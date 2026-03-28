@@ -1,0 +1,36 @@
+local item_icons = "__administratorio__/graphics/icons/"
+local entity_graphics = "__administratorio__/graphics/entities/"
+local feature_flags = require("feature_flags")
+local working_hours_enabled = feature_flags.working_hours_enabled()
+
+local function disabled_item_description(key)
+  if working_hours_enabled then
+    return nil
+  end
+  return {"item-description." .. key}
+end
+
+data:extend({
+  -- Infrastructure
+  { type = "item", name = "pneumatic-pipe",            icons = {{icon = "__base__/graphics/icons/pipe.png", icon_size = 64, tint = {r=0.85, g=0.75, b=0.55, a=1}}},            subgroup = "admin-infrastructure", order = "d1", place_result = "pneumatic-pipe",            stack_size = 100 },
+  { type = "item", name = "pneumatic-pipe-to-ground",  icons = {{icon = "__base__/graphics/icons/pipe-to-ground.png", icon_size = 64, tint = {r=0.85, g=0.75, b=0.55, a=1}}}, subgroup = "admin-infrastructure", order = "d2", place_result = "pneumatic-pipe-to-ground",  stack_size = 50 },
+  { type = "item", name = "form-liquifier",            icon = item_icons .. "pneumatic/intake.png",  icon_size = 32, subgroup = "admin-infrastructure", order = "e1", place_result = "form-liquifier",            stack_size = 50 },
+  { type = "item", name = "form-solidifier",           icon = item_icons .. "pneumatic/outtake.png", icon_size = 32, subgroup = "admin-infrastructure", order = "e2", place_result = "form-solidifier",           stack_size = 50 },
+
+  -- Buildings
+  { type = "item", name = "office-desk",               icon = item_icons .. "office-building.png",                              icon_size = 64,  subgroup = "admin-buildings", order = "a",  place_result = "office-desk",               stack_size = 50, localised_description = disabled_item_description("office-desk-no-working-hours") },
+  { type = "item", name = "admin-station",             icon = item_icons .. "admin-desk.png",                                  icon_size = 64,  subgroup = "admin-buildings", order = "b",  place_result = "admin-station",             stack_size = 50 },
+  { type = "item", name = "resolution-office",         icons = {{icon = "__base__/graphics/icons/assembling-machine-1.png", icon_size = 64, tint = {r=0.9, g=0.3, b=0.3, a=1}}},  subgroup = "admin-buildings", order = "b2", place_result = "resolution-office",         stack_size = 50 },
+  { type = "item", name = "greenhouse",                icon = item_icons .. "greenhouse.png",                                   icon_size = 64,  subgroup = "admin-buildings", order = "c",  place_result = "greenhouse",                stack_size = 50 },
+  { type = "item", name = "corporate-breakroom",       icon = "__administratorio__/graphics/icons/warehouse-icon.png",         icon_size = 64,  subgroup = "admin-buildings", order = "d",  place_result = "corporate-breakroom",       stack_size = 20, localised_description = disabled_item_description("corporate-breakroom-no-working-hours") },
+  { type = "item", name = "meeting-room",             icon = "__administratorio__/graphics/icons/meeting-room-icon.png",      icon_size = 64,  subgroup = "admin-buildings", order = "e",  place_result = "meeting-room",              stack_size = 10, localised_description = disabled_item_description("meeting-room-no-working-hours") },
+  { type = "item", name = "union-headquarters",        icon = "__administratorio__/graphics/icons/lufter-icon.png",            icon_size = 64,  subgroup = "admin-buildings", order = "f",  place_result = "union-headquarters",        stack_size = 10, localised_description = disabled_item_description("union-headquarters-no-working-hours") },
+  { type = "item", name = "propaganda-distillery",     icons = {{icon = "__base__/graphics/icons/oil-refinery.png", icon_size = 64, tint = {r=0.6, g=0.3, b=0.6, a=1}}},  subgroup = "admin-buildings", order = "g",  place_result = "propaganda-distillery",     stack_size = 20 },
+  { type = "item", name = "printer-t1",                icon = "__administratorio__/graphics/icons/mini-assembler-icon.png",    icon_size = 64,  subgroup = "admin-buildings", order = "i",  place_result = "printer-t1",                stack_size = 50 },
+  { type = "item", name = "printer-t2",                icon = "__administratorio__/graphics/icons/steel-forge-icon.png",       icon_size = 64,  subgroup = "admin-buildings", order = "j",  place_result = "printer-t2",                stack_size = 50 },
+  { type = "item", name = "mechanical-printer",        icon = "__administratorio__/graphics/entities/mechanical-printer/icon.png", icon_size = 64,  subgroup = "admin-buildings", order = "n",  place_result = "mechanical-printer",        stack_size = 20 },
+  { type = "item", name = "transit-permit-chest",      icon = "__base__/graphics/icons/steel-chest.png",                         icon_size = 64,  subgroup = "admin-infrastructure", order = "f1", stack_size = 50 },
+  { type = "item", name = "admin-station-north",       icon = item_icons .. "admin-desk.png", icon_size = 64, hidden = true, hidden_in_factoriopedia = true, factoriopedia_alternative = "admin-station", localised_name = {"item-name.admin-station"}, localised_description = {"item-description.admin-station"}, place_result = "admin-station", stack_size = 50 },
+  { type = "item", name = "admin-station-east",        icon = item_icons .. "admin-desk.png", icon_size = 64, hidden = true, hidden_in_factoriopedia = true, factoriopedia_alternative = "admin-station", localised_name = {"item-name.admin-station"}, localised_description = {"item-description.admin-station"}, place_result = "admin-station", stack_size = 50 },
+  { type = "item", name = "admin-station-west",        icon = item_icons .. "admin-desk.png", icon_size = 64, hidden = true, hidden_in_factoriopedia = true, factoriopedia_alternative = "admin-station", localised_name = {"item-name.admin-station"}, localised_description = {"item-description.admin-station"}, place_result = "admin-station", stack_size = 50 },
+})

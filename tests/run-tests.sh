@@ -1,0 +1,89 @@
+#!/bin/sh
+
+set -eu
+
+usage() {
+  cat <<'EOF'
+Usage: ./run-tests.sh --repo-root PATH --factorio-bin PATH [-- PYTHON_TEST_ARGS...]
+
+Required arguments:
+  --repo-root PATH     Absolute or relative path to the repo root.
+  --factorio-bin PATH  Factorio binary passed to the progression report test.
+
+Optional arguments:
+  --help               Show this help text.
+
+Any arguments after -- are forwarded to Python tests.
+EOF
+}
+
+REPO_ROOT=
+FACTORIO_BIN=
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --repo-root)
+      [ "$#" -ge 2 ] || { echo "Missing value for --repo-root" >&2; exit 1; }
+      REPO_ROOT=$2
+      shift 2
+      ;;
+    --factorio-bin)
+      [ "$#" -ge 2 ] || { echo "Missing value for --factorio-bin" >&2; exit 1; }
+      FACTORIO_BIN=$2
+      shift 2
+      ;;
+    --help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+[ -n "$REPO_ROOT" ] || { echo "--repo-root is required" >&2; exit 1; }
+[ -n "$FACTORIO_BIN" ] || { echo "--factorio-bin is required" >&2; exit 1; }
+command -v lua >/dev/null 2>&1 || { echo "'lua' not found on PATH" >&2; exit 1; }
+command -v python >/dev/null 2>&1 || { echo "'python' not found on PATH" >&2; exit 1; }
+python -c 'import sys; sys.exit(0 if sys.version_info[0] >= 3 else 1)' >/dev/null 2>&1 || {
+  echo "'python' must be Python 3 for tests/test_progression_report.py" >&2
+  exit 1
+}
+
+TEST_DIR=$REPO_ROOT/tests
+
+if [ ! -d "$TEST_DIR" ]; then
+  echo "Test directory not found: $TEST_DIR" >&2
+  exit 1
+fi
+
+run_lua_tests() {
+  find "$TEST_DIR" -maxdepth 1 -type f -name 'test_*.lua' | sort |
+  while IFS= read -r test_file; do
+    [ -n "$test_file" ] || continue
+    printf '==> %s\n' "$(basename "$test_file")"
+    lua "$test_file"
+  done
+}
+
+run_python_tests() {
+  find "$TEST_DIR" -maxdepth 1 -type f -name 'test_*.py' | sort |
+  while IFS= read -r test_file; do
+    [ -n "$test_file" ] || continue
+    printf '==> %s\n' "$(basename "$test_file")"
+    python "$test_file" --factorio-bin "$FACTORIO_BIN" "$@"
+  done
+}
+
+cd "$REPO_ROOT"
+run_lua_tests
+run_python_tests "$@"
+
+echo "All tests passed."

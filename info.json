@@ -1,0 +1,18 @@
+{
+  "name": "administratorio",
+  "version": "0.2.3",
+  "title": "Administratorio",
+  "author": "Onoulade",
+  "contact": "",
+  "homepage": "",
+  "description": "The factory must grow, but only if you have the proper permits. Replace biters with complainers and weapons with bureaucracy.",
+  "factorio_version": "2.0",
+  "dependencies": ["base >= 2.0.0", "! space-age"],
+  "quality_required": false,
+  "rail_bridges_required": false,
+  "space_travel_required": false,
+  "spoiling_required": false,
+  "freezing_required": false,
+  "segmented_units_required": false,
+  "expansion_shaders_required": false
+}

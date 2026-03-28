@@ -1,0 +1,662 @@
+local feature_flags = require("feature_flags")
+local working_hours_enabled = feature_flags.working_hours_enabled()
+local tech_icons = "__administratorio__/graphics/technology/"
+
+data:extend({
+  -- DISCOVERY: BULLSHIT (gate tech — mining bullshit ore unlocks the certificate supply chain)
+  {
+    type = "technology", name = "discovery-bullshit",
+    icon = "__administratorio__/graphics/icons/bullshit-ore.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "dubious-data-refining" },
+      { type = "unlock-recipe", recipe = "basic-excuse-production" },
+      { type = "unlock-recipe", recipe = "safety-waiver-draft" },
+      { type = "unlock-recipe", recipe = "safety-waiver-printing" },
+      { type = "unlock-recipe", recipe = "construction-permit-draft" },
+      { type = "unlock-recipe", recipe = "construction-permit-printing" }
+    },
+    research_trigger = { type = "mine-entity", entity = "bullshit-ore" },
+    order = "z-b"
+  },
+  -- DISCOVERY: RED TAPE
+  {
+    type = "technology", name = "discovery-redundant-rubble",
+    icon = "__administratorio__/graphics/icons/regulation.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "provisional-approval-production" },
+      { type = "unlock-recipe", recipe = "burner-mining-drill" }
+    },
+    research_trigger = { type = "mine-entity", entity = "redundant-rubble" },
+    order = "z-c"
+  },
+  -- ADMINISTRATIVE SCIENCE (T0 — unlocks admin science packs)
+  {
+    type = "technology", name = "administrative-science-research",
+    icon = "__administratorio__/graphics/icons/administrative-science-pack.png", icon_size = 256, icon_mipmaps = 4,
+    effects = {
+      { type = "unlock-recipe", recipe = "administrative-science-pack-production" }
+    },
+    prerequisites = {"automation"},
+    unit = { count = 10, ingredients = {{"automation-science-pack", 1}}, time = 15 },
+    order = "a-a"
+  },
+  -- PRINTING TECHNOLOGY (printer T1 + rubble derivatives for downstream use)
+  {
+    type = "technology", name = "printing-technology",
+    icon = "__administratorio__/graphics/icons/ink-cartridge.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "printer-t1" }
+    },
+    prerequisites = {"administrative-science-research"},
+    unit = { count = 20, ingredients = {{"automation-science-pack", 1}, {"administrative-science-pack", 1}}, time = 15 },
+    order = "a-c"
+  },
+
+  -- T1: ADMINISTRATIVE BUREAUCRACY (early wood bootstrap)
+  {
+    type = "technology", name = "administrative-bureaucracy",
+    icon = tech_icons .. "administrative-bureaucracy.png", icon_size = 128,
+    effects = {
+      { type = "unlock-recipe", recipe = "greenhouse" },
+      { type = "unlock-recipe", recipe = "greenhouse-wood" }
+    },
+    prerequisites = {"printing-technology"},
+    unit = { count = 20, ingredients = {{"automation-science-pack", 1}, {"administrative-science-pack", 1}}, time = 15 },
+    order = "a"
+  },
+  -- LITTERING RESOLUTION (standalone — early complaint handling, red + admin only)
+  {
+    type = "technology", name = "littering-resolution",
+    icon = tech_icons .. "local-precedents.png", icon_size = 256,
+    effects = {
+      { type = "unlock-recipe", recipe = "crappy-report-production" },
+      { type = "unlock-recipe", recipe = "filing-littering" },
+      { type = "unlock-recipe", recipe = "littering-final" }
+    },
+    prerequisites = {"printing-technology"},
+    unit = { count = 25, ingredients = {{"automation-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },
+    order = "a-l"
+  },
+  -- T2: INDUSTRIAL PRINTING (industrial printer + bulk copy infrastructure)
+  {
+    type = "technology", name = "industrial-printing",
+    icon = "__administratorio__/graphics/icons/steel-forge-icon.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "printer-t2" },
+      { type = "unlock-recipe", recipe = "copy-blank-form" },
+      { type = "unlock-recipe", recipe = "copy-blank-approval" },
+      { type = "unlock-recipe", recipe = "copy-carbon-offset-certificate" },
+      { type = "unlock-recipe", recipe = "copy-form-27b-6" },
+      { type = "unlock-recipe", recipe = "copy-environmental-impact-report" }
+    },
+    prerequisites = {"administrative-bureaucracy", "steel-processing", "advanced-circuit", "chemical-science-pack"},
+    unit = { count = 90, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "b"
+  },
+  -- T2b: LOCAL PRECEDENTS (legal boilerplate and standardized requisition forms)
+  {
+    type = "technology", name = "local-precedents",
+    icon = tech_icons .. "local-precedents.png", icon_size = 256,
+    effects = {
+      { type = "unlock-recipe", recipe = "useless-documentation-production" },
+      { type = "unlock-recipe", recipe = "form-27b-6" }
+    },
+    prerequisites = {"administrative-bureaucracy", "littering-resolution"},
+    unit = { count = 60, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "b-b"
+  },
+  -- T2c: ENVIRONMENTAL REPORTING (impact reports built on top of legal boilerplate)
+  {
+    type = "technology", name = "environmental-reporting",
+    icon = tech_icons .. "environmental-compliance.png", icon_size = 256,
+    effects = {
+      { type = "unlock-recipe", recipe = "environmental-impact-report" },
+      { type = "unlock-recipe", recipe = "chemical-handling-work-order-production" }
+    },
+    prerequisites = {"local-precedents"},
+    unit = { count = 45, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "b-c"
+  },
+  -- T2d: RUBBLE COMPACTION (shared processed material for multiple later branches)
+  {
+    type = "technology", name = "rubble-compaction",
+    icon = "__administratorio__/graphics/icons/compacted-rubble.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "compacted-rubble-production" }
+    },
+    prerequisites = {"printing-technology", "discovery-redundant-rubble"},
+    unit = { count = 30, ingredients = {{"automation-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },
+    order = "b-d"
+  },
+  -- STREAMLINED WORK ORDERS (direct draft-to-work-order printing at T1/T2 printers)
+  {
+    type = "technology", name = "streamlined-work-orders",
+    icon = tech_icons .. "administrative-bureaucracy.png", icon_size = 128,
+    effects = {
+      { type = "unlock-recipe", recipe = "safety-work-order-printing" },
+      { type = "unlock-recipe", recipe = "construction-work-order-printing" },
+      { type = "unlock-recipe", recipe = "research-grant-work-order-printing" }
+    },
+    prerequisites = {"printing-technology", "logistic-science-pack", "rubble-compaction"},
+    unit = { count = 50, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "b-a"
+  },
+  -- T3a: OFFICE AGRICULTURE (coffee propagation and charcoal built on greenhouse output)
+  {
+    type = "technology", name = "office-agriculture",
+    icon = "__administratorio__/graphics/icons/coffee-bean.png", icon_size = 32,
+    effects = {
+      { type = "unlock-recipe", recipe = "coffee-plantation" },
+      { type = "unlock-recipe", recipe = "charcoal-production" }
+    },
+    prerequisites = {"corporate-hospitality", "fluid-handling"},
+    unit = { count = 60, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "c-a"
+  },
+  -- T3b: INDUSTRIAL PROPAGANDA (lies, nonsense, and credentials)
+  {
+    type = "technology", name = "industrial-propaganda",
+    icon = tech_icons .. "environmental-compliance.png", icon_size = 256,
+    effects = {
+      { type = "unlock-recipe", recipe = "propaganda-distillery" },
+      { type = "unlock-recipe", recipe = "politician-fluid-refining" },
+      { type = "unlock-recipe", recipe = "misinformation-production" },
+      { type = "unlock-recipe", recipe = "refined-nonsense-production" },
+      { type = "unlock-recipe", recipe = "credentials-production" }
+    },
+    prerequisites = {"littering-resolution", "fluid-handling", "rubble-compaction"},
+    unit = { count = 70, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "c-b"
+  },
+  -- T3c: CORPORATE HOSPITALITY (breakrooms, coffee, gossip, and office drama)
+  {
+    type = "technology", name = "corporate-hospitality",
+    icon = "__administratorio__/graphics/icons/warehouse-icon.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "corporate-breakroom" },
+      { type = "unlock-recipe", recipe = "greenhouse-discovery" },
+      { type = "unlock-recipe", recipe = "coffee-refining" },
+      { type = "unlock-recipe", recipe = "watercooler-gossip-production" },
+      { type = "unlock-recipe", recipe = "office-drama-recycling" }
+    },
+    prerequisites = {"administrative-bureaucracy"},
+    unit = { count = 70, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "c-c"
+  },
+  -- T3d: INFORMATION MANAGEMENT (turn gossip and credentials into useful paperwork)
+  {
+    type = "technology", name = "information-management",
+    icon = "__administratorio__/graphics/icons/data.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "data-production" },
+      { type = "unlock-recipe", recipe = "good-excuse-production" }
+    },
+    prerequisites = {"corporate-hospitality", "industrial-propaganda"},
+    unit = { count = 85, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "c-d"
+  },
+  -- T3e: VERBAL APPROVALS (directives and informal management sign-off)
+  {
+    type = "technology", name = "verbal-approvals",
+    icon = "__administratorio__/graphics/icons/management-approval-verbal.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "blank-directive-production" },
+      { type = "unlock-recipe", recipe = "copy-blank-directive" },
+      { type = "unlock-recipe", recipe = "management-verbal-work-order-production" },
+      { type = "unlock-recipe", recipe = "management-verbal-draft" },
+      { type = "unlock-recipe", recipe = "management-verbal-printing" }
+    },
+    prerequisites = {"corporate-hospitality"},
+    unit = { count = 80, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "c-e"
+  },
+  -- T4a: ENVIRONMENTAL COMPLIANCE (petrochemical permitting)
+  {
+    type = "technology", name = "environmental-compliance",
+    icon = tech_icons .. "environmental-compliance.png", icon_size = 256,
+    effects = {
+      { type = "unlock-recipe", recipe = "petrochemical-operating-permit-production" }
+    },
+    prerequisites = {"environmental-reporting"},
+    unit = { count = 85, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "d-a"
+  },
+  -- T4b: SMOG ABATEMENT (air-pollution complaint chain)
+  {
+    type = "technology", name = "smog-abatement",
+    icon = tech_icons .. "environmental-compliance.png", icon_size = 256,
+    effects = {
+      { type = "unlock-recipe", recipe = "filing-smog" },
+      { type = "unlock-recipe", recipe = "case-smog" },
+      { type = "unlock-recipe", recipe = "smog-final" }
+    },
+    prerequisites = {"environmental-compliance"},
+    unit = { count = 90, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "d-b"
+  },
+  -- T4c: HAZMAT RESPONSE (hazard-material complaint chain)
+  {
+    type = "technology", name = "hazmat-response",
+    icon = tech_icons .. "health-and-safety.png", icon_size = 256,
+    effects = {
+      { type = "unlock-recipe", recipe = "filing-hazmat" },
+      { type = "unlock-recipe", recipe = "case-hazmat" },
+      { type = "unlock-recipe", recipe = "hazmat-final" }
+    },
+    prerequisites = {"environmental-compliance"},
+    unit = { count = 100, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "d-c"
+  },
+  -- T4d: NEST EXPROPRIATION (eviction notices for territorial expansion)
+  {
+    type = "technology", name = "nest-expropriation",
+    icon = "__administratorio__/graphics/icons/eviction-notice.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "eviction-notice-production" }
+    },
+    prerequisites = {"information-management", "industrial-propaganda"},
+    unit = { count = 90, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "d-d"
+  },
+  {
+    type = "technology", name = "synthetic-stationery",
+    icon = "__administratorio__/graphics/icons/paper.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "synthetic-paper-production" }
+    },
+    prerequisites = {"environmental-compliance", "plastics", "sulfur-processing"},
+    unit = { count = 120, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "c-d"
+  },
+  -- T5a: PUBLIC FINANCE (bonds, grants, and union institutions)
+  {
+    type = "technology", name = "public-finance",
+    icon = "__administratorio__/graphics/icons/taxpayer-money.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "treasury-bond-production" },
+      { type = "unlock-recipe", recipe = "union-headquarters" },
+      { type = "unlock-recipe", recipe = "union-approval-production" },
+      { type = "unlock-recipe", recipe = "government-grant-production" }
+    },
+    prerequisites = {"verbal-approvals", "local-precedents", "advanced-circuit"},
+    unit = { count = 145, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
+    order = "e-a"
+  },
+  -- T5b: HEALTH & SAFETY (OSHA cleanup, justification, and narrative control)
+  {
+    type = "technology", name = "health-and-safety",
+    icon = tech_icons .. "health-and-safety.png", icon_size = 256,
+    effects = {
+      { type = "unlock-recipe", recipe = "justification-production" },
+      { type = "unlock-recipe", recipe = "narrative-production" },
+      { type = "unlock-recipe", recipe = "osha-scrubbing" },
+      { type = "unlock-recipe", recipe = "osha-violation-recycling" }
+    },
+    prerequisites = {"public-finance", "information-management"},
+    unit = { count = 150, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
+    order = "e-b"
+  },
+  -- T5c: BOARD MEETINGS (meeting-room infrastructure)
+  {
+    type = "technology", name = "board-meetings",
+    icon = "__administratorio__/graphics/icons/meeting-room-icon.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "meeting-room" }
+    },
+    prerequisites = {"public-finance", "verbal-approvals"},
+    unit = { count = 135, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
+    order = "e-c"
+  },
+  -- T6a: EXECUTIVE REVIEW (written approvals and signed directives)
+  {
+    type = "technology", name = "executive-review",
+    icon = "__administratorio__/graphics/icons/meeting-room-icon.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "management-written-work-order-production" },
+      { type = "unlock-recipe", recipe = "management-written-proposal" },
+      { type = "unlock-recipe", recipe = "management-written-1st-printing" },
+      { type = "unlock-recipe", recipe = "management-written-2nd-printing" }
+    },
+    prerequisites = {"board-meetings", "health-and-safety"},
+    unit = { count = 175, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
+    order = "f-a"
+  },
+  -- T6b: RADIOLOGICAL COMPLIANCE (centrifuge-family operating paperwork)
+  {
+    type = "technology", name = "radiological-compliance",
+    icon = tech_icons .. "health-and-safety.png", icon_size = 256,
+    effects = {
+      { type = "unlock-recipe", recipe = "radiological-work-order-production" }
+    },
+    prerequisites = {"executive-review", "environmental-compliance"},
+    unit = { count = 160, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
+    order = "f-b"
+  },
+  -- T7a: EMINENT DOMAIN & ZONING (policy drafting and slush-fund planning)
+  {
+    type = "technology", name = "eminent-domain-zoning",
+    icon = tech_icons .. "eminent-domain-zoning.png", icon_size = 256,
+    effects = {
+      { type = "unlock-recipe", recipe = "white-paper-production" },
+      { type = "unlock-recipe", recipe = "policy-production" },
+      { type = "unlock-recipe", recipe = "slush-fund-production" }
+    },
+    prerequisites = {"executive-review", "processing-unit"},
+    unit = { count = 210, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    order = "g-a"
+  },
+  -- T7b: ENVIRONMENTAL CERTIFICATION (verified carbon paperwork)
+  {
+    type = "technology", name = "environmental-certification",
+    icon = tech_icons .. "environmental-compliance.png", icon_size = 256,
+    effects = {
+      { type = "unlock-recipe", recipe = "carbon-offset-certificate-verified" }
+    },
+    prerequisites = {"public-finance", "production-science-pack"},
+    unit = { count = 130, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    order = "g-b"
+  },
+  -- T7c: FEDERAL REGULATION (codify policy into formal law)
+  {
+    type = "technology", name = "federal-regulation",
+    icon = "__administratorio__/graphics/icons/regulation.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "regulation-production" }
+    },
+    prerequisites = {"eminent-domain-zoning"},
+    unit = { count = 175, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    order = "g-c"
+  },
+  -- T7d: NOISE ORDINANCES (noise complaint resolution)
+  {
+    type = "technology", name = "noise-ordinances",
+    icon = tech_icons .. "eminent-domain-zoning.png", icon_size = 256,
+    effects = {
+      { type = "unlock-recipe", recipe = "filing-noise" },
+      { type = "unlock-recipe", recipe = "case-noise" },
+      { type = "unlock-recipe", recipe = "brief-noise" },
+      { type = "unlock-recipe", recipe = "noise-final" }
+    },
+    prerequisites = {"eminent-domain-zoning", "environmental-certification"},
+    unit = { count = 185, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    order = "g-d"
+  },
+  -- T7e: LOITERING ORDINANCES (loitering complaint resolution)
+  {
+    type = "technology", name = "loitering-ordinances",
+    icon = tech_icons .. "eminent-domain-zoning.png", icon_size = 256,
+    effects = {
+      { type = "unlock-recipe", recipe = "filing-loitering" },
+      { type = "unlock-recipe", recipe = "case-loitering" },
+      { type = "unlock-recipe", recipe = "brief-loitering" },
+      { type = "unlock-recipe", recipe = "loitering-final" }
+    },
+    prerequisites = {"board-meetings"},
+    unit = { count = 185, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"utility-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    order = "g-e"
+  },
+  {
+    type = "technology", name = "creative-accounting",
+    icon = "__administratorio__/graphics/icons/taxpayer-money.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "tax-audit" },
+    },
+    prerequisites = {"eminent-domain-zoning"},
+    unit = { count = 175, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    order = "f-y"
+  },
+  -- T8a: CONSTITUTIONAL LAW (unemployment resolution)
+  {
+    type = "technology", name = "constitutional-law",
+    icon = tech_icons .. "constitutional-law.png", icon_size = 256,
+    effects = {
+      { type = "unlock-recipe", recipe = "filing-unemployment" },
+      { type = "unlock-recipe", recipe = "case-unemployment" },
+      { type = "unlock-recipe", recipe = "brief-unemployment" },
+      { type = "unlock-recipe", recipe = "unemployment-final" }
+    },
+    prerequisites = {"federal-regulation"},
+    unit = { count = 260, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    order = "h-a"
+  },
+  -- T8b: VAGRANCY ORDINANCES (vagrancy complaint resolution)
+  {
+    type = "technology", name = "vagrancy-ordinances",
+    icon = tech_icons .. "constitutional-law.png", icon_size = 256,
+    effects = {
+      { type = "unlock-recipe", recipe = "filing-vagrancy" },
+      { type = "unlock-recipe", recipe = "case-vagrancy" },
+      { type = "unlock-recipe", recipe = "brief-vagrancy" },
+      { type = "unlock-recipe", recipe = "vagrancy-final" }
+    },
+    prerequisites = {"constitutional-law"},
+    unit = { count = 320, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"utility-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    order = "h-b"
+  },
+  -- PNEUMATIC FORM TRANSPORT (first green-science paperwork logistics)
+  {
+    type = "technology", name = "pneumatic-form-transport",
+    icons = {{icon = "__base__/graphics/icons/pipe.png", icon_size = 64, tint = {r=0.85, g=0.75, b=0.55, a=1}}},
+    effects = {
+      { type = "unlock-recipe", recipe = "pneumatic-pipe" },
+      { type = "unlock-recipe", recipe = "pneumatic-pipe-to-ground" },
+      { type = "unlock-recipe", recipe = "form-liquifier" },
+      { type = "unlock-recipe", recipe = "form-solidifier" }
+    },
+    prerequisites = {"printing-technology", "logistic-science-pack", "rubble-compaction"},
+    unit = { count = 40, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },
+    order = "a-p"
+  }
+})
+
+local function add_tech_prerequisite(technology_name, prerequisite_name)
+  local technology = data.raw["technology"] and data.raw["technology"][technology_name]
+  if not technology or not prerequisite_name then return end
+  if not technology.prerequisites then technology.prerequisites = {} end
+  for _, prereq in ipairs(technology.prerequisites) do
+    if prereq == prerequisite_name then return end
+  end
+  table.insert(technology.prerequisites, prerequisite_name)
+end
+
+local function add_tech_unlock(technology_name, recipe_name)
+  local technology = data.raw["technology"] and data.raw["technology"][technology_name]
+  if not technology or not recipe_name then return end
+  if not technology.effects then technology.effects = {} end
+  for _, effect in ipairs(technology.effects) do
+    if effect.type == "unlock-recipe" and effect.recipe == recipe_name then
+      return
+    end
+  end
+  table.insert(technology.effects, { type = "unlock-recipe", recipe = recipe_name })
+end
+
+local science_pack_order = {
+  ["automation-science-pack"] = 1,
+  ["logistic-science-pack"] = 2,
+  ["military-science-pack"] = 3,
+  ["chemical-science-pack"] = 4,
+  ["production-science-pack"] = 5,
+  ["utility-science-pack"] = 6,
+  ["space-science-pack"] = 7,
+  ["metallurgic-science-pack"] = 8,
+  ["electromagnetic-science-pack"] = 9,
+  ["agricultural-science-pack"] = 10,
+  ["cryogenic-science-pack"] = 11,
+  ["promethium-science-pack"] = 12,
+  ["administrative-science-pack"] = 13,
+}
+
+local function tech_uses_pack(technology, pack_name)
+  if not technology or not technology.unit or not technology.unit.ingredients then return false end
+  for _, ingredient in ipairs(technology.unit.ingredients) do
+    if (ingredient[1] or ingredient.name) == pack_name then
+      return true
+    end
+  end
+  return false
+end
+
+local function add_tech_science_pack(technology_name, pack_name, amount)
+  local technology = data.raw["technology"] and data.raw["technology"][technology_name]
+  if not technology or not technology.unit or not technology.unit.ingredients then return false end
+  if tech_uses_pack(technology, pack_name) then return false end
+  table.insert(technology.unit.ingredients, {pack_name, amount or 1})
+  return true
+end
+
+local function sort_science_packs(technology)
+  if not technology or not technology.unit or not technology.unit.ingredients then return end
+  table.sort(technology.unit.ingredients, function(a, b)
+    local a_name = a[1] or a.name or ""
+    local b_name = b[1] or b.name or ""
+    local a_order = science_pack_order[a_name] or 999
+    local b_order = science_pack_order[b_name] or 999
+    if a_order == b_order then
+      return a_name < b_name
+    end
+    return a_order < b_order
+  end)
+end
+
+local function dedupe_science_packs(technology)
+  if not technology or not technology.unit or not technology.unit.ingredients then return end
+
+  local deduped = {}
+  local seen = {}
+  for _, ingredient in ipairs(technology.unit.ingredients) do
+    local pack_name = ingredient[1] or ingredient.name
+    if pack_name and not seen[pack_name] then
+      seen[pack_name] = true
+      deduped[#deduped + 1] = ingredient
+    end
+  end
+  technology.unit.ingredients = deduped
+end
+
+local function inherit_parent_science_packs()
+  local technologies = data.raw["technology"] or {}
+  local changed = true
+
+  while changed do
+    changed = false
+    for tech_name, technology in pairs(technologies) do
+      if technology.unit and technology.unit.ingredients then
+        for _, prereq_name in ipairs(technology.prerequisites or {}) do
+          local prereq = technologies[prereq_name]
+          if prereq and prereq.unit and prereq.unit.ingredients then
+            for _, ingredient in ipairs(prereq.unit.ingredients) do
+              local pack_name = ingredient[1] or ingredient.name
+              local pack_amount = ingredient[2] or ingredient.amount or 1
+              if pack_name and add_tech_science_pack(tech_name, pack_name, pack_amount) then
+                changed = true
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  for _, technology in pairs(technologies) do
+    dedupe_science_packs(technology)
+    sort_science_packs(technology)
+  end
+end
+
+if working_hours_enabled then
+  data:extend({
+    {
+      type = "technology", name = "after-hours-operations",
+      icon = tech_icons .. "overtime-module.png",
+      icon_size = 64,
+      effects = {
+        { type = "unlock-recipe", recipe = "overtime-exemption" }
+      },
+      prerequisites = {"federal-regulation", "productivity-module"},
+      unit = {
+        count = 250,
+        ingredients = {
+          {"automation-science-pack", 1},
+          {"logistic-science-pack", 1},
+          {"chemical-science-pack", 1},
+          {"utility-science-pack", 1},
+          {"administrative-science-pack", 1},
+        },
+        time = 60
+      },
+      order = "f-z"
+    },
+  })
+end
+
+-- ============================================================
+-- VANILLA TECHNOLOGY HOOKS
+-- ============================================================
+
+-- Railway now depends on both the verbal-approval branch and the legal form
+-- branch so locomotives and transit paperwork become usable at unlock.
+add_tech_unlock("railway", "transit-authorization-production")
+add_tech_prerequisite("railway", "verbal-approvals")
+add_tech_prerequisite("railway", "local-precedents")
+
+-- The office desk uses electronic circuits, so it should arrive with the
+-- circuit tier instead of pretending to be bootstrap-safe.
+add_tech_unlock("electronics", "office-desk")
+
+-- Discovery-triggered bootstrap structures should not appear craftable before
+-- their prerequisite paperwork exists.
+add_tech_unlock("discovery-redundant-rubble", "admin-station")
+add_tech_unlock("discovery-redundant-rubble", "resolution-office")
+
+-- Early paperwork that consumes bootstrap resources should unlock only after
+-- the matching discovery chain is in play.
+add_tech_unlock("printing-technology", "promise-production")
+add_tech_unlock("discovery-redundant-rubble", "filing-landscape")
+add_tech_unlock("discovery-bullshit", "landscape-final")
+add_tech_prerequisite("printing-technology", "discovery-bullshit")
+add_tech_prerequisite("printing-technology", "discovery-redundant-rubble")
+
+-- Unlock Work Orders with Automation (fuel for AM1)
+add_tech_unlock("automation", "work-order-production")
+add_tech_unlock("automation", "research-grant-work-order-production")
+add_tech_unlock("automation", "safety-work-order-production")
+add_tech_unlock("automation", "construction-work-order-production")
+
+-- Unlock Research Grant Approval with Automation Science (red science unlock)
+add_tech_unlock("automation-science-pack", "research-grant-approval-production")
+
+-- Science-pack tier heads should explicitly depend on the pack tech that
+-- introduces the tier, so the tree matches the actual research requirement.
+add_tech_prerequisite("industrial-printing", "chemical-science-pack")
+add_tech_prerequisite("office-agriculture", "logistic-science-pack")
+add_tech_prerequisite("health-and-safety", "chemical-science-pack")
+add_tech_prerequisite("public-finance", "chemical-science-pack")
+add_tech_prerequisite("board-meetings", "chemical-science-pack")
+add_tech_prerequisite("synthetic-stationery", "chemical-science-pack")
+add_tech_prerequisite("eminent-domain-zoning", "production-science-pack")
+add_tech_prerequisite("environmental-certification", "production-science-pack")
+add_tech_prerequisite("constitutional-law", "production-science-pack")
+add_tech_prerequisite("loitering-ordinances", "utility-science-pack")
+add_tech_prerequisite("vagrancy-ordinances", "utility-science-pack")
+add_tech_prerequisite("after-hours-operations", "utility-science-pack")
+
+-- Vanilla branches that now consume mod paperwork need matching bureaucracy
+-- prerequisites so they unlock only when their recipes are actually usable.
+add_tech_prerequisite("engine", "automation")
+add_tech_prerequisite("gate", "automation")
+add_tech_prerequisite("power-armor-mk2", "low-density-structure")
+
+for _, tech_name in ipairs({"solar-energy", "electric-energy-accumulators", "construction-robotics", "logistic-robotics"}) do
+  add_tech_prerequisite(tech_name, "verbal-approvals")
+end
+
+add_tech_prerequisite("oil-processing", "environmental-compliance")
+
+for _, tech_name in ipairs({"automation-3", "effect-transmission", "rocket-silo"}) do
+  add_tech_prerequisite(tech_name, "executive-review")
+end
+
+add_tech_prerequisite("uranium-processing", "radiological-compliance")
+
+inherit_parent_science_packs()

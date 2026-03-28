@@ -1,0 +1,2 @@
+-- REMOVED CARPET TILES AS PER OVERHAUL PLAN
+-- File kept for structure but currently empty.

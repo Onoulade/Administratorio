@@ -1,0 +1,374 @@
+-- ADMINISTRATORIO: SHARED CONSTANTS
+-- Single source of truth for constants used across data.lua and data-final-fixes.lua.
+
+local shared = {}
+
+-------------------------------------------------------------------------------
+-- CORE DESIGN PRINCIPLES
+--
+-- 1. FORMS ARE THE CURRENCY OF AUTOMATION
+--    Assembling machines use work-orders and combined work-orders.
+--    Furnaces, refineries, chemical plants, and centrifuges use their own
+--    machine-family operating paperwork.
+--
+-- 2. BATCH SIZING CONTROLS FORM CONSUMPTION
+--    Small items get large batch multipliers (10x copper cable = 0.1 form/item).
+--    Big structures get 1x multiplier (1 form per rocket silo).
+--    Target rates: 0.1, 0.2, 0.5, or 1.0 forms per item.
+--
+-- 3. INK ON PAPER = PRINTER ONLY
+--    Any recipe where ink is applied to paper/forms must be done in a printer.
+--    Blank forms require ink and must be printed (crash-site or T1 printer).
+--    Higher-tier printed documents need ink cartridges (Printer T1/T2).
+--
+-- 4. EVERY FORM HAS A PRINTER STEP
+--    All forms trace back to a blank-form (printed with ink) in their
+--    production chain. Higher-tier forms require more printing/ink steps.
+--
+-- 5. HANDCRAFTING IS LIMITED
+--    Items unlocked by red science or earlier can be handcrafted.
+--    Items past red science (green science+) are hidden from the handcrafter.
+--    T1+ handcraftable items require their tier form as ingredient.
+--
+-- 6. AMs CANNOT CRAFT FORMS
+--    Forms are only craftable in administrative buildings (office desk,
+--    admin station, printers). AMs only craft regulated vanilla recipes.
+--
+-- 7. ALL BUILDINGS NEED FORMS
+--    Every vanilla building recipe requires a tier-appropriate form:
+--    - In the regulated recipe (AM1/AM2): combined form (tier + work-order, consumed)
+--    - In the original recipe (handcraft/AM3): tier form directly
+--    Exception: pipes, belts, poles, and basic intermediates (T0 = work-order only).
+--    Machine operation paperwork is handled separately by recipe category.
+--
+-- 8. AM3 IS THE REWARD
+--    AM3 uses the same regulated recipes as AM1/AM2 but also keeps
+--    original categories, so T0 items can be crafted without forms.
+--
+-- 9. HANDCRAFTING GATED BY TECH TIER
+--    Only recipes at red science or below are handcraftable.
+--    Past red science → hidden from player crafting entirely.
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+-- PAPERWORK ITEMS
+-- All bureaucratic form/permit/certificate item names.
+-- Used by the regulation system to identify and strip paperwork from recipes
+-- before re-adding them in a controlled way.
+-------------------------------------------------------------------------------
+shared.PAPERWORK_ITEMS = {
+  ["work-order"] = true,
+  ["form-27b-6"] = true,
+  ["research-grant-approval"] = true,
+  ["provisional-approval"] = true,
+  ["safety-waiver"] = true,
+  ["safety-waiver-draft"] = true,
+  ["construction-permit"] = true,
+  ["construction-permit-draft"] = true,
+  ["transit-authorization"] = true,
+  ["management-approval-verbal"] = true,
+  ["management-verbal-draft"] = true,
+  ["management-approval-written"] = true,
+  ["management-written-proposal"] = true,
+  ["management-written-review"] = true,
+  ["carbon-offset-certificate-basic"] = true,
+  ["carbon-offset-certificate-verified"] = true,
+  ["environmental-impact-report"] = true,
+  ["petrochemical-operating-permit"] = true,
+  ["blank-form"] = true,
+  ["blank-approval"] = true,
+  ["blank-directive"] = true,
+  ["treasury-bond"] = true,
+  ["government-grant"] = true,
+  -- Combined forms (tier form + work-order)
+  ["safety-work-order"] = true,
+  ["construction-work-order"] = true,
+  ["management-verbal-work-order"] = true,
+  ["management-written-work-order"] = true,
+  ["research-grant-work-order"] = true,
+  ["chemical-handling-work-order"] = true,
+  ["radiological-work-order"] = true,
+}
+
+-------------------------------------------------------------------------------
+-- COMBINED FORMS
+-- Maps a tier form to its combined version (tier form + work-order).
+-- Used by AM1/AM2/AM3 regulated recipes. The combined form is consumed (no return).
+-- work-order has no combined form (it IS the base form for T0 items).
+-------------------------------------------------------------------------------
+shared.COMBINED_FORMS = {
+  ["safety-waiver"] = "safety-work-order",
+  ["construction-permit"] = "construction-work-order",
+  ["management-approval-verbal"] = "management-verbal-work-order",
+  ["management-approval-written"] = "management-written-work-order",
+  ["research-grant-approval"] = "research-grant-work-order",
+}
+
+-------------------------------------------------------------------------------
+-- ADMIN BUILDINGS
+-- Our mod's buildings. Their recipes are excluded from the regulation system
+-- because they handle their own crafting categories and form requirements.
+-------------------------------------------------------------------------------
+shared.ADMIN_BUILDINGS = {
+  ["admin-station"] = true,
+  ["resolution-office"] = true,
+  ["office-desk"] = true,
+  ["greenhouse"] = true,
+  ["corporate-breakroom"] = true,
+  ["meeting-room"] = true,
+  ["printer-t1"] = true,
+  ["printer-t2"] = true,
+  ["union-headquarters"] = true,
+  ["mechanical-printer"] = true,
+  ["form-liquifier"] = true,
+  ["form-solidifier"] = true,
+  ["pneumatic-pipe"] = true,
+  ["pneumatic-pipe-to-ground"] = true,
+}
+
+-------------------------------------------------------------------------------
+-- FORM PRODUCTION RECIPES
+-- Maps form item names to the recipe that produces them.
+-- Used by is_admin_recipe() and FORM_PRODUCTION_RECIPE_SET for skip logic.
+-- Form recipe unlocks are managed explicitly in technology.lua.
+-------------------------------------------------------------------------------
+shared.FORM_PRODUCTION_RECIPES = {
+  ["work-order"] = "work-order-production",
+  ["safety-waiver"] = "safety-waiver-printing",
+  ["form-27b-6"] = "form-27b-6",
+  ["construction-permit"] = "construction-permit-printing",
+  ["management-approval-verbal"] = "management-verbal-printing",
+  ["management-approval-written"] = "management-written-2nd-printing",
+  ["provisional-approval"] = "provisional-approval-production",
+  ["research-grant-approval"] = "research-grant-approval-production",
+  ["petrochemical-operating-permit"] = "petrochemical-operating-permit-production",
+  ["blank-form"] = "blank-form-production",
+  ["blank-approval"] = "blank-approval-production",
+  ["blank-directive"] = "blank-directive-production",
+  ["chemical-handling-work-order"] = "chemical-handling-work-order-production",
+  ["radiological-work-order"] = "radiological-work-order-production",
+}
+
+-------------------------------------------------------------------------------
+-- COMBINED FORM PRODUCTION RECIPES
+-- Maps combined form names to the recipe that produces them.
+-- Unlocks managed explicitly in technology.lua.
+-------------------------------------------------------------------------------
+shared.COMBINED_FORM_PRODUCTION_RECIPES = {
+  ["safety-work-order"] = "safety-work-order-production",
+  ["construction-work-order"] = "construction-work-order-production",
+  ["management-verbal-work-order"] = "management-verbal-work-order-production",
+  ["management-written-work-order"] = "management-written-work-order-production",
+  ["research-grant-work-order"] = "research-grant-work-order-production",
+}
+
+-------------------------------------------------------------------------------
+-- ADMIN RECIPE DETECTION
+-- Returns true if a recipe name belongs to our mod and should NOT be processed
+-- by the vanilla recipe regulation system.
+-------------------------------------------------------------------------------
+function shared.is_admin_recipe(name)
+  -- Recipes that match admin patterns but should still be regulated
+  local NOT_ADMIN = {
+    ["paper-production"] = true,
+    ["ink-production"] = true,
+  }
+  if NOT_ADMIN[name] then return false end
+
+  -- Explicit building check
+  if shared.ADMIN_BUILDINGS[name] then return true end
+
+  -- Explicit form production recipe check
+  for _, recipe_name in pairs(shared.FORM_PRODUCTION_RECIPES) do
+    if name == recipe_name then return true end
+  end
+
+  -- Explicit combined form production recipe check
+  for _, recipe_name in pairs(shared.COMBINED_FORM_PRODUCTION_RECIPES) do
+    if name == recipe_name then return true end
+  end
+
+  -- Pattern-based detection for mod recipe naming conventions.
+  local patterns = {
+    -- Core admin patterns
+    "^admin", "bureau", "^filing%-", "^case%-", "^brief%-",
+    "^landscape%-final", "^smog%-final", "^noise%-final", "^unemployment%-final",
+    "^littering%-final", "^hazmat%-final", "^loitering%-final", "^vagrancy%-final",
+    -- Paperwork production
+    "%-production$", "%-refining$", "%-batch$", "^copy%-",
+    -- Specific item/recipe names
+    "certificate", "form%-27b", "waiver", "approval",
+    "permit", "clearance", "provisional",
+    "bond", "grant", "slush", "ink", "audit",
+    -- Combined forms
+    "%-work%-order",
+    -- Draft/printing pipeline
+    "directive", "%-draft", "%-printing", "%-proposal", "%-review",
+    -- BS economy
+    "dubious%-data", "excuse", "gossip", "justification",
+    "narrative", "white%-paper", "policy%-production", "regulation%-production",
+    "promise", "eviction", "osha", "office%-drama",
+    -- Rubble derivatives
+    "useless%-documentation", "compacted%-rubble", "refined%-nonsense",
+    -- Greenhouse & coffee
+    "greenhouse", "coffee",
+    -- Paper & forms
+    "^blank%-form", "^blank%-approval", "^blank%-directive",
+    -- Resolution
+    "^resolved%-", "waiting%-zone",
+    -- Pneumatic
+    "^pneumatic%-", "^form%-liquifier", "^form%-solidifier",
+    -- Science
+    "administrative%-science",
+  }
+  for _, pat in ipairs(patterns) do
+    if name:find(pat) then return true end
+  end
+  return false
+end
+
+-------------------------------------------------------------------------------
+-- BATCH MULTIPLIERS
+-- How many items are produced per regulated craft.
+-- Determines effective form cost per item:
+--   10x = 0.1 forms/item (bulk intermediates)
+--    5x = 0.2 forms/item (standard items)
+--    2x = 0.5 forms/item (machines, science)
+--    1x = 1.0 forms/item (megastructures)
+-------------------------------------------------------------------------------
+shared.BATCH_MULTIPLIER_DEFAULT = 5
+shared.BATCH_MULTIPLIERS = {
+  -- Megastructures (1x = 1 form each)
+  ["rocket-silo"] = 1,
+  ["nuclear-reactor"] = 1,
+  ["centrifuge"] = 1,
+  ["beacon"] = 1,
+  ["assembling-machine-3"] = 1,
+  ["locomotive"] = 1,
+  -- Machines & science (2x = 0.5 forms each)
+  ["lab"] = 2,
+  ["assembling-machine-1"] = 2,
+  ["assembling-machine-2"] = 2,
+  ["chemical-plant"] = 2,
+  ["oil-refinery"] = 1,
+  ["pumpjack"] = 5,
+  ["roboport"] = 2,
+  ["solar-panel"] = 5,
+  ["accumulator"] = 5,
+  ["automation-science-pack"] = 5,
+  ["logistic-science-pack"] = 5,
+  ["chemical-science-pack"] = 2,
+  ["production-science-pack"] = 1,
+  ["utility-science-pack"] = 1,
+  ["space-science-pack"] = 1,
+  -- High-volume intermediates (10x = 0.1 forms each)
+  ["copper-cable"] = 10,
+  ["iron-gear-wheel"] = 10,
+  ["pipe"] = 10,
+  ["transport-belt"] = 10,
+  ["electronic-circuit"] = 10,
+  ["iron-plate"] = 20,
+  ["copper-plate"] = 20,
+  ["steel-plate"] = 20,
+  ["stone-brick"] = 20,
+  ["plastic-bar"] = 10,
+  ["sulfur"] = 10,
+  ["battery"] = 10,
+  ["explosives"] = 10,
+  -- Ultra-high-volume (20x = 0.05 forms each)
+  ["paper-production"] = 20,
+}
+
+-------------------------------------------------------------------------------
+-- FORM TIER SYSTEM
+-- Determines which form is required for regulated crafting recipes.
+-- Higher tiers = harder to produce forms = cannot be handcrafted.
+--
+-- Tier 0 (work-order):              Basic assembler-regulated intermediates
+-- Tier 1 (safety-waiver):           Factory equipment (inserters, poles, radar)
+-- Tier 2 (construction-permit):     Industrial buildings, underground items, red/blue belts
+-- Tier 3 (management-approval-verbal): Heavy infrastructure (trains, roboport)
+-- Tier 4 (management-approval-written): Megastructures (AM3, silo, nuclear)
+-- Special: Labs use construction-permit (same as T2 industrial buildings)
+-- Special: Science packs use research-grant-approval
+-------------------------------------------------------------------------------
+
+function shared.get_required_form(recipe_name)
+  if recipe_name == "burner-inserter" then return "work-order" end
+
+  -- Tier 4: Management Approval Written (megastructures)
+  local tier4_patterns = {
+    "assembling%-machine%-3", "centrifuge", "rocket%-silo",
+    "nuclear%-reactor", "beacon",
+  }
+  for _, pat in ipairs(tier4_patterns) do
+    if recipe_name:find(pat) then return "management-approval-written" end
+  end
+
+  -- Tier 3: Management Approval Verbal (heavy infrastructure)
+  local tier3_patterns = {
+    "locomotive", "cargo%-wagon", "fluid%-wagon",
+    "roboport", "solar%-panel", "accumulator",
+  }
+  for _, pat in ipairs(tier3_patterns) do
+    if recipe_name:find(pat) then return "management-approval-verbal" end
+  end
+
+  -- Tier 2: Construction Permit (industrial buildings + underground infrastructure)
+  local tier2_patterns = {
+    "assembling%-machine%-2", "chemical%-plant", "oil%-refinery",
+    "pumpjack", "storage%-tank", "offshore%-pump",
+    "steel%-furnace", "electric%-furnace",
+    "underground%-belt", "pipe%-to%-ground",
+    "fast%-transport%-belt", "fast%-splitter",
+    "express%-transport%-belt", "express%-splitter",
+  }
+  for _, pat in ipairs(tier2_patterns) do
+    if recipe_name:find(pat) then return "construction-permit" end
+  end
+
+  -- Tier 1: Safety Waiver (factory equipment & basic buildings)
+  local tier1_patterns = {
+    "inserter", "radar", "stone%-wall", "gate",
+    "medium%-electric%-pole", "big%-electric%-pole", "substation",
+    "boiler", "steam%-engine", "assembling%-machine%-1",
+  }
+  for _, pat in ipairs(tier1_patterns) do
+    if recipe_name:find(pat) then return "safety-waiver" end
+  end
+
+  -- Special: Labs and mining drills (use construction permit)
+  if recipe_name == "lab" then return "construction-permit" end
+  if recipe_name:find("mining%-drill") then return "construction-permit" end
+
+  -- Special: Science packs (use research grant approval)
+  if recipe_name:find("science%-pack") then return "research-grant-approval" end
+
+  -- Tier 0: Work Order (everything else)
+  return "work-order"
+end
+
+-------------------------------------------------------------------------------
+-- MACHINE OPERATION PAPERWORK
+-- Recipe categories that do NOT use assembler work-orders.
+-------------------------------------------------------------------------------
+shared.OPERATING_FORM_BY_CATEGORY = {
+  ["oil-processing"] = "petrochemical-operating-permit",
+  ["chemistry"] = "petrochemical-operating-permit",
+  ["centrifuging"] = "radiological-work-order",
+}
+
+-------------------------------------------------------------------------------
+-- TAXPAYER MONEY COSTS
+-- Adds taxpayer-money as an ingredient to regulated (AM) recipes for
+-- superfluous-but-awesome late-game buildings.
+-------------------------------------------------------------------------------
+shared.TAXPAYER_MONEY_COSTS = {
+  ["roboport"] = 25,
+  ["beacon"] = 30,
+  ["nuclear-reactor"] = 100,
+  ["centrifuge"] = 50,
+  ["rocket-silo"] = 200,
+}
+
+return shared
