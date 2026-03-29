@@ -27,6 +27,7 @@ local feature_flags = require("feature_flags")
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
 local REGULATED_AM_FACTORIOPEDIA_NOTE = {"administratorio-factoriopedia.regulated-assembling-note"}
 local WORKING_HOURS_ENABLED = feature_flags.working_hours_enabled()
+local DEBUG_SHOW_PAPERWORK_ICON_OVERLAYS = false
 local NIGHT_WORK_BUILDINGS = {
   ["office-desk"] = true,
   ["corporate-breakroom"] = true,
@@ -453,6 +454,91 @@ local function get_primary_result_name_and_type(recipe)
   return product_name, product_type
 end
 
+local function clone_icon_layers(prototype)
+  if not prototype then return nil end
+  if prototype.icons then
+    return util.table.deepcopy(prototype.icons)
+  end
+  if prototype.icon then
+    return {{
+      icon = prototype.icon,
+      icon_size = prototype.icon_size or 64,
+      icon_mipmaps = prototype.icon_mipmaps,
+      tint = prototype.tint,
+    }}
+  end
+  return nil
+end
+
+local function get_recipe_base_icons(recipe)
+  local icons = clone_icon_layers(recipe)
+  if icons then return icons end
+
+  local product_name, product_type = get_primary_result_name_and_type(recipe)
+  if not product_name then return nil end
+
+  if product_type == "item" then
+    return clone_icon_layers(find_item_like_prototype(product_name))
+  end
+  if product_type == "fluid" and data.raw["fluid"] and data.raw["fluid"][product_name] then
+    return clone_icon_layers(data.raw["fluid"][product_name])
+  end
+
+  return nil
+end
+
+local function shift_icon_layer(layer, offset, scale)
+  local shifted = util.table.deepcopy(layer)
+  local base_shift = shifted.shift or {0, 0}
+
+  shifted.shift = {
+    (base_shift[1] or 0) + offset[1],
+    (base_shift[2] or 0) + offset[2],
+  }
+  shifted.scale = (shifted.scale or 1) * scale
+
+  return shifted
+end
+
+local function apply_bulk_recipe_icon_overlay(recipe, multiplier, paperwork_name)
+  if not recipe or not paperwork_name then return end
+
+  local icons = get_recipe_base_icons(recipe)
+  if not icons then return end
+
+  if DEBUG_SHOW_PAPERWORK_ICON_OVERLAYS and paperwork_name ~= "work-order" then
+    local paperwork = find_item_like_prototype(paperwork_name)
+    if not paperwork and data.raw["fluid"] then
+      paperwork = data.raw["fluid"][paperwork_name]
+    end
+    local paperwork_icons = clone_icon_layers(paperwork)
+    if paperwork_icons then
+      for _, layer in ipairs(paperwork_icons) do
+        table.insert(icons, shift_icon_layer(layer, {12, -12}, 0.24))
+      end
+    end
+  end
+
+  if multiplier and multiplier > 1 then
+    local multiplier_text = tostring(multiplier)
+    local start_x = -14
+    for i = 1, #multiplier_text do
+      local digit = multiplier_text:sub(i, i)
+      table.insert(icons, {
+        icon = "__base__/graphics/icons/signal/signal_" .. digit .. ".png",
+        icon_size = 64,
+        scale = 0.26,
+        shift = {start_x + ((i - 1) * 10), -12},
+      })
+    end
+  end
+
+  recipe.icons = icons
+  recipe.icon = nil
+  recipe.icon_size = nil
+  recipe.icon_mipmaps = nil
+end
+
 local function resolve_regulated_recipe_localisation(recipe, recipe_name)
   if recipe.localised_name and recipe.localised_description then
     return recipe.localised_name, recipe.localised_description
@@ -671,6 +757,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     -------------------------------------------------------------------------
     recipe.category = regulated_cat
     regulate_recipe(recipe, regulated_form, multiplier)
+    apply_bulk_recipe_icon_overlay(recipe, multiplier, regulated_form)
     recipe.hide_from_player_crafting = false
 
     -- Inject taxpayer-money for expensive late-game items
@@ -700,6 +787,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     regulated.category = regulated_cat
 
     regulate_recipe(regulated, regulated_form, multiplier)
+    apply_bulk_recipe_icon_overlay(regulated, multiplier, regulated_form)
 
     -- Inject taxpayer-money for expensive late-game items
     local money_cost = shared.TAXPAYER_MONEY_COSTS[name]
@@ -719,6 +807,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     -- Modify original for T1+ handcrafting (batch + tier form)
     if not is_t0 then
       batch_original_with_form(recipe, required_form, multiplier)
+      apply_bulk_recipe_icon_overlay(recipe, multiplier, required_form)
     end
 
   end

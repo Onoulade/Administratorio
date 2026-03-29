@@ -96,10 +96,42 @@ util = {
 
 -- Minimal vanilla coverage so final-fixes can exercise the Factoriopedia
 -- redirection path for regulated non-admin recipes.
-data.raw.item["iron-plate"] = { type = "item", name = "iron-plate", stack_size = 100 }
-data.raw.item["electric-furnace"] = { type = "item", name = "electric-furnace", stack_size = 50 }
-data.raw.item["splitter"] = { type = "item", name = "splitter", stack_size = 50 }
-data.raw.item["transport-belt"] = { type = "item", name = "transport-belt", stack_size = 100, place_result = "transport-belt" }
+data.raw.item["iron-plate"] = {
+  type = "item",
+  name = "iron-plate",
+  stack_size = 100,
+  icon = "__base__/graphics/icons/iron-plate.png",
+  icon_size = 64,
+}
+data.raw.item["electric-furnace"] = {
+  type = "item",
+  name = "electric-furnace",
+  stack_size = 50,
+  icon = "__base__/graphics/icons/electric-furnace.png",
+  icon_size = 64,
+}
+data.raw.item["nuclear-reactor"] = {
+  type = "item",
+  name = "nuclear-reactor",
+  stack_size = 10,
+  icon = "__base__/graphics/icons/nuclear-reactor.png",
+  icon_size = 64,
+}
+data.raw.item["splitter"] = {
+  type = "item",
+  name = "splitter",
+  stack_size = 50,
+  icon = "__base__/graphics/icons/splitter.png",
+  icon_size = 64,
+}
+data.raw.item["transport-belt"] = {
+  type = "item",
+  name = "transport-belt",
+  stack_size = 100,
+  place_result = "transport-belt",
+  icon = "__base__/graphics/icons/transport-belt.png",
+  icon_size = 64,
+}
 recipes["transport-belt"] = {
   type = "recipe",
   name = "transport-belt",
@@ -153,11 +185,43 @@ recipes["splitter"] = {
   },
 }
 
+recipes["nuclear-reactor"] = {
+  type = "recipe",
+  name = "nuclear-reactor",
+  category = "advanced-crafting",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "concrete", amount = 500 },
+    { type = "item", name = "steel-plate", amount = 500 },
+    { type = "item", name = "advanced-circuit", amount = 500 },
+    { type = "item", name = "copper-plate", amount = 500 },
+  },
+  results = {
+    { type = "item", name = "nuclear-reactor", amount = 1 },
+  },
+}
+
 technologies["advanced-material-processing-2"] = {
   type = "technology",
   name = "advanced-material-processing-2",
   effects = {
     { type = "unlock-recipe", recipe = "electric-furnace" },
+  },
+  unit = {
+    count = 1,
+    ingredients = {
+      {"automation-science-pack", 1},
+      {"logistic-science-pack", 1},
+    },
+    time = 1,
+  },
+}
+
+technologies["nuclear-power"] = {
+  type = "technology",
+  name = "nuclear-power",
+  effects = {
+    { type = "unlock-recipe", recipe = "nuclear-reactor" },
   },
   unit = {
     count = 1,
@@ -264,6 +328,16 @@ local function tech_unlocks_recipe(tech_name, recipe_name)
   return false
 end
 
+local function has_icon_layer(recipe, icon_path)
+  if not recipe or not recipe.icons then return false end
+  for _, layer in ipairs(recipe.icons) do
+    if layer.icon == icon_path then
+      return true
+    end
+  end
+  return false
+end
+
 -------------------------------------------------------------------------------
 -- 3. TESTS
 -------------------------------------------------------------------------------
@@ -343,6 +417,48 @@ test("splitter uses safety waiver by hand and safety work order in regulated 5x 
   assert_true(not has_ingredient(regulated, "construction-work-order"), "splitter-regulated should not require construction-work-order")
   assert_eq(get_ingredient_amount(regulated, "electronic-circuit"), 5, "splitter-regulated should batch AM ingredients at 5x")
   assert_eq(get_result_amount(regulated, "splitter"), 5, "splitter-regulated should produce 5 splitters")
+end)
+
+test("bulk regulated recipe icons show amount overlay", function()
+  local regulated = get_recipe("splitter-regulated")
+  assert_true(regulated ~= nil, "splitter-regulated missing")
+  assert_true(regulated.icons ~= nil, "splitter-regulated should use layered icons")
+  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_5.png"),
+    "splitter-regulated should overlay the 5x amount")
+  assert_true(not has_icon_layer(regulated, "__administratorio__/graphics/icons/safety-work-order.png"),
+    "splitter-regulated should not overlay paperwork icon by default")
+end)
+
+test("bulk in-place regulated recipe icons show amount overlay", function()
+  local regulated = get_recipe("electric-furnace")
+  assert_true(regulated ~= nil, "electric-furnace missing")
+  assert_true(regulated.icons ~= nil, "electric-furnace should use layered icons")
+  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_5.png"),
+    "electric-furnace should overlay the 5x amount")
+  assert_true(not has_icon_layer(regulated, "__administratorio__/graphics/icons/management-verbal-work-order.png"),
+    "electric-furnace should not overlay paperwork icon by default")
+end)
+
+test("work-order bulk recipe icons show amount without paperwork icon", function()
+  local regulated = get_recipe("transport-belt-regulated")
+  assert_true(regulated ~= nil, "transport-belt-regulated missing")
+  assert_true(regulated.icons ~= nil, "transport-belt-regulated should use layered icons")
+  assert_true(not has_icon_layer(regulated, "__administratorio__/graphics/icons/work-order.png"),
+    "transport-belt-regulated should not overlay work-order icon")
+  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_1.png"),
+    "transport-belt-regulated should overlay the 10x amount")
+  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_0.png"),
+    "transport-belt-regulated should overlay the 10x amount")
+end)
+
+test("1x regulated recipes do not show amount digits", function()
+  local regulated = get_recipe("nuclear-reactor")
+  assert_true(regulated ~= nil, "nuclear-reactor missing")
+  assert_true(regulated.icons ~= nil, "nuclear-reactor should use layered icons")
+  assert_true(not has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_1.png"),
+    "nuclear-reactor should not overlay a 1x amount digit")
+  assert_true(not has_icon_layer(regulated, "__administratorio__/graphics/icons/management-written-work-order.png"),
+    "nuclear-reactor should not overlay paperwork icon by default")
 end)
 
 test("all plain crafting recipes have regulated AM copies", function()
