@@ -648,6 +648,7 @@ add_tech_prerequisite("gate", "automation")
 add_tech_prerequisite("power-armor-mk2", "low-density-structure")
 
 for _, tech_name in ipairs({
+  "advanced-material-processing-2",
   "solar-energy",
   "electric-energy-accumulators",
   "construction-robotics",

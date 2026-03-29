@@ -308,7 +308,7 @@ function shared.get_required_form(recipe_name)
   -- Tier 3: Management Approval Verbal (heavy infrastructure)
   local tier3_patterns = {
     "locomotive", "cargo%-wagon", "fluid%-wagon",
-    "roboport", "solar%-panel", "accumulator",
+    "roboport", "solar%-panel", "accumulator", "electric%-furnace",
   }
   for _, pat in ipairs(tier3_patterns) do
     if recipe_name:find(pat) then return "management-approval-verbal" end
@@ -318,7 +318,7 @@ function shared.get_required_form(recipe_name)
   local tier2_patterns = {
     "assembling%-machine%-2", "chemical%-plant", "oil%-refinery",
     "pumpjack", "storage%-tank", "offshore%-pump",
-    "steel%-furnace", "electric%-furnace",
+    "steel%-furnace",
     "underground%-belt", "pipe%-to%-ground",
     "fast%-transport%-belt", "fast%-splitter",
     "express%-transport%-belt", "express%-splitter",

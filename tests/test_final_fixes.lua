@@ -97,6 +97,7 @@ util = {
 -- Minimal vanilla coverage so final-fixes can exercise the Factoriopedia
 -- redirection path for regulated non-admin recipes.
 data.raw.item["iron-plate"] = { type = "item", name = "iron-plate", stack_size = 100 }
+data.raw.item["electric-furnace"] = { type = "item", name = "electric-furnace", stack_size = 50 }
 data.raw.item["transport-belt"] = { type = "item", name = "transport-belt", stack_size = 100 }
 recipes["transport-belt"] = {
   type = "recipe",
@@ -107,6 +108,50 @@ recipes["transport-belt"] = {
   },
   results = {
     { type = "item", name = "transport-belt", amount = 2 },
+  },
+}
+
+recipes["iron-plate"] = {
+  type = "recipe",
+  name = "iron-plate",
+  category = "smelting",
+  enabled = true,
+  ingredients = {
+    { type = "item", name = "iron-ore", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "iron-plate", amount = 1 },
+  },
+}
+
+recipes["electric-furnace"] = {
+  type = "recipe",
+  name = "electric-furnace",
+  category = "advanced-crafting",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 10 },
+    { type = "item", name = "advanced-circuit", amount = 10 },
+    { type = "item", name = "stone-brick", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "electric-furnace", amount = 1 },
+  },
+}
+
+technologies["advanced-material-processing-2"] = {
+  type = "technology",
+  name = "advanced-material-processing-2",
+  effects = {
+    { type = "unlock-recipe", recipe = "electric-furnace" },
+  },
+  unit = {
+    count = 1,
+    ingredients = {
+      {"automation-science-pack", 1},
+      {"logistic-science-pack", 1},
+    },
+    time = 1,
   },
 }
 
@@ -212,6 +257,25 @@ test("paper and ink get regulated AM recipes", function()
   assert_eq(ink.category, "crafting-regulated", "ink-regulated category")
   assert_true(has_ingredient(ink, "work-order"), "ink-regulated missing work-order")
   assert_eq(ink.enabled, true, "ink-regulated should stay enabled from start")
+end)
+
+test("smelting recipes get certified steel-furnace variants", function()
+  local r = get_recipe("iron-plate-certified")
+  assert_true(r ~= nil, "iron-plate-certified missing")
+  assert_eq(r.category, "smelting-basic", "iron-plate-certified category")
+  assert_true(has_ingredient(r, "iron-ore"), "iron-plate-certified missing iron-ore")
+  assert_true(has_ingredient(r, "carbon-offset-certificate-basic"),
+    "iron-plate-certified missing carbon-offset-certificate-basic")
+  assert_eq(r.hide_from_player_crafting, true, "iron-plate-certified should be hidden from player crafting")
+  assert_eq(r.allow_decomposition, false, "iron-plate-certified should disable decomposition")
+end)
+
+test("electric furnace recipe upgrades to management verbal paperwork", function()
+  local r = get_recipe("electric-furnace")
+  assert_true(r ~= nil, "electric-furnace missing")
+  assert_eq(r.category, "advanced-crafting-regulated", "electric-furnace category")
+  assert_true(has_ingredient(r, "management-verbal-work-order"), "electric-furnace missing management-verbal-work-order")
+  assert_true(not has_ingredient(r, "construction-work-order"), "electric-furnace should not use construction-work-order")
 end)
 
 test("all plain crafting recipes have regulated AM copies", function()

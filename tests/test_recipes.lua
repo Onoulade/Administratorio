@@ -548,6 +548,7 @@ test("T3 items: locomotive, roboport, solar-panel use management-approval-verbal
   assert_eq(shared.get_required_form("roboport"), "management-approval-verbal")
   assert_eq(shared.get_required_form("solar-panel"), "management-approval-verbal")
   assert_eq(shared.get_required_form("accumulator"), "management-approval-verbal")
+  assert_eq(shared.get_required_form("electric-furnace"), "management-approval-verbal")
 end)
 
 test("T4 items: AM3, centrifuge, rocket-silo, nuclear-reactor use management-approval-written", function()
@@ -615,13 +616,13 @@ test("all smelting-basic recipes require carbon-offset-certificate-basic", funct
   end
 end)
 
-test("charcoal-production does NOT require carbon offset (wood only)", function()
+test("charcoal-production requires carbon offset", function()
   local r = get_recipe("charcoal-production")
   assert_true(r ~= nil)
   assert_eq(r.category, "smelting-basic")
   assert_true(has_ingredient(r, "wood"))
-  assert_true(not has_ingredient(r, "carbon-offset-certificate-basic"),
-    "charcoal should not need carbon offset")
+  assert_true(has_ingredient(r, "carbon-offset-certificate-basic"),
+    "charcoal should need carbon offset")
 end)
 
 test("batch smelting disables decomposition", function()

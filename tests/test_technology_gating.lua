@@ -103,6 +103,9 @@ vanilla_tech("railway", {"logistics-2", "engine"}, {
 vanilla_tech("solar-energy", {"steel-processing", "logistic-science-pack"}, {
   {type = "unlock-recipe", recipe = "solar-panel"},
 }, {"automation-science-pack", "logistic-science-pack"})
+vanilla_tech("advanced-material-processing-2", {"advanced-material-processing", "steel-processing"}, {
+  {type = "unlock-recipe", recipe = "electric-furnace"},
+}, {"automation-science-pack", "logistic-science-pack"})
 vanilla_tech("electric-energy-accumulators", {"electric-energy-distribution-1", "battery"}, {
   {type = "unlock-recipe", recipe = "accumulator"},
 }, {"automation-science-pack", "logistic-science-pack"})
@@ -265,6 +268,7 @@ test("midgame office branches are split into separate pipelines", function()
   assert_true(tech_unlocks_recipe("information-management", "data-production"), "information-management should unlock data-production")
   assert_true(tech_unlocks_recipe("information-management", "good-excuse-production"), "information-management should unlock good excuses")
   assert_true(tech_unlocks_recipe("verbal-approvals", "blank-directive-production"), "verbal-approvals should unlock blank directives")
+  assert_true(tech_unlocks_recipe("verbal-approvals", "management-verbal-work-order-production"), "verbal-approvals should unlock management verbal work orders")
   assert_true(tech_unlocks_recipe("verbal-approvals", "management-verbal-printing"), "verbal-approvals should unlock verbal approval printing")
 end)
 
@@ -350,6 +354,7 @@ test("vanilla branches gain the required bureaucracy prerequisites", function()
   assert_true(tech_has_prereq("railway", "verbal-approvals"), "railway should require verbal-approvals")
   assert_true(tech_has_prereq("railway", "local-precedents"), "railway should require local-precedents")
 
+  assert_true(tech_has_prereq("advanced-material-processing-2", "verbal-approvals"), "advanced-material-processing-2 should require verbal-approvals")
   assert_true(tech_has_prereq("solar-energy", "verbal-approvals"), "solar-energy should require verbal-approvals")
   assert_true(tech_has_prereq("electric-energy-accumulators", "verbal-approvals"), "accumulators should require verbal-approvals")
   assert_true(tech_has_prereq("construction-robotics", "verbal-approvals"), "construction-robotics should require verbal-approvals")
@@ -368,6 +373,7 @@ end)
 
 test("vanilla children inherit the science packs of their bureaucracy parents", function()
   assert_pack_superset("railway", "verbal-approvals")
+  assert_pack_superset("advanced-material-processing-2", "verbal-approvals")
   assert_pack_superset("solar-energy", "verbal-approvals")
   assert_pack_superset("electric-energy-accumulators", "verbal-approvals")
   assert_pack_superset("construction-robotics", "verbal-approvals")
