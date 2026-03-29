@@ -246,6 +246,12 @@ test("default batch multiplier is 5", function()
   assert_eq(shared.BATCH_MULTIPLIER_DEFAULT, 5)
 end)
 
+test("splitter family batch multipliers are pinned at 5x", function()
+  assert_eq(shared.BATCH_MULTIPLIERS["splitter"], 5)
+  assert_eq(shared.BATCH_MULTIPLIERS["fast-splitter"], 5)
+  assert_eq(shared.BATCH_MULTIPLIERS["express-splitter"], 5)
+end)
+
 -- =========================================================================
 -- PRINCIPLE 3: INK ON PAPER = PRINTER ONLY
 -- =========================================================================
@@ -519,6 +525,9 @@ test("T1 items: inserters, radar, walls use safety-waiver", function()
   assert_eq(shared.get_required_form("inserter"), "safety-waiver")
   assert_eq(shared.get_required_form("long-handed-inserter"), "safety-waiver")
   assert_eq(shared.get_required_form("fast-inserter"), "safety-waiver")
+  assert_eq(shared.get_required_form("splitter"), "safety-waiver")
+  assert_eq(shared.get_required_form("fast-splitter"), "safety-waiver")
+  assert_eq(shared.get_required_form("express-splitter"), "safety-waiver")
   assert_eq(shared.get_required_form("radar"), "safety-waiver")
   assert_eq(shared.get_required_form("stone-wall"), "safety-waiver")
   assert_eq(shared.get_required_form("gate"), "safety-waiver")

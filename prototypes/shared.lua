@@ -255,6 +255,9 @@ shared.BATCH_MULTIPLIERS = {
   ["roboport"] = 2,
   ["solar-panel"] = 5,
   ["accumulator"] = 5,
+  ["splitter"] = 5,
+  ["fast-splitter"] = 5,
+  ["express-splitter"] = 5,
   ["automation-science-pack"] = 5,
   ["logistic-science-pack"] = 5,
   ["chemical-science-pack"] = 2,
@@ -320,8 +323,7 @@ function shared.get_required_form(recipe_name)
     "pumpjack", "storage%-tank", "offshore%-pump",
     "steel%-furnace",
     "underground%-belt", "pipe%-to%-ground",
-    "fast%-transport%-belt", "fast%-splitter",
-    "express%-transport%-belt", "express%-splitter",
+    "fast%-transport%-belt", "express%-transport%-belt",
   }
   for _, pat in ipairs(tier2_patterns) do
     if recipe_name:find(pat) then return "construction-permit" end
@@ -329,7 +331,7 @@ function shared.get_required_form(recipe_name)
 
   -- Tier 1: Safety Waiver (factory equipment & basic buildings)
   local tier1_patterns = {
-    "inserter", "radar", "stone%-wall", "gate",
+    "inserter", "radar", "stone%-wall", "gate", "splitter",
     "medium%-electric%-pole", "big%-electric%-pole", "substation",
     "boiler", "steam%-engine", "assembling%-machine%-1",
   }

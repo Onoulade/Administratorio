@@ -98,6 +98,7 @@ util = {
 -- redirection path for regulated non-admin recipes.
 data.raw.item["iron-plate"] = { type = "item", name = "iron-plate", stack_size = 100 }
 data.raw.item["electric-furnace"] = { type = "item", name = "electric-furnace", stack_size = 50 }
+data.raw.item["splitter"] = { type = "item", name = "splitter", stack_size = 50 }
 data.raw.item["transport-belt"] = { type = "item", name = "transport-belt", stack_size = 100 }
 recipes["transport-belt"] = {
   type = "recipe",
@@ -139,6 +140,19 @@ recipes["electric-furnace"] = {
   },
 }
 
+recipes["splitter"] = {
+  type = "recipe",
+  name = "splitter",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "electronic-circuit", amount = 1 },
+    { type = "item", name = "iron-plate", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "splitter", amount = 1 },
+  },
+}
+
 technologies["advanced-material-processing-2"] = {
   type = "technology",
   name = "advanced-material-processing-2",
@@ -150,6 +164,21 @@ technologies["advanced-material-processing-2"] = {
     ingredients = {
       {"automation-science-pack", 1},
       {"logistic-science-pack", 1},
+    },
+    time = 1,
+  },
+}
+
+technologies["logistics"] = {
+  type = "technology",
+  name = "logistics",
+  effects = {
+    { type = "unlock-recipe", recipe = "splitter" },
+  },
+  unit = {
+    count = 1,
+    ingredients = {
+      {"automation-science-pack", 1},
     },
     time = 1,
   },
@@ -202,6 +231,26 @@ local function has_ingredient(recipe, item_name)
     if (ing.name or ing[1]) == item_name then return true end
   end
   return false
+end
+
+local function get_ingredient_amount(recipe, item_name)
+  if not recipe or not recipe.ingredients then return nil end
+  for _, ing in ipairs(recipe.ingredients) do
+    if (ing.name or ing[1]) == item_name then
+      return ing.amount or ing[2]
+    end
+  end
+  return nil
+end
+
+local function get_result_amount(recipe, item_name)
+  if not recipe or not recipe.results then return nil end
+  for _, res in ipairs(recipe.results) do
+    if (res.name or res[1]) == item_name then
+      return res.amount or res[2]
+    end
+  end
+  return nil
 end
 
 local function tech_unlocks_recipe(tech_name, recipe_name)
@@ -276,6 +325,24 @@ test("electric furnace recipe upgrades to management verbal paperwork", function
   assert_eq(r.category, "advanced-crafting-regulated", "electric-furnace category")
   assert_true(has_ingredient(r, "management-verbal-work-order"), "electric-furnace missing management-verbal-work-order")
   assert_true(not has_ingredient(r, "construction-work-order"), "electric-furnace should not use construction-work-order")
+end)
+
+test("splitter uses safety waiver by hand and safety work order in regulated 5x batches", function()
+  local original = get_recipe("splitter")
+  local regulated = get_recipe("splitter-regulated")
+
+  assert_true(original ~= nil, "splitter missing")
+  assert_true(regulated ~= nil, "splitter-regulated missing")
+
+  assert_true(has_ingredient(original, "safety-waiver"), "splitter should require safety-waiver when handcrafted")
+  assert_true(not has_ingredient(original, "construction-permit"), "splitter should not require construction-permit")
+  assert_eq(get_ingredient_amount(original, "electronic-circuit"), 5, "splitter should batch handcraft ingredients at 5x")
+  assert_eq(get_result_amount(original, "splitter"), 5, "splitter should batch handcraft results at 5x")
+
+  assert_true(has_ingredient(regulated, "safety-work-order"), "splitter-regulated should require safety-work-order")
+  assert_true(not has_ingredient(regulated, "construction-work-order"), "splitter-regulated should not require construction-work-order")
+  assert_eq(get_ingredient_amount(regulated, "electronic-circuit"), 5, "splitter-regulated should batch AM ingredients at 5x")
+  assert_eq(get_result_amount(regulated, "splitter"), 5, "splitter-regulated should produce 5 splitters")
 end)
 
 test("all plain crafting recipes have regulated AM copies", function()
