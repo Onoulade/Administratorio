@@ -58,9 +58,9 @@ This file tracks the actual progression model implemented by the mod, not just t
 | --- | --- | --- |
 | T0 | `work-order` | Assembler-only basic intermediates, belts, pipes, base utility items |
 | T1 | `safety-waiver` / `safety-work-order` | Inserters, poles, boiler / steam tier, AM1 |
-| T2 | `construction-permit` / `construction-work-order` | Furnaces, mining drills, AM2, industrial building recipes |
-| T3 | `management-approval-verbal` / `management-verbal-work-order` | Rail, solar, accumulators, roboport |
-| T4 | `management-approval-written` / `management-written-work-order` | AM3, beacon, rocket silo, late megaproject recipes |
+| T2 | `construction-permit` / `construction-work-order` | Furnaces, mining drills, pumps, AM2, industrial building recipes, demolition |
+| T3 | `management-approval-verbal` / `management-verbal-work-order` | Rail, solar, accumulators, roboport, personal roboports, robot logistics |
+| T4 | `management-approval-written` / `management-written-work-order` | AM3, beacon, rocket silo, nuclear support hardware, late megaproject recipes |
 | Science | `research-grant-approval` / `research-grant-work-order` | All science packs |
 
 ## Machine Operation Paperwork

@@ -82,8 +82,16 @@ vanilla_tech("speed-module", nil, nil, {"automation-science-pack", "logistic-sci
 vanilla_tech("electric-engine", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
 vanilla_tech("battery", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
 vanilla_tech("robotics", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
+vanilla_tech("personal-roboport-equipment", {"robotics"}, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
+vanilla_tech("personal-roboport-mk2-equipment", {"personal-roboport-equipment"}, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "utility-science-pack"})
 vanilla_tech("oil-gathering", nil, nil, {"chemical-science-pack"})
 vanilla_tech("uranium-mining", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
+vanilla_tech("nuclear-power", {"uranium-processing"}, {
+  {type = "unlock-recipe", recipe = "nuclear-reactor"},
+  {type = "unlock-recipe", recipe = "heat-exchanger"},
+  {type = "unlock-recipe", recipe = "heat-pipe"},
+  {type = "unlock-recipe", recipe = "steam-turbine"},
+}, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
 vanilla_tech("rocket-fuel", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack", "utility-science-pack"})
 vanilla_tech("concrete", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
 vanilla_tech("low-density-structure", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
@@ -346,11 +354,14 @@ test("vanilla branches gain the required bureaucracy prerequisites", function()
   assert_true(tech_has_prereq("electric-energy-accumulators", "verbal-approvals"), "accumulators should require verbal-approvals")
   assert_true(tech_has_prereq("construction-robotics", "verbal-approvals"), "construction-robotics should require verbal-approvals")
   assert_true(tech_has_prereq("logistic-robotics", "verbal-approvals"), "logistic-robotics should require verbal-approvals")
+  assert_true(tech_has_prereq("personal-roboport-equipment", "verbal-approvals"), "personal-roboport-equipment should require verbal-approvals")
+  assert_true(tech_has_prereq("personal-roboport-mk2-equipment", "verbal-approvals"), "personal-roboport-mk2-equipment should require verbal-approvals")
 
   assert_true(tech_has_prereq("oil-processing", "environmental-compliance"), "oil-processing should require environmental-compliance")
 
   assert_true(tech_has_prereq("automation-3", "executive-review"), "automation-3 should require executive-review")
   assert_true(tech_has_prereq("effect-transmission", "executive-review"), "effect-transmission should require executive-review")
+  assert_true(tech_has_prereq("nuclear-power", "executive-review"), "nuclear-power should require executive-review")
   assert_true(tech_has_prereq("uranium-processing", "radiological-compliance"), "uranium-processing should require radiological-compliance")
   assert_true(tech_has_prereq("rocket-silo", "executive-review"), "rocket-silo should require executive-review")
 end)
@@ -361,9 +372,12 @@ test("vanilla children inherit the science packs of their bureaucracy parents", 
   assert_pack_superset("electric-energy-accumulators", "verbal-approvals")
   assert_pack_superset("construction-robotics", "verbal-approvals")
   assert_pack_superset("logistic-robotics", "verbal-approvals")
+  assert_pack_superset("personal-roboport-equipment", "verbal-approvals")
+  assert_pack_superset("personal-roboport-mk2-equipment", "verbal-approvals")
   assert_pack_superset("oil-processing", "environmental-compliance")
   assert_pack_superset("automation-3", "executive-review")
   assert_pack_superset("effect-transmission", "executive-review")
+  assert_pack_superset("nuclear-power", "executive-review")
   assert_pack_superset("uranium-processing", "radiological-compliance")
   assert_pack_superset("rocket-silo", "executive-review")
 end)

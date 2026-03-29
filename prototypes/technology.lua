@@ -647,13 +647,20 @@ add_tech_prerequisite("engine", "automation")
 add_tech_prerequisite("gate", "automation")
 add_tech_prerequisite("power-armor-mk2", "low-density-structure")
 
-for _, tech_name in ipairs({"solar-energy", "electric-energy-accumulators", "construction-robotics", "logistic-robotics"}) do
+for _, tech_name in ipairs({
+  "solar-energy",
+  "electric-energy-accumulators",
+  "construction-robotics",
+  "logistic-robotics",
+  "personal-roboport-equipment",
+  "personal-roboport-mk2-equipment",
+}) do
   add_tech_prerequisite(tech_name, "verbal-approvals")
 end
 
 add_tech_prerequisite("oil-processing", "environmental-compliance")
 
-for _, tech_name in ipairs({"automation-3", "effect-transmission", "rocket-silo"}) do
+for _, tech_name in ipairs({"automation-3", "effect-transmission", "rocket-silo", "nuclear-power"}) do
   add_tech_prerequisite(tech_name, "executive-review")
 end
 

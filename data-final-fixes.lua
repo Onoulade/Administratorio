@@ -177,6 +177,26 @@ local function add_ingredient_to_recipe(recipe_name, item_name, count)
   end
 end
 
+local function add_special_paperwork(recipe_name, item_name, count)
+  local recipe = data.raw["recipe"][recipe_name]
+  if not recipe then return end
+
+  local function has_ingredient(target)
+    if not target or not target.ingredients then return false end
+    for _, ingredient in ipairs(target.ingredients) do
+      if (ingredient.name or ingredient[1]) == item_name then
+        return true
+      end
+    end
+    return false
+  end
+
+  local target = recipe.normal or recipe
+  if not has_ingredient(target) then
+    add_ingredient_to_recipe(recipe_name, item_name, count)
+  end
+end
+
 local function add_osha_violation(target)
   if not target then return end
   local original_product = target.main_product or target.result
@@ -218,6 +238,12 @@ for _, recipe in pairs(data.raw["recipe"]) do
       end
     end
   end
+end
+
+-- Demolition products need explicit construction paperwork on top of their
+-- normal process permits so cliff clearance and blasting stay on-theme.
+for _, recipe_name in ipairs({"explosives", "cliff-explosives"}) do
+  add_special_paperwork(recipe_name, "construction-permit", 1)
 end
 
 -------------------------------------------------------------------------------
@@ -349,6 +375,71 @@ local function get_primary_item_like_result_name(recipe)
   end
 
   return product_name
+end
+
+local function get_primary_result_name_and_type(recipe)
+  local target = recipe.normal or recipe
+  if not target then return nil, nil end
+
+  local main_product = target.main_product or recipe.main_product
+  if main_product and main_product ~= "" then
+    if find_item_like_prototype(main_product) then
+      return main_product, "item"
+    end
+    if data.raw["fluid"] and data.raw["fluid"][main_product] then
+      return main_product, "fluid"
+    end
+  end
+
+  local results = target.results or (target.result and {{name = target.result}}) or {}
+  local product_name = nil
+  local product_type = nil
+  for _, res in ipairs(results) do
+    local res_name = res.name or res[1]
+    local res_type = res.type
+
+    if not res_type then
+      if find_item_like_prototype(res_name) then
+        res_type = "item"
+      elseif data.raw["fluid"] and data.raw["fluid"][res_name] then
+        res_type = "fluid"
+      end
+    end
+
+    if res_name and (res_type == "item" or res_type == "fluid") then
+      if product_name and product_name ~= res_name then
+        return nil, nil
+      end
+      product_name = res_name
+      product_type = res_type
+    end
+  end
+
+  return product_name, product_type
+end
+
+local function resolve_regulated_recipe_localisation(recipe, recipe_name)
+  if recipe.localised_name and recipe.localised_description then
+    return recipe.localised_name, recipe.localised_description
+  end
+
+  local product_name, product_type = get_primary_result_name_and_type(recipe)
+  local localised_name = recipe.localised_name
+  local localised_description = recipe.localised_description
+
+  if product_name and product_type == "item" then
+    local prototype = find_item_like_prototype(product_name)
+    localised_name = localised_name or (prototype and prototype.localised_name) or {"item-name." .. product_name}
+    localised_description = localised_description or (prototype and prototype.localised_description) or {"item-description." .. product_name}
+  elseif product_name and product_type == "fluid" then
+    local prototype = data.raw["fluid"] and data.raw["fluid"][product_name]
+    localised_name = localised_name or (prototype and prototype.localised_name) or {"fluid-name." .. product_name}
+    localised_description = localised_description or (prototype and prototype.localised_description) or {"fluid-description." .. product_name}
+  else
+    localised_name = localised_name or {"recipe-name." .. recipe_name}
+  end
+
+  return localised_name, localised_description
 end
 
 -- Create a batched copy of a recipe with a form requirement.
@@ -567,7 +658,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     -------------------------------------------------------------------------
     local regulated = util.table.deepcopy(recipe)
     regulated.name = name .. "-regulated"
-    regulated.localised_name = recipe.localised_name or {"recipe-name." .. name}
+    regulated.localised_name, regulated.localised_description = resolve_regulated_recipe_localisation(recipe, name)
     regulated.hide_from_player_crafting = true
     regulated.hide_from_stats = true
     regulated.category = regulated_cat
@@ -623,7 +714,7 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
 
   local regulated = util.table.deepcopy(recipe)
   regulated.name = recipe_name .. "-regulated"
-  regulated.localised_name = recipe.localised_name or {"recipe-name." .. recipe_name}
+  regulated.localised_name, regulated.localised_description = resolve_regulated_recipe_localisation(recipe, recipe_name)
   regulated.hide_from_player_crafting = true
   regulated.hide_from_stats = true
   regulated.category = (cat == "advanced-crafting") and "advanced-crafting-regulated" or "crafting-regulated"

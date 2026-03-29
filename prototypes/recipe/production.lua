@@ -34,7 +34,7 @@ data:extend({
   -- Compacted Rubble (T0 derivative — industrially compressed rubble)
   { type = "recipe", name = "compacted-rubble-production", category = "smelting-basic", enabled = false, ingredients = {{type="item", name="redundant-rubble", amount=5}, {type="item", name="carbon-offset-certificate-basic", amount=1}}, results = {{type="item", name="compacted-rubble", amount=5}}, energy_required = 16 },
 
-  -- Charcoal Production (T3 — burn wood to produce coal)
-  { type = "recipe", name = "charcoal-production", category = "smelting-basic", enabled = false, ingredients = {{type="item", name="wood", amount=5}}, results = {{type="item", name="coal", amount=1}}, energy_required = 8 },
+  -- Charcoal Production (T3 — batch-burn wood into coal)
+  { type = "recipe", name = "charcoal-production", category = "smelting-basic", enabled = false, ingredients = {{type="item", name="wood", amount=25}, {type="item", name="carbon-offset-certificate-basic", amount=1}}, results = {{type="item", name="coal", amount=5}}, energy_required = 40, allow_decomposition = false },
 
 })

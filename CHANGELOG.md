@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## 0.2.4 - 2026-03-29
+
+### Changed
+- Robot-network infrastructure now uses heavier automation paperwork: `flying-robot-frame`, `construction-robot`, `logistic-robot`, logistic chests, and related network pieces now require the T3 management-approval track instead of basic work orders.
+- Personal roboports now follow the same T3 management-approval path as the rest of the robot network, and `pump` now requires construction paperwork instead of a basic work order.
+- Demolition recipes now require explicit construction paperwork, adding permit gating to `explosives` and pushing `cliff-explosives` onto the construction-permit tier.
+- Nuclear support hardware now uses written management approval, and `nuclear-power` waits for the matching executive-review paperwork branch before unlocking those recipes.
+- `charcoal-production` now runs as a certified 5x furnace batch: `25 wood + 1 carbon-offset-certificate-basic -> 5 coal`, matching the rest of the regulated `smelting-basic` throughput recipes.
+
+### Fixed
+- Removed the electric-pole supply-area bonus so small, medium, and big power poles keep their vanilla reach.
+- Fixed promised protesters with no open admin-station slot so pacified biters stay visible in place, show an explicit `WAITING FOR DESK` marker, and no longer flicker in and out while waiting for capacity. Recovered desk-bound biters now also restore their reserved desk slot before resuming, preventing invalidated `pathfinding` protesters from repeatedly respawning near the desk center instead of settling into a stable waiting position.
+- Fixed protesting biters losing their overhead message while moving or idling away from their target, and reworked promise pacification so it only drops frustration to 50%, restores full protest urgency when the promise expires, removes the yellow ground circle, and keeps pacified biters roaming between desks instead of freezing in place while they wait for capacity.
+- Fixed Tips & Tricks and related technology copy that mislabeled the biter complaint branch as human complaints.
+
 ## 0.2.3 - 2026-03-28
 
 ### Fixed
