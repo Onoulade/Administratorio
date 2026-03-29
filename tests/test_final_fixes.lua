@@ -99,7 +99,7 @@ util = {
 data.raw.item["iron-plate"] = { type = "item", name = "iron-plate", stack_size = 100 }
 data.raw.item["electric-furnace"] = { type = "item", name = "electric-furnace", stack_size = 50 }
 data.raw.item["splitter"] = { type = "item", name = "splitter", stack_size = 50 }
-data.raw.item["transport-belt"] = { type = "item", name = "transport-belt", stack_size = 100 }
+data.raw.item["transport-belt"] = { type = "item", name = "transport-belt", stack_size = 100, place_result = "transport-belt" }
 recipes["transport-belt"] = {
   type = "recipe",
   name = "transport-belt",
@@ -380,6 +380,8 @@ test("vanilla recipes redirect Factoriopedia to regulated copies", function()
   assert_eq(original.factoriopedia_alternative, "transport-belt-regulated", "transport-belt should redirect Factoriopedia to the regulated recipe")
   assert_eq(original.hidden_in_factoriopedia, true, "transport-belt should be hidden in Factoriopedia")
   assert_true(not regulated.hidden_in_factoriopedia, "transport-belt-regulated should remain visible in Factoriopedia")
+  assert_true(type(regulated.localised_name) == "table", "transport-belt-regulated missing localised_name")
+  assert_eq(regulated.localised_name[1], "entity-name.transport-belt", "transport-belt-regulated should localise from place_result")
 end)
 
 test("admin building recipes redirect Factoriopedia to regulated copies", function()

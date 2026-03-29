@@ -301,6 +301,20 @@ test("all copy recipes use printing-advanced category", function()
   end
 end)
 
+test("copy recipes define explicit recipe localisation keys", function()
+  local copies = {
+    "copy-blank-form", "copy-blank-approval", "copy-blank-directive",
+    "copy-carbon-offset-certificate", "copy-form-27b-6",
+    "copy-environmental-impact-report",
+  }
+  for _, name in ipairs(copies) do
+    local r = get_recipe(name)
+    assert_true(r ~= nil, name .. " missing")
+    assert_true(type(r.localised_name) == "table", name .. " missing localised_name")
+    assert_eq(r.localised_name[1], "recipe-name." .. name, name .. " wrong localised_name")
+  end
+end)
+
 -- =========================================================================
 -- PRINCIPLE 4: EVERY FORM HAS A PRINTER STEP
 -- =========================================================================

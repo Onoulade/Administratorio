@@ -336,6 +336,41 @@ local function find_item_like_prototype(name)
   return nil
 end
 
+local function get_item_like_localisation(prototype, product_name)
+  if not prototype then
+    return {"item-name." .. product_name}, {"item-description." .. product_name}
+  end
+
+  local localised_name = prototype.localised_name
+  local localised_description = prototype.localised_description
+
+  if not localised_name then
+    if prototype.place_result then
+      localised_name = {"entity-name." .. prototype.place_result}
+    elseif prototype.placed_as_equipment_result then
+      localised_name = {"equipment-name." .. prototype.placed_as_equipment_result}
+    elseif prototype.place_as_tile and prototype.place_as_tile.result then
+      localised_name = {"tile-name." .. prototype.place_as_tile.result}
+    else
+      localised_name = {"item-name." .. product_name}
+    end
+  end
+
+  if not localised_description then
+    if prototype.place_result then
+      localised_description = {"entity-description." .. prototype.place_result}
+    elseif prototype.placed_as_equipment_result then
+      localised_description = {"equipment-description." .. prototype.placed_as_equipment_result}
+    elseif prototype.place_as_tile and prototype.place_as_tile.result then
+      localised_description = {"tile-description." .. prototype.place_as_tile.result}
+    else
+      localised_description = {"item-description." .. product_name}
+    end
+  end
+
+  return localised_name, localised_description
+end
+
 local function add_factoriopedia_note(prototype, note)
   if not prototype or not note then return end
   if prototype.factoriopedia_description then
@@ -429,8 +464,9 @@ local function resolve_regulated_recipe_localisation(recipe, recipe_name)
 
   if product_name and product_type == "item" then
     local prototype = find_item_like_prototype(product_name)
-    localised_name = localised_name or (prototype and prototype.localised_name) or {"item-name." .. product_name}
-    localised_description = localised_description or (prototype and prototype.localised_description) or {"item-description." .. product_name}
+    local prototype_name, prototype_description = get_item_like_localisation(prototype, product_name)
+    localised_name = localised_name or prototype_name
+    localised_description = localised_description or prototype_description
   elseif product_name and product_type == "fluid" then
     local prototype = data.raw["fluid"] and data.raw["fluid"][product_name]
     localised_name = localised_name or (prototype and prototype.localised_name) or {"fluid-name." .. product_name}
