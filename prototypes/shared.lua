@@ -299,7 +299,7 @@ shared.BATCH_MULTIPLIERS = {
 --
 -- Tier 0 (work-order):              Basic assembler-regulated intermediates
 -- Tier 1 (safety-waiver):           Factory equipment (inserters, poles, radar)
--- Tier 2 (construction-permit):     Industrial buildings, underground items, red/blue belts
+-- Tier 2 (construction-permit):     Industrial buildings, underground/elevated infrastructure, red/blue belts
 -- Tier 3 (management-approval-verbal): Heavy infrastructure (trains, roboport)
 -- Tier 4 (management-approval-written): Megastructures (AM3, silo, nuclear)
 -- Special: Labs use construction-permit (same as T2 industrial buildings)
@@ -333,6 +333,7 @@ function shared.get_required_form(recipe_name)
     "pumpjack", "storage%-tank", "offshore%-pump",
     "steel%-furnace",
     "underground%-belt", "pipe%-to%-ground",
+    "rail%-ramp", "rail%-support",
     "fast%-transport%-belt", "express%-transport%-belt",
   }
   for _, pat in ipairs(tier2_patterns) do

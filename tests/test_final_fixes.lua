@@ -147,6 +147,20 @@ data.raw.item["heat-pipe"] = {
   icon = "__base__/graphics/icons/heat-pipe.png",
   icon_size = 64,
 }
+data.raw.item["rail-ramp"] = {
+  type = "item",
+  name = "rail-ramp",
+  stack_size = 20,
+  icon = "__base__/graphics/icons/rail-ramp.png",
+  icon_size = 64,
+}
+data.raw.item["rail-support"] = {
+  type = "item",
+  name = "rail-support",
+  stack_size = 50,
+  icon = "__base__/graphics/icons/rail-support.png",
+  icon_size = 64,
+}
 data.raw.item["solar-panel-equipment"] = {
   type = "item",
   name = "solar-panel-equipment",
@@ -272,6 +286,32 @@ recipes["heat-pipe"] = {
   },
   results = {
     { type = "item", name = "heat-pipe", amount = 1 },
+  },
+}
+
+recipes["rail-ramp"] = {
+  type = "recipe",
+  name = "rail-ramp",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 4 },
+    { type = "item", name = "stone-brick", amount = 4 },
+  },
+  results = {
+    { type = "item", name = "rail-ramp", amount = 1 },
+  },
+}
+
+recipes["rail-support"] = {
+  type = "recipe",
+  name = "rail-support",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 2 },
+    { type = "item", name = "concrete", amount = 2 },
+  },
+  results = {
+    { type = "item", name = "rail-support", amount = 1 },
   },
 }
 
@@ -429,6 +469,16 @@ technologies["logistics"] = {
       {"automation-science-pack", 1},
     },
     time = 1,
+  },
+}
+
+technologies["elevated-rails"] = {
+  type = "technology",
+  name = "elevated-rails",
+  research_trigger = { type = "build-entity", entity = "rail-signal" },
+  effects = {
+    { type = "unlock-recipe", recipe = "rail-ramp" },
+    { type = "unlock-recipe", recipe = "rail-support" },
   },
 }
 
@@ -649,6 +699,26 @@ test("splitter uses safety waiver by hand and safety work order in regulated 5x 
   assert_true(not has_ingredient(regulated, "construction-work-order"), "splitter-regulated should not require construction-work-order")
   assert_eq(get_ingredient_amount(regulated, "electronic-circuit"), 5, "splitter-regulated should batch AM ingredients at 5x")
   assert_eq(get_result_amount(regulated, "splitter"), 5, "splitter-regulated should produce 5 splitters")
+end)
+
+test("elevated rail ramps and supports require construction paperwork even on research-trigger techs", function()
+  local ramp = get_recipe("rail-ramp")
+  local ramp_regulated = get_recipe("rail-ramp-regulated")
+  local support = get_recipe("rail-support")
+  local support_regulated = get_recipe("rail-support-regulated")
+
+  assert_true(ramp ~= nil, "rail-ramp missing")
+  assert_true(ramp_regulated ~= nil, "rail-ramp-regulated missing")
+  assert_true(support ~= nil, "rail-support missing")
+  assert_true(support_regulated ~= nil, "rail-support-regulated missing")
+
+  assert_true(has_ingredient(ramp, "construction-permit"), "rail-ramp should require construction-permit when handcrafted")
+  assert_true(not has_ingredient(ramp, "work-order"), "rail-ramp should not fall back to a bare work-order")
+  assert_true(has_ingredient(ramp_regulated, "construction-work-order"), "rail-ramp-regulated should require construction-work-order")
+
+  assert_true(has_ingredient(support, "construction-permit"), "rail-support should require construction-permit when handcrafted")
+  assert_true(not has_ingredient(support, "work-order"), "rail-support should not fall back to a bare work-order")
+  assert_true(has_ingredient(support_regulated, "construction-work-order"), "rail-support-regulated should require construction-work-order")
 end)
 
 test("bulk regulated recipe icons show amount overlay", function()
