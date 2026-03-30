@@ -291,6 +291,10 @@ test("all copy recipes use printing-advanced category", function()
     "copy-blank-form", "copy-blank-approval", "copy-blank-directive",
     "copy-carbon-offset-certificate", "copy-form-27b-6",
     "copy-environmental-impact-report",
+    "copy-work-order", "copy-safety-work-order", "copy-construction-work-order",
+    "copy-management-verbal-work-order", "copy-management-written-work-order",
+    "copy-research-grant-work-order", "copy-chemical-handling-work-order",
+    "copy-radiological-work-order",
   }
   for _, name in ipairs(copies) do
     local r = get_recipe(name)
@@ -301,11 +305,28 @@ test("all copy recipes use printing-advanced category", function()
   end
 end)
 
+test("standard copy recipes require advanced circuits", function()
+  local copies = {
+    "copy-blank-form", "copy-blank-approval", "copy-blank-directive",
+    "copy-carbon-offset-certificate", "copy-form-27b-6",
+    "copy-environmental-impact-report",
+  }
+  for _, name in ipairs(copies) do
+    local r = get_recipe(name)
+    assert_true(r ~= nil, name .. " missing")
+    assert_true(has_ingredient(r, "advanced-circuit"), name .. " missing advanced-circuit")
+  end
+end)
+
 test("copy recipes define explicit recipe localisation keys", function()
   local copies = {
     "copy-blank-form", "copy-blank-approval", "copy-blank-directive",
     "copy-carbon-offset-certificate", "copy-form-27b-6",
     "copy-environmental-impact-report",
+    "copy-work-order", "copy-safety-work-order", "copy-construction-work-order",
+    "copy-management-verbal-work-order", "copy-management-written-work-order",
+    "copy-research-grant-work-order", "copy-chemical-handling-work-order",
+    "copy-radiological-work-order",
   }
   for _, name in ipairs(copies) do
     local r = get_recipe(name)
@@ -1002,6 +1023,28 @@ test("direct printing produces 2x output (efficiency bonus)", function()
   assert_eq(get_result_amount(get_recipe("safety-work-order-printing"), "safety-work-order"), 2)
   assert_eq(get_result_amount(get_recipe("construction-work-order-printing"), "construction-work-order"), 2)
   assert_eq(get_result_amount(get_recipe("research-grant-work-order-printing"), "research-grant-work-order"), 2)
+end)
+
+test("industrial printer copy recipes exist for every work-order family", function()
+  local copies = {
+    {"copy-work-order", "work-order"},
+    {"copy-safety-work-order", "safety-work-order"},
+    {"copy-construction-work-order", "construction-work-order"},
+    {"copy-management-verbal-work-order", "management-verbal-work-order"},
+    {"copy-management-written-work-order", "management-written-work-order"},
+    {"copy-research-grant-work-order", "research-grant-work-order"},
+    {"copy-chemical-handling-work-order", "chemical-handling-work-order"},
+    {"copy-radiological-work-order", "radiological-work-order"},
+  }
+  for _, copy in ipairs(copies) do
+    local recipe_name = copy[1]
+    local product_name = copy[2]
+    local recipe = get_recipe(recipe_name)
+    assert_true(recipe ~= nil, recipe_name .. " missing")
+    assert_true(has_ingredient(recipe, product_name), recipe_name .. " missing original form")
+    assert_true(has_ingredient(recipe, "processing-unit"), recipe_name .. " missing processing-unit")
+    assert_eq(get_result_amount(recipe, product_name), 6, recipe_name .. " should output 6 copies")
+  end
 end)
 
 -- =========================================================================

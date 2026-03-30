@@ -356,6 +356,24 @@ data:extend({
     unit = { count = 130, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "g-b"
   },
+  -- T7b2: WORK ORDER DUPLICATION (industrial printer copies every work-order family)
+  {
+    type = "technology", name = "work-order-duplication",
+    icon = "__administratorio__/graphics/icons/work-order.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "copy-work-order" },
+      { type = "unlock-recipe", recipe = "copy-safety-work-order" },
+      { type = "unlock-recipe", recipe = "copy-construction-work-order" },
+      { type = "unlock-recipe", recipe = "copy-management-verbal-work-order" },
+      { type = "unlock-recipe", recipe = "copy-management-written-work-order" },
+      { type = "unlock-recipe", recipe = "copy-research-grant-work-order" },
+      { type = "unlock-recipe", recipe = "copy-chemical-handling-work-order" },
+      { type = "unlock-recipe", recipe = "copy-radiological-work-order" }
+    },
+    prerequisites = {"industrial-printing", "radiological-compliance", "processing-unit", "production-science-pack"},
+    unit = { count = 180, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    order = "g-b2"
+  },
   -- T7c: FEDERAL REGULATION (codify policy into formal law)
   {
     type = "technology", name = "federal-regulation",
