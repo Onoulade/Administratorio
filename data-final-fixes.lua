@@ -313,37 +313,56 @@ end
 --    - Tier form added as ingredient (for handcrafting)
 -------------------------------------------------------------------------------
 
-local function get_max_stack_size(item_name)
-  for _, item_type in ipairs({"item", "ammo", "gun", "armor", "capsule", "tool", "selection-tool", "item-with-entity-data"}) do
-    if data.raw[item_type] and data.raw[item_type][item_name] then
-      return data.raw[item_type][item_name].stack_size or 1
-    end
-  end
-  return 100
-end
-
-local function get_recipe_batch_multiplier(recipe_name, recipe)
-  local multiplier = shared.BATCH_MULTIPLIERS[recipe_name] or shared.BATCH_MULTIPLIER_DEFAULT
-  local r_proto = recipe.normal or recipe
-  local results = r_proto.results or (r_proto.result and {{name = r_proto.result}}) or {}
-
-  for _, res in ipairs(results) do
-    local res_name = res.name or res[1]
-    if res_name and get_max_stack_size(res_name) == 1 then
-      return 1
-    end
-  end
-
-  return multiplier
-end
+local ITEM_LIKE_PROTOTYPE_TYPES = {
+  "item",
+  "tool",
+  "repair-tool",
+  "module",
+  "capsule",
+  "ammo",
+  "gun",
+  "armor",
+  "selection-tool",
+  "item-with-entity-data",
+  "rail-planner",
+  "spidertron-remote",
+}
 
 local function find_item_like_prototype(name)
-  for _, item_type in ipairs({"item", "ammo", "gun", "armor", "capsule", "tool", "selection-tool", "item-with-entity-data", "rail-planner", "spidertron-remote"}) do
+  for _, item_type in ipairs(ITEM_LIKE_PROTOTYPE_TYPES) do
     if data.raw[item_type] and data.raw[item_type][name] then
       return data.raw[item_type][name]
     end
   end
   return nil
+end
+
+local function get_max_stack_size(item_name)
+  local prototype = find_item_like_prototype(item_name)
+  if prototype then return prototype.stack_size or 1 end
+  return 100
+end
+
+local function get_recipe_batch_multiplier(recipe_name, recipe)
+  local explicit_multiplier = shared.BATCH_MULTIPLIERS[recipe_name]
+  local multiplier = explicit_multiplier or shared.BATCH_MULTIPLIER_DEFAULT
+  local r_proto = recipe.normal or recipe
+  local results = r_proto.results or (r_proto.result and {{name = r_proto.result}}) or {}
+
+  for _, res in ipairs(results) do
+    local res_name = res.name or res[1]
+    if res_name then
+      local prototype = find_item_like_prototype(res_name)
+      if get_max_stack_size(res_name) == 1 then
+        return 1
+      end
+      if not explicit_multiplier and prototype and prototype.placed_as_equipment_result then
+        return 1
+      end
+    end
+  end
+
+  return multiplier
 end
 
 local function get_item_like_localisation(prototype, product_name)
@@ -848,7 +867,7 @@ data:extend(regulated_list)
 -- Some mod recipes are intentionally skipped by the main regulation loop
 -- (admin buildings and other admin-detected crafting recipes), but should
 -- still be craftable in assembling machines. Any recipe left in vanilla
--- crafting categories gets a "-regulated" copy here.
+-- crafting categories gets a batched "-regulated" copy here.
 -------------------------------------------------------------------------------
 local admin_building_regulated = {}
 for recipe_name, recipe in pairs(data.raw["recipe"]) do
@@ -865,14 +884,9 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
   regulated.hide_from_stats = true
   regulated.category = (cat == "advanced-crafting") and "advanced-crafting-regulated" or "crafting-regulated"
 
-  -- Add work-order as ingredient (1 per craft, consistent with T0 regulation)
-  local target = regulated.normal or regulated
-  if target.ingredients then
-    table.insert(target.ingredients, {type = "item", name = "work-order", amount = 1})
-  end
-  if regulated.normal and regulated.expensive and regulated.expensive.ingredients then
-    table.insert(regulated.expensive.ingredients, {type = "item", name = "work-order", amount = 1})
-  end
+  local multiplier = get_recipe_batch_multiplier(recipe_name, recipe)
+  batch_original_with_form(regulated, "work-order", multiplier)
+  apply_bulk_recipe_icon_overlay(regulated, multiplier, "work-order")
 
   table.insert(admin_building_regulated, regulated)
   regulated_factoriopedia_products[recipe_name] = true

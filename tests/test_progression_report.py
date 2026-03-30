@@ -37,6 +37,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 ITEM_LIKE_TYPES = (
     "item",
     "tool",
+    "repair-tool",
     "module",
     "capsule",
     "ammo",

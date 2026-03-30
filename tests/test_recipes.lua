@@ -235,11 +235,22 @@ end)
 test("batch multipliers for high-volume intermediates are 10x or 20x", function()
   local bulk = {
     ["copper-cable"] = 10, ["iron-gear-wheel"] = 10, ["electronic-circuit"] = 10,
+    ["heat-pipe"] = 10, ["ink"] = 10,
+    ["pneumatic-pipe"] = 10, ["pneumatic-pipe-to-ground"] = 10,
+    ["form-liquifier"] = 10, ["form-solidifier"] = 10,
     ["iron-plate"] = 20, ["copper-plate"] = 20, ["steel-plate"] = 20,
   }
   for name, expected in pairs(bulk) do
     assert_eq(shared.BATCH_MULTIPLIERS[name], expected, name .. " wrong multiplier")
   end
+end)
+
+test("equipment recipe multiplier overrides stay narrow", function()
+  assert_eq(shared.BATCH_MULTIPLIERS["solar-panel-equipment"], 2)
+  assert_eq(shared.BATCH_MULTIPLIERS["battery-equipment"], 2)
+  assert_eq(shared.BATCH_MULTIPLIERS["battery-mk2-equipment"], 2)
+  assert_true(shared.BATCH_MULTIPLIERS["exoskeleton-equipment"] == nil,
+    "non-battery equipment should fall back to the 1x equipment rule, not an explicit override")
 end)
 
 test("default batch multiplier is 5", function()

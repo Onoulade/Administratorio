@@ -3,6 +3,7 @@ local merge = {}
 local ITEM_LIKE_TYPES = {
   "item",
   "tool",
+  "repair-tool",
   "module",
   "capsule",
   "ammo",

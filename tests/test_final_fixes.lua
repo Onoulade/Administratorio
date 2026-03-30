@@ -54,6 +54,7 @@ data = {
     fluid = {},
     item = {},
     tool = {},
+    ["repair-tool"] = {},
     module = {},
     capsule = {},
     ammo = {},
@@ -132,6 +133,52 @@ data.raw.item["transport-belt"] = {
   icon = "__base__/graphics/icons/transport-belt.png",
   icon_size = 64,
 }
+data.raw["repair-tool"]["repair-pack"] = {
+  type = "repair-tool",
+  name = "repair-pack",
+  stack_size = 100,
+  icon = "__base__/graphics/icons/repair-pack.png",
+  icon_size = 64,
+}
+data.raw.item["heat-pipe"] = {
+  type = "item",
+  name = "heat-pipe",
+  stack_size = 50,
+  icon = "__base__/graphics/icons/heat-pipe.png",
+  icon_size = 64,
+}
+data.raw.item["solar-panel-equipment"] = {
+  type = "item",
+  name = "solar-panel-equipment",
+  stack_size = 20,
+  placed_as_equipment_result = "solar-panel-equipment",
+  icon = "__base__/graphics/icons/solar-panel-equipment.png",
+  icon_size = 64,
+}
+data.raw.item["battery-equipment"] = {
+  type = "item",
+  name = "battery-equipment",
+  stack_size = 20,
+  placed_as_equipment_result = "battery-equipment",
+  icon = "__base__/graphics/icons/battery-equipment.png",
+  icon_size = 64,
+}
+data.raw.item["battery-mk2-equipment"] = {
+  type = "item",
+  name = "battery-mk2-equipment",
+  stack_size = 20,
+  placed_as_equipment_result = "battery-mk2-equipment",
+  icon = "__base__/graphics/icons/battery-mk2-equipment.png",
+  icon_size = 64,
+}
+data.raw.item["exoskeleton-equipment"] = {
+  type = "item",
+  name = "exoskeleton-equipment",
+  stack_size = 20,
+  placed_as_equipment_result = "exoskeleton-equipment",
+  icon = "__base__/graphics/icons/exoskeleton-equipment.png",
+  icon_size = 64,
+}
 recipes["transport-belt"] = {
   type = "recipe",
   name = "transport-belt",
@@ -201,6 +248,85 @@ recipes["nuclear-reactor"] = {
   },
 }
 
+recipes["repair-pack"] = {
+  type = "recipe",
+  name = "repair-pack",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "iron-gear-wheel", amount = 2 },
+    { type = "item", name = "electronic-circuit", amount = 2 },
+  },
+  results = {
+    { name = "repair-pack", amount = 1 },
+  },
+}
+
+recipes["heat-pipe"] = {
+  type = "recipe",
+  name = "heat-pipe",
+  category = "advanced-crafting",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "copper-plate", amount = 10 },
+    { type = "item", name = "steel-plate", amount = 5 },
+  },
+  results = {
+    { type = "item", name = "heat-pipe", amount = 1 },
+  },
+}
+
+recipes["solar-panel-equipment"] = {
+  type = "recipe",
+  name = "solar-panel-equipment",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "solar-panel", amount = 5 },
+    { type = "item", name = "electronic-circuit", amount = 2 },
+  },
+  results = {
+    { type = "item", name = "solar-panel-equipment", amount = 1 },
+  },
+}
+
+recipes["battery-equipment"] = {
+  type = "recipe",
+  name = "battery-equipment",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "battery", amount = 5 },
+    { type = "item", name = "steel-plate", amount = 2 },
+  },
+  results = {
+    { type = "item", name = "battery-equipment", amount = 1 },
+  },
+}
+
+recipes["battery-mk2-equipment"] = {
+  type = "recipe",
+  name = "battery-mk2-equipment",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "battery-equipment", amount = 10 },
+    { type = "item", name = "processing-unit", amount = 5 },
+  },
+  results = {
+    { type = "item", name = "battery-mk2-equipment", amount = 1 },
+  },
+}
+
+recipes["exoskeleton-equipment"] = {
+  type = "recipe",
+  name = "exoskeleton-equipment",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "electric-engine-unit", amount = 10 },
+    { type = "item", name = "advanced-circuit", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "exoskeleton-equipment", amount = 1 },
+  },
+}
+
 recipes["oil-processing"] = {
   type = "recipe",
   name = "oil-processing",
@@ -255,6 +381,21 @@ technologies["advanced-material-processing-2"] = {
     ingredients = {
       {"automation-science-pack", 1},
       {"logistic-science-pack", 1},
+    },
+    time = 1,
+  },
+}
+
+technologies["automation"] = {
+  type = "technology",
+  name = "automation",
+  effects = {
+    { type = "unlock-recipe", recipe = "repair-pack" },
+  },
+  unit = {
+    count = 1,
+    ingredients = {
+      {"automation-science-pack", 1},
     },
     time = 1,
   },
@@ -425,6 +566,54 @@ test("paper and ink get regulated AM recipes", function()
   assert_eq(ink.enabled, true, "ink-regulated should stay enabled from start")
 end)
 
+test("repair-pack gets a bulked regulated AM recipe", function()
+  local regulated = get_recipe("repair-pack-regulated")
+  assert_true(regulated ~= nil, "repair-pack-regulated missing")
+  assert_eq(regulated.category, "crafting-regulated", "repair-pack-regulated category")
+  assert_true(has_ingredient(regulated, "work-order"), "repair-pack-regulated missing work-order")
+  assert_eq(get_result_amount(regulated, "repair-pack"), 5, "repair-pack-regulated should batch to 5")
+  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_5.png"),
+    "repair-pack-regulated should show the 5x overlay")
+end)
+
+test("heat-pipe batches at 10x", function()
+  local regulated = get_recipe("heat-pipe")
+  assert_true(regulated ~= nil, "heat-pipe missing")
+  assert_eq(regulated.category, "advanced-crafting-regulated", "heat-pipe category")
+  assert_true(has_ingredient(regulated, "work-order"), "heat-pipe missing work-order")
+  assert_eq(get_result_amount(regulated, "heat-pipe"), 10, "heat-pipe should batch to 10")
+  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_1.png"),
+    "heat-pipe should show the 10x overlay")
+  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_0.png"),
+    "heat-pipe should show the 10x overlay")
+end)
+
+test("equipment recipes default to 1x except solar panels and batteries", function()
+  local solar = get_recipe("solar-panel-equipment")
+  assert_true(solar ~= nil, "solar-panel-equipment missing")
+  assert_eq(get_result_amount(solar, "solar-panel-equipment"), 2, "solar-panel-equipment should batch to 2")
+  assert_true(has_icon_layer(solar, "__base__/graphics/icons/signal/signal_2.png"),
+    "solar-panel-equipment should show the 2x overlay")
+
+  local battery = get_recipe("battery-equipment")
+  assert_true(battery ~= nil, "battery-equipment missing")
+  assert_eq(get_result_amount(battery, "battery-equipment"), 2, "battery-equipment should batch to 2")
+  assert_true(has_icon_layer(battery, "__base__/graphics/icons/signal/signal_2.png"),
+    "battery-equipment should show the 2x overlay")
+
+  local battery_mk2 = get_recipe("battery-mk2-equipment")
+  assert_true(battery_mk2 ~= nil, "battery-mk2-equipment missing")
+  assert_eq(get_result_amount(battery_mk2, "battery-mk2-equipment"), 2, "battery-mk2-equipment should batch to 2")
+  assert_true(has_icon_layer(battery_mk2, "__base__/graphics/icons/signal/signal_2.png"),
+    "battery-mk2-equipment should show the 2x overlay")
+
+  local exoskeleton = get_recipe("exoskeleton-equipment")
+  assert_true(exoskeleton ~= nil, "exoskeleton-equipment missing")
+  assert_eq(get_result_amount(exoskeleton, "exoskeleton-equipment"), 1, "exoskeleton-equipment should stay 1x")
+  assert_true(not has_icon_layer(exoskeleton, "__base__/graphics/icons/signal/signal_1.png"),
+    "exoskeleton-equipment should not show a 1x overlay")
+end)
+
 test("smelting recipes get certified steel-furnace variants", function()
   local r = get_recipe("iron-plate-certified")
   assert_true(r ~= nil, "iron-plate-certified missing")
@@ -576,6 +765,31 @@ test("admin building recipes redirect Factoriopedia to regulated copies", functi
   assert_eq(original.factoriopedia_alternative, "printer-t1-regulated", "printer-t1 should redirect Factoriopedia to the regulated recipe")
   assert_eq(original.hidden_in_factoriopedia, true, "printer-t1 should be hidden in Factoriopedia")
   assert_true(not regulated.hidden_in_factoriopedia, "printer-t1-regulated should remain visible in Factoriopedia")
+end)
+
+test("admin building regulated recipes batch and show overlays", function()
+  local printer = get_recipe("printer-t1-regulated")
+  assert_true(printer ~= nil, "printer-t1-regulated missing")
+  assert_eq(get_ingredient_amount(printer, "provisional-approval"), 5, "printer-t1-regulated should batch its paperwork ingredient")
+  assert_eq(get_result_amount(printer, "printer-t1"), 5, "printer-t1-regulated should batch to 5")
+  assert_true(has_icon_layer(printer, "__base__/graphics/icons/signal/signal_5.png"),
+    "printer-t1-regulated should show the 5x overlay")
+
+  local pipe = get_recipe("pneumatic-pipe-regulated")
+  assert_true(pipe ~= nil, "pneumatic-pipe-regulated missing")
+  assert_eq(get_result_amount(pipe, "pneumatic-pipe"), 20, "pneumatic-pipe-regulated should batch to 20")
+  assert_true(has_icon_layer(pipe, "__base__/graphics/icons/signal/signal_1.png"),
+    "pneumatic-pipe-regulated should show the 10x overlay")
+  assert_true(has_icon_layer(pipe, "__base__/graphics/icons/signal/signal_0.png"),
+    "pneumatic-pipe-regulated should show the 10x overlay")
+
+  local liquifier = get_recipe("form-liquifier-regulated")
+  assert_true(liquifier ~= nil, "form-liquifier-regulated missing")
+  assert_eq(get_result_amount(liquifier, "form-liquifier"), 10, "form-liquifier-regulated should batch to 10")
+  assert_true(has_icon_layer(liquifier, "__base__/graphics/icons/signal/signal_1.png"),
+    "form-liquifier-regulated should show the 10x overlay")
+  assert_true(has_icon_layer(liquifier, "__base__/graphics/icons/signal/signal_0.png"),
+    "form-liquifier-regulated should show the 10x overlay")
 end)
 
 -------------------------------------------------------------------------------
