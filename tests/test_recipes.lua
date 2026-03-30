@@ -364,6 +364,7 @@ test("management-approval-written requires 3-step pipeline", function()
   assert_true(proposal ~= nil)
   assert_eq(proposal.category, "bureaucracy-policy")
   assert_true(has_ingredient(proposal, "blank-directive"))
+  assert_true(has_ingredient(proposal, "advanced-circuit"))
 
   local first = get_recipe("management-written-1st-printing")
   assert_eq(first.category, "printing")
@@ -520,6 +521,8 @@ test("meeting-room requires management-approval-verbal and government-grant", fu
   assert_true(has_ingredient(r, "management-approval-verbal"))
   assert_true(has_ingredient(r, "government-grant"))
   assert_true(has_ingredient(r, "taxpayer-money"))
+  assert_true(has_ingredient(r, "advanced-circuit"))
+  assert_true(has_ingredient(r, "steel-plate"))
 end)
 
 -- =========================================================================
@@ -609,16 +612,22 @@ test("operating paperwork chain: petro < chemical < radiological", function()
   assert_true(has_ingredient(petro, "construction-permit"))
   assert_true(has_ingredient(petro, "safety-waiver"))
   assert_true(has_ingredient(petro, "environmental-impact-report"))
+  assert_true(has_ingredient(petro, "barrel"))
+  assert_true(has_ingredient(petro, "pipe"))
 
   local chem = get_recipe("chemical-handling-work-order-production")
   assert_true(has_ingredient(chem, "petrochemical-operating-permit"), "chemical needs petro permit")
   assert_true(has_ingredient(chem, "safety-waiver"), "chemical needs safety waiver")
   assert_true(has_ingredient(chem, "construction-permit"), "chemical needs construction permit")
+  assert_true(has_ingredient(chem, "barrel"), "chemical needs barrel")
+  assert_true(has_ingredient(chem, "pipe"), "chemical needs pipe")
   assert_true(not has_ingredient(chem, "management-approval-verbal"))
 
   local radio = get_recipe("radiological-work-order-production")
   assert_true(has_ingredient(radio, "chemical-handling-work-order"), "radio needs chemical work order")
   assert_true(has_ingredient(radio, "management-approval-written"))
+  assert_true(has_ingredient(radio, "battery"))
+  assert_true(has_ingredient(radio, "steel-plate"))
 end)
 
 -- =========================================================================
@@ -826,6 +835,7 @@ test("data-production now runs through bureaucracy-registration", function()
   assert_eq(r.category, "bureaucracy-registration")
   assert_true(has_ingredient(r, "crappy-report"))
   assert_true(has_ingredient(r, "credentials"))
+  assert_true(has_ingredient(r, "advanced-circuit"))
 end)
 
 test("government-grant requires treasury-bond and union negotiation", function()
@@ -875,6 +885,7 @@ test("credentials require lies and refined-nonsense", function()
   local r = get_recipe("credentials-production")
   assert_true(has_ingredient(r, "dubious-data"))
   assert_true(has_ingredient(r, "refined-nonsense"))
+  assert_true(has_ingredient(r, "electronic-circuit"))
 end)
 
 test("narrative requires justification and good-excuse and watercooler-gossip", function()
@@ -1083,11 +1094,56 @@ end)
 test("pneumatic-pipe requires compacted-rubble", function()
   local r = get_recipe("pneumatic-pipe")
   assert_true(has_ingredient(r, "compacted-rubble"))
+  assert_true(has_ingredient(r, "pipe"))
 end)
 
 test("form-liquifier and form-solidifier require compacted-rubble", function()
   assert_true(has_ingredient(get_recipe("form-liquifier"), "compacted-rubble"))
   assert_true(has_ingredient(get_recipe("form-solidifier"), "compacted-rubble"))
+  assert_true(has_ingredient(get_recipe("form-liquifier"), "pipe"))
+  assert_true(has_ingredient(get_recipe("form-solidifier"), "pipe"))
+end)
+
+test("heavier vanilla integration anchors have exact ingredient counts", function()
+  local expectations = {
+    {"greenhouse", "stone-brick", 10},
+    {"greenhouse", "pipe", 2},
+    {"corporate-breakroom", "stone-brick", 10},
+    {"corporate-breakroom", "pipe", 4},
+    {"meeting-room", "steel-plate", 15},
+    {"meeting-room", "advanced-circuit", 5},
+    {"pneumatic-pipe", "pipe", 1},
+    {"form-liquifier", "pipe", 2},
+    {"form-solidifier", "pipe", 2},
+    {"crappy-report-production", "paper", 2},
+    {"credentials-production", "electronic-circuit", 2},
+    {"data-production", "advanced-circuit", 2},
+    {"management-written-proposal", "advanced-circuit", 2},
+    {"environmental-impact-report", "barrel", 1},
+    {"petrochemical-operating-permit-production", "barrel", 1},
+    {"petrochemical-operating-permit-production", "pipe", 2},
+    {"chemical-handling-work-order-production", "barrel", 1},
+    {"chemical-handling-work-order-production", "pipe", 2},
+    {"radiological-work-order-production", "battery", 1},
+    {"radiological-work-order-production", "steel-plate", 2},
+    {"white-paper-production", "paper", 10},
+    {"white-paper-production", "processing-unit", 1},
+    {"policy-production", "processing-unit", 2},
+    {"regulation-production", "processing-unit", 3},
+    {"case-smog", "coal", 2},
+    {"case-hazmat", "barrel", 1},
+    {"case-noise", "processing-unit", 1},
+  }
+
+  for _, expectation in ipairs(expectations) do
+    local recipe_name = expectation[1]
+    local ingredient_name = expectation[2]
+    local amount = expectation[3]
+    local recipe = get_recipe(recipe_name)
+    assert_true(recipe ~= nil, recipe_name .. " missing")
+    assert_eq(get_ingredient_amount(recipe, ingredient_name), amount,
+      recipe_name .. " wrong " .. ingredient_name .. " amount")
+  end
 end)
 
 -- =========================================================================

@@ -632,6 +632,7 @@ add_tech_prerequisite("industrial-printing", "chemical-science-pack")
 add_tech_prerequisite("office-agriculture", "logistic-science-pack")
 add_tech_prerequisite("health-and-safety", "chemical-science-pack")
 add_tech_prerequisite("public-finance", "chemical-science-pack")
+add_tech_prerequisite("public-finance", "steel-processing")
 add_tech_prerequisite("board-meetings", "chemical-science-pack")
 add_tech_prerequisite("synthetic-stationery", "chemical-science-pack")
 add_tech_prerequisite("eminent-domain-zoning", "production-science-pack")
@@ -640,6 +641,11 @@ add_tech_prerequisite("constitutional-law", "production-science-pack")
 add_tech_prerequisite("loitering-ordinances", "utility-science-pack")
 add_tech_prerequisite("vagrancy-ordinances", "utility-science-pack")
 add_tech_prerequisite("after-hours-operations", "utility-science-pack")
+
+add_tech_prerequisite("information-management", "advanced-circuit")
+add_tech_prerequisite("environmental-reporting", "fluid-handling")
+add_tech_prerequisite("environmental-reporting", "steel-processing")
+add_tech_prerequisite("radiological-compliance", "battery")
 
 -- Vanilla branches that now consume mod paperwork need matching bureaucracy
 -- prerequisites so they unlock only when their recipes are actually usable.
