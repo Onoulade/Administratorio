@@ -223,7 +223,8 @@ local hidden_outtake_inserter = {
   name = "pneumatic-hidden-outtake",
   energy_source = {type = "void"},
   extension_speed = 1, rotation_speed = 1,
-  pickup_position = {0, -0.2}, insert_position = {0, 1},
+  -- Keep the drop point off the belt centerline so rotations don't flip lanes.
+  pickup_position = {0, -0.2}, insert_position = {0.2, 1},
   stack = false, stack_size_bonus = 50,
   draw_held_item = false, draw_inserter_arrow = false, chases_belt_items = false,
   platform_picture = empty_sheet,
