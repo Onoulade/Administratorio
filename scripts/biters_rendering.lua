@@ -170,66 +170,115 @@ function M.new(deps)
     info.protest_circle_render_id = nil
   end
 
+  function controller.destroy_pacified_rendering(info)
+    if not info then return end
+    destroy_render_object(info.pacified_text_render_id)
+    info.pacified_text_render_id = nil
+    info.pacified_text_target_unit_number = nil
+  end
+
+  function controller.ensure_pacified_rendering(info)
+    if not info or info.state ~= "pacified" then return end
+    local entity = info.entity
+    if not entity or not entity.valid then
+      controller.destroy_pacified_rendering(info)
+      return
+    end
+
+    local wait_text_tint = deps.pacified_wait_text_tint or {r = 1, g = 0.98, b = 0.85}
+    local wait_label = deps.pacified_wait_label or "No available desk"
+
+    if info.pacified_text_target_unit_number ~= entity.unit_number then
+      destroy_render_object(info.pacified_text_render_id)
+      info.pacified_text_render_id = nil
+    end
+
+    if not get_render_object(info.pacified_text_render_id) then
+      info.pacified_text_render_id = rendering.draw_text{
+        text = wait_label,
+        surface = entity.surface,
+        target = {entity = entity, offset = {0, -2.2}},
+        color = wait_text_tint,
+        alignment = "center",
+        vertical_alignment = "middle",
+        scale = 1.15,
+        scale_with_zoom = true,
+      }.id
+      info.pacified_text_target_unit_number = entity.unit_number
+    end
+  end
+
   function controller.ensure_protest_rendering(info)
     if not info or info.state ~= "protesting" then return end
     local entity = info.entity
     local target = info.target_building
-    if not entity or not entity.valid or not target or not target.valid or not info.arrived_at_building then
+    if not entity or not entity.valid then
       controller.destroy_protest_rendering(info)
       return
     end
 
     local ticket, message, complaint_tint = ensure_protest_theme(info)
 
-    if not get_render_object(info.protest_circle_render_id) then
-      info.protest_circle_render_id = rendering.draw_circle{
-        color = deps.protest_stop_tint,
-        radius = 1.8,
-        width = 5,
-        target = target,
-        surface = target.surface,
-        blink_interval = 30,
-        draw_on_ground = true,
-      }.id
-    end
+    if target and target.valid and info.arrived_at_building then
+      if not get_render_object(info.protest_circle_render_id) then
+        info.protest_circle_render_id = rendering.draw_circle{
+          color = deps.protest_stop_tint,
+          radius = 1.8,
+          width = 5,
+          target = target,
+          surface = target.surface,
+          blink_interval = 30,
+          draw_on_ground = true,
+        }.id
+      end
 
-    if not get_render_object(info.protest_light_render_id) then
-      info.protest_light_render_id = rendering.draw_light{
-        sprite = "utility/light_medium",
-        color = deps.protest_stop_tint,
-        intensity = 0.9,
-        minimum_darkness = 0,
-        scale = 2.1,
-        target = {entity = target, offset = {0, -0.2}},
-        surface = target.surface,
-        blink_interval = 30,
-      }.id
-    end
+      if not get_render_object(info.protest_light_render_id) then
+        info.protest_light_render_id = rendering.draw_light{
+          sprite = "utility/light_medium",
+          color = deps.protest_stop_tint,
+          intensity = 0.9,
+          minimum_darkness = 0,
+          scale = 2.1,
+          target = {entity = target, offset = {0, -0.2}},
+          surface = target.surface,
+          blink_interval = 30,
+        }.id
+      end
 
-    if not get_render_object(info.protest_icon_render_id) then
-      info.protest_icon_render_id = rendering.draw_text{
-        text = "X",
-        target = {entity = target, offset = {0, -1.2}},
-        surface = target.surface,
-        color = deps.protest_stop_tint,
-        alignment = "center",
-        vertical_alignment = "middle",
-        scale = 3.1,
-        scale_with_zoom = true,
-      }.id
-    end
+      if not get_render_object(info.protest_icon_render_id) then
+        info.protest_icon_render_id = rendering.draw_text{
+          text = "X",
+          target = {entity = target, offset = {0, -1.2}},
+          surface = target.surface,
+          color = deps.protest_stop_tint,
+          alignment = "center",
+          vertical_alignment = "middle",
+          scale = 3.1,
+          scale_with_zoom = true,
+        }.id
+      end
 
-    if not get_render_object(info.protest_stop_text_render_id) then
-      info.protest_stop_text_render_id = rendering.draw_text{
-        text = "STOP",
-        target = {entity = target, offset = {0, 0.35}},
-        surface = target.surface,
-        color = deps.protest_stop_text_tint,
-        alignment = "center",
-        vertical_alignment = "middle",
-        scale = 1.35,
-        scale_with_zoom = true,
-      }.id
+      if not get_render_object(info.protest_stop_text_render_id) then
+        info.protest_stop_text_render_id = rendering.draw_text{
+          text = "STOP",
+          target = {entity = target, offset = {0, 0.35}},
+          surface = target.surface,
+          color = deps.protest_stop_text_tint,
+          alignment = "center",
+          vertical_alignment = "middle",
+          scale = 1.35,
+          scale_with_zoom = true,
+        }.id
+      end
+    else
+      destroy_render_object(info.protest_circle_render_id)
+      destroy_render_object(info.protest_light_render_id)
+      destroy_render_object(info.protest_icon_render_id)
+      destroy_render_object(info.protest_stop_text_render_id)
+      info.protest_circle_render_id = nil
+      info.protest_light_render_id = nil
+      info.protest_icon_render_id = nil
+      info.protest_stop_text_render_id = nil
     end
 
     if info.protest_text_target_unit_number ~= entity.unit_number then

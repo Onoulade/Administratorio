@@ -163,7 +163,7 @@ local function new_test_context()
       DESK_SLOT_COMMAND_RADIUS = 0.5,
       DESK_SLOT_ARRIVAL_DISTANCE = 1.0,
       PACIFIED_FRUSTRATION_RATIO = 0.5,
-      PACIFIED_ROAM_REISSUE_TICKS = 5 * 60,
+      PACIFIED_ROAM_REISSUE_TICKS = 30,
       PACIFIED_ROAM_REISSUE_JITTER_TICKS = 0,
     },
     zones = {
@@ -338,6 +338,7 @@ test("pacified invalid biter rematerializes into a parked visible state while wa
 
   assert_eq(ctx.get_create_calls(), 1, "pacified invalid biter should be recreated so it remains visible")
   assert_eq(ctx.get_route_calls(), 0, "pacified invalid biter should not try to route while no desk is available")
+  assert_true(ctx.get_pacified_render_calls() > 0, "pacified waiting biter should show a waiting indicator")
   assert_eq(info.state, "pacified", "recreated biter should remain pacified while waiting")
   assert_true(info.entity and info.entity.valid, "pacified biter should have a live entity again")
   assert_true(info.entity.active == false, "pacified biter should be parked so it stays stable while visible")
@@ -505,6 +506,7 @@ test("promise without desk capacity pacifies and explicitly stops the protester"
   assert_eq(info.last_known_position.y, 1, "pacified protester should remember its last y position")
   assert_true(target.active == true, "promise should release the protested building while the biter is pacified")
   assert_true(ctx.get_last_stop_command() ~= nil, "pacified protester should receive an explicit stop command")
+  assert_true(ctx.get_pacified_render_calls() > 0, "pacified protester should show a waiting indicator")
   assert_eq(ctx.get_last_stop_command().type, defines.command.stop, "promise pacification should stop the protester's movement command")
 end)
 
@@ -552,6 +554,78 @@ test("promise with only full desks keeps pacified biters roaming instead of free
   assert_eq(info.frustration, 300, "pacified roaming should keep frustration at half threshold")
   assert_true(entity.active == true, "pacified biter should keep moving when desks exist but are full")
   assert_true(ctx.get_last_move_command() ~= nil, "pacified biter should receive a roam movement command")
+  assert_true(ctx.get_pacified_render_calls() > 0, "pacified roaming biter should still show a waiting indicator")
+  local destination = ctx.get_last_move_command().destination
+  local desk_dist = (destination.x - ctx.desk.position.x)^2 + (destination.y - ctx.desk.position.y)^2
+  local start_dist = (destination.x - 1)^2 + (destination.y - 1)^2
+  assert_true(desk_dist < start_dist, "pacified roaming should orbit the desk area, not its old protest spot")
+end)
+
+test("pacified roaming biter parks when its roam command completes", function()
+  local ctx = new_test_context()
+  storage.admin_desks[ctx.desk.unit_number] = ctx.desk
+
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 12, y = 10},
+    force = "neutral",
+  }
+  entity.unit_number = 18
+  local info = {
+    state = "pacified",
+    entity = entity,
+    entity_name = entity.name,
+    frustration = 300,
+    tracked_unit_number = 18,
+    promise_retry_until_tick = 60 * 60,
+    next_pacified_roam_tick = 30,
+  }
+  storage.waiting_biters[18] = info
+  ctx.state_sets.pacified[18] = true
+
+  game.tick = 15
+  ctx.controller.on_ai_command_completed{
+    unit_number = 18,
+    result = 0,
+  }
+
+  assert_eq(info.state, "pacified", "completed pacified roam should stay pacified")
+  assert_true(entity.active == false, "completed pacified roam should park the biter between moves")
+  assert_true(ctx.get_last_stop_command() ~= nil, "completed pacified roam should issue a stop command while parked")
+end)
+
+test("pacified pacing quickly resumes desk loitering after a short idle", function()
+  local ctx = new_test_context()
+  storage.admin_desks[ctx.desk.unit_number] = ctx.desk
+
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 12, y = 10},
+    force = "neutral",
+  }
+  entity.unit_number = 20
+  entity.active = false
+  local info = {
+    state = "pacified",
+    entity = entity,
+    entity_name = entity.name,
+    frustration = 300,
+    tracked_unit_number = 20,
+    promise_retry_until_tick = 60 * 60,
+    next_pacified_roam_tick = 20,
+  }
+  storage.waiting_biters[20] = info
+  ctx.state_sets.pacified[20] = true
+
+  game.tick = 20
+  ctx.controller.process_protest_pacing(ctx.surface)
+
+  assert_true(entity.active == true, "pacified pacing should restart desk loitering after the short idle window")
+  assert_true(ctx.get_last_move_command() ~= nil, "pacified pacing should issue a new roam command")
+  local destination = ctx.get_last_move_command().destination
+  local desk_dist = (destination.x - ctx.desk.position.x)^2 + (destination.y - ctx.desk.position.y)^2
+  local start_dist = (destination.x - 12)^2 + (destination.y - 10)^2
+  assert_true(desk_dist < start_dist, "resumed pacified loitering should head toward a desk area")
 end)
 
 test("pacified biter returns to full frustration when promise expires", function()
@@ -611,6 +685,43 @@ test("protest pacing refreshes protest rendering even before arrival", function(
   ctx.controller.process_protest_pacing(ctx.surface)
 
   assert_true(ctx.get_protest_render_calls() > 0, "protest pacing should refresh protest rendering before arrival")
+end)
+
+test("protesting biter resumes movement when a successful approach command ends before arrival", function()
+  local ctx = new_test_context()
+  local target = {
+    valid = true,
+    active = false,
+    force = {name = "player"},
+    unit_number = 96,
+    position = {x = 7, y = 7},
+    surface = ctx.surface,
+  }
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 1, y = 1},
+    force = "neutral",
+  }
+  entity.unit_number = 9
+  local info = {
+    state = "protesting",
+    entity = entity,
+    entity_name = entity.name,
+    tracked_unit_number = 9,
+    target_building = target,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[9] = info
+  ctx.state_sets.protesting[9] = true
+
+  game.tick = 20
+  ctx.controller.on_ai_command_completed{
+    unit_number = 9,
+    result = 0,
+  }
+
+  assert_true(ctx.get_last_move_command() ~= nil, "protesting biter should receive a follow-up movement command after a premature command completion")
+  assert_true(entity.active == true, "protesting biter should stay active while resuming its approach")
 end)
 
 print(string.format("\n=== PROMISE PACIFIED TESTS ==="))

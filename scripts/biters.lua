@@ -90,6 +90,9 @@ local PROTEST_TINTS = {
 }
 local PROTEST_STOP_TINT = {r = 1, g = 0.1, b = 0.1}
 local PROTEST_STOP_TEXT_TINT = {r = 1, g = 0.95, b = 0.95}
+local PACIFIED_WAIT_TINT = {r = 1, g = 0.76, b = 0.18}
+local PACIFIED_WAIT_TEXT_TINT = {r = 1, g = 0.98, b = 0.85}
+local PACIFIED_WAIT_LABEL = "No available desk"
 local PROTEST_DEBUG_STATUS_TICKS = 10 * 60
 local PROTEST_ALERT_SOUND_PATH = "administratorio-protest-alert"
 local PROTEST_ALERT_SOUND_COOLDOWN_TICKS = 6 * 60
@@ -654,6 +657,9 @@ end
 protest_rendering = biters_rendering_factory.new({
   format_position = format_position,
   log_prefix = LOG_PREFIX,
+  pacified_wait_label = PACIFIED_WAIT_LABEL,
+  pacified_wait_text_tint = PACIFIED_WAIT_TEXT_TINT,
+  pacified_wait_tint = PACIFIED_WAIT_TINT,
   protest_alert_sound_cooldown_ticks = PROTEST_ALERT_SOUND_COOLDOWN_TICKS,
   protest_alert_sound_path = PROTEST_ALERT_SOUND_PATH,
   protest_map_tag_text = PROTEST_MAP_TAG_TEXT,

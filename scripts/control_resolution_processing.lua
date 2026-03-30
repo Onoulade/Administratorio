@@ -6,6 +6,7 @@ function M.new(deps)
   local needs_loaded_working_hours_refresh = false
 
   local runtime_debug = deps.runtime_debug
+  local process_pending_group_redirects = deps.process_pending_group_redirects or function() end
 
   local controller = {}
 
@@ -24,7 +25,7 @@ function M.new(deps)
     end)
 
     runtime_debug.run_profiled_section(runtime_snapshot, "group_redirects", function()
-      deps.process_pending_group_redirects(event.tick)
+      process_pending_group_redirects(event.tick)
     end)
 
     runtime_debug.run_profiled_section(runtime_snapshot, "trains", function()
