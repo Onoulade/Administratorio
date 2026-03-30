@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.2.6 - 2026-03-30
+
+### Changed
+- `pneumatic-pipe-to-ground` now requires a `construction-permit`, moving underground pneumatic transport onto the construction-paperwork tier.
+
+### Fixed
+- Fixed the hidden `form-solidifier` outtake inserter so it drops onto a stable belt lane instead of flipping lanes when rotated.
+- Removed the stale electric-pole supply-area bonus so small, medium, and big power poles keep their vanilla reach.
+
 ## 0.2.5 - 2026-03-30
 
 ### Added
@@ -29,7 +38,6 @@
 - `charcoal-production` now runs as a certified 5x furnace batch: `25 wood + 1 carbon-offset-certificate-basic -> 5 coal`, matching the rest of the regulated `smelting-basic` throughput recipes.
 
 ### Fixed
-- Removed the electric-pole supply-area bonus so small, medium, and big power poles keep their vanilla reach.
 - Fixed promised protesters with no open admin-station slot so pacified biters stay visible in place, show an explicit `WAITING FOR DESK` marker, and no longer flicker in and out while waiting for capacity. Recovered desk-bound biters now also restore their reserved desk slot before resuming, preventing invalidated `pathfinding` protesters from repeatedly respawning near the desk center instead of settling into a stable waiting position.
 - Fixed protesting biters losing their overhead message while moving or idling away from their target, and reworked promise pacification so it only drops frustration to 50%, restores full protest urgency when the promise expires, removes the yellow ground circle, and keeps pacified biters roaming between desks instead of freezing in place while they wait for capacity.
 - Fixed Tips & Tricks and related technology copy that mislabeled the biter complaint branch as human complaints.
