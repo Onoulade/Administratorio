@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+## 0.2.5 - 2026-03-30
+
+### Added
+- Added `work-order-duplication`, a production-science printer upgrade that unlocks 6x industrial-copy recipes for every work-order family, from basic `work-order`s through chemical and radiological paperwork.
+
+### Changed
+- Printer workflows now consistently consume `ink` only in printer categories, and direct `printing-workorder` shortcuts are limited to safety and construction forms while higher-tier work orders move to industrial copy recipes.
+- Deepened vanilla integration across bureaucracy chains: multiple admin buildings, pneumatic devices, paperwork stages, and complaint cases now consume more vanilla materials such as stone brick, pipes, barrels, coal, electronic/advanced/processing circuits, batteries, and steel, and office desks can now handle 10-ingredient recipes to support the denser paperwork mix.
+- Rebalanced paperwork tiers for vanilla infrastructure: splitters now use safety paperwork in 5x batches, elevated rail ramps and supports require construction paperwork, electric furnaces move to verbal-management paperwork, chemistry now runs on `chemical-handling-work-order`, and steel furnaces get hidden certified `smelting-basic` variants so certificate-gated smelting stays distinct from electric-furnace progression.
+- Batched regulated recipes now show their batch size directly on recipe icons, and batching coverage has been expanded across more vanilla/admin recipes including paper, ink, repair packs, heat pipes, belts, and selected equipment.
+- Tightened vanilla tech prerequisites so paperwork-gated unlocks appear only when usable: solar, accumulators, electric furnaces, robotics and personal roboports, oil processing, uranium processing, nuclear power, `automation-3`, `effect-transmission`, and `rocket-silo` now wait for the matching bureaucracy branch.
+
+### Fixed
+- Fixed regulated recipe localization and Factoriopedia mapping for repair tools, equipment, place-result items, and other item-like prototypes so regulated and bulk-copy recipes inherit the correct names and descriptions.
+- Fixed protesting biters losing complaint text before arrival, stalling after interrupted movement, or reviving back into broken desk/protest states after pathing recovery.
+- Fixed promise pacification when no desk is free: promised biters now stay visible with a `No available desk` marker, roam between desks instead of freezing, keep 50% frustration while pacified, and cleanly resume queueing or protesting when the promise expires.
+
 ## 0.2.4 - 2026-03-29
 
 ### Changed
