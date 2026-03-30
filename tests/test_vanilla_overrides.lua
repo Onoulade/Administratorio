@@ -55,7 +55,11 @@ data = {
     furnace = {},
     ["assembling-machine"] = {},
     locomotive = {},
-    ["electric-pole"] = {},
+    ["electric-pole"] = {
+      ["small-electric-pole"] = {name = "small-electric-pole", supply_area_distance = 2.5},
+      ["medium-electric-pole"] = {name = "medium-electric-pole", supply_area_distance = 3.5},
+      ["big-electric-pole"] = {name = "big-electric-pole", supply_area_distance = 2},
+    },
     planet = {
       nauvis = {
         map_gen_settings = {},
@@ -87,6 +91,13 @@ test("laser shooting speed technologies are still disabled by the broader purge"
   local tech = technologies["laser-shooting-speed-1"]
   assert_true(tech.enabled == false, "laser-shooting-speed-1 should be disabled")
   assert_true(tech.hidden == true, "laser-shooting-speed-1 should be hidden")
+end)
+
+test("electric poles keep their vanilla supply area", function()
+  local poles = data.raw["electric-pole"]
+  assert_true(poles["small-electric-pole"].supply_area_distance == 2.5, "small-electric-pole supply area should stay vanilla")
+  assert_true(poles["medium-electric-pole"].supply_area_distance == 3.5, "medium-electric-pole supply area should stay vanilla")
+  assert_true(poles["big-electric-pole"].supply_area_distance == 2, "big-electric-pole supply area should stay vanilla")
 end)
 
 if failed > 0 then

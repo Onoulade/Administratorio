@@ -6,7 +6,7 @@
 --   - Integrates admin science into labs
 --   - Hides vanilla modules (replaced by subpoena/audit/embezzlement)
 --   - Converts furnaces to assembling machines
---   - QoL tweaks (assembler slots, pole range, locomotive inventory)
+--   - QoL tweaks (assembler slots, locomotive inventory)
 --   - Registers resources for Nauvis map generation
 --   - Vanilla recipe hooks (greenhouse, steel batch, production science module swap)
 
@@ -361,16 +361,6 @@ end
 -------------------------------------------------------------------------------
 for _, loco in pairs(data.raw["locomotive"]) do
   loco.inventory_size = 1
-end
-
--------------------------------------------------------------------------------
--- ELECTRIC POLE RANGE QOL
--------------------------------------------------------------------------------
-for _, pole_name in ipairs({"small-electric-pole", "medium-electric-pole", "big-electric-pole"}) do
-  if data.raw["electric-pole"][pole_name] then
-    local pole = data.raw["electric-pole"][pole_name]
-    pole.supply_area_distance = pole.supply_area_distance + 0.5
-  end
 end
 
 -- KEEP SCIENCE PACKS VISIBLE IN HANDCRAFTING UI
