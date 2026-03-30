@@ -1195,6 +1195,12 @@ test("pneumatic-pipe requires compacted-rubble", function()
   assert_true(has_ingredient(r, "pipe"))
 end)
 
+test("pneumatic-pipe-to-ground requires construction-permit", function()
+  local r = get_recipe("pneumatic-pipe-to-ground")
+  assert_true(has_ingredient(r, "construction-permit"))
+  assert_true(has_ingredient(r, "pneumatic-pipe"))
+end)
+
 test("form-liquifier and form-solidifier require compacted-rubble", function()
   assert_true(has_ingredient(get_recipe("form-liquifier"), "compacted-rubble"))
   assert_true(has_ingredient(get_recipe("form-solidifier"), "compacted-rubble"))
@@ -1211,6 +1217,7 @@ test("heavier vanilla integration anchors have exact ingredient counts", functio
     {"meeting-room", "steel-plate", 15},
     {"meeting-room", "advanced-circuit", 5},
     {"pneumatic-pipe", "pipe", 1},
+    {"pneumatic-pipe-to-ground", "construction-permit", 1},
     {"form-liquifier", "pipe", 2},
     {"form-solidifier", "pipe", 2},
     {"crappy-report-production", "paper", 2},
