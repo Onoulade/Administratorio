@@ -356,7 +356,7 @@ end
 -------------------------------------------------------------------------------
 shared.OPERATING_FORM_BY_CATEGORY = {
   ["oil-processing"] = "petrochemical-operating-permit",
-  ["chemistry"] = "petrochemical-operating-permit",
+  ["chemistry"] = "chemical-handling-work-order",
   ["centrifuging"] = "radiological-work-order",
 }
 

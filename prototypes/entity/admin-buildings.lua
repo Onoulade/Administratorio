@@ -139,6 +139,7 @@ office_desk.minable.result = "office-desk"
 office_desk.next_upgrade = nil
 office_desk.crafting_categories = {"bureaucracy-registration", "bureaucratic-bootstrap"}
 office_desk.crafting_speed = OFFICE_DESK_SPEED
+office_desk.ingredient_count = 10
 office_desk.module_slots = 4
 office_desk.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
 office_desk.localised_description = disabled_entity_description("office-desk-no-working-hours")

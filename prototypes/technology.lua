@@ -134,8 +134,7 @@ data:extend({
     icon = tech_icons .. "administrative-bureaucracy.png", icon_size = 128,
     effects = {
       { type = "unlock-recipe", recipe = "safety-work-order-printing" },
-      { type = "unlock-recipe", recipe = "construction-work-order-printing" },
-      { type = "unlock-recipe", recipe = "research-grant-work-order-printing" }
+      { type = "unlock-recipe", recipe = "construction-work-order-printing" }
     },
     prerequisites = {"printing-technology", "logistic-science-pack", "rubble-compaction"},
     unit = { count = 50, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },

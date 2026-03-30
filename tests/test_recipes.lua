@@ -278,10 +278,20 @@ test("blank-directive-production requires ink and uses printing category", funct
   assert_true(has_ingredient(r, "paper"))
 end)
 
-test("all printing-category recipes contain ink", function()
+test("all printer recipes contain ink", function()
   for name, recipe in pairs(recipes) do
-    if recipe.category == "printing" then
-      assert_true(has_ingredient(recipe, "ink"), name .. " is printing but has no ink")
+    local category = recipe.category
+    if category == "printing" or category == "printing-workorder" or category == "printing-advanced" then
+      assert_true(has_ingredient(recipe, "ink"), name .. " is a printer recipe but has no ink")
+    end
+  end
+end)
+
+test("non-printer recipes do not consume ink", function()
+  for name, recipe in pairs(recipes) do
+    local category = recipe.category
+    if category ~= "printing" and category ~= "printing-workorder" and category ~= "printing-advanced" then
+      assert_true(not has_ingredient(recipe, "ink"), name .. " should not consume ink outside a printer")
     end
   end
 end)
@@ -302,6 +312,29 @@ test("all copy recipes use printing-advanced category", function()
     assert_eq(r.category, "printing-advanced", name .. " wrong category")
     assert_true(has_ingredient(r, "ink"), name .. " missing ink")
     assert_true(has_ingredient(r, "paper"), name .. " missing paper")
+  end
+end)
+
+test("printer recipes only accept paper forms and ink", function()
+  local function allowed_printer_input(name, category)
+    if name == "paper" or name == "ink" or shared.PAPERWORK_ITEMS[name] == true then
+      return true
+    end
+    if category == "printing-advanced" and (name == "advanced-circuit" or name == "processing-unit") then
+      return true
+    end
+    return false
+  end
+
+  for recipe_name, recipe in pairs(recipes) do
+    local category = recipe.category
+    if category == "printing" or category == "printing-workorder" or category == "printing-advanced" then
+      for _, ingredient in ipairs(recipe.ingredients or {}) do
+        local ingredient_name = ingredient.name or ingredient[1]
+        assert_true(allowed_printer_input(ingredient_name, category),
+          recipe_name .. " should not send " .. ingredient_name .. " through a printer")
+      end
+    end
   end
 end)
 
@@ -620,8 +653,8 @@ test("oil-processing requires petrochemical-operating-permit", function()
   assert_eq(shared.OPERATING_FORM_BY_CATEGORY["oil-processing"], "petrochemical-operating-permit")
 end)
 
-test("chemistry requires petrochemical-operating-permit", function()
-  assert_eq(shared.OPERATING_FORM_BY_CATEGORY["chemistry"], "petrochemical-operating-permit")
+test("chemistry requires chemical-handling-work-order", function()
+  assert_eq(shared.OPERATING_FORM_BY_CATEGORY["chemistry"], "chemical-handling-work-order")
 end)
 
 test("centrifuging requires radiological-work-order", function()
@@ -630,25 +663,34 @@ end)
 
 test("operating paperwork chain: petro < chemical < radiological", function()
   local petro = get_recipe("petrochemical-operating-permit-production")
+  assert_eq(petro.category, "bureaucracy-registration")
   assert_true(has_ingredient(petro, "construction-permit"))
   assert_true(has_ingredient(petro, "safety-waiver"))
   assert_true(has_ingredient(petro, "environmental-impact-report"))
   assert_true(has_ingredient(petro, "barrel"))
   assert_true(has_ingredient(petro, "pipe"))
+  assert_true(not has_ingredient(petro, "ink"))
+  assert_eq(get_result_amount(petro, "petrochemical-operating-permit"), 2)
 
   local chem = get_recipe("chemical-handling-work-order-production")
+  assert_eq(chem.category, "bureaucracy-registration")
   assert_true(has_ingredient(chem, "petrochemical-operating-permit"), "chemical needs petro permit")
   assert_true(has_ingredient(chem, "safety-waiver"), "chemical needs safety waiver")
   assert_true(has_ingredient(chem, "construction-permit"), "chemical needs construction permit")
   assert_true(has_ingredient(chem, "barrel"), "chemical needs barrel")
   assert_true(has_ingredient(chem, "pipe"), "chemical needs pipe")
   assert_true(not has_ingredient(chem, "management-approval-verbal"))
+  assert_true(not has_ingredient(chem, "ink"))
+  assert_eq(get_result_amount(chem, "chemical-handling-work-order"), 2)
 
   local radio = get_recipe("radiological-work-order-production")
+  assert_eq(radio.category, "bureaucracy-registration")
   assert_true(has_ingredient(radio, "chemical-handling-work-order"), "radio needs chemical work order")
   assert_true(has_ingredient(radio, "management-approval-written"))
   assert_true(has_ingredient(radio, "battery"))
   assert_true(has_ingredient(radio, "steel-plate"))
+  assert_true(not has_ingredient(radio, "ink"))
+  assert_eq(get_result_amount(radio, "radiological-work-order"), 2)
 end)
 
 -- =========================================================================
@@ -1009,20 +1051,20 @@ test("direct draft-to-work-order recipes use printing-workorder category", funct
   local direct = {
     "safety-work-order-printing",
     "construction-work-order-printing",
-    "research-grant-work-order-printing",
   }
   for _, name in ipairs(direct) do
     local r = get_recipe(name)
     assert_true(r ~= nil, name .. " missing")
     assert_eq(r.category, "printing-workorder", name .. " wrong category")
     assert_true(has_ingredient(r, "work-order"), name .. " missing work-order")
+    assert_true(has_ingredient(r, "ink"), name .. " missing ink")
   end
 end)
 
-test("direct printing produces 2x output (efficiency bonus)", function()
+test("only draft-backed work-order printing produces 2x output", function()
   assert_eq(get_result_amount(get_recipe("safety-work-order-printing"), "safety-work-order"), 2)
   assert_eq(get_result_amount(get_recipe("construction-work-order-printing"), "construction-work-order"), 2)
-  assert_eq(get_result_amount(get_recipe("research-grant-work-order-printing"), "research-grant-work-order"), 2)
+  assert_true(get_recipe("research-grant-work-order-printing") == nil, "research grant work orders should not have a direct printing shortcut")
 end)
 
 test("industrial printer copy recipes exist for every work-order family", function()

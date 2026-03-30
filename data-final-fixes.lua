@@ -241,12 +241,6 @@ for _, recipe in pairs(data.raw["recipe"]) do
   end
 end
 
--- Demolition products need explicit construction paperwork on top of their
--- normal process permits so cliff clearance and blasting stay on-theme.
-for _, recipe_name in ipairs({"explosives", "cliff-explosives"}) do
-  add_special_paperwork(recipe_name, "construction-permit", 1)
-end
-
 -------------------------------------------------------------------------------
 -- 4a. FACTORIOPEDIA CANONICAL RECIPE NAMES
 -- Factoriopedia merges a product page with a recipe page only when both share
@@ -326,6 +320,21 @@ local function get_max_stack_size(item_name)
     end
   end
   return 100
+end
+
+local function get_recipe_batch_multiplier(recipe_name, recipe)
+  local multiplier = shared.BATCH_MULTIPLIERS[recipe_name] or shared.BATCH_MULTIPLIER_DEFAULT
+  local r_proto = recipe.normal or recipe
+  local results = r_proto.results or (r_proto.result and {{name = r_proto.result}}) or {}
+
+  for _, res in ipairs(results) do
+    local res_name = res.name or res[1]
+    if res_name and get_max_stack_size(res_name) == 1 then
+      return 1
+    end
+  end
+
+  return multiplier
 end
 
 local function find_item_like_prototype(name)
@@ -683,6 +692,25 @@ local function batch_original_with_form(recipe, form_name, multiplier)
   if recipe.expensive then process_level(recipe.expensive) end
 end
 
+for name, recipe in pairs(data.raw["recipe"]) do
+  if shared.is_admin_recipe(name) then goto next_operating_recipe end
+
+  local operating_form = shared.OPERATING_FORM_BY_CATEGORY[recipe.category or "crafting"]
+  if not operating_form then goto next_operating_recipe end
+
+  local multiplier = get_recipe_batch_multiplier(name, recipe)
+  regulate_recipe(recipe, operating_form, multiplier)
+  apply_bulk_recipe_icon_overlay(recipe, multiplier, operating_form)
+
+  ::next_operating_recipe::
+end
+
+-- Demolition products need explicit construction paperwork on top of their
+-- normal process permits so cliff clearance and blasting stay on-theme.
+for _, recipe_name in ipairs({"explosives", "cliff-explosives"}) do
+  add_special_paperwork(recipe_name, "construction-permit", 1)
+end
+
 -- Build reverse set of form production recipes for quick lookup
 local FORM_PRODUCTION_RECIPE_SET = {}
 for _, recipe_name in pairs(shared.FORM_PRODUCTION_RECIPES) do
@@ -710,19 +738,12 @@ for name, recipe in pairs(data.raw["recipe"]) do
   end
 
   -- Determine batch multiplier (force 1 for non-stackable outputs)
-  local multiplier = shared.BATCH_MULTIPLIERS[name] or shared.BATCH_MULTIPLIER_DEFAULT
+  local multiplier = get_recipe_batch_multiplier(name, recipe)
   local r_proto = recipe.normal or recipe
   local results = r_proto.results or (r_proto.result and {{name = r_proto.result}}) or {}
   local primary_result_name = get_primary_item_like_result_name(recipe)
   if primary_result_name then
     regulated_factoriopedia_products[primary_result_name] = true
-  end
-  for _, res in ipairs(results) do
-    local res_name = res.name or res[1]
-    if res_name and get_max_stack_size(res_name) == 1 then
-      multiplier = 1
-      break
-    end
   end
 
   -- Determine which form is required based on item tier

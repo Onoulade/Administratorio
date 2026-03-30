@@ -201,6 +201,49 @@ recipes["nuclear-reactor"] = {
   },
 }
 
+recipes["oil-processing"] = {
+  type = "recipe",
+  name = "oil-processing",
+  category = "oil-processing",
+  enabled = false,
+  ingredients = {
+    { type = "fluid", name = "crude-oil", amount = 100 },
+  },
+  results = {
+    { type = "fluid", name = "heavy-oil", amount = 30 },
+    { type = "fluid", name = "light-oil", amount = 30 },
+    { type = "fluid", name = "petroleum-gas", amount = 40 },
+  },
+}
+
+recipes["sulfur"] = {
+  type = "recipe",
+  name = "sulfur",
+  category = "chemistry",
+  enabled = false,
+  ingredients = {
+    { type = "fluid", name = "petroleum-gas", amount = 30 },
+    { type = "fluid", name = "water", amount = 30 },
+  },
+  results = {
+    { type = "item", name = "sulfur", amount = 2 },
+  },
+}
+
+recipes["uranium-processing"] = {
+  type = "recipe",
+  name = "uranium-processing",
+  category = "centrifuging",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "uranium-ore", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "uranium-235", amount = 1, probability = 0.007 },
+    { type = "item", name = "uranium-238", amount = 1, probability = 0.993 },
+  },
+}
+
 technologies["advanced-material-processing-2"] = {
   type = "technology",
   name = "advanced-material-processing-2",
@@ -459,6 +502,30 @@ test("1x regulated recipes do not show amount digits", function()
     "nuclear-reactor should not overlay a 1x amount digit")
   assert_true(not has_icon_layer(regulated, "__administratorio__/graphics/icons/management-written-work-order.png"),
     "nuclear-reactor should not overlay paperwork icon by default")
+end)
+
+test("operating-paperwork recipes batch refinery chemistry and centrifuging families", function()
+  local oil = get_recipe("oil-processing")
+  assert_true(oil ~= nil, "oil-processing missing")
+  assert_true(has_ingredient(oil, "petrochemical-operating-permit"), "oil-processing missing petrochemical-operating-permit")
+  assert_eq(get_ingredient_amount(oil, "crude-oil"), 500, "oil-processing should batch crude oil at 5x")
+  assert_eq(get_result_amount(oil, "heavy-oil"), 150, "oil-processing should batch heavy oil at 5x")
+  assert_eq(get_result_amount(oil, "light-oil"), 150, "oil-processing should batch light oil at 5x")
+  assert_eq(get_result_amount(oil, "petroleum-gas"), 200, "oil-processing should batch petroleum gas at 5x")
+
+  local sulfur = get_recipe("sulfur")
+  assert_true(sulfur ~= nil, "sulfur missing")
+  assert_true(has_ingredient(sulfur, "chemical-handling-work-order"), "sulfur missing chemical-handling-work-order")
+  assert_true(not has_ingredient(sulfur, "petrochemical-operating-permit"), "sulfur should no longer use petrochemical-operating-permit")
+  assert_eq(get_ingredient_amount(sulfur, "petroleum-gas"), 300, "sulfur should batch petroleum gas at 10x")
+  assert_eq(get_result_amount(sulfur, "sulfur"), 20, "sulfur should batch output at 10x")
+
+  local uranium = get_recipe("uranium-processing")
+  assert_true(uranium ~= nil, "uranium-processing missing")
+  assert_true(has_ingredient(uranium, "radiological-work-order"), "uranium-processing missing radiological-work-order")
+  assert_eq(get_ingredient_amount(uranium, "uranium-ore"), 50, "uranium-processing should batch uranium ore at 5x")
+  assert_eq(get_result_amount(uranium, "uranium-235"), 5, "uranium-processing should batch uranium-235 at 5x")
+  assert_eq(get_result_amount(uranium, "uranium-238"), 5, "uranium-processing should batch uranium-238 at 5x")
 end)
 
 test("all plain crafting recipes have regulated AM copies", function()
