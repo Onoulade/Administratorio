@@ -1271,9 +1271,11 @@ local PAPERWORK_ITEMS = {
 
 local function count_forms_crafted(force)
   local total = 0
-  local stats = force.item_production_statistics
-  for _, item_name in ipairs(PAPERWORK_ITEMS) do
-    total = total + stats.get_input_count(item_name)
+  for _, surface in pairs(game.surfaces) do
+    local stats = force.get_item_production_statistics(surface)
+    for _, item_name in ipairs(PAPERWORK_ITEMS) do
+      total = total + stats.get_input_count(item_name)
+    end
   end
   return total
 end
