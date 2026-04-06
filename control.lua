@@ -671,6 +671,8 @@ local function on_entity_removed(event)
   local entity = event.entity
   if not entity or not entity.valid then return end
 
+  biters.on_protest_target_removed(entity)
+
   if WORKING_HOURS_ENABLED then
     working_hours.untrack_entity(entity)
   end
@@ -1159,6 +1161,8 @@ local function on_entity_died(event)
   local entity = event.entity
   if entity.type == "unit" then
     biters.on_biter_died(entity)
+  else
+    biters.on_protest_target_removed(entity)
   end
   if WORKING_HOURS_ENABLED then
     working_hours.untrack_entity(entity)
@@ -1185,6 +1189,10 @@ end
 
 local ON_ENTITY_DIED_FILTERS = {
   {filter = "type", type = "unit"},
+  {filter = "type", type = "assembling-machine"},
+  {filter = "type", type = "furnace"},
+  {filter = "type", type = "lab"},
+  {filter = "type", type = "mining-drill"},
   {filter = "type", type = "train-stop"},
   {filter = "name", name = "admin-station"},
   {filter = "name", name = "admin-station-north"},

@@ -86,6 +86,10 @@ function M.new(deps)
 
   function controller.ensure_protest_chart_tag(info, player_override)
     if not info or info.state ~= "protesting" then return end
+    if not info.arrived_at_building then
+      controller.destroy_protest_chart_tag(info)
+      return
+    end
 
     local target = info.target_building
     local entity = info.entity
@@ -308,6 +312,23 @@ function M.new(deps)
     local target = info.target_building
     local entity = info.entity
     local alert_entity = (target and target.valid and target) or (entity and entity.valid and entity) or nil
+    local players = player_override and {player_override} or game.connected_players
+
+    if not info.arrived_at_building then
+      controller.destroy_protest_chart_tag(info)
+      if alert_entity then
+        for _, player in pairs(players) do
+          if player.valid then
+            player.remove_alert{
+              entity = alert_entity,
+              type = defines.alert_type.custom,
+            }
+          end
+        end
+      end
+      return
+    end
+
     if not alert_entity then
       -- log(deps.log_prefix .. "Protest DEBUG UI: alert skipped, no valid alert entity")
       controller.destroy_protest_chart_tag(info)
@@ -322,7 +343,6 @@ function M.new(deps)
     local icon = get_protest_alert_icon(info)
     local caption = get_protest_alert_caption(info)
     local gps = "[gps=" .. math.floor(alert_entity.position.x) .. "," .. math.floor(alert_entity.position.y) .. "]"
-    local players = player_override and {player_override} or game.connected_players
     local alerted_count = 0
 
     for _, player in pairs(players) do

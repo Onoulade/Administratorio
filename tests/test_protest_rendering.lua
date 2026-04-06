@@ -33,6 +33,10 @@ local rendering_factory = dofile(mod_root .. "scripts/biters_rendering.lua")
 local function new_render_context()
   local next_id = 0
   local objects = {}
+  local chart_tags = {}
+  local added_alerts = 0
+  local removed_alerts = 0
+  local played_sounds = 0
 
   local function new_object(kind, params)
     next_id = next_id + 1
@@ -65,12 +69,64 @@ local function new_render_context()
     end,
   }
 
+  defines = {
+    alert_type = {
+      custom = 1,
+    },
+  }
+
+  local force = {
+    name = "player",
+  }
+  function force.add_chart_tag(surface, params)
+    local tag = {
+      valid = true,
+      surface = surface,
+      icon = params.icon,
+      position = params.position,
+      text = params.text,
+    }
+    function tag.destroy()
+      tag.valid = false
+      chart_tags[tag] = nil
+    end
+    chart_tags[tag] = true
+    return tag
+  end
+
+  local player = {
+    valid = true,
+    index = 1,
+    force = force,
+    remove_alert = function()
+      removed_alerts = removed_alerts + 1
+    end,
+    add_custom_alert = function()
+      added_alerts = added_alerts + 1
+    end,
+    play_sound = function()
+      played_sounds = played_sounds + 1
+    end,
+  }
+
+  game = {
+    tick = 0,
+    connected_players = {player},
+    forces = {
+      player = force,
+    },
+  }
+
+  storage = {}
+
   local controller = rendering_factory.new({
     format_position = function(pos)
       if not pos then return "[nil]" end
       return "[" .. tostring(pos.x) .. "," .. tostring(pos.y) .. "]"
     end,
     log_prefix = "[Administratorio] ",
+    protest_alert_sound_cooldown_ticks = 60,
+    protest_alert_sound_path = "administratorio-protest-alert",
     protest_map_tag_text = "PROTEST",
     protest_slogans = {
       ["ticket-landscape"] = {"Stop paving our habitat!"},
@@ -88,7 +144,7 @@ local function new_render_context()
     name = "office-desk",
     position = {x = 10, y = 10},
     surface = surface,
-    force = {name = "player"},
+    force = force,
     bounding_box = {
       left_top = {x = 9.5, y = 9.5},
       right_bottom = {x = 10.5, y = 10.5},
@@ -107,6 +163,16 @@ local function new_render_context()
     entity = entity,
     target = target,
     get_object = function(id) return objects[id] end,
+    get_chart_tag_count = function()
+      local total = 0
+      for _ in pairs(chart_tags) do
+        total = total + 1
+      end
+      return total
+    end,
+    get_added_alerts = function() return added_alerts end,
+    get_removed_alerts = function() return removed_alerts end,
+    get_played_sounds = function() return played_sounds end,
   }
 end
 
@@ -144,6 +210,40 @@ test("arrived protesters render both text and stop visuals", function()
   assert_true(info.protest_light_render_id ~= nil, "arrived protest should draw the stop light")
   assert_true(info.protest_icon_render_id ~= nil, "arrived protest should draw the stop icon")
   assert_true(info.protest_stop_text_render_id ~= nil, "arrived protest should draw the stop label")
+end)
+
+test("pre-arrival protests do not alert players or create map tags", function()
+  local ctx = new_render_context()
+  local info = {
+    state = "protesting",
+    entity = ctx.entity,
+    target_building = ctx.target,
+    complaints = {"ticket-landscape"},
+  }
+
+  ctx.controller.notify_players_of_protest(info)
+
+  assert_eq(ctx.get_added_alerts(), 0, "pre-arrival protest should not add a custom alert")
+  assert_eq(ctx.get_played_sounds(), 0, "pre-arrival protest should not play the protest siren")
+  assert_eq(ctx.get_chart_tag_count(), 0, "pre-arrival protest should not create a map tag")
+end)
+
+test("arrived protests alert players and create a map tag", function()
+  local ctx = new_render_context()
+  local info = {
+    state = "protesting",
+    entity = ctx.entity,
+    target_building = ctx.target,
+    arrived_at_building = true,
+    complaints = {"ticket-landscape"},
+  }
+
+  game.tick = 120
+  ctx.controller.notify_players_of_protest(info)
+
+  assert_eq(ctx.get_added_alerts(), 1, "arrived protest should add a custom alert")
+  assert_eq(ctx.get_played_sounds(), 1, "arrived protest should play the protest siren once")
+  assert_eq(ctx.get_chart_tag_count(), 1, "arrived protest should create a map tag")
 end)
 
 print(("Protest rendering tests: %d passed, %d failed"):format(passed, failed))

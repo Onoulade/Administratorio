@@ -713,6 +713,10 @@ function M.refresh_protest_notifications(player)
   protest_system.refresh_protest_notifications(player)
 end
 
+function M.on_protest_target_removed(entity)
+  protest_system.on_protest_target_removed(entity)
+end
+
 function M.reroute_desk_biters(desk_id, surface)
   protest_system.reroute_desk_biters(desk_id, surface)
 end

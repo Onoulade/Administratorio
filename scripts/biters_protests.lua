@@ -302,6 +302,37 @@ function M.new(deps)
       and a.position.y == b.position.y
   end
 
+  local function snapshot_protest_target(target)
+    if not target or not target.valid then return nil end
+
+    return {
+      unit_number = target.unit_number,
+      name = target.name,
+      surface_index = target.surface and target.surface.index or nil,
+      position = target.position and {x = target.position.x, y = target.position.y} or nil,
+    }
+  end
+
+  local function same_protest_target_snapshot(target, snapshot)
+    if not target or not target.valid or not snapshot then return false end
+
+    local surface = target.surface
+    if snapshot.unit_number and target.unit_number then
+      return target.unit_number == snapshot.unit_number
+        and surface
+        and surface.index == snapshot.surface_index
+    end
+
+    local position = target.position
+    return surface
+      and position
+      and snapshot.position
+      and surface.index == snapshot.surface_index
+      and target.name == snapshot.name
+      and position.x == snapshot.position.x
+      and position.y == snapshot.position.y
+  end
+
   count_protesters_on_target = function(target, exclude_unit_number)
     local total = 0
     for unit_number in pairs(deps.get_waiting_biter_state_set("protesting")) do
@@ -651,7 +682,7 @@ function M.new(deps)
     })
   end
 
-  local function collect_protest_target_candidates(surface, info, entity, avoid_target)
+  local function collect_protest_target_candidates(surface, info, entity, avoid_target, avoid_target_snapshot)
     local raw_candidates = {}
     local seen = {}
     local snapshot = get_protester_snapshot()
@@ -667,7 +698,8 @@ function M.new(deps)
         local claimed = snapshot.claimed_counts[target_id] or 0
         if claimed < C.PROTEST_TARGET_MAX_PROTESTERS then
           local dist = distance_sq(target.position, entity_pos)
-          local avoided = avoid_target and same_protest_target(target, avoid_target) or false
+          local avoided = (avoid_target and same_protest_target(target, avoid_target) or false)
+            or same_protest_target_snapshot(target, avoid_target_snapshot)
           local priority = claimed * claimed * C.PROTEST_TARGET_LOAD_PENALTY
             + dist
             + math.random() * C.PROTEST_TARGET_SELECTION_JITTER
@@ -782,11 +814,16 @@ function M.new(deps)
   local function assign_protest_target(surface, info, entity)
     if not surface or not info or not entity or not entity.valid then return false end
     local previous_target = info.target_building
+    local avoided_target_snapshot = info.retarget_avoid_target_snapshot
+    if not avoided_target_snapshot and previous_target and previous_target.valid then
+      avoided_target_snapshot = snapshot_protest_target(previous_target)
+    end
+    info.retarget_avoid_target_snapshot = nil
     reset_protest_targeting(info)
     info.return_spawner = nil
     info.return_dest = nil
 
-    local candidates = collect_protest_target_candidates(surface, info, entity, previous_target)
+    local candidates = collect_protest_target_candidates(surface, info, entity, previous_target, avoided_target_snapshot)
     if #candidates == 0 then
       -- log(deps.log_prefix .. "Protest WARNING: no available player buildings found for " .. entity.name .. " to protest")
       info.next_protest_target_retry_tick = game.tick + C.PROTEST_TARGET_RETRY_TICKS
@@ -797,6 +834,24 @@ function M.new(deps)
     log_protest_debug(entity, info, "requesting protest target path from " .. deps.format_position(entity.position)
       .. " with " .. #candidates .. " candidates")
     return request_next_protest_target_path(info, entity, 1)
+  end
+
+  local function reassign_protest_after_target_loss(info, surface, avoid_target_snapshot)
+    if not info or info.state ~= "protesting" then return false end
+
+    if avoid_target_snapshot then
+      info.retarget_avoid_target_snapshot = avoid_target_snapshot
+    end
+
+    if info.entity and info.entity.valid then
+      info.entity.force = game.forces["neutral"]
+      info.entity.active = true
+      return assign_protest_target(surface or info.entity.surface, info, info.entity)
+    end
+
+    reset_protest_targeting(info, info.tracked_unit_number)
+    info.next_protest_target_retry_tick = game.tick
+    return false
   end
 
   local function find_revival_surface(info, fallback_surface)
@@ -972,6 +1027,27 @@ function M.new(deps)
           render.notify_players_of_protest(info, player)
         end
       end
+    end
+  end
+
+  function controller.on_protest_target_removed(target)
+    if not target or not target.valid then return end
+
+    local impacted = {}
+    local removed_snapshot = snapshot_protest_target(target)
+    local fallback_surface = target.surface
+
+    for unit_number in pairs(deps.get_waiting_biter_state_set("protesting")) do
+      local info = storage.waiting_biters and storage.waiting_biters[unit_number]
+      if info
+         and info.state == "protesting"
+         and same_protest_target(info.target_building, target) then
+        impacted[#impacted + 1] = info
+      end
+    end
+
+    for _, info in ipairs(impacted) do
+      reassign_protest_after_target_loss(info, fallback_surface, removed_snapshot)
     end
   end
 
@@ -1185,6 +1261,10 @@ function M.new(deps)
           end
         elseif info.state == "protesting" then
           local target = info.target_building
+          if target and not target.valid then
+            reset_protest_targeting(info, b_id)
+            target = nil
+          end
           if target and target.valid then
             -- Pre-filtered check is much faster
             if not target.force or target.force.name ~= "player" or deps.protest_protected_names[target.name] then
@@ -1264,7 +1344,7 @@ function M.new(deps)
         end
         if refresh_alerts then
           local tgt_id = info.target_building.unit_number
-          if not alerted_targets[tgt_id] then
+          if info.arrived_at_building and not alerted_targets[tgt_id] then
             alerted_targets[tgt_id] = true
             render.notify_players_of_protest(info)
           end
@@ -1408,8 +1488,6 @@ function M.new(deps)
         .. " target_pos=" .. deps.format_position(candidate.target.position)
         .. " approach=" .. deps.format_position(candidate.pos)
         .. " path_nodes=" .. tostring(#event.path))
-      render.ensure_protest_chart_tag(info)
-      render.notify_players_of_protest(info)
       if issue_protest_wander_command(info, entity, {
         destination = candidate.pos,
         origin = entity.position,
