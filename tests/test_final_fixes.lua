@@ -147,6 +147,20 @@ data.raw.item["heat-pipe"] = {
   icon = "__base__/graphics/icons/heat-pipe.png",
   icon_size = 64,
 }
+data.raw.item["explosives"] = {
+  type = "item",
+  name = "explosives",
+  stack_size = 100,
+  icon = "__base__/graphics/icons/explosives.png",
+  icon_size = 64,
+}
+data.raw.item["cliff-explosives"] = {
+  type = "item",
+  name = "cliff-explosives",
+  stack_size = 20,
+  icon = "__base__/graphics/icons/cliff-explosives.png",
+  icon_size = 64,
+}
 data.raw.item["rail-ramp"] = {
   type = "item",
   name = "rail-ramp",
@@ -313,6 +327,20 @@ recipes["heat-pipe"] = {
   },
   results = {
     { type = "item", name = "heat-pipe", amount = 1 },
+  },
+}
+
+recipes["cliff-explosives"] = {
+  type = "recipe",
+  name = "cliff-explosives",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "explosives", amount = 10 },
+    { type = "item", name = "grenade", amount = 1 },
+    { type = "item", name = "empty-barrel", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "cliff-explosives", amount = 1 },
   },
 }
 
@@ -600,6 +628,24 @@ technologies["logistics"] = {
   },
 }
 
+technologies["cliff-explosives"] = {
+  type = "technology",
+  name = "cliff-explosives",
+  prerequisites = {"explosives", "military-2"},
+  effects = {
+    { type = "unlock-recipe", recipe = "cliff-explosives" },
+  },
+  unit = {
+    count = 1,
+    ingredients = {
+      {"automation-science-pack", 1},
+      {"logistic-science-pack", 1},
+      {"chemical-science-pack", 1},
+    },
+    time = 1,
+  },
+}
+
 technologies["elevated-rails"] = {
   type = "technology",
   name = "elevated-rails",
@@ -847,6 +893,14 @@ test("elevated rail ramps and supports require construction paperwork even on re
   assert_true(has_ingredient(support, "construction-permit"), "rail-support should require construction-permit when handcrafted")
   assert_true(not has_ingredient(support, "work-order"), "rail-support should not fall back to a bare work-order")
   assert_true(has_ingredient(support_regulated, "construction-work-order"), "rail-support-regulated should require construction-work-order")
+end)
+
+test("cliff explosives drop grenades but keep construction paperwork", function()
+  local recipe = get_recipe("cliff-explosives")
+
+  assert_true(recipe ~= nil, "cliff-explosives missing")
+  assert_true(not has_ingredient(recipe, "grenade"), "cliff-explosives should not require grenades")
+  assert_true(has_ingredient(recipe, "construction-permit"), "cliff-explosives should require construction-permit")
 end)
 
 test("bulk regulated recipe icons show amount overlay", function()

@@ -81,25 +81,35 @@ for tech_name, tech in pairs(data.raw["technology"]) do
   end
 end
 
--- Rewire the non-combat armor progression away from disabled military gates.
-local armor_tech_prerequisite_replacements = {
+-- Rewire civilian technologies away from disabled military gates.
+local tech_prerequisite_replacements = {
   ["heavy-armor"] = {
     military = "administrative-bureaucracy",
   },
   ["power-armor-mk2"] = {
     ["military-4"] = "eminent-domain-zoning",
   },
+  ["cliff-explosives"] = {
+    military = "discovery-bullshit",
+    ["military-2"] = "discovery-bullshit",
+  },
 }
 
-for tech_name, replacements in pairs(armor_tech_prerequisite_replacements) do
+for tech_name, replacements in pairs(tech_prerequisite_replacements) do
   local tech = data.raw["technology"][tech_name]
   if tech and tech.prerequisites then
-    for i, prereq in ipairs(tech.prerequisites) do
-      local replacement = replacements[prereq]
-      if replacement then
-        tech.prerequisites[i] = replacement
+    local rewritten_prereqs = {}
+    local seen_prereqs = {}
+
+    for _, prereq in ipairs(tech.prerequisites) do
+      local rewritten = replacements[prereq] or prereq
+      if not seen_prereqs[rewritten] then
+        rewritten_prereqs[#rewritten_prereqs + 1] = rewritten
+        seen_prereqs[rewritten] = true
       end
     end
+
+    tech.prerequisites = rewritten_prereqs
   end
 end
 

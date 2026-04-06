@@ -198,6 +198,27 @@ local function add_special_paperwork(recipe_name, item_name, count)
   end
 end
 
+local function remove_ingredient_from_recipe(recipe_name, item_name)
+  local recipe = data.raw["recipe"][recipe_name]
+  if not recipe then return end
+
+  local function strip_ingredient(target)
+    if not target or not target.ingredients then return end
+
+    local filtered = {}
+    for _, ingredient in ipairs(target.ingredients) do
+      if (ingredient.name or ingredient[1]) ~= item_name then
+        filtered[#filtered + 1] = ingredient
+      end
+    end
+    target.ingredients = filtered
+  end
+
+  strip_ingredient(recipe)
+  strip_ingredient(recipe.normal)
+  strip_ingredient(recipe.expensive)
+end
+
 local function add_osha_violation(target)
   if not target then return end
   local original_product = target.main_product or target.result
@@ -724,12 +745,6 @@ for name, recipe in pairs(data.raw["recipe"]) do
   ::next_operating_recipe::
 end
 
--- Demolition products need explicit construction paperwork on top of their
--- normal process permits so cliff clearance and blasting stay on-theme.
-for _, recipe_name in ipairs({"explosives", "cliff-explosives"}) do
-  add_special_paperwork(recipe_name, "construction-permit", 1)
-end
-
 -- Build reverse set of form production recipes for quick lookup
 local FORM_PRODUCTION_RECIPE_SET = {}
 for _, recipe_name in pairs(shared.FORM_PRODUCTION_RECIPES) do
@@ -895,6 +910,22 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
   ::next_admin_building::
 end
 data:extend(admin_building_regulated)
+
+-- Demolition products need explicit construction paperwork on top of their
+-- normal process permits so cliff clearance and blasting stay on-theme.
+for _, recipe_name in ipairs({
+  "explosives",
+  "explosives-regulated",
+  "cliff-explosives",
+  "cliff-explosives-regulated",
+}) do
+  add_special_paperwork(recipe_name, "construction-permit", 1)
+end
+
+-- Cliff charges should stay civilian; remove the hidden military grenade
+-- dependency after any recipe cloning/regulation has happened.
+remove_ingredient_from_recipe("cliff-explosives", "grenade")
+remove_ingredient_from_recipe("cliff-explosives-regulated", "grenade")
 
 for product_name, _ in pairs(regulated_factoriopedia_products) do
   local prototype = find_item_like_prototype(product_name)
