@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.8 - 2026-04-06
+
 ### Fixed
 - Fixed the rocket-launch win screen crash on Factorio 2.0 by reading paperwork production statistics through the per-surface `LuaForce.get_item_production_statistics(surface)` API.
 
