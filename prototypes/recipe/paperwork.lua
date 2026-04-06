@@ -22,8 +22,8 @@ data:extend({
   -- Provisional Approval (Tier 0)
   { type = "recipe", name = "provisional-approval-production", category = "bureaucratic-bootstrap", enabled = false, ingredients = {{type="item", name="blank-form", amount=1}, {type="item", name="redundant-rubble", amount=1}}, results = {{type="item", name="provisional-approval", amount=1}}, energy_required = 1 },
 
-  -- Carbon Offset Certificates (reworked: desk recipe from blank-form + coal)
-  { type = "recipe", name = "carbon-offset-certificate-basic",    category = "bureaucratic-bootstrap", enabled = true,  ingredients = {{type="item", name="blank-form", amount=1}, {type="item", name="coal", amount=1}}, results = {{type="item", name="carbon-offset-certificate-basic", amount=1}}, energy_required = 2 },
+  -- Carbon Offset Certificates (desk recipe from blank-form + stone)
+  { type = "recipe", name = "carbon-offset-certificate-basic",    category = "bureaucratic-bootstrap", enabled = true,  ingredients = {{type="item", name="blank-form", amount=1}, {type="item", name="stone", amount=1}}, results = {{type="item", name="carbon-offset-certificate-basic", amount=1}}, energy_required = 2 },
   { type = "recipe", name = "carbon-offset-certificate-verified", category = "union-negotiation",          enabled = false, ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="dubious-data", amount=5}}, results = {{type="item", name="carbon-offset-certificate-verified", amount=1}}, energy_required = 5 },
 
   -- Form 27b-6
