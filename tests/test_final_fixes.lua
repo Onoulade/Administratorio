@@ -193,6 +193,33 @@ data.raw.item["exoskeleton-equipment"] = {
   icon = "__base__/graphics/icons/exoskeleton-equipment.png",
   icon_size = 64,
 }
+data.raw.item["plastic-bar"] = {
+  type = "item",
+  name = "plastic-bar",
+  stack_size = 100,
+  icon = "__base__/graphics/icons/plastic-bar.png",
+  icon_size = 64,
+}
+data.raw.item["solid-fuel"] = {
+  type = "item",
+  name = "solid-fuel",
+  stack_size = 50,
+  icon = "__base__/graphics/icons/solid-fuel.png",
+  icon_size = 64,
+}
+data.raw.item["sulfur"] = {
+  type = "item",
+  name = "sulfur",
+  stack_size = 100,
+  icon = "__base__/graphics/icons/sulfur.png",
+  icon_size = 64,
+}
+data.raw.fluid["sulfuric-acid"] = {
+  type = "fluid",
+  name = "sulfuric-acid",
+  icon = "__base__/graphics/icons/fluid/sulfuric-acid.png",
+  icon_size = 64,
+}
 recipes["transport-belt"] = {
   type = "recipe",
   name = "transport-belt",
@@ -382,6 +409,53 @@ recipes["oil-processing"] = {
   },
 }
 
+recipes["advanced-oil-processing"] = {
+  type = "recipe",
+  name = "advanced-oil-processing",
+  category = "oil-processing",
+  enabled = false,
+  ingredients = {
+    { type = "fluid", name = "crude-oil", amount = 100 },
+    { type = "fluid", name = "water", amount = 50 },
+  },
+  results = {
+    { type = "fluid", name = "heavy-oil", amount = 25 },
+    { type = "fluid", name = "light-oil", amount = 45 },
+    { type = "fluid", name = "petroleum-gas", amount = 55 },
+  },
+}
+
+recipes["coal-liquefaction"] = {
+  type = "recipe",
+  name = "coal-liquefaction",
+  category = "oil-processing",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "coal", amount = 10 },
+    { type = "fluid", name = "steam", amount = 50 },
+    { type = "fluid", name = "heavy-oil", amount = 25 },
+  },
+  results = {
+    { type = "fluid", name = "heavy-oil", amount = 90 },
+    { type = "fluid", name = "light-oil", amount = 20 },
+    { type = "fluid", name = "petroleum-gas", amount = 10 },
+  },
+}
+
+recipes["plastic-bar"] = {
+  type = "recipe",
+  name = "plastic-bar",
+  category = "chemistry",
+  enabled = false,
+  ingredients = {
+    { type = "fluid", name = "petroleum-gas", amount = 20 },
+    { type = "item", name = "coal", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "plastic-bar", amount = 2 },
+  },
+}
+
 recipes["sulfur"] = {
   type = "recipe",
   name = "sulfur",
@@ -393,6 +467,60 @@ recipes["sulfur"] = {
   },
   results = {
     { type = "item", name = "sulfur", amount = 2 },
+  },
+}
+
+recipes["sulfuric-acid"] = {
+  type = "recipe",
+  name = "sulfuric-acid",
+  category = "chemistry",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "iron-plate", amount = 1 },
+    { type = "item", name = "sulfur", amount = 5 },
+    { type = "fluid", name = "water", amount = 100 },
+  },
+  results = {
+    { type = "fluid", name = "sulfuric-acid", amount = 50 },
+  },
+}
+
+recipes["solid-fuel-from-heavy-oil"] = {
+  type = "recipe",
+  name = "solid-fuel-from-heavy-oil",
+  category = "chemistry",
+  enabled = false,
+  ingredients = {
+    { type = "fluid", name = "heavy-oil", amount = 20 },
+  },
+  results = {
+    { type = "item", name = "solid-fuel", amount = 1 },
+  },
+}
+
+recipes["solid-fuel-from-light-oil"] = {
+  type = "recipe",
+  name = "solid-fuel-from-light-oil",
+  category = "chemistry",
+  enabled = false,
+  ingredients = {
+    { type = "fluid", name = "light-oil", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "solid-fuel", amount = 1 },
+  },
+}
+
+recipes["solid-fuel-from-petroleum-gas"] = {
+  type = "recipe",
+  name = "solid-fuel-from-petroleum-gas",
+  category = "chemistry",
+  enabled = false,
+  ingredients = {
+    { type = "fluid", name = "petroleum-gas", amount = 20 },
+  },
+  results = {
+    { type = "item", name = "solid-fuel", amount = 1 },
   },
 }
 
@@ -772,12 +900,61 @@ test("operating-paperwork recipes batch refinery chemistry and centrifuging fami
   assert_eq(get_result_amount(oil, "light-oil"), 150, "oil-processing should batch light oil at 5x")
   assert_eq(get_result_amount(oil, "petroleum-gas"), 200, "oil-processing should batch petroleum gas at 5x")
 
+  local advanced_oil = get_recipe("advanced-oil-processing")
+  assert_true(advanced_oil ~= nil, "advanced-oil-processing missing")
+  assert_true(has_ingredient(advanced_oil, "chemical-handling-work-order"), "advanced-oil-processing missing chemical-handling-work-order")
+  assert_true(not has_ingredient(advanced_oil, "petrochemical-operating-permit"), "advanced-oil-processing should not use the basic petro permit")
+  assert_eq(get_ingredient_amount(advanced_oil, "crude-oil"), 500, "advanced-oil-processing should batch crude oil at 5x")
+  assert_eq(get_ingredient_amount(advanced_oil, "water"), 250, "advanced-oil-processing should batch water at 5x")
+  assert_eq(get_result_amount(advanced_oil, "petroleum-gas"), 275, "advanced-oil-processing should batch petroleum gas at 5x")
+
+  local coal_liq = get_recipe("coal-liquefaction")
+  assert_true(coal_liq ~= nil, "coal-liquefaction missing")
+  assert_true(has_ingredient(coal_liq, "chemical-handling-work-order"), "coal-liquefaction missing chemical-handling-work-order")
+  assert_true(not has_ingredient(coal_liq, "petrochemical-operating-permit"), "coal-liquefaction should not use the basic petro permit")
+  assert_eq(get_ingredient_amount(coal_liq, "coal"), 50, "coal-liquefaction should batch coal at 5x")
+  assert_eq(get_ingredient_amount(coal_liq, "steam"), 250, "coal-liquefaction should batch steam at 5x")
+  assert_eq(get_result_amount(coal_liq, "heavy-oil"), 450, "coal-liquefaction should batch heavy oil at 5x")
+
+  local plastic = get_recipe("plastic-bar")
+  assert_true(plastic ~= nil, "plastic-bar missing")
+  assert_true(has_ingredient(plastic, "petrochemical-operating-permit"), "plastic-bar missing petrochemical-operating-permit")
+  assert_true(not has_ingredient(plastic, "chemical-handling-work-order"), "plastic-bar should stay on the basic petro permit")
+  assert_eq(get_ingredient_amount(plastic, "petroleum-gas"), 200, "plastic-bar should batch petroleum gas at 10x")
+  assert_eq(get_result_amount(plastic, "plastic-bar"), 20, "plastic-bar should batch output at 10x")
+
   local sulfur = get_recipe("sulfur")
   assert_true(sulfur ~= nil, "sulfur missing")
-  assert_true(has_ingredient(sulfur, "chemical-handling-work-order"), "sulfur missing chemical-handling-work-order")
-  assert_true(not has_ingredient(sulfur, "petrochemical-operating-permit"), "sulfur should no longer use petrochemical-operating-permit")
+  assert_true(has_ingredient(sulfur, "petrochemical-operating-permit"), "sulfur missing petrochemical-operating-permit")
+  assert_true(not has_ingredient(sulfur, "chemical-handling-work-order"), "sulfur should stay on the basic petro permit")
   assert_eq(get_ingredient_amount(sulfur, "petroleum-gas"), 300, "sulfur should batch petroleum gas at 10x")
   assert_eq(get_result_amount(sulfur, "sulfur"), 20, "sulfur should batch output at 10x")
+
+  local sulfuric_acid = get_recipe("sulfuric-acid")
+  assert_true(sulfuric_acid ~= nil, "sulfuric-acid missing")
+  assert_true(has_ingredient(sulfuric_acid, "petrochemical-operating-permit"), "sulfuric-acid missing petrochemical-operating-permit")
+  assert_true(not has_ingredient(sulfuric_acid, "chemical-handling-work-order"), "sulfuric-acid should stay on the basic petro permit")
+  assert_eq(get_ingredient_amount(sulfuric_acid, "water"), 500, "sulfuric-acid should batch water at 5x")
+  assert_eq(get_result_amount(sulfuric_acid, "sulfuric-acid"), 250, "sulfuric-acid should batch output at 5x")
+
+  local solid_fuel_light = get_recipe("solid-fuel-from-light-oil")
+  assert_true(solid_fuel_light ~= nil, "solid-fuel-from-light-oil missing")
+  assert_true(has_ingredient(solid_fuel_light, "petrochemical-operating-permit"), "solid-fuel-from-light-oil missing petrochemical-operating-permit")
+  assert_true(not has_ingredient(solid_fuel_light, "chemical-handling-work-order"), "solid-fuel-from-light-oil should stay on the basic petro permit")
+  assert_eq(get_ingredient_amount(solid_fuel_light, "light-oil"), 50, "solid-fuel-from-light-oil should batch light oil at 5x")
+  assert_eq(get_result_amount(solid_fuel_light, "solid-fuel"), 5, "solid-fuel-from-light-oil should batch output at 5x")
+
+  local solid_fuel_heavy = get_recipe("solid-fuel-from-heavy-oil")
+  assert_true(solid_fuel_heavy ~= nil, "solid-fuel-from-heavy-oil missing")
+  assert_true(has_ingredient(solid_fuel_heavy, "petrochemical-operating-permit"), "solid-fuel-from-heavy-oil missing petrochemical-operating-permit")
+  assert_true(not has_ingredient(solid_fuel_heavy, "chemical-handling-work-order"), "solid-fuel-from-heavy-oil should stay on the basic petro permit")
+  assert_eq(get_ingredient_amount(solid_fuel_heavy, "heavy-oil"), 100, "solid-fuel-from-heavy-oil should batch heavy oil at 5x")
+
+  local solid_fuel_gas = get_recipe("solid-fuel-from-petroleum-gas")
+  assert_true(solid_fuel_gas ~= nil, "solid-fuel-from-petroleum-gas missing")
+  assert_true(has_ingredient(solid_fuel_gas, "petrochemical-operating-permit"), "solid-fuel-from-petroleum-gas missing petrochemical-operating-permit")
+  assert_true(not has_ingredient(solid_fuel_gas, "chemical-handling-work-order"), "solid-fuel-from-petroleum-gas should stay on the basic petro permit")
+  assert_eq(get_ingredient_amount(solid_fuel_gas, "petroleum-gas"), 100, "solid-fuel-from-petroleum-gas should batch petroleum gas at 5x")
 
   local uranium = get_recipe("uranium-processing")
   assert_true(uranium ~= nil, "uranium-processing missing")

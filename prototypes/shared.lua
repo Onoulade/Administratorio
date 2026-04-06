@@ -364,12 +364,37 @@ end
 -------------------------------------------------------------------------------
 -- MACHINE OPERATION PAPERWORK
 -- Recipe categories that do NOT use assembler work-orders.
+-- Most machine families are category-wide, but petroleum handling splits:
+-- baseline petrochem stays on the basic permit while advanced processing and
+-- more demanding chemistry step up to the chemical work order.
 -------------------------------------------------------------------------------
 shared.OPERATING_FORM_BY_CATEGORY = {
   ["oil-processing"] = "petrochemical-operating-permit",
   ["chemistry"] = "chemical-handling-work-order",
   ["centrifuging"] = "radiological-work-order",
 }
+
+shared.OPERATING_FORM_BY_RECIPE = {
+  ["plastic-bar"] = "petrochemical-operating-permit",
+  ["sulfur"] = "petrochemical-operating-permit",
+  ["sulfuric-acid"] = "petrochemical-operating-permit",
+  ["solid-fuel-from-heavy-oil"] = "petrochemical-operating-permit",
+  ["solid-fuel-from-light-oil"] = "petrochemical-operating-permit",
+  ["solid-fuel-from-petroleum-gas"] = "petrochemical-operating-permit",
+  ["advanced-oil-processing"] = "chemical-handling-work-order",
+  ["coal-liquefaction"] = "chemical-handling-work-order",
+}
+
+function shared.get_operating_form(recipe_or_name, category)
+  local recipe_name = recipe_or_name
+  if type(recipe_or_name) == "table" then
+    recipe_name = recipe_or_name.name
+    category = recipe_or_name.category
+  end
+
+  return shared.OPERATING_FORM_BY_RECIPE[recipe_name]
+    or shared.OPERATING_FORM_BY_CATEGORY[category or "crafting"]
+end
 
 -------------------------------------------------------------------------------
 -- TAXPAYER MONEY COSTS

@@ -224,7 +224,7 @@ end
 for _, recipe in pairs(data.raw["recipe"]) do
   if not shared.is_admin_recipe(recipe.name) then
     local cat = recipe.category or "crafting"
-    local operating_form = shared.OPERATING_FORM_BY_CATEGORY[cat]
+    local operating_form = shared.get_operating_form(recipe)
     if operating_form then
       add_ingredient_to_recipe(recipe.name, operating_form, 1)
 
@@ -714,7 +714,7 @@ end
 for name, recipe in pairs(data.raw["recipe"]) do
   if shared.is_admin_recipe(name) then goto next_operating_recipe end
 
-  local operating_form = shared.OPERATING_FORM_BY_CATEGORY[recipe.category or "crafting"]
+  local operating_form = shared.get_operating_form(recipe)
   if not operating_form then goto next_operating_recipe end
 
   local multiplier = get_recipe_batch_multiplier(name, recipe)

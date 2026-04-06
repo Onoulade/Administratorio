@@ -662,8 +662,22 @@ end)
 -- MACHINE OPERATION PAPERWORK
 -- =========================================================================
 
-test("oil-processing requires petrochemical-operating-permit", function()
-  assert_eq(shared.OPERATING_FORM_BY_CATEGORY["oil-processing"], "petrochemical-operating-permit")
+test("baseline oil-processing uses petrochemical-operating-permit", function()
+  assert_eq(shared.get_operating_form({name = "oil-processing", category = "oil-processing"}), "petrochemical-operating-permit")
+end)
+
+test("baseline petrochem recipes stay on petrochemical-operating-permit", function()
+  assert_eq(shared.get_operating_form({name = "plastic-bar", category = "chemistry"}), "petrochemical-operating-permit")
+  assert_eq(shared.get_operating_form({name = "sulfur", category = "chemistry"}), "petrochemical-operating-permit")
+  assert_eq(shared.get_operating_form({name = "sulfuric-acid", category = "chemistry"}), "petrochemical-operating-permit")
+  assert_eq(shared.get_operating_form({name = "solid-fuel-from-heavy-oil", category = "chemistry"}), "petrochemical-operating-permit")
+  assert_eq(shared.get_operating_form({name = "solid-fuel-from-light-oil", category = "chemistry"}), "petrochemical-operating-permit")
+  assert_eq(shared.get_operating_form({name = "solid-fuel-from-petroleum-gas", category = "chemistry"}), "petrochemical-operating-permit")
+end)
+
+test("advanced refining recipes use chemical-handling-work-order", function()
+  assert_eq(shared.get_operating_form({name = "advanced-oil-processing", category = "oil-processing"}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "coal-liquefaction", category = "oil-processing"}), "chemical-handling-work-order")
 end)
 
 test("chemistry requires chemical-handling-work-order", function()
@@ -677,21 +691,23 @@ end)
 test("operating paperwork chain: petro < chemical < radiological", function()
   local petro = get_recipe("petrochemical-operating-permit-production")
   assert_eq(petro.category, "bureaucracy-registration")
-  assert_true(has_ingredient(petro, "construction-permit"))
   assert_true(has_ingredient(petro, "safety-waiver"))
   assert_true(has_ingredient(petro, "environmental-impact-report"))
-  assert_true(has_ingredient(petro, "barrel"))
-  assert_true(has_ingredient(petro, "pipe"))
+  assert_true(not has_ingredient(petro, "construction-permit"))
+  assert_true(not has_ingredient(petro, "barrel"))
+  assert_true(not has_ingredient(petro, "pipe"))
+  assert_true(not has_ingredient(petro, "form-27b-6"))
   assert_true(not has_ingredient(petro, "ink"))
   assert_eq(get_result_amount(petro, "petrochemical-operating-permit"), 2)
 
   local chem = get_recipe("chemical-handling-work-order-production")
   assert_eq(chem.category, "bureaucracy-registration")
   assert_true(has_ingredient(chem, "petrochemical-operating-permit"), "chemical needs petro permit")
-  assert_true(has_ingredient(chem, "safety-waiver"), "chemical needs safety waiver")
-  assert_true(has_ingredient(chem, "construction-permit"), "chemical needs construction permit")
+  assert_true(has_ingredient(chem, "form-27b-6"), "chemical needs Form 27B-6")
   assert_true(has_ingredient(chem, "barrel"), "chemical needs barrel")
   assert_true(has_ingredient(chem, "pipe"), "chemical needs pipe")
+  assert_true(not has_ingredient(chem, "safety-waiver"), "chemical should inherit safety via petro permit")
+  assert_true(not has_ingredient(chem, "construction-permit"), "chemical should not need construction paperwork")
   assert_true(not has_ingredient(chem, "management-approval-verbal"))
   assert_true(not has_ingredient(chem, "ink"))
   assert_eq(get_result_amount(chem, "chemical-handling-work-order"), 2)
@@ -1225,10 +1241,8 @@ test("heavier vanilla integration anchors have exact ingredient counts", functio
     {"data-production", "advanced-circuit", 2},
     {"management-written-proposal", "advanced-circuit", 2},
     {"environmental-impact-report", "barrel", 1},
-    {"petrochemical-operating-permit-production", "barrel", 1},
-    {"petrochemical-operating-permit-production", "pipe", 2},
     {"chemical-handling-work-order-production", "barrel", 1},
-    {"chemical-handling-work-order-production", "pipe", 2},
+    {"chemical-handling-work-order-production", "pipe", 1},
     {"radiological-work-order-production", "battery", 1},
     {"radiological-work-order-production", "steel-plate", 2},
     {"white-paper-production", "paper", 10},
