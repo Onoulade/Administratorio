@@ -7,9 +7,16 @@
 local entity_graphics = "__administratorio__/graphics/entities/"
 local sound_path = "__administratorio__/sound/buildings/"
 
+local function placeable_by_item(name)
+  return {
+    {item = name, count = 1},
+  }
+end
+
 -- Mechanical Printer (T0 - early game)
 local mechanical_printer = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
 mechanical_printer.name = "mechanical-printer"
+mechanical_printer.placeable_by = placeable_by_item("mechanical-printer")
 mechanical_printer.next_upgrade = "printer-t1"
 mechanical_printer.icon = "__administratorio__/graphics/entities/mechanical-printer/icon.png"
 mechanical_printer.icon_size = 64
@@ -50,6 +57,7 @@ mechanical_printer.working_sound = {
 -- Printer T1: electric, printing
 local printer_t1 = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
 printer_t1.name = "printer-t1"
+printer_t1.placeable_by = placeable_by_item("printer-t1")
 printer_t1.icon = "__administratorio__/graphics/icons/mini-assembler-icon.png"
 printer_t1.icon_size = 64
 printer_t1.minable.result = "printer-t1"
@@ -75,6 +83,7 @@ printer_t1.working_sound = {
 -- Printer T2: electric, printing + printing-advanced
 local printer_t2 = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
 printer_t2.name = "printer-t2"
+printer_t2.placeable_by = placeable_by_item("printer-t2")
 printer_t2.icon = "__administratorio__/graphics/icons/steel-forge-icon.png"
 printer_t2.icon_size = 64
 printer_t2.minable.result = "printer-t2"

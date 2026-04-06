@@ -1,0 +1,234 @@
+-------------------------------------------------------------------------------
+-- ADMINISTRATORIO ENTITY PLACEABLE_BY TESTS
+--
+-- Verifies cloned custom entities point ghost construction back to the correct
+-- item instead of inheriting stale placement metadata from the vanilla
+-- prototype they were copied from.
+-------------------------------------------------------------------------------
+
+local passed, failed, errors = 0, 0, {}
+
+local function test(name, fn)
+  local ok, err = pcall(fn)
+  if ok then
+    passed = passed + 1
+  else
+    failed = failed + 1
+    errors[#errors + 1] = name .. ": " .. tostring(err)
+  end
+end
+
+local function assert_eq(actual, expected, msg)
+  if actual ~= expected then
+    error((msg or "") .. " - expected " .. tostring(expected) .. ", got " .. tostring(actual), 2)
+  end
+end
+
+local function assert_true(value, msg)
+  if not value then error(msg or "assertion failed", 2) end
+end
+
+data = {
+  raw = {
+    item = {},
+    ["assembling-machine"] = {
+      ["assembling-machine-1"] = {
+        type = "assembling-machine",
+        name = "assembling-machine-1",
+        minable = {result = "assembling-machine-1"},
+        placeable_by = {{item = "assembling-machine-1", count = 1}},
+        graphics_set = {},
+        fluid_boxes = {},
+      },
+      ["assembling-machine-2"] = {
+        type = "assembling-machine",
+        name = "assembling-machine-2",
+        minable = {result = "assembling-machine-2"},
+        placeable_by = {{item = "assembling-machine-2", count = 1}},
+        graphics_set = {},
+        fluid_boxes = {},
+      },
+      ["assembling-machine-3"] = {
+        type = "assembling-machine",
+        name = "assembling-machine-3",
+        minable = {result = "assembling-machine-3"},
+        placeable_by = {{item = "assembling-machine-3", count = 1}},
+        graphics_set = {},
+        fluid_boxes = {},
+      },
+      ["oil-refinery"] = {
+        type = "assembling-machine",
+        name = "oil-refinery",
+        minable = {result = "oil-refinery"},
+        placeable_by = {{item = "oil-refinery", count = 1}},
+        graphics_set = {},
+        fluid_boxes = {},
+      },
+      ["centrifuge"] = {
+        type = "assembling-machine",
+        name = "centrifuge",
+        minable = {result = "centrifuge"},
+        placeable_by = {{item = "centrifuge", count = 1}},
+        graphics_set = {},
+        fluid_boxes = {},
+      },
+    },
+    ["furnace"] = {},
+    ["pipe"] = {
+      pipe = {
+        type = "pipe",
+        name = "pipe",
+        minable = {result = "pipe"},
+        placeable_by = {{item = "pipe", count = 1}},
+        pictures = {},
+        fluid_box = {pipe_connections = {}},
+      },
+    },
+    ["pipe-to-ground"] = {
+      ["pipe-to-ground"] = {
+        type = "pipe-to-ground",
+        name = "pipe-to-ground",
+        minable = {result = "pipe-to-ground"},
+        placeable_by = {{item = "pipe-to-ground", count = 1}},
+        pictures = {},
+        fluid_box = {pipe_connections = {}},
+      },
+    },
+    ["container"] = {
+      ["steel-chest"] = {
+        type = "container",
+        name = "steel-chest",
+        inventory_size = 48,
+      },
+    },
+  },
+}
+
+function data:extend(prototypes)
+  for _, proto in ipairs(prototypes) do
+    data.raw[proto.type] = data.raw[proto.type] or {}
+    data.raw[proto.type][proto.name] = proto
+  end
+end
+
+util = {
+  table = {
+    deepcopy = function(tbl)
+      if type(tbl) ~= "table" then return tbl end
+      local copy = {}
+      for k, v in pairs(tbl) do
+        copy[util.table.deepcopy(k)] = util.table.deepcopy(v)
+      end
+      return setmetatable(copy, getmetatable(tbl))
+    end,
+  },
+  by_pixel = function(x, y)
+    return {x / 32, y / 32}
+  end,
+}
+
+if not table.deepcopy then
+  table.deepcopy = util.table.deepcopy
+end
+
+defines = {
+  direction = {
+    north = 0,
+    east = 2,
+    south = 4,
+    west = 6,
+  },
+}
+
+settings = {
+  startup = {
+    ["administratorio-enable-working-hours"] = {value = true},
+  },
+}
+
+universal_connector_template = {}
+circuit_connector_definitions = {
+  create_single = function(_, params)
+    return params
+  end,
+}
+
+function pipecoverspictures()
+  return {}
+end
+
+local mod_root = debug.getinfo(1, "S").source:match("@(.*/)")
+if mod_root then
+  mod_root = mod_root:gsub("Internal/tests/$", ""):gsub("tests/$", "")
+else
+  mod_root = "./"
+end
+package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
+
+dofile(mod_root .. "prototypes/item/buildings.lua")
+dofile(mod_root .. "prototypes/entity/admin-buildings.lua")
+dofile(mod_root .. "prototypes/entity/printers.lua")
+dofile(mod_root .. "prototypes/entity/pneumatic.lua")
+
+local function find_entity_prototype(name)
+  for proto_type, prototypes in pairs(data.raw) do
+    if proto_type ~= "item" and type(prototypes) == "table" then
+      local prototype = prototypes[name]
+      if prototype then
+        return prototype, proto_type
+      end
+    end
+  end
+  return nil, nil
+end
+
+local function entity_has_matching_placeable_item(entity, place_result)
+  if not entity or not entity.placeable_by then return false end
+  for _, entry in ipairs(entity.placeable_by) do
+    local item = entry.item and data.raw.item[entry.item]
+    if item and item.place_result == place_result then
+      return true
+    end
+  end
+  return false
+end
+
+test("every visible placeable building item resolves to a robot-buildable entity", function()
+  local checked = 0
+  for item_name, item in pairs(data.raw.item) do
+    if item.place_result and not item.hidden then
+      local entity, proto_type = find_entity_prototype(item.place_result)
+      assert_true(entity ~= nil, item_name .. " place_result " .. item.place_result .. " prototype missing")
+      assert_true(entity.placeable_by ~= nil, item_name .. " place_result " .. item.place_result .. " missing placeable_by on " .. tostring(proto_type))
+      assert_true(entity_has_matching_placeable_item(entity, item.place_result), item_name .. " place_result " .. item.place_result .. " cannot be built from any matching item")
+      checked = checked + 1
+    end
+  end
+  assert_true(checked > 0, "expected to check at least one placeable item")
+end)
+
+test("admin-station and its directional variants build from the canonical item", function()
+  for _, name in ipairs({"admin-station", "admin-station-north", "admin-station-east", "admin-station-west"}) do
+    local entity, proto_type = find_entity_prototype(name)
+    assert_true(entity ~= nil, name .. " prototype missing")
+    assert_true(entity.placeable_by ~= nil and entity.placeable_by[1] ~= nil, name .. " missing placeable_by on " .. tostring(proto_type))
+    assert_eq(entity.placeable_by[1].item, "admin-station", name .. " should build from the canonical admin-station item")
+  end
+end)
+
+test("legacy directional admin-station items are no longer placement sources", function()
+  assert_eq(data.raw.item["admin-station"].place_result, "admin-station", "admin-station should stay placeable")
+  assert_true(data.raw.item["admin-station-north"].place_result == nil, "admin-station-north should not remain placeable")
+  assert_true(data.raw.item["admin-station-east"].place_result == nil, "admin-station-east should not remain placeable")
+  assert_true(data.raw.item["admin-station-west"].place_result == nil, "admin-station-west should not remain placeable")
+end)
+
+if failed > 0 then
+  io.stderr:write("FAILED " .. failed .. " tests\n")
+  for _, err in ipairs(errors) do
+    io.stderr:write(" - " .. err .. "\n")
+  end
+  os.exit(1)
+else
+  print("OK (" .. passed .. " tests)")
+end

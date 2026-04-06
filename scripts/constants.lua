@@ -88,6 +88,7 @@ M.ZONE_DIR_NAMES = {
 M.ZONE_SAFE_TYPES = {
   ["character"] = true, ["unit"] = true, ["corpse"] = true, ["particle"] = true,
   ["projectile"] = true, ["smoke"] = true, ["explosion"] = true,
+  ["construction-robot"] = true, ["logistic-robot"] = true, ["combat-robot"] = true,
 }
 
 M.RETURN_WALK_DISTANCE = 200     -- how far resolved biters walk before despawning

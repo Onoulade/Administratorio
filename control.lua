@@ -77,6 +77,11 @@ local function normalize_player_admin_station_quickbar(player)
   end
 end
 
+local function freeze_admin_station_rotation(desk)
+  if not desk or not desk.valid then return end
+  desk.rotatable = false
+end
+
 local function connect_desk_combinator(desk, combinator)
   if not desk or not desk.valid or not combinator or not combinator.valid then return end
   local desk_red = desk.get_wire_connector(defines.wire_connector_id.circuit_red, true)
@@ -157,6 +162,7 @@ end
 local function normalize_admin_station_entity(desk, player)
   if not desk or not desk.valid then return nil end
   if desk.name == "admin-station" then
+    freeze_admin_station_rotation(desk)
     storage.admin_desks[desk.unit_number] = desk
     return desk
   end
@@ -190,6 +196,7 @@ local function normalize_admin_station_entity(desk, player)
   local new_desk = surface.create_entity(params)
   if not new_desk or not new_desk.valid then return desk end
 
+  freeze_admin_station_rotation(new_desk)
   migrate_desk_storage(old_desk_id, new_desk)
   storage.admin_desks[new_desk.unit_number] = new_desk
   ensure_desk_combinator(new_desk)
@@ -205,6 +212,7 @@ end
 
 local function refresh_cached_desk(desk)
   if not desk or not desk.valid then return nil end
+  freeze_admin_station_rotation(desk)
   storage.admin_desks[desk.unit_number] = desk
   zones.ensure_desk_runtime_state(desk)
   ensure_desk_combinator(desk)
@@ -601,14 +609,17 @@ local function on_entity_built_inner(event)
     local player = event.player_index and game.get_player(event.player_index)
     entity = normalize_admin_station_entity(entity, player) or entity
     if not entity or not entity.valid then return end
+    freeze_admin_station_rotation(entity)
 
     local surface = entity.surface
     local desk_id = entity.unit_number
     local bounds = zones.get_zone_bounds(entity.position)
     local footprint = zones.get_desk_footprint_bounds(entity.position)
+    local overlaps_existing = zones.zone_overlaps_existing(footprint, desk_id)
+    local area_clear = zones.zone_area_is_clear(surface, footprint, entity)
 
     -- Prevent overlap with other station footprints or existing buildings.
-    if zones.zone_overlaps_existing(footprint, desk_id) then
+    if overlaps_existing then
       if player then
         player.print("Cannot place here: administrative station footprint would overlap another station.")
         player.insert{name = "admin-station", count = 1, quality = entity.quality and entity.quality.name or nil}
@@ -617,7 +628,7 @@ local function on_entity_built_inner(event)
       return
     end
 
-    if not zones.zone_area_is_clear(surface, footprint, entity) then
+    if not area_clear then
       if player then
         player.print("Cannot place here: station footprint is blocked by terrain or buildings.")
         player.insert{name = "admin-station", count = 1, quality = entity.quality and entity.quality.name or nil}

@@ -117,6 +117,28 @@ else
 end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 
+local function load_locale_section(section_name)
+  local path = mod_root .. "locale/en/config.cfg"
+  local section = nil
+  local values = {}
+
+  for line in io.lines(path) do
+    local header = line:match("^%[([^%]]+)%]$")
+    if header then
+      section = header
+    elseif section == section_name then
+      local key, value = line:match("^([^=]+)=(.*)$")
+      if key then
+        values[key] = value
+      end
+    end
+  end
+
+  return values
+end
+
+local recipe_name_locale = load_locale_section("recipe-name")
+
 -- Load categories first (defines recipe-categories + sets up character)
 dofile(mod_root .. "prototypes/categories.lua")
 
@@ -1094,6 +1116,19 @@ test("only draft-backed work-order printing produces 2x output", function()
   assert_eq(get_result_amount(get_recipe("safety-work-order-printing"), "safety-work-order"), 2)
   assert_eq(get_result_amount(get_recipe("construction-work-order-printing"), "construction-work-order"), 2)
   assert_true(get_recipe("research-grant-work-order-printing") == nil, "research grant work orders should not have a direct printing shortcut")
+end)
+
+test("only printer recipes use Print in localized recipe names", function()
+  for name, recipe in pairs(recipes) do
+    local localized_name = recipe_name_locale[name]
+    if localized_name and localized_name:match("^Print ") then
+      local category = recipe.category or "crafting"
+      local is_printer_recipe = category == "printing"
+        or category == "printing-advanced"
+        or category == "printing-workorder"
+      assert_true(is_printer_recipe, name .. " is labeled as Print but uses " .. category)
+    end
+  end
 end)
 
 test("industrial printer copy recipes exist for every work-order family", function()

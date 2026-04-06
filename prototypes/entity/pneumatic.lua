@@ -7,6 +7,12 @@
 
 local pneumatic_tint = {r=0.85, g=0.75, b=0.55, a=1} -- manila/tan
 
+local function placeable_by_item(name)
+  return {
+    {item = name, count = 1},
+  }
+end
+
 -- Helper: tint all sprite layers in a pipe pictures table
 local function tint_pipe_pictures(pictures, tint)
   if not pictures then return end
@@ -36,6 +42,7 @@ end
 local pneumatic_pipe = table.deepcopy(data.raw["pipe"]["pipe"])
 pneumatic_pipe.name = "pneumatic-pipe"
 pneumatic_pipe.minable.result = "pneumatic-pipe"
+pneumatic_pipe.placeable_by = placeable_by_item("pneumatic-pipe")
 pneumatic_pipe.fast_replaceable_group = "pneumatic-pipe"
 pneumatic_pipe.icons = {{icon = "__base__/graphics/icons/pipe.png", icon_size = 64, tint = pneumatic_tint}}
 pneumatic_pipe.icon = nil
@@ -54,6 +61,7 @@ end
 local pneumatic_underground = table.deepcopy(data.raw["pipe-to-ground"]["pipe-to-ground"])
 pneumatic_underground.name = "pneumatic-pipe-to-ground"
 pneumatic_underground.minable.result = "pneumatic-pipe-to-ground"
+pneumatic_underground.placeable_by = placeable_by_item("pneumatic-pipe-to-ground")
 pneumatic_underground.fast_replaceable_group = "pneumatic-pipe-to-ground"
 pneumatic_underground.icons = {{icon = "__base__/graphics/icons/pipe-to-ground.png", icon_size = 64, tint = pneumatic_tint}}
 pneumatic_underground.icon = nil
@@ -83,6 +91,7 @@ local form_liquifier = {
   icon_size = 32,
   flags = {"placeable-neutral", "placeable-player", "player-creation"},
   minable = {mining_time = 0.2, result = "form-liquifier"},
+  placeable_by = placeable_by_item("form-liquifier"),
   fast_replaceable_group = "pneumatic-io",
   max_health = 200,
   corpse = "small-remnants",
@@ -144,6 +153,7 @@ local form_solidifier = {
   icon_size = 32,
   flags = {"placeable-neutral", "placeable-player", "player-creation"},
   minable = {mining_time = 0.2, result = "form-solidifier"},
+  placeable_by = placeable_by_item("form-solidifier"),
   fast_replaceable_group = "pneumatic-io",
   max_health = 200,
   corpse = "small-remnants",

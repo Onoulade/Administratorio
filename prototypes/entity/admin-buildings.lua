@@ -25,6 +25,12 @@ local function disabled_entity_description(key)
   return {"entity-description." .. key}
 end
 
+local function placeable_by_item(name)
+  return {
+    {item = name, count = 1},
+  }
+end
+
 local function tint_sprites(t, tint)
   if type(t) ~= "table" then return end
   if t.filename and not t.draw_as_shadow then
@@ -109,6 +115,7 @@ local admin_station_west = make_admin_station("admin-station-west")
 local resolution_office = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
 resolution_office.name = "resolution-office"
 resolution_office.minable.result = "resolution-office"
+resolution_office.placeable_by = placeable_by_item("resolution-office")
 resolution_office.next_upgrade = nil
 resolution_office.icon = nil
 resolution_office.icon_size = nil
@@ -136,6 +143,7 @@ resolution_office.working_sound = {
 local office_desk = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
 office_desk.name = "office-desk"
 office_desk.minable.result = "office-desk"
+office_desk.placeable_by = placeable_by_item("office-desk")
 office_desk.next_upgrade = nil
 office_desk.crafting_categories = {"bureaucracy-registration", "bureaucratic-bootstrap"}
 office_desk.crafting_speed = OFFICE_DESK_SPEED
@@ -173,6 +181,7 @@ office_desk.working_sound = {
 local greenhouse = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
 greenhouse.name = "greenhouse"
 greenhouse.minable.result = "greenhouse"
+greenhouse.placeable_by = placeable_by_item("greenhouse")
 greenhouse.next_upgrade = nil
 greenhouse.crafting_categories = {"admin-greenhouse"}
 greenhouse.module_slots = 2
@@ -217,6 +226,7 @@ greenhouse.working_sound = {
 local breakroom = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
 breakroom.name = "corporate-breakroom"
 breakroom.minable.result = "corporate-breakroom"
+breakroom.placeable_by = placeable_by_item("corporate-breakroom")
 breakroom.next_upgrade = nil
 breakroom.crafting_categories = {"watercooler-gossip"}
 breakroom.crafting_speed = BREAKROOM_SPEED
@@ -248,6 +258,7 @@ breakroom.working_sound = {
 local meeting = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
 meeting.name = "meeting-room"
 meeting.minable.result = "meeting-room"
+meeting.placeable_by = placeable_by_item("meeting-room")
 meeting.next_upgrade = nil
 meeting.icon = "__administratorio__/graphics/icons/meeting-room-icon.png"
 meeting.icon_size = 64
@@ -281,6 +292,7 @@ meeting.working_sound = {
 local union_hq = table.deepcopy(data.raw["assembling-machine"]["centrifuge"])
 union_hq.name = "union-headquarters"
 union_hq.minable.result = "union-headquarters"
+union_hq.placeable_by = placeable_by_item("union-headquarters")
 union_hq.next_upgrade = nil
 union_hq.crafting_categories = {"union-negotiation"}
 union_hq.crafting_speed = UNION_HQ_SPEED
@@ -388,6 +400,7 @@ local distillery_tint = {r=0.5, g=0.2, b=0.5, a=1.0}
 local propaganda_distillery = table.deepcopy(data.raw["assembling-machine"]["oil-refinery"])
 propaganda_distillery.name = "propaganda-distillery"
 propaganda_distillery.minable.result = "propaganda-distillery"
+propaganda_distillery.placeable_by = placeable_by_item("propaganda-distillery")
 propaganda_distillery.next_upgrade = nil
 propaganda_distillery.icon = nil
 propaganda_distillery.icon_size = nil
