@@ -151,6 +151,9 @@ circuit_connector_definitions = {
   create_single = function(_, params)
     return params
   end,
+  create_vector = function(_, params)
+    return params
+  end,
 }
 
 function pipecoverspictures()
@@ -221,6 +224,37 @@ test("legacy directional admin-station items are no longer placement sources", f
   assert_true(data.raw.item["admin-station-north"].place_result == nil, "admin-station-north should not remain placeable")
   assert_true(data.raw.item["admin-station-east"].place_result == nil, "admin-station-east should not remain placeable")
   assert_true(data.raw.item["admin-station-west"].place_result == nil, "admin-station-west should not remain placeable")
+end)
+
+test("office-desk circuit connector is shifted to the custom desk position", function()
+  local entity = assert(find_entity_prototype("office-desk"))
+  local connector = assert(entity.circuit_connector and entity.circuit_connector[1], "office-desk missing circuit connector override")
+  assert_eq(connector.main_offset[1], 96 / 32, "office-desk connector should sit 3 tiles east of center")
+  assert_eq(connector.main_offset[2], 32 / 32, "office-desk connector should sit 1 tile south of center")
+  assert_eq(connector.shadow_offset[1], 107 / 32, "office-desk connector shadow should follow east shift")
+  assert_eq(connector.shadow_offset[2], 38 / 32, "office-desk connector shadow should follow south shift")
+end)
+
+test("admin-station circuit connector is shifted to the custom desk position", function()
+  local entity = assert(find_entity_prototype("admin-station"))
+  local connector = assert(entity.circuit_connector, "admin-station missing circuit connector override")
+  assert_eq(connector.main_offset[1], 96 / 32, "admin-station connector should sit 3 tiles east of center")
+  assert_eq(connector.main_offset[2], 32 / 32, "admin-station connector should sit 1 tile south of center")
+  assert_eq(connector.shadow_offset[1], 100 / 32, "admin-station connector shadow should follow east shift")
+  assert_eq(connector.shadow_offset[2], 36 / 32, "admin-station connector shadow should follow south shift")
+end)
+
+test("admin-station hidden circuit helper matches the desk connector position", function()
+  local combinator = assert(find_entity_prototype("admin-station-combinator"))
+  local point = assert(combinator.circuit_wire_connection_points and combinator.circuit_wire_connection_points[1], "admin-station-combinator missing wire points")
+  assert_eq(point.wire.red[1], 104 / 32, "helper red wire should match desk connector x")
+  assert_eq(point.wire.red[2], 33 / 32, "helper red wire should match desk connector y")
+  assert_eq(point.wire.green[1], 106 / 32, "helper green wire should match desk connector x")
+  assert_eq(point.wire.green[2], 40 / 32, "helper green wire should match desk connector y")
+  assert_eq(point.shadow.red[1], 120 / 32, "helper red shadow should match desk connector shadow x")
+  assert_eq(point.shadow.red[2], 46 / 32, "helper red shadow should match desk connector shadow y")
+  assert_eq(point.shadow.green[1], 114 / 32, "helper green shadow should match desk connector shadow x")
+  assert_eq(point.shadow.green[2], 46 / 32, "helper green shadow should match desk connector shadow y")
 end)
 
 if failed > 0 then

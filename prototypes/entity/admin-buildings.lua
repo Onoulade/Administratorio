@@ -71,7 +71,7 @@ local admin_station_base = {
   fast_replaceable_group = "admin-station",
   circuit_connector = circuit_connector_definitions.create_single(
     universal_connector_template,
-    {variation = 26, main_offset = util.by_pixel(0, 96), shadow_offset = util.by_pixel(4, 100), show_shadow = true}
+    {variation = 26, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(100, 36), show_shadow = true}
   ),
   picture = {
     filename = "__core__/graphics/empty.png",
@@ -153,6 +153,15 @@ office_desk.allowed_effects = {"speed", "productivity", "consumption", "pollutio
 office_desk.localised_description = disabled_entity_description("office-desk-no-working-hours")
 office_desk.collision_box = {{-2.25, -2.25}, {2.25, 2.25}}
 office_desk.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
+office_desk.circuit_connector = circuit_connector_definitions.create_vector(
+  universal_connector_template,
+  {
+    {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+    {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+    {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+    {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+  }
+)
 office_desk.graphics_set = {
   animation = {
     layers = {
@@ -386,10 +395,10 @@ local admin_station_combinator = {
   },
   activity_led_light_offsets = {{0, 0}, {0, 0}, {0, 0}, {0, 0}},
   circuit_wire_connection_points = {
-    { wire = {red = {0, 3}, green = {0, 3}}, shadow = {red = {0.12, 3.12}, green = {0.12, 3.12}} },
-    { wire = {red = {0, 3}, green = {0, 3}}, shadow = {red = {0.12, 3.12}, green = {0.12, 3.12}} },
-    { wire = {red = {0, 3}, green = {0, 3}}, shadow = {red = {0.12, 3.12}, green = {0.12, 3.12}} },
-    { wire = {red = {0, 3}, green = {0, 3}}, shadow = {red = {0.12, 3.12}, green = {0.12, 3.12}} },
+    { wire = {red = util.by_pixel(104, 33), green = util.by_pixel(106, 40)}, shadow = {red = util.by_pixel(120, 46), green = util.by_pixel(114, 46)} },
+    { wire = {red = util.by_pixel(104, 33), green = util.by_pixel(106, 40)}, shadow = {red = util.by_pixel(120, 46), green = util.by_pixel(114, 46)} },
+    { wire = {red = util.by_pixel(104, 33), green = util.by_pixel(106, 40)}, shadow = {red = util.by_pixel(120, 46), green = util.by_pixel(114, 46)} },
+    { wire = {red = util.by_pixel(104, 33), green = util.by_pixel(106, 40)}, shadow = {red = util.by_pixel(120, 46), green = util.by_pixel(114, 46)} },
   },
   circuit_wire_max_distance = 9
 }
