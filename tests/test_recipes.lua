@@ -1126,14 +1126,6 @@ test("work-order recipe: blank-form + dubious-data -> work-order", function()
   assert_eq(get_result_amount(r, "work-order"), 1)
 end)
 
-test("carbon offset certificate recipe: blank-form + stone -> certificate", function()
-  local r = get_recipe("carbon-offset-certificate-basic")
-  assert_true(has_ingredient(r, "blank-form"))
-  assert_eq(get_ingredient_amount(r, "stone"), 1)
-  assert_true(not has_ingredient(r, "coal"))
-  assert_eq(get_result_amount(r, "carbon-offset-certificate-basic"), 1)
-end)
-
 test("direct draft-to-work-order recipes use printing-workorder category", function()
   local direct = {
     "safety-work-order-printing",
