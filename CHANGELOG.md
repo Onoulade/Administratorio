@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Fixed
+- Fixed transit permit chest placement at train stops. The chest now sits on the rail-adjacent tile before the stop in train direction, and existing stations migrate there from both overlapping and misaligned legacy positions on init/config-change.
+
 ## 0.2.6 - 2026-03-30
 
 ### Changed

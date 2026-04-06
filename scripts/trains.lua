@@ -1,5 +1,5 @@
 -- Train station transit permit logic (Visible Chest)
--- Auto-places a transit-permit-chest overlapping each train stop.
+-- Auto-places a transit-permit-chest just outside each train stop, on the rail-facing side.
 -- Destination Station requires a permit. Limit is equal to permits in chest.
 -- Train consumes one transit-authorization ON ARRIVAL at the station.
 
@@ -7,6 +7,97 @@ local M = {}
 
 local CHEST_NAME = "transit-permit-chest"
 local FORM_NAME = "transit-authorization"
+local CHEST_DEFAULT_OFFSET = {x = -0.5, y = 1.5}
+local CHEST_OFFSET_BY_DIRECTION = {
+    -- Train stops are 2x2. Put the chest on the rail-adjacent tile of the edge
+    -- the train reaches first, so it sits before the stop in travel direction.
+    [defines.direction.north] = {x = -0.5, y = 1.5},
+    [defines.direction.east] = {x = -1.5, y = -0.5},
+    [defines.direction.south] = {x = 0.5, y = -1.5},
+    [defines.direction.west] = {x = 1.5, y = 0.5},
+}
+
+local LEGACY_CHEST_OFFSET_BY_DIRECTION = {
+    -- 0.2.7 briefly moved the chest to the center of the rail-facing edge.
+    [defines.direction.north] = {x = -1, y = 0},
+    [defines.direction.east] = {x = 0, y = -1},
+    [defines.direction.south] = {x = 1, y = 0},
+    [defines.direction.west] = {x = 0, y = 1},
+}
+
+local function offset_position(position, offset)
+    return {
+        x = position.x + offset.x,
+        y = position.y + offset.y,
+    }
+end
+
+local function get_chest_position(station)
+    local offset = CHEST_OFFSET_BY_DIRECTION[station.direction] or CHEST_DEFAULT_OFFSET
+    return offset_position(station.position, offset)
+end
+
+local function get_legacy_chest_position(station)
+    local offset = LEGACY_CHEST_OFFSET_BY_DIRECTION[station.direction]
+    if not offset then
+        return nil
+    end
+    return offset_position(station.position, offset)
+end
+
+local function positions_match(a, b)
+    if not a or not b then return false end
+    return math.abs(a.x - b.x) < 0.001 and math.abs(a.y - b.y) < 0.001
+end
+
+local function find_chest_at_position(surface, position)
+    if not position then
+        return nil
+    end
+
+    return surface.find_entities_filtered{
+        name = CHEST_NAME,
+        position = position,
+        radius = 0.2
+    }[1]
+end
+
+local function find_existing_chest(station, target_position)
+    local known_station_data = storage.stations and storage.stations[station.unit_number]
+    if known_station_data and known_station_data.chest and known_station_data.chest.valid then
+        return known_station_data.chest
+    end
+
+    local chest = find_chest_at_position(station.surface, target_position)
+    if chest then
+        return chest
+    end
+
+    chest = find_chest_at_position(station.surface, get_legacy_chest_position(station))
+    if chest then
+        return chest
+    end
+
+    -- Legacy saves placed the chest directly on top of the stop.
+    return find_chest_at_position(station.surface, station.position)
+end
+
+local function move_chest_to_target(chest, target_position)
+    if not chest or not chest.valid or positions_match(chest.position, target_position) then
+        return chest
+    end
+
+    if chest.teleport then
+        local teleported = chest.teleport(target_position)
+        if teleported == false then
+            return nil
+        end
+    else
+        chest.position = {x = target_position.x, y = target_position.y}
+    end
+
+    return chest
+end
 
 -- Syncs a single station's train limit with its chest contents
 local function sync_station(station_data)
@@ -45,21 +136,21 @@ local function setup_station(station)
     if not station or not station.valid then return end
 
     storage.stations = storage.stations or {}
+    local chest_position = get_chest_position(station)
 
-    -- Check if a chest already exists (e.g., from ghost revival)
-    local chest = station.surface.find_entities_filtered{
-        name = CHEST_NAME,
-        position = station.position,
-        radius = 1
-    }[1]
+    -- Reuse an existing chest when possible so migrating old stations preserves contents.
+    local chest = find_existing_chest(station, chest_position)
 
     if not chest then
         chest = station.surface.create_entity{
             name = CHEST_NAME,
-            position = station.position,
+            position = chest_position,
+            direction = station.direction,
             force = station.force,
         }
     end
+
+    chest = move_chest_to_target(chest, chest_position)
 
     if chest then
         chest.destructible = false
