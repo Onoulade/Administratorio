@@ -12,11 +12,13 @@
 local feature_flags = require("feature_flags")
 local working_hours_enabled = feature_flags.working_hours_enabled()
 local entity_graphics = "__administratorio__/graphics/entities/"
+local scrubber_graphics = entity_graphics .. "scrubber/"
 local sound_path = "__administratorio__/sound/buildings/"
 local OFFICE_DESK_SPEED = working_hours_enabled and 0.75 or 0.5
 local BREAKROOM_SPEED = working_hours_enabled and 0.75 or 0.5
 local MEETING_SPEED = working_hours_enabled and 0.5 or 0.25
 local UNION_HQ_SPEED = working_hours_enabled and 1.5 or 1.0
+local SPRITTER_ANIMATION_SPEED = 1 / 3
 
 local function disabled_entity_description(key)
   if working_hours_enabled then
@@ -37,6 +39,41 @@ local function tint_sprites(t, tint)
     t.tint = tint
   end
   for _, v in pairs(t) do tint_sprites(v, tint) end
+end
+
+local function machine_animation_layer(filename, width, height, frame_count, line_length, shift, extra)
+  local layer = {
+    filename = filename,
+    priority = "high",
+    width = width,
+    height = height,
+    frame_count = frame_count,
+    line_length = line_length,
+    animation_speed = SPRITTER_ANIMATION_SPEED,
+    shift = shift,
+    scale = 0.5,
+  }
+
+  if extra then
+    for key, value in pairs(extra) do
+      layer[key] = value
+    end
+  end
+
+  return layer
+end
+
+local function machine_shadow_layer(filename, width, height, frame_count, shift)
+  return {
+    filename = filename,
+    priority = "high",
+    width = width,
+    height = height,
+    repeat_count = frame_count,
+    shift = shift,
+    draw_as_shadow = true,
+    scale = 0.5,
+  }
 end
 
 local ADMIN_STATION_PLACEABLE_BY = {
@@ -117,9 +154,9 @@ resolution_office.name = "resolution-office"
 resolution_office.minable.result = "resolution-office"
 resolution_office.placeable_by = placeable_by_item("resolution-office")
 resolution_office.next_upgrade = nil
-resolution_office.icon = nil
-resolution_office.icon_size = nil
-resolution_office.icons = {{icon = "__base__/graphics/icons/assembling-machine-1.png", icon_size = 64, tint = {r=0.9, g=0.3, b=0.3, a=1.0}}}
+resolution_office.icon = scrubber_graphics .. "base/scrubber-icon.png"
+resolution_office.icon_size = 64
+resolution_office.icons = nil
 resolution_office.crafting_categories = {"bureaucracy-resolution"}
 resolution_office.crafting_speed = 1.0
 resolution_office.energy_usage = "300kW"
@@ -128,7 +165,18 @@ resolution_office.allowed_effects = {"speed", "productivity", "consumption", "po
 resolution_office.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
 resolution_office.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
 local resolution_tint = {r=0.5, g=0.3, b=0.3, a=1.0}
-tint_sprites(resolution_office.graphics_set, resolution_tint)
+resolution_office.graphics_set = {
+  animation = {
+    layers = {
+      machine_animation_layer(scrubber_graphics .. "base/scrubber-animation.png", 210, 280, 60, 10, util.by_pixel(0, -10)),
+      machine_animation_layer(scrubber_graphics .. "base/scrubber-color1.png", 210, 280, 60, 10, util.by_pixel(0, -10), {
+        tint = resolution_tint,
+        tint_as_overlay = true,
+      }),
+      machine_shadow_layer(scrubber_graphics .. "base/scrubber-shadow.png", 400, 350, 60, util.by_pixel(16, 4)),
+    }
+  }
+}
 resolution_office.fluid_boxes = {
   { production_type = "input",  pipe_connections = {{ direction = defines.direction.north, position = {0, -1} }}, volume = 100 },
   { production_type = "input",  pipe_connections = {{ direction = defines.direction.south, position = {0, 1} }},  volume = 100 },
@@ -403,7 +451,6 @@ local admin_station_combinator = {
   circuit_wire_max_distance = 9
 }
 
--- 5x5 admin fluid refinery (lies, misinformation, slush fund, etc.)
 local distillery_tint = {r=0.5, g=0.2, b=0.5, a=1.0}
 
 local propaganda_distillery = table.deepcopy(data.raw["assembling-machine"]["oil-refinery"])

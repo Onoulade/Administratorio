@@ -69,6 +69,10 @@ Currently incompatible with Space Age and Quality. Requires Factorio 2.0. I'd lo
 
 One current caveat: the Working Hours shutdown is runtime logic, so planner mods like Factory Planner will currently mis-model those buildings unless you account for it manually. I do want to address this somehow, but there is no proper compatibility solution in place yet. If you prefer planner accuracy over the day/night mechanic, disable Working Hours in the startup settings.
 
+## Credits
+
+The **Resolution Office** scrubber art is by **Hurricane** ([Hurricane046 on the Factorio Mod Portal](https://mods.factorio.com/user/Hurricane046)).
+
 ---
 
 *Disclaimer: This mod was vibecoded by a real programmer that does not have enough free time to code himself, but it's still made with love and attention.*
