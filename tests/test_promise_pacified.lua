@@ -724,6 +724,52 @@ test("protesting biter resumes movement when a successful approach command ends 
   assert_true(entity.active == true, "protesting biter should stay active while resuming its approach")
 end)
 
+test("stale protest path callback ignores invalid target entities", function()
+  local ctx = new_test_context()
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 1, y = 1},
+    force = "neutral",
+  }
+  entity.unit_number = 21
+
+  local info = {
+    state = "protesting",
+    entity = entity,
+    entity_name = entity.name,
+    tracked_unit_number = 21,
+    pending_path_request_id = 55,
+    pending_protest_candidates = {
+      {
+        target = {
+          valid = false,
+          name = "office-desk",
+          position = {x = 7, y = 7},
+        },
+        pos = {x = 6, y = 6},
+      },
+    },
+  }
+  storage.waiting_biters[21] = info
+  ctx.state_sets.protesting[21] = true
+  storage.path_requests[55] = {
+    unit_number = 21,
+    kind = "protest_target",
+    candidate_index = 1,
+  }
+
+  game.tick = 200
+  ctx.controller.on_script_path_request_finished{
+    id = 55,
+    path = {},
+  }
+
+  assert_eq(storage.path_requests[55], nil, "completed path request should be cleared")
+  assert_eq(info.pending_path_request_id, nil, "stale path request should not stay pending")
+  assert_eq(info.pending_protest_candidates, nil, "invalid stale candidate should be discarded after callback")
+  assert_eq(info.next_protest_target_retry_tick, 200 + 5 * 60, "stale invalid candidate should fall back to the normal protest retry timer")
+end)
+
 print(string.format("\n=== PROMISE PACIFIED TESTS ==="))
 print(string.format("Passed: %d  Failed: %d  Total: %d", passed, failed, passed + failed))
 

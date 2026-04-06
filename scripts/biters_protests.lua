@@ -1419,7 +1419,7 @@ function M.new(deps)
       end
     end
 
-    if candidate and candidate.target then
+    if candidate and candidate.target and candidate.target.valid then
       log_protest_debug(entity, info, "rejected protest candidate " .. candidate.target.name
         .. " approach=" .. deps.format_position(candidate.pos)
         .. " path_nodes=" .. tostring(event.path and #event.path or 0))
