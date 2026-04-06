@@ -195,6 +195,16 @@ local function get_result_amount(recipe, item_name)
   return nil
 end
 
+local function get_result_probability(recipe, item_name)
+  if not recipe or not recipe.results then return nil end
+  for _, res in ipairs(recipe.results) do
+    if (res.name or res[1]) == item_name then
+      return res.probability
+    end
+  end
+  return nil
+end
+
 -------------------------------------------------------------------------------
 -- 3. TESTS
 -------------------------------------------------------------------------------
@@ -1025,6 +1035,20 @@ test("good-excuse has probabilistic office-drama byproduct", function()
     end
   end
   assert_true(found, "office-drama byproduct missing from good-excuse")
+end)
+
+test("office-drama recycling randomly returns gossip, excuses, and work orders", function()
+  local r = get_recipe("office-drama-recycling")
+  assert_eq(r.category, "watercooler-gossip")
+  assert_true(has_ingredient(r, "office-drama"))
+  assert_true(has_ingredient(r, "liquid-coffee"))
+  assert_eq(#r.results, 3)
+  assert_eq(get_result_amount(r, "work-order"), 1)
+  assert_eq(get_result_amount(r, "watercooler-gossip"), 1)
+  assert_eq(get_result_amount(r, "basic-excuse"), 1)
+  assert_eq(get_result_probability(r, "work-order"), 0.5)
+  assert_eq(get_result_probability(r, "watercooler-gossip"), 0.5)
+  assert_eq(get_result_probability(r, "basic-excuse"), 0.5)
 end)
 
 -- =========================================================================

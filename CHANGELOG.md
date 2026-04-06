@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Changed
+- `office-drama-recycling` now randomly feeds back into `work-order`, `watercooler-gossip`, and `basic-excuse` output instead of the broader salvage table.
+
 ## 0.2.8 - 2026-04-06
 
 ### Fixed

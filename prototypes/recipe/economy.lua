@@ -68,11 +68,9 @@ data:extend({
     subgroup = "admin-bs-economy", order = "z2",
     ingredients = {{type="item", name="office-drama", amount=3}, {type="fluid", name="liquid-coffee", amount=25}},
     results = {
-      {type="item", name="blank-form", amount=1, probability=0.5},
-      {type="item", name="dubious-data", amount=2, probability=0.6},
-      {type="item", name="basic-excuse", amount=1, probability=0.4},
-      {type="item", name="work-order", amount=1, probability=0.3},
-      {type="item", name="blank-approval", amount=1, probability=0.15},
+      {type="item", name="work-order", amount=1, probability=0.5},
+      {type="item", name="watercooler-gossip", amount=1, probability=0.5},
+      {type="item", name="basic-excuse", amount=1, probability=0.5},
     },
     energy_required = 6
   },
