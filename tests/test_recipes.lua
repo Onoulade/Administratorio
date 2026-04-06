@@ -759,6 +759,8 @@ test("all smelting-basic recipes require carbon-offset-certificate-basic", funct
     assert_eq(r.category, "smelting-basic", name .. " wrong category")
     assert_true(has_ingredient(r, "carbon-offset-certificate-basic"),
       name .. " missing carbon offset certificate")
+    assert_eq(r.ingredients[1].name, "carbon-offset-certificate-basic",
+      name .. " should list the certificate first")
   end
 end)
 
@@ -769,6 +771,8 @@ test("charcoal-production requires carbon offset", function()
   assert_true(has_ingredient(r, "wood"))
   assert_true(has_ingredient(r, "carbon-offset-certificate-basic"),
     "charcoal should need carbon offset")
+  assert_eq(r.ingredients[1].name, "carbon-offset-certificate-basic",
+    "charcoal should list the certificate first")
 end)
 
 test("batch smelting disables decomposition", function()

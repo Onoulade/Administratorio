@@ -842,6 +842,10 @@ test("smelting-basic keeps only explicit batch recipes", function()
   local batch = get_recipe("iron-plate-batch")
   assert_true(batch ~= nil, "iron-plate-batch missing")
   assert_eq(batch.category, "smelting-basic", "iron-plate-batch category")
+  assert_eq(batch.ingredients[1].name, "carbon-offset-certificate-basic",
+    "iron-plate-batch should list the carbon certificate first")
+  assert_eq(batch.ingredients[2].name, "iron-ore",
+    "iron-plate-batch should list the smelting input second")
   assert_true(has_ingredient(batch, "iron-ore"), "iron-plate-batch missing iron-ore")
   assert_true(has_ingredient(batch, "carbon-offset-certificate-basic"),
     "iron-plate-batch missing carbon-offset-certificate-basic")
