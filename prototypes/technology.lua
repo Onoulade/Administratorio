@@ -52,7 +52,7 @@ data:extend({
     order = "a-c"
   },
 
-  -- T1: ADMINISTRATIVE BUREAUCRACY (early wood bootstrap)
+  -- T1: ADMINISTRATIVE BUREAUCRACY (red-science wood bootstrap)
   {
     type = "technology", name = "administrative-bureaucracy",
     icon = tech_icons .. "administrative-bureaucracy.png", icon_size = 128,
@@ -60,8 +60,8 @@ data:extend({
       { type = "unlock-recipe", recipe = "greenhouse" },
       { type = "unlock-recipe", recipe = "greenhouse-wood" }
     },
-    prerequisites = {"printing-technology"},
-    unit = { count = 20, ingredients = {{"automation-science-pack", 1}, {"administrative-science-pack", 1}}, time = 15 },
+    prerequisites = {"automation", "discovery-redundant-rubble"},
+    unit = { count = 20, ingredients = {{"automation-science-pack", 1}}, time = 15 },
     order = "a"
   },
   -- LITTERING RESOLUTION (standalone — early complaint handling, red + admin only)

@@ -248,6 +248,11 @@ test("administrative bureaucracy owns only the early greenhouse wood bootstrap",
   assert_true(not tech_unlocks_recipe("administrative-bureaucracy", "filing-landscape"), "administrative-bureaucracy should not unlock landscape filing")
   assert_true(not tech_unlocks_recipe("administrative-bureaucracy", "landscape-final"), "administrative-bureaucracy should not unlock landscape resolution")
   assert_true(not tech_unlocks_recipe("administrative-bureaucracy", "greenhouse-discovery"), "administrative-bureaucracy should not unlock coffee discovery")
+  assert_true(tech_has_prereq("administrative-bureaucracy", "automation"), "administrative-bureaucracy should require automation for work-order-gated vanilla ingredients")
+  assert_true(not tech_has_prereq("administrative-bureaucracy", "printing-technology"), "administrative-bureaucracy should not require printing-technology")
+  assert_true(not tech_has_prereq("administrative-bureaucracy", "administrative-science-research"), "administrative-bureaucracy should not require administrative science research")
+  assert_true(tech_uses_pack("administrative-bureaucracy", "automation-science-pack"), "administrative-bureaucracy should still use automation science")
+  assert_true(not tech_uses_pack("administrative-bureaucracy", "administrative-science-pack"), "administrative-bureaucracy should not use administrative science")
 end)
 
 test("bootstrap paperwork is gated behind both discovery chains", function()
