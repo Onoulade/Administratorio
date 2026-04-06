@@ -968,50 +968,10 @@ inject_carbon_cert_to_boiler("boiler")
 inject_carbon_cert_to_boiler("boiler-regulated")
 
 -------------------------------------------------------------------------------
--- 5d. CERTIFIED STEEL FURNACE SMELTING
--- Steel furnaces run the certificate-gated smelting-basic category. Clone each
--- vanilla smelting recipe into a certified variant so steel furnaces can keep
--- using standard plate/brick recipes without sharing the electric-furnace path.
--------------------------------------------------------------------------------
-local certified_smelting_recipes = {}
-
-local function recipe_has_ingredient(recipe, item_name)
-  if not recipe or not recipe.ingredients then return false end
-  for _, ingredient in ipairs(recipe.ingredients) do
-    if (ingredient.name or ingredient[1]) == item_name then
-      return true
-    end
-  end
-  return false
-end
-
-for name, recipe in pairs(data.raw["recipe"]) do
-  if recipe.category == "smelting" and not name:find("%-certified$") then
-    local certified = table.deepcopy(recipe)
-    certified.name = name .. "-certified"
-    certified.category = "smelting-basic"
-    certified.localised_name = recipe.localised_name or {"recipe-name." .. name}
-    certified.localised_description = recipe.localised_description or {"recipe-description." .. name}
-    certified.hide_from_player_crafting = true
-    certified.allow_as_intermediate = false
-    certified.allow_decomposition = false
-
-    local target = certified.normal or certified
-    if target.ingredients and not recipe_has_ingredient(target, "carbon-offset-certificate-basic") then
-      table.insert(target.ingredients, {type = "item", name = "carbon-offset-certificate-basic", amount = 1})
-    end
-
-    if certified.normal and certified.expensive and certified.expensive.ingredients
-      and not recipe_has_ingredient(certified.expensive, "carbon-offset-certificate-basic") then
-      table.insert(certified.expensive.ingredients, {type = "item", name = "carbon-offset-certificate-basic", amount = 1})
-    end
-
-    certified_smelting_recipes[#certified_smelting_recipes + 1] = certified
-  end
-end
-
-data:extend(certified_smelting_recipes)
-
+-- 5d. SMELTING RECIPE CLEANUP
+-- Furnaces should only expose the explicit batch-smelting recipes in
+-- smelting-basic. Do not clone vanilla unbatched smelting recipes into that
+-- category, or the furnace UI shows duplicate plate/brick options.
 -------------------------------------------------------------------------------
 -- 6. HANDCRAFTING VISIBILITY EXCEPTIONS
 -- Keep late vanilla recipes visible as unavailable, but hide special machine-

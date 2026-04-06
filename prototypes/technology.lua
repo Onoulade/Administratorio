@@ -625,10 +625,10 @@ add_tech_unlock("electronics", "office-desk")
 -- their prerequisite paperwork exists.
 add_tech_unlock("discovery-redundant-rubble", "admin-station")
 add_tech_unlock("discovery-redundant-rubble", "resolution-office")
+add_tech_unlock("discovery-redundant-rubble", "promise-production")
 
 -- Early paperwork that consumes bootstrap resources should unlock only after
 -- the matching discovery chain is in play.
-add_tech_unlock("printing-technology", "promise-production")
 add_tech_unlock("discovery-redundant-rubble", "filing-landscape")
 add_tech_unlock("discovery-bullshit", "landscape-final")
 add_tech_prerequisite("printing-technology", "discovery-bullshit")

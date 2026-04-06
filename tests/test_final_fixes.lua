@@ -838,15 +838,16 @@ test("equipment recipes default to 1x except solar panels and batteries", functi
     "exoskeleton-equipment should not show a 1x overlay")
 end)
 
-test("smelting recipes get certified steel-furnace variants", function()
-  local r = get_recipe("iron-plate-certified")
-  assert_true(r ~= nil, "iron-plate-certified missing")
-  assert_eq(r.category, "smelting-basic", "iron-plate-certified category")
-  assert_true(has_ingredient(r, "iron-ore"), "iron-plate-certified missing iron-ore")
-  assert_true(has_ingredient(r, "carbon-offset-certificate-basic"),
-    "iron-plate-certified missing carbon-offset-certificate-basic")
-  assert_eq(r.hide_from_player_crafting, true, "iron-plate-certified should be hidden from player crafting")
-  assert_eq(r.allow_decomposition, false, "iron-plate-certified should disable decomposition")
+test("smelting-basic keeps only explicit batch recipes", function()
+  local batch = get_recipe("iron-plate-batch")
+  assert_true(batch ~= nil, "iron-plate-batch missing")
+  assert_eq(batch.category, "smelting-basic", "iron-plate-batch category")
+  assert_true(has_ingredient(batch, "iron-ore"), "iron-plate-batch missing iron-ore")
+  assert_true(has_ingredient(batch, "carbon-offset-certificate-basic"),
+    "iron-plate-batch missing carbon-offset-certificate-basic")
+
+  local certified = get_recipe("iron-plate-certified")
+  assert_true(certified == nil, "iron-plate-certified should not exist")
 end)
 
 test("electric furnace recipe upgrades to management verbal paperwork", function()
