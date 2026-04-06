@@ -2,8 +2,22 @@
 
 ## Unreleased
 
+## 0.2.7 - 2026-04-06
+
+### Added
+- Replaced the Resolution Office placeholder visuals with dedicated scrubber art.
+
+### Changed
+- Split oil-chain operating paperwork into clearer tiers: `petrochemical-operating-permit` now covers baseline refinery startup and simple petrochem, while `chemical-handling-work-order` handles chemical plants, advanced oil processing, coal liquefaction, and heavier chemistry.
+- Moved `promise-production` to `discovery-redundant-rubble`, making Bureaucratic Promises available with the first complaint-desk bootstrap instead of waiting for printing tech.
+- Restored a civilian cliff-clearing path: `cliff-explosives` no longer depends on military tech or grenades, but still requires `explosives` and explicit construction paperwork.
+
 ### Fixed
 - Fixed transit permit chest placement at train stops. The chest now sits on the rail-adjacent tile before the stop in train direction, and existing stations migrate there from both overlapping and misaligned legacy positions on init/config-change.
+- Fixed protesting biters getting stranded on removed or invalid protest targets. They now immediately retarget to another reachable building, and protest alerts wait until arrival instead of firing on abandoned path attempts.
+- Fixed robot, blueprint, and paste placement metadata across custom buildings and pneumatic entities so construction robots consistently use the canonical item/entity pairings.
+- Fixed admin station and office desk circuit connector alignment, and now lock the admin station's runtime rotation so its footprint and wiring stay consistent.
+- Fixed `smelting-basic` furnace UI duplication by keeping that category limited to the explicit batch-smelting recipes instead of cloning vanilla single-output smelting recipes into it.
 
 ## 0.2.6 - 2026-03-30
 
