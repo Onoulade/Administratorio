@@ -17,6 +17,7 @@ Detailed planet breakdowns live in:
 - [Gleba Plan](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-gleba-plan.md)
 - [Fulgora Plan](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-fulgora-plan.md)
 - [Aquilo Plan](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-aquilo-plan.md)
+- [Public Finance Plan](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-public-finance-plan.md)
 
 ## Current Code Constraints
 
@@ -58,6 +59,20 @@ The intended expansion spine is:
 7. Reach Aquilo for transfer-media printing and late high-speed bureaucracy.
 
 This keeps the mod centered on documents, offices, queues, and logistics instead of combat reskins.
+
+## Interstellar Public Finance
+
+The current preferred money model is:
+
+- raw `taxpayer-money` stays mostly sovereign to Nauvis
+- the player should be able to export only small amounts directly, ideally through `money-case`
+- offworld infrastructure should mostly consume compact derivatives such as `treasury-bond`, `government-grant`, and a dedicated `offworld-allocation`
+- local planet paperwork loops should avoid raw `taxpayer-money` in their first self-sufficient stage
+- large late-game money income should come from redeeming imported offworld goods and claims on Nauvis, not from printing raw cash in space
+
+This gives money a central role in interstellar travel without turning every planet into a raw-cash sink.
+
+The detailed candidate system lives in [space-age-public-finance-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-public-finance-plan.md).
 
 ## Shared Printing Model
 
@@ -360,6 +375,10 @@ These are the current required multi-use intermediates.
 - `thermal-transfer-sheet`
 - `composite-chroma-ribbon`
 - `cryo-form-stock`
+- `money-case`
+- `offworld-allocation`
+- `cargo-manifest`
+- `customs-appraisal`
 
 Each of these should have at least three meaningful uses, with at least one offworld or late-game use.
 

@@ -41,6 +41,7 @@ Because of that, Aquilo is allowed to assume:
 - the player already has `Chromatic Printer`
 - imported `cyan-ink`, `yellow-ink`, and `magenta-ink` exist somewhere in the interplanetary network
 - faxing foreign forms is now a real strategic option
+- raw `taxpayer-money` should not be the normal way to sustain Aquilo print throughput
 
 Aquilo should still have one local raw resource and one local building reward, but it is intentionally the first place where mixed-planet paperwork becomes normal instead of optional.
 
@@ -162,6 +163,7 @@ Aquilo exports should matter everywhere:
 
 - Aquilo can intentionally depend on earlier planets because it is not part of the any-order basic trio.
 - The `Laser Printer` must be much faster than other printers, but it must not steal the Notary Office's recipe space.
+- Aquilo should consume transfer media and imported chromatic materials, not piles of raw cash.
 - `thermal-transfer-sheet` should be common enough that the player actually uses the machine, while `composite-chroma-ribbon` should stay premium enough to preserve the value of imported CMY.
 - `advanced-chemistry-license` should be meaningful for `advanced chemical plant`, but still one-time or build-time only.
 

@@ -39,6 +39,7 @@ That means:
 
 - no Vulcanus or Fulgora resource is required to start
 - local paperwork must be reconstructable without coal-derived black ink
+- the first self-sufficient Gleba loop should not require raw `taxpayer-money`
 - the enemy answer must exist entirely inside the Gleba loop once the player has `Chromatic Printer`
 
 The intended bootstrap is:
@@ -190,6 +191,7 @@ Gleba exports should matter everywhere:
 ## Balance Notes
 
 - The `Conciliation Desk` must stay one-slot and slow.
+- Gleba core paperwork should stay essentially cashless once the local yellow loop is running.
 - Gleba should give a powerful shortcut, not infinite free eggs or free recruited workforce.
 - `Voluntary Workforce Reassignment` should be strong enough to justify importing spores to Nauvis, but weaker in bulk than solving the normal complaint economy well.
 - Rotten eggs must remain dangerous enough that the player still cares about containment.
