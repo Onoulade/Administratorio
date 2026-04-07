@@ -290,20 +290,20 @@ breakroom.crafting_speed = BREAKROOM_SPEED
 breakroom.module_slots = 3
 breakroom.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
 breakroom.localised_description = disabled_entity_description("corporate-breakroom-no-working-hours")
-breakroom.collision_box = {{-3.25, -3.25}, {3.25, 3.25}}
-breakroom.selection_box = {{-3.5, -3.5}, {3.5, 3.5}}
+breakroom.collision_box = {{-2.25, -2.25}, {2.25, 2.25}}
+breakroom.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
 breakroom.icon = "__administratorio__/graphics/icons/warehouse-icon.png"
 breakroom.icon_size = 64
 breakroom.graphics_set = {
   animation = {
     layers = {
-      { filename = entity_graphics .. "corporate-breakroom/warehouse-1.png", priority = "high", width = 319, height = 328, frame_count = 1, scale = 0.7, shift = {0, -0.1} },
+      { filename = entity_graphics .. "corporate-breakroom/warehouse-1.png", priority = "high", width = 319, height = 328, frame_count = 1, scale = 0.5, shift = {0, -0.1} },
     }
   }
 }
 breakroom.fluid_boxes = {
-  { production_type = "input",  pipe_connections = {{ direction = defines.direction.north, position = {0, -3} }}, volume = 100 },
-  { production_type = "output", pipe_connections = {{ direction = defines.direction.south, position = {0, 3} }},  volume = 100 },
+  { production_type = "input",  pipe_connections = {{ flow_direction = "input", direction = defines.direction.north, position = {0, -2} }}, volume = 100 },
+  { production_type = "output", pipe_connections = {{ flow_direction = "output", direction = defines.direction.south, position = {0, 2} }},  volume = 100 },
 }
 breakroom.fluid_boxes_off_when_no_fluid_recipe = true
 breakroom.working_sound = {
