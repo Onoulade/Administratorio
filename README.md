@@ -70,7 +70,7 @@ One current caveat: the Working Hours shutdown is runtime logic, so planner mods
 
 ## Credits
 
-The **Resolution Office** scrubber art is by **Hurricane** ([Hurricane046 on the Factorio Mod Portal](https://mods.factorio.com/user/Hurricane046)).
+The **Resolution Office** scrubber art and **Propaganda Distillery** art are by **Hurricane** ([Hurricane046](https://mods.factorio.com/user/Hurricane046)).
 
 ---
 
