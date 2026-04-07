@@ -6,7 +6,7 @@ data:extend({
     type = "item-group",
     name = "admin-paperwork-group",
     order = "za",
-    icon = item_icons .. "office-building.png",
+    icon = item_icons .. "blank-form.png",
     icon_size = 64
   },
   {
