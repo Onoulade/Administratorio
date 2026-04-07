@@ -746,6 +746,16 @@ local function has_icon_layer(recipe, icon_path)
   return false
 end
 
+local function get_icon_layer(recipe, icon_path)
+  if not recipe or not recipe.icons then return nil end
+  for _, layer in ipairs(recipe.icons) do
+    if layer.icon == icon_path then
+      return layer
+    end
+  end
+  return nil
+end
+
 -------------------------------------------------------------------------------
 -- 3. TESTS
 -------------------------------------------------------------------------------
@@ -788,6 +798,16 @@ test("paper and ink get regulated AM recipes", function()
   assert_eq(ink.category, "crafting-regulated", "ink-regulated category")
   assert_true(has_ingredient(ink, "work-order"), "ink-regulated missing work-order")
   assert_eq(ink.enabled, true, "ink-regulated should stay enabled from start")
+end)
+
+test("ink regulated recipe icon matches the base item icon", function()
+  local ink = get_recipe("ink-regulated")
+  assert_true(ink ~= nil, "ink-regulated missing")
+  assert_true(ink.icons ~= nil, "ink-regulated should use layered icons")
+
+  local base_layer = get_icon_layer(ink, "__administratorio__/graphics/icons/ink-cartridge.png")
+  assert_true(base_layer ~= nil, "ink-regulated should use the ink cartridge base icon")
+  assert_true(base_layer.tint == nil, "ink-regulated should not apply the item's prototype tint to the recipe icon")
 end)
 
 test("repair-pack gets a bulked regulated AM recipe", function()

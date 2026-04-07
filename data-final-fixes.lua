@@ -513,7 +513,6 @@ local function clone_icon_layers(prototype)
       icon = prototype.icon,
       icon_size = prototype.icon_size or 64,
       icon_mipmaps = prototype.icon_mipmaps,
-      tint = prototype.tint,
     }}
   end
   return nil
