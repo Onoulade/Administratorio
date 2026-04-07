@@ -178,6 +178,17 @@ local function get_ingredient_amount(recipe, item_name)
   return nil
 end
 
+local function count_fluid_ingredients(recipe)
+  if not recipe or not recipe.ingredients then return 0 end
+  local count = 0
+  for _, ing in ipairs(recipe.ingredients) do
+    if ing.type == "fluid" then
+      count = count + 1
+    end
+  end
+  return count
+end
+
 local function get_result_name(recipe)
   if recipe.results and recipe.results[1] then
     return recipe.results[1].name or recipe.results[1][1]
@@ -620,6 +631,28 @@ test("meeting-room requires management-approval-verbal and government-grant", fu
   assert_true(has_ingredient(r, "taxpayer-money"))
   assert_true(has_ingredient(r, "advanced-circuit"))
   assert_true(has_ingredient(r, "steel-plate"))
+end)
+
+test("meeting-room policy recipes stay within its two fluid inputs", function()
+  for _, recipe_name in ipairs({
+    "white-paper-production",
+    "policy-production",
+    "regulation-production",
+  }) do
+    local recipe = get_recipe(recipe_name)
+    assert_true(recipe ~= nil, recipe_name .. " missing")
+    assert_true(count_fluid_ingredients(recipe) <= 2,
+      recipe_name .. " exceeds the meeting-room two-fluid limit")
+    assert_true(not has_ingredient(recipe, "slush-fund"),
+      recipe_name .. " should no longer require slush-fund")
+  end
+end)
+
+test("white-paper now uses a treasury-bond instead of slush-fund", function()
+  local r = get_recipe("white-paper-production")
+  assert_true(has_ingredient(r, "treasury-bond"))
+  assert_eq(get_ingredient_amount(r, "treasury-bond"), 1)
+  assert_true(not has_ingredient(r, "slush-fund"))
 end)
 
 -- =========================================================================
@@ -1326,6 +1359,7 @@ test("heavier vanilla integration anchors have exact ingredient counts", functio
     {"radiological-work-order-production", "steel-plate", 2},
     {"white-paper-production", "paper", 10},
     {"white-paper-production", "processing-unit", 1},
+    {"white-paper-production", "treasury-bond", 1},
     {"policy-production", "processing-unit", 2},
     {"regulation-production", "processing-unit", 3},
     {"case-smog", "coal", 2},

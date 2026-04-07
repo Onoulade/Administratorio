@@ -242,6 +242,27 @@ test("propaganda-distillery uses a symmetric four-port refinery layout", functio
   end
 end)
 
+test("meeting-room exposes exactly two fluid inputs for policy work", function()
+  local entity = data.raw["assembling-machine"]["meeting-room"]
+  assert_true(entity ~= nil, "meeting-room prototype missing")
+  assert_true(entity.fluid_boxes ~= nil, "meeting-room fluid boxes missing")
+  assert_eq(#entity.fluid_boxes, 2, "meeting-room should expose exactly two pipe connections")
+
+  local expected = {
+    {"input", defines.direction.north, 0, -3},
+    {"input", defines.direction.south, 0, 3},
+  }
+
+  for index, spec in ipairs(expected) do
+    local fluid_box = entity.fluid_boxes[index]
+    assert_eq(fluid_box.production_type, spec[1], "unexpected production type for fluid box " .. index)
+    assert_true(fluid_box.pipe_connections ~= nil and fluid_box.pipe_connections[1] ~= nil, "missing pipe connection for fluid box " .. index)
+    assert_eq(fluid_box.pipe_connections[1].direction, spec[2], "unexpected direction for fluid box " .. index)
+    assert_eq(fluid_box.pipe_connections[1].position[1], spec[3], "unexpected x position for fluid box " .. index)
+    assert_eq(fluid_box.pipe_connections[1].position[2], spec[4], "unexpected y position for fluid box " .. index)
+  end
+end)
+
 test("legacy directional admin-station items are no longer placement sources", function()
   assert_eq(data.raw.item["admin-station"].place_result, "admin-station", "admin-station should stay placeable")
   assert_true(data.raw.item["admin-station-north"].place_result == nil, "admin-station-north should not remain placeable")
