@@ -451,23 +451,133 @@ local admin_station_combinator = {
   circuit_wire_max_distance = 9
 }
 
-local distillery_tint = {r=0.5, g=0.2, b=0.5, a=1.0}
+local distillery_graphics = entity_graphics .. "propaganda-distillery/"
+local distillery_scale = 0.525
+local distillery_shift = util.by_pixel(5, -5)
+
+local function distillery_animation_layer(filename, extra)
+  local merged = { scale = distillery_scale }
+  if extra then
+    for key, value in pairs(extra) do
+      merged[key] = value
+    end
+  end
+  return machine_animation_layer(distillery_graphics .. filename, 340, 340, 64, 8, distillery_shift, merged)
+end
+
+local function distillery_color_layer(filename, extra)
+  local merged = { scale = distillery_scale }
+  if extra then
+    for key, value in pairs(extra) do
+      merged[key] = value
+    end
+  end
+  return machine_animation_layer(distillery_graphics .. filename, 270, 310, 64, 8, distillery_shift, merged)
+end
 
 local propaganda_distillery = table.deepcopy(data.raw["assembling-machine"]["oil-refinery"])
 propaganda_distillery.name = "propaganda-distillery"
 propaganda_distillery.minable.result = "propaganda-distillery"
 propaganda_distillery.placeable_by = placeable_by_item("propaganda-distillery")
 propaganda_distillery.next_upgrade = nil
-propaganda_distillery.icon = nil
-propaganda_distillery.icon_size = nil
-propaganda_distillery.icons = {{icon = "__base__/graphics/icons/oil-refinery.png", icon_size = 64, tint = distillery_tint}}
+propaganda_distillery.icon = distillery_graphics .. "base/fuel-refinery-icon.png"
+propaganda_distillery.icon_size = 64
+propaganda_distillery.icons = nil
 propaganda_distillery.crafting_categories = {"propaganda-distillery"}
 propaganda_distillery.crafting_speed = 1.0
 propaganda_distillery.energy_usage = "250kW"
 propaganda_distillery.module_slots = 4
 propaganda_distillery.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+propaganda_distillery.collision_box = {{-2.4, -2.4}, {2.4, 2.4}}
+propaganda_distillery.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
 propaganda_distillery.fluid_boxes_off_when_no_fluid_recipe = true
-tint_sprites(propaganda_distillery.graphics_set, distillery_tint)
+
+local inherited_distillery_pipe_picture = nil
+if propaganda_distillery.fluid_boxes and propaganda_distillery.fluid_boxes[1] then
+  inherited_distillery_pipe_picture = table.deepcopy(propaganda_distillery.fluid_boxes[1].pipe_picture)
+end
+
+propaganda_distillery.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_picture = table.deepcopy(inherited_distillery_pipe_picture),
+    pipe_connections = {{ direction = defines.direction.west, position = {-2, -1} }},
+    volume = 1000,
+  },
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_picture = table.deepcopy(inherited_distillery_pipe_picture),
+    pipe_connections = {{ direction = defines.direction.west, position = {-2, 1} }},
+    volume = 1000,
+  },
+  {
+    production_type = "output",
+    pipe_covers = pipecoverspictures(),
+    pipe_picture = table.deepcopy(inherited_distillery_pipe_picture),
+    pipe_connections = {{ direction = defines.direction.east, position = {2, -1} }},
+    volume = 1000,
+  },
+  {
+    production_type = "output",
+    pipe_covers = pipecoverspictures(),
+    pipe_picture = table.deepcopy(inherited_distillery_pipe_picture),
+    pipe_connections = {{ direction = defines.direction.east, position = {2, 1} }},
+    volume = 1000,
+  },
+}
+
+propaganda_distillery.graphics_set = {
+  animation = {
+    layers = {
+      distillery_animation_layer("base/fuel-refinery-animation.png"),
+      {
+        filename = distillery_graphics .. "base/fuel-refinery-shadow.png",
+        priority = "high",
+        width = 600,
+        height = 500,
+        frame_count = 1,
+        repeat_count = 64,
+        shift = distillery_shift,
+        draw_as_shadow = true,
+        scale = distillery_scale,
+      },
+    },
+  },
+  frozen_patch = {
+    layers = {
+      distillery_animation_layer("base/fuel-refinery-frozen.png"),
+    },
+  },
+  working_visualisations = {
+    {
+      always_draw = true,
+      apply_recipe_tint = "primary",
+      animation = distillery_color_layer("color/fuel-refinery-color2.png"),
+    },
+    {
+      always_draw = true,
+      fadeout = true,
+      constant_speed = true,
+      apply_recipe_tint = "secondary",
+      animation = distillery_animation_layer("base/fuel-refinery-emission1.png", {
+        blend_mode = "additive",
+        draw_as_glow = true,
+      }),
+    },
+    {
+      always_draw = true,
+      fadeout = true,
+      constant_speed = true,
+      apply_recipe_tint = "tertiary",
+      animation = distillery_animation_layer("base/fuel-refinery-emission2.png", {
+        blend_mode = "additive",
+        draw_as_glow = true,
+      }),
+    },
+  },
+}
 
 -- Transit Permit Chest: visible 1x1 chest auto-placed next to train stops
 local transit_permit_chest = table.deepcopy(data.raw["container"]["steel-chest"])

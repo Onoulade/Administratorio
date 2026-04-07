@@ -987,6 +987,22 @@ test("slush-fund-production uses propaganda-distillery", function()
   assert_true(has_ingredient(r, "treasury-bond"))
 end)
 
+test("propaganda-distillery recipes define crafting machine tints", function()
+  for _, recipe_name in ipairs({
+    "slush-fund-production",
+    "politician-fluid-refining",
+    "misinformation-production",
+    "justification-production",
+  }) do
+    local recipe = get_recipe(recipe_name)
+    assert_true(recipe.crafting_machine_tint ~= nil, recipe_name .. " missing crafting_machine_tint")
+    assert_true(recipe.crafting_machine_tint.primary ~= nil, recipe_name .. " missing primary tint")
+    assert_true(recipe.crafting_machine_tint.secondary ~= nil, recipe_name .. " missing secondary tint")
+    assert_true(recipe.crafting_machine_tint.tertiary ~= nil, recipe_name .. " missing tertiary tint")
+    assert_true(recipe.crafting_machine_tint.quaternary ~= nil, recipe_name .. " missing quaternary tint")
+  end
+end)
+
 test("taxpayer money costs defined for late-game buildings", function()
   assert_eq(shared.TAXPAYER_MONEY_COSTS["roboport"], 25)
   assert_eq(shared.TAXPAYER_MONEY_COSTS["beacon"], 30)
