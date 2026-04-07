@@ -3,6 +3,12 @@ local M = {}
 function M.new(deps)
   local controller = {}
 
+  local function distance_sq(a, b)
+    local dx = a.x - b.x
+    local dy = a.y - b.y
+    return dx * dx + dy * dy
+  end
+
   local function get_render_object(render_ref)
     if not render_ref then return nil end
     if type(render_ref) == "number" then
@@ -355,11 +361,21 @@ function M.new(deps)
 
         local last_sound_tick = storage.protest_alert_sound_tick_by_player[player.index] or -math.huge
         if game.tick - last_sound_tick >= deps.protest_alert_sound_cooldown_ticks then
-          player.play_sound{
-            path = deps.protest_alert_sound_path,
-            volume_modifier = 0.9,
-          }
-          storage.protest_alert_sound_tick_by_player[player.index] = game.tick
+          local player_surface = player.physical_surface or player.surface
+          local player_position = player.physical_position or player.position
+          local max_distance = deps.protest_alert_sound_max_distance or 32
+          local within_hearing_range = player_surface == alert_entity.surface
+            and player_position ~= nil
+            and distance_sq(player_position, alert_entity.position) <= max_distance * max_distance
+
+          if within_hearing_range then
+            player.play_sound{
+              path = deps.protest_alert_sound_path,
+              position = alert_entity.position,
+              volume_modifier = 0.9,
+            }
+            storage.protest_alert_sound_tick_by_player[player.index] = game.tick
+          end
         end
 
         info.protest_alerted_players[player.index] = true

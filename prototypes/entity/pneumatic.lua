@@ -6,6 +6,7 @@
 -------------------------------------------------------------------------------
 
 local pneumatic_tint = {r=0.85, g=0.75, b=0.55, a=1} -- manila/tan
+local pneumatic_sound_path = "__administratorio__/sound/pneumatic/"
 
 local function placeable_by_item(name)
   return {
@@ -143,6 +144,10 @@ local form_liquifier = {
       pipe_connections = {{direction = defines.direction.north, flow_direction = "output", position = {0, 0}, connection_category = "pneumatic-forms"}},
     },
   },
+  working_sound = {
+    sound = { filename = pneumatic_sound_path .. "pneumatic-send.ogg", volume = 0.32 },
+    idle_sound = { filename = "__base__/sound/idle1.ogg" },
+  },
 }
 
 -- Form Solidifier (outtake): furnace that converts pneumatic fluids -> items
@@ -204,6 +209,10 @@ local form_solidifier = {
       pipe_covers = pipecoverspictures(),
       pipe_connections = {{direction = defines.direction.north, flow_direction = "input", position = {0, 0}, connection_category = "pneumatic-forms"}},
     },
+  },
+  working_sound = {
+    sound = { filename = pneumatic_sound_path .. "pneumatic-receive.ogg", volume = 0.3 },
+    idle_sound = { filename = "__base__/sound/idle1.ogg" },
   },
 }
 

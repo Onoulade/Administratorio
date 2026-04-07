@@ -37,6 +37,7 @@ local function new_render_context()
   local added_alerts = 0
   local removed_alerts = 0
   local played_sounds = 0
+  local last_sound_spec = nil
 
   local function new_object(kind, params)
     next_id = next_id + 1
@@ -98,14 +99,16 @@ local function new_render_context()
     valid = true,
     index = 1,
     force = force,
+    physical_position = {x = 11, y = 10},
     remove_alert = function()
       removed_alerts = removed_alerts + 1
     end,
     add_custom_alert = function()
       added_alerts = added_alerts + 1
     end,
-    play_sound = function()
+    play_sound = function(sound_spec)
       played_sounds = played_sounds + 1
+      last_sound_spec = sound_spec
     end,
   }
 
@@ -126,6 +129,7 @@ local function new_render_context()
     end,
     log_prefix = "[Administratorio] ",
     protest_alert_sound_cooldown_ticks = 60,
+    protest_alert_sound_max_distance = 32,
     protest_alert_sound_path = "administratorio-protest-alert",
     protest_map_tag_text = "PROTEST",
     protest_slogans = {
@@ -139,6 +143,7 @@ local function new_render_context()
   })
 
   local surface = {name = "nauvis"}
+  player.physical_surface = surface
   local target = {
     valid = true,
     name = "office-desk",
@@ -173,6 +178,9 @@ local function new_render_context()
     get_added_alerts = function() return added_alerts end,
     get_removed_alerts = function() return removed_alerts end,
     get_played_sounds = function() return played_sounds end,
+    get_last_sound_spec = function() return last_sound_spec end,
+    player = player,
+    surface = surface,
   }
 end
 
@@ -244,6 +252,27 @@ test("arrived protests alert players and create a map tag", function()
   assert_eq(ctx.get_added_alerts(), 1, "arrived protest should add a custom alert")
   assert_eq(ctx.get_played_sounds(), 1, "arrived protest should play the protest siren once")
   assert_eq(ctx.get_chart_tag_count(), 1, "arrived protest should create a map tag")
+  assert_eq(ctx.get_last_sound_spec().path, "administratorio-protest-alert", "arrived protest should play the configured protest alert sound")
+  assert_eq(ctx.get_last_sound_spec().position, ctx.target.position, "arrived protest sound should originate at the protest position")
+end)
+
+test("arrived protests stay silent for players far away", function()
+  local ctx = new_render_context()
+  local info = {
+    state = "protesting",
+    entity = ctx.entity,
+    target_building = ctx.target,
+    arrived_at_building = true,
+    complaints = {"ticket-landscape"},
+  }
+
+  ctx.player.physical_position = {x = 200, y = 200}
+  game.tick = 120
+  ctx.controller.notify_players_of_protest(info)
+
+  assert_eq(ctx.get_added_alerts(), 1, "far-away players should still receive the protest alert")
+  assert_eq(ctx.get_played_sounds(), 0, "far-away players should not hear the protest sound")
+  assert_eq(ctx.get_chart_tag_count(), 1, "far-away players should still get the protest map tag")
 end)
 
 print(("Protest rendering tests: %d passed, %d failed"):format(passed, failed))

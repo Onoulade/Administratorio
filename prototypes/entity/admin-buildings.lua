@@ -183,7 +183,7 @@ resolution_office.fluid_boxes = {
 }
 resolution_office.fluid_boxes_off_when_no_fluid_recipe = true
 resolution_office.working_sound = {
-  sound = { filename = sound_path .. "stamp.ogg", volume = 0.6 },
+  sound = { filename = sound_path .. "resolution-signoff.ogg", volume = 0.55 },
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
 
@@ -230,7 +230,7 @@ office_desk.fluid_boxes = {
 }
 office_desk.fluid_boxes_off_when_no_fluid_recipe = true
 office_desk.working_sound = {
-  sound = { filename = sound_path .. "office-loop.ogg", volume = 0.5 },
+  sound = { filename = sound_path .. "office-paperwork.ogg", volume = 0.48 },
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
 
@@ -307,7 +307,13 @@ breakroom.fluid_boxes = {
 }
 breakroom.fluid_boxes_off_when_no_fluid_recipe = true
 breakroom.working_sound = {
-  sound = { filename = sound_path .. "coffee-machine.ogg", volume = 0.5 },
+  sound = {
+    allow_random_repeat = true,
+    variations = {
+      { filename = sound_path .. "breakroom-gossip.ogg", volume = 0.42 },
+      { filename = sound_path .. "coffee-machine.ogg", volume = 0.34 },
+    },
+  },
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
 
@@ -341,7 +347,17 @@ meeting.fluid_boxes = {
 }
 meeting.fluid_boxes_off_when_no_fluid_recipe = true
 meeting.working_sound = {
-  sound = { filename = sound_path .. "people-talking.ogg", volume = 0.4 },
+  sound = {
+    allow_random_repeat = true,
+    variations = {
+      { filename = sound_path .. "meeting-calm.ogg", volume = 0.28 },
+      { filename = sound_path .. "meeting-debate.ogg", volume = 0.34 },
+      { filename = sound_path .. "meeting-argument-inside.ogg", volume = 0.27 },
+      { filename = sound_path .. "meeting-argument-2.ogg", volume = 0.26 },
+      { filename = sound_path .. "meeting-argument-3.ogg", volume = 0.26 },
+      { filename = sound_path .. "meeting-argument-1.ogg", volume = 0.24 },
+    },
+  },
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
 
@@ -374,7 +390,14 @@ union_hq.fluid_boxes = {
 }
 union_hq.fluid_boxes_off_when_no_fluid_recipe = true
 union_hq.working_sound = {
-  sound = { filename = sound_path .. "office-ambience-loop.ogg", volume = 0.4 },
+  sound = {
+    allow_random_repeat = true,
+    variations = {
+      { filename = sound_path .. "union-office-ambience.ogg", volume = 0.36 },
+      { filename = sound_path .. "office-ambience-a.ogg", volume = 0.34 },
+      { filename = sound_path .. "office-ambience-b.ogg", volume = 0.34 },
+    },
+  },
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
 
