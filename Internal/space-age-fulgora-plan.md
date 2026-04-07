@@ -40,6 +40,7 @@ That means:
 
 - no Vulcanus or Gleba resource is required to start
 - its core paperwork family cannot rely on local black ink
+- the first self-sufficient Fulgora loop should not require raw `taxpayer-money`
 - the first usable fax loop must work with only Nauvis plus Fulgora infrastructure
 
 The intended bootstrap is:
@@ -173,6 +174,7 @@ Fulgora exports should matter everywhere:
 ## Balance Notes
 
 - Faxing should never replace ships for buildings, fluids, or bulk cargo.
+- Fulgora core paperwork should remain mostly cashless once magenta routes are running locally.
 - The receiver should not be the throughput bottleneck by itself; connected printers should still matter.
 - `signal-allocation-directive` should feel like a meaningful build-time document for `electromagnetic assembler`, not a recurring annoyance.
 - Archive recovery should be useful but not so random that it skips the main paperwork progression.
