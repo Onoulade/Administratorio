@@ -8,10 +8,10 @@ data:extend({
   { type = "item", name = "useless-documentation", icon = item_icons .. "useless-documentation.png", icon_size = 64, subgroup = "admin-raw", order = "b3", stack_size = 100 },
   { type = "item", name = "refined-nonsense", icon = item_icons .. "regulation.png",    icon_size = 64, subgroup = "admin-raw", order = "b4", stack_size = 100, tint = {r=0.7, g=0.3, b=0.6} },
 
-  -- Intermediates (vanilla intermediate-products group)
-  { type = "item", name = "paper",            icon = item_icons .. "paper.png",         icon_size = 64, subgroup = "admin-intermediate", order = "a", stack_size = 200 },
-  { type = "item", name = "ink",              icon = item_icons .. "ink-cartridge.png",  icon_size = 64, subgroup = "admin-intermediate", order = "b", stack_size = 100, tint = {r=0.2, g=0.2, b=0.3} },
-  { type = "item", name = "coffee-bean",      icon = item_icons .. "coffee-bean.png",   icon_size = 32, subgroup = "admin-intermediate", order = "c", stack_size = 500 },
+  -- Core administrative supplies
+  { type = "item", name = "paper",            icon = item_icons .. "paper.png",         icon_size = 64, subgroup = "admin-paper-supplies", order = "a", stack_size = 200 },
+  { type = "item", name = "ink",              icon = item_icons .. "ink-cartridge.png",  icon_size = 64, subgroup = "admin-paper-supplies", order = "b", stack_size = 100, tint = {r=0.2, g=0.2, b=0.3} },
+  { type = "item", name = "coffee-bean",      icon = item_icons .. "coffee-bean.png",   icon_size = 32, subgroup = "admin-paper-supplies", order = "c", stack_size = 500 },
   -- BS Economy Intermediaries
   { type = "item", name = "dubious-data",       icon = item_icons .. "dubious-data.png",       icon_size = 64, subgroup = "admin-bs-economy", order = "a", stack_size = 100 },
   { type = "item", name = "basic-excuse",       icon = item_icons .. "basic-excuse.png",       icon_size = 64, subgroup = "admin-bs-economy", order = "b", stack_size = 100 },

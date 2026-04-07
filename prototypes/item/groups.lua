@@ -40,11 +40,13 @@ data:extend({
 -- Subgroups (Logistics/Admin Group)
 data:extend({
   { type = "item-subgroup", name = "admin-raw",            group = "admin-logistics-group", order = "a" },
-  { type = "item-subgroup", name = "admin-bs-economy",     group = "admin-logistics-group", order = "b" },
-  { type = "item-subgroup", name = "admin-fluids",         group = "admin-logistics-group", order = "c" },
-  { type = "item-subgroup", name = "admin-money",          group = "admin-logistics-group", order = "d" },
+  { type = "item-subgroup", name = "admin-paper-supplies", group = "admin-logistics-group", order = "b" },
+  { type = "item-subgroup", name = "admin-bs-economy",     group = "admin-logistics-group", order = "c" },
+  { type = "item-subgroup", name = "admin-fluids",         group = "admin-logistics-group", order = "d" },
+  { type = "item-subgroup", name = "admin-money",          group = "admin-logistics-group", order = "e" },
   { type = "item-subgroup", name = "admin-infrastructure", group = "admin-logistics-group", order = "f" },
   { type = "item-subgroup", name = "admin-buildings",      group = "admin-logistics-group", order = "g" },
+  { type = "item-subgroup", name = "admin-printers",       group = "admin-logistics-group", order = "h" },
 })
 
 -- Admin intermediate subgroup in vanilla intermediate-products group

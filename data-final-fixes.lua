@@ -986,6 +986,75 @@ for name, recipe in pairs(data.raw["recipe"]) do
 end
 
 -------------------------------------------------------------------------------
+-- 6a. ADMIN RECIPE UI ORDERING
+-- Align recipe row/ordering with produced item/fluid so crafting panes remain
+-- consistent with handcraft inventory rows.
+-------------------------------------------------------------------------------
+local ADMIN_RECIPE_UI_EXTRAS = {
+  ["paper-production"] = true,
+  ["ink-production"] = true,
+}
+
+local function recipe_primary_product_name(recipe)
+  if not recipe then return nil end
+
+  if recipe.main_product ~= nil and recipe.main_product ~= "" then
+    return recipe.main_product
+  end
+
+  local level = recipe.normal or recipe
+  if level.main_product ~= nil and level.main_product ~= "" then
+    return level.main_product
+  end
+
+  if recipe.result then return recipe.result end
+  if level.result then return level.result end
+
+  local results = level.results or recipe.results
+  if results and results[1] then
+    return results[1].name or results[1][1]
+  end
+
+  return nil
+end
+
+local function product_sort_data(product_name)
+  if not product_name then return nil end
+
+  local item = find_item_like_prototype(product_name)
+  if item then return item end
+
+  return (data.raw.fluid and data.raw.fluid[product_name]) or nil
+end
+
+for _, recipe in pairs(data.raw["recipe"] or {}) do
+  if shared.is_admin_recipe(recipe.name) or ADMIN_RECIPE_UI_EXTRAS[recipe.name] then
+    local needs_subgroup = recipe.subgroup == nil
+    local needs_order = recipe.order == nil
+    if needs_subgroup or needs_order then
+      local product_name = recipe_primary_product_name(recipe)
+      local sort_data = product_sort_data(product_name)
+      if sort_data then
+        if needs_subgroup then
+          recipe.subgroup = sort_data.subgroup
+        end
+
+        if needs_order then
+          local base_order = sort_data.order or product_name or recipe.name
+          if recipe.name:find("^copy%-") then
+            recipe.order = base_order .. "-y[copy]"
+          elseif recipe.name:find("%-regulated$") then
+            recipe.order = base_order .. "-z[regulated]"
+          else
+            recipe.order = base_order
+          end
+        end
+      end
+    end
+  end
+end
+
+-------------------------------------------------------------------------------
 -- 7. PNEUMATIC FORM TRANSPORT — FLUID & RECIPE GENERATION
 -- Auto-generates a fluid + liquify/solidify recipe pair for every paperwork item.
 -- These fluids flow through pneumatic pipes (connection_category = "pneumatic-forms")

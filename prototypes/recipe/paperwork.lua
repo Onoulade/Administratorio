@@ -7,7 +7,7 @@ data:extend({
       { icon = "__administratorio__/graphics/icons/paper.png", icon_size = 64 },
       { icon = "__base__/graphics/icons/plastic-bar.png", icon_size = 64, scale = 0.35, shift = {8, 8} },
     },
-    subgroup = "admin-intermediate", order = "a1",
+    subgroup = "admin-paper-supplies", order = "a1",
     ingredients = {{type="item", name="plastic-bar", amount=2}, {type="item", name="sulfur", amount=1}, {type="fluid", name="water", amount=50}},
     results = {{type="item", name="paper", amount=20}},
     energy_required = 4
