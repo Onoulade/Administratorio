@@ -1,585 +1,475 @@
 # Space Age Compatibility Plan
 
-This document organizes candidate Space Age ideas for Administratorio and evaluates them against the mod's current implementation.
+This is the current canonical Space Age design plan for Administratorio.
 
-It is intentionally blunt. Some ideas are strong thematic fits but poor architectural fits unless the complaint runtime is simplified first.
+It replaces older brainstorm versions and normalizes the current direction around:
 
-## Current Baseline
+- CMY bureaucracy: `cyan-ink`, `yellow-ink`, `magenta-ink`
+- no fourth ink color on Aquilo
+- one raw resource per planet
+- one upgraded administrative building per planet
+- any-order access for Vulcanus, Gleba, and Fulgora
+- faxing as remote reconstruction rather than teleportation
 
-Space Age compatibility is currently blocked at the dependency level in [`info.json`](~/.codex/worktrees/35bf/administratorio/info.json) with `! space-age`.
+Detailed planet breakdowns live in:
 
-The current mod architecture also has three important constraints:
+- [Vulcanus Plan](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-vulcanus-plan.md)
+- [Gleba Plan](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-gleba-plan.md)
+- [Fulgora Plan](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-fulgora-plan.md)
+- [Aquilo Plan](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-aquilo-plan.md)
+
+## Current Code Constraints
+
+Space Age is currently blocked in [`info.json`](~/Library/Application Support/factorio/mods/administratorio/info.json) by `! space-age`.
+
+The current mod architecture also imposes three important limits:
 
 1. Complaint handling is runtime-heavy.
-   Each biter at a desk is a live tracked unit with state, frustration, protest logic, desk slot reservation, and an in-memory complaint list. This lives mainly in [`scripts/biters.lua`](~/.codex/worktrees/35bf/administratorio/scripts/biters.lua) and [`scripts/biters_protests.lua`](~/.codex/worktrees/35bf/administratorio/scripts/biters_protests.lua).
+   Waiting biters, protests, frustration, desk reservations, and complaint inventories are tracked in Lua in [biters.lua](~/Library/Application Support/factorio/mods/administratorio/scripts/biters.lua) and [biters_protests.lua](~/Library/Application Support/factorio/mods/administratorio/scripts/biters_protests.lua).
+2. The admin desk is inventory-constrained.
+   The main station inventory is only 20 slots in [admin-buildings.lua](~/Library/Application Support/factorio/mods/administratorio/prototypes/entity/admin-buildings.lua), and it currently mixes complaint items, outputs, and payout.
+3. Resolution is item-matching, not case-aware.
+   The current runtime consumes one matching resolved item against one complaint item. It does not understand bundles, reserved outputs, or multi-target routing.
 
-2. The admin station is both inbox and payout chest.
-   The desk only has `inventory_size = 20` in [`prototypes/entity/admin-buildings.lua`](~/.codex/worktrees/35bf/administratorio/prototypes/entity/admin-buildings.lua), and that inventory currently stores complaint tickets, resolved items, and taxpayer payout.
+These constraints are why the Space Age direction should stay item-heavy and avoid multiplying live complaint state.
 
-3. Resolution matching is item-by-item, not case-based.
-   [`scripts/biters.lua`](~/.codex/worktrees/35bf/administratorio/scripts/biters.lua) removes one matching complaint from one waiting biter for each `resolved-*` item found in the desk chest. There is no notion of a bundled case file, reservation token, or per-biter output channel.
+## Locked Design Rules
 
-Those three constraints should drive every Space Age decision.
+These are the current non-negotiable rules.
 
-## Design Goals
+- No intermediate item should exist for only one recipe, except in a very rare joke or quest exception.
+- Each planet gets exactly one new raw resource, item or fluid.
+- Each planet gets exactly one upgraded administrative building with value outside its home planet.
+- Vulcanus, Gleba, and Fulgora must be visitable in any order.
+- Vanilla Space Age native buildings do not consume recurring work orders on their native recipe families.
+- Planet-specific recipes require matching planet-specific paperwork and the appropriate chromatic inputs.
+- Aquilo does not add a fourth ink color. The only primary bureaucratic colors are `cyan`, `yellow`, and `magenta`.
 
-1. Preserve the mod's identity.
-   Space Age content should still feel like bureaucracy replacing violence, not vanilla combat with paperwork layered on top.
+## Shared Progression Spine
 
-2. Prefer itemized logistics over bespoke runtime AI.
-   New content should mostly be recipes, buildings, technologies, and logistics items. New "live creature state machines" should be rare.
+The intended expansion spine is:
 
-3. Avoid planet-specific one-off control logic unless the loop is exceptional enough to justify it.
+1. Unlock `Chromatic Printing`.
+2. Visit any of `Vulcanus`, `Gleba`, or `Fulgora`.
+3. Rebuild local paperwork through that planet's own chromatic route.
+4. Export each planet's special intermediate and upgraded office building.
+5. Build the fax network.
+6. Convert recruited enemies into training, management, and orbital logistics.
+7. Reach Aquilo for transfer-media printing and late high-speed bureaucracy.
 
-4. Keep interplanetary gameplay paperwork-centric.
-   Faxing, permits, archives, office satellites, astronaut clerks, and cross-planet form routing are all strong fits.
+This keeps the mod centered on documents, offices, queues, and logistics instead of combat reskins.
 
-## Executive Review Of The Proposed Ideas
+## Shared Printing Model
 
-| Idea | Theme fit | Implementation fit | Feasibility | Recommendation |
-| --- | --- | --- | --- | --- |
-| Enroll biters as workers through complaint resolution | Very high | Medium-low | Medium | Keep, but redesign around deterministic conversion outputs |
-| Train enrolled biters into astronauts | High | Medium | Medium-high | Keep |
-| Space office crafting paperwork in space | Very high | High | High | Keep, likely core Space Age loop |
-| Non-weapon asteroid solution | High | Unknown | Medium-low | Keep only after picking a concrete logistics-based mechanic |
-| Pay demolishers with taxpayer money on Vulcanus | Very high | Medium | Medium | Keep, but make it building-driven rather than floor-item gimmick |
-| Gleba complaints arrive in rapid rot bursts | High | Low | Low-medium | Rework heavily before implementation |
-| Gleba forms rot into regular paper | High | High | High | Keep |
-| Fulgora archive salvage yields random forms | Very high | High | High | Keep |
-| Planet-specific inks and universal fax network | Very high | High | High | Strong candidate for main Space Age backbone |
-| Negotiator spidertron with biter asset | Very high | Medium | Medium | Keep as late-game prestige feature, not core progression |
+### Printer Tiers
 
-## Recommended Expansion Shape
+- `mechanical-printer`, `printer-t1`, and `printer-t2` stay black-ink printers.
+- `Chromatic Printing` unlocks the `Chromatic Printer`.
+- `Chromatic Printer` is the first machine allowed to print CMY paperwork and fulfill fax reconstruction jobs.
+- `Laser Printer` is the late Aquilo speed reward. It is not the first color printer.
 
-The cleanest Space Age version is not "every planet gets a custom enemy runtime."
+### Color Model
 
-The cleanest version is:
+The bureaucracy color model is:
 
-1. Nauvis introduces biter enrollment and astronaut training.
-2. Fulgora introduces archive recovery and random paperwork reconstruction.
-3. Vulcanus introduces territorial bribery through a dedicated diplomacy building.
-4. Gleba introduces rot-sensitive paperwork and biological office hazards, but with minimal live-entity complaint logic.
-5. Cross-planet progression is tied together by colored inks, cartridges, faxing, and orbital/space-office bureaucracy.
+- `black-ink` remains the Nauvis baseline
+- `cyan-ink` is the Vulcanus branch
+- `yellow-ink` is the Gleba branch
+- `magenta-ink` is the Fulgora branch
+- Aquilo uses `thermal-transfer-sheet` and `composite-chroma-ribbon`, not a fourth color
 
-This keeps the expansion centered on paperwork logistics, which matches the existing mod structure far better than building three new live complaint AI subsystems.
+Important consequence:
 
-## System Proposals
+- some paperwork families are easier to produce on their home planet even when black ink is scarce or absent
+- late premium paperwork can ask for two or three chromatic channels together
+- there is never a `white-ink`
 
-### 1. Biter Enrollment
+### Reconstruction Rule
 
-Original idea:
-Resolve a complaint by outputting a job offer instead of a normal resolution, and let the waiting biter accept or reject it.
+Planet paperwork should not be a flat recolor recipe.
 
-Assessment:
-The fantasy is excellent, but the current desk system is not built for branching per-biter interactions. A desk chest is just a shared inventory. If multiple biters are waiting with multiple complaints, there is currently no safe way to say "this job offer belongs to that exact biter and replaces the normal resolution path" without extra state.
+The target structure is:
 
-Main conflicts with current implementation:
+1. local raw resource
+2. pigment, toner, resin, or transfer stage
+3. planet ink or transfer medium
+4. local stock or draft layer
+5. final paperwork family
+6. exported intermediate or building unlocks
 
-- Resolutions are matched by item name only, not by case identity.
-- A single biter can have multiple complaints in `info.complaints`.
-- The desk chest is shared by all waiting biters at that desk.
-- The runtime does not support a "pending offer decision" state.
+That gives each planet a distinct paperwork ecology and avoids `existing-paperwork + one ink = everything`.
 
-Recommended redesign:
+## Planet Matrix
 
-1. Add a new final-tier alternative output per complaint family, such as `job-offer-landscape` or a generic `employment-offer`.
-2. When the desk consumes a matching offer, convert exactly one complaint into an `enrolled-biter` item instead of sending the unit home.
-3. Do not model explicit acceptance/rejection initially.
-4. Treat enrollment as deterministic if the complaint is eligible.
+| Planet | Raw resource | Local color or medium | Shared intermediate(s) | Upgraded building | Local strength | Global export |
+| --- | --- | --- | --- | --- | --- | --- |
+| Vulcanus | `verdigris-crust` | `cyan-ink` | `embossed-seal`, `heatproof-form-stock` | `Notary Office` | permits, charters, land and industrial certification | productive non-printed paperwork |
+| Gleba | `spore-resin` | `yellow-ink` | `conciliation-spores`, `symbiosis-record`, `mycelial-form-stock` | `Conciliation Desk` | enemy luring, biosafety, personnel simplification | recruitment and one-slot shortcut bureaucracy |
+| Fulgora | `static-dust` | `magenta-ink` | `signal-toner`, `signal-form-stock` | `Interplanetary Fax Exchange` | directives, archive recovery, relay paperwork | interplanetary paperwork routing |
+| Aquilo | `cryo-phosphor` | `thermal-transfer-sheet`, `composite-chroma-ribbon` | `thermal-transfer-sheet`, `composite-chroma-ribbon`, `cryo-form-stock` | `Laser Printer` | very fast print and copy throughput | fast local reconstruction and late mixed-planet paperwork |
 
-Why this is better:
+## Building Identity Split
 
-- It avoids adding dialogue state to live entities.
-- It converts a runtime-managed unit into a normal item as early as possible.
-- It gives a clean handoff into Space Age logistics and training.
+### Vulcanus: `Notary Office`
 
-Feasibility:
-Medium. Requires runtime changes in complaint resolution, but the state model stays manageable if acceptance is not simulated.
+The `Notary Office` is the premium non-printing office.
 
-Open design question:
-Should enrollment consume the entire biter after resolving one complaint, or require all complaints on that biter to be cleared first?
+It should handle:
 
-Recommendation:
-Require all complaints to be cleared first, then allow a final "employment conversion" step. That is much cleaner than mixing partial complaint completion with worker extraction.
+- approvals
+- charters
+- permits
+- grants and bonds
+- personnel packets
+- certification folders
+- notarized dossiers
 
-### 2. Astronaut Training
+It should not handle:
 
-Original idea:
-Enrolled biters can be trained in a new building into astronauts.
+- raw printing
+- copy steps
+- reprint steps
+- anything that is clearly "paper goes through a printer"
 
-Assessment:
-This is one of the strongest ideas in the set. Once an `enrolled-biter` exists as an item, training is mostly standard Factorio content: item -> recipe chain -> specialist item.
+The core reward is productivity on expensive administrative intermediates.
 
-Recommended implementation:
+### Gleba: `Conciliation Desk`
 
-- Add `training-center` building.
-- Recipes:
-  - `biter-orientation`
-  - `astronaut-certification`
-  - `negotiator-certification`
-- Inputs should likely include paperwork, coffee, protective equipment, and maybe planet-specific inks or directives.
+The `Conciliation Desk` is a one-slot organic desk.
 
-Potential conflicts:
+Its role is:
 
-- None at the runtime level if `enrolled-biter` is already an item.
-- Balance concern: if enrollment is too cheap, this becomes a free conversion of enemy pressure into high-value specialists.
+- lure one nearby enemy at a time
+- process that enemy slowly through a euphemistic biological recipe
+- export the same mechanism back to Nauvis as a recruitment and simplification shortcut
 
-Feasibility:
-Medium-high.
+On Gleba its flagship recipe is `Voluntary Egg Reassignment`.
 
-Recommendation:
-Keep. This should likely be one of the first Space Age features implemented.
+On Nauvis its flagship recipe is `Voluntary Workforce Reassignment`.
 
-### 3. Space Office
+### Fulgora: `Interplanetary Fax Exchange`
 
-Original idea:
-Astronauts are needed to craft a "space office" that crafts paperwork in space.
+The `Interplanetary Fax Exchange` is not a throughput assembler. It is a network hub.
 
-Assessment:
-Strong fit mechanically and thematically. This is the most obvious bridge between Administratorio and Space Age platform gameplay.
+Its role is:
 
-Recommended implementation:
+- own the incoming fax queue for one surface
+- expose that queue to local printers
+- let the player route urgent paperwork to a planet or spaceship without physically shipping the finished form
 
-- New building: `space-office`.
-- Crafted from astronaut workforce, high-tier paperwork, electronics, and platform-compatible materials.
-- Crafting categories:
-  - orbital paperwork
-  - fax relay setup
-  - space administration
-- Primary purpose:
-  - produce forms in orbit
-  - support interplanetary paperwork demand
-  - potentially satisfy offworld permit requirements
+There should be:
 
-Potential conflicts:
+- many `Fax Sender` entities per surface
+- exactly one `Interplanetary Fax Exchange` receiver per destination surface
+- many local `Chromatic Printer` and `Laser Printer` entities attached to that receiver by circuit network
 
-- Need to decide whether space-office is a normal assembling machine clone or something platform-specific.
-- Existing progression may need a new science/tech bridge so orbital bureaucracy does not appear too early.
+### Aquilo: `Laser Printer`
 
-Feasibility:
-High.
+The `Laser Printer` is the late high-speed print building.
 
-Recommendation:
-Make this the centerpiece of Space Age compatibility.
+It should handle only explicit printing work:
 
-### 4. Asteroid Handling Without Weapons
+- print stages
+- copy stages
+- reprint stages
+- bulk blank forms
+- fax reconstruction jobs
 
-Original idea:
-Need a way of dealing with asteroids without weapons.
+It should not handle the Notary Office recipe list.
 
-Assessment:
-Correct problem, but the mechanic is currently underspecified.
+Its main advantages are:
 
-Bad direction:
+- speed
+- no liquid-ink handling at point of print
+- high-value use of `thermal-transfer-sheet` and `composite-chroma-ribbon`
 
-- Recreating vanilla combat with "non-lethal weapons" disguised as bureaucracy.
+## Any-Order Basic Planet Rule
 
-Better directions:
+Vulcanus, Gleba, and Fulgora are parallel first planets.
 
-1. Permitting beam / rerouting signal.
-   Asteroids are redirected by filing transit permits or orbital traffic directives.
+That means:
 
-2. Insurance claim interception.
-   Asteroids become claimable hazards that are converted into paperwork and salvage if processed by a special office structure.
+- their first viable local paperwork loops cannot require each other
+- none of their upgraded buildings can be required to start another basic planet
+- their local paperwork must be reconstructable from local resource plus imported Nauvis basics
+- cross-planet paperwork should be an upgrade before Aquilo, not an access gate
 
-3. Debris compliance net.
-   A platform building captures and reclassifies asteroids as archived debris instead of destroying them militarily.
+Aquilo is allowed to be later and can intentionally depend on earlier chromatic infrastructure.
 
-Best fit:
-Use an orbital bureaucracy building that "reclassifies" asteroids into paperwork-compatible debris streams.
+## Planet-Specific Paperwork Rule
 
-Main risk:
-If the mechanic ultimately still needs to function like damage-dealing combat, the thematic layer may feel fake.
+Every planet-specific recipe should follow this logic:
 
-Feasibility:
-Medium-low until a concrete non-combat loop is chosen.
+- use the appropriate local paperwork
+- use the appropriate local chromatic input
+- add existing Nauvis administrative items where useful
 
-Recommendation:
-Do not start implementation until the exact loop is specified in one sentence.
+Examples:
 
-Suggested rule:
-"Asteroids are neutralized by administrative interception buildings that consume cartridges/forms and output classified debris."
+- Vulcanus industrial, zoning, and demolisher recipes use Vulcanus paperwork plus `cyan-ink`
+- Gleba biosafety, conciliation, and luring recipes use Gleba paperwork plus `yellow-ink`
+- Fulgora relay, archive, and routing recipes use Fulgora paperwork plus `magenta-ink`
+- Aquilo cryogenic and transfer-print recipes use Aquilo paperwork plus `thermal-transfer-sheet` and, where appropriate, imported CMY
 
-### 5. Vulcanus: Buying Land From Demolishers
+## Vanilla Space Age Building Rule
 
-Original idea:
-A demolisher can be bribed by feeding it taxpayer money fast enough; larger demolishers need higher throughput.
+The following buildings should not consume recurring work orders for their native recipe families:
 
-Assessment:
-This is very on-brand. It also maps fairly well onto Factorio throughput gameplay.
+- `foundry`
+- `biochamber`
+- `electromagnetic assembler`
+- `advanced chemical plant`
 
-The floor-drop money-fountain version is probably not the right implementation.
+Instead, they should use one-time or build-time paperwork.
 
-Problems with the current phrasing:
+Recommended permit mapping:
 
-- Item-on-ground interactions are awkward and unreliable compared to inventory or machine interactions.
-- Designing this around entities picking up items from the floor risks jank and performance edge cases.
-- "Need multiple to keep the pace" is good gameplay, but the delivery method should be cleaner.
+- `foundry` -> `industrial-charter` and `lava-safety-endorsement`
+- `biochamber` -> `biosafety-waiver` and `conciliation-order`
+- `electromagnetic assembler` -> `signal-allocation-directive`
+- `advanced chemical plant` -> `cryogenic-operations-license`
 
-Recommended redesign:
+These are build-time thematic gates, not permanent taxes.
 
-- New building: `eminent-domain-disperser` or `taxpayer-fountain`.
-- It targets nearby demolishers and continuously spends `taxpayer-money` or higher-value bribe documents.
-- Each demolisher has a required bribery rate.
-- Insufficient sustained throughput causes the negotiation to fail or decay.
+## Fax Network
 
-Possible resource ladder:
+### Functional Model
 
-- early: raw `taxpayer-money`
-- mid: `treasury-bond`
-- late: `government-grant` or `land-acquisition-package`
+Faxing is remote reconstruction, not teleportation.
 
-Potential conflicts:
+The intended behavior is:
 
-- If demolishers are not easily interceptable via existing APIs, this may need custom runtime tracking.
-- Balance risk: taxpayer money is already central to the main economy, so this could overcompete with current progression.
+1. A `Fax Sender` consumes a completed form.
+2. The sender targets one destination surface.
+3. Runtime writes a `fax_request` to that destination receiver queue.
+4. The destination `Interplanetary Fax Exchange` exposes pending jobs on circuit.
+5. A connected `Chromatic Printer` or `Laser Printer` claims a compatible job.
+6. That printer consumes local materials and reconstructs the requested form.
 
-Feasibility:
-Medium.
+### Destination Targeting
 
-Recommendation:
-Keep, but implement as a dedicated building with a visible "bribery pressure" mechanic, not as loose dropped items.
+A destination can be:
 
-### 6. Gleba: Complaint Swarms And Rot
+- one planet surface
+- one spaceship surface
 
-Original idea:
-Enemies complain like Nauvis, but send many complaints per second; forms rot; eggs need special handling; gleba-specific forms can rot into regular paper.
+This is technically plausible because both planets and spaceships are normal Factorio surfaces with stable runtime identifiers.
 
-Assessment:
-This has good atmosphere but is the weakest architectural fit in its current form.
+### Topology Rule
 
-Main problems:
+- many senders per surface are allowed
+- one receiver per destination surface is allowed
+- many printers may attach to that receiver
 
-- The current complaint runtime is already the heaviest bespoke system in the mod.
-- "Multiple complaints per second" multiplies desk inventory pressure, runtime matching work, and frustration instability.
-- Rot on complaint items inside a shared desk chest could become chaotic and unreadable.
-- Egg handling adds another special-case logistics object on top of that.
+This mirrors the landing-pad pattern without turning the fax network into trivial infinite throughput.
 
-Direct conflicts with current implementation:
+### Ink Rule At Destination
 
-- Desk inventory is only 20 slots.
-- Walk-ins currently insert all complaint tickets at registration time.
-- A high-frequency complaint burst would cause immediate chest-full failures and protests.
-- Complaint tracking is per waiting biter with a normal Lua table of items, not designed for continuous inflow after registration.
+The destination printer must have the correct materials for the document family being recreated.
 
-Recommended redesign:
+Examples:
 
-Keep only the rot side of the idea.
+- a Vulcanus form needs `cyan-ink`
+- a Gleba form needs `yellow-ink`
+- a Fulgora form needs `magenta-ink`
+- an Aquilo form needs `thermal-transfer-sheet` and, if the form is chromatic, the required CMY ribbon or inks
 
-Better Gleba loop:
+This is why already-made cross-planet forms are good fax targets. The network moves urgency, not free matter.
 
-1. Gleba introduces biodegradable paperwork.
-2. Special Gleba forms decay into `paper` or `spoiled-paper-pulp`.
-3. Biological hazards create office contamination recipes, not live complaint swarms.
-4. Eggs are processed as items through a `quarantine desk` or `biorecords office`, not by requiring enemy walk-ins at high frequency.
+### Why Faxing Matters
 
-If enemy interaction is still desired:
+Before Aquilo:
 
-- Use occasional high-value "inspection incidents", not continuous complaint spray.
+- foreign paperwork should mostly be nice-to-have upgrades
+- faxing is already useful for urgent permits and relay forms
 
-Feasibility:
-Current version: low-medium.
-Reworked item-centric version: high.
+After Aquilo:
 
-Recommendation:
-Do not implement "multiple complaints per second" literally.
+- mixed-planet paperwork should become common enough that faxing is strategically superior to moving every finished form by ship
 
-### 7. Fulgora: Scrapyard Archives
+This is the point where the fax network becomes a major quality-of-life and throughput tool instead of a novelty.
 
-Original idea:
-Old archives appear in scrap and yield random forms that must be recycled or reassembled. No enemy.
+## Gleba And Nauvis Enemy / Workforce Loop
 
-Assessment:
-Excellent fit. This is one of the easiest ideas to integrate with existing recipe/item patterns.
+### Gleba
 
-Good reasons:
+Pentapods should not imitate Nauvis complaint queues.
 
-- It is item-centric.
-- It does not need runtime enemy logic.
-- It adds a new source of paperwork materials without competing with Nauvis complaints directly.
-- Random recovery and reconstruction matches Fulgora well.
+The preferred Gleba loop is:
 
-Recommended implementation:
+1. Pentapods wander toward attractive organic infrastructure.
+2. If ignored, they damage buildings directly.
+3. A loaded `Conciliation Desk` attracts one nearby target.
+4. The desk slowly processes that target through `Voluntary Egg Reassignment`.
+5. The outputs are `pentapod-egg` and `symbiosis-record`.
 
-- New item drops such as `damaged-archive`, `burned-ledger`, `partial-form`.
-- Recyclers or archive offices convert them into:
-  - random low-tier forms
-  - archive fragments
-  - repairable legal templates
-- Optional recipe chain:
-  - `archive sorting`
-  - `form reconstruction`
-  - `certified reassembly`
+Rotten eggs should still hatch ferals.
 
-Potential conflicts:
+Those ferals should:
 
-- Random output should not bypass the intended bureaucracy tiering too hard.
-- Need to avoid showering the player with high-tier approvals too early.
+- remain able to damage buildings
+- be calmable by `conciliation-spores` or related Gleba paperwork
+- either despawn naturally or become lure-eligible for the desk
 
-Feasibility:
-High.
+### Nauvis
 
-Recommendation:
-Implement early in the Space Age roadmap.
+The exported Gleba spore family should also work on Nauvis.
 
-### 8. Planet-Specific Inks And Fax Network
+That lets the `Conciliation Desk` do:
 
-Original idea:
-Each planet unlocks a new ink color, used for its forms; combined inks produce cartridges for a fax machine and antenna that transmit forms across planets without ships.
+- `Voluntary Workforce Reassignment` on nearby biters, spitters, and optionally protesters
+- an ultra-slow emergency simplification recipe for one complaint at a time
 
-Assessment:
-This is probably the best idea in the whole set.
+The result is a premium shortcut machine, not a replacement for the main complaint economy.
 
-Why it fits:
+### Satirical Management Sink
 
-- It turns interplanetary logistics into paperwork logistics instead of cargo rocket micromanagement.
-- It naturally uses items, recipes, buildings, and techs.
-- It gives each planet a clear bureaucratic identity.
-- It creates a strong reward loop for visiting all planets.
+The cross-planet satire loop is:
 
-Recommended structure:
+- `enrolled-biter -> management-trainee -> middle-management-managing-manager`
 
-- Vulcanus ink: blue
-- Gleba ink: green
-- Fulgora ink: red
-- Existing Nauvis/base ink stays black
-- Combined product: `interplanetary-ink-cartridge`
+Only a minority should branch into useful specialists such as astronauts or negotiators.
 
-Buildings:
+Most should become `middle-management-managing-manager`, abbreviated as `MMMM`.
 
-- `fax-machine`
-- `bureaucratic-antenna`
-- maybe `orbital-relay-office`
+`MMMM` then feeds the space asteroid system as a continuous consumable.
 
-Likely rules:
+## Space Asteroid Loop
 
-- Only paperwork-class items can be faxed.
-- Faxing consumes power, cartridges, and maybe transmission permits.
-- Some rare items should stay unfaxable for balance.
+The approved non-weapon asteroid answer is:
 
-Potential conflicts:
+- a platform building such as `trajectory-compliance-array`
+- continuous consumption of `MMMM`
+- failure mode when management supply dries up
 
-- Existing pneumatic transport already creates a fluidized logistics layer for paperwork.
-- Need to define whether faxing complements or replaces ships for paperwork.
+The thematic joke is that middle management is burned out in pointless orbital oversight until the platform is safe again.
 
-Recommendation on that conflict:
-Faxing should complement ships, not replace them entirely. Restrict faxing to paperwork items and perhaps low-stack official capsules/documents, while buildings, fluids, and bulk materials still require normal logistics.
+If direct asteroid deviation is technically awkward, the implementation can still be framed as deviation while using themed interception under the hood.
 
-Feasibility:
-High.
+## Expected Multi-Use Intermediates
 
-Recommendation:
-Make this the second major backbone after space-office content.
+These are the current required multi-use intermediates.
 
-### 9. Negotiator Spidertron
+- `embossed-seal`
+- `heatproof-form-stock`
+- `conciliation-spores`
+- `symbiosis-record`
+- `mycelial-form-stock`
+- `signal-toner`
+- `signal-form-stock`
+- `thermal-transfer-sheet`
+- `composite-chroma-ribbon`
+- `cryo-form-stock`
 
-Original idea:
-Training center can also train a negotiator, a spidertron-like remote-controlled unit with a biter asset that delivers eviction notices and bureaucratic promises.
+Each of these should have at least three meaningful uses, with at least one offworld or late-game use.
 
-Assessment:
-Very strong fantasy. Moderate implementation risk.
+## Technical Fit Review
 
-Good fit points:
+### Strong Fits
 
-- The mod already conceptually replaces military tools with paperwork tools.
-- A negotiator unit is a natural late-game mobility/expansion tool.
-- Existing code already knows about spidertron-related prototypes in [`data-final-fixes.lua`](~/.codex/worktrees/35bf/administratorio/data-final-fixes.lua).
+- chromatic inks and local reconstruction routes
+- the fax network
+- planet-specific paperwork families
+- one upgraded building per planet
+- management as a continuous orbital consumable
+- archive recovery on Fulgora
 
-Risks:
+### Manageable But Scripted
 
-- Vehicle compatibility can get messy with Space Age and other mods.
-- If this becomes mandatory for core progression, it may overcomplicate the first compatibility release.
+- `Conciliation Desk` lure logic
+- one-receiver-per-surface fax topology
+- asteroid deviation backed by `MMMM`
+- demolisher diplomacy or throughput bribery on Vulcanus
 
-Recommended role:
+### Bad Fits To Avoid
 
-- Late-game utility unit.
-- Can deploy eviction notices at range.
-- Can pacify protesters remotely.
-- Can perform offworld diplomatic errands if lore permits.
+- complaint spam measured in complaints per second
+- per-biter accept or reject dialogue trees
+- loose floor-item pickup as a primary gameplay system
+- new planets that duplicate the Nauvis complaint runtime
 
-Feasibility:
-Medium.
+## Technical Notes
 
-Recommendation:
-Keep, but ship after the core Space Age logistics systems are stable.
+### Data Stage Work
 
-## Cross-Cutting Risks
+1. Remove `! space-age` from [info.json](~/Library/Application Support/factorio/mods/administratorio/info.json).
+2. Add `Chromatic Printing` and `Chromatic Printer`.
+3. Add one raw resource, one paperwork family, and one upgraded office building per planet.
+4. Add new printing and non-printing recipe categories as needed.
+5. Mark vanilla Space Age native recipes as exempt from recurring work orders on their native buildings.
 
-### Runtime Performance Risk
+### Runtime Work
 
-Anything that increases the number of simultaneously tracked live complaint entities is dangerous. The current runtime already tracks:
+1. Add `Conciliation Desk` target-claim and lure logic.
+2. Add surface-scoped singleton logic for `Interplanetary Fax Exchange`.
+3. Add a fax queue keyed by destination surface id.
+4. Add printer claim and reconstruction logic for connected `Chromatic Printer` and `Laser Printer` entities.
+5. Add `trajectory-compliance-array` drain and failure handling for `MMMM`.
 
-- waiting
-- pathfinding
-- protesting
-- pacified
-- returning_home
+### Likely Script Shapes
 
-New planet systems should favor item transformations over additional unit states.
+The most plausible technical shapes are:
 
-### Inventory Pressure Risk
+- `Conciliation Desk` as an assembling-machine-like entity with scripted occupant targeting
+- `Interplanetary Fax Exchange` as a scripted queue owner plus visible building
+- fax printers as normal crafting entities with script-assigned reconstruction jobs
+- `trajectory-compliance-array` as a continuous platform consumer with stock and timeout state
 
-The `admin-station` chest is already a bottleneck. Space Age content that adds more complaint item churn will fail unless the desk model changes.
+## Open Questions
 
-Possible future fixes:
+These are still worth settling before implementation starts.
 
-1. Increase desk inventory.
-2. Separate complaint inbox from payout storage.
-3. Move to case bundles rather than many loose tickets.
-
-Of those, separating inbox/payout storage is the healthiest medium-term change.
-
-### Progression Dilution Risk
-
-Space Age can easily flood the mod with side systems. The expansion should preserve one readable progression spine:
-
-1. resolve / enroll
-2. train specialists
-3. establish orbital office
-4. unlock planet inks
-5. build fax network
-6. solve planet-specific bureaucracy problems
-
-### Theme Drift Risk
-
-The expansion should avoid:
-
-- stealth weapons renamed as office tools
-- too many biology gimmicks detached from paperwork
-- new planets that ignore the complaint/permit/administration identity
-
-## Conflicts With Existing Progression
-
-### Taxpayer Money Is Already Overcommitted
-
-`taxpayer-money` currently funds important existing chains. If it also becomes the core currency for Vulcanus bribery, astronaut training, fax cartridges, and orbital operations, the economy may become too singular.
-
-Recommendation:
-
-- Keep `taxpayer-money` as the raw base currency.
-- Add higher-tier Space Age sinks such as:
-  - `offworld-allocation`
-  - `planetary-development-grant`
-  - `extraterritorial-claim`
-
-### Complaint Resolution Techs Are Already Tight
-
-Current complaint tiers already lag enemy evolution in some cases. Adding Space Age complaint variants before fixing that baseline could make Nauvis stability worse instead of better.
-
-Recommendation:
-
-- Do not add new complaint families until base complaint pacing is fully comfortable.
-- Use planet loops that are mostly independent from the core desk runtime.
-
-### Existing Transport Identity Is Pneumatic
-
-The mod already has a paperwork transport fantasy: pneumatic form transport.
-
-Recommendation:
-
-- Position faxing as long-range, low-volume, high-value transmission.
-- Keep pneumatic transport as the local factory-scale paperwork backbone.
-
-That makes the logistics stack feel coherent:
-
-- local: belts/inserters
-- paperwork local: pneumatic
-- interplanetary paperwork: fax
-- heavy cargo: ships
+1. Should complaint-based enrollment remain the slow orthodox path on Nauvis, with spores as the premium shortcut?
+2. Should `Voluntary Workforce Reassignment` work on all nearby biters and spitters, or only protesters and special cases?
+3. How aggressive should the `Notary Office` productivity bonus be before it starts invalidating other admin chains?
+4. Should fax targeting support both manual destination UI and circuit-signal control?
+5. How should connected printers prioritize jobs around a receiver: first compatible, filtered by item signal, or both?
+6. How much mixed-planet paperwork should exist before Aquilo, so faxing is valuable but first-visit loops remain open?
+7. What is the cleanest direct implementation for demolisher diplomacy on Vulcanus?
 
 ## Recommended Implementation Order
 
-### Phase 1: Compatibility Foundation
+### Phase 1
 
-1. Remove the hard Space Age incompatibility flag.
-2. Audit prototype assumptions against Space Age items, planets, and surfaces.
-3. Confirm base game startup cleanup and progression still work when Space Age is active.
+- remove the hard incompatibility
+- add `Chromatic Printing`
+- add `Chromatic Printer`
+- make startup and progression safe under Space Age
 
-### Phase 2: Minimal Thematic Bridge
+### Phase 2
 
-1. Add planet-specific inks.
-2. Add fax machine and antenna.
-3. Allow paperwork-only interplanetary transmission.
+- add Vulcanus, Gleba, and Fulgora raw resources
+- add their local paperwork reconstruction loops
+- add their upgraded buildings
 
-This phase gives a real compatibility win without touching the most fragile runtime systems.
+### Phase 3
 
-### Phase 3: Workforce Expansion
+- add `Fax Sender`
+- add `Interplanetary Fax Exchange`
+- add destination-printer reconstruction
 
-1. Add enrolled biters.
-2. Add training center.
-3. Add astronauts.
-4. Add space-office.
+### Phase 4
 
-This phase makes Space Age feel native to Administratorio.
+- add `Conciliation Desk` enemy handling
+- add `Voluntary Workforce Reassignment`
+- add `enrolled-biter -> management-trainee -> MMMM`
+- add astronaut and specialist branches
 
-### Phase 4: Planetary Flavor
+### Phase 5
 
-1. Fulgora archive recovery.
-2. Vulcanus bribery/diplomacy.
-3. Gleba rot paperwork and biohazard administration.
+- add `space-office`
+- add `trajectory-compliance-array`
+- add Aquilo transfer-media printing and `Laser Printer`
 
-### Phase 5: Prestige Systems
+## Final Direction
 
-1. Negotiator spidertron.
-2. More exotic orbital bureaucracy.
-3. Optional asteroid administration mechanic.
+The safest strong Space Age version is:
 
-## Concrete Recommendations Per Original Idea
+- local chromatic bureaucracy
+- any-order first planets
+- one powerful administrative building per planet
+- faxing as long-range paperwork reconstruction
+- Gleba as one-slot lure bureaucracy rather than complaint spam
+- recruited enemies converted into management, then burned in space
 
-### Keep Mostly As-Is
-
-- astronaut training
-- space office
-- fulgora archives
-- colored inks
-- fax network
-- negotiator concept
-
-### Keep But Redesign
-
-- biter enrollment through complaint resolution
-- vulcanus demolisher bribery
-- gleba enemy interaction
-- asteroid handling
-
-### Avoid In First Release
-
-- explicit offer acceptance/rejection simulation
-- floor-drop money fountain as the primary demolisher interface
-- gleba complaint spam measured in complaints per second
-
-## Best Candidate For First Space Age Milestone
-
-If only one feature set should be built first, it should be:
-
-1. planet-specific inks
-2. fax machine + antenna
-3. training center
-4. enrolled biters -> astronauts
-5. space office
-
-That set is coherent, valuable, and does not require rewriting the complaint runtime into something more complex than it already is.
-
-## Questions Worth Settling Before Implementation
-
-1. Is enrollment deterministic, or should there be a success chance / eligibility gate?
-2. Does an enrolled biter come only from fully resolved cases, or can a partially handled biter be recruited?
-3. Is faxing instant, buffered, or recipe-based over time?
-4. Are planet-specific forms separate items, or are the inks simply ingredients for existing paperwork?
-5. Is asteroid handling mandatory for progression, or a side mechanic?
-6. Should Vulcanus bribery consume raw money continuously, or packaged bribe documents?
-7. Should Gleba have any live enemy desk loop at all, or should it be purely item/rot based?
-
-## Final Call
-
-The Space Age version should lean harder into paperwork logistics, specialist workforce conversion, and interplanetary administration.
-
-The least safe direction is to multiply the number of bespoke live-enemy complaint systems.
-
-The safest strong direction is:
-
-- convert enemies into workforce items
-- train them into specialists
-- bureaucratize orbit
-- bureaucratize interplanetary logistics through inks and faxing
-- give each planet one mostly item-driven paperwork identity
+That direction stays in theme, is technically plausible, and avoids fighting the weakest parts of the current runtime.
