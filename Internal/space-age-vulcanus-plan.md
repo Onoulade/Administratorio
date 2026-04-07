@@ -40,6 +40,7 @@ That means:
 
 - no Gleba or Fulgora resource is required to start
 - black ink from Nauvis helps, but is not required for the local core loop
+- the first self-sufficient Vulcanus permit loop should not require raw `taxpayer-money`
 - the player should be able to arrive with only `Chromatic Printer`, paper, and a small Nauvis admin seed kit
 
 The intended bootstrap is:
@@ -56,7 +57,7 @@ The intended bootstrap is:
 
 - `verdigris-crust -> cyan-pigment`
 - `cyan-pigment + sulfuric-acid -> cyan-ink`
-- `cyan-pigment + taxpayer-money -> embossed-seal`
+- `cyan-pigment + useless-documentation -> embossed-seal`
 
 `cyan-pigment` is not allowed to be a dead-end. It must feed at least:
 
@@ -96,11 +97,11 @@ It must feed at least:
 
 ### Stage 4: Final Vulcanus Paperwork
 
-- `permit-draft + inspection-docket + taxpayer-money -> industrial-charter`
+- `permit-draft + inspection-docket + embossed-seal -> industrial-charter`
 - `permit-draft + construction-permit + embossed-seal -> zoning-variance`
 - `inspection-docket + basic-excuse + cyan-ink -> lava-safety-endorsement`
-- `industrial-charter + zoning-variance + embossed-seal -> expropriation-dossier`
-- `industrial-charter + lava-safety-endorsement + embossed-seal -> foundry-operating-charter`
+- `industrial-charter + zoning-variance + government-grant -> expropriation-dossier`
+- `industrial-charter + lava-safety-endorsement + government-grant -> foundry-operating-charter`
 
 This keeps the tree readable:
 
@@ -108,6 +109,7 @@ This keeps the tree readable:
 - two reusable draft layers
 - one seal intermediate
 - a small family of high-value certified outputs
+- raw `taxpayer-money` only returning at the higher sovereignty layer through `government-grant`
 
 ## Notary Office
 
@@ -176,6 +178,7 @@ Every notable Vulcanus intermediate already has at least three real uses:
 ## Balance Notes
 
 - Vulcanus must not require another basic planet to become locally self-sufficient.
+- raw `taxpayer-money` should matter mainly for offworld grants and late sovereign paperwork, not the local first loop
 - `Notary Office` productivity should feel significant on expensive paperwork, not universal on every office recipe.
 - `embossed-seal` should be premium enough that the player does not spam it into trivial items.
 - `foundry-operating-charter` should be a meaningful build-time cost, not a recurring production tax.
