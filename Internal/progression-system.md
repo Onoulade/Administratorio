@@ -33,7 +33,7 @@ This file tracks the actual progression model implemented by the mod, not just t
 
 1. Forms gate automation.
 2. Complaint resolution gates `taxpayer-money`.
-3. `taxpayer-money` gates bonds, grants, meetings, and several late-game buildings.
+3. `taxpayer-money` gates bonds, grants, late Union HQ policy work, and several late-game buildings.
 4. Coffee, lies, misinformation, credentials, data, narrative, policy, and regulation form the late-game admin economy.
 
 ## Building Roles
@@ -41,7 +41,7 @@ This file tracks the actual progression model implemented by the mod, not just t
 | Building | Category / role | Notes |
 | --- | --- | --- |
 | `office-desk` | `bureaucracy-registration` | Base forms, approvals, work-orders, science, excuses, bonds input chain |
-| `resolution-office` | `bureaucracy-resolution` | All complaint filing / case / brief / final recipes |
+| `resolution-office` | `bureaucracy-resolution` | All complaint filing / case / final recipes plus legacy brief compatibility crafts |
 | `mechanical-printer` | `printing` | Early printer, burner powered |
 | `printer-t1` | `printing`, `printing-workorder` | Midgame printer |
 | `printer-t2` | `printing`, `printing-advanced`, `printing-workorder` | Copying and high-throughput printing |
@@ -88,7 +88,7 @@ This file tracks the actual progression model implemented by the mod, not just t
 
 | Tech | Main unlocks | Progression meaning |
 | --- | --- | --- |
-| `administrative-bureaucracy` | currently none | Meant to be the T1 bureaucracy gate, but is empty in code |
+| `administrative-bureaucracy` | `greenhouse`, `greenhouse-wood` | Early red-science renewable wood bootstrap |
 | `littering-resolution` | `crappy-report-production`, `filing-littering`, `littering-final` | First spitter support |
 | `pneumatic-form-transport` | `compacted-rubble-production`, pneumatic buildings | Form logistics and rubble compression |
 | `local-precedents` | `printer-t2`, copy recipes, `useless-documentation-production`, `form-27b-6` | Real midgame paperwork acceleration |
@@ -101,7 +101,9 @@ This file tracks the actual progression model implemented by the mod, not just t
 | --- | --- | --- |
 | `environmental-compliance` | breakroom, coffee refining, verbal approvals, treasury bonds, petrochemical permit, smog + hazmat resolution, eviction notices | First real funding, coffee economy, and process-industry permitting |
 | `health-and-safety` | union HQ, justification, narrative, written approvals, radiological work order, government grants | Opens late-form, centrifuge paperwork, and grant chain |
-| `eminent-domain-zoning` | white paper, policy, regulation, verified certificates, noise + loitering resolution, slush fund | High-bureaucracy policy tier |
+| `board-meetings` | written management proposal + heavy printer approval pass | Opens the executive committee layer inside Union HQ |
+| `eminent-domain-zoning` | white paper, policy, verified certificates, noise + loitering resolution, slush fund | High-bureaucracy policy tier |
+| `federal-regulation` | regulation | Formal law layer for the final complaint tier |
 | `creative-accounting` | tax audit | Converts slush funds back into official revenue through a dedicated late-game funding loop |
 | `constitutional-law` | unemployment + vagrancy resolution | Final complaint tier |
 
@@ -112,8 +114,8 @@ This file tracks the actual progression model implemented by the mod, not just t
 | `landscape` | start | filing -> final |
 | `littering` | `littering-resolution` | filing -> final |
 | `smog` + `hazmat` | `environmental-compliance` | filing -> case -> final |
-| `noise` + `loitering` | `eminent-domain-zoning` | filing -> case -> brief -> final |
-| `unemployment` + `vagrancy` | `constitutional-law` | filing -> case -> brief -> final |
+| `noise` + `loitering` | `eminent-domain-zoning` | filing -> case -> final |
+| `unemployment` + `vagrancy` | `constitutional-law` | filing -> case -> final |
 
 ### Runtime complaint generation
 
@@ -133,7 +135,7 @@ Frustration threshold is `600` seconds. Protesters disable a random player build
 2. Receive `taxpayer-money`.
 3. Convert to `treasury-bond`.
 4. Convert to `government-grant`.
-5. Spend grants on higher bureaucracy, meetings, policies, and late buildings.
+5. Spend grants on higher bureaucracy, Union HQ policy work, and late buildings.
 6. `tax-audit` launders `slush-fund` plus paperwork back into extra `taxpayer-money`.
 
 ## Coffee / Propaganda / Policy Chain
@@ -163,7 +165,7 @@ Frustration threshold is `600` seconds. Protesters disable a random player build
 
 ### 3. Taxpayer funding depends on complaint stability
 
-- `taxpayer-money` is needed for bonds, grants, breakrooms, meetings, and some late regulated recipes.
+- `taxpayer-money` is needed for bonds, grants, breakrooms, Union HQ expansion, and some late regulated recipes.
 - Any disruption in complaint resolution directly slows tech progression.
 
 ### 4. Coffee starts with RNG
@@ -181,12 +183,12 @@ Frustration threshold is `600` seconds. Protesters disable a random player build
 
 These are not "design intent" notes. They are current-code notes.
 
-- `administrative-bureaucracy` is an empty technology in the current data stage, despite sitting in the T1 bureaucracy position.
 - `administrative-science-pack-production` is unlocked by `administrative-science-research`, not by `administrative-bureaucracy`.
-- `administrative-bureaucracy` itself already costs `administrative-science-pack`, so moving the pack unlock there would require a tech-cost redesign to avoid a circular gate.
+- `administrative-bureaucracy` now sits on red science only and no longer depends on `printing-technology`, so greenhouse wood arrives before the admin-science printer ramp.
 - `safety-waiver-draft`, `safety-waiver-printing`, `construction-permit-draft`, and `construction-permit-printing` are enabled from the start.
 - Because of that, T1 and T2 form production is front-loaded instead of being unlocked by later bureaucracy techs.
 - All complaint recipes are in `bureaucracy-resolution`, so the `resolution-office` handles the full complaint chain. The `office-desk` does not process complaint filings in the current code.
+- Legacy `brief-*` and `management-written-review` recipes still exist for save compatibility, but normal progression no longer routes through them.
 - `assembling-machine-3` only keeps regulated categories in `data-final-fixes.lua`, even though shared comments describe AM3 as a reward that should also keep original categories.
 
 ## Files To Re-check When Rebalancing

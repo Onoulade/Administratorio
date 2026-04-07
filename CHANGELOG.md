@@ -2,8 +2,21 @@
 
 ## Unreleased
 
+## 0.2.9 - 2026-04-07
+
 ### Changed
-- `office-drama-recycling` now randomly feeds back into `work-order`, `watercooler-gossip`, and `basic-excuse` output instead of the broader salvage table.
+- Moved the early greenhouse/wood bootstrap onto `administrative-bureaucracy` with red science only, so renewable wood unlocks earlier and no longer waits on printer/admin-science progression.
+- Folded the removed Meeting Room workload into the Union Headquarters: written approvals, white papers, policy, regulation, and tax audits now run through the HQ's shared late-game pipeline.
+- Simplified the written-approval chain so `management-written-proposal` now finalizes into `management-approval-written` in one heavy printer pass, while the old review intermediate remains only as a legacy-save fallback.
+- Late complaint resolutions no longer spend separate brief intermediates. Noise/loitering finals now consume validated cases plus white-paper support, and unemployment/vagrancy finals fold the old brief costs into heavier final crafts.
+- Reworked `office-drama-recycling` into a tighter late-policy support loop that randomly returns `work-order`, `watercooler-gossip`, and `basic-excuse` output instead of the broader salvage table.
+- Standardized `smelting-basic` recipe ingredient order so the carbon-offset certificate is listed first across batch smelting and related rubble/charcoal recipes.
+- Refreshed the protest soundscape with new crowd/alert variations and replaced the Propaganda Distillery placeholder with a larger tinted fuel-refinery visual set and symmetric four-port pipe layout.
+
+### Fixed
+- Fixed the Meeting Room-era refinery operating workflow so the two-fluid `resolution-office` and shared late-game HQ recipes fit current machine port limits.
+- Fixed English locale and recipe text to match the consolidated Union Headquarters workflow, legacy brief/review compatibility recipes, and the updated late complaint chain.
+- Fixed the local test runner to prefer `python3` while still accepting `python` when it already points to Python 3.
 
 ## 0.2.8 - 2026-04-06
 
