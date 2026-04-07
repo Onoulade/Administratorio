@@ -295,26 +295,24 @@ data:extend({
     unit = { count = 150, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
     order = "e-b"
   },
-  -- T5c: BOARD MEETINGS (meeting-room infrastructure)
+  -- T5c: BOARD MEETINGS (executive committee layer inside the Union HQ)
   {
     type = "technology", name = "board-meetings",
-    icon = "__administratorio__/graphics/icons/meeting-room-icon.png", icon_size = 64,
+    icon = "__administratorio__/graphics/icons/management-written-proposal.png", icon_size = 64,
     effects = {
-      { type = "unlock-recipe", recipe = "meeting-room" }
+      { type = "unlock-recipe", recipe = "management-written-proposal" },
+      { type = "unlock-recipe", recipe = "management-written-1st-printing" }
     },
-    prerequisites = {"public-finance", "verbal-approvals"},
+    prerequisites = {"public-finance", "health-and-safety"},
     unit = { count = 135, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
     order = "e-c"
   },
   -- T6a: EXECUTIVE REVIEW (written approvals and signed directives)
   {
     type = "technology", name = "executive-review",
-    icon = "__administratorio__/graphics/icons/meeting-room-icon.png", icon_size = 64,
+    icon = "__administratorio__/graphics/icons/management-approval-written.png", icon_size = 64,
     effects = {
-      { type = "unlock-recipe", recipe = "management-written-work-order-production" },
-      { type = "unlock-recipe", recipe = "management-written-proposal" },
-      { type = "unlock-recipe", recipe = "management-written-1st-printing" },
-      { type = "unlock-recipe", recipe = "management-written-2nd-printing" }
+      { type = "unlock-recipe", recipe = "management-written-work-order-production" }
     },
     prerequisites = {"board-meetings", "health-and-safety"},
     unit = { count = 175, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
@@ -391,7 +389,6 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "filing-noise" },
       { type = "unlock-recipe", recipe = "case-noise" },
-      { type = "unlock-recipe", recipe = "brief-noise" },
       { type = "unlock-recipe", recipe = "noise-final" }
     },
     prerequisites = {"eminent-domain-zoning", "environmental-certification"},
@@ -405,7 +402,6 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "filing-loitering" },
       { type = "unlock-recipe", recipe = "case-loitering" },
-      { type = "unlock-recipe", recipe = "brief-loitering" },
       { type = "unlock-recipe", recipe = "loitering-final" }
     },
     prerequisites = {"board-meetings"},
@@ -429,7 +425,6 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "filing-unemployment" },
       { type = "unlock-recipe", recipe = "case-unemployment" },
-      { type = "unlock-recipe", recipe = "brief-unemployment" },
       { type = "unlock-recipe", recipe = "unemployment-final" }
     },
     prerequisites = {"federal-regulation"},
@@ -443,7 +438,6 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "filing-vagrancy" },
       { type = "unlock-recipe", recipe = "case-vagrancy" },
-      { type = "unlock-recipe", recipe = "brief-vagrancy" },
       { type = "unlock-recipe", recipe = "vagrancy-final" }
     },
     prerequisites = {"constitutional-law"},

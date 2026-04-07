@@ -48,8 +48,7 @@ This file tracks the actual progression model implemented by the mod, not just t
 | `greenhouse` | `admin-greenhouse` | Renewable wood, coffee discovery, coffee cultivation |
 | `corporate-breakroom` | `watercooler-gossip` | Coffee, gossip, good excuses, verbal approvals |
 | `propaganda-distillery` | `propaganda-distillery` | Lie, misinformation, slush fund, justification chain |
-| `union-headquarters` | `union-negotiation` | Union approval, grants, verified certificates, narrative |
-| `meeting-room` | `bureaucracy-policy` | Data, white paper, policy, regulation, written approvals |
+| `union-headquarters` | `union-negotiation`, `bureaucracy-policy` | Union approval, grants, verified certificates, narrative, written approvals, policy work, tax audits |
 | `admin-station` | storage + complaint desk | Holds tickets, resolved items, and payouts |
 
 ## Assembler Form Tiers
@@ -101,7 +100,7 @@ This file tracks the actual progression model implemented by the mod, not just t
 | Tech | Main unlocks | Progression meaning |
 | --- | --- | --- |
 | `environmental-compliance` | breakroom, coffee refining, verbal approvals, treasury bonds, petrochemical permit, smog + hazmat resolution, eviction notices | First real funding, coffee economy, and process-industry permitting |
-| `health-and-safety` | union HQ, meeting room, justification, narrative, written approvals, radiological work order, government grants | Opens late-form, centrifuge paperwork, and grant chain |
+| `health-and-safety` | union HQ, justification, narrative, written approvals, radiological work order, government grants | Opens late-form, centrifuge paperwork, and grant chain |
 | `eminent-domain-zoning` | white paper, policy, regulation, verified certificates, noise + loitering resolution, slush fund | High-bureaucracy policy tier |
 | `creative-accounting` | tax audit | Converts slush funds back into official revenue through a dedicated late-game funding loop |
 | `constitutional-law` | unemployment + vagrancy resolution | Final complaint tier |

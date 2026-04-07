@@ -107,7 +107,6 @@ data:extend({
 
   -- Gossip & Corporate
   entity_recipe("corporate-breakroom", { type = "recipe", enabled = false, ingredients = {{type="item", name="iron-plate", amount=20}, {type="item", name="wood", amount=10}, {type="item", name="stone-brick", amount=10}, {type="item", name="pipe", amount=4}, {type="item", name="electronic-circuit", amount=5}, {type="item", name="construction-permit", amount=1}}, results = {{type="item", name="corporate-breakroom", amount=1}}, energy_required = 10 }),
-  entity_recipe("meeting-room",        { type = "recipe", enabled = false, ingredients = {{type="item", name="office-desk", amount=4}, {type="item", name="iron-plate", amount=20}, {type="item", name="steel-plate", amount=15}, {type="item", name="advanced-circuit", amount=5}, {type="item", name="management-approval-verbal", amount=5}, {type="item", name="government-grant", amount=3}, {type="item", name="taxpayer-money", amount=5}}, results = {{type="item", name="meeting-room", amount=1}}, energy_required = 30 }),
   { type = "recipe", name = "watercooler-gossip-production",  category = "watercooler-gossip", enabled = false, ingredients = {{type="fluid", name="liquid-coffee", amount=50}, {type="item", name="dubious-data", amount=2}}, results = {{type="item", name="watercooler-gossip", amount=1}}, energy_required = 5 },
   {
     type = "recipe", name = "office-drama-recycling", category = "watercooler-gossip", enabled = false,

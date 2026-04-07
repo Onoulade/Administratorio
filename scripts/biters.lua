@@ -21,7 +21,6 @@ local PROTEST_TARGET_NAMES = {
   "office-desk",
   "greenhouse",
   "corporate-breakroom",
-  "meeting-room",
   "union-headquarters",
   "propaganda-distillery",
   "printer-t1",

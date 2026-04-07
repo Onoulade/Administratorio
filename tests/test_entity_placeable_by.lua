@@ -236,30 +236,71 @@ test("propaganda-distillery uses a symmetric four-port refinery layout", functio
     local fluid_box = entity.fluid_boxes[index]
     assert_eq(fluid_box.production_type, spec[1], "unexpected production type for fluid box " .. index)
     assert_true(fluid_box.pipe_connections ~= nil and fluid_box.pipe_connections[1] ~= nil, "missing pipe connection for fluid box " .. index)
+    assert_eq(fluid_box.pipe_connections[1].flow_direction, spec[1], "unexpected flow direction for fluid box " .. index)
     assert_eq(fluid_box.pipe_connections[1].direction, spec[2], "unexpected direction for fluid box " .. index)
     assert_eq(fluid_box.pipe_connections[1].position[1], spec[3], "unexpected x position for fluid box " .. index)
     assert_eq(fluid_box.pipe_connections[1].position[2], spec[4], "unexpected y position for fluid box " .. index)
   end
 end)
 
-test("meeting-room exposes exactly two fluid inputs for policy work", function()
-  local entity = data.raw["assembling-machine"]["meeting-room"]
-  assert_true(entity ~= nil, "meeting-room prototype missing")
-  assert_true(entity.fluid_boxes ~= nil, "meeting-room fluid boxes missing")
-  assert_eq(#entity.fluid_boxes, 2, "meeting-room should expose exactly two pipe connections")
+test("union-headquarters now supports both union negotiation and policy work", function()
+  local entity = data.raw["assembling-machine"]["union-headquarters"]
+  assert_true(entity ~= nil, "union-headquarters prototype missing")
 
-  local expected = {
-    {"input", defines.direction.north, 0, -3},
-    {"input", defines.direction.south, 0, 3},
+  local categories = {}
+  for _, category in ipairs(entity.crafting_categories or {}) do
+    categories[category] = true
+  end
+
+  assert_true(categories["union-negotiation"], "union-headquarters should keep union-negotiation")
+  assert_true(categories["bureaucracy-policy"], "union-headquarters should also handle policy work")
+  assert_true((entity.ingredient_count or 0) >= 6, "union-headquarters must support high-ingredient late recipes")
+
+  assert_true(entity.fluid_boxes ~= nil, "union-headquarters fluid boxes missing")
+  assert_true(#entity.fluid_boxes >= 3, "union-headquarters should expose two fluid inputs and one output")
+
+  local input_count = 0
+  local output_count = 0
+  for _, fluid_box in ipairs(entity.fluid_boxes) do
+    if fluid_box.production_type == "input" then
+      input_count = input_count + 1
+    elseif fluid_box.production_type == "output" then
+      output_count = output_count + 1
+    end
+  end
+
+  assert_true(input_count >= 2, "union-headquarters should have at least two fluid inputs")
+  assert_true(output_count >= 1, "union-headquarters should have at least one fluid output")
+end)
+
+test("all custom fluid connections are explicitly one-way", function()
+  local prototypes = {
+    data.raw["assembling-machine"]["resolution-office"],
+    data.raw["assembling-machine"]["office-desk"],
+    data.raw["assembling-machine"]["greenhouse"],
+    data.raw["assembling-machine"]["corporate-breakroom"],
+    data.raw["assembling-machine"]["union-headquarters"],
+    data.raw["assembling-machine"]["propaganda-distillery"],
+    data.raw["furnace"]["form-liquifier"],
+    data.raw["furnace"]["form-solidifier"],
   }
 
-  for index, spec in ipairs(expected) do
-    local fluid_box = entity.fluid_boxes[index]
-    assert_eq(fluid_box.production_type, spec[1], "unexpected production type for fluid box " .. index)
-    assert_true(fluid_box.pipe_connections ~= nil and fluid_box.pipe_connections[1] ~= nil, "missing pipe connection for fluid box " .. index)
-    assert_eq(fluid_box.pipe_connections[1].direction, spec[2], "unexpected direction for fluid box " .. index)
-    assert_eq(fluid_box.pipe_connections[1].position[1], spec[3], "unexpected x position for fluid box " .. index)
-    assert_eq(fluid_box.pipe_connections[1].position[2], spec[4], "unexpected y position for fluid box " .. index)
+  for _, prototype in ipairs(prototypes) do
+    assert_true(prototype ~= nil, "missing prototype in flow-direction coverage")
+    assert_true(prototype.fluid_boxes ~= nil, prototype.name .. " should expose fluid boxes")
+
+    for fluid_box_index, fluid_box in ipairs(prototype.fluid_boxes) do
+      local expected = fluid_box.production_type
+      assert_true(expected == "input" or expected == "output",
+        prototype.name .. " has non-directional fluid box " .. fluid_box_index)
+      assert_true(fluid_box.pipe_connections ~= nil and #fluid_box.pipe_connections > 0,
+        prototype.name .. " fluid box " .. fluid_box_index .. " should have at least one connection")
+
+      for connection_index, connection in ipairs(fluid_box.pipe_connections) do
+        assert_eq(connection.flow_direction, expected,
+          prototype.name .. " fluid box " .. fluid_box_index .. " connection " .. connection_index .. " flow_direction mismatch")
+      end
+    end
   end
 end)
 

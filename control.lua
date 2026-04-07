@@ -1211,7 +1211,6 @@ local ON_ENTITY_DIED_FILTERS = {
   {filter = "name", name = "admin-station-west"},
   {filter = "name", name = "office-desk"},
   {filter = "name", name = "corporate-breakroom"},
-  {filter = "name", name = "meeting-room"},
   {filter = "name", name = "union-headquarters"},
 }
 

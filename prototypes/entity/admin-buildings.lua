@@ -5,7 +5,6 @@
 -- Office Desk (2x2): filing, permits, general admin tasks
 -- Greenhouse (7x7): wood and coffee cultivation
 -- Corporate Breakroom (5x5): gossip, morale, coffee consumption
--- Endless Meeting (7x7): high-level policy drafting (very slow)
 -- Union HQ (7x7): union approval negotiation
 -- Propaganda Distillery (3x3): admin fluid processing (lies, misinformation)
 -------------------------------------------------------------------------------
@@ -16,8 +15,7 @@ local scrubber_graphics = entity_graphics .. "scrubber/"
 local sound_path = "__administratorio__/sound/buildings/"
 local OFFICE_DESK_SPEED = working_hours_enabled and 0.75 or 0.5
 local BREAKROOM_SPEED = working_hours_enabled and 0.75 or 0.5
-local MEETING_SPEED = working_hours_enabled and 0.5 or 0.25
-local UNION_HQ_SPEED = working_hours_enabled and 1.5 or 1.0
+local UNION_HQ_SPEED = working_hours_enabled and 1.0 or 0.75
 local SPRITTER_ANIMATION_SPEED = 1 / 3
 
 local function disabled_entity_description(key)
@@ -178,8 +176,8 @@ resolution_office.graphics_set = {
   }
 }
 resolution_office.fluid_boxes = {
-  { production_type = "input",  pipe_connections = {{ direction = defines.direction.north, position = {0, -1} }}, volume = 100 },
-  { production_type = "input",  pipe_connections = {{ direction = defines.direction.south, position = {0, 1} }},  volume = 100 },
+  { production_type = "input",  pipe_connections = {{ flow_direction = "input", direction = defines.direction.north, position = {0, -1} }}, volume = 100 },
+  { production_type = "input",  pipe_connections = {{ flow_direction = "input", direction = defines.direction.south, position = {0, 1} }},  volume = 100 },
 }
 resolution_office.fluid_boxes_off_when_no_fluid_recipe = true
 resolution_office.working_sound = {
@@ -225,8 +223,8 @@ office_desk.graphics_set = {
   }
 }
 office_desk.fluid_boxes = {
-  { production_type = "input",  pipe_connections = {{ direction = defines.direction.north, position = {0, -2} }}, volume = 100 },
-  { production_type = "output", pipe_connections = {{ direction = defines.direction.south, position = {0, 2} }},  volume = 100 },
+  { production_type = "input",  pipe_connections = {{ flow_direction = "input", direction = defines.direction.north, position = {0, -2} }}, volume = 100 },
+  { production_type = "output", pipe_connections = {{ flow_direction = "output", direction = defines.direction.south, position = {0, 2} }},  volume = 100 },
 }
 office_desk.fluid_boxes_off_when_no_fluid_recipe = true
 office_desk.working_sound = {
@@ -250,10 +248,10 @@ greenhouse.fluid_boxes = {
     production_type = "input",
     volume = 200,
     pipe_connections = {
-      { flow_direction = "input-output", direction = defines.direction.north, position = {0, -3} },
-      { flow_direction = "input-output", direction = defines.direction.south, position = {0, 3} },
-      { flow_direction = "input-output", direction = defines.direction.east,  position = {3, 0} },
-      { flow_direction = "input-output", direction = defines.direction.west,  position = {-3, 0} },
+      { flow_direction = "input", direction = defines.direction.north, position = {0, -3} },
+      { flow_direction = "input", direction = defines.direction.south, position = {0, 3} },
+      { flow_direction = "input", direction = defines.direction.east,  position = {3, 0} },
+      { flow_direction = "input", direction = defines.direction.west,  position = {-3, 0} },
     },
   },
 }
@@ -317,58 +315,16 @@ breakroom.working_sound = {
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
 
--- Meeting Room: 7x7 slow policy drafting
-local meeting = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
-meeting.name = "meeting-room"
-meeting.minable.result = "meeting-room"
-meeting.placeable_by = placeable_by_item("meeting-room")
-meeting.next_upgrade = nil
-meeting.icon = "__administratorio__/graphics/icons/meeting-room-icon.png"
-meeting.icon_size = 64
-meeting.crafting_categories = {"bureaucracy-policy"}
-meeting.crafting_speed = MEETING_SPEED
-meeting.module_slots = 6
-meeting.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
-meeting.localised_description = disabled_entity_description("meeting-room-no-working-hours")
-meeting.collision_box = {{-3.25, -3.25}, {3.25, 3.25}}
-meeting.selection_box = {{-3.5, -3.5}, {3.5, 3.5}}
-meeting.energy_usage = "50kW"
-meeting.graphics_set = {
-  animation = {
-    layers = {
-      { filename = entity_graphics .. "endless-meeting/architectural-office.png", width = 520, height = 500, frame_count = 1, scale = 0.45, shift = {0, -0.2} },
-      { filename = entity_graphics .. "endless-meeting/singularity-lab-shadow.png", width = 548, height = 482, frame_count = 1, scale = 0.45, shift = {0.3, 0.1}, draw_as_shadow = true }
-    }
-  }
-}
-meeting.fluid_boxes = {
-  { production_type = "input", pipe_connections = {{ direction = defines.direction.north, position = {0, -3} }}, volume = 100 },
-  { production_type = "input", pipe_connections = {{ direction = defines.direction.south, position = {0, 3} }}, volume = 100 },
-}
-meeting.fluid_boxes_off_when_no_fluid_recipe = true
-meeting.working_sound = {
-  sound = {
-    allow_random_repeat = true,
-    variations = {
-      { filename = sound_path .. "meeting-calm.ogg", volume = 0.28 },
-      { filename = sound_path .. "meeting-debate.ogg", volume = 0.34 },
-      { filename = sound_path .. "meeting-argument-inside.ogg", volume = 0.27 },
-      { filename = sound_path .. "meeting-argument-2.ogg", volume = 0.26 },
-      { filename = sound_path .. "meeting-argument-3.ogg", volume = 0.26 },
-      { filename = sound_path .. "meeting-argument-1.ogg", volume = 0.24 },
-    },
-  },
-  idle_sound = { filename = "__base__/sound/idle1.ogg" }
-}
-
 -- Union Headquarters: 7x7
 local union_hq = table.deepcopy(data.raw["assembling-machine"]["centrifuge"])
 union_hq.name = "union-headquarters"
 union_hq.minable.result = "union-headquarters"
 union_hq.placeable_by = placeable_by_item("union-headquarters")
 union_hq.next_upgrade = nil
-union_hq.crafting_categories = {"union-negotiation"}
+union_hq.fast_replaceable_group = "late-admin-campus"
+union_hq.crafting_categories = {"union-negotiation", "bureaucracy-policy"}
 union_hq.crafting_speed = UNION_HQ_SPEED
+union_hq.ingredient_count = 10
 union_hq.module_slots = 6
 union_hq.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
 union_hq.localised_description = disabled_entity_description("union-headquarters-no-working-hours")
@@ -385,8 +341,9 @@ union_hq.graphics_set = {
   }
 }
 union_hq.fluid_boxes = {
-  { production_type = "input",  pipe_connections = {{ direction = defines.direction.north, position = {0, -3} }}, volume = 100 },
-  { production_type = "output", pipe_connections = {{ direction = defines.direction.south, position = {0, 3} }}, volume = 100 },
+  { production_type = "input",  pipe_connections = {{ flow_direction = "input", direction = defines.direction.north, position = {0, -3} }}, volume = 100 },
+  { production_type = "input",  pipe_connections = {{ flow_direction = "input", direction = defines.direction.south, position = {0, 3} }}, volume = 100 },
+  { production_type = "output", pipe_connections = {{ flow_direction = "output", direction = defines.direction.east,  position = {3, 0} }}, volume = 100 },
 }
 union_hq.fluid_boxes_off_when_no_fluid_recipe = true
 union_hq.working_sound = {
@@ -525,28 +482,28 @@ propaganda_distillery.fluid_boxes = {
     production_type = "input",
     pipe_covers = pipecoverspictures(),
     pipe_picture = table.deepcopy(inherited_distillery_pipe_picture),
-    pipe_connections = {{ direction = defines.direction.west, position = {-2, -1} }},
+    pipe_connections = {{ flow_direction = "input", direction = defines.direction.west, position = {-2, -1} }},
     volume = 1000,
   },
   {
     production_type = "input",
     pipe_covers = pipecoverspictures(),
     pipe_picture = table.deepcopy(inherited_distillery_pipe_picture),
-    pipe_connections = {{ direction = defines.direction.west, position = {-2, 1} }},
+    pipe_connections = {{ flow_direction = "input", direction = defines.direction.west, position = {-2, 1} }},
     volume = 1000,
   },
   {
     production_type = "output",
     pipe_covers = pipecoverspictures(),
     pipe_picture = table.deepcopy(inherited_distillery_pipe_picture),
-    pipe_connections = {{ direction = defines.direction.east, position = {2, -1} }},
+    pipe_connections = {{ flow_direction = "output", direction = defines.direction.east, position = {2, -1} }},
     volume = 1000,
   },
   {
     production_type = "output",
     pipe_covers = pipecoverspictures(),
     pipe_picture = table.deepcopy(inherited_distillery_pipe_picture),
-    pipe_connections = {{ direction = defines.direction.east, position = {2, 1} }},
+    pipe_connections = {{ flow_direction = "output", direction = defines.direction.east, position = {2, 1} }},
     volume = 1000,
   },
 }
@@ -618,7 +575,7 @@ transit_permit_chest.collision_mask = {layers = {}}
 data:extend({
   admin_station, admin_station_north, admin_station_east, admin_station_west,
   resolution_office, office_desk, greenhouse,
-  breakroom, meeting, union_hq, propaganda_distillery,
+  breakroom, union_hq, propaganda_distillery,
   waiting_zone_marker, admin_station_corner_blocker, admin_station_combinator,
   transit_permit_chest
 })

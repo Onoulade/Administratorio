@@ -86,7 +86,7 @@
 
 ### Added
 - Administrative buildings (office desk, admin station, resolution office, greenhouse, printers, pneumatic buildings, etc.) can now be crafted in assembling machines via regulated recipe copies. Original recipes remain handcraftable.
-- Added a Working Hours system for office desks, corporate breakrooms, union headquarters, and meeting rooms. These buildings now shut down at night by default unless fitted with an `Overtime Exemption`, which is unlocked by the new `After-Hours Operations` research, documented in Tips & Tricks, and surfaced in the runtime debug profiler.
+- Added a Working Hours system for office desks, corporate breakrooms, and union headquarters. These buildings now shut down at night by default unless fitted with an `Overtime Exemption`, which is unlocked by the new `After-Hours Operations` research, documented in Tips & Tricks, and surfaced in the runtime debug profiler.
 - Added a startup setting to disable Working Hours entirely for players who want those buildings to remain 24/7. Disabling it also removes the module, research, tip, runtime checks, and daytime speed rebalance.
 - Added evolution-threshold warnings that alert connected players shortly before new complaint tiers become mandatory, so the required bureaucracy tech can be researched before filings start upgrading.
 - Added dedicated `Synthetic Stationery` and `Creative Accounting` technologies to gate synthetic paper and tax audits as explicit progression milestones.
@@ -101,7 +101,7 @@
 - Split remaining mixed administrative unlocks into single-purpose branches, including a dedicated `rubble-compaction` tech, a separate `verbal-approvals` step, and an optional `industrial-printing` throughput upgrade that no longer gates unique content.
 - Late complaint progression now splits cleanly by family and science tier: human complaints top out on the production-science `constitutional-law` branch, while spitter complaints finish on the utility-science `vagrancy-ordinances` branch.
 - Several vanilla branches now wait for the matching paperwork path before unlocking usable recipes, including rail/solar/accumulators/robotics on `verbal-approvals`, uranium processing on `radiological-compliance`, and late megaprojects on `executive-review`.
-- Simplified the coffee growth loop by removing fertilizer from plantations; coffee now scales directly from beans and water, while more mid/late-game funding, meeting-room, and high-tier complaint recipes consume brewed coffee.
+- Simplified the coffee growth loop by removing fertilizer from plantations; coffee now scales directly from beans and water, while more mid/late-game funding, union-headquarters, and high-tier complaint recipes consume brewed coffee.
 - Reworked the public-money loop so `slush-fund` is laundered from treasury bonds and lies, and `tax-audit` converts that slush fund back into a much larger `taxpayer-money` payout.
 - Early bootstrap paperwork now comes from `discovery-bullshit`, the office desk keeps its original circuit recipe under `electronics`, and every research inherits at least the science packs already required by its parent chain.
 

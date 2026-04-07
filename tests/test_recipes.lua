@@ -467,7 +467,7 @@ test("management-approval-verbal requires 2-step pipeline (gossip + printing)", 
   assert_true(not has_ingredient(print_step, "form-27b-6"))
 end)
 
-test("management-approval-written requires 3-step pipeline", function()
+test("management-approval-written requires 2-step pipeline", function()
   local proposal = get_recipe("management-written-proposal")
   assert_true(proposal ~= nil)
   assert_eq(proposal.category, "bureaucracy-policy")
@@ -478,11 +478,9 @@ test("management-approval-written requires 3-step pipeline", function()
   assert_eq(first.category, "printing")
   assert_true(has_ingredient(first, "management-written-proposal"))
   assert_true(has_ingredient(first, "ink"))
-
-  local second = get_recipe("management-written-2nd-printing")
-  assert_eq(second.category, "printing")
-  assert_true(has_ingredient(second, "management-written-review"))
-  assert_true(has_ingredient(second, "ink"))
+  assert_true(has_ingredient(first, "form-27b-6"))
+  assert_true(has_ingredient(first, "paper"))
+  assert_true(get_result_amount(first, "management-approval-written") == 1)
 end)
 
 -- =========================================================================
@@ -618,22 +616,17 @@ test("corporate-breakroom no longer depends on treasury-bonds", function()
   assert_true(not has_ingredient(r, "treasury-bond"))
 end)
 
-test("union-headquarters requires construction-permit and treasury-bond", function()
+test("union-headquarters absorbs the removed late-game building cost", function()
   local r = get_recipe("union-headquarters")
   assert_true(has_ingredient(r, "construction-permit"))
   assert_true(has_ingredient(r, "treasury-bond"))
-end)
-
-test("meeting-room requires management-approval-verbal and government-grant", function()
-  local r = get_recipe("meeting-room")
   assert_true(has_ingredient(r, "management-approval-verbal"))
   assert_true(has_ingredient(r, "government-grant"))
-  assert_true(has_ingredient(r, "taxpayer-money"))
   assert_true(has_ingredient(r, "advanced-circuit"))
   assert_true(has_ingredient(r, "steel-plate"))
 end)
 
-test("meeting-room policy recipes stay within its two fluid inputs", function()
+test("late policy recipes stay within the shared HQ fluid limits", function()
   for _, recipe_name in ipairs({
     "white-paper-production",
     "policy-production",
@@ -642,7 +635,7 @@ test("meeting-room policy recipes stay within its two fluid inputs", function()
     local recipe = get_recipe(recipe_name)
     assert_true(recipe ~= nil, recipe_name .. " missing")
     assert_true(count_fluid_ingredients(recipe) <= 2,
-      recipe_name .. " exceeds the meeting-room two-fluid limit")
+      recipe_name .. " exceeds the union-headquarters two-fluid limit")
     assert_true(not has_ingredient(recipe, "slush-fund"),
       recipe_name .. " should no longer require slush-fund")
   end
@@ -905,25 +898,25 @@ test("smog/hazmat finals require case stage (not brief)", function()
   assert_true(has_ingredient(r2, "case-h"))
 end)
 
-test("noise/loitering finals require brief stage", function()
-  assert_true(has_ingredient(get_recipe("noise-final"), "brief-n"))
-  assert_true(has_ingredient(get_recipe("loitering-final"), "brief-lo"))
+test("noise/loitering finals now resolve directly from the case stage", function()
+  assert_true(has_ingredient(get_recipe("noise-final"), "case-n"))
+  assert_true(has_ingredient(get_recipe("loitering-final"), "case-lo"))
 end)
 
-test("unemployment/vagrancy finals require brief stage (hardest)", function()
-  assert_true(has_ingredient(get_recipe("unemployment-final"), "brief-u"))
-  assert_true(has_ingredient(get_recipe("vagrancy-final"), "brief-v"))
+test("unemployment/vagrancy finals now resolve directly from the case stage", function()
+  assert_true(has_ingredient(get_recipe("unemployment-final"), "case-u"))
+  assert_true(has_ingredient(get_recipe("vagrancy-final"), "case-v"))
 end)
 
-test("final resolution times escalate: simple(5-7) < medium(20) < hard(90) < hardest(180)", function()
+test("final resolution times escalate after folding the brief stage into the final craft", function()
   assert_eq(get_recipe("landscape-final").energy_required, 5)
   assert_eq(get_recipe("littering-final").energy_required, 7)
   assert_eq(get_recipe("smog-final").energy_required, 20)
   assert_eq(get_recipe("hazmat-final").energy_required, 20)
-  assert_eq(get_recipe("noise-final").energy_required, 90)
-  assert_eq(get_recipe("loitering-final").energy_required, 90)
-  assert_eq(get_recipe("unemployment-final").energy_required, 180)
-  assert_eq(get_recipe("vagrancy-final").energy_required, 180)
+  assert_eq(get_recipe("noise-final").energy_required, 150)
+  assert_eq(get_recipe("loitering-final").energy_required, 150)
+  assert_eq(get_recipe("unemployment-final").energy_required, 270)
+  assert_eq(get_recipe("vagrancy-final").energy_required, 270)
 end)
 
 test("all complaint filing and resolution recipes are tech-gated", function()
@@ -931,7 +924,6 @@ test("all complaint filing and resolution recipes are tech-gated", function()
     "filing-landscape", "landscape-final",
     "filing-smog", "filing-noise", "filing-unemployment",
     "case-smog", "case-noise", "case-unemployment",
-    "brief-noise", "brief-unemployment",
     "smog-final", "noise-final", "unemployment-final",
   }
   for _, name in ipairs(must_be_disabled) do
@@ -1129,7 +1121,7 @@ test("is_admin_recipe returns false for vanilla recipes", function()
 end)
 
 test("is_admin_recipe detects resolution recipes", function()
-  local resolution = {"filing-landscape", "case-smog", "brief-noise", "unemployment-final"}
+  local resolution = {"filing-landscape", "case-smog", "noise-final", "unemployment-final"}
   for _, name in ipairs(resolution) do
     assert_true(shared.is_admin_recipe(name), name .. " not detected as admin")
   end
@@ -1342,8 +1334,10 @@ test("heavier vanilla integration anchors have exact ingredient counts", functio
     {"greenhouse", "pipe", 2},
     {"corporate-breakroom", "stone-brick", 10},
     {"corporate-breakroom", "pipe", 4},
-    {"meeting-room", "steel-plate", 15},
-    {"meeting-room", "advanced-circuit", 5},
+    {"union-headquarters", "steel-plate", 60},
+    {"union-headquarters", "advanced-circuit", 25},
+    {"union-headquarters", "management-approval-verbal", 2},
+    {"union-headquarters", "government-grant", 2},
     {"pneumatic-pipe", "pipe", 1},
     {"pneumatic-pipe-to-ground", "construction-permit", 1},
     {"form-liquifier", "pipe", 2},
@@ -1691,7 +1685,7 @@ end)
 test("ADMIN_BUILDINGS includes all expected building names", function()
   local expected = {
     "office-desk", "admin-station", "resolution-office", "greenhouse",
-    "corporate-breakroom", "meeting-room", "printer-t1", "printer-t2",
+    "corporate-breakroom", "printer-t1", "printer-t2",
     "mechanical-printer", "union-headquarters",
     "form-liquifier", "form-solidifier", "pneumatic-pipe", "pneumatic-pipe-to-ground",
   }

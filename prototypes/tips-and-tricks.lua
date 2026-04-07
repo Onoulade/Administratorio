@@ -211,7 +211,6 @@ if working_hours_enabled then
         triggers = {
           { type = "build-entity", entity = "office-desk" },
           { type = "build-entity", entity = "corporate-breakroom" },
-          { type = "build-entity", entity = "meeting-room" },
           { type = "build-entity", entity = "union-headquarters" },
         }
       }

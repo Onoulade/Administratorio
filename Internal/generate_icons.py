@@ -911,13 +911,6 @@ ICON_DEFS = {
         "post_it": True,
         "desc": "Purple paper, centered pen + question + post-it (proposal)",
     },
-    "management-written-review": {
-        "base": "paper", "tint": C_LIGHT_PURPLE,
-        "symbol": SYM_PEN, "symbol_color": SC_PURPLE, "symbol_pos": "center",
-        "symbol2": SYM_CHECKMARK, "symbol2_color": SC_GREEN, "symbol2_pos": "br",
-        "desc": "Purple paper, centered pen + green check (review)",
-    },
-
     # ===== WORK ORDERS (Form + Hole Punches + Gear icon) =====
     "work-order": {
         "base": "form", "tint": C_LIGHT_YELLOW,
@@ -1194,28 +1187,6 @@ ICON_DEFS = {
         "badge": ("V", S_PINK, "bl"),
         "symbol": SYM_QUESTION, "symbol_color": SC_PINK, "symbol_pos": "center",
         "desc": "Vagrancy case folder",
-    },
-
-    # ===== RESOLUTION: BRIEFS (Envelope + Symbol) =====
-    "brief-n": {
-        "base": "envelope", "tint": (235, 225, 240, 255),
-        "symbol": SYM_SOUND, "symbol_color": SC_PURPLE, "symbol_pos": "center",
-        "desc": "Noise brief envelope",
-    },
-    "brief-u": {
-        "base": "envelope", "tint": (245, 235, 220, 255),
-        "symbol": SYM_PERSON, "symbol_color": SC_ORANGE, "symbol_pos": "center",
-        "desc": "Unemployment brief envelope",
-    },
-    "brief-lo": {
-        "base": "envelope", "tint": (220, 235, 250, 255),
-        "symbol": SYM_CHAIN, "symbol_color": SC_BLUE, "symbol_pos": "center",
-        "desc": "Loitering brief envelope",
-    },
-    "brief-v": {
-        "base": "envelope", "tint": (250, 225, 240, 255),
-        "symbol": SYM_QUESTION, "symbol_color": SC_PINK, "symbol_pos": "center",
-        "desc": "Vagrancy brief envelope",
     },
 
     # ===== RESOLUTION: RESOLVED (Form + Big Green Stamp) =====

@@ -51,9 +51,19 @@ done
 [ -n "$REPO_ROOT" ] || { echo "--repo-root is required" >&2; exit 1; }
 [ -n "$FACTORIO_BIN" ] || { echo "--factorio-bin is required" >&2; exit 1; }
 command -v lua >/dev/null 2>&1 || { echo "'lua' not found on PATH" >&2; exit 1; }
-command -v python >/dev/null 2>&1 || { echo "'python' not found on PATH" >&2; exit 1; }
-python -c 'import sys; sys.exit(0 if sys.version_info[0] >= 3 else 1)' >/dev/null 2>&1 || {
-  echo "'python' must be Python 3 for tests/test_progression_report.py" >&2
+
+# Prefer python3. Fall back to python only if it is Python 3.
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON_BIN=python3
+elif command -v python >/dev/null 2>&1; then
+  PYTHON_BIN=python
+else
+  echo "Neither 'python3' nor 'python' found on PATH" >&2
+  exit 1
+fi
+
+"$PYTHON_BIN" -c 'import sys; sys.exit(0 if sys.version_info[0] >= 3 else 1)' >/dev/null 2>&1 || {
+  echo "'$PYTHON_BIN' must be Python 3 for tests/test_progression_report.py" >&2
   exit 1
 }
 
@@ -78,7 +88,7 @@ run_python_tests() {
   while IFS= read -r test_file; do
     [ -n "$test_file" ] || continue
     printf '==> %s\n' "$(basename "$test_file")"
-    python "$test_file" --factorio-bin "$FACTORIO_BIN" "$@"
+    "$PYTHON_BIN" "$test_file" --factorio-bin "$FACTORIO_BIN" "$@"
   done
 }
 

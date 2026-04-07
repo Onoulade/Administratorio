@@ -5,7 +5,6 @@ local WORKING_HOURS_ENABLED = feature_flags.working_hours_enabled()
 local MANAGED_BUILDINGS = {
   "office-desk",
   "corporate-breakroom",
-  "meeting-room",
   "union-headquarters",
 }
 

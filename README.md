@@ -32,7 +32,7 @@ The catch is that nearby biters are not deleted. They get displaced into your co
 
 ### Working hours and overtime exemptions
 
-The bureaucracy now has office hours. When night falls, the lights go out, the clerks go home, and some of your most important administrative buildings simply stop pretending to care. **Office Desks**, **Corporate Breakrooms**, **Union Headquarters**, and **Meeting Rooms** all close for the night unless you've filed the proper exception.
+The bureaucracy now has office hours. When night falls, the lights go out, the clerks go home, and some of your most important administrative buildings simply stop pretending to care. **Office Desks**, **Corporate Breakrooms**, and **Union Headquarters** all close for the night unless you've filed the proper exception.
 
 That exception is the **Overtime Exemption**. Research **After-Hours Operations**, install a single exemption module in the building, and suddenly the paperwork machine keeps humming long after sunset. Unsurprisingly, the permit for legally forcing night shift work is expensive, caffeine-dependent, and held together by public money. It only protects against the night shutdown, though — a protester can still disable that building during the day.
 
@@ -50,7 +50,6 @@ I added a bunch of new buildings to support the bureaucratic machine:
 - **Printers** — Produce forms, permits, and approvals at industrial scale
 - **Corporate Breakroom** — Turns coffee and dubious data into gossip, good excuses, and verbal management drafts
 - **Union Headquarters** — Negotiates approvals, grants, narratives, and OSHA cleanup
-- **Meeting Room** — Handles written approvals, white papers, policy, regulation, and tax audits
 - **Propaganda Distillery** — Weaponizes misinformation for administrative purposes
 - **Resolution Office** — Processes complex complaint chains
 - **Biter Administration Desk** — Receives intercepted attack groups and has a fixed central waiting zone inside a larger walk-through station footprint

@@ -132,10 +132,10 @@ data:extend({
     allowed_without_fight = true,
   },
   {
-    type = "build-entity-achievement",
+    type = "research-achievement",
     name = "endless-meetings",
-    to_build = "meeting-room",
-    icon = icons .. "endless-meeting.png",
+    technology = "board-meetings",
+    icon = icons .. "management-written-proposal.png",
     icon_size = 64,
     order = "d[industrial]-b",
     allowed_without_fight = true,

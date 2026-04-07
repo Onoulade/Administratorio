@@ -31,7 +31,6 @@ local DEBUG_SHOW_PAPERWORK_ICON_OVERLAYS = false
 local NIGHT_WORK_BUILDINGS = {
   ["office-desk"] = true,
   ["corporate-breakroom"] = true,
-  ["meeting-room"] = true,
   ["union-headquarters"] = true,
 }
 

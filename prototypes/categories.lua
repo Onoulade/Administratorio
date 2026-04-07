@@ -8,7 +8,7 @@
 -- bureaucracy-registration    | Office Desk (all desk work: filing, permits, work-orders, modules)
 -- bureaucratic-bootstrap     | Player character + Office Desk (starter paperwork bridge)
 -- bureaucracy-resolution      | Resolution Office (all complaint processing: filing, case, brief, final)
--- bureaucracy-policy          | Endless Meeting (policies, regulations, treasury bonds, data)
+-- bureaucracy-policy          | Union Headquarters (policies, regulations, audits, written approvals)
 -- admin-greenhouse            | Greenhouse (wood, coffee)
 -- watercooler-gossip          | Corporate Breakroom (gossip, coffee, promises, transit-auth)
 -- union-negotiation           | Union Headquarters (union approval, grants, narrative, OSHA)
