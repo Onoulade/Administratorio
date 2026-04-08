@@ -33,6 +33,7 @@ local recipes = {
 
 local items = {}
 local ammos = {}
+local fluids = {}
 local technologies = {
   ["metallurgic-science-pack"] = {type = "technology", name = "metallurgic-science-pack", effects = {}},
   ["agricultural-science-pack"] = {type = "technology", name = "agricultural-science-pack", effects = {}},
@@ -43,11 +44,16 @@ local technologies = {
   ["nest-expropriation"] = {type = "technology", name = "nest-expropriation", effects = {}},
 }
 
+mods = {
+  ["space-age"] = "2.0.0",
+}
+
 data = {
   raw = {
     recipe = recipes,
     item = items,
     ammo = ammos,
+    fluid = fluids,
     technology = technologies,
   },
 }
@@ -62,6 +68,8 @@ function data:extend(prototypes)
       items[proto.name] = proto
     elseif proto.type == "ammo" then
       ammos[proto.name] = proto
+    elseif proto.type == "fluid" then
+      fluids[proto.name] = proto
     elseif proto.type == "technology" then
       technologies[proto.name] = proto
     end
@@ -76,6 +84,7 @@ else
 end
 
 dofile(mod_root .. "prototypes/item/space_age.lua")
+dofile(mod_root .. "prototypes/item/capsules-and-fluids.lua")
 dofile(mod_root .. "prototypes/recipe/space_age.lua")
 dofile(mod_root .. "prototypes/technology/space_age.lua")
 
@@ -93,6 +102,16 @@ local function tech_unlocks_recipe(technology, recipe_name)
   if not technology or not technology.effects then return false end
   for _, effect in ipairs(technology.effects) do
     if effect.type == "unlock-recipe" and effect.recipe == recipe_name then
+      return true
+    end
+  end
+  return false
+end
+
+local function has_fluid_ingredient(recipe, fluid_name)
+  if not recipe or not recipe.ingredients then return false end
+  for _, ingredient in ipairs(recipe.ingredients) do
+    if ingredient.type == "fluid" and ingredient.name == fluid_name then
       return true
     end
   end
@@ -121,9 +140,59 @@ end)
 
 test("native Space Age buildings consume planet-specific specialists", function()
   assert_true(has_ingredient(recipes["foundry"], "licensed-notary"), "foundry should require licensed-notary")
+  assert_true(has_ingredient(recipes["foundry"], "foundry-operating-charter"), "foundry should require foundry-operating-charter")
   assert_true(has_ingredient(recipes["biochamber"], "conciliation-officer"), "biochamber should require conciliation-officer")
   assert_true(has_ingredient(recipes["electromagnetic-plant"], "relay-clerk"), "electromagnetic-plant should require relay-clerk")
   assert_true(has_ingredient(recipes["cryogenic-plant"], "cryoprint-technician"), "cryogenic-plant should require cryoprint-technician")
+end)
+
+test("chromatic printing now unlocks the vulcanus bootstrap chain", function()
+  local chromatic = technologies["chromatic-printing"]
+  assert_true(chromatic ~= nil, "chromatic-printing missing")
+  for _, recipe_name in ipairs({
+    "chromatic-printer",
+    "liquid-black-ink",
+    "dubious-data-analysis-vulcanus",
+    "cyan-slurry-production",
+    "cyan-ink-production",
+    "heatproof-form-stock",
+    "permit-draft",
+    "inspection-docket",
+  }) do
+    assert_true(tech_unlocks_recipe(chromatic, recipe_name), "chromatic-printing should unlock " .. recipe_name)
+  end
+end)
+
+test("vulcanus certification unlocks the notary office and fallback paperwork", function()
+  local certification = technologies["vulcanus-certification"]
+  assert_true(certification ~= nil, "vulcanus-certification missing")
+  for _, recipe_name in ipairs({
+    "notary-office",
+    "embossed-seal",
+    "industrial-charter",
+    "lava-safety-endorsement",
+    "foundry-operating-charter",
+    "vulcanus-lie-fabrication",
+    "research-grant-approval-vulcanus",
+    "management-verbal-approval-vulcanus",
+    "management-written-approval-vulcanus",
+  }) do
+    assert_true(tech_unlocks_recipe(certification, recipe_name), "vulcanus-certification should unlock " .. recipe_name)
+  end
+end)
+
+test("vulcanus chromatic chain defines the expected fluids and fluid-fed recipes", function()
+  assert_true(fluids["liquid-black-ink"] ~= nil, "liquid-black-ink missing")
+  assert_true(fluids["cyan-slurry"] ~= nil, "cyan-slurry missing")
+  assert_true(fluids["cyan-ink"] ~= nil, "cyan-ink missing")
+  assert_true(fluids["yellow-ink"] ~= nil, "yellow-ink missing")
+  assert_true(fluids["magenta-ink"] ~= nil, "magenta-ink missing")
+
+  assert_true(has_fluid_ingredient(recipes["heatproof-form-stock"], "cyan-ink"), "heatproof-form-stock should consume cyan-ink")
+  assert_true(has_fluid_ingredient(recipes["permit-draft"], "liquid-black-ink"), "permit-draft should consume liquid-black-ink")
+  assert_true(has_fluid_ingredient(recipes["permit-draft"], "cyan-ink"), "permit-draft should consume cyan-ink")
+  assert_true(has_fluid_ingredient(recipes["inspection-docket"], "liquid-black-ink"), "inspection-docket should consume liquid-black-ink")
+  assert_true(has_fluid_ingredient(recipes["inspection-docket"], "cyan-ink"), "inspection-docket should consume cyan-ink")
 end)
 
 test("workforce tech owns the workforce progression unlocks", function()

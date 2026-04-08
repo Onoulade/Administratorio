@@ -132,6 +132,10 @@ function M.ensure_storage()
 end
 
 function M.on_tick(event)
+  if not event or not event.tick or event.tick % RESPONSE_INTERVAL ~= 0 then
+    return
+  end
+
   ensure_storage()
 
   local seen = {}

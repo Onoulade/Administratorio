@@ -35,6 +35,33 @@ chromatic_printer.energy_usage = "350kW"
 chromatic_printer.energy_source = {type = "electric", usage_priority = "secondary-input"}
 chromatic_printer.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
 chromatic_printer.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+chromatic_printer.fluid_boxes_off_when_no_fluid_recipe = true
+chromatic_printer.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -2}}},
+    volume = 1000,
+  },
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.east, position = {2, 0}}},
+    volume = 1000,
+  },
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {0, 2}}},
+    volume = 1000,
+  },
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.west, position = {-2, 0}}},
+    volume = 1000,
+  },
+}
 chromatic_printer.graphics_set = {
   animation = {
     layers = {
@@ -44,6 +71,42 @@ chromatic_printer.graphics_set = {
 }
 chromatic_printer.working_sound = {
   sound = {filename = sound_path .. "industrial-printer-loop.ogg", volume = 0.55},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+}
+
+local notary_office = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
+notary_office.name = "notary-office"
+notary_office.icon = "__administratorio__/graphics/icons/management-approval-written.png"
+notary_office.icon_size = 64
+notary_office.minable = {mining_time = 0.2, result = "notary-office"}
+notary_office.placeable_by = placeable_by_item("notary-office")
+notary_office.next_upgrade = nil
+notary_office.crafting_categories = {"bureaucracy-certification"}
+notary_office.crafting_speed = 2
+notary_office.energy_usage = "450kW"
+notary_office.energy_source = {type = "electric", usage_priority = "secondary-input"}
+notary_office.ingredient_count = 8
+notary_office.module_slots = 4
+notary_office.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+notary_office.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
+notary_office.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+notary_office.fluid_boxes_off_when_no_fluid_recipe = true
+notary_office.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -2}}},
+    volume = 1000,
+  },
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {0, 2}}},
+    volume = 1000,
+  },
+}
+notary_office.working_sound = {
+  sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.45},
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
@@ -66,4 +129,4 @@ trajectory_compliance_array.surface_conditions = {
   },
 }
 
-data:extend({formation_center, chromatic_printer, trajectory_compliance_array})
+data:extend({formation_center, chromatic_printer, notary_office, trajectory_compliance_array})

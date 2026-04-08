@@ -1,4 +1,5 @@
 local item_icons = "__administratorio__/graphics/icons/"
+local feature_flags = require("feature_flags")
 
 local function deepcopy(value)
   if table.deepcopy then return table.deepcopy(value) end
@@ -247,3 +248,13 @@ data:extend({
   { type = "fluid", name = "union-approval",    icon = item_icons .. "union-approval.png", icon_size = 64, subgroup = "admin-fluids", order = "e", default_temperature = 25, base_color = {r=0.2, g=0.4, b=1.0}, flow_color = {r=0.4, g=0.6, b=1.0} },
   { type = "fluid", name = "liquid-coffee",     icon = item_icons .. "coffee.png",                  icon_size = 64, subgroup = "admin-fluids", order = "f", default_temperature = 80, base_color = {r=0.3, g=0.2, b=0.1}, flow_color = {r=0.4, g=0.2, b=0.1} },
 })
+
+if feature_flags.space_age_enabled() then
+  data:extend({
+    { type = "fluid", name = "liquid-black-ink", icon = item_icons .. "ink-cartridge.png", icon_size = 64, subgroup = "admin-fluids", order = "g", default_temperature = 25, base_color = {r=0.08, g=0.08, b=0.12}, flow_color = {r=0.15, g=0.15, b=0.2} },
+    { type = "fluid", name = "cyan-slurry",      icon = item_icons .. "dubious-data.png", icon_size = 64, subgroup = "admin-fluids", order = "h", default_temperature = 90, base_color = {r=0.05, g=0.55, b=0.55}, flow_color = {r=0.15, g=0.85, b=0.85} },
+    { type = "fluid", name = "cyan-ink",         icon = item_icons .. "ink-cartridge.png", icon_size = 64, subgroup = "admin-fluids", order = "i", default_temperature = 25, base_color = {r=0.05, g=0.6, b=0.7}, flow_color = {r=0.2, g=0.9, b=1.0} },
+    { type = "fluid", name = "yellow-ink",       icon = item_icons .. "ink-cartridge.png", icon_size = 64, subgroup = "admin-fluids", order = "j", default_temperature = 25, base_color = {r=0.75, g=0.7, b=0.05}, flow_color = {r=1.0, g=0.95, b=0.2} },
+    { type = "fluid", name = "magenta-ink",      icon = item_icons .. "ink-cartridge.png", icon_size = 64, subgroup = "admin-fluids", order = "k", default_temperature = 25, base_color = {r=0.75, g=0.05, b=0.55}, flow_color = {r=1.0, g=0.2, b=0.8} },
+  })
+end
