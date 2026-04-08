@@ -4,6 +4,18 @@ local rules = {}
 
 rules.OPERATING_FORM_BY_CATEGORY = base_rules.OPERATING_FORM_BY_CATEGORY
 rules.OPERATING_FORM_BY_RECIPE = base_rules.OPERATING_FORM_BY_RECIPE
+rules.OPERATING_FORM_EXEMPT_BY_CATEGORY = {
+  ["metallurgy"] = true,
+  ["organic"] = true,
+  ["electromagnetics"] = true,
+  ["cryogenics"] = true,
+}
+rules.OPERATING_FORM_EXEMPT_BY_RECIPE = {
+  ["foundry"] = true,
+  ["biochamber"] = true,
+  ["electromagnetic-plant"] = true,
+  ["cryogenic-plant"] = true,
+}
 rules.TAXPAYER_MONEY_COSTS = base_rules.TAXPAYER_MONEY_COSTS
 
 -- Phase 1 compatibility keeps existing paperwork behavior until each
