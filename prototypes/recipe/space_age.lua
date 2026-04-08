@@ -198,6 +198,21 @@ data:extend({
   },
   {
     type = "recipe",
+    name = "trajectory-compliance-array",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "radar", amount = 2},
+      {type = "item", name = "processing-unit", amount = 10},
+      {type = "item", name = "low-density-structure", amount = 10},
+      {type = "item", name = "refined-concrete", amount = 20},
+      {type = "item", name = "management-approval-written", amount = 1},
+      {type = "item", name = "construction-work-order", amount = 1},
+    },
+    results = {{type = "item", name = "trajectory-compliance-array", amount = 1}},
+    energy_required = 20
+  },
+  {
+    type = "recipe",
     name = "overtime-exemption-staffed",
     category = "union-negotiation",
     enabled = false,
@@ -268,13 +283,4 @@ for _, recipe_name in ipairs({
     ["cryogenic-plant"] = "cryoprint-technician",
   }
   add_item_ingredient(data.raw.recipe and data.raw.recipe[recipe_name], specialist_by_recipe[recipe_name], 1)
-end
-
-for _, recipe_name in ipairs({
-  "space-platform-starter-pack",
-  "cargo-bay",
-  "asteroid-collector",
-  "crusher",
-}) do
-  add_item_ingredient(data.raw.recipe and data.raw.recipe[recipe_name], "middle-management-managing-manager", 1)
 end
