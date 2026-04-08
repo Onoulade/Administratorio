@@ -13,6 +13,7 @@ local biter_station = require("scripts.biter_station")
 local biter_station_hover = require("scripts.biter_station_hover")
 local biterport = require("scripts.biterport")
 local biterport_hover = require("scripts.biterport_hover")
+local trajectory_compliance = require("scripts.trajectory_compliance")
 local runtime_debug = require("scripts.control_runtime_debug")
 local control_event_router = require("scripts.control_event_router")
 local control_resolution_processing_factory = require("scripts.control_resolution_processing")
@@ -440,6 +441,7 @@ local function init_storage()
   storage.stats.biters_hired = storage.stats.biters_hired or 0
   storage.stats.rockets_launched = storage.stats.rockets_launched or 0
   storage.calmed_spawners = storage.calmed_spawners or {}
+  trajectory_compliance.ensure_storage()
   if WORKING_HOURS_ENABLED then
     working_hours.ensure_storage()
   end
@@ -2017,6 +2019,7 @@ local function on_main_tick(event)
   runtime_debug.run_profiled_external_sections("rideable_biter", function()
     rideable_biter.update(event.tick)
   end)
+  trajectory_compliance.on_tick(event)
 end
 
 local function on_pneumatic_tick(_event)

@@ -113,14 +113,39 @@ data:extend({
     stack_size = 20
   },
   {
-    type = "item",
+    type = "ammo",
     name = "middle-management-managing-manager",
     icons = {
       {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64},
       {icon = item_icons .. "policy.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
     },
+    ammo_category = "trajectory-compliance",
+    ammo_type = {
+      target_type = "entity",
+      action = {
+        type = "direct",
+        action_delivery = {
+          type = "instant",
+          source_effects = {
+            type = "create-explosion",
+            entity_name = "explosion-hit",
+          },
+        },
+      },
+    },
+    magazine_size = 1,
     subgroup = "admin-bs-economy",
     order = "j-j",
+    stack_size = 20
+  },
+  {
+    type = "item",
+    name = "trajectory-compliance-array",
+    icon = "__base__/graphics/icons/radar.png",
+    icon_size = 64,
+    subgroup = "admin-buildings",
+    order = "i",
+    place_result = "trajectory-compliance-array",
     stack_size = 20
   },
   {
