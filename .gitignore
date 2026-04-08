@@ -6,3 +6,5 @@ __pycache__/
 !.vscode/settings.json
 *.code-workspace
 *.zip
+Internal/all-recipes.txt
+Internal/all-techs.txt

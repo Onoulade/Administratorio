@@ -47,6 +47,7 @@ local categories = {
 
 if space_age_enabled then
   categories[#categories + 1] = {type = "recipe-category", name = "printing-chromatic"}
+  categories[#categories + 1] = {type = "recipe-category", name = "workforce-formation"}
 end
 
 if working_hours_enabled then
