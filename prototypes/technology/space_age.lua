@@ -5,6 +5,7 @@ data:extend({
     icon = "__administratorio__/graphics/icons/steel-forge-icon.png",
     icon_size = 64,
     effects = {
+      {type = "unlock-recipe", recipe = "worker-biter"},
       {type = "unlock-recipe", recipe = "chromatic-printer"},
     },
     prerequisites = {"industrial-printing", "executive-review"},
