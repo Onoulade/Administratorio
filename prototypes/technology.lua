@@ -441,6 +441,138 @@ data:extend({
   }
 })
 
+local admin_station_capacity_techs = {}
+local capacity_pack_sets = {
+  {{"automation-science-pack", 1}, {"administrative-science-pack", 1}},
+  {{"automation-science-pack", 1}, {"administrative-science-pack", 1}},
+  {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}},
+  {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}},
+  {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}},
+  {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}},
+  {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}},
+  {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"utility-science-pack", 1}, {"administrative-science-pack", 1}},
+}
+local capacity_counts = {40, 60, 90, 130, 180, 240, 320, 420}
+local capacity_times = {20, 20, 30, 30, 45, 45, 60, 60}
+local capacity_extra_prereqs = {
+  nil,
+  nil,
+  "logistic-science-pack",
+  nil,
+  "chemical-science-pack",
+  nil,
+  "production-science-pack",
+  "utility-science-pack",
+}
+
+for level = 1, 8 do
+  local name = "admin-station-capacity-" .. level
+  local prerequisites = {}
+  if level == 1 then
+    prerequisites = {"administrative-bureaucracy"}
+  else
+    prerequisites = {"admin-station-capacity-" .. (level - 1)}
+  end
+
+  local extra_prereq = capacity_extra_prereqs[level]
+  if extra_prereq then
+    prerequisites[#prerequisites + 1] = extra_prereq
+  end
+
+  admin_station_capacity_techs[#admin_station_capacity_techs + 1] = {
+    type = "technology",
+    name = name,
+    icon = "__administratorio__/graphics/icons/admin-desk.png",
+    icon_size = 64,
+    effects = {
+      { type = "nothing", effect_description = {"technology-effect.admin-station-capacity", tostring(level)} }
+    },
+    prerequisites = prerequisites,
+    unit = {
+      count = capacity_counts[level],
+      ingredients = capacity_pack_sets[level],
+      time = capacity_times[level],
+    },
+    order = "a-z[" .. string.format("%02d", level) .. "]",
+    upgrade = true,
+  }
+end
+
+data:extend(admin_station_capacity_techs)
+
+data:extend({
+  {
+    type = "technology",
+    name = "filing-cabinet-logistics-1",
+    icon = "__administratorio__/graphics/icons/filing-l.png",
+    icon_size = 64,
+    effects = {
+      { type = "character-logistic-requests", modifier = true },
+      { type = "character-logistic-trash-slots", modifier = 10 },
+    },
+    prerequisites = {"information-management", "logistic-robotics"},
+    unit = {
+      count = 120,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 30,
+    },
+    order = "e-l1",
+    upgrade = true,
+  },
+  {
+    type = "technology",
+    name = "filing-cabinet-logistics-2",
+    icon = "__administratorio__/graphics/icons/filing-n.png",
+    icon_size = 64,
+    effects = {
+      { type = "character-logistic-requests", modifier = true },
+      { type = "character-logistic-trash-slots", modifier = 10 },
+    },
+    prerequisites = {"filing-cabinet-logistics-1", "public-finance"},
+    unit = {
+      count = 220,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 45,
+    },
+    order = "f-l2",
+    upgrade = true,
+  },
+  {
+    type = "technology",
+    name = "filing-cabinet-logistics-3",
+    icon = "__administratorio__/graphics/icons/filing-v.png",
+    icon_size = 64,
+    effects = {
+      { type = "character-logistic-requests", modifier = true },
+      { type = "character-logistic-trash-slots", modifier = 10 },
+    },
+    prerequisites = {"filing-cabinet-logistics-2", "board-meetings", "utility-science-pack"},
+    unit = {
+      count = 340,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"utility-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 60,
+    },
+    order = "g-l3",
+    upgrade = true,
+  },
+})
+
 local function add_tech_prerequisite(technology_name, prerequisite_name)
   local technology = data.raw["technology"] and data.raw["technology"][technology_name]
   if not technology or not prerequisite_name then return end

@@ -776,9 +776,39 @@ function M.send_biter_to_station_with_targets(entity, targets, opts)
   end
 end
 
+local function enforce_desk_capacity_limit(desk)
+  if not desk or not desk.valid then return end
+  ensure_desk_biters()
+  local desk_id = desk.unit_number
+  local desk_set = storage.desk_biters[desk_id]
+  if not desk_set then return end
+
+  local capacity = zones.get_zone_capacity(desk_id)
+  local occupants = {}
+  for b_id in pairs(desk_set) do
+    local info = storage.waiting_biters[b_id]
+    if info and info.desk_id == desk_id and (info.state == "waiting" or info.state == "pathfinding")
+       and info.entity and info.entity.valid then
+      occupants[#occupants + 1] = {b_id = b_id, info = info}
+    end
+  end
+
+  if #occupants <= capacity then return end
+  table.sort(occupants, function(a, b) return a.b_id < b.b_id end)
+  for i = capacity + 1, #occupants do
+    local entry = occupants[i]
+    zones.release_slot(desk_id, entry.b_id)
+    unindex_biter_from_desk(desk_id, entry.b_id)
+    untrack_waiting_biter(entry.b_id, entry.info)
+    M.trigger_immediate_protest(entry.info.entity, desk.surface, entry.info)
+  end
+  mark_desk_circuit_dirty(desk_id)
+end
+
 function M.process_walk_in_registration(surface, desks, runtime_profile)
   ensure_achievements()
   for _, desk in ipairs(desks) do
+    enforce_desk_capacity_limit(desk)
     local walkins_profiler = runtime_profile and game.create_profiler() or nil
     if zones.get_available_slots(desk.unit_number) > 0 then
       local search_pos = desk.position
@@ -789,7 +819,9 @@ function M.process_walk_in_registration(surface, desks, runtime_profile)
           if zones.get_available_slots(desk.unit_number) <= 0 then break end
           local slot = zones.reserve_slot(desk.unit_number)
           if not slot then break end
-          local pos = zones.get_biter_placement_pos(surface, desk, biter.name)
+          local reserved = zones.get_slot_position(desk.unit_number, slot)
+          local pos = reserved and (surface.find_non_colliding_position(biter.name, reserved, 1, 0.25) or reserved)
+            or zones.get_biter_placement_pos(surface, desk, biter.name)
           if pos then
             local complaints = C.generate_complaints(biter.name)
             local inv = desk.get_inventory(defines.inventory.chest)

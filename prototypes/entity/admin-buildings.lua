@@ -408,7 +408,7 @@ local admin_station_combinator = {
   selection_box = {{0, 0}, {0, 0}},
   selectable_in_game = false,
   hidden = true,
-  item_slot_count = 6,
+  item_slot_count = 10,
   sprites = {
     north = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
     east  = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },

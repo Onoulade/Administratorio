@@ -331,6 +331,7 @@ end)
 
 test("admin-station hidden circuit helper matches the desk connector position", function()
   local combinator = assert(find_entity_prototype("admin-station-combinator"))
+  assert_true((combinator.item_slot_count or 0) >= 10, "admin-station-combinator should expose at least 10 signal slots")
   local point = assert(combinator.circuit_wire_connection_points and combinator.circuit_wire_connection_points[1], "admin-station-combinator missing wire points")
   assert_eq(point.wire.red[1], 104 / 32, "helper red wire should match desk connector x")
   assert_eq(point.wire.red[2], 33 / 32, "helper red wire should match desk connector y")

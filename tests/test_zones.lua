@@ -25,6 +25,12 @@ local function assert_false(value, msg)
   if value then error(msg or "assertion failed", 2) end
 end
 
+local function assert_eq(actual, expected, msg)
+  if actual ~= expected then
+    error((msg or "assertion failed") .. " - expected " .. tostring(expected) .. ", got " .. tostring(actual), 2)
+  end
+end
+
 defines = {
   direction = {
     north = 0,
@@ -36,6 +42,7 @@ defines = {
 
 storage = {
   desk_zones = {},
+  admin_desks = {},
 }
 
 local mod_root = debug.getinfo(1, "S").source:match("@(.*/)")
@@ -76,6 +83,65 @@ test("zone_area_is_clear still rejects real blocking structures", function()
     {valid = true, type = "assembling-machine", name = "assembling-machine-1"},
   })
   assert_false(zones.zone_area_is_clear(surface, BOUNDS, nil), "assembling machines should block station placement")
+end)
+
+test("desk waiting capacity starts at 4 and tops out at 12 with research tiers", function()
+  local desk_id = 101
+  storage.desk_zones[desk_id] = {bounds = BOUNDS}
+
+  local technologies = {}
+  for level = 1, 8 do
+    technologies["admin-station-capacity-" .. level] = {researched = false}
+  end
+
+  storage.admin_desks[desk_id] = {
+    valid = true,
+    force = {
+      valid = true,
+      technologies = technologies,
+    },
+  }
+
+  assert_eq(zones.get_zone_capacity(desk_id), 4, "capacity should start at 4 before upgrades")
+
+  technologies["admin-station-capacity-1"].researched = true
+  technologies["admin-station-capacity-2"].researched = true
+  technologies["admin-station-capacity-3"].researched = true
+  assert_eq(zones.get_zone_capacity(desk_id), 7, "capacity should grow one slot per researched tier")
+
+  for level = 1, 8 do
+    technologies["admin-station-capacity-" .. level].researched = true
+  end
+  assert_eq(zones.get_zone_capacity(desk_id), 12, "capacity should cap at 12")
+end)
+
+test("desk reservations respect tracked occupants even if grid slots drift", function()
+  local desk_id = 202
+  storage.desk_zones[desk_id] = {bounds = BOUNDS}
+  storage.desk_grid_slots = {[desk_id] = {}}
+  storage.desk_biters = {[desk_id] = {[11] = true, [12] = true, [13] = true, [14] = true}}
+  storage.waiting_biters = {
+    [11] = {desk_id = desk_id, state = "waiting", entity = {valid = true}},
+    [12] = {desk_id = desk_id, state = "waiting", entity = {valid = true}},
+    [13] = {desk_id = desk_id, state = "pathfinding", entity = {valid = true}},
+    [14] = {desk_id = desk_id, state = "waiting", entity = {valid = true}},
+  }
+
+  local technologies = {}
+  for level = 1, 8 do
+    technologies["admin-station-capacity-" .. level] = {researched = false}
+  end
+  storage.admin_desks[desk_id] = {
+    valid = true,
+    force = {
+      valid = true,
+      technologies = technologies,
+    },
+  }
+
+  assert_eq(zones.get_zone_capacity(desk_id), 4, "baseline capacity should be 4")
+  assert_eq(zones.get_available_slots(desk_id), 0, "tracked occupants should consume all capacity even if slot grid is empty")
+  assert_eq(zones.reserve_slot(desk_id, 99), nil, "reserve_slot should reject over-capacity desk when tracked occupants already fill it")
 end)
 
 if failed > 0 then

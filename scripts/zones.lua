@@ -2,13 +2,18 @@
 local C = require("scripts.constants")
 local M = {}
 
--- 6 fixed grid offsets within a 5x5 zone (relative to zone left_top).
--- A 3x2 layout gives large biters enough separation to remain readable.
+-- Grid offsets within a 5x5 zone (relative to zone left_top).
+-- Starts at 4 active slots and expands up to 12 through research.
 local GRID_OFFSETS = {
-  {1.0, 0.75}, {2.5, 0.75}, {4.0, 0.75},
-  {1.0, 3.25}, {2.5, 3.25}, {4.0, 3.25},
+  -- Base 4 slots (outer ring, clear of 9x9 corner blockers)
+  {1.20, 1.10}, {3.80, 1.10}, {1.20, 2.90}, {3.80, 2.90},
+  -- Expansion slots
+  {2.00, 1.10}, {3.00, 2.90}, {3.00, 1.10}, {2.00, 2.90},
+  {1.20, 2.00}, {3.80, 2.00}, {2.00, 2.00}, {3.00, 2.00},
 }
-local ZONE_CAPACITY = #GRID_OFFSETS
+local BASE_ZONE_CAPACITY = 4
+local MAX_ZONE_CAPACITY = #GRID_OFFSETS
+local CAPACITY_TECH_PREFIX = "admin-station-capacity-"
 local DESK_HALF_SIZE = 4.5
 local ZONE_HALF_SIZE = 2.5
 local CORNER_BLOCKER_NAME = "admin-station-corner-blocker"
@@ -137,7 +142,7 @@ end
 
 -------------------------------------------------------------------------------
 -- GRID-BASED SLOT MANAGEMENT
--- Each desk has 6 fixed grid slots. Each slot can hold exactly one biter.
+-- Each desk has research-scaled grid slots (4 base, up to 12).
 -- storage.desk_grid_slots[desk_id] = { [slot_index] = unit_number, ... }
 -------------------------------------------------------------------------------
 
@@ -204,22 +209,69 @@ local function cleanup_stale_slots(desk_id)
   end
 end
 
+local function count_tracked_desk_occupants(desk_id)
+  local waiting_biters = storage.waiting_biters
+  local desk_biters = storage.desk_biters and storage.desk_biters[desk_id]
+  if not waiting_biters or not desk_biters then return 0 end
+
+  local occupied = 0
+  for unit_number in pairs(desk_biters) do
+    local info = waiting_biters[unit_number]
+    if info and info.desk_id == desk_id and (info.state == "waiting" or info.state == "pathfinding")
+       and info.entity and info.entity.valid then
+      occupied = occupied + 1
+    end
+  end
+  return occupied
+end
+
+local function get_desk_force(desk_id)
+  local desks = storage and storage.admin_desks
+  if not desks then return nil end
+  local desk = desks[desk_id]
+  if desk and desk.valid and desk.force and desk.force.valid then
+    return desk.force
+  end
+  if desk and desk.valid == false then
+    desks[desk_id] = nil
+  end
+  return nil
+end
+
+local function get_capacity_bonus_for_force(force)
+  if not force or not force.valid or not force.technologies then return 0 end
+  local max_bonus = MAX_ZONE_CAPACITY - BASE_ZONE_CAPACITY
+  local bonus = 0
+  for level = 1, max_bonus do
+    local tech = force.technologies[CAPACITY_TECH_PREFIX .. level]
+    if tech and tech.researched then
+      bonus = bonus + 1
+    else
+      break
+    end
+  end
+  return bonus
+end
+
 function M.get_zone_capacity(desk_id)
   local zone = storage.desk_zones[desk_id]
   if (not zone or not zone.bounds) and try_repair_desk_runtime_state(desk_id) then
     zone = storage.desk_zones[desk_id]
   end
   if not zone or not zone.bounds then return 0 end
-  return ZONE_CAPACITY
+  local force = get_desk_force(desk_id)
+  local capacity = BASE_ZONE_CAPACITY + get_capacity_bonus_for_force(force)
+  return math.min(capacity, MAX_ZONE_CAPACITY)
 end
 
 function M.get_available_slots(desk_id)
   ensure_grid(desk_id)
   cleanup_stale_slots(desk_id)
-  local occupied = 0
+  local occupied_by_slots = 0
   for _ in pairs(storage.desk_grid_slots[desk_id]) do
-    occupied = occupied + 1
+    occupied_by_slots = occupied_by_slots + 1
   end
+  local occupied = math.max(occupied_by_slots, count_tracked_desk_occupants(desk_id))
   return math.max(0, M.get_zone_capacity(desk_id) - occupied)
 end
 
@@ -227,9 +279,13 @@ end
 function M.reserve_slot(desk_id, unit_number)
   ensure_grid(desk_id)
   cleanup_stale_slots(desk_id)
+  local capacity = M.get_zone_capacity(desk_id)
+  if count_tracked_desk_occupants(desk_id) >= capacity then
+    return nil
+  end
   -- If no unit_number provided, use a placeholder (for pathfinding biters not yet placed)
   local id = unit_number or -(game.tick * 1000 + math.random(999))
-  for i = 1, ZONE_CAPACITY do
+  for i = 1, capacity do
     if not storage.desk_grid_slots[desk_id][i] then
       storage.desk_grid_slots[desk_id][i] = id
       return i
@@ -315,7 +371,8 @@ function M.get_zone_position(surface, desk_id, entity_name, unit_number)
   end
   -- Fallback: find any free slot position
   ensure_grid(desk_id)
-  for i = 1, ZONE_CAPACITY do
+  local capacity = M.get_zone_capacity(desk_id)
+  for i = 1, capacity do
     if not storage.desk_grid_slots[desk_id][i] then
       local pos = M.get_slot_position(desk_id, i)
       if pos then

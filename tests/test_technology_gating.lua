@@ -197,6 +197,17 @@ local function tech_uses_pack(tech_name, pack_name)
   return false
 end
 
+local function tech_has_effect(tech_name, effect_type)
+  local tech = technologies[tech_name]
+  if not tech or not tech.effects then return false end
+  for _, effect in ipairs(tech.effects) do
+    if effect.type == effect_type then
+      return true
+    end
+  end
+  return false
+end
+
 local function assert_pack_superset(child_name, parent_name)
   local parent = technologies[parent_name]
   assert_true(parent and parent.unit and parent.unit.ingredients, parent_name .. " should have science packs in the test harness")
@@ -257,6 +268,43 @@ test("administrative bureaucracy owns only the early greenhouse wood bootstrap",
   assert_true(not tech_has_prereq("administrative-bureaucracy", "administrative-science-research"), "administrative-bureaucracy should not require administrative science research")
   assert_true(tech_uses_pack("administrative-bureaucracy", "automation-science-pack"), "administrative-bureaucracy should still use automation science")
   assert_true(not tech_uses_pack("administrative-bureaucracy", "administrative-science-pack"), "administrative-bureaucracy should not use administrative science")
+end)
+
+test("admin station capacity upgrades are tiered and chain correctly", function()
+  for level = 1, 8 do
+    local tech_name = "admin-station-capacity-" .. level
+    assert_true(technologies[tech_name] ~= nil, tech_name .. " should exist")
+    assert_true(tech_has_effect(tech_name, "nothing"), tech_name .. " should expose a scripted-effect marker")
+
+    if level == 1 then
+      assert_true(tech_has_prereq(tech_name, "administrative-bureaucracy"), tech_name .. " should start from administrative-bureaucracy")
+      assert_true(tech_uses_pack(tech_name, "automation-science-pack"), tech_name .. " should use automation science")
+      assert_true(tech_uses_pack(tech_name, "administrative-science-pack"), tech_name .. " should use administrative science")
+    else
+      assert_true(tech_has_prereq(tech_name, "admin-station-capacity-" .. (level - 1)), tech_name .. " should chain from prior level")
+    end
+  end
+
+  assert_true(tech_has_prereq("admin-station-capacity-3", "logistic-science-pack"), "capacity III should require logistic science")
+  assert_true(tech_has_prereq("admin-station-capacity-5", "chemical-science-pack"), "capacity V should require chemical science")
+  assert_true(tech_has_prereq("admin-station-capacity-7", "production-science-pack"), "capacity VII should require production science")
+  assert_true(tech_has_prereq("admin-station-capacity-8", "utility-science-pack"), "capacity VIII should require utility science")
+  assert_true(tech_uses_pack("admin-station-capacity-8", "utility-science-pack"), "capacity VIII should consume utility science")
+end)
+
+test("filing cabinet logistics upgrades grant character logistics bonuses", function()
+  for level = 1, 3 do
+    local tech_name = "filing-cabinet-logistics-" .. level
+    assert_true(technologies[tech_name] ~= nil, tech_name .. " should exist")
+    assert_true(tech_has_effect(tech_name, "character-logistic-requests"), tech_name .. " should increase logistic requests")
+    assert_true(tech_has_effect(tech_name, "character-logistic-trash-slots"), tech_name .. " should increase trash slots")
+  end
+
+  assert_true(tech_has_prereq("filing-cabinet-logistics-1", "information-management"), "filing logistics I should require information-management")
+  assert_true(tech_has_prereq("filing-cabinet-logistics-1", "logistic-robotics"), "filing logistics I should require logistic robotics")
+  assert_true(tech_has_prereq("filing-cabinet-logistics-2", "filing-cabinet-logistics-1"), "filing logistics II should chain from level I")
+  assert_true(tech_has_prereq("filing-cabinet-logistics-3", "filing-cabinet-logistics-2"), "filing logistics III should chain from level II")
+  assert_true(tech_has_prereq("filing-cabinet-logistics-3", "utility-science-pack"), "filing logistics III should require utility science")
 end)
 
 test("bootstrap paperwork is gated behind both discovery chains", function()
