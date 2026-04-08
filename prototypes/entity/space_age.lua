@@ -40,25 +40,25 @@ chromatic_printer.fluid_boxes = {
   {
     production_type = "input",
     pipe_covers = pipecoverspictures(),
-    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -2}}},
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -1}}},
     volume = 1000,
   },
   {
     production_type = "input",
     pipe_covers = pipecoverspictures(),
-    pipe_connections = {{flow_direction = "input", direction = defines.direction.east, position = {2, 0}}},
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.east, position = {1, 0}}},
     volume = 1000,
   },
   {
     production_type = "input",
     pipe_covers = pipecoverspictures(),
-    pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {0, 2}}},
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {0, 1}}},
     volume = 1000,
   },
   {
     production_type = "input",
     pipe_covers = pipecoverspictures(),
-    pipe_connections = {{flow_direction = "input", direction = defines.direction.west, position = {-2, 0}}},
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.west, position = {-1, 0}}},
     volume = 1000,
   },
 }
@@ -95,13 +95,13 @@ notary_office.fluid_boxes = {
   {
     production_type = "input",
     pipe_covers = pipecoverspictures(),
-    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -2}}},
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -1}}},
     volume = 1000,
   },
   {
     production_type = "input",
     pipe_covers = pipecoverspictures(),
-    pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {0, 2}}},
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {0, 1}}},
     volume = 1000,
   },
 }
