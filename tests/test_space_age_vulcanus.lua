@@ -149,10 +149,10 @@ test("chromatic printer is a flippable four-port liquid-fed machine", function()
   assert_eq(#(entity.fluid_boxes or {}), 4, "chromatic-printer should expose four input ports")
 
   local expected = {
-    {defines.direction.north, 0, -2},
-    {defines.direction.east, 2, 0},
-    {defines.direction.south, 0, 2},
-    {defines.direction.west, -2, 0},
+    {defines.direction.north, 0, -1},
+    {defines.direction.east, 1, 0},
+    {defines.direction.south, 0, 1},
+    {defines.direction.west, -1, 0},
   }
 
   for index, spec in ipairs(expected) do
