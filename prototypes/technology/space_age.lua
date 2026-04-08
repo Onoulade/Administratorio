@@ -18,6 +18,13 @@ data:extend({
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "chromatic-printer"},
+      {type = "unlock-recipe", recipe = "liquid-black-ink"},
+      {type = "unlock-recipe", recipe = "dubious-data-analysis-vulcanus"},
+      {type = "unlock-recipe", recipe = "cyan-slurry-production"},
+      {type = "unlock-recipe", recipe = "cyan-ink-production"},
+      {type = "unlock-recipe", recipe = "heatproof-form-stock"},
+      {type = "unlock-recipe", recipe = "permit-draft"},
+      {type = "unlock-recipe", recipe = "inspection-docket"},
     },
     prerequisites = {"industrial-printing", "executive-review"},
     unit = {
@@ -62,6 +69,36 @@ data:extend({
       time = 45,
     },
     order = "h-b",
+  },
+  {
+    type = "technology",
+    name = "vulcanus-certification",
+    icon = "__administratorio__/graphics/icons/management-approval-written.png",
+    icon_size = 64,
+    effects = {
+      {type = "unlock-recipe", recipe = "notary-office"},
+      {type = "unlock-recipe", recipe = "embossed-seal"},
+      {type = "unlock-recipe", recipe = "industrial-charter"},
+      {type = "unlock-recipe", recipe = "lava-safety-endorsement"},
+      {type = "unlock-recipe", recipe = "foundry-operating-charter"},
+      {type = "unlock-recipe", recipe = "vulcanus-lie-fabrication"},
+      {type = "unlock-recipe", recipe = "research-grant-approval-vulcanus"},
+      {type = "unlock-recipe", recipe = "management-verbal-approval-vulcanus"},
+      {type = "unlock-recipe", recipe = "management-written-approval-vulcanus"},
+    },
+    prerequisites = {"chromatic-printing", "metallurgic-science-pack"},
+    unit = {
+      count = 320,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"metallurgic-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 45,
+    },
+    order = "h-c",
   },
 })
 

@@ -9,6 +9,7 @@
 -- 1. AUTOPLACE CONTROLS (must be registered before resources reference them)
 -------------------------------------------------------------------------------
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
+local feature_flags = require("feature_flags")
 
 data:extend({
   {
@@ -43,6 +44,20 @@ data:extend({
     category = "resource"
   }
 })
+
+if feature_flags.space_age_enabled() then
+  data:extend({
+    {
+      type = "autoplace-control",
+      name = "verdigris-crust",
+      icon = "__administratorio__/graphics/icons/bullshit-ore.png",
+      icon_size = 64,
+      richness = true,
+      order = "b-d",
+      category = "resource"
+    },
+  })
+end
 
 -------------------------------------------------------------------------------
 -- 2. LOAD ALL MOD PROTOTYPES

@@ -4,7 +4,9 @@
 -- Politician Fluid: infinite fluid, pumpjack -- yields lies + credentials
 -- Redundant Rubble: solid, mineable, starting area -- bureaucratic filler
 -------------------------------------------------------------------------------
+local feature_flags = require("feature_flags")
 local resource_autoplace = require("resource-autoplace")
+local planets = require("prototypes.shared.space_age_planets")
 
 data:extend({
   {
@@ -104,3 +106,41 @@ data:extend({
     map_color = {r=1, g=0.3, b=0.3}
   }
 })
+
+if feature_flags.space_age_enabled() then
+  data:extend({
+    planets.apply_planet_surface_conditions({
+      type = "resource", name = "verdigris-crust",
+      icons = {
+        {icon = "__administratorio__/graphics/icons/bullshit-ore.png", icon_size = 64, tint = {r = 0.25, g = 0.9, b = 0.75, a = 1}},
+      },
+      flags = {"placeable-neutral"}, order="a-b-d",
+      tree_removal_probability = 0.5, tree_removal_max_distance = 32 * 32,
+      minable = {mining_particle = "stone-particle", mining_time = 1.2, result = "verdigris-crust"},
+      collision_box = {{-0.1, -0.1}, {0.1, 0.1}},
+      selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
+      autoplace = resource_autoplace.resource_autoplace_settings{
+        name = "verdigris-crust",
+        order = "b-d",
+        base_density = 6,
+        base_spots_per_km2 = 2.0,
+        has_starting_area_placement = true,
+        regular_rq_factor_multiplier = 1.0,
+        starting_rq_factor_multiplier = 1.0,
+        candidate_spot_count = 15,
+      },
+      stage_counts = {12000, 6000, 1800, 600, 240, 100, 50, 12},
+      stages = {
+        sheet = {
+          filename = "__administratorio__/graphics/entities/bullshit-ore/rare-metal-ore.png",
+          priority = "extra-high",
+          width = 128, height = 128,
+          frame_count = 8, variation_count = 8,
+          scale = 0.5,
+          tint = {r = 0.25, g = 0.9, b = 0.75, a = 1},
+        }
+      },
+      map_color = {r=0.1, g=0.8, b=0.7}
+    }, "vulcanus"),
+  })
+end

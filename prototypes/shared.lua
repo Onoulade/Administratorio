@@ -234,6 +234,9 @@ shared.ADMIN_BUILDINGS = {
 
 if space_age_enabled then
   shared.ADMIN_BUILDINGS["chromatic-printer"] = true
+  shared.ADMIN_BUILDINGS["formation-center"] = true
+  shared.ADMIN_BUILDINGS["trajectory-compliance-array"] = true
+  shared.ADMIN_BUILDINGS["notary-office"] = true
 end
 
 -------------------------------------------------------------------------------
@@ -257,6 +260,24 @@ shared.FORM_PRODUCTION_RECIPES = {
   ["chemical-handling-work-order"] = "chemical-handling-work-order-production",
   ["radiological-work-order"] = "radiological-work-order-production",
 }
+
+if space_age_enabled then
+  shared.PAPERWORK_ITEMS["heatproof-form-stock"] = true
+  shared.PAPERWORK_ITEMS["permit-draft"] = true
+  shared.PAPERWORK_ITEMS["inspection-docket"] = true
+  shared.PAPERWORK_ITEMS["embossed-seal"] = true
+  shared.PAPERWORK_ITEMS["industrial-charter"] = true
+  shared.PAPERWORK_ITEMS["lava-safety-endorsement"] = true
+  shared.PAPERWORK_ITEMS["foundry-operating-charter"] = true
+
+  shared.FORM_PRODUCTION_RECIPES["heatproof-form-stock"] = "heatproof-form-stock"
+  shared.FORM_PRODUCTION_RECIPES["permit-draft"] = "permit-draft"
+  shared.FORM_PRODUCTION_RECIPES["inspection-docket"] = "inspection-docket"
+  shared.FORM_PRODUCTION_RECIPES["embossed-seal"] = "embossed-seal"
+  shared.FORM_PRODUCTION_RECIPES["industrial-charter"] = "industrial-charter"
+  shared.FORM_PRODUCTION_RECIPES["lava-safety-endorsement"] = "lava-safety-endorsement"
+  shared.FORM_PRODUCTION_RECIPES["foundry-operating-charter"] = "foundry-operating-charter"
+end
 
 -------------------------------------------------------------------------------
 -- COMBINED FORM PRODUCTION RECIPES
