@@ -18,6 +18,7 @@ Detailed planet breakdowns live in:
 - [Fulgora Plan](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-fulgora-plan.md)
 - [Aquilo Plan](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-aquilo-plan.md)
 - [Public Finance Plan](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-public-finance-plan.md)
+- [Professions Plan](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-professions-plan.md)
 
 ## Current Code Constraints
 
@@ -73,6 +74,8 @@ The current preferred money model is:
 This gives money a central role in interstellar travel without turning every planet into a raw-cash sink.
 
 The detailed candidate system lives in [space-age-public-finance-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-public-finance-plan.md).
+
+The current workforce specialization draft lives in [space-age-professions-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-professions-plan.md).
 
 ## Shared Printing Model
 
@@ -391,6 +394,7 @@ Each of these should have at least three meaningful uses, with at least one offw
 - planet-specific paperwork families
 - one upgraded building per planet
 - management as a continuous orbital consumable
+- tier-3 modules as a repeatable trained-biter sink
 - archive recovery on Fulgora
 
 ### Manageable But Scripted

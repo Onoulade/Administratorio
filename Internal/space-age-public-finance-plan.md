@@ -143,6 +143,7 @@ Suggested uses:
 - `space-office`
 - `Fax Sender`
 - `Interplanetary Fax Exchange`
+- platform reactor operating budget
 - `trajectory-compliance-array`
 - late offworld buildings or upgrades
 
@@ -198,6 +199,32 @@ This means:
 - space is expensive to enter
 - offworld infrastructure is capital-intensive
 - the player is not expected to continuously feed raw cash into every remote printer
+
+## Platform Power Budget
+
+The best reactor-money version is:
+
+- platform reactors consume a compact finance document, not raw `taxpayer-money`
+- the preferred recurring fuel is `offworld-allocation`
+- `money-case` remains an emergency bootstrap item, not the main fuel
+
+Why `offworld-allocation` is the best fit:
+
+- it already has several other offworld uses
+- it does not create a single-use finance intermediate
+- it reads as budget authorization rather than literal cash being burned in a furnace
+
+Design intent:
+
+- major platform power should feel publicly funded
+- space travel should stay expensive even after the first launch
+- the player should solve this with treasury throughput on Nauvis, not by stuffing raw cash into every recipe
+
+Technical note:
+
+- if the chosen platform reactor implementation can consume an item fuel directly, `offworld-allocation` should be the item it burns
+- if direct fuel burning is not viable on the final reactor prototype, the fallback is to consume `offworld-allocation` through a scripted operating-budget or maintenance-permit layer
+- avoid introducing a reactor-only finance item unless it also has several other uses
 
 ## Where Money Should Matter
 
