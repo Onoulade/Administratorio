@@ -2,7 +2,11 @@
 -- Single source of truth for constants used across data.lua and data-final-fixes.lua.
 
 local shared = {}
-local compatibility_rules = require("prototypes.shared.vanilla_rules")
+local feature_flags = require("feature_flags")
+local space_age_enabled = feature_flags.space_age_enabled()
+local compatibility_rules = space_age_enabled
+  and require("prototypes.shared.space_age_rules")
+  or require("prototypes.shared.non_space_age_rules")
 
 -------------------------------------------------------------------------------
 -- CORE DESIGN PRINCIPLES
@@ -228,6 +232,10 @@ shared.ADMIN_BUILDINGS = {
   ["pneumatic-pipe-to-ground"] = true,
 }
 
+if space_age_enabled then
+  shared.ADMIN_BUILDINGS["chromatic-printer"] = true
+end
+
 -------------------------------------------------------------------------------
 -- FORM PRODUCTION RECIPES
 -- Maps form item names to the recipe that produces them.
@@ -431,11 +439,12 @@ shared.BATCH_MULTIPLIERS = {
   ["paper-production"] = 20,
 }
 
+-- COMPATIBILITY RULESET
+-- Non-Space-Age and Space-Age rules are split into separate files so each
+-- mode can evolve independently without mixing conditionals across this file.
 -------------------------------------------------------------------------------
--- RULESET
--- Main branch keeps baseline (vanilla) regulation rules in a dedicated file.
--------------------------------------------------------------------------------
-shared.COMPATIBILITY_RULESET = "vanilla"
+shared.SPACE_AGE_ENABLED = space_age_enabled
+shared.COMPATIBILITY_RULESET = space_age_enabled and "space-age" or "non-space-age"
 
 function shared.get_required_form(recipe_name)
   return compatibility_rules.get_required_form(recipe_name)

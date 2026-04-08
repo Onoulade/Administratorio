@@ -2,6 +2,7 @@
 
 local feature_flags = require("feature_flags")
 local working_hours_enabled = feature_flags.working_hours_enabled()
+local space_age_enabled = feature_flags.space_age_enabled()
 
 if not data.raw["damage-type"]["bureaucratic-logic"] then
   data:extend({
@@ -15,6 +16,9 @@ require("prototypes.item.paperwork")
 require("prototypes.item.resolution")
 require("prototypes.item.economy")
 require("prototypes.item.buildings")
+if space_age_enabled then
+  require("prototypes.item.space_age")
+end
 if working_hours_enabled then
   require("prototypes.item.modules")
 end

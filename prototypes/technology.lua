@@ -1,6 +1,7 @@
 local feature_flags = require("feature_flags")
 local shared = require("prototypes.shared")
 local working_hours_enabled = feature_flags.working_hours_enabled()
+local space_age_enabled = feature_flags.space_age_enabled()
 local tech_icons = "__administratorio__/graphics/technology/"
 
 local function pneumatic_form_transport_effects()
@@ -1262,3 +1263,7 @@ add_tech_prerequisite("uranium-processing", "radiological-compliance")
 add_tech_prerequisite("nuclear-power", "production-science-pack")
 
 inherit_parent_science_packs()
+
+if space_age_enabled then
+  require("prototypes.technology.space_age")
+end
