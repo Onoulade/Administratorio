@@ -757,6 +757,9 @@ else
   mod_root = "./"
 end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
+local shared = require("prototypes.shared")
+-- Regression guard: explicit equipment overrides must be ignored by final-fixes.
+shared.BATCH_MULTIPLIERS["battery-equipment"] = 99
 
 dofile(mod_root .. "prototypes/categories.lua")
 
@@ -919,24 +922,30 @@ test("heat-pipe batches at 10x", function()
     "heat-pipe should show the 10x overlay")
 end)
 
-test("equipment recipes default to 1x except solar panels and batteries", function()
+test("equipment recipes stay unbatched at 1x", function()
   local solar = get_recipe("solar-panel-equipment")
   assert_true(solar ~= nil, "solar-panel-equipment missing")
-  assert_eq(get_result_amount(solar, "solar-panel-equipment"), 2, "solar-panel-equipment should batch to 2")
-  assert_true(has_icon_layer(solar, "__base__/graphics/icons/signal/signal_2.png"),
-    "solar-panel-equipment should show the 2x overlay")
+  assert_eq(get_result_amount(solar, "solar-panel-equipment"), 1, "solar-panel-equipment should stay 1x")
+  assert_true(not has_icon_layer(solar, "__base__/graphics/icons/signal/signal_1.png"),
+    "solar-panel-equipment should not show a 1x overlay")
+  assert_true(not has_icon_layer(solar, "__base__/graphics/icons/signal/signal_2.png"),
+    "solar-panel-equipment should not show a 2x overlay")
 
   local battery = get_recipe("battery-equipment")
   assert_true(battery ~= nil, "battery-equipment missing")
-  assert_eq(get_result_amount(battery, "battery-equipment"), 2, "battery-equipment should batch to 2")
-  assert_true(has_icon_layer(battery, "__base__/graphics/icons/signal/signal_2.png"),
-    "battery-equipment should show the 2x overlay")
+  assert_eq(get_result_amount(battery, "battery-equipment"), 1, "battery-equipment should stay 1x")
+  assert_true(not has_icon_layer(battery, "__base__/graphics/icons/signal/signal_1.png"),
+    "battery-equipment should not show a 1x overlay")
+  assert_true(not has_icon_layer(battery, "__base__/graphics/icons/signal/signal_2.png"),
+    "battery-equipment should not show a 2x overlay")
 
   local battery_mk2 = get_recipe("battery-mk2-equipment")
   assert_true(battery_mk2 ~= nil, "battery-mk2-equipment missing")
-  assert_eq(get_result_amount(battery_mk2, "battery-mk2-equipment"), 2, "battery-mk2-equipment should batch to 2")
-  assert_true(has_icon_layer(battery_mk2, "__base__/graphics/icons/signal/signal_2.png"),
-    "battery-mk2-equipment should show the 2x overlay")
+  assert_eq(get_result_amount(battery_mk2, "battery-mk2-equipment"), 1, "battery-mk2-equipment should stay 1x")
+  assert_true(not has_icon_layer(battery_mk2, "__base__/graphics/icons/signal/signal_1.png"),
+    "battery-mk2-equipment should not show a 1x overlay")
+  assert_true(not has_icon_layer(battery_mk2, "__base__/graphics/icons/signal/signal_2.png"),
+    "battery-mk2-equipment should not show a 2x overlay")
 
   local exoskeleton = get_recipe("exoskeleton-equipment")
   assert_true(exoskeleton ~= nil, "exoskeleton-equipment missing")

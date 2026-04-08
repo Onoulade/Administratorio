@@ -291,12 +291,15 @@ test("batch multipliers for high-volume intermediates are 10x or 20x", function(
   end
 end)
 
-test("equipment recipe multiplier overrides stay narrow", function()
-  assert_eq(shared.BATCH_MULTIPLIERS["solar-panel-equipment"], 2)
-  assert_eq(shared.BATCH_MULTIPLIERS["battery-equipment"], 2)
-  assert_eq(shared.BATCH_MULTIPLIERS["battery-mk2-equipment"], 2)
+test("equipment recipes have no explicit batching overrides", function()
+  assert_true(shared.BATCH_MULTIPLIERS["solar-panel-equipment"] == nil,
+    "solar-panel-equipment should rely on the 1x equipment rule")
+  assert_true(shared.BATCH_MULTIPLIERS["battery-equipment"] == nil,
+    "battery-equipment should rely on the 1x equipment rule")
+  assert_true(shared.BATCH_MULTIPLIERS["battery-mk2-equipment"] == nil,
+    "battery-mk2-equipment should rely on the 1x equipment rule")
   assert_true(shared.BATCH_MULTIPLIERS["exoskeleton-equipment"] == nil,
-    "non-battery equipment should fall back to the 1x equipment rule, not an explicit override")
+    "exoskeleton-equipment should rely on the 1x equipment rule")
 end)
 
 test("default batch multiplier is 5", function()

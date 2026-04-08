@@ -375,7 +375,9 @@ local function get_recipe_batch_multiplier(recipe_name, recipe)
       if get_max_stack_size(res_name) == 1 then
         return 1
       end
-      if not explicit_multiplier and prototype and prototype.placed_as_equipment_result then
+      -- Equipment-grid items are always unbatched, even if a future explicit
+      -- multiplier override is accidentally added.
+      if prototype and prototype.placed_as_equipment_result then
         return 1
       end
     end
