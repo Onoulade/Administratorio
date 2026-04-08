@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 0.2.10 - 2026-04-08
+
+### Added
+- Added an eight-step `admin-station-capacity` research chain so each Biter Administration Desk can grow from 4 default waiting slots up to 12 total, plus three `filing-cabinet-logistics` upgrades for extra personal logistics request and trash slots.
+
+### Changed
+- Reworked paperwork progression and environmental gating: `environmental-compliance` now unlocks environmental impact reports, chemical-handling work orders, petrochemical permits, and verified carbon certificates in one branch, while advanced modules, robotics, processing, fuel, and other higher-tier vanilla recipes pick up stricter approval and compliance paperwork.
+- Rebalanced the complaint pipeline around paired biter/spitter tiers, removing the old written-review step from normal progression while keeping legacy complaint briefs only for save compatibility.
+- Reordered administrative items and recipes so paper supplies, printers, and regulated recipe variants sort more cleanly in crafting panes and Factoriopedia.
+- Equipment-grid armor recipes now stay unbatched at 1x even if surrounding recipe tiers batch normally.
+
+### Fixed
+- Fixed English locale, Tips & Tricks, and README copy to match the electric greenhouse, merged environmental branch, expanded admin-station capacity research, and the current late-game complaint/workflow structure.
+
 ## 0.2.9 - 2026-04-07
 
 ### Changed

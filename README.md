@@ -14,7 +14,7 @@ Most recipes now require an administrative form on top of their regular ingredie
 
 ### Complaints replace combat
 
-Biters don't attack your base in the usual way. Attack groups get intercepted and rerouted to your **Biter Administration Desk** instead. Each registered biter occupies one waiting slot, turns into a neutral citizen, and drops complaint-ticket items into the desk inventory. You process those tickets through the **Resolution Office** chain, return the matching resolved item to the desk, and the citizen leaves satisfied while paying you in **Taxpayer Money**.
+Biters don't attack your base in the usual way. Attack groups get intercepted and rerouted to your **Biter Administration Desk** instead. Each registered biter occupies one waiting slot, turns into a neutral citizen, and drops complaint-ticket items into the desk inventory. Admin Stations now start at **4 waiting slots** by default and can be expanded to **12** through the **Admin Station Capacity** research chain. You process those tickets through the **Resolution Office** chain, return the matching resolved item to the desk, and the citizen leaves satisfied while paying you in **Taxpayer Money**.
 
 There are two complaint families: biters escalate through landscape, smog, noise, and unemployment; spitters escalate through littering, hazmat, loitering, and vagrancy. Bigger enemies can generate higher tiers, and the mod warns you as evolution approaches the thresholds where new paperwork tiers start mattering.
 
@@ -59,7 +59,7 @@ And yes, coffee is the lifeblood of the operation. You'll grow it in **Greenhous
 
 ### A full tech tree built on red tape
 
-I reworked the entire research tree — military milestones are replaced with bureaucratic ones. Instead of a few giant umbrella techs, the tree now splits into narrower branches like **Local Precedents**, **Environmental Reporting**, **Corporate Hospitality**, **Information Management**, **Verbal Approvals**, **Public Finance**, **Board Meetings**, **Executive Review**, **Radiological Compliance**, **Federal Regulation**, and the separate late complaint ordinances. Each branch unlocks a different slice of the office: paperwork throughput, coffee, approvals, funding, expansion, or one of the late complaint families.
+I reworked the entire research tree. Military milestones are replaced with bureaucratic ones, and the tree now splits into narrower branches like **Local Precedents**, **Environmental Compliance**, **Corporate Hospitality**, **Information Management**, **Verbal Approvals**, **Public Finance**, **Board Meetings**, **Executive Review**, **Radiological Compliance**, **Federal Regulation**, **Admin Station Capacity**, and the separate late complaint ordinances. Each branch unlocks a different slice of the office: paperwork throughput, coffee, approvals, funding, queue capacity, expansion, or one of the late complaint families.
 
 
 ## Current State
