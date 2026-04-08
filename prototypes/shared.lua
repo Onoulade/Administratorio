@@ -2,6 +2,7 @@
 -- Single source of truth for constants used across data.lua and data-final-fixes.lua.
 
 local shared = {}
+local compatibility_rules = require("prototypes.shared.vanilla_rules")
 
 -------------------------------------------------------------------------------
 -- CORE DESIGN PRINCIPLES
@@ -348,99 +349,13 @@ shared.BATCH_MULTIPLIERS = {
 }
 
 -------------------------------------------------------------------------------
--- FORM TIER SYSTEM
--- Determines which form is required for regulated crafting recipes.
--- Higher tiers = harder to produce forms = cannot be handcrafted.
---
--- Tier 0 (work-order):              Basic assembler-regulated intermediates
--- Tier 1 (safety-waiver):           Factory equipment (inserters, poles, radar)
--- Tier 2 (construction-permit):     Industrial buildings, underground/elevated infrastructure, red/blue belts
--- Tier 3 (management-approval-verbal): Heavy infrastructure (trains, roboport)
--- Tier 4 (management-approval-written): Megastructures (AM3, silo, nuclear)
--- Special: Labs use construction-permit (same as T2 industrial buildings)
--- Special: Science packs use research-grant-approval
+-- RULESET
+-- Main branch keeps baseline (vanilla) regulation rules in a dedicated file.
 -------------------------------------------------------------------------------
+shared.COMPATIBILITY_RULESET = "vanilla"
 
 function shared.get_required_form(recipe_name)
-  local explicit_form_overrides = {
-    ["advanced-circuit"] = "management-approval-verbal",
-    ["electric-engine-unit"] = "management-approval-verbal",
-    ["processing-unit"] = "management-approval-verbal",
-    ["flying-robot-frame"] = "management-approval-verbal",
-    ["logistic-robot"] = "management-approval-verbal",
-    ["construction-robot"] = "management-approval-verbal",
-    ["personal-roboport-equipment"] = "management-approval-verbal",
-    ["personal-roboport-mk2-equipment"] = "management-approval-verbal",
-    ["rail"] = "construction-permit",
-    ["train-stop"] = "construction-permit",
-    ["rail-signal"] = "construction-permit",
-    ["rail-chain-signal"] = "construction-permit",
-    ["locomotive"] = "safety-waiver",
-    ["rocket-fuel"] = "management-approval-verbal",
-    ["low-density-structure"] = "management-approval-written",
-    ["rocket-control-unit"] = "management-approval-written",
-    ["satellite"] = "management-approval-written",
-    ["heat-exchanger"] = "management-approval-written",
-    ["steam-turbine"] = "management-approval-written",
-    ["fusion-reactor-equipment"] = "management-approval-written",
-  }
-  if explicit_form_overrides[recipe_name] then
-    return explicit_form_overrides[recipe_name]
-  end
-
-  if recipe_name == "burner-inserter" then return "work-order" end
-
-  -- Tier 4: Management Approval Written (megastructures)
-  local tier4_patterns = {
-    "assembling%-machine%-3", "centrifuge", "rocket%-silo",
-    "nuclear%-reactor", "beacon",
-    "fusion%-reactor", "quantum", "antimatter", "singularity",
-  }
-  for _, pat in ipairs(tier4_patterns) do
-    if recipe_name:find(pat) then return "management-approval-written" end
-  end
-
-  -- Tier 3: Management Approval Verbal (heavy infrastructure)
-  local tier3_patterns = {
-    "locomotive", "cargo%-wagon", "fluid%-wagon",
-    "roboport", "solar%-panel", "accumulator", "electric%-furnace",
-  }
-  for _, pat in ipairs(tier3_patterns) do
-    if recipe_name:find(pat) then return "management-approval-verbal" end
-  end
-
-  -- Tier 2: Construction Permit (industrial buildings + underground infrastructure)
-  local tier2_patterns = {
-    "assembling%-machine%-2", "chemical%-plant", "oil%-refinery",
-    "pumpjack", "storage%-tank", "offshore%-pump",
-    "steel%-furnace",
-    "underground%-belt", "pipe%-to%-ground",
-    "rail%-ramp", "rail%-support",
-    "fast%-transport%-belt", "express%-transport%-belt",
-  }
-  for _, pat in ipairs(tier2_patterns) do
-    if recipe_name:find(pat) then return "construction-permit" end
-  end
-
-  -- Tier 1: Safety Waiver (factory equipment & basic buildings)
-  local tier1_patterns = {
-    "inserter", "radar", "stone%-wall", "gate", "splitter",
-    "medium%-electric%-pole", "big%-electric%-pole", "substation",
-    "boiler", "steam%-engine", "assembling%-machine%-1",
-  }
-  for _, pat in ipairs(tier1_patterns) do
-    if recipe_name:find(pat) then return "safety-waiver" end
-  end
-
-  -- Special: Labs and mining drills (use construction permit)
-  if recipe_name == "lab" then return "construction-permit" end
-  if recipe_name:find("mining%-drill") then return "construction-permit" end
-
-  -- Special: Science packs (use research grant approval)
-  if recipe_name:find("science%-pack") then return "research-grant-approval" end
-
-  -- Tier 0: Work Order (everything else)
-  return "work-order"
+  return compatibility_rules.get_required_form(recipe_name)
 end
 
 -------------------------------------------------------------------------------
@@ -450,22 +365,8 @@ end
 -- baseline petrochem stays on the basic permit while advanced processing and
 -- more demanding chemistry step up to the chemical work order.
 -------------------------------------------------------------------------------
-shared.OPERATING_FORM_BY_CATEGORY = {
-  ["oil-processing"] = "petrochemical-operating-permit",
-  ["chemistry"] = "chemical-handling-work-order",
-  ["centrifuging"] = "radiological-work-order",
-}
-
-shared.OPERATING_FORM_BY_RECIPE = {
-  ["plastic-bar"] = "petrochemical-operating-permit",
-  ["sulfur"] = "petrochemical-operating-permit",
-  ["sulfuric-acid"] = "petrochemical-operating-permit",
-  ["solid-fuel-from-heavy-oil"] = "petrochemical-operating-permit",
-  ["solid-fuel-from-light-oil"] = "petrochemical-operating-permit",
-  ["solid-fuel-from-petroleum-gas"] = "petrochemical-operating-permit",
-  ["advanced-oil-processing"] = "chemical-handling-work-order",
-  ["coal-liquefaction"] = "chemical-handling-work-order",
-}
+shared.OPERATING_FORM_BY_CATEGORY = compatibility_rules.OPERATING_FORM_BY_CATEGORY
+shared.OPERATING_FORM_BY_RECIPE = compatibility_rules.OPERATING_FORM_BY_RECIPE
 
 function shared.get_operating_form(recipe_or_name, category)
   local recipe_name = recipe_or_name
@@ -480,15 +381,7 @@ end
 
 -------------------------------------------------------------------------------
 -- TAXPAYER MONEY COSTS
--- Adds taxpayer-money as an ingredient to regulated (AM) recipes for
--- superfluous-but-awesome late-game buildings.
 -------------------------------------------------------------------------------
-shared.TAXPAYER_MONEY_COSTS = {
-  ["roboport"] = 25,
-  ["beacon"] = 30,
-  ["nuclear-reactor"] = 100,
-  ["centrifuge"] = 50,
-  ["rocket-silo"] = 200,
-}
+shared.TAXPAYER_MONEY_COSTS = compatibility_rules.TAXPAYER_MONEY_COSTS
 
 return shared
