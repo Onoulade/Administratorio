@@ -1,0 +1,79 @@
+-------------------------------------------------------------------------------
+-- ADMINISTRATORIO SPACE AGE COMPATIBILITY TESTS
+--
+-- Standalone Lua tests for Space Age-specific paperwork exemptions.
+-- Run: lua tests/test_space_age_rules.lua
+-------------------------------------------------------------------------------
+
+local passed, failed, errors = 0, 0, {}
+
+local function test(name, fn)
+  local ok, err = pcall(fn)
+  if ok then
+    passed = passed + 1
+  else
+    failed = failed + 1
+    errors[#errors + 1] = name .. ": " .. tostring(err)
+  end
+end
+
+local function assert_eq(actual, expected, msg)
+  if actual ~= expected then
+    error((msg or "") .. " - expected " .. tostring(expected) .. ", got " .. tostring(actual), 2)
+  end
+end
+
+local function assert_nil(value, msg)
+  if value ~= nil then
+    error((msg or "expected nil") .. ", got " .. tostring(value), 2)
+  end
+end
+
+mods = {
+  ["space-age"] = "2.0.0",
+}
+
+local mod_root = debug.getinfo(1, "S").source:match("@(.*/)")
+if mod_root then
+  mod_root = mod_root:gsub("Internal/tests/$", ""):gsub("tests/$", "")
+else
+  mod_root = "./"
+end
+package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
+
+package.loaded["feature_flags"] = nil
+package.loaded["prototypes.shared"] = nil
+package.loaded["prototypes.shared.non_space_age_rules"] = nil
+package.loaded["prototypes.shared.space_age_rules"] = nil
+
+local shared = require("prototypes.shared")
+
+test("native Space Age machine categories are exempt from recurring operating paperwork", function()
+  assert_nil(shared.get_operating_form({name = "casting-copper-cable", category = "metallurgy"}), "metallurgy should be exempt")
+  assert_nil(shared.get_operating_form({name = "yumako-processing", category = "organic"}), "organic should be exempt")
+  assert_nil(shared.get_operating_form({name = "superconductor", category = "electromagnetics"}), "electromagnetics should be exempt")
+  assert_nil(shared.get_operating_form({name = "fluoroketone", category = "cryogenics"}), "cryogenics should be exempt")
+end)
+
+test("native Space Age machine build recipes stay exempt on hybrid categories", function()
+  assert_nil(shared.get_operating_form({name = "foundry", category = "metallurgy-or-assembling"}), "foundry should be exempt")
+  assert_nil(shared.get_operating_form({name = "biochamber", category = "organic-or-assembling"}), "biochamber should be exempt")
+  assert_nil(shared.get_operating_form({name = "electromagnetic-plant", category = "electronics-or-assembling"}), "electromagnetic-plant should be exempt")
+  assert_nil(shared.get_operating_form({name = "cryogenic-plant", category = "cryogenics-or-assembling"}), "cryogenic-plant should be exempt")
+end)
+
+test("existing vanilla operating-paperwork mappings remain intact under Space Age", function()
+  assert_eq(shared.get_operating_form({name = "oil-processing", category = "oil-processing"}), "petrochemical-operating-permit")
+  assert_eq(shared.get_operating_form({name = "advanced-oil-processing", category = "oil-processing"}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "uranium-processing", category = "centrifuging"}), "radiological-work-order")
+end)
+
+if failed > 0 then
+  io.stderr:write(("Failed %d/%d tests\n"):format(failed, passed + failed))
+  for _, err in ipairs(errors) do
+    io.stderr:write(err, "\n")
+  end
+  os.exit(1)
+end
+
+print(("Passed %d tests"):format(passed))

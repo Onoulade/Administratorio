@@ -459,12 +459,22 @@ end
 -------------------------------------------------------------------------------
 shared.OPERATING_FORM_BY_CATEGORY = compatibility_rules.OPERATING_FORM_BY_CATEGORY
 shared.OPERATING_FORM_BY_RECIPE = compatibility_rules.OPERATING_FORM_BY_RECIPE
+shared.OPERATING_FORM_EXEMPT_BY_CATEGORY = compatibility_rules.OPERATING_FORM_EXEMPT_BY_CATEGORY or {}
+shared.OPERATING_FORM_EXEMPT_BY_RECIPE = compatibility_rules.OPERATING_FORM_EXEMPT_BY_RECIPE or {}
 
 function shared.get_operating_form(recipe_or_name, category)
   local recipe_name = recipe_or_name
   if type(recipe_or_name) == "table" then
     recipe_name = recipe_or_name.name
     category = recipe_or_name.category
+  end
+
+  if shared.OPERATING_FORM_EXEMPT_BY_RECIPE[recipe_name] then
+    return nil
+  end
+
+  if shared.OPERATING_FORM_EXEMPT_BY_CATEGORY[category or "crafting"] then
+    return nil
   end
 
   return shared.OPERATING_FORM_BY_RECIPE[recipe_name]
