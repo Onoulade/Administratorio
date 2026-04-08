@@ -29,6 +29,12 @@ local function assert_nil(value, msg)
   end
 end
 
+local function assert_true(value, msg)
+  if not value then
+    error(msg or "expected true", 2)
+  end
+end
+
 mods = {
   ["space-age"] = "2.0.0",
 }
@@ -66,6 +72,12 @@ test("existing vanilla operating-paperwork mappings remain intact under Space Ag
   assert_eq(shared.get_operating_form({name = "oil-processing", category = "oil-processing"}), "petrochemical-operating-permit")
   assert_eq(shared.get_operating_form({name = "advanced-oil-processing", category = "oil-processing"}), "chemical-handling-work-order")
   assert_eq(shared.get_operating_form({name = "uranium-processing", category = "centrifuging"}), "radiological-work-order")
+end)
+
+test("space age admin buildings stay out of vanilla recipe regulation", function()
+  assert_true(shared.is_admin_recipe("chromatic-printer"), "chromatic-printer should be treated as an admin recipe")
+  assert_true(shared.is_admin_recipe("formation-center"), "formation-center should be treated as an admin recipe")
+  assert_true(shared.is_admin_recipe("trajectory-compliance-array"), "trajectory-compliance-array should be treated as an admin recipe")
 end)
 
 if failed > 0 then
