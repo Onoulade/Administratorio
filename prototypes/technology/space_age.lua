@@ -30,6 +30,7 @@ data:extend({
     icon = "__administratorio__/graphics/icons/steel-forge-icon.png",
     icon_size = 64,
     effects = {
+      {type = "unlock-recipe", recipe = "worker-biter"},
       {type = "unlock-recipe", recipe = "chromatic-printer"},
       {type = "unlock-recipe", recipe = "liquid-black-ink"},
       {type = "unlock-recipe", recipe = "dubious-data-analysis-vulcanus"},
