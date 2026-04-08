@@ -100,8 +100,14 @@ local function tech_unlocks_recipe(technology, recipe_name)
 end
 
 test("worker-biter exists as the enrolled-to-workforce intermediate", function()
+  assert_true(items["job-offer"] ~= nil, "job-offer missing")
   assert_true(items["enrolled-biter"] ~= nil, "enrolled-biter missing")
   assert_true(items["worker-biter"] ~= nil, "worker-biter missing")
+  assert_true(recipes["job-offer-production"] ~= nil, "job-offer recipe missing")
+  assert_eq(recipes["job-offer-production"].category, "bureaucracy-policy", "job-offer should be drafted through policy bureaucracy")
+  assert_true(has_ingredient(recipes["job-offer-production"], "treasury-bond"), "job-offer should require treasury-bonds")
+  assert_true(has_ingredient(recipes["job-offer-production"], "taxpayer-money"), "job-offer should require taxpayer-money")
+  assert_true(has_ingredient(recipes["job-offer-production"], "narrative"), "job-offer should require narrative")
   assert_true(recipes["worker-biter-formation"] ~= nil, "worker-biter formation recipe missing")
   assert_true(has_ingredient(recipes["worker-biter-formation"], "enrolled-biter"), "worker-biter should come from enrolled-biter")
 end)
@@ -124,6 +130,7 @@ test("workforce tech owns the workforce progression unlocks", function()
   local workforce = technologies["workforce-formation"]
   local chromatic = technologies["chromatic-printing"]
   assert_true(workforce ~= nil, "workforce-formation missing")
+  assert_true(tech_unlocks_recipe(workforce, "job-offer-production"), "workforce-formation should unlock job-offer-production")
   assert_true(tech_unlocks_recipe(workforce, "worker-biter-formation"), "workforce-formation should unlock worker-biter-formation")
   assert_true(not tech_unlocks_recipe(chromatic, "worker-biter"), "chromatic-printing should not directly unlock worker-biter")
   assert_eq(workforce.prerequisites[1], "space-science-pack", "workforce-formation should unlock after space science")

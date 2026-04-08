@@ -3,6 +3,15 @@ local item_icons = "__administratorio__/graphics/icons/"
 data:extend({
   {
     type = "item",
+    name = "job-offer",
+    icon = "__administratorio__/graphics/icons/management-written-proposal.png",
+    icon_size = 64,
+    subgroup = "admin-bs-economy",
+    order = "j-0",
+    stack_size = 20
+  },
+  {
+    type = "item",
     name = "enrolled-biter",
     icon = "__base__/graphics/icons/small-biter.png",
     icon_size = 64,
