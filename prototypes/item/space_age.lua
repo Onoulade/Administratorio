@@ -12,6 +12,15 @@ data:extend({
   },
   {
     type = "item",
+    name = "worker-biter",
+    icon = "__base__/graphics/icons/small-biter.png",
+    icon_size = 64,
+    subgroup = "admin-bs-economy",
+    order = "j-a2",
+    stack_size = 20
+  },
+  {
+    type = "item",
     name = "clerical-trainee",
     icon = "__base__/graphics/icons/medium-biter.png",
     icon_size = 64,

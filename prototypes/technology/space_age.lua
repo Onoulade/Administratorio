@@ -17,7 +17,6 @@ data:extend({
     icon = "__administratorio__/graphics/icons/steel-forge-icon.png",
     icon_size = 64,
     effects = {
-      {type = "unlock-recipe", recipe = "worker-biter"},
       {type = "unlock-recipe", recipe = "chromatic-printer"},
     },
     prerequisites = {"industrial-printing", "executive-review"},
@@ -40,13 +39,14 @@ data:extend({
     icon_size = 256,
     effects = {
       {type = "unlock-recipe", recipe = "formation-center"},
+      {type = "unlock-recipe", recipe = "worker-biter-formation"},
       {type = "unlock-recipe", recipe = "clerical-trainee-formation"},
       {type = "unlock-recipe", recipe = "management-trainee-formation"},
       {type = "unlock-recipe", recipe = "night-shift-supervisor-formation"},
       {type = "unlock-recipe", recipe = "field-negotiator-formation"},
       {type = "unlock-recipe", recipe = "middle-management-managing-manager-formation"},
     },
-    prerequisites = {"space-science-pack", "chromatic-printing"},
+    prerequisites = {"space-science-pack", "executive-review"},
     unit = {
       count = 280,
       ingredients = {
@@ -67,3 +67,6 @@ add_tech_unlock("metallurgic-science-pack", "licensed-notary-formation")
 add_tech_unlock("agricultural-science-pack", "conciliation-officer-formation")
 add_tech_unlock("electromagnetic-science-pack", "relay-clerk-formation")
 add_tech_unlock("cryogenic-science-pack", "cryoprint-technician-formation")
+add_tech_unlock("after-hours-operations", "overtime-exemption-staffed")
+add_tech_unlock("discovery-redundant-rubble", "promise-production-negotiated")
+add_tech_unlock("nest-expropriation", "eviction-notice-production-negotiated")

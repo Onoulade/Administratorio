@@ -35,13 +35,26 @@ data:extend({
   },
   {
     type = "recipe",
-    name = "clerical-trainee-formation",
+    name = "worker-biter-formation",
     category = "workforce-formation",
     enabled = false,
     ingredients = {
       {type = "item", name = "enrolled-biter", amount = 1},
       {type = "item", name = "credentials", amount = 1},
       {type = "item", name = "good-excuse", amount = 1},
+      {type = "item", name = "taxpayer-money", amount = 5},
+    },
+    results = {{type = "item", name = "worker-biter", amount = 1}},
+    energy_required = 10
+  },
+  {
+    type = "recipe",
+    name = "clerical-trainee-formation",
+    category = "workforce-formation",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "worker-biter", amount = 1},
+      {type = "item", name = "credentials", amount = 1},
       {type = "item", name = "paper", amount = 5},
     },
     results = {{type = "item", name = "clerical-trainee", amount = 1}},
@@ -53,7 +66,7 @@ data:extend({
     category = "workforce-formation",
     enabled = false,
     ingredients = {
-      {type = "item", name = "enrolled-biter", amount = 1},
+      {type = "item", name = "worker-biter", amount = 1},
       {type = "item", name = "narrative", amount = 1},
       {type = "item", name = "management-approval-verbal", amount = 1},
       {type = "item", name = "taxpayer-money", amount = 10},
@@ -167,6 +180,63 @@ data:extend({
     results = {{type = "item", name = "chromatic-printer", amount = 1}},
     energy_required = 12
   },
+  {
+    type = "recipe",
+    name = "overtime-exemption-staffed",
+    category = "union-negotiation",
+    enabled = false,
+    localised_name = {"recipe-name.overtime-exemption"},
+    ingredients = {
+      {type = "item", name = "night-shift-supervisor", amount = 1},
+      {type = "item", name = "productivity-module", amount = 1},
+      {type = "item", name = "processing-unit", amount = 6},
+      {type = "item", name = "government-grant", amount = 2},
+      {type = "item", name = "regulation", amount = 2},
+      {type = "item", name = "management-approval-written", amount = 1},
+      {type = "fluid", name = "liquid-coffee", amount = 60},
+    },
+    results = {
+      {type = "item", name = "overtime-exemption", amount = 1},
+    },
+    energy_required = 20,
+  },
+  {
+    type = "recipe",
+    name = "promise-production-negotiated",
+    category = "union-negotiation",
+    enabled = false,
+    localised_name = {"recipe-name.promise-production"},
+    ingredients = {
+      {type = "item", name = "field-negotiator", amount = 1},
+      {type = "item", name = "blank-form", amount = 4},
+      {type = "item", name = "good-excuse", amount = 1},
+      {type = "item", name = "management-approval-verbal", amount = 1},
+      {type = "fluid", name = "liquid-coffee", amount = 50},
+    },
+    results = {
+      {type = "item", name = "promise", amount = 3},
+    },
+    energy_required = 15,
+  },
+  {
+    type = "recipe",
+    name = "eviction-notice-production-negotiated",
+    category = "bureaucracy-policy",
+    enabled = false,
+    localised_name = {"recipe-name.eviction-notice-production"},
+    ingredients = {
+      {type = "item", name = "field-negotiator", amount = 1},
+      {type = "item", name = "good-excuse", amount = 1},
+      {type = "item", name = "credentials", amount = 1},
+      {type = "item", name = "management-approval-written", amount = 1},
+      {type = "fluid", name = "politician-fluid", amount = 50},
+      {type = "item", name = "taxpayer-money", amount = 60},
+    },
+    results = {
+      {type = "item", name = "eviction-notice", amount = 2},
+    },
+    energy_required = 25,
+  },
 })
 
 for _, recipe_name in ipairs({
@@ -182,4 +252,13 @@ for _, recipe_name in ipairs({
     ["cryogenic-plant"] = "cryoprint-technician",
   }
   add_item_ingredient(data.raw.recipe and data.raw.recipe[recipe_name], specialist_by_recipe[recipe_name], 1)
+end
+
+for _, recipe_name in ipairs({
+  "space-platform-starter-pack",
+  "cargo-bay",
+  "asteroid-collector",
+  "crusher",
+}) do
+  add_item_ingredient(data.raw.recipe and data.raw.recipe[recipe_name], "middle-management-managing-manager", 1)
 end
