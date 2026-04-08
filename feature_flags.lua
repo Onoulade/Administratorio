@@ -21,4 +21,21 @@ function M.debug_hard_mode_enabled()
   return startup_bool("administratorio-debug-hard-mode", false)
 end
 
+local function mod_enabled(mod_name)
+  if mods and mods[mod_name] then
+    return true
+  end
+
+  -- Runtime fallback for control stage.
+  if script and script.active_mods and script.active_mods[mod_name] then
+    return true
+  end
+
+  return false
+end
+
+function M.space_age_enabled()
+  return mod_enabled("space-age")
+end
+
 return M
