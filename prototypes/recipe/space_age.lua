@@ -21,18 +21,136 @@ end
 data:extend({
   {
     type = "recipe",
-    name = "worker-biter",
-    category = "union-negotiation",
+    name = "formation-center",
     enabled = false,
     ingredients = {
+      {type = "item", name = "office-desk", amount = 2},
+      {type = "item", name = "printer-t2", amount = 1},
+      {type = "item", name = "processing-unit", amount = 10},
+      {type = "item", name = "management-approval-written", amount = 1},
+      {type = "item", name = "refined-concrete", amount = 20},
+    },
+    results = {{type = "item", name = "formation-center", amount = 1}},
+    energy_required = 30
+  },
+  {
+    type = "recipe",
+    name = "clerical-trainee-formation",
+    category = "workforce-formation",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "enrolled-biter", amount = 1},
       {type = "item", name = "credentials", amount = 1},
       {type = "item", name = "good-excuse", amount = 1},
-      {type = "item", name = "narrative", amount = 1},
-      {type = "item", name = "taxpayer-money", amount = 25},
-      {type = "fluid", name = "liquid-coffee", amount = 100},
+      {type = "item", name = "paper", amount = 5},
     },
-    results = {{type = "item", name = "worker-biter", amount = 1}},
-    energy_required = 30
+    results = {{type = "item", name = "clerical-trainee", amount = 1}},
+    energy_required = 15
+  },
+  {
+    type = "recipe",
+    name = "management-trainee-formation",
+    category = "workforce-formation",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "enrolled-biter", amount = 1},
+      {type = "item", name = "narrative", amount = 1},
+      {type = "item", name = "management-approval-verbal", amount = 1},
+      {type = "item", name = "taxpayer-money", amount = 10},
+    },
+    results = {{type = "item", name = "management-trainee", amount = 1}},
+    energy_required = 20
+  },
+  {
+    type = "recipe",
+    name = "night-shift-supervisor-formation",
+    category = "workforce-formation",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "clerical-trainee", amount = 1},
+      {type = "item", name = "regulation", amount = 1},
+      {type = "item", name = "productivity-module", amount = 1},
+    },
+    results = {{type = "item", name = "night-shift-supervisor", amount = 1}},
+    energy_required = 20
+  },
+  {
+    type = "recipe",
+    name = "licensed-notary-formation",
+    category = "workforce-formation",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "clerical-trainee", amount = 1},
+      {type = "item", name = "construction-permit", amount = 1},
+      {type = "item", name = "management-approval-verbal", amount = 1},
+    },
+    results = {{type = "item", name = "licensed-notary", amount = 1}},
+    energy_required = 20
+  },
+  {
+    type = "recipe",
+    name = "conciliation-officer-formation",
+    category = "workforce-formation",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "clerical-trainee", amount = 1},
+      {type = "item", name = "good-excuse", amount = 1},
+      {type = "item", name = "promise", amount = 1},
+    },
+    results = {{type = "item", name = "conciliation-officer", amount = 1}},
+    energy_required = 20
+  },
+  {
+    type = "recipe",
+    name = "relay-clerk-formation",
+    category = "workforce-formation",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "clerical-trainee", amount = 1},
+      {type = "item", name = "data", amount = 1},
+      {type = "item", name = "processing-unit", amount = 1},
+    },
+    results = {{type = "item", name = "relay-clerk", amount = 1}},
+    energy_required = 20
+  },
+  {
+    type = "recipe",
+    name = "cryoprint-technician-formation",
+    category = "workforce-formation",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "clerical-trainee", amount = 1},
+      {type = "item", name = "processing-unit", amount = 2},
+      {type = "item", name = "management-approval-written", amount = 1},
+    },
+    results = {{type = "item", name = "cryoprint-technician", amount = 1}},
+    energy_required = 25
+  },
+  {
+    type = "recipe",
+    name = "field-negotiator-formation",
+    category = "workforce-formation",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "management-trainee", amount = 1},
+      {type = "item", name = "eviction-notice", amount = 1},
+      {type = "item", name = "management-approval-written", amount = 1},
+    },
+    results = {{type = "item", name = "field-negotiator", amount = 1}},
+    energy_required = 25
+  },
+  {
+    type = "recipe",
+    name = "middle-management-managing-manager-formation",
+    category = "workforce-formation",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "management-trainee", amount = 1},
+      {type = "item", name = "policy", amount = 1},
+      {type = "item", name = "office-drama", amount = 2},
+    },
+    results = {{type = "item", name = "middle-management-managing-manager", amount = 1}},
+    energy_required = 25
   },
   {
     type = "recipe",
@@ -57,5 +175,11 @@ for _, recipe_name in ipairs({
   "electromagnetic-plant",
   "cryogenic-plant",
 }) do
-  add_item_ingredient(data.raw.recipe and data.raw.recipe[recipe_name], "worker-biter", 1)
+  local specialist_by_recipe = {
+    ["foundry"] = "licensed-notary",
+    ["biochamber"] = "conciliation-officer",
+    ["electromagnetic-plant"] = "relay-clerk",
+    ["cryogenic-plant"] = "cryoprint-technician",
+  }
+  add_item_ingredient(data.raw.recipe and data.raw.recipe[recipe_name], specialist_by_recipe[recipe_name], 1)
 end
