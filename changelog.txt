@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.11
+Date: 2026-04-08
+  Bugfixes:
+    - Restored full complaint-paper processing at the `resolution-office` by letting it craft the shared bootstrap filing recipes alongside the rest of the resolution chain, so all complaint families can be completed there again.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.2.10
 Date: 2026-04-08
   Features:

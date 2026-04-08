@@ -41,7 +41,7 @@ This file tracks the actual progression model implemented by the mod, not just t
 | Building | Category / role | Notes |
 | --- | --- | --- |
 | `office-desk` | `bureaucracy-registration` | Base forms, approvals, work-orders, science, excuses, bonds input chain |
-| `resolution-office` | `bureaucracy-resolution` | All complaint filing / case / final recipes plus legacy brief compatibility crafts |
+| `resolution-office` | `bureaucracy-resolution`, `bureaucratic-bootstrap` | All complaint filing / case / final recipes plus legacy brief compatibility crafts; now also covers the shared bootstrap complaint filing entry points |
 | `mechanical-printer` | `printing` | Early printer, burner powered |
 | `printer-t1` | `printing`, `printing-workorder` | Midgame printer |
 | `printer-t2` | `printing`, `printing-advanced`, `printing-workorder` | Copying and high-throughput printing |
@@ -187,7 +187,7 @@ These are not "design intent" notes. They are current-code notes.
 - `administrative-bureaucracy` now sits on red science only and no longer depends on `printing-technology`, so greenhouse wood arrives before the admin-science printer ramp.
 - `safety-waiver-draft`, `safety-waiver-printing`, `construction-permit-draft`, and `construction-permit-printing` are enabled from the start.
 - Because of that, T1 and T2 form production is front-loaded instead of being unlocked by later bureaucracy techs.
-- All complaint recipes are in `bureaucracy-resolution`, so the `resolution-office` handles the full complaint chain. The `office-desk` does not process complaint filings in the current code.
+- `filing-landscape` still lives in `bureaucratic-bootstrap`, but the `resolution-office` now also has that category so it still handles the full complaint chain. The `office-desk` continues to share `bureaucratic-bootstrap`, but complaint processing is centered on the `resolution-office`.
 - Legacy `brief-*` recipes still exist for save compatibility, but normal progression no longer routes through them.
 - `assembling-machine-3` only keeps regulated categories in `data-final-fixes.lua`, even though shared comments describe AM3 as a reward that should also keep original categories.
 

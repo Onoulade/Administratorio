@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.2.11 - 2026-04-08
+
+### Fixed
+- Restored full complaint-paper processing at the `resolution-office` by letting it craft the shared bootstrap filing recipes alongside the rest of the resolution chain, so all complaint families can be completed there again.
+
 ## 0.2.10 - 2026-04-08
 
 ### Added
