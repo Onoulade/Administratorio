@@ -56,8 +56,8 @@ data:extend({
   { type = "recipe", name = "government-grant-production", category = "union-negotiation", enabled = false, ingredients = {{type="item", name="treasury-bond", amount=2},  {type="item", name="crappy-report", amount=1}, {type="item", name="management-approval-verbal", amount=1}},  results = {{type="item", name="government-grant", amount=1}}, energy_required = 15 },
   {
     type = "recipe", name = "tax-audit", category = "bureaucracy-policy", enabled = false,
-    ingredients = {{type="fluid", name="slush-fund", amount=100}, {type="item", name="taxpayer-money", amount=10}, {type="item", name="blank-form", amount=1}, {type="item", name="useless-documentation", amount=1}, {type="item", name="data", amount=1}, {type="fluid", name="liquid-coffee", amount=25}},
-    results = {{type="item", name="taxpayer-money", amount=30}},
+    ingredients = {{type="fluid", name="slush-fund", amount=80}, {type="item", name="taxpayer-money", amount=8}, {type="item", name="blank-form", amount=1}, {type="item", name="data", amount=1}, {type="fluid", name="liquid-coffee", amount=15}},
+    results = {{type="item", name="taxpayer-money", amount=22}},
     energy_required = 10
   },
   {
@@ -83,8 +83,8 @@ data:extend({
     energy_required = 5,
     crafting_machine_tint = distillery_recipe_tint("politician-fluid", "lie")
   },
-  { type = "recipe", name = "credentials-production", category = "bureaucracy-registration", enabled = false, ingredients = {{type="fluid", name="lie", amount=50}, {type="item", name="dubious-data", amount=5}, {type="item", name="refined-nonsense", amount=1}, {type="item", name="electronic-circuit", amount=2}}, results = {{type="item", name="credentials", amount=1}}, energy_required = 10 },
-  { type = "recipe", name = "data-production",           category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="crappy-report", amount=1}, {type="item", name="credentials", amount=1}, {type="item", name="advanced-circuit", amount=2}, {type="fluid", name="liquid-coffee", amount=25}},     results = {{type="item", name="data", amount=1}},             energy_required = 10 },
+  { type = "recipe", name = "credentials-production", category = "bureaucracy-registration", enabled = false, ingredients = {{type="fluid", name="lie", amount=35}, {type="item", name="dubious-data", amount=4}, {type="item", name="refined-nonsense", amount=1}, {type="item", name="electronic-circuit", amount=2}}, results = {{type="item", name="credentials", amount=1}}, energy_required = 10 },
+  { type = "recipe", name = "data-production",           category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="crappy-report", amount=1}, {type="item", name="advanced-circuit", amount=2}, {type="fluid", name="liquid-coffee", amount=15}},     results = {{type="item", name="data", amount=1}},             energy_required = 10 },
   { type = "recipe", name = "good-excuse-production",    category = "watercooler-gossip",       enabled = false,
     ingredients = {{type="item", name="data", amount=1}, {type="fluid", name="lie", amount=50}, {type="item", name="watercooler-gossip", amount=1}},
     results = {{type="item", name="good-excuse", amount=1}, {type="item", name="office-drama", amount=1, probability=0.5}},
@@ -93,20 +93,20 @@ data:extend({
   { type = "recipe", name = "misinformation-production", category = "propaganda-distillery",       enabled = false, subgroup = "admin-bs-economy", order = "f1", ingredients = {{type="fluid", name="lie", amount=50},         {type="item", name="dubious-data", amount=1}},                                              results = {{type="fluid", name="misinformation", amount=50}}, energy_required = 5, crafting_machine_tint = distillery_recipe_tint("lie", "misinformation") },
   { type = "recipe", name = "justification-production",  category = "propaganda-distillery",       enabled = false, ingredients = {{type="fluid", name="misinformation", amount=50}, {type="item", name="credentials", amount=1}, {type="fluid", name="politician-fluid", amount=50}}, results = {{type="item", name="justification", amount=1}},    energy_required = 15, crafting_machine_tint = distillery_recipe_tint("misinformation", "politician-fluid") },
   { type = "recipe", name = "narrative-production",      category = "union-negotiation", enabled = false,
-    ingredients = {{type="item", name="justification", amount=1}, {type="item", name="good-excuse", amount=1}, {type="item", name="refined-nonsense", amount=1}, {type="item", name="watercooler-gossip", amount=2}},
+    ingredients = {{type="item", name="justification", amount=1}, {type="item", name="good-excuse", amount=1}, {type="item", name="watercooler-gossip", amount=1}},
     results = {{type="item", name="narrative", amount=1}, {type="item", name="office-drama", amount=1, probability=0.3}},
     main_product = "narrative",
     energy_required = 20 },
-  { type = "recipe", name = "white-paper-production",    category = "bureaucracy-policy",       enabled = false, ingredients = {{type="item", name="data", amount=1}, {type="item", name="paper", amount=10}, {type="item", name="processing-unit", amount=1}, {type="item", name="treasury-bond", amount=1}, {type="fluid", name="lie", amount=50}, {type="fluid", name="liquid-coffee", amount=25}}, results = {{type="item", name="white-paper", amount=1}},      energy_required = 30 },
-  { type = "recipe", name = "policy-production",         category = "bureaucracy-policy", enabled = false, ingredients = {{type="item", name="white-paper", amount=1}, {type="fluid", name="misinformation", amount=100}, {type="item", name="data", amount=1}, {type="item", name="government-grant", amount=1}, {type="item", name="processing-unit", amount=2}, {type="fluid", name="liquid-coffee", amount=50}}, results = {{type="item", name="policy", amount=1}},     energy_required = 45 },
-  { type = "recipe", name = "regulation-production",     category = "bureaucracy-policy", enabled = false, ingredients = {{type="item", name="data", amount=2}, {type="item", name="credentials", amount=1}, {type="item", name="government-grant", amount=3}, {type="item", name="processing-unit", amount=3}, {type="fluid", name="liquid-coffee", amount=50}}, results = {{type="item", name="regulation", amount=1}}, energy_required = 60 },
+  { type = "recipe", name = "white-paper-production",    category = "bureaucracy-policy",       enabled = false, ingredients = {{type="item", name="paper", amount=8}, {type="item", name="processing-unit", amount=1}, {type="item", name="treasury-bond", amount=1}, {type="fluid", name="lie", amount=35}, {type="fluid", name="liquid-coffee", amount=20}}, results = {{type="item", name="white-paper", amount=1}},      energy_required = 30 },
+  { type = "recipe", name = "policy-production",         category = "bureaucracy-policy", enabled = false, ingredients = {{type="item", name="white-paper", amount=1}, {type="fluid", name="misinformation", amount=80}, {type="item", name="government-grant", amount=1}, {type="item", name="processing-unit", amount=1}, {type="fluid", name="liquid-coffee", amount=30}}, results = {{type="item", name="policy", amount=1}},     energy_required = 45 },
+  { type = "recipe", name = "regulation-production",     category = "bureaucracy-policy", enabled = false, ingredients = {{type="item", name="policy", amount=1}, {type="item", name="government-grant", amount=2}, {type="item", name="processing-unit", amount=2}, {type="fluid", name="liquid-coffee", amount=35}}, results = {{type="item", name="regulation", amount=1}}, energy_required = 60 },
 
   -- Promise & Eviction
   { type = "recipe", name = "promise-production",         category = "bureaucratic-bootstrap", enabled = false, ingredients = {{type="item", name="blank-form", amount=3}, {type="item", name="dubious-data", amount=5}, {type="item", name="provisional-approval", amount=2}, {type="item", name="paper", amount=5}}, results = {{type="item", name="promise", amount=1}},         energy_required = 15 },
   { type = "recipe", name = "eviction-notice-production", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="good-excuse", amount=1}, {type="item", name="credentials", amount=1}, {type="fluid", name="politician-fluid", amount=50}, {type="item", name="taxpayer-money", amount=100}}, results = {{type="item", name="eviction-notice", amount=1}}, energy_required = 30 },
 
   -- Gossip & Corporate
-  entity_recipe("corporate-breakroom", { type = "recipe", enabled = false, ingredients = {{type="item", name="iron-plate", amount=20}, {type="item", name="wood", amount=10}, {type="item", name="stone-brick", amount=10}, {type="item", name="pipe", amount=4}, {type="item", name="electronic-circuit", amount=5}, {type="item", name="construction-permit", amount=1}}, results = {{type="item", name="corporate-breakroom", amount=1}}, energy_required = 10 }),
+  entity_recipe("corporate-breakroom", { type = "recipe", enabled = false, ingredients = {{type="item", name="iron-plate", amount=16}, {type="item", name="wood", amount=8}, {type="item", name="stone-brick", amount=8}, {type="item", name="pipe", amount=3}, {type="item", name="electronic-circuit", amount=4}, {type="item", name="construction-permit", amount=1}}, results = {{type="item", name="corporate-breakroom", amount=1}}, energy_required = 10 }),
   { type = "recipe", name = "watercooler-gossip-production",  category = "watercooler-gossip", enabled = false, ingredients = {{type="fluid", name="liquid-coffee", amount=50}, {type="item", name="dubious-data", amount=2}}, results = {{type="item", name="watercooler-gossip", amount=1}}, energy_required = 5 },
   {
     type = "recipe", name = "office-drama-recycling", category = "watercooler-gossip", enabled = false,
@@ -152,12 +152,12 @@ data:extend({
     type = "recipe", name = "union-approval-production", category = "union-negotiation", enabled = false,
     subgroup = "admin-bs-economy", order = "l",
     ingredients = {
-      {type="fluid", name="liquid-coffee", amount=100},
-      {type="item", name="paper", amount=5},
-      {type="item", name="dubious-data", amount=5},
-      {type="item", name="taxpayer-money", amount=10}
+      {type="fluid", name="liquid-coffee", amount=70},
+      {type="item", name="paper", amount=4},
+      {type="item", name="dubious-data", amount=4},
+      {type="item", name="taxpayer-money", amount=8}
     },
-    results = {{type="fluid", name="union-approval", amount=200}},
+    results = {{type="fluid", name="union-approval", amount=150}},
     energy_required = 10
   },
 })

@@ -823,15 +823,23 @@ end)
 -- RESOLUTION PIPELINE (filing -> case -> brief -> final)
 -- =========================================================================
 
-test("all filing recipes use bureaucracy-resolution and require blank-form", function()
+test("all filing recipes require blank-form and use expected categories", function()
   local filings = {
-    "filing-landscape", "filing-smog", "filing-noise", "filing-unemployment",
-    "filing-littering", "filing-hazmat", "filing-loitering", "filing-vagrancy",
+    {"filing-landscape", "bureaucratic-bootstrap"},
+    {"filing-smog", "bureaucracy-resolution"},
+    {"filing-noise", "bureaucracy-resolution"},
+    {"filing-unemployment", "bureaucracy-resolution"},
+    {"filing-littering", "bureaucracy-resolution"},
+    {"filing-hazmat", "bureaucracy-resolution"},
+    {"filing-loitering", "bureaucracy-resolution"},
+    {"filing-vagrancy", "bureaucracy-resolution"},
   }
-  for _, name in ipairs(filings) do
+  for _, entry in ipairs(filings) do
+    local name = entry[1]
+    local expected_category = entry[2]
     local r = get_recipe(name)
     assert_true(r ~= nil, name .. " missing")
-    assert_eq(r.category, "bureaucracy-resolution", name .. " wrong category")
+    assert_eq(r.category, expected_category, name .. " wrong category")
     assert_true(has_ingredient(r, "blank-form"), name .. " missing blank-form")
   end
 end)
@@ -987,8 +995,9 @@ test("data-production now runs through bureaucracy-registration", function()
   local r = get_recipe("data-production")
   assert_eq(r.category, "bureaucracy-registration")
   assert_true(has_ingredient(r, "crappy-report"))
-  assert_true(has_ingredient(r, "credentials"))
   assert_true(has_ingredient(r, "advanced-circuit"))
+  assert_true(not has_ingredient(r, "credentials"),
+    "data-production should no longer require credentials intermediary")
 end)
 
 test("government-grant requires treasury-bond and union negotiation", function()
@@ -1332,12 +1341,12 @@ test("heavier vanilla integration anchors have exact ingredient counts", functio
   local expectations = {
     {"greenhouse", "stone-brick", 10},
     {"greenhouse", "pipe", 2},
-    {"corporate-breakroom", "stone-brick", 10},
-    {"corporate-breakroom", "pipe", 4},
-    {"union-headquarters", "steel-plate", 60},
-    {"union-headquarters", "advanced-circuit", 25},
-    {"union-headquarters", "management-approval-verbal", 2},
-    {"union-headquarters", "government-grant", 2},
+    {"corporate-breakroom", "stone-brick", 8},
+    {"corporate-breakroom", "pipe", 3},
+    {"union-headquarters", "steel-plate", 45},
+    {"union-headquarters", "advanced-circuit", 18},
+    {"union-headquarters", "management-approval-verbal", 1},
+    {"union-headquarters", "government-grant", 1},
     {"pneumatic-pipe", "pipe", 1},
     {"pneumatic-pipe-to-ground", "construction-permit", 1},
     {"form-liquifier", "pipe", 2},
@@ -1351,11 +1360,11 @@ test("heavier vanilla integration anchors have exact ingredient counts", functio
     {"chemical-handling-work-order-production", "pipe", 1},
     {"radiological-work-order-production", "battery", 1},
     {"radiological-work-order-production", "steel-plate", 2},
-    {"white-paper-production", "paper", 10},
+    {"white-paper-production", "paper", 8},
     {"white-paper-production", "processing-unit", 1},
     {"white-paper-production", "treasury-bond", 1},
-    {"policy-production", "processing-unit", 2},
-    {"regulation-production", "processing-unit", 3},
+    {"policy-production", "processing-unit", 1},
+    {"regulation-production", "processing-unit", 2},
     {"case-smog", "coal", 2},
     {"case-hazmat", "barrel", 1},
     {"case-noise", "processing-unit", 1},
