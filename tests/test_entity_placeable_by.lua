@@ -172,6 +172,7 @@ dofile(mod_root .. "prototypes/item/buildings.lua")
 dofile(mod_root .. "prototypes/entity/admin-buildings.lua")
 dofile(mod_root .. "prototypes/entity/printers.lua")
 dofile(mod_root .. "prototypes/entity/pneumatic.lua")
+dofile(mod_root .. "prototypes/recipe/resolution.lua")
 
 local function find_entity_prototype(name)
   for proto_type, prototypes in pairs(data.raw) do
@@ -271,6 +272,50 @@ test("union-headquarters now supports both union negotiation and policy work", f
 
   assert_true(input_count >= 2, "union-headquarters should have at least two fluid inputs")
   assert_true(output_count >= 1, "union-headquarters should have at least one fluid output")
+end)
+
+test("resolution-office supports bootstrap and resolution categories", function()
+  local entity = data.raw["assembling-machine"]["resolution-office"]
+  assert_true(entity ~= nil, "resolution-office prototype missing")
+
+  local categories = {}
+  for _, category in ipairs(entity.crafting_categories or {}) do
+    categories[category] = true
+  end
+
+  assert_true(categories["bureaucracy-resolution"], "resolution-office should craft bureaucracy-resolution recipes")
+  assert_true(categories["bureaucratic-bootstrap"], "resolution-office should also craft bureaucratic-bootstrap recipes")
+end)
+
+test("resolution-office can craft all complaint paper recipes", function()
+  local entity = data.raw["assembling-machine"]["resolution-office"]
+  assert_true(entity ~= nil, "resolution-office prototype missing")
+
+  local craftable_categories = {}
+  for _, category in ipairs(entity.crafting_categories or {}) do
+    craftable_categories[category] = true
+  end
+
+  local complaint_recipes = {
+    -- Biter chain
+    "filing-landscape", "landscape-final",
+    "filing-smog", "case-smog", "smog-final",
+    "filing-noise", "case-noise", "brief-noise", "noise-final",
+    "filing-unemployment", "case-unemployment", "brief-unemployment", "unemployment-final",
+    -- Spitter chain
+    "filing-littering", "littering-final",
+    "filing-hazmat", "case-hazmat", "hazmat-final",
+    "filing-loitering", "case-loitering", "brief-loitering", "loitering-final",
+    "filing-vagrancy", "case-vagrancy", "brief-vagrancy", "vagrancy-final",
+  }
+
+  for _, recipe_name in ipairs(complaint_recipes) do
+    local recipe = data.raw.recipe and data.raw.recipe[recipe_name]
+    assert_true(recipe ~= nil, recipe_name .. " recipe missing")
+    local category = recipe.category or "crafting"
+    assert_true(craftable_categories[category],
+      recipe_name .. " category '" .. tostring(category) .. "' is not craftable by resolution-office")
+  end
 end)
 
 test("all custom fluid connections are explicitly one-way", function()
