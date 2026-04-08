@@ -534,6 +534,62 @@ local function normalize_case_progress(info)
   end
 end
 
+local function is_nauvis_offer_recruitable_biter(entity_name)
+  return entity_name ~= nil
+    and C.BITER_MAX_TIER[entity_name] ~= nil
+    and not C.IS_SPITTER[entity_name]
+end
+
+local function get_nauvis_enrollment_offer_chance(info)
+  local frustration = (info and info.frustration) or 0
+  if frustration < C.PROTEST_THRESHOLD * (C.ENROLLMENT_OFFER_LOW_FRUSTRATION_RATIO or 0.25) then
+    return C.ENROLLMENT_OFFER_LOW_CHANCE or 0.05
+  end
+  if frustration < C.PROTEST_THRESHOLD * (C.ENROLLMENT_OFFER_MEDIUM_FRUSTRATION_RATIO or 0.50) then
+    return C.ENROLLMENT_OFFER_MEDIUM_CHANCE or 0.01
+  end
+  return 0
+end
+
+local function finalize_enrolled_biter_conversion(desk_id, info, inv)
+  if not desk_id or not info or not inv then return false end
+  local entity = info.entity
+  if not entity or not entity.valid then return false end
+  if inv.insert({name = "enrolled-biter", count = 1}) <= 0 then return false end
+
+  local biter_unit = entity.unit_number
+  zones.release_slot(desk_id, biter_unit)
+  unindex_biter_from_desk(desk_id, biter_unit)
+  untrack_waiting_biter(biter_unit, info)
+  entity.destroy()
+  mark_desk_circuit_dirty(desk_id)
+
+  if storage.stats then
+    storage.stats.cases_resolved = (storage.stats.cases_resolved or 0) + 1
+  end
+
+  return true
+end
+
+local function maybe_attempt_nauvis_enrollment_offer(desk_id, info, inv)
+  if not desk_id or not info or not inv then return false end
+  local entity = info.entity
+  if not entity or not entity.valid then return false end
+  if not is_nauvis_offer_recruitable_biter(entity.name) then return false end
+  if not inv.can_insert or not inv.can_insert({name = "enrolled-biter", count = 1}) then
+    return false
+  end
+  if inv.remove({name = "job-offer", count = 1}) <= 0 then return false end
+
+  local chance = get_nauvis_enrollment_offer_chance(info)
+  if chance > 0 and math.random() < chance then
+    return finalize_enrolled_biter_conversion(desk_id, info, inv)
+  end
+
+  mark_desk_circuit_dirty(desk_id)
+  return false
+end
+
 local function capture_home_spawner(info, entity, should_release)
   if not info or not entity or not entity.valid then return end
   local commandable = entity.commandable

@@ -21,6 +21,22 @@ end
 data:extend({
   {
     type = "recipe",
+    name = "job-offer-production",
+    category = "bureaucracy-policy",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "treasury-bond", amount = 2},
+      {type = "item", name = "taxpayer-money", amount = 50},
+      {type = "item", name = "credentials", amount = 1},
+      {type = "item", name = "good-excuse", amount = 1},
+      {type = "item", name = "narrative", amount = 1},
+      {type = "item", name = "paper", amount = 10},
+    },
+    results = {{type = "item", name = "job-offer", amount = 1}},
+    energy_required = 30
+  },
+  {
+    type = "recipe",
     name = "formation-center",
     enabled = false,
     ingredients = {
