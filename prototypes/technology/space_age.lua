@@ -39,6 +39,7 @@ data:extend({
     icon_size = 256,
     effects = {
       {type = "unlock-recipe", recipe = "formation-center"},
+      {type = "unlock-recipe", recipe = "trajectory-compliance-array"},
       {type = "unlock-recipe", recipe = "job-offer-production"},
       {type = "unlock-recipe", recipe = "worker-biter-formation"},
       {type = "unlock-recipe", recipe = "clerical-trainee-formation"},

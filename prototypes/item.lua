@@ -7,7 +7,8 @@ local space_age_enabled = feature_flags.space_age_enabled()
 if not data.raw["damage-type"]["bureaucratic-logic"] then
   data:extend({
     { type = "damage-type", name = "bureaucratic-logic" },
-    { type = "ammo-category", name = "bureaucracy" }
+    { type = "ammo-category", name = "bureaucracy" },
+    { type = "ammo-category", name = "trajectory-compliance" }
   })
 end
 

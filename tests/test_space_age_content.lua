@@ -29,13 +29,10 @@ local recipes = {
   biochamber = {type = "recipe", name = "biochamber", ingredients = {{type = "item", name = "iron-plate", amount = 20}}},
   ["electromagnetic-plant"] = {type = "recipe", name = "electromagnetic-plant", ingredients = {{type = "item", name = "holmium-plate", amount = 150}}},
   ["cryogenic-plant"] = {type = "recipe", name = "cryogenic-plant", ingredients = {{type = "item", name = "lithium-plate", amount = 20}}},
-  ["space-platform-starter-pack"] = {type = "recipe", name = "space-platform-starter-pack", ingredients = {{type = "item", name = "space-platform-foundation", amount = 60}}},
-  ["cargo-bay"] = {type = "recipe", name = "cargo-bay", ingredients = {{type = "item", name = "steel-plate", amount = 20}}},
-  ["asteroid-collector"] = {type = "recipe", name = "asteroid-collector", ingredients = {{type = "item", name = "low-density-structure", amount = 20}}},
-  ["crusher"] = {type = "recipe", name = "crusher", ingredients = {{type = "item", name = "low-density-structure", amount = 20}}},
 }
 
 local items = {}
+local ammos = {}
 local technologies = {
   ["metallurgic-science-pack"] = {type = "technology", name = "metallurgic-science-pack", effects = {}},
   ["agricultural-science-pack"] = {type = "technology", name = "agricultural-science-pack", effects = {}},
@@ -50,6 +47,7 @@ data = {
   raw = {
     recipe = recipes,
     item = items,
+    ammo = ammos,
     technology = technologies,
   },
 }
@@ -62,6 +60,8 @@ function data:extend(prototypes)
       recipes[proto.name] = proto
     elseif proto.type == "item" then
       items[proto.name] = proto
+    elseif proto.type == "ammo" then
+      ammos[proto.name] = proto
     elseif proto.type == "technology" then
       technologies[proto.name] = proto
     end
@@ -150,10 +150,12 @@ test("night shift and negotiator roles feed their intended recipes", function()
   assert_true(tech_unlocks_recipe(technologies["nest-expropriation"], "eviction-notice-production-negotiated"), "nest-expropriation should unlock negotiated eviction")
 end)
 
-test("MMMM feeds core orbital infrastructure", function()
-  for _, recipe_name in ipairs({"space-platform-starter-pack", "cargo-bay", "asteroid-collector", "crusher"}) do
-    assert_true(has_ingredient(recipes[recipe_name], "middle-management-managing-manager"), recipe_name .. " should require MMMM")
-  end
+test("MMMM is converted into trajectory-compliance ammo and sink hardware", function()
+  assert_true(ammos["middle-management-managing-manager"] ~= nil, "MMMM ammo missing")
+  assert_eq(ammos["middle-management-managing-manager"].type, "ammo", "MMMM should be ammo-backed for trajectory compliance")
+  assert_eq(ammos["middle-management-managing-manager"].ammo_category, "trajectory-compliance", "MMMM should feed trajectory-compliance arrays")
+  assert_true(recipes["trajectory-compliance-array"] ~= nil, "trajectory compliance array recipe missing")
+  assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "trajectory-compliance-array"), "workforce formation should unlock the compliance array")
 end)
 
 if failed > 0 then

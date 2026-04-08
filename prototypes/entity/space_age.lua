@@ -47,4 +47,23 @@ chromatic_printer.working_sound = {
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
-data:extend({formation_center, chromatic_printer})
+local trajectory_compliance_array = table.deepcopy(data.raw["ammo-turret"]["gun-turret"])
+trajectory_compliance_array.name = "trajectory-compliance-array"
+trajectory_compliance_array.icon = "__base__/graphics/icons/radar.png"
+trajectory_compliance_array.icon_size = 64
+trajectory_compliance_array.minable = {mining_time = 0.2, result = "trajectory-compliance-array"}
+trajectory_compliance_array.placeable_by = placeable_by_item("trajectory-compliance-array")
+trajectory_compliance_array.next_upgrade = nil
+trajectory_compliance_array.fast_replaceable_group = nil
+trajectory_compliance_array.attack_parameters.ammo_category = "trajectory-compliance"
+trajectory_compliance_array.attack_parameters.cooldown = 60
+trajectory_compliance_array.attack_parameters.range = 30
+trajectory_compliance_array.surface_conditions = {
+  {
+    property = "pressure",
+    min = 0,
+    max = 0,
+  },
+}
+
+data:extend({formation_center, chromatic_printer, trajectory_compliance_array})
