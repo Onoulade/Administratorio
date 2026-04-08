@@ -91,6 +91,9 @@ rules.OPERATING_FORM_BY_RECIPE = {
   ["coal-liquefaction"] = "chemical-handling-work-order",
 }
 
+rules.OPERATING_FORM_EXEMPT_BY_CATEGORY = {}
+rules.OPERATING_FORM_EXEMPT_BY_RECIPE = {}
+
 rules.TAXPAYER_MONEY_COSTS = {
   ["roboport"] = 25,
   ["beacon"] = 30,
