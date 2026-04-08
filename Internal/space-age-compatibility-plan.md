@@ -22,7 +22,7 @@ Detailed planet breakdowns live in:
 
 ## Current Code Constraints
 
-Space Age is currently blocked in [`info.json`](~/Library/Application Support/factorio/mods/administratorio/info.json) by `! space-age`.
+Space Age is now enabled as an optional dependency in [`info.json`](~/Library/Application Support/factorio/mods/administratorio/info.json). Compatibility remains partial and is being filled in planet by planet.
 
 The current mod architecture also imposes three important limits:
 
@@ -415,8 +415,8 @@ Each of these should have at least three meaningful uses, with at least one offw
 
 ### Data Stage Work
 
-1. Remove `! space-age` from [info.json](~/Library/Application Support/factorio/mods/administratorio/info.json).
-2. Add `Chromatic Printing` and `Chromatic Printer`.
+1. Keep `space-age` optional in [info.json](~/Library/Application Support/factorio/mods/administratorio/info.json).
+2. Extend `Chromatic Printing` and the liquid-fed `Chromatic Printer` into planet-specific loops.
 3. Add one raw resource, one paperwork family, and one upgraded office building per planet.
 4. Add new printing and non-printing recipe categories as needed.
 5. Mark vanilla Space Age native recipes as exempt from recurring work orders on their native buildings.
@@ -458,6 +458,8 @@ These are still worth settling before implementation starts.
 - add `Chromatic Printing`
 - add `Chromatic Printer`
 - make startup and progression safe under Space Age
+- add initial `Workforce Formation` staffing and specialist routing
+- add the first `trajectory-compliance-array` / `MMMM` orbital sink ahead of the original long-term ordering
 
 ### Phase 2
 
@@ -475,13 +477,12 @@ These are still worth settling before implementation starts.
 
 - add `Conciliation Desk` enemy handling
 - add `Voluntary Workforce Reassignment`
-- add `enrolled-biter -> management-trainee -> MMMM`
-- add astronaut and specialist branches
+- expand enrollment and workforce conversion beyond the current Nauvis-first staffing chain
+- add astronaut and additional specialist branches
 
 ### Phase 5
 
 - add `space-office`
-- add `trajectory-compliance-array`
 - add Aquilo transfer-media printing and `Laser Printer`
 
 ## Final Direction

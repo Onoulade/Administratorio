@@ -157,6 +157,21 @@ test("arrays do not spend MMMM when no asteroid chunk is present", function()
   assert_eq(#destroyed, 0, "array should not destroy chunks without a target")
 end)
 
+test("arrays only scan platforms on their response interval", function()
+  storage = {}
+  destroyed = {}
+  printed_messages = {}
+  chunks = {
+    {name = "metallic-asteroid-chunk", position = {x = 4, y = 2}},
+  }
+  surface._entities = {new_array(force, 2)}
+
+  module.on_tick({tick = 59})
+
+  assert_eq(surface._entities[1]._inventory._count(), 2, "array should not spend MMMM off-interval")
+  assert_eq(#destroyed, 0, "array should not scan or destroy chunks off-interval")
+end)
+
 test("arrays spend MMMM to deviate nearby asteroid chunks", function()
   storage = {}
   destroyed = {}

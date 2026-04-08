@@ -168,4 +168,100 @@ data:extend({
     place_result = "chromatic-printer",
     stack_size = 50
   },
+  {
+    type = "item",
+    name = "verdigris-crust",
+    icons = {
+      {icon = item_icons .. "bullshit-ore.png", icon_size = 64, tint = {r = 0.25, g = 0.9, b = 0.75, a = 1}},
+    },
+    subgroup = "admin-raw",
+    order = "b5",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "heatproof-form-stock",
+    icons = {
+      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.75, g = 0.95, b = 0.95, a = 1}},
+    },
+    subgroup = "forms-printed",
+    order = "da",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "permit-draft",
+    icons = {
+      {icon = item_icons .. "construction-permit-draft.png", icon_size = 64},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
+    },
+    subgroup = "forms-permits",
+    order = "db",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "inspection-docket",
+    icons = {
+      {icon = item_icons .. "form-27b-6.png", icon_size = 64},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
+    },
+    subgroup = "forms-permits",
+    order = "dc",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "embossed-seal",
+    icons = {
+      {icon = item_icons .. "blank-approval.png", icon_size = 64},
+      {icon = item_icons .. "management-approval-written.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    },
+    subgroup = "forms-permits",
+    order = "dd",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "industrial-charter",
+    icons = {
+      {icon = item_icons .. "construction-permit.png", icon_size = 64},
+      {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    },
+    subgroup = "forms-permits",
+    order = "de",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "lava-safety-endorsement",
+    icons = {
+      {icon = item_icons .. "safety-waiver.png", icon_size = 64},
+      {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    },
+    subgroup = "forms-permits",
+    order = "df",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "foundry-operating-charter",
+    icons = {
+      {icon = item_icons .. "management-approval-written.png", icon_size = 64},
+      {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    },
+    subgroup = "forms-permits",
+    order = "dg",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "notary-office",
+    icon = "__administratorio__/graphics/icons/management-approval-written.png",
+    icon_size = 64,
+    subgroup = "admin-buildings",
+    order = "j",
+    place_result = "notary-office",
+    stack_size = 20
+  },
 })
