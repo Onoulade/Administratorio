@@ -111,7 +111,6 @@ local ADMIN_STATION_EXCLUDED_TYPES = {
   ["locomotive"] = true,
   ["cargo-wagon"] = true,
   ["fluid-wagon"] = true,
-  ["artillery-wagon"] = true,
 }
 
 local ADMIN_STATION_EXCLUDED_FLAGS = {
@@ -611,10 +610,33 @@ local function resolve_regulated_recipe_localisation(recipe, recipe_name)
   return localised_name, localised_description
 end
 
--- Create a batched copy of a recipe with a form requirement.
--- The form is always consumed (no return).
-local function regulate_recipe(recipe, form_name, multiplier)
+local function normalize_paperwork_requirements(requirements)
+  if not requirements then return {} end
+
+  if type(requirements) == "string" then
+    return {{name = requirements, amount = 1}}
+  end
+
+  local normalized = {}
+  for _, requirement in ipairs(requirements) do
+    if type(requirement) == "string" then
+      normalized[#normalized + 1] = {name = requirement, amount = 1}
+    elseif requirement and requirement.name then
+      normalized[#normalized + 1] = {
+        name = requirement.name,
+        amount = requirement.amount or 1,
+      }
+    end
+  end
+
+  return normalized
+end
+
+-- Create a batched copy of a recipe with paperwork requirements.
+-- Paperwork is always consumed (no return).
+local function regulate_recipe(recipe, paperwork_requirements, multiplier)
   if not recipe then return end
+  paperwork_requirements = normalize_paperwork_requirements(paperwork_requirements)
 
   local function process_level(target)
     if not target then return end
@@ -626,7 +648,7 @@ local function regulate_recipe(recipe, form_name, multiplier)
       target.energy_required = 0.5 * multiplier
     end
 
-    -- Process ingredients: strip old paperwork, multiply base, add form
+    -- Process ingredients: strip old paperwork, multiply base, add paperwork
     if target.ingredients then
       local clean_ingredients = {}
       for _, ing in ipairs(target.ingredients) do
@@ -645,8 +667,10 @@ local function regulate_recipe(recipe, form_name, multiplier)
         end
       end
 
-      -- 1 form per batch (never multiplied)
-      table.insert(target.ingredients, {type = "item", name = form_name, amount = 1})
+      -- Paperwork per batch is fixed and never multiplied.
+      for _, paperwork in ipairs(paperwork_requirements) do
+        table.insert(target.ingredients, {type = "item", name = paperwork.name, amount = paperwork.amount})
+      end
     end
 
     -- Process results: multiply outputs
@@ -678,10 +702,11 @@ local function regulate_recipe(recipe, form_name, multiplier)
   if recipe.expensive then process_level(recipe.expensive) end
 end
 
--- Batch the original recipe and add a form ingredient (for handcrafting T1+ items).
--- Same batch multiplier as AM recipes so form cost per item is consistent.
--- Form is consumed (no return/expiration for handcrafting).
-local function batch_original_with_form(recipe, form_name, multiplier)
+-- Batch the original recipe and add paperwork ingredients (for handcrafting T1+ items).
+-- Same batch multiplier as AM recipes so paperwork cost per item stays consistent.
+local function batch_original_with_form(recipe, paperwork_requirements, multiplier)
+  paperwork_requirements = normalize_paperwork_requirements(paperwork_requirements)
+
   local function process_level(target)
     if not target then return end
 
@@ -692,7 +717,7 @@ local function batch_original_with_form(recipe, form_name, multiplier)
       target.energy_required = 0.5 * multiplier
     end
 
-    -- Multiply ingredients, add form
+    -- Multiply ingredients, add paperwork
     if target.ingredients then
       for _, ing in ipairs(target.ingredients) do
         if ing.amount then
@@ -701,7 +726,9 @@ local function batch_original_with_form(recipe, form_name, multiplier)
           ing[2] = ing[2] * multiplier
         end
       end
-      table.insert(target.ingredients, {type = "item", name = form_name, amount = 1})
+      for _, paperwork in ipairs(paperwork_requirements) do
+        table.insert(target.ingredients, {type = "item", name = paperwork.name, amount = paperwork.amount})
+      end
     end
 
     -- Multiply results
@@ -771,8 +798,6 @@ for name, recipe in pairs(data.raw["recipe"]) do
 
   -- Determine batch multiplier (force 1 for non-stackable outputs)
   local multiplier = get_recipe_batch_multiplier(name, recipe)
-  local r_proto = recipe.normal or recipe
-  local results = r_proto.results or (r_proto.result and {{name = r_proto.result}}) or {}
   local primary_result_name = get_primary_item_like_result_name(recipe)
   if primary_result_name then
     regulated_factoriopedia_products[primary_result_name] = true
@@ -782,13 +807,9 @@ for name, recipe in pairs(data.raw["recipe"]) do
   local required_form = shared.get_required_form(name)
   local is_t0 = (required_form == "work-order")
 
-  -- Determine the form for regulated recipe
-  local regulated_form
-  if is_t0 then
-    regulated_form = "work-order"
-  else
-    regulated_form = shared.COMBINED_FORMS[required_form] or required_form
-  end
+  local handcraft_paperwork = shared.get_paperwork_requirements(required_form, false)
+  local regulated_paperwork = shared.get_paperwork_requirements(required_form, true)
+  local regulated_form = (regulated_paperwork[1] and regulated_paperwork[1].name) or required_form
 
   -- Determine regulated category
   local regulated_cat
@@ -809,7 +830,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     -- Keep the recipe visible in the player's crafting UI as unavailable.
     -------------------------------------------------------------------------
     recipe.category = regulated_cat
-    regulate_recipe(recipe, regulated_form, multiplier)
+    regulate_recipe(recipe, regulated_paperwork, multiplier)
     apply_bulk_recipe_icon_overlay(recipe, multiplier, regulated_form)
     recipe.hide_from_player_crafting = false
 
@@ -839,7 +860,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     regulated.hide_from_stats = true
     regulated.category = regulated_cat
 
-    regulate_recipe(regulated, regulated_form, multiplier)
+    regulate_recipe(regulated, regulated_paperwork, multiplier)
     apply_bulk_recipe_icon_overlay(regulated, multiplier, regulated_form)
 
     -- Inject taxpayer-money for expensive late-game items
@@ -859,7 +880,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
 
     -- Modify original for T1+ handcrafting (batch + tier form)
     if not is_t0 then
-      batch_original_with_form(recipe, required_form, multiplier)
+      batch_original_with_form(recipe, handcraft_paperwork, multiplier)
       apply_bulk_recipe_icon_overlay(recipe, multiplier, required_form)
     end
 
@@ -898,8 +919,11 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
   regulated.category = (cat == "advanced-crafting") and "advanced-crafting-regulated" or "crafting-regulated"
 
   local multiplier = get_recipe_batch_multiplier(recipe_name, recipe)
-  batch_original_with_form(regulated, "work-order", multiplier)
-  apply_bulk_recipe_icon_overlay(regulated, multiplier, "work-order")
+  local required_form = shared.get_required_form(recipe_name)
+  local regulated_paperwork = shared.get_paperwork_requirements(required_form, true)
+  local regulated_form = (regulated_paperwork[1] and regulated_paperwork[1].name) or required_form
+  batch_original_with_form(regulated, regulated_paperwork, multiplier)
+  apply_bulk_recipe_icon_overlay(regulated, multiplier, regulated_form)
 
   table.insert(admin_building_regulated, regulated)
   regulated_factoriopedia_products[recipe_name] = true
@@ -918,6 +942,39 @@ for _, recipe_name in ipairs({
   "cliff-explosives-regulated",
 }) do
   add_special_paperwork(recipe_name, "construction-permit", 1)
+end
+
+-- Engine manufacture carries direct emissions, so every batch requires
+-- explicit carbon offset paperwork.
+for _, recipe_name in ipairs({
+  "engine-unit",
+  "engine-unit-regulated",
+}) do
+  add_special_paperwork(recipe_name, "carbon-offset-certificate-basic", 1)
+end
+
+-- Higher-energy process recipes should consume the verified certificate tier.
+for _, recipe_name in ipairs({
+  "electric-engine-unit",
+  "electric-engine-unit-regulated",
+  "battery",
+  "battery-regulated",
+  "rocket-fuel",
+  "rocket-fuel-regulated",
+}) do
+  add_special_paperwork(recipe_name, "carbon-offset-certificate-verified", 1)
+end
+
+-- Top-tier recipes get explicit environmental compliance on top of their
+-- stacked management paperwork.
+for recipe_name, recipe in pairs(data.raw["recipe"] or {}) do
+  if not shared.is_admin_recipe(recipe_name) and recipe then
+    local base_recipe_name = recipe_name:gsub("%-regulated$", "")
+    local required_form = shared.get_required_form(base_recipe_name)
+    if required_form == "management-approval-written" then
+      add_special_paperwork(recipe_name, "environmental-impact-report", 1)
+    end
+  end
 end
 
 -- Cliff charges should stay civilian; remove the hidden military grenade
@@ -1074,7 +1131,7 @@ end
 local extra_pneumatic = {
   "paper", "ink", "blank-form", "blank-approval", "blank-directive",
   "safety-waiver-draft", "construction-permit-draft",
-  "management-verbal-draft", "management-written-proposal", "management-written-review",
+  "management-verbal-draft", "management-written-proposal",
   "ticket-landscape", "ticket-smog", "ticket-noise", "ticket-unemployment",
   "ticket-littering", "ticket-hazmat", "ticket-loitering", "ticket-vagrancy",
   "filing-l", "filing-s", "filing-n", "filing-u",

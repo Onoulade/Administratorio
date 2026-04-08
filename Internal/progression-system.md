@@ -188,7 +188,7 @@ These are not "design intent" notes. They are current-code notes.
 - `safety-waiver-draft`, `safety-waiver-printing`, `construction-permit-draft`, and `construction-permit-printing` are enabled from the start.
 - Because of that, T1 and T2 form production is front-loaded instead of being unlocked by later bureaucracy techs.
 - All complaint recipes are in `bureaucracy-resolution`, so the `resolution-office` handles the full complaint chain. The `office-desk` does not process complaint filings in the current code.
-- Legacy `brief-*` and `management-written-review` recipes still exist for save compatibility, but normal progression no longer routes through them.
+- Legacy `brief-*` recipes still exist for save compatibility, but normal progression no longer routes through them.
 - `assembling-machine-3` only keeps regulated categories in `data-final-fixes.lua`, even though shared comments describe AM3 as a reward that should also keep original categories.
 
 ## Files To Re-check When Rebalancing

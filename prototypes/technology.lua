@@ -105,19 +105,7 @@ data:extend({
     unit = { count = 60, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "b-b"
   },
-  -- T2c: ENVIRONMENTAL REPORTING (impact reports built on top of legal boilerplate)
-  {
-    type = "technology", name = "environmental-reporting",
-    icon = tech_icons .. "environmental-compliance.png", icon_size = 256,
-    effects = {
-      { type = "unlock-recipe", recipe = "environmental-impact-report" },
-      { type = "unlock-recipe", recipe = "chemical-handling-work-order-production" }
-    },
-    prerequisites = {"local-precedents"},
-    unit = { count = 45, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
-    order = "b-c"
-  },
-  -- T2d: RUBBLE COMPACTION (shared processed material for multiple later branches)
+  -- T2c: RUBBLE COMPACTION (shared processed material for multiple later branches)
   {
     type = "technology", name = "rubble-compaction",
     icon = "__administratorio__/graphics/icons/compacted-rubble.png", icon_size = 64,
@@ -209,15 +197,19 @@ data:extend({
     unit = { count = 80, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "c-e"
   },
-  -- T4a: ENVIRONMENTAL COMPLIANCE (petrochemical permitting)
+  -- T4a: ENVIRONMENTAL COMPLIANCE
+  -- Single environmental gate for reporting, certification, and operating permits.
   {
     type = "technology", name = "environmental-compliance",
     icon = tech_icons .. "environmental-compliance.png", icon_size = 256,
     effects = {
-      { type = "unlock-recipe", recipe = "petrochemical-operating-permit-production" }
+      { type = "unlock-recipe", recipe = "petrochemical-operating-permit-production" },
+      { type = "unlock-recipe", recipe = "environmental-impact-report" },
+      { type = "unlock-recipe", recipe = "chemical-handling-work-order-production" },
+      { type = "unlock-recipe", recipe = "carbon-offset-certificate-verified" }
     },
-    prerequisites = {"environmental-reporting"},
-    unit = { count = 85, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    prerequisites = {"local-precedents", "fluid-handling", "steel-processing"},
+    unit = { count = 95, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "d-a"
   },
   -- T4b: SMOG ABATEMENT (air-pollution complaint chain)
@@ -342,18 +334,7 @@ data:extend({
     unit = { count = 210, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "g-a"
   },
-  -- T7b: ENVIRONMENTAL CERTIFICATION (verified carbon paperwork)
-  {
-    type = "technology", name = "environmental-certification",
-    icon = tech_icons .. "environmental-compliance.png", icon_size = 256,
-    effects = {
-      { type = "unlock-recipe", recipe = "carbon-offset-certificate-verified" }
-    },
-    prerequisites = {"public-finance", "production-science-pack"},
-    unit = { count = 130, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
-    order = "g-b"
-  },
-  -- T7b2: WORK ORDER DUPLICATION (industrial printer copies every work-order family)
+  -- T7b: WORK ORDER DUPLICATION (industrial printer copies every work-order family)
   {
     type = "technology", name = "work-order-duplication",
     icon = "__administratorio__/graphics/icons/work-order.png", icon_size = 64,
@@ -369,7 +350,7 @@ data:extend({
     },
     prerequisites = {"industrial-printing", "radiological-compliance", "processing-unit", "production-science-pack"},
     unit = { count = 180, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
-    order = "g-b2"
+    order = "g-b"
   },
   -- T7c: FEDERAL REGULATION (codify policy into formal law)
   {
@@ -391,7 +372,7 @@ data:extend({
       { type = "unlock-recipe", recipe = "case-noise" },
       { type = "unlock-recipe", recipe = "noise-final" }
     },
-    prerequisites = {"eminent-domain-zoning", "environmental-certification"},
+    prerequisites = {"eminent-domain-zoning", "environmental-compliance"},
     unit = { count = 185, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "g-d"
   },
@@ -647,15 +628,14 @@ add_tech_prerequisite("public-finance", "steel-processing")
 add_tech_prerequisite("board-meetings", "chemical-science-pack")
 add_tech_prerequisite("synthetic-stationery", "chemical-science-pack")
 add_tech_prerequisite("eminent-domain-zoning", "production-science-pack")
-add_tech_prerequisite("environmental-certification", "production-science-pack")
 add_tech_prerequisite("constitutional-law", "production-science-pack")
 add_tech_prerequisite("loitering-ordinances", "utility-science-pack")
 add_tech_prerequisite("vagrancy-ordinances", "utility-science-pack")
 add_tech_prerequisite("after-hours-operations", "utility-science-pack")
 
 add_tech_prerequisite("information-management", "advanced-circuit")
-add_tech_prerequisite("environmental-reporting", "fluid-handling")
-add_tech_prerequisite("environmental-reporting", "steel-processing")
+add_tech_prerequisite("environmental-compliance", "fluid-handling")
+add_tech_prerequisite("environmental-compliance", "steel-processing")
 add_tech_prerequisite("radiological-compliance", "battery")
 
 -- Vanilla branches that now consume mod paperwork need matching bureaucracy
@@ -663,6 +643,67 @@ add_tech_prerequisite("radiological-compliance", "battery")
 add_tech_prerequisite("engine", "automation")
 add_tech_prerequisite("gate", "automation")
 add_tech_prerequisite("power-armor-mk2", "low-density-structure")
+add_tech_prerequisite("advanced-circuit", "verbal-approvals")
+add_tech_prerequisite("processing-unit", "verbal-approvals")
+add_tech_prerequisite("battery", "environmental-compliance")
+add_tech_prerequisite("electric-engine", "environmental-compliance")
+add_tech_prerequisite("rocket-fuel", "environmental-compliance")
+add_tech_prerequisite("lubricant", "environmental-compliance")
+add_tech_prerequisite("explosives", "environmental-compliance")
+
+for _, tech_name in ipairs({
+  "advanced-combinators",
+  "after-hours-operations",
+  "construction-robotics",
+  "effect-transmission",
+  "efficiency-module-2",
+  "electric-energy-distribution-2",
+  "logistic-robotics",
+  "logistic-system",
+  "logistics-3",
+  "nuclear-power",
+  "productivity-module-2",
+  "speed-module-2",
+  "uranium-processing",
+}) do
+  add_tech_prerequisite(tech_name, "advanced-circuit")
+end
+
+for _, tech_name in ipairs({
+  "automation-3",
+  "effect-transmission",
+  "nuclear-power",
+  "rocket-silo",
+  "uranium-processing",
+}) do
+  add_tech_prerequisite(tech_name, "environmental-compliance")
+end
+
+for _, tech_name in ipairs({
+  "after-hours-operations",
+  "efficiency-module-3",
+  "power-armor-mk2",
+  "productivity-module-3",
+  "rocket-silo",
+  "speed-module-3",
+}) do
+  add_tech_prerequisite(tech_name, "processing-unit")
+end
+
+for _, tech_name in ipairs({
+  "power-armor-mk2",
+  "rocket-silo",
+}) do
+  add_tech_prerequisite(tech_name, "electric-engine")
+end
+
+add_tech_prerequisite("productivity-module-2", "information-management")
+add_tech_prerequisite("speed-module-2", "information-management")
+add_tech_prerequisite("speed-module-3", "processing-unit")
+add_tech_prerequisite("efficiency-module-3", "processing-unit")
+add_tech_prerequisite("productivity-module-3", "processing-unit")
+add_tech_prerequisite("uranium-processing", "board-meetings")
+add_tech_prerequisite("after-hours-operations", "executive-review")
 
 for _, tech_name in ipairs({
   "advanced-material-processing-2",

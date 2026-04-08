@@ -70,7 +70,6 @@ shared.PAPERWORK_ITEMS = {
   ["management-verbal-draft"] = true,
   ["management-approval-written"] = true,
   ["management-written-proposal"] = true,
-  ["management-written-review"] = true,
   ["carbon-offset-certificate-basic"] = true,
   ["carbon-offset-certificate-verified"] = true,
   ["environmental-impact-report"] = true,
@@ -103,6 +102,66 @@ shared.COMBINED_FORMS = {
   ["management-approval-written"] = "management-written-work-order",
   ["research-grant-approval"] = "research-grant-work-order",
 }
+
+-------------------------------------------------------------------------------
+-- PAPERWORK BURDEN MODEL
+-- Defines per-recipe paperwork requirements for each tier.
+-- Keep this intentionally lean: broader paperwork coverage should come from
+-- recipe tiering and intermediates, not by stuffing many extra forms into
+-- every single recipe.
+-------------------------------------------------------------------------------
+shared.PAPERWORK_BURDEN_BY_FORM = {
+  ["work-order"] = {
+    {name = "work-order", amount = 1},
+  },
+  ["safety-waiver"] = {
+    {name = "safety-waiver", amount = 1},
+  },
+  ["construction-permit"] = {
+    {name = "construction-permit", amount = 1},
+  },
+  ["management-approval-verbal"] = {
+    {name = "management-approval-verbal", amount = 1},
+  },
+  ["management-approval-written"] = {
+    {name = "management-approval-written", amount = 1},
+  },
+  ["research-grant-approval"] = {
+    {name = "research-grant-approval", amount = 1},
+  },
+}
+
+function shared.get_paperwork_requirements(base_form, use_combined_forms)
+  local burden = shared.PAPERWORK_BURDEN_BY_FORM[base_form]
+  if not burden then
+    burden = {{name = base_form, amount = 1}}
+  end
+
+  local expanded = {}
+  local indexed = {}
+
+  local function append_requirement(name, amount)
+    if use_combined_forms and shared.COMBINED_FORMS[name] then
+      name = shared.COMBINED_FORMS[name]
+    end
+
+    local existing = indexed[name]
+    if existing then
+      existing.amount = existing.amount + amount
+      return
+    end
+
+    local requirement = {name = name, amount = amount}
+    indexed[name] = requirement
+    expanded[#expanded + 1] = requirement
+  end
+
+  for _, requirement in ipairs(burden) do
+    append_requirement(requirement.name, requirement.amount or 1)
+  end
+
+  return expanded
+end
 
 -------------------------------------------------------------------------------
 -- ADMIN BUILDINGS
@@ -306,12 +365,39 @@ shared.BATCH_MULTIPLIERS = {
 -------------------------------------------------------------------------------
 
 function shared.get_required_form(recipe_name)
+  local explicit_form_overrides = {
+    ["advanced-circuit"] = "management-approval-verbal",
+    ["electric-engine-unit"] = "management-approval-verbal",
+    ["processing-unit"] = "management-approval-verbal",
+    ["flying-robot-frame"] = "management-approval-verbal",
+    ["logistic-robot"] = "management-approval-verbal",
+    ["construction-robot"] = "management-approval-verbal",
+    ["personal-roboport-equipment"] = "management-approval-verbal",
+    ["personal-roboport-mk2-equipment"] = "management-approval-verbal",
+    ["rail"] = "construction-permit",
+    ["train-stop"] = "construction-permit",
+    ["rail-signal"] = "construction-permit",
+    ["rail-chain-signal"] = "construction-permit",
+    ["locomotive"] = "safety-waiver",
+    ["rocket-fuel"] = "management-approval-verbal",
+    ["low-density-structure"] = "management-approval-written",
+    ["rocket-control-unit"] = "management-approval-written",
+    ["satellite"] = "management-approval-written",
+    ["heat-exchanger"] = "management-approval-written",
+    ["steam-turbine"] = "management-approval-written",
+    ["fusion-reactor-equipment"] = "management-approval-written",
+  }
+  if explicit_form_overrides[recipe_name] then
+    return explicit_form_overrides[recipe_name]
+  end
+
   if recipe_name == "burner-inserter" then return "work-order" end
 
   -- Tier 4: Management Approval Written (megastructures)
   local tier4_patterns = {
     "assembling%-machine%-3", "centrifuge", "rocket%-silo",
     "nuclear%-reactor", "beacon",
+    "fusion%-reactor", "quantum", "antimatter", "singularity",
   }
   for _, pat in ipairs(tier4_patterns) do
     if recipe_name:find(pat) then return "management-approval-written" end

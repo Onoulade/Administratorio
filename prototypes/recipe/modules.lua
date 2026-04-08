@@ -11,6 +11,7 @@ data:extend({
       {type = "item", name = "advanced-circuit", amount = 20},
       {type = "item", name = "government-grant", amount = 4},
       {type = "item", name = "regulation", amount = 4},
+      {type = "item", name = "management-approval-written", amount = 1},
       {type = "item", name = "taxpayer-money", amount = 50},
       {type = "fluid", name = "liquid-coffee", amount = 100},
     },

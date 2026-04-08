@@ -1259,7 +1259,7 @@ local PAPERWORK_ITEMS = {
   "safety-waiver-draft", "safety-waiver",
   "construction-permit-draft", "construction-permit",
   "management-verbal-draft", "management-approval-verbal",
-  "management-written-proposal", "management-written-review", "management-approval-written",
+  "management-written-proposal", "management-approval-written",
   "transit-authorization", "research-grant-approval",
   "work-order", "form-27b-6",
   "safety-work-order", "construction-work-order",

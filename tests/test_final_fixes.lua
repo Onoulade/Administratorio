@@ -133,6 +133,34 @@ data.raw.item["transport-belt"] = {
   icon = "__base__/graphics/icons/transport-belt.png",
   icon_size = 64,
 }
+data.raw.item["engine-unit"] = {
+  type = "item",
+  name = "engine-unit",
+  stack_size = 50,
+  icon = "__base__/graphics/icons/engine-unit.png",
+  icon_size = 64,
+}
+data.raw.item["electric-engine-unit"] = {
+  type = "item",
+  name = "electric-engine-unit",
+  stack_size = 50,
+  icon = "__base__/graphics/icons/electric-engine-unit.png",
+  icon_size = 64,
+}
+data.raw.item["battery"] = {
+  type = "item",
+  name = "battery",
+  stack_size = 200,
+  icon = "__base__/graphics/icons/battery.png",
+  icon_size = 64,
+}
+data.raw.item["rocket-fuel"] = {
+  type = "item",
+  name = "rocket-fuel",
+  stack_size = 10,
+  icon = "__base__/graphics/icons/rocket-fuel.png",
+  icon_size = 64,
+}
 data.raw["repair-tool"]["repair-pack"] = {
   type = "repair-tool",
   name = "repair-pack",
@@ -284,6 +312,65 @@ recipes["splitter"] = {
   },
   results = {
     { type = "item", name = "splitter", amount = 1 },
+  },
+}
+
+recipes["engine-unit"] = {
+  type = "recipe",
+  name = "engine-unit",
+  category = "crafting",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 1 },
+    { type = "item", name = "iron-gear-wheel", amount = 1 },
+    { type = "item", name = "pipe", amount = 2 },
+  },
+  results = {
+    { type = "item", name = "engine-unit", amount = 1 },
+  },
+}
+
+recipes["electric-engine-unit"] = {
+  type = "recipe",
+  name = "electric-engine-unit",
+  category = "crafting-with-fluid",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "engine-unit", amount = 1 },
+    { type = "item", name = "electronic-circuit", amount = 2 },
+    { type = "fluid", name = "lubricant", amount = 15 },
+  },
+  results = {
+    { type = "item", name = "electric-engine-unit", amount = 1 },
+  },
+}
+
+recipes["battery"] = {
+  type = "recipe",
+  name = "battery",
+  category = "chemistry",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "iron-plate", amount = 1 },
+    { type = "item", name = "copper-plate", amount = 1 },
+    { type = "fluid", name = "sulfuric-acid", amount = 20 },
+  },
+  results = {
+    { type = "item", name = "battery", amount = 1 },
+  },
+}
+
+recipes["rocket-fuel"] = {
+  type = "recipe",
+  name = "rocket-fuel",
+  category = "chemistry",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "solid-fuel", amount = 10 },
+    { type = "fluid", name = "light-oil", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "rocket-fuel", amount = 1 },
   },
 }
 
@@ -880,6 +967,29 @@ test("electric furnace recipe upgrades to management verbal paperwork", function
   assert_eq(r.category, "advanced-crafting-regulated", "electric-furnace category")
   assert_true(has_ingredient(r, "management-verbal-work-order"), "electric-furnace missing management-verbal-work-order")
   assert_true(not has_ingredient(r, "construction-work-order"), "electric-furnace should not use construction-work-order")
+end)
+
+test("engine units use baseline paperwork plus carbon offsets", function()
+  local r = get_recipe("engine-unit")
+  assert_true(r ~= nil, "engine-unit missing")
+  assert_eq(r.category, "crafting-regulated", "engine-unit category")
+  assert_true(has_ingredient(r, "work-order"), "engine-unit missing work-order")
+  assert_true(has_ingredient(r, "carbon-offset-certificate-basic"), "engine-unit missing carbon-offset-certificate-basic")
+  assert_true(not has_ingredient(r, "management-verbal-work-order"), "engine-unit should not use management-verbal-work-order")
+end)
+
+test("high-energy intermediates require verified carbon certificates", function()
+  local electric_engine = get_recipe("electric-engine-unit")
+  assert_true(electric_engine ~= nil, "electric-engine-unit missing")
+  assert_true(has_ingredient(electric_engine, "carbon-offset-certificate-verified"), "electric-engine-unit missing verified carbon certificate")
+
+  local battery = get_recipe("battery")
+  assert_true(battery ~= nil, "battery missing")
+  assert_true(has_ingredient(battery, "carbon-offset-certificate-verified"), "battery missing verified carbon certificate")
+
+  local rocket_fuel = get_recipe("rocket-fuel")
+  assert_true(rocket_fuel ~= nil, "rocket-fuel missing")
+  assert_true(has_ingredient(rocket_fuel, "carbon-offset-certificate-verified"), "rocket-fuel missing verified carbon certificate")
 end)
 
 test("splitter uses safety waiver by hand and safety work order in regulated 5x batches", function()

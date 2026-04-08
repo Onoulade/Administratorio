@@ -205,15 +205,69 @@ end
 -- Add administrative-science-pack to all module tech research costs.
 -------------------------------------------------------------------------------
 local module_recipe_overrides = {
-  ["speed-module"]          = {{type="item", name="basic-excuse", amount=10},          {type="item", name="electronic-circuit", amount=5}},
-  ["speed-module-2"]        = {{type="item", name="speed-module", amount=4},           {type="item", name="good-excuse", amount=5},       {type="item", name="advanced-circuit", amount=5}, {type="item", name="taxpayer-money", amount=5}},
-  ["speed-module-3"]        = {{type="item", name="speed-module-2", amount=4},         {type="item", name="narrative", amount=5},          {type="item", name="processing-unit", amount=5},  {type="item", name="compacted-rubble", amount=10}, {type="item", name="credentials", amount=1}, {type="item", name="taxpayer-money", amount=10}},
-  ["productivity-module"]   = {{type="item", name="dubious-data", amount=10},          {type="item", name="electronic-circuit", amount=5}},
-  ["productivity-module-2"] = {{type="item", name="productivity-module", amount=4},    {type="item", name="data", amount=5},               {type="item", name="advanced-circuit", amount=5}, {type="item", name="taxpayer-money", amount=5}},
-  ["productivity-module-3"] = {{type="item", name="productivity-module-2", amount=4},  {type="item", name="justification", amount=5},      {type="item", name="processing-unit", amount=5},  {type="item", name="compacted-rubble", amount=10}, {type="item", name="credentials", amount=1}, {type="item", name="taxpayer-money", amount=10}},
-  ["efficiency-module"]     = {{type="item", name="crappy-report", amount=10},         {type="item", name="electronic-circuit", amount=5}},
-  ["efficiency-module-2"]   = {{type="item", name="efficiency-module", amount=4},      {type="item", name="white-paper", amount=5},        {type="item", name="advanced-circuit", amount=5}, {type="item", name="taxpayer-money", amount=5}},
-  ["efficiency-module-3"]   = {{type="item", name="efficiency-module-2", amount=4},    {type="item", name="policy", amount=5},             {type="item", name="processing-unit", amount=5},  {type="item", name="compacted-rubble", amount=10}, {type="item", name="credentials", amount=1}, {type="item", name="taxpayer-money", amount=10}},
+  ["speed-module"] = {
+    {type = "item", name = "basic-excuse", amount = 10},
+    {type = "item", name = "electronic-circuit", amount = 5},
+    {type = "item", name = "safety-waiver", amount = 1},
+  },
+  ["speed-module-2"] = {
+    {type = "item", name = "speed-module", amount = 4},
+    {type = "item", name = "good-excuse", amount = 5},
+    {type = "item", name = "advanced-circuit", amount = 5},
+    {type = "item", name = "taxpayer-money", amount = 5},
+    {type = "item", name = "management-approval-verbal", amount = 1},
+  },
+  ["speed-module-3"] = {
+    {type = "item", name = "speed-module-2", amount = 4},
+    {type = "item", name = "narrative", amount = 5},
+    {type = "item", name = "processing-unit", amount = 5},
+    {type = "item", name = "compacted-rubble", amount = 10},
+    {type = "item", name = "credentials", amount = 1},
+    {type = "item", name = "taxpayer-money", amount = 10},
+    {type = "item", name = "management-approval-written", amount = 1},
+  },
+  ["productivity-module"] = {
+    {type = "item", name = "dubious-data", amount = 10},
+    {type = "item", name = "electronic-circuit", amount = 5},
+    {type = "item", name = "safety-waiver", amount = 1},
+  },
+  ["productivity-module-2"] = {
+    {type = "item", name = "productivity-module", amount = 4},
+    {type = "item", name = "data", amount = 5},
+    {type = "item", name = "advanced-circuit", amount = 5},
+    {type = "item", name = "taxpayer-money", amount = 5},
+    {type = "item", name = "management-approval-verbal", amount = 1},
+  },
+  ["productivity-module-3"] = {
+    {type = "item", name = "productivity-module-2", amount = 4},
+    {type = "item", name = "justification", amount = 5},
+    {type = "item", name = "processing-unit", amount = 5},
+    {type = "item", name = "compacted-rubble", amount = 10},
+    {type = "item", name = "credentials", amount = 1},
+    {type = "item", name = "taxpayer-money", amount = 10},
+    {type = "item", name = "management-approval-written", amount = 1},
+  },
+  ["efficiency-module"] = {
+    {type = "item", name = "crappy-report", amount = 10},
+    {type = "item", name = "electronic-circuit", amount = 5},
+    {type = "item", name = "safety-waiver", amount = 1},
+  },
+  ["efficiency-module-2"] = {
+    {type = "item", name = "efficiency-module", amount = 4},
+    {type = "item", name = "white-paper", amount = 5},
+    {type = "item", name = "advanced-circuit", amount = 5},
+    {type = "item", name = "taxpayer-money", amount = 5},
+    {type = "item", name = "management-approval-verbal", amount = 1},
+  },
+  ["efficiency-module-3"] = {
+    {type = "item", name = "efficiency-module-2", amount = 4},
+    {type = "item", name = "policy", amount = 5},
+    {type = "item", name = "processing-unit", amount = 5},
+    {type = "item", name = "compacted-rubble", amount = 10},
+    {type = "item", name = "credentials", amount = 1},
+    {type = "item", name = "taxpayer-money", amount = 10},
+    {type = "item", name = "management-approval-written", amount = 1},
+  },
 }
 
 for name, ingredients in pairs(module_recipe_overrides) do

@@ -247,21 +247,24 @@ test("shared.COMBINED_FORMS maps all tier forms correctly", function()
   assert_eq(shared.COMBINED_FORMS["research-grant-approval"], "research-grant-work-order")
 end)
 
-test("combined form production recipes exist and require tier form + work-order", function()
+test("combined form production recipes exist and scale with multiple work-orders", function()
   local combos = {
-    {"safety-work-order-production", "safety-waiver", "work-order"},
-    {"construction-work-order-production", "construction-permit", "work-order"},
-    {"management-verbal-work-order-production", "management-approval-verbal", "work-order"},
-    {"management-written-work-order-production", "management-approval-written", "work-order"},
-    {"research-grant-work-order-production", "research-grant-approval", "work-order"},
+    {"safety-work-order-production", "safety-waiver", "work-order", 2},
+    {"construction-work-order-production", "construction-permit", "work-order", 2},
+    {"management-verbal-work-order-production", "management-approval-verbal", "work-order", 2},
+    {"management-written-work-order-production", "management-approval-written", "work-order", 2},
+    {"research-grant-work-order-production", "research-grant-approval", "work-order", 2},
   }
   for _, combo in ipairs(combos) do
     local r = get_recipe(combo[1])
     assert_true(r ~= nil, combo[1] .. " recipe missing")
     assert_true(has_ingredient(r, combo[2]), combo[1] .. " missing " .. combo[2])
     assert_true(has_ingredient(r, combo[3]), combo[1] .. " missing " .. combo[3])
+    assert_eq(get_ingredient_amount(r, combo[3]), combo[4], combo[1] .. " should scale work-order demand")
     assert_eq(r.category, "bureaucracy-registration", combo[1] .. " wrong category")
   end
+  assert_true(has_ingredient(get_recipe("management-written-work-order-production"), "management-approval-verbal"),
+    "management-written-work-order-production should include the lower-tier verbal approval")
 end)
 
 -- =========================================================================
@@ -681,6 +684,9 @@ test("T2 items: AM2, chemical-plant, elevated rail supports use construction-per
   assert_eq(shared.get_required_form("chemical-plant"), "construction-permit")
   assert_eq(shared.get_required_form("oil-refinery"), "construction-permit")
   assert_eq(shared.get_required_form("underground-belt"), "construction-permit")
+  assert_eq(shared.get_required_form("rail"), "construction-permit")
+  assert_eq(shared.get_required_form("rail-signal"), "construction-permit")
+  assert_eq(shared.get_required_form("rail-chain-signal"), "construction-permit")
   assert_eq(shared.get_required_form("rail-ramp"), "construction-permit")
   assert_eq(shared.get_required_form("rail-support"), "construction-permit")
   assert_eq(shared.get_required_form("fast-transport-belt"), "construction-permit")
@@ -694,12 +700,17 @@ test("T2 special: lab and mining-drill use construction-permit", function()
   assert_eq(shared.get_required_form("burner-mining-drill"), "construction-permit")
 end)
 
-test("T3 items: locomotive, roboport, solar-panel use management-approval-verbal", function()
-  assert_eq(shared.get_required_form("locomotive"), "management-approval-verbal")
+test("locomotive is safety-tier while heavy infrastructure stays management-verbal", function()
+  assert_eq(shared.get_required_form("locomotive"), "safety-waiver")
   assert_eq(shared.get_required_form("roboport"), "management-approval-verbal")
   assert_eq(shared.get_required_form("solar-panel"), "management-approval-verbal")
   assert_eq(shared.get_required_form("accumulator"), "management-approval-verbal")
   assert_eq(shared.get_required_form("electric-furnace"), "management-approval-verbal")
+end)
+
+test("advanced circuit is elevated while engine unit falls back to baseline paperwork", function()
+  assert_eq(shared.get_required_form("advanced-circuit"), "management-approval-verbal")
+  assert_eq(shared.get_required_form("engine-unit"), "work-order")
 end)
 
 test("T4 items: AM3, centrifuge, rocket-silo, nuclear-reactor use management-approval-written", function()
@@ -747,6 +758,11 @@ test("centrifuging requires radiological-work-order", function()
 end)
 
 test("operating paperwork chain: petro < chemical < radiological", function()
+  local eir = get_recipe("environmental-impact-report")
+  assert_eq(eir.category, "bureaucracy-registration")
+  assert_true(has_ingredient(eir, "carbon-offset-certificate-verified"), "EIR should require verified carbon certificates")
+  assert_true(not has_ingredient(eir, "barrel"), "EIR should no longer require barrels")
+
   local petro = get_recipe("petrochemical-operating-permit-production")
   assert_eq(petro.category, "bureaucracy-registration")
   assert_true(has_ingredient(petro, "safety-waiver"))
@@ -1355,7 +1371,7 @@ test("heavier vanilla integration anchors have exact ingredient counts", functio
     {"credentials-production", "electronic-circuit", 2},
     {"data-production", "advanced-circuit", 2},
     {"management-written-proposal", "advanced-circuit", 2},
-    {"environmental-impact-report", "barrel", 1},
+    {"environmental-impact-report", "carbon-offset-certificate-verified", 3},
     {"chemical-handling-work-order-production", "barrel", 1},
     {"chemical-handling-work-order-production", "pipe", 1},
     {"radiological-work-order-production", "battery", 1},
@@ -1408,6 +1424,14 @@ test("steel-plate-batch: 50 iron-plate + 1 cert -> 10 steel", function()
   local r = get_recipe("steel-plate-batch")
   assert_eq(get_ingredient_amount(r, "iron-plate"), 50)
   assert_eq(get_result_amount(r, "steel-plate"), 10)
+end)
+
+test("verified carbon certificate cost is scaled up", function()
+  local r = get_recipe("carbon-offset-certificate-verified")
+  assert_true(r ~= nil, "carbon-offset-certificate-verified missing")
+  assert_eq(get_ingredient_amount(r, "carbon-offset-certificate-basic"), 4)
+  assert_eq(get_ingredient_amount(r, "dubious-data"), 20)
+  assert_eq(r.energy_required, 15)
 end)
 
 -- =========================================================================
