@@ -24,6 +24,7 @@
 -------------------------------------------------------------------------------
 local feature_flags = require("feature_flags")
 local working_hours_enabled = feature_flags.working_hours_enabled()
+local space_age_enabled = feature_flags.space_age_enabled()
 
 local categories = {
   {type = "recipe-category", name = "bureaucracy-registration"},
@@ -43,6 +44,10 @@ local categories = {
   {type = "recipe-category", name = "propaganda-distillery"},
   {type = "recipe-category", name = "pneumatic-intake"},
 }
+
+if space_age_enabled then
+  categories[#categories + 1] = {type = "recipe-category", name = "printing-chromatic"}
+end
 
 if working_hours_enabled then
   categories[#categories + 1] = {type = "module-category", name = "night-work"}
