@@ -105,11 +105,38 @@ data:extend({
     },
     order = "h-c",
   },
+  {
+    type = "technology",
+    name = "gleba-conciliation",
+    icon = "__administratorio__/graphics/icons/promise.png",
+    icon_size = 64,
+    effects = {
+      {type = "unlock-recipe", recipe = "chromatic-printer"},
+      {type = "unlock-recipe", recipe = "conciliation-desk"},
+      {type = "unlock-recipe", recipe = "yellow-ink-production"},
+      {type = "unlock-recipe", recipe = "mycelial-form-stock"},
+      {type = "unlock-recipe", recipe = "blank-yellow-form-production"},
+      {type = "unlock-recipe", recipe = "symbiosis-record"},
+      {type = "unlock-recipe", recipe = "conciliation-order"},
+      {type = "unlock-recipe", recipe = "biochamber-operating-waiver"},
+    },
+    prerequisites = {"executive-review", "agricultural-science-pack"},
+    unit = {
+      count = 320,
+      ingredients = {
+        {"administrative-science-pack", 1},
+      },
+      time = 45,
+    },
+    order = "h-d",
+  },
 })
 
 add_tech_unlock("metallurgic-science-pack", "licensed-notary-formation")
 add_tech_unlock("administrative-science-research", "research-grant-approval-vulcanus")
 add_tech_unlock("administrative-science-research", "administrative-science-pack-production-vulcanus")
+add_tech_unlock("administrative-science-research", "admin-station-gleba")
+add_tech_unlock("administrative-science-research", "administrative-science-pack-production-gleba")
 add_tech_unlock("calcite-processing", "dubious-data-analysis-vulcanus")
 add_tech_unlock("calcite-processing", "paper-production-vulcanus")
 add_tech_unlock("calcite-processing", "carbon-offset-certificate-basic-vulcanus")
@@ -120,9 +147,12 @@ add_tech_unlock("calcite-processing", "plastic-bar-vulcanus")
 add_tech_unlock("calcite-processing", "heatproof-paper-production")
 add_tech_unlock("calcite-processing", "molten-promises-production")
 add_tech_unlock("printing-technology", "printer-t1-vulcanus")
+add_tech_unlock("printing-technology", "printer-t1-gleba")
 add_tech_unlock("industrial-propaganda", "propaganda-distillery-vulcanus")
 add_tech_unlock("industrial-propaganda", "refined-nonsense-production-vulcanus")
+add_tech_unlock("local-precedents", "useless-documentation-production-gleba")
 add_tech_unlock("agricultural-science-pack", "conciliation-officer-formation")
+add_tech_unlock("corporate-hospitality", "corporate-breakroom-gleba")
 add_tech_unlock("electromagnetic-science-pack", "relay-clerk-formation")
 add_tech_unlock("cryogenic-science-pack", "cryoprint-technician-formation")
 add_tech_unlock("after-hours-operations", "overtime-exemption-staffed")

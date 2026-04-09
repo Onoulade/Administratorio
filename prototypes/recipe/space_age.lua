@@ -20,6 +20,26 @@ local function add_item_ingredient(recipe, ingredient_name, amount)
   apply_to_variant(recipe.expensive)
 end
 
+local function remove_ingredient(recipe, ingredient_name)
+  if not recipe then return end
+
+  local function apply_to_variant(target)
+    if not target or not target.ingredients then return end
+
+    local filtered = {}
+    for _, ingredient in ipairs(target.ingredients) do
+      if (ingredient.name or ingredient[1]) ~= ingredient_name then
+        filtered[#filtered + 1] = ingredient
+      end
+    end
+    target.ingredients = filtered
+  end
+
+  apply_to_variant(recipe)
+  apply_to_variant(recipe.normal)
+  apply_to_variant(recipe.expensive)
+end
+
 local function surface_limited(recipe, planet_name)
   return planets.apply_planet_surface_conditions(recipe, planet_name)
 end
@@ -280,6 +300,21 @@ data:extend({
     results = {{type = "item", name = "notary-office", amount = 1}},
     energy_required = 16
   },
+  surface_limited({
+    type = "recipe",
+    name = "conciliation-desk",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "office-desk", amount = 2},
+      {type = "item", name = "chromatic-printer", amount = 1},
+      {type = "item", name = "conciliation-officer", amount = 1},
+      {type = "item", name = "steel-plate", amount = 20},
+      {type = "item", name = "advanced-circuit", amount = 10},
+      {type = "item", name = "nutrients", amount = 5},
+    },
+    results = {{type = "item", name = "conciliation-desk", amount = 1}},
+    energy_required = 16
+  }, "gleba"),
   {
     type = "recipe",
     name = "trajectory-compliance-array",
@@ -365,6 +400,227 @@ data:extend({
     },
     energy_required = 2,
   },
+  surface_limited({
+    type = "recipe",
+    name = "amber-sap-nonsense-seeding",
+    category = "bureaucratic-bootstrap",
+    enabled = true,
+    localised_name = {"item-name.bullshit-ore"},
+    ingredients = {
+      {type = "fluid", name = "amber-sap", amount = 20},
+      {type = "item", name = "nutrients", amount = 1},
+    },
+    results = {
+      {type = "item", name = "bullshit-ore", amount = 4},
+    },
+    energy_required = 4,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "ink-production-gleba",
+    category = "bureaucratic-bootstrap",
+    enabled = true,
+    localised_name = {"recipe-name.ink-production"},
+    ingredients = {
+      {type = "fluid", name = "amber-sap", amount = 10},
+      {type = "item", name = "nutrients", amount = 1},
+    },
+    results = {
+      {type = "item", name = "ink", amount = 3},
+    },
+    energy_required = 2,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "carbon-offset-certificate-basic-gleba",
+    category = "bureaucratic-bootstrap",
+    enabled = true,
+    localised_name = {"item-name.carbon-offset-certificate-basic"},
+    ingredients = {
+      {type = "fluid", name = "amber-sap", amount = 10},
+      {type = "item", name = "nutrients", amount = 1},
+    },
+    results = {
+      {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
+    },
+    energy_required = 2,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "admin-station-gleba",
+    enabled = false,
+    localised_name = {"item-name.admin-station"},
+    localised_description = {"item-description.admin-station"},
+    ingredients = {
+      {type = "item", name = "iron-plate", amount = 20},
+      {type = "item", name = "electronic-circuit", amount = 10},
+      {type = "item", name = "dubious-data", amount = 2},
+      {type = "item", name = "nutrients", amount = 2},
+    },
+    results = {
+      {type = "item", name = "admin-station", amount = 1},
+    },
+    energy_required = 15,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "printer-t1-gleba",
+    enabled = false,
+    localised_name = {"item-name.printer-t1"},
+    localised_description = {"item-description.printer-t1"},
+    ingredients = {
+      {type = "item", name = "iron-plate", amount = 10},
+      {type = "item", name = "iron-gear-wheel", amount = 5},
+      {type = "item", name = "electronic-circuit", amount = 3},
+      {type = "item", name = "dubious-data", amount = 1},
+    },
+    results = {
+      {type = "item", name = "printer-t1", amount = 1},
+    },
+    energy_required = 5,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "corporate-breakroom-gleba",
+    enabled = false,
+    localised_name = {"item-name.corporate-breakroom"},
+    localised_description = {"item-description.corporate-breakroom"},
+    ingredients = {
+      {type = "item", name = "iron-plate", amount = 16},
+      {type = "item", name = "wood", amount = 8},
+      {type = "item", name = "stone-brick", amount = 8},
+      {type = "item", name = "pipe", amount = 3},
+      {type = "item", name = "electronic-circuit", amount = 4},
+      {type = "item", name = "nutrients", amount = 2},
+    },
+    results = {
+      {type = "item", name = "corporate-breakroom", amount = 1},
+    },
+    energy_required = 10,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "administrative-science-pack-production-gleba",
+    category = "bureaucracy-registration",
+    enabled = false,
+    hide_from_player_crafting = false,
+    localised_name = {"recipe-name.administrative-science-pack-production"},
+    ingredients = {
+      {type = "item", name = "blank-form", amount = 2},
+      {type = "item", name = "basic-excuse", amount = 1},
+      {type = "item", name = "dubious-data", amount = 1},
+      {type = "item", name = "nutrients", amount = 2},
+    },
+    results = {
+      {type = "item", name = "administrative-science-pack", amount = 1},
+    },
+    energy_required = 5,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "useless-documentation-production-gleba",
+    category = "bureaucracy-registration",
+    enabled = false,
+    localised_name = {"item-name.useless-documentation"},
+    ingredients = {
+      {type = "item", name = "paper", amount = 3},
+      {type = "item", name = "dubious-data", amount = 1},
+      {type = "item", name = "nutrients", amount = 1},
+    },
+    results = {
+      {type = "item", name = "useless-documentation", amount = 2},
+    },
+    energy_required = 3,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "yellow-ink-production",
+    category = "bureaucracy-registration",
+    enabled = false,
+    localised_name = {"fluid-name.yellow-ink"},
+    ingredients = {
+      {type = "fluid", name = "amber-sap", amount = 30},
+      {type = "item", name = "nutrients", amount = 2},
+    },
+    results = {
+      {type = "fluid", name = "yellow-ink", amount = 40},
+    },
+    energy_required = 4,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "mycelial-form-stock",
+    category = "printing-chromatic",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "paper", amount = 2},
+      {type = "fluid", name = "yellow-ink", amount = 10},
+    },
+    results = {
+      {type = "item", name = "mycelial-form-stock", amount = 2},
+    },
+    energy_required = 3,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "blank-yellow-form-production",
+    category = "printing-chromatic",
+    enabled = false,
+    localised_name = {"item-name.blank-yellow-form"},
+    ingredients = {
+      {type = "item", name = "mycelial-form-stock", amount = 1},
+      {type = "fluid", name = "yellow-ink", amount = 5},
+    },
+    results = {
+      {type = "item", name = "blank-yellow-form", amount = 2},
+    },
+    energy_required = 2,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "symbiosis-record",
+    category = "bureaucracy-conciliation",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "blank-yellow-form", amount = 1},
+      {type = "item", name = "dubious-data", amount = 2},
+      {type = "item", name = "nutrients", amount = 2},
+    },
+    results = {
+      {type = "item", name = "symbiosis-record", amount = 1},
+    },
+    energy_required = 4,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "conciliation-order",
+    category = "bureaucracy-conciliation",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "blank-yellow-form", amount = 1},
+      {type = "item", name = "symbiosis-record", amount = 1},
+      {type = "fluid", name = "liquid-coffee", amount = 25},
+    },
+    results = {
+      {type = "item", name = "conciliation-order", amount = 1},
+    },
+    energy_required = 5,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "biochamber-operating-waiver",
+    category = "bureaucracy-conciliation",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "blank-yellow-form", amount = 1},
+      {type = "item", name = "symbiosis-record", amount = 1},
+      {type = "item", name = "nutrients", amount = 4},
+    },
+    results = {
+      {type = "item", name = "biochamber-operating-waiver", amount = 1},
+    },
+    energy_required = 5,
+  }, "gleba"),
   surface_limited({
     type = "recipe",
     name = "paper-production-vulcanus",
@@ -839,6 +1095,45 @@ data:extend({
 })
 
 do
+  local gleba_clones = {
+    {source = "advanced-circuit", clone = "advanced-circuit-gleba", add = {{type = "item", name = "nutrients", amount = 2}}},
+    {source = "low-density-structure", clone = "low-density-structure-gleba", add = {{type = "item", name = "nutrients", amount = 5}}},
+    {source = "rocket-control-unit", clone = "rocket-control-unit-gleba", add = {
+      {type = "item", name = "symbiosis-record", amount = 1},
+      {type = "item", name = "nutrients", amount = 5},
+    }},
+    {source = "rocket-silo", clone = "rocket-silo-gleba", add = {
+      {type = "item", name = "symbiosis-record", amount = 2},
+      {type = "item", name = "conciliation-order", amount = 1},
+      {type = "item", name = "nutrients", amount = 20},
+    }},
+  }
+
+  local gleba_recipes = {}
+  for _, spec in ipairs(gleba_clones) do
+    local clone = clone_recipe(spec.source, spec.clone)
+    if clone then
+      for _, ingredient in ipairs(spec.add or {}) do
+        if ingredient.type == "fluid" then
+          table.insert(clone.ingredients, ingredient)
+        else
+          add_item_ingredient(clone, ingredient.name, ingredient.amount)
+        end
+      end
+      surface_limited(clone, "gleba")
+      table.insert(gleba_recipes, clone)
+    end
+  end
+
+  if #gleba_recipes > 0 then
+    data:extend(gleba_recipes)
+    for _, spec in ipairs(gleba_clones) do
+      if data.raw.recipe and data.raw.recipe[spec.clone] then
+        add_unlock_for_clone(spec.source, spec.clone)
+      end
+    end
+  end
+
   local offworld_clones = {
     {source = "foundry", clone = "foundry-offworld", ingredient = "offworld-metallurgy-charter", amount = 1},
     {source = "tungsten-plate", clone = "tungsten-plate-offworld", ingredient = "thermal-process-license", amount = 1},
@@ -871,6 +1166,37 @@ do
     for _, spec in ipairs(offworld_clones) do
       if data.raw.recipe and data.raw.recipe[spec.clone] then
         add_unlock_for_clone(spec.source, spec.clone)
+      end
+    end
+  end
+end
+
+do
+  local gleba_bio_exports = {
+    "rocket-fuel-from-jelly",
+    "bioplastic",
+    "biosulfur",
+    "biolubricant",
+  }
+
+  local clones = {}
+  for _, recipe_name in ipairs(gleba_bio_exports) do
+    local source = data.raw.recipe and data.raw.recipe[recipe_name]
+    if source then
+      surface_limited(source, "gleba")
+      local clone = clone_recipe(recipe_name, recipe_name .. "-offworld")
+      if clone then
+        add_item_ingredient(clone, "biochamber-operating-waiver", 1)
+        table.insert(clones, clone)
+      end
+    end
+  end
+
+  if #clones > 0 then
+    data:extend(clones)
+    for _, recipe_name in ipairs(gleba_bio_exports) do
+      if data.raw.recipe and data.raw.recipe[recipe_name .. "-offworld"] then
+        add_unlock_for_clone(recipe_name, recipe_name .. "-offworld")
       end
     end
   end
