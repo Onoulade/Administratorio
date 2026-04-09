@@ -173,6 +173,8 @@ test("notary office is the dedicated certification machine", function()
   local categories = entity.crafting_categories or {}
   assert_eq(#categories, 1, "notary-office should only expose one crafting category")
   assert_eq(categories[1], "bureaucracy-certification", "notary-office should only craft certification recipes")
+  assert_eq(#(entity.fluid_boxes or {}), 3, "notary-office should expose two inputs and one output")
+  assert_eq(entity.fluid_boxes[3].production_type, "output", "notary-office should vent fluid outputs")
 end)
 
 test("planet helper exposes exact basic-planet conditions and abundance outputs", function()
@@ -192,13 +194,22 @@ test("planet helper exposes exact basic-planet conditions and abundance outputs"
   assert_eq(planets.BASIC_PLANET_ABUNDANCE.fulgora, "useless-documentation", "fulgora abundance should be useless-documentation")
 end)
 
-test("vulcanus fallback launch paperwork is present and surface-limited", function()
+test("vulcanus printer and notary split is present and surface-limited", function()
   local required = {
+    "paper-production-vulcanus",
+    "carbon-offset-certificate-basic-vulcanus",
+    "admin-station-vulcanus",
+    "printer-t1-vulcanus",
     "dubious-data-analysis-vulcanus",
     "research-grant-approval-vulcanus",
-    "management-verbal-approval-vulcanus",
-    "management-written-approval-vulcanus",
-    "vulcanus-lie-fabrication",
+    "administrative-science-pack-production-vulcanus",
+    "plastic-bar-vulcanus",
+    "refined-nonsense-production-vulcanus",
+    "blank-cyan-form-production",
+    "management-approval-verbal-vulcanus",
+    "vulcanus-lie-distillation",
+    "heatproof-filler-documentation",
+    "form-27b-6-vulcanus",
   }
 
   for _, recipe_name in ipairs(required) do
@@ -208,8 +219,26 @@ test("vulcanus fallback launch paperwork is present and surface-limited", functi
     assert_eq(recipe.surface_conditions[2].min, 40, recipe_name .. " should target Vulcanus gravity")
   end
 
-  assert_true(has_ingredient(data.raw.recipe["management-written-approval-vulcanus"], "management-approval-verbal"),
-    "management-written-approval-vulcanus should build on management-approval-verbal")
+  assert_true(data.raw.recipe["management-written-approval-vulcanus"] == nil,
+    "management-written-approval-vulcanus should stay import-seeded")
+end)
+
+test("chromatic recipes stay printer-only while support-heavy paperwork lives in the notary office", function()
+  assert_eq(data.raw.recipe["blank-cyan-form-production"].category, "printing-chromatic", "blank-cyan-form should be printer-made")
+  assert_eq(data.raw.recipe["inspection-docket"].category, "printing-chromatic", "inspection-docket should be printer-made")
+  assert_eq(data.raw.recipe["management-approval-verbal-vulcanus"].category, "bureaucracy-certification", "verbal approval shortcut should be notary-made")
+  assert_eq(data.raw.recipe["offworld-metallurgy-charter"].category, "bureaucracy-certification", "offworld charter should be notary-made")
+  assert_true(not has_ingredient(data.raw.recipe["management-approval-verbal-vulcanus"], "cyan-ink"),
+    "notary verbal approval should consume support materials, not direct printer ink")
+end)
+
+test("offworld recipe variants keep vulcanus paperwork gates off the home planet", function()
+  assert_true(data.raw.recipe["foundry"].surface_conditions ~= nil, "foundry should be home-planet limited")
+  assert_true(data.raw.recipe["foundry-offworld"].surface_conditions ~= nil, "foundry-offworld should be surface-limited")
+  assert_true(has_ingredient(data.raw.recipe["foundry-offworld"], "offworld-metallurgy-charter"),
+    "foundry-offworld should require the offworld charter")
+  assert_true(not has_ingredient(data.raw.recipe["foundry"], "offworld-metallurgy-charter"),
+    "home-planet foundry should not consume the offworld charter")
 end)
 
 if failed > 0 then

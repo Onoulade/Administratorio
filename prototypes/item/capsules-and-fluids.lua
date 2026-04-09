@@ -256,5 +256,7 @@ if feature_flags.space_age_enabled() then
     { type = "fluid", name = "cyan-ink",         icon = item_icons .. "ink-cartridge.png", icon_size = 64, subgroup = "admin-fluids", order = "i", default_temperature = 25, base_color = {r=0.05, g=0.6, b=0.7}, flow_color = {r=0.2, g=0.9, b=1.0} },
     { type = "fluid", name = "yellow-ink",       icon = item_icons .. "ink-cartridge.png", icon_size = 64, subgroup = "admin-fluids", order = "j", default_temperature = 25, base_color = {r=0.75, g=0.7, b=0.05}, flow_color = {r=1.0, g=0.95, b=0.2} },
     { type = "fluid", name = "magenta-ink",      icon = item_icons .. "ink-cartridge.png", icon_size = 64, subgroup = "admin-fluids", order = "k", default_temperature = 25, base_color = {r=0.75, g=0.05, b=0.55}, flow_color = {r=1.0, g=0.2, b=0.8} },
+    { type = "fluid", name = "liquid-stimulant", icon = item_icons .. "coffee.png", icon_size = 64, subgroup = "admin-fluids", order = "l", default_temperature = 110, base_color = {r=0.05, g=0.8, b=0.85}, flow_color = {r=0.2, g=1.0, b=1.0} },
+    { type = "fluid", name = "molten-promises",  icon = item_icons .. "lie.png", icon_size = 64, subgroup = "admin-fluids", order = "m", default_temperature = 250, base_color = {r=0.6, g=0.35, b=0.05}, flow_color = {r=1.0, g=0.6, b=0.15} },
   })
 end

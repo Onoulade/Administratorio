@@ -26,6 +26,15 @@ end
 
 local recipes = {
   foundry = {type = "recipe", name = "foundry", ingredients = {{type = "item", name = "steel-plate", amount = 50}}},
+  ["tungsten-plate"] = {type = "recipe", name = "tungsten-plate", ingredients = {{type = "item", name = "tungsten-ore", amount = 4}}},
+  ["tungsten-carbide"] = {type = "recipe", name = "tungsten-carbide", ingredients = {{type = "item", name = "tungsten-plate", amount = 2}}},
+  ["casting-low-density-structure"] = {type = "recipe", name = "casting-low-density-structure", ingredients = {{type = "item", name = "plastic-bar", amount = 20}}},
+  ["molten-iron"] = {type = "recipe", name = "molten-iron", ingredients = {{type = "item", name = "calcite", amount = 1}}},
+  ["molten-iron-from-lava"] = {type = "recipe", name = "molten-iron-from-lava", ingredients = {{type = "item", name = "calcite", amount = 1}}},
+  ["molten-copper"] = {type = "recipe", name = "molten-copper", ingredients = {{type = "item", name = "calcite", amount = 1}}},
+  ["molten-copper-from-lava"] = {type = "recipe", name = "molten-copper-from-lava", ingredients = {{type = "item", name = "calcite", amount = 1}}},
+  ["simple-coal-liquefaction"] = {type = "recipe", name = "simple-coal-liquefaction", ingredients = {{type = "item", name = "calcite", amount = 1}}},
+  ["acid-neutralisation"] = {type = "recipe", name = "acid-neutralisation", ingredients = {{type = "item", name = "calcite", amount = 1}}},
   biochamber = {type = "recipe", name = "biochamber", ingredients = {{type = "item", name = "iron-plate", amount = 20}}},
   ["electromagnetic-plant"] = {type = "recipe", name = "electromagnetic-plant", ingredients = {{type = "item", name = "holmium-plate", amount = 150}}},
   ["cryogenic-plant"] = {type = "recipe", name = "cryogenic-plant", ingredients = {{type = "item", name = "lithium-plate", amount = 20}}},
@@ -35,7 +44,11 @@ local items = {}
 local ammos = {}
 local fluids = {}
 local technologies = {
+  ["administrative-science-research"] = {type = "technology", name = "administrative-science-research", effects = {}},
   ["metallurgic-science-pack"] = {type = "technology", name = "metallurgic-science-pack", effects = {}},
+  ["calcite-processing"] = {type = "technology", name = "calcite-processing", effects = {}},
+  ["printing-technology"] = {type = "technology", name = "printing-technology", effects = {}},
+  ["industrial-propaganda"] = {type = "technology", name = "industrial-propaganda", effects = {}},
   ["agricultural-science-pack"] = {type = "technology", name = "agricultural-science-pack", effects = {}},
   ["electromagnetic-science-pack"] = {type = "technology", name = "electromagnetic-science-pack", effects = {}},
   ["cryogenic-science-pack"] = {type = "technology", name = "cryogenic-science-pack", effects = {}},
@@ -140,7 +153,9 @@ end)
 
 test("native Space Age buildings consume planet-specific specialists", function()
   assert_true(has_ingredient(recipes["foundry"], "licensed-notary"), "foundry should require licensed-notary")
-  assert_true(has_ingredient(recipes["foundry"], "foundry-operating-charter"), "foundry should require foundry-operating-charter")
+  assert_true(not has_ingredient(recipes["foundry"], "offworld-metallurgy-charter"), "home-planet foundry should not require offworld-metallurgy-charter")
+  assert_true(has_ingredient(recipes["foundry-offworld"], "licensed-notary"), "offworld foundry should still require licensed-notary")
+  assert_true(has_ingredient(recipes["foundry-offworld"], "offworld-metallurgy-charter"), "offworld foundry should require offworld-metallurgy-charter")
   assert_true(has_ingredient(recipes["biochamber"], "conciliation-officer"), "biochamber should require conciliation-officer")
   assert_true(has_ingredient(recipes["electromagnetic-plant"], "relay-clerk"), "electromagnetic-plant should require relay-clerk")
   assert_true(has_ingredient(recipes["cryogenic-plant"], "cryoprint-technician"), "cryogenic-plant should require cryoprint-technician")
@@ -156,11 +171,28 @@ test("chromatic printing now unlocks the vulcanus bootstrap chain", function()
     "cyan-slurry-production",
     "cyan-ink-production",
     "heatproof-form-stock",
+    "blank-cyan-form-production",
     "permit-draft",
     "inspection-docket",
   }) do
     assert_true(tech_unlocks_recipe(chromatic, recipe_name), "chromatic-printing should unlock " .. recipe_name)
   end
+end)
+
+test("vulcanus early bootstrap unlocks local dubious data and research grants before chromatic printing", function()
+  local calcite = technologies["calcite-processing"]
+  local admin_research = technologies["administrative-science-research"]
+  local printing = technologies["printing-technology"]
+  assert_true(calcite ~= nil, "calcite-processing missing")
+  assert_true(admin_research ~= nil, "administrative-science-research missing")
+  assert_true(printing ~= nil, "printing-technology missing")
+  assert_true(tech_unlocks_recipe(calcite, "dubious-data-analysis-vulcanus"), "calcite-processing should unlock dubious-data-analysis-vulcanus")
+  assert_true(tech_unlocks_recipe(calcite, "paper-production-vulcanus"), "calcite-processing should unlock paper-production-vulcanus")
+  assert_true(tech_unlocks_recipe(calcite, "carbon-offset-certificate-basic-vulcanus"), "calcite-processing should unlock carbon-offset-certificate-basic-vulcanus")
+  assert_true(tech_unlocks_recipe(calcite, "admin-station-vulcanus"), "calcite-processing should unlock admin-station-vulcanus")
+  assert_true(tech_unlocks_recipe(admin_research, "research-grant-approval-vulcanus"), "administrative-science-research should unlock research-grant-approval-vulcanus")
+  assert_true(tech_unlocks_recipe(admin_research, "administrative-science-pack-production-vulcanus"), "administrative-science-research should unlock administrative-science-pack-production-vulcanus")
+  assert_true(tech_unlocks_recipe(printing, "printer-t1-vulcanus"), "printing-technology should unlock printer-t1-vulcanus")
 end)
 
 test("vulcanus certification unlocks the notary office and fallback paperwork", function()
@@ -170,12 +202,16 @@ test("vulcanus certification unlocks the notary office and fallback paperwork", 
     "notary-office",
     "embossed-seal",
     "industrial-charter",
-    "lava-safety-endorsement",
-    "foundry-operating-charter",
-    "vulcanus-lie-fabrication",
-    "research-grant-approval-vulcanus",
-    "management-verbal-approval-vulcanus",
-    "management-written-approval-vulcanus",
+    "thermal-process-license",
+    "calcite-reagent-waiver",
+    "offworld-metallurgy-charter",
+    "good-excuse-vulcanus",
+    "safety-waiver-vulcanus",
+    "construction-permit-vulcanus",
+    "management-approval-verbal-vulcanus",
+    "heatproof-filler-documentation",
+    "form-27b-6-vulcanus",
+    "vulcanus-lie-distillation",
   }) do
     assert_true(tech_unlocks_recipe(certification, recipe_name), "vulcanus-certification should unlock " .. recipe_name)
   end
@@ -185,14 +221,76 @@ test("vulcanus chromatic chain defines the expected fluids and fluid-fed recipes
   assert_true(fluids["liquid-black-ink"] ~= nil, "liquid-black-ink missing")
   assert_true(fluids["cyan-slurry"] ~= nil, "cyan-slurry missing")
   assert_true(fluids["cyan-ink"] ~= nil, "cyan-ink missing")
+  assert_true(fluids["liquid-stimulant"] ~= nil, "liquid-stimulant missing")
+  assert_true(fluids["molten-promises"] ~= nil, "molten-promises missing")
   assert_true(fluids["yellow-ink"] ~= nil, "yellow-ink missing")
   assert_true(fluids["magenta-ink"] ~= nil, "magenta-ink missing")
 
   assert_true(has_fluid_ingredient(recipes["heatproof-form-stock"], "cyan-ink"), "heatproof-form-stock should consume cyan-ink")
-  assert_true(has_fluid_ingredient(recipes["permit-draft"], "liquid-black-ink"), "permit-draft should consume liquid-black-ink")
+  assert_true(not has_fluid_ingredient(recipes["heatproof-form-stock"], "sulfuric-acid"), "heatproof-form-stock should stay printer-only")
+  assert_true(has_fluid_ingredient(recipes["blank-cyan-form-production"], "cyan-ink"), "blank-cyan-form should consume cyan-ink")
   assert_true(has_fluid_ingredient(recipes["permit-draft"], "cyan-ink"), "permit-draft should consume cyan-ink")
-  assert_true(has_fluid_ingredient(recipes["inspection-docket"], "liquid-black-ink"), "inspection-docket should consume liquid-black-ink")
   assert_true(has_fluid_ingredient(recipes["inspection-docket"], "cyan-ink"), "inspection-docket should consume cyan-ink")
+  assert_true(has_fluid_ingredient(recipes["management-approval-verbal-vulcanus"], "liquid-coffee"), "verbal approval notary shortcut should consume liquid-coffee")
+  assert_true(has_fluid_ingredient(recipes["vulcanus-lie-distillation"], "molten-promises"), "lie distillation should consume molten-promises")
+end)
+
+test("vulcanus chemistry unlocks local stimulant and paper shortcuts", function()
+  local calcite = technologies["calcite-processing"]
+  local propaganda = technologies["industrial-propaganda"]
+  assert_true(calcite ~= nil, "calcite-processing missing")
+  assert_true(propaganda ~= nil, "industrial-propaganda missing")
+  for _, recipe_name in ipairs({
+    "liquid-stimulant-production",
+    "liquid-coffee-vulcanus",
+    "plastic-bar-vulcanus",
+    "heatproof-paper-production",
+    "molten-promises-production",
+  }) do
+    assert_true(tech_unlocks_recipe(calcite, recipe_name), "calcite-processing should unlock " .. recipe_name)
+  end
+  for _, recipe_name in ipairs({
+    "refined-nonsense-production-vulcanus",
+  }) do
+    assert_true(tech_unlocks_recipe(propaganda, recipe_name), "industrial-propaganda should unlock " .. recipe_name)
+  end
+  for _, recipe_name in ipairs({
+    "liquid-stimulant-production",
+    "liquid-coffee-vulcanus",
+    "plastic-bar-vulcanus",
+    "heatproof-paper-production",
+  }) do
+    assert_true(not has_ingredient(recipes[recipe_name], "chemical-handling-work-order"), recipe_name .. " should stay bootstrap-safe on Vulcanus")
+  end
+end)
+
+test("off-world vulcanus anchor recipes require shipped chromatic paperwork", function()
+  assert_true(not has_ingredient(recipes["tungsten-plate"], "thermal-process-license"), "home-planet tungsten-plate should not require thermal-process-license")
+  assert_true(not has_ingredient(recipes["tungsten-carbide"], "thermal-process-license"), "home-planet tungsten-carbide should not require thermal-process-license")
+  assert_true(has_ingredient(recipes["tungsten-plate-offworld"], "thermal-process-license"), "tungsten-plate-offworld should require thermal-process-license")
+  assert_true(has_ingredient(recipes["tungsten-carbide-offworld"], "thermal-process-license"), "tungsten-carbide-offworld should require thermal-process-license")
+  assert_true(not has_ingredient(recipes["casting-low-density-structure"], "offworld-metallurgy-charter"), "home-planet LDS casting should not require offworld-metallurgy-charter")
+  assert_true(has_ingredient(recipes["casting-low-density-structure-offworld"], "offworld-metallurgy-charter"), "casting-low-density-structure-offworld should require offworld-metallurgy-charter")
+  for _, recipe_name in ipairs({
+    "molten-iron-offworld",
+    "molten-iron-from-lava-offworld",
+    "molten-copper-offworld",
+    "molten-copper-from-lava-offworld",
+    "simple-coal-liquefaction-offworld",
+    "acid-neutralisation-offworld",
+  }) do
+    assert_true(has_ingredient(recipes[recipe_name], "calcite-reagent-waiver"), recipe_name .. " should require calcite-reagent-waiver")
+  end
+  for _, recipe_name in ipairs({
+    "molten-iron",
+    "molten-iron-from-lava",
+    "molten-copper",
+    "molten-copper-from-lava",
+    "simple-coal-liquefaction",
+    "acid-neutralisation",
+  }) do
+    assert_true(not has_ingredient(recipes[recipe_name], "calcite-reagent-waiver"), recipe_name .. " should stay clean on Vulcanus")
+  end
 end)
 
 test("workforce tech owns the workforce progression unlocks", function()

@@ -1,6 +1,6 @@
 local function add_tech_unlock(technology_name, recipe_name)
   local technology = data.raw["technology"] and data.raw["technology"][technology_name]
-  if not technology or not recipe_name then return end
+  if not technology or not recipe_name or not (data.raw.recipe and data.raw.recipe[recipe_name]) then return end
   technology.effects = technology.effects or {}
   for _, effect in ipairs(technology.effects) do
     if effect.type == "unlock-recipe" and effect.recipe == recipe_name then
@@ -23,6 +23,7 @@ data:extend({
       {type = "unlock-recipe", recipe = "cyan-slurry-production"},
       {type = "unlock-recipe", recipe = "cyan-ink-production"},
       {type = "unlock-recipe", recipe = "heatproof-form-stock"},
+      {type = "unlock-recipe", recipe = "blank-cyan-form-production"},
       {type = "unlock-recipe", recipe = "permit-draft"},
       {type = "unlock-recipe", recipe = "inspection-docket"},
     },
@@ -79,12 +80,16 @@ data:extend({
       {type = "unlock-recipe", recipe = "notary-office"},
       {type = "unlock-recipe", recipe = "embossed-seal"},
       {type = "unlock-recipe", recipe = "industrial-charter"},
-      {type = "unlock-recipe", recipe = "lava-safety-endorsement"},
-      {type = "unlock-recipe", recipe = "foundry-operating-charter"},
-      {type = "unlock-recipe", recipe = "vulcanus-lie-fabrication"},
-      {type = "unlock-recipe", recipe = "research-grant-approval-vulcanus"},
-      {type = "unlock-recipe", recipe = "management-verbal-approval-vulcanus"},
-      {type = "unlock-recipe", recipe = "management-written-approval-vulcanus"},
+      {type = "unlock-recipe", recipe = "thermal-process-license"},
+      {type = "unlock-recipe", recipe = "calcite-reagent-waiver"},
+      {type = "unlock-recipe", recipe = "offworld-metallurgy-charter"},
+      {type = "unlock-recipe", recipe = "good-excuse-vulcanus"},
+      {type = "unlock-recipe", recipe = "safety-waiver-vulcanus"},
+      {type = "unlock-recipe", recipe = "construction-permit-vulcanus"},
+      {type = "unlock-recipe", recipe = "management-approval-verbal-vulcanus"},
+      {type = "unlock-recipe", recipe = "heatproof-filler-documentation"},
+      {type = "unlock-recipe", recipe = "form-27b-6-vulcanus"},
+      {type = "unlock-recipe", recipe = "vulcanus-lie-distillation"},
     },
     prerequisites = {"chromatic-printing", "metallurgic-science-pack"},
     unit = {
@@ -103,6 +108,20 @@ data:extend({
 })
 
 add_tech_unlock("metallurgic-science-pack", "licensed-notary-formation")
+add_tech_unlock("administrative-science-research", "research-grant-approval-vulcanus")
+add_tech_unlock("administrative-science-research", "administrative-science-pack-production-vulcanus")
+add_tech_unlock("calcite-processing", "dubious-data-analysis-vulcanus")
+add_tech_unlock("calcite-processing", "paper-production-vulcanus")
+add_tech_unlock("calcite-processing", "carbon-offset-certificate-basic-vulcanus")
+add_tech_unlock("calcite-processing", "admin-station-vulcanus")
+add_tech_unlock("calcite-processing", "liquid-stimulant-production")
+add_tech_unlock("calcite-processing", "liquid-coffee-vulcanus")
+add_tech_unlock("calcite-processing", "plastic-bar-vulcanus")
+add_tech_unlock("calcite-processing", "heatproof-paper-production")
+add_tech_unlock("calcite-processing", "molten-promises-production")
+add_tech_unlock("printing-technology", "printer-t1-vulcanus")
+add_tech_unlock("industrial-propaganda", "propaganda-distillery-vulcanus")
+add_tech_unlock("industrial-propaganda", "refined-nonsense-production-vulcanus")
 add_tech_unlock("agricultural-science-pack", "conciliation-officer-formation")
 add_tech_unlock("electromagnetic-science-pack", "relay-clerk-formation")
 add_tech_unlock("cryogenic-science-pack", "cryoprint-technician-formation")
