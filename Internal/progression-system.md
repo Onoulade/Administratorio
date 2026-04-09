@@ -134,9 +134,10 @@ Frustration threshold is `600` seconds. Protesters disable a random player build
 1. Resolve biter complaints.
 2. Receive `taxpayer-money`.
 3. Convert to `treasury-bond`.
-4. Convert to `government-grant`.
-5. Spend grants on higher bureaucracy, Union HQ policy work, and late buildings.
-6. `tax-audit` launders `slush-fund` plus paperwork back into extra `taxpayer-money`.
+4. Build the first `union-headquarters`.
+5. Convert to `government-grant`.
+6. Spend grants on Union HQ policy work, late modules, and complaint chains.
+7. `tax-audit` launders `slush-fund` plus paperwork back into extra `taxpayer-money`.
 
 ## Coffee / Propaganda / Policy Chain
 

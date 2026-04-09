@@ -14,6 +14,8 @@ Default behavior:
 Strict mode:
   - `--strict` also fails when a direct building/accessory unlock does not
     become immediately craftable at its unlocking technology.
+  - `--strict` fails when a building ingredient is only machine-reachable from
+    the building itself or from a later provider in that building's branch.
   - `--strict` fails when a child technology drops a science pack already
     required by one of its prerequisite technologies.
 """
@@ -210,6 +212,8 @@ class ProgressionAnalyzer:
                 self.item_type_by_name[name] = proto_type
 
         self.root_materials = self._build_root_materials()
+        self.root_crafting_categories = self._build_root_crafting_categories()
+        self.category_providers = self._build_category_providers()
         self.producing_recipes: Dict[str, List[str]] = defaultdict(list)
         for recipe_name, recipe in self.recipes.items():
             for result_name, _ in recipe_results(recipe):
@@ -252,6 +256,52 @@ class ProgressionAnalyzer:
                         roots.add(res["name"])
         return roots
 
+    def _build_root_crafting_categories(self) -> Set[str]:
+        categories: Set[str] = set()
+        for proto in self.data_raw.get("character", {}).values():
+            for category in proto.get("crafting_categories", []) or []:
+                if category:
+                    categories.add(category)
+        categories.add("crafting")
+        return categories
+
+    def _build_category_providers(self) -> Dict[str, Tuple[str, ...]]:
+        providers: Dict[str, Set[str]] = defaultdict(set)
+        place_result_items: Dict[str, Set[str]] = defaultdict(set)
+
+        for item_name, item_proto in self.item_index.items():
+            if item_proto.get("hidden"):
+                continue
+            place_result = item_proto.get("place_result")
+            if place_result:
+                place_result_items[place_result].add(item_name)
+
+        for proto_group in self.data_raw.values():
+            if not isinstance(proto_group, dict):
+                continue
+            for entity_name, proto in proto_group.items():
+                categories = proto.get("crafting_categories")
+                if categories is None:
+                    single_category = proto.get("crafting_category")
+                    categories = [single_category] if single_category else []
+
+                if not categories:
+                    continue
+
+                provider_items = place_result_items.get(entity_name, set())
+                if not provider_items:
+                    continue
+
+                for category in categories:
+                    if not category:
+                        continue
+                    providers[category].update(provider_items)
+
+        return {
+            category: tuple(sorted(item_names))
+            for category, item_names in providers.items()
+        }
+
     def tech_visible(self, tech_name: str) -> bool:
         tech = self.technologies[tech_name]
         return tech.get("enabled", True) and not tech.get("hidden", False)
@@ -269,6 +319,14 @@ class ProgressionAnalyzer:
     def is_building_item(self, item_name: str) -> bool:
         proto = self.item_index.get(item_name)
         return bool(proto) and not proto.get("hidden") and "place_result" in proto
+
+    def is_mod_item(self, item_name: str) -> bool:
+        proto = self.item_index.get(item_name)
+        subgroup = (proto or {}).get("subgroup") or ""
+        return bool(proto) and subgroup.startswith("admin-")
+
+    def is_mod_building_item(self, item_name: str) -> bool:
+        return self.is_building_item(item_name) and self.is_mod_item(item_name)
 
     @lru_cache(maxsize=None)
     def prereq_closure(self, tech_name: str) -> Tuple[str, ...]:
@@ -373,6 +431,69 @@ class ProgressionAnalyzer:
                     return True
             visiting.remove(name)
             return False
+
+        return rec(item_name)
+
+    @lru_cache(maxsize=None)
+    def available_provider_items(self, tech_key: Tuple[str, ...]) -> Tuple[str, ...]:
+        available = self.available_recipes(tech_key)
+        provider_items: Set[str] = set()
+        for item_names in self.category_providers.values():
+            for item_name in item_names:
+                producers = self.producing_recipes.get(item_name, ())
+                if any(recipe_name in available for recipe_name in producers):
+                    provider_items.add(item_name)
+        return tuple(sorted(provider_items))
+
+    @lru_cache(maxsize=None)
+    def machine_craftable(
+        self,
+        item_name: str,
+        tech_key: Tuple[str, ...],
+        excluded_provider_items: Tuple[str, ...] = (),
+    ) -> bool:
+        available = self.available_recipes(tech_key)
+        provider_roots = set(self.available_provider_items(tech_key))
+        provider_roots.difference_update(excluded_provider_items)
+        visiting_items: Set[str] = set()
+
+        def rec(name: str) -> bool:
+            if name in self.root_materials:
+                return True
+            if name in visiting_items:
+                return False
+            producers = self.producing_recipes.get(name)
+            if not producers:
+                return False
+
+            visiting_items.add(name)
+            try:
+                for recipe_name in producers:
+                    if recipe_name not in available:
+                        continue
+                    recipe = self.recipes[recipe_name]
+                    category_name = recipe_category(recipe) or "crafting"
+                    if category_name not in self.root_crafting_categories and not any(
+                        provider_item in provider_roots
+                        for provider_item in self.category_providers.get(category_name, ())
+                    ):
+                        continue
+
+                    ok = True
+                    for ingredient_name, ingredient_type in recipe_ingredients(recipe):
+                        if ingredient_type == "item":
+                            if not rec(ingredient_name):
+                                ok = False
+                                break
+                        else:
+                            if ingredient_name not in self.root_materials and not rec(ingredient_name):
+                                ok = False
+                                break
+                    if ok:
+                        return True
+                return False
+            finally:
+                visiting_items.remove(name)
 
         return rec(item_name)
 
@@ -561,6 +682,82 @@ class ProgressionAnalyzer:
             )
         return findings
 
+    def find_descendant_machine_resolution(
+        self,
+        tech_name: str,
+        ingredient_name: str,
+        excluded_provider_items: Tuple[str, ...] = (),
+    ) -> Optional[Dict[str, str]]:
+        for descendant in self.descendants(tech_name):
+            if not self.tech_visible(descendant):
+                continue
+            descendant_after = tuple(sorted(set(self.prereq_closure(descendant)) | {descendant}))
+            if self.machine_craftable(
+                ingredient_name,
+                descendant_after,
+                excluded_provider_items,
+            ):
+                return {"technology": descendant}
+        return None
+
+    def building_provider_dependency_findings(self) -> List[Dict]:
+        findings: List[Dict] = []
+        for tech_name in sorted(self.technologies):
+            if not self.tech_visible(tech_name):
+                continue
+
+            after_key = tuple(sorted(set(self.prereq_closure(tech_name)) | {tech_name}))
+            for recipe_name in self.unlocks_by_tech.get(tech_name, []):
+                recipe = self.recipes[recipe_name]
+                output_buildings = [
+                    result_name
+                    for result_name, _ in recipe_results(recipe)
+                    if self.is_mod_building_item(result_name)
+                ]
+                if not output_buildings:
+                    continue
+
+                for building_name in output_buildings:
+                    for ingredient_name, ingredient_type in recipe_ingredients(recipe):
+                        if ingredient_type != "item" or not self.is_mod_item(ingredient_name):
+                            continue
+                        if self.machine_craftable(
+                            ingredient_name,
+                            after_key,
+                            (building_name,),
+                        ):
+                            continue
+
+                        if self.machine_craftable(ingredient_name, after_key):
+                            findings.append(
+                                {
+                                    "type": "requires_self_provider",
+                                    "technology": tech_name,
+                                    "recipe": recipe_name,
+                                    "building": building_name,
+                                    "ingredient": ingredient_name,
+                                }
+                            )
+                            continue
+
+                        delayed_resolution = self.find_descendant_machine_resolution(
+                            tech_name,
+                            ingredient_name,
+                            (building_name,),
+                        )
+                        if delayed_resolution is not None:
+                            findings.append(
+                                {
+                                    "type": "requires_descendant_provider",
+                                    "technology": tech_name,
+                                    "recipe": recipe_name,
+                                    "building": building_name,
+                                    "ingredient": ingredient_name,
+                                    "delayed_resolution": delayed_resolution,
+                                }
+                            )
+        return findings
+
     def buildings_without_recipes(self) -> List[str]:
         missing = []
         for item_name in sorted(self.item_index):
@@ -623,6 +820,7 @@ def render_report(
     direct_target_failures: Sequence[Dict],
     parent_pack_gaps: Sequence[Dict],
     enabled_recipe_gating_failures: Sequence[Dict],
+    building_provider_dependency_failures: Sequence[Dict],
     pipeline_only_techs: Sequence[str],
     dump_path: Path,
 ) -> str:
@@ -678,6 +876,27 @@ def render_report(
     for finding in enabled_recipe_gating_failures:
         lines.append(f"  - {finding['recipe']}")
         lines.append(f"    Missing from always-enabled graph: {', '.join(finding['missing_paths'])}")
+
+    lines.extend(
+        [
+            "",
+            "Building ingredients that depend on the same building or a later provider: "
+            f"{len(building_provider_dependency_failures)}",
+        ]
+    )
+    for finding in building_provider_dependency_failures:
+        lines.append(
+            f"  - {finding['technology']} -> {finding['recipe']} ({finding['building']}) needs {finding['ingredient']}"
+        )
+        if finding["type"] == "requires_self_provider":
+            lines.append(
+                f"    Machine-reachable only if {finding['building']} already exists"
+            )
+        else:
+            lines.append(
+                "    First machine-reachable from descendant tech: "
+                f"{finding['delayed_resolution']['technology']}"
+            )
 
     lines.extend(
         [
@@ -744,6 +963,7 @@ def main() -> int:
         direct_target_failures = analyzer.direct_target_findings()
         parent_pack_gaps = analyzer.parent_pack_gaps()
         enabled_recipe_gating_failures = analyzer.enabled_recipe_gating_findings()
+        building_provider_dependency_failures = analyzer.building_provider_dependency_findings()
         pipeline_only_techs = analyzer.pipeline_only_technologies()
         hard_target_failures = [
             finding
@@ -757,6 +977,7 @@ def main() -> int:
             direct_target_failures=direct_target_failures,
             parent_pack_gaps=parent_pack_gaps,
             enabled_recipe_gating_failures=enabled_recipe_gating_failures,
+            building_provider_dependency_failures=building_provider_dependency_failures,
             pipeline_only_techs=pipeline_only_techs,
             dump_path=dump_path,
         )
@@ -768,7 +989,12 @@ def main() -> int:
 
         if missing_building_recipes:
             return 1
-        if args.strict and (hard_target_failures or parent_pack_gaps or enabled_recipe_gating_failures):
+        if args.strict and (
+            hard_target_failures
+            or parent_pack_gaps
+            or enabled_recipe_gating_failures
+            or building_provider_dependency_failures
+        ):
             return 1
         return 0
     finally:
