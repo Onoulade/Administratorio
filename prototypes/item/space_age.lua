@@ -190,13 +190,24 @@ data:extend({
   },
   {
     type = "item",
+    name = "blank-cyan-form",
+    icons = {
+      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.8, g = 1, b = 1, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
+    },
+    subgroup = "forms-printed",
+    order = "db",
+    stack_size = 100
+  },
+  {
+    type = "item",
     name = "permit-draft",
     icons = {
       {icon = item_icons .. "construction-permit-draft.png", icon_size = 64},
       {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
     },
     subgroup = "forms-permits",
-    order = "db",
+    order = "dc",
     stack_size = 100
   },
   {
@@ -207,7 +218,7 @@ data:extend({
       {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
     },
     subgroup = "forms-permits",
-    order = "dc",
+    order = "dd",
     stack_size = 100
   },
   {
@@ -218,7 +229,7 @@ data:extend({
       {icon = item_icons .. "management-approval-written.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
     },
     subgroup = "forms-permits",
-    order = "dd",
+    order = "de",
     stack_size = 100
   },
   {
@@ -229,29 +240,40 @@ data:extend({
       {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
     },
     subgroup = "forms-permits",
-    order = "de",
-    stack_size = 100
-  },
-  {
-    type = "item",
-    name = "lava-safety-endorsement",
-    icons = {
-      {icon = item_icons .. "safety-waiver.png", icon_size = 64},
-      {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
-    },
-    subgroup = "forms-permits",
     order = "df",
     stack_size = 100
   },
   {
     type = "item",
-    name = "foundry-operating-charter",
+    name = "thermal-process-license",
+    icons = {
+      {icon = item_icons .. "construction-permit.png", icon_size = 64},
+      {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    },
+    subgroup = "forms-permits",
+    order = "dg",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "calcite-reagent-waiver",
+    icons = {
+      {icon = item_icons .. "safety-waiver.png", icon_size = 64},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
+    },
+    subgroup = "forms-permits",
+    order = "dh",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "offworld-metallurgy-charter",
     icons = {
       {icon = item_icons .. "management-approval-written.png", icon_size = 64},
       {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
     },
     subgroup = "forms-permits",
-    order = "dg",
+    order = "di",
     stack_size = 100
   },
   {
