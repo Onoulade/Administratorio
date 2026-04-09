@@ -37,8 +37,19 @@ data = {
       biochamber = {type = "recipe", name = "biochamber", ingredients = {}},
       ["electromagnetic-plant"] = {type = "recipe", name = "electromagnetic-plant", ingredients = {}},
       ["cryogenic-plant"] = {type = "recipe", name = "cryogenic-plant", ingredients = {}},
+      ["advanced-circuit"] = {type = "recipe", name = "advanced-circuit", ingredients = {}},
+      ["low-density-structure"] = {type = "recipe", name = "low-density-structure", ingredients = {}},
+      ["rocket-control-unit"] = {type = "recipe", name = "rocket-control-unit", ingredients = {}},
+      ["rocket-silo"] = {type = "recipe", name = "rocket-silo", ingredients = {}},
+      ["rocket-fuel-from-jelly"] = {type = "recipe", name = "rocket-fuel-from-jelly", ingredients = {}},
+      ["bioplastic"] = {type = "recipe", name = "bioplastic", ingredients = {}},
+      ["biosulfur"] = {type = "recipe", name = "biosulfur", ingredients = {}},
+      ["biolubricant"] = {type = "recipe", name = "biolubricant", ingredients = {}},
     },
     technology = {
+      ["administrative-science-research"] = {type = "technology", name = "administrative-science-research", effects = {}},
+      ["printing-technology"] = {type = "technology", name = "printing-technology", effects = {}},
+      ["corporate-hospitality"] = {type = "technology", name = "corporate-hospitality", effects = {}},
       ["metallurgic-science-pack"] = {type = "technology", name = "metallurgic-science-pack", effects = {}},
       ["agricultural-science-pack"] = {type = "technology", name = "agricultural-science-pack", effects = {}},
       ["electromagnetic-science-pack"] = {type = "technology", name = "electromagnetic-science-pack", effects = {}},
@@ -177,6 +188,17 @@ test("notary office is the dedicated certification machine", function()
   assert_eq(entity.fluid_boxes[3].production_type, "output", "notary-office should vent fluid outputs")
 end)
 
+test("conciliation desk is the dedicated gleba certification machine", function()
+  local entity = data.raw["assembling-machine"]["conciliation-desk"]
+  assert_true(entity ~= nil, "conciliation-desk missing")
+  assert_eq(entity.placeable_by[1].item, "conciliation-desk", "conciliation-desk should build from the conciliation-desk item")
+  local categories = entity.crafting_categories or {}
+  assert_eq(#categories, 1, "conciliation-desk should only expose one crafting category")
+  assert_eq(categories[1], "bureaucracy-conciliation", "conciliation-desk should only craft conciliation recipes")
+  assert_eq(#(entity.fluid_boxes or {}), 3, "conciliation-desk should expose two inputs and one output")
+  assert_eq(entity.fluid_boxes[3].production_type, "output", "conciliation-desk should vent fluid outputs")
+end)
+
 test("planet helper exposes exact basic-planet conditions and abundance outputs", function()
   local vulcanus = planets.surface_conditions_for_planet("vulcanus")
   local gleba = planets.surface_conditions_for_planet("gleba")
@@ -239,6 +261,47 @@ test("offworld recipe variants keep vulcanus paperwork gates off the home planet
     "foundry-offworld should require the offworld charter")
   assert_true(not has_ingredient(data.raw.recipe["foundry"], "offworld-metallurgy-charter"),
     "home-planet foundry should not consume the offworld charter")
+end)
+
+test("gleba alternates are surface-limited and keep the yellow family compact", function()
+  local required = {
+    "admin-station-gleba",
+    "printer-t1-gleba",
+    "corporate-breakroom-gleba",
+    "administrative-science-pack-production-gleba",
+    "yellow-ink-production",
+    "mycelial-form-stock",
+    "blank-yellow-form-production",
+    "symbiosis-record",
+    "conciliation-order",
+    "biochamber-operating-waiver",
+    "advanced-circuit-gleba",
+    "low-density-structure-gleba",
+    "rocket-control-unit-gleba",
+    "rocket-silo-gleba",
+  }
+
+  for _, recipe_name in ipairs(required) do
+    local recipe = assert(data.raw.recipe[recipe_name], recipe_name .. " missing")
+    assert_true(recipe.surface_conditions ~= nil and #recipe.surface_conditions >= 2, recipe_name .. " should be surface-limited")
+    assert_eq(recipe.surface_conditions[1].min, 2000, recipe_name .. " should target Gleba pressure")
+    assert_eq(recipe.surface_conditions[2].min, 20, recipe_name .. " should target Gleba gravity")
+  end
+
+  assert_true(data.raw.recipe["management-approval-written-gleba"] == nil,
+    "management-approval-written-gleba should stay absent")
+end)
+
+test("gleba offworld bio exports keep paperwork off the home planet", function()
+  for _, recipe_name in ipairs({"rocket-fuel-from-jelly", "bioplastic", "biosulfur", "biolubricant"}) do
+    local source = assert(data.raw.recipe[recipe_name], recipe_name .. " missing")
+    local clone = assert(data.raw.recipe[recipe_name .. "-offworld"], recipe_name .. "-offworld missing")
+    assert_true(source.surface_conditions ~= nil, recipe_name .. " should stay home-planet limited")
+    assert_true(has_ingredient(clone, "biochamber-operating-waiver"),
+      recipe_name .. "-offworld should require biochamber-operating-waiver")
+    assert_true(not has_ingredient(source, "biochamber-operating-waiver"),
+      recipe_name .. " should not consume biochamber-operating-waiver on Gleba")
+  end
 end)
 
 if failed > 0 then

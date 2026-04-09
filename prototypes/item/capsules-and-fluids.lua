@@ -251,6 +251,7 @@ data:extend({
 
 if feature_flags.space_age_enabled() then
   data:extend({
+    { type = "fluid", name = "amber-sap",        icon = item_icons .. "coffee.png", icon_size = 64, subgroup = "admin-fluids", order = "f5", default_temperature = 35, base_color = {r=0.65, g=0.4, b=0.05}, flow_color = {r=0.95, g=0.7, b=0.2} },
     { type = "fluid", name = "liquid-black-ink", icon = item_icons .. "ink-cartridge.png", icon_size = 64, subgroup = "admin-fluids", order = "g", default_temperature = 25, base_color = {r=0.08, g=0.08, b=0.12}, flow_color = {r=0.15, g=0.15, b=0.2} },
     { type = "fluid", name = "cyan-slurry",      icon = item_icons .. "dubious-data.png", icon_size = 64, subgroup = "admin-fluids", order = "h", default_temperature = 90, base_color = {r=0.05, g=0.55, b=0.55}, flow_color = {r=0.15, g=0.85, b=0.85} },
     { type = "fluid", name = "cyan-ink",         icon = item_icons .. "ink-cartridge.png", icon_size = 64, subgroup = "admin-fluids", order = "i", default_temperature = 25, base_color = {r=0.05, g=0.6, b=0.7}, flow_color = {r=0.2, g=0.9, b=1.0} },

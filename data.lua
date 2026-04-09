@@ -49,11 +49,20 @@ if feature_flags.space_age_enabled() then
   data:extend({
     {
       type = "autoplace-control",
+      name = "amber-sap-seep",
+      icon = "__administratorio__/graphics/icons/coffee.png",
+      icon_size = 64,
+      richness = true,
+      order = "b-d",
+      category = "resource"
+    },
+    {
+      type = "autoplace-control",
       name = "verdigris-crust",
       icon = "__administratorio__/graphics/icons/bullshit-ore.png",
       icon_size = 64,
       richness = true,
-      order = "b-d",
+      order = "b-e",
       category = "resource"
     },
   })

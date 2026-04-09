@@ -201,13 +201,34 @@ data:extend({
   },
   {
     type = "item",
+    name = "mycelial-form-stock",
+    icons = {
+      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.95, g = 0.88, b = 0.45, a = 1}},
+    },
+    subgroup = "forms-printed",
+    order = "dc",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "blank-yellow-form",
+    icons = {
+      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.98, g = 0.92, b = 0.55, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
+    },
+    subgroup = "forms-printed",
+    order = "dd",
+    stack_size = 100
+  },
+  {
+    type = "item",
     name = "permit-draft",
     icons = {
       {icon = item_icons .. "construction-permit-draft.png", icon_size = 64},
       {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
     },
     subgroup = "forms-permits",
-    order = "dc",
+    order = "de",
     stack_size = 100
   },
   {
@@ -218,7 +239,40 @@ data:extend({
       {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
     },
     subgroup = "forms-permits",
-    order = "dd",
+    order = "df",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "symbiosis-record",
+    icons = {
+      {icon = item_icons .. "form-27b-6.png", icon_size = 64},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
+    },
+    subgroup = "forms-permits",
+    order = "dg",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "conciliation-order",
+    icons = {
+      {icon = item_icons .. "construction-permit.png", icon_size = 64},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
+    },
+    subgroup = "forms-permits",
+    order = "dh",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "biochamber-operating-waiver",
+    icons = {
+      {icon = item_icons .. "safety-waiver.png", icon_size = 64},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
+    },
+    subgroup = "forms-permits",
+    order = "di",
     stack_size = 100
   },
   {
@@ -229,7 +283,7 @@ data:extend({
       {icon = item_icons .. "management-approval-written.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
     },
     subgroup = "forms-permits",
-    order = "de",
+    order = "dj",
     stack_size = 100
   },
   {
@@ -240,7 +294,7 @@ data:extend({
       {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
     },
     subgroup = "forms-permits",
-    order = "df",
+    order = "dk",
     stack_size = 100
   },
   {
@@ -251,7 +305,7 @@ data:extend({
       {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
     },
     subgroup = "forms-permits",
-    order = "dg",
+    order = "dl",
     stack_size = 100
   },
   {
@@ -262,7 +316,7 @@ data:extend({
       {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
     },
     subgroup = "forms-permits",
-    order = "dh",
+    order = "dm",
     stack_size = 100
   },
   {
@@ -273,8 +327,18 @@ data:extend({
       {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
     },
     subgroup = "forms-permits",
-    order = "di",
+    order = "dn",
     stack_size = 100
+  },
+  {
+    type = "item",
+    name = "conciliation-desk",
+    icon = "__administratorio__/graphics/icons/promise.png",
+    icon_size = 64,
+    subgroup = "admin-buildings",
+    order = "k",
+    place_result = "conciliation-desk",
+    stack_size = 20
   },
   {
     type = "item",
