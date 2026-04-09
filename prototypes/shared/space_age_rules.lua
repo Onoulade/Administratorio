@@ -15,6 +15,10 @@ rules.OPERATING_FORM_EXEMPT_BY_RECIPE = {
   ["biochamber"] = true,
   ["electromagnetic-plant"] = true,
   ["cryogenic-plant"] = true,
+  ["plastic-bar-vulcanus"] = true,
+  ["heatproof-paper-production"] = true,
+  ["liquid-stimulant-production"] = true,
+  ["liquid-coffee-vulcanus"] = true,
 }
 rules.TAXPAYER_MONEY_COSTS = base_rules.TAXPAYER_MONEY_COSTS
 

@@ -10,7 +10,9 @@
 -------------------------------------------------------------------------------
 local feature_flags = require("feature_flags")
 local unit_ai_settings = require("scripts.unit_ai_settings")
+local planets = require("prototypes.shared.space_age_planets")
 local working_hours_enabled = feature_flags.working_hours_enabled()
+local space_age_enabled = feature_flags.space_age_enabled()
 local entity_graphics = "__administratorio__/graphics/entities/"
 local scrubber_graphics = entity_graphics .. "scrubber/"
 local sound_path = "__administratorio__/sound/buildings/"
@@ -656,6 +658,14 @@ greenhouse.working_sound = {
   sound = { filename = "__administratorio__/sound/buildings/greenhouse.ogg", volume = 0.75 },
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
+if space_age_enabled then
+  greenhouse.surface_conditions = {
+    {
+      property = "pressure",
+      max = planets.BASIC_PLANET_PROPERTIES.vulcanus.pressure - 1,
+    },
+  }
+end
 
 -- Corporate Breakroom: 5x5 gossip
 local breakroom = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
