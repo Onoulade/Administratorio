@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.12
+Date: 2026-04-09
+  Changes:
+    - The first `union-headquarters` now bootstraps from treasury bonds and verbal management paperwork instead of requiring a `government-grant`, so `public-finance` unlocks the building before the grant chain it hosts.
+    - Split the baseline vanilla regulation data out of `prototypes/shared.lua` into `prototypes/shared/vanilla_rules.lua`, keeping the main shared helper focused on common logic while preserving the same compatibility ruleset.
+  Bugfixes:
+    - Tightened the strict progression report so it now fails when a building ingredient is only machine-reachable from that same building or from a later provider in its branch, catching bootstrap deadlocks like the old Union HQ grant loop.
+    - Refreshed English locale and README copy to match the new Union HQ bootstrap and the current role of `government-grant`s in late policy and complaint workflows.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.2.11
 Date: 2026-04-08
   Bugfixes:
