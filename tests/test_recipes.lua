@@ -622,12 +622,13 @@ test("corporate-breakroom no longer depends on treasury-bonds", function()
   assert_true(not has_ingredient(r, "treasury-bond"))
 end)
 
-test("union-headquarters absorbs the removed late-game building cost", function()
+test("union-headquarters bootstraps from finance paperwork without requiring a grant", function()
   local r = get_recipe("union-headquarters")
   assert_true(has_ingredient(r, "construction-permit"))
   assert_true(has_ingredient(r, "treasury-bond"))
   assert_true(has_ingredient(r, "management-approval-verbal"))
-  assert_true(has_ingredient(r, "government-grant"))
+  assert_true(has_ingredient(r, "management-verbal-work-order"))
+  assert_true(not has_ingredient(r, "government-grant"))
   assert_true(has_ingredient(r, "advanced-circuit"))
   assert_true(has_ingredient(r, "steel-plate"))
 end)
@@ -1365,7 +1366,7 @@ test("heavier vanilla integration anchors have exact ingredient counts", functio
     {"union-headquarters", "steel-plate", 45},
     {"union-headquarters", "advanced-circuit", 18},
     {"union-headquarters", "management-approval-verbal", 1},
-    {"union-headquarters", "government-grant", 1},
+    {"union-headquarters", "management-verbal-work-order", 1},
     {"pneumatic-pipe", "pipe", 1},
     {"pneumatic-pipe-to-ground", "construction-permit", 1},
     {"form-liquifier", "pipe", 2},
