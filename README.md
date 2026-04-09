@@ -49,7 +49,7 @@ I added a bunch of new buildings to support the bureaucratic machine:
 - **Office Desk** — Core workstation for forms, science packs, early funding paperwork, and general admin throughput
 - **Printers** — Produce forms, permits, and approvals at industrial scale
 - **Corporate Breakroom** — Turns coffee and dubious data into gossip, good excuses, and verbal management drafts
-- **Union Headquarters** — Negotiates approvals, grants, narratives, written approvals, policy work, tax audits, and OSHA cleanup
+- **Union Headquarters** — Negotiates union approvals, grants, narratives, written approvals, policy work, tax audits, and OSHA cleanup. The first HQ now bootstraps from treasury bonds and verbal paperwork instead of already needing a grant.
 - **Propaganda Distillery** — Weaponizes misinformation for administrative purposes
 - **Resolution Office** — Processes complex complaint chains
 - **Biter Administration Desk** — Receives intercepted attack groups and has a fixed central waiting zone inside a larger walk-through station footprint
