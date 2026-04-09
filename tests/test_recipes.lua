@@ -638,6 +638,17 @@ test("union-headquarters preserves paperwork without depending on its own produc
   assert_true(has_paperwork, "union-headquarters should participate in the paperwork economy")
 end)
 
+test("union-headquarters bootstraps from finance paperwork without requiring a grant", function()
+  local r = get_recipe("union-headquarters")
+  assert_true(has_ingredient(r, "construction-permit"))
+  assert_true(has_ingredient(r, "treasury-bond"))
+  assert_true(has_ingredient(r, "management-approval-verbal"))
+  assert_true(has_ingredient(r, "management-verbal-work-order"))
+  assert_true(not has_ingredient(r, "government-grant"))
+  assert_true(has_ingredient(r, "advanced-circuit"))
+  assert_true(has_ingredient(r, "steel-plate"))
+end)
+
 test("late policy recipes stay within the shared HQ fluid limits", function()
   for _, recipe_name in ipairs({
     "white-paper-production",
@@ -1470,6 +1481,57 @@ test("tube intake and outtake require compacted-rubble", function()
   assert_true(has_ingredient(get_recipe("tube-outtake"), "compacted-rubble"))
   assert_true(has_ingredient(get_recipe("tube-intake"), "pipe"))
   assert_true(has_ingredient(get_recipe("tube-outtake"), "pipe"))
+end)
+
+test("form-liquifier and form-solidifier require compacted-rubble", function()
+  assert_true(has_ingredient(get_recipe("form-liquifier"), "compacted-rubble"))
+  assert_true(has_ingredient(get_recipe("form-solidifier"), "compacted-rubble"))
+  assert_true(has_ingredient(get_recipe("form-liquifier"), "pipe"))
+  assert_true(has_ingredient(get_recipe("form-solidifier"), "pipe"))
+end)
+
+test("heavier vanilla integration anchors have exact ingredient counts", function()
+  local expectations = {
+    {"greenhouse", "stone-brick", 10},
+    {"greenhouse", "pipe", 2},
+    {"corporate-breakroom", "stone-brick", 8},
+    {"corporate-breakroom", "pipe", 3},
+    {"union-headquarters", "steel-plate", 45},
+    {"union-headquarters", "advanced-circuit", 18},
+    {"union-headquarters", "management-approval-verbal", 1},
+    {"union-headquarters", "management-verbal-work-order", 1},
+    {"pneumatic-pipe", "pipe", 1},
+    {"pneumatic-pipe-to-ground", "construction-permit", 1},
+    {"form-liquifier", "pipe", 2},
+    {"form-solidifier", "pipe", 2},
+    {"crappy-report-production", "paper", 2},
+    {"credentials-production", "electronic-circuit", 2},
+    {"data-production", "advanced-circuit", 2},
+    {"management-written-proposal", "advanced-circuit", 2},
+    {"environmental-impact-report", "carbon-offset-certificate-verified", 3},
+    {"chemical-handling-work-order-production", "barrel", 1},
+    {"chemical-handling-work-order-production", "pipe", 1},
+    {"radiological-work-order-production", "battery", 1},
+    {"radiological-work-order-production", "steel-plate", 2},
+    {"white-paper-production", "paper", 8},
+    {"white-paper-production", "processing-unit", 1},
+    {"white-paper-production", "treasury-bond", 1},
+    {"policy-production", "processing-unit", 1},
+    {"regulation-production", "processing-unit", 2},
+    {"case-smog", "coal", 2},
+    {"case-hazmat", "barrel", 1},
+    {"case-noise", "processing-unit", 1},
+  }
+
+  for _, expectation in ipairs(expectations) do
+    local recipe_name = expectation[1]
+    local ingredient_name = expectation[2]
+    local amount = expectation[3]
+    local recipe = get_recipe(recipe_name)
+    assert_true(recipe ~= nil, recipe_name .. " missing")
+    assert_eq(get_ingredient_amount(recipe, ingredient_name), amount,
+      recipe_name .. " wrong " .. ingredient_name .. " amount")
+  end
 end)
 
 -- =========================================================================

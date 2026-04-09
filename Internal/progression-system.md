@@ -108,6 +108,70 @@ Managed by `biter-station`:
 | `scripts/zones.lua` | Desk waiting zone management |
 | `scripts/regulated_unlocks.lua` | Runtime technology effect propagation |
 
+### Green-tech stage
+
+| Tech | Main unlocks | Progression meaning |
+| --- | --- | --- |
+| `administrative-bureaucracy` | `greenhouse`, `greenhouse-wood` | Early red-science renewable wood bootstrap |
+| `littering-resolution` | `crappy-report-production`, `filing-littering`, `littering-final` | First spitter support |
+| `pneumatic-form-transport` | `compacted-rubble-production`, pneumatic buildings | Form logistics and rubble compression |
+| `local-precedents` | `printer-t2`, copy recipes, `useless-documentation-production`, `form-27b-6` | Real midgame paperwork acceleration |
+| `streamlined-work-orders` | direct draft-to-work-order printing | Throughput upgrade for early combined forms |
+| `industrial-propaganda` | distillery, lie / misinformation chain, coffee discovery, blank directives | Opens the true admin economy |
+
+### Chemical and late stage
+
+| Tech | Main unlocks | Progression meaning |
+| --- | --- | --- |
+| `environmental-compliance` | breakroom, coffee refining, verbal approvals, treasury bonds, petrochemical permit, smog + hazmat resolution, eviction notices | First real funding, coffee economy, and process-industry permitting |
+| `health-and-safety` | union HQ, justification, narrative, written approvals, radiological work order, government grants | Opens late-form, centrifuge paperwork, and grant chain |
+| `board-meetings` | written management proposal + heavy printer approval pass | Opens the executive committee layer inside Union HQ |
+| `eminent-domain-zoning` | white paper, policy, verified certificates, noise + loitering resolution, slush fund | High-bureaucracy policy tier |
+| `federal-regulation` | regulation | Formal law layer for the final complaint tier |
+| `creative-accounting` | tax audit | Converts slush funds back into official revenue through a dedicated late-game funding loop |
+| `constitutional-law` | unemployment + vagrancy resolution | Final complaint tier |
+
+## Complaint Unlock Ladder
+
+| Complaint pair | Available after | Recipe depth |
+| --- | --- | --- |
+| `landscape` | start | filing -> final |
+| `littering` | `littering-resolution` | filing -> final |
+| `smog` + `hazmat` | `environmental-compliance` | filing -> case -> final |
+| `noise` + `loitering` | `eminent-domain-zoning` | filing -> case -> final |
+| `unemployment` + `vagrancy` | `constitutional-law` | filing -> case -> final |
+
+### Runtime complaint generation
+
+| Enemy | Complaint count | Max tier |
+| --- | --- | --- |
+| small biter / spitter | 1 | tier 1 |
+| medium biter / spitter | 3 | tier 2 |
+| big biter / spitter | 6 | tier 3 |
+| behemoth biter / spitter | 10 | tier 4 |
+
+Frustration threshold is `600` seconds. Protesters disable a random player building until pacified.
+`promise` capsules now pacify a protester for up to `60` seconds while it retries to find an open desk. If no desk frees up before that timer expires, the protest resumes.
+
+## Funding Chain
+
+1. Resolve biter complaints.
+2. Receive `taxpayer-money`.
+3. Convert to `treasury-bond`.
+4. Build the first `union-headquarters`.
+5. Convert to `government-grant`.
+6. Spend grants on Union HQ policy work, late modules, and complaint chains.
+7. `tax-audit` launders `slush-fund` plus paperwork back into extra `taxpayer-money`.
+
+## Coffee / Propaganda / Policy Chain
+
+1. `greenhouse-discovery` gives the first `coffee-bean` at 10% probability while returning some of the input `wood`.
+2. `coffee-plantation` bootstraps bean multiplication.
+3. `coffee-refining` turns `coffee-bean` + `water` into `liquid-coffee`.
+4. `politician-fluid-refining` makes `lie`.
+5. `misinformation-production` + `credentials-production` + `data-production` build the admin-intelligence layer.
+6. `justification` -> `narrative` -> `white-paper` -> `policy` -> `regulation` is the late chain.
+
 ## Important Structural Bottlenecks
 
 ### 1. Desk inventory is the real complaint cap
