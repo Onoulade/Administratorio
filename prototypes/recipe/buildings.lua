@@ -1,3 +1,7 @@
+local feature_flags = require("feature_flags")
+local planets = require("prototypes.shared.space_age_planets")
+local space_age_enabled = feature_flags.space_age_enabled()
+
 local function entity_recipe(name, recipe)
   recipe.name = name
   recipe.localised_name = {"item-name." .. name}
@@ -25,7 +29,26 @@ local function set_recipe_icon_from_item(recipe, item_name)
   end
 end
 
-data:extend({
+local function not_on_vulcanus(recipe)
+  if not space_age_enabled then
+    return recipe
+  end
+  recipe.surface_conditions = {
+    {
+      property = "pressure",
+      max = planets.BASIC_PLANET_PROPERTIES.vulcanus.pressure - 1,
+    },
+  }
+  return recipe
+end
+
+local function only_on_vulcanus(recipe)
+  if not space_age_enabled then return nil end
+  recipe.surface_conditions = planets.surface_conditions_for_planet("vulcanus")
+  return recipe
+end
+
+local building_recipes = {
   -- Core Admin Buildings
   entity_recipe("field-office",               { type = "recipe", enabled = false, ingredients = {{type="item", name="iron-plate", amount=5}, {type="item", name="stone-brick", amount=2}, {type="item", name="dubious-data", amount=1}}, results = {{type="item", name="field-office", amount=1}}, energy_required = 5 }),
   entity_recipe("office-desk",               { type = "recipe", enabled = false, ingredients = {{type="item", name="iron-plate", amount=20}, {type="item", name="iron-gear-wheel", amount=10}, {type="item", name="electronic-circuit", amount=10}, {type="item", name="biter-worker", amount=1}},                                            results = {{type="item", name="office-desk", amount=1}},      energy_required = 10 }),
@@ -51,7 +74,16 @@ data:extend({
   entity_recipe("pneumatic-pipe-to-ground",  { type = "recipe", enabled = false, ingredients = {{type="item", name="iron-plate", amount=5}, {type="item", name="pneumatic-pipe", amount=10}, {type="item", name="construction-permit", amount=1}},   results = {{type="item", name="pneumatic-pipe-to-ground", amount=2}},  energy_required = 3 }),
   entity_recipe("tube-intake",              { type = "recipe", enabled = false, ingredients = {{type="item", name="iron-plate", amount=5}, {type="item", name="pipe", amount=2}, {type="item", name="electronic-circuit", amount=2}, {type="item", name="compacted-rubble", amount=3}}, results = {{type="item", name="tube-intake", amount=1}},              energy_required = 3 }),
   entity_recipe("tube-outtake",             { type = "recipe", enabled = false, ingredients = {{type="item", name="iron-plate", amount=5}, {type="item", name="pipe", amount=2}, {type="item", name="electronic-circuit", amount=2}, {type="item", name="compacted-rubble", amount=3}}, results = {{type="item", name="tube-outtake", amount=1}},             energy_required = 3 }),
-})
+  entity_recipe("form-liquifier",            { type = "recipe", enabled = false, ingredients = {{type="item", name="iron-plate", amount=5}, {type="item", name="pipe", amount=2}, {type="item", name="electronic-circuit", amount=2}, {type="item", name="compacted-rubble", amount=3}}, results = {{type="item", name="form-liquifier", amount=1}},            energy_required = 3 }),
+  entity_recipe("form-solidifier",           { type = "recipe", enabled = false, ingredients = {{type="item", name="iron-plate", amount=5}, {type="item", name="pipe", amount=2}, {type="item", name="electronic-circuit", amount=2}, {type="item", name="compacted-rubble", amount=3}}, results = {{type="item", name="form-solidifier", amount=1}},           energy_required = 3 }),
+}
+
+local vulcanus_distillery = only_on_vulcanus(entity_recipe("propaganda-distillery-vulcanus", { type = "recipe", enabled = false, ingredients = {{type="item", name="steel-plate", amount=20}, {type="item", name="pipe", amount=10}, {type="item", name="electronic-circuit", amount=10}, {type="item", name="calcite", amount=5}, {type="item", name="construction-work-order", amount=1}}, results = {{type="item", name="propaganda-distillery", amount=1}}, energy_required = 15 }))
+if vulcanus_distillery then
+  table.insert(building_recipes, vulcanus_distillery)
+end
+
+data:extend(building_recipes)
 
 local pneumatic_intake_recipes = {}
 local pneumatic_item_names = {}

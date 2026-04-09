@@ -96,6 +96,13 @@ def parse_args() -> argparse.Namespace:
         help="Print the chosen dependency steps for each target.",
     )
     parser.add_argument(
+        "--import-depth",
+        type=int,
+        default=0,
+        metavar="N",
+        help="Show N levels of how imported materials are used (0=off, 1=direct consumers, 2+=recursive).",
+    )
+    parser.add_argument(
         "-v",
         "--verbose",
         action="count",
@@ -422,6 +429,12 @@ class PlanetEscapeAnalyzer:
                     if fluid_name:
                         resources[planet_name].add(fluid_name)
 
+            # Vulcanus exposes lava directly as a native surface fluid, but it
+            # is not represented through the normal offshore-pump/resource
+            # discovery path in the dump.
+            if planet_name == "vulcanus" and "lava" in self.fluid_index:
+                resources[planet_name].add("lava")
+
         return {planet: sorted(resources[planet]) for planet in resources}
 
     def _build_machine_categories_by_item(self) -> Dict[str, Set[str]]:
@@ -705,12 +718,36 @@ class PlanetEscapeAnalyzer:
 
     def craftable_outputs(self, planet_name: str) -> List[str]:
         available_key = self.available_recipes(planet_name)
-        outputs: Set[str] = set(self.local_resources_by_planet[planet_name])
-        for recipe_name in available_key:
-            for result_name, _, _ in recipe_results(self.recipes[recipe_name]):
-                if self.craftable_with_recipes(planet_name, result_name, available_key):
-                    outputs.add(result_name)
-        return sorted(outputs)
+        local_resources = set(self.local_resources_by_planet[planet_name])
+
+        # Build the set of craftable outputs iteratively, respecting that
+        # recipes need buildings and buildings need to be craftable too.
+        craftable: Set[str] = set(local_resources)
+
+        changed = True
+        while changed:
+            changed = False
+            # Which building categories are available given current craftable set?
+            available_categories = set(self.hand_crafting_categories)
+            for item_name in craftable:
+                if item_name in self.machine_categories_by_item:
+                    available_categories.update(self.machine_categories_by_item[item_name])
+
+            # Which recipes can we actually run?
+            usable_recipes = [
+                recipe_name for recipe_name in available_key
+                if recipe_category(self.recipes[recipe_name]) in available_categories
+            ]
+
+            for recipe_name in usable_recipes:
+                ingredients = recipe_ingredients(self.recipes[recipe_name])
+                if all(ing_name in craftable for ing_name, _, _ in ingredients):
+                    for result_name, _, _ in recipe_results(self.recipes[recipe_name]):
+                        if result_name not in craftable:
+                            craftable.add(result_name)
+                            changed = True
+
+        return sorted(craftable)
 
     def accessible_buildings(self, planet_name: str) -> List[str]:
         outputs = set(self.craftable_outputs(planet_name))
@@ -735,6 +772,26 @@ class PlanetEscapeAnalyzer:
         # Materials proven craftable locally — treat as free for planning even
         # if the recipe graph has cycles (e.g. water ↔ steam).
         locally_craftable = set(self.craftable_outputs(planet_name))
+
+        # Compute which recipe categories are physically possible on this planet.
+        # A category is possible if it's hand-craftable, or at least one building
+        # providing it has a recipe available on this planet (not blocked by
+        # surface conditions).
+        planet_possible_categories = set(self.hand_crafting_categories)
+        for building_item, categories in self.machine_categories_by_item.items():
+            # Check if the building's item recipe is available on this planet
+            building_recipe = self.recipes.get(building_item)
+            if building_recipe and self._recipe_available_on_planet(building_recipe, planet_name):
+                planet_possible_categories.update(categories)
+                continue
+            # Also check entity surface conditions directly
+            for proto_type in MACHINE_TYPES:
+                entity = self.data_raw.get(proto_type, {}).get(building_item)
+                if entity:
+                    entity_conditions = entity.get("surface_conditions") or []
+                    if not entity_conditions or condition_matches(entity_conditions, self.planet_properties[planet_name]):
+                        planet_possible_categories.update(categories)
+                    break
         _rec_calls = [0]
         _rec_cache_hits = [0]
         _rec_max_depth = [0]
@@ -756,6 +813,19 @@ class PlanetEscapeAnalyzer:
                 "categories": set(plan["categories"]),
                 "building_categories": set(plan["building_categories"]),
                 "steps": plan["steps"],
+                "import_usage": {k: list(v) for k, v in plan.get("import_usage", {}).items()},
+            }
+
+        def _empty_plan(steps: Tuple[str, ...], imports: Optional[Counter] = None,
+                        deadlocks: Optional[Set[str]] = None) -> Dict:
+            return {
+                "imports": imports or Counter(),
+                "deadlocks": deadlocks or set(),
+                "recipes": Counter(),
+                "categories": set(),
+                "building_categories": set(),
+                "steps": steps,
+                "import_usage": {},
             }
 
         def rec(material_name: str, required_amount: Fraction) -> Dict:
@@ -789,61 +859,36 @@ class PlanetEscapeAnalyzer:
                       planet_name, depth, material_name, format_fraction(required_amount))
 
             if material_name in locally_craftable:
-                result = {
-                    "imports": Counter(),
-                    "deadlocks": set(),
-                    "recipes": Counter(),
-                    "categories": set(),
-                    "building_categories": set(),
-                    "steps": (f"use local {format_fraction(required_amount)}x {material_name}",),
-                }
+                result = _empty_plan(
+                    (f"use local {format_fraction(required_amount)}x {material_name}",),
+                )
                 _rec_memo[memo_key] = result
                 return _copy_plan(result)
 
             if material_name in _visiting:
-                if material_name in self.known_materials:
-                    return {
-                        "imports": Counter({material_name: required_amount}),
-                        "deadlocks": set(),
-                        "recipes": Counter(),
-                        "categories": set(),
-                        "building_categories": set(),
-                        "steps": (f"import {format_fraction(required_amount)}x {material_name} (break cycle)",),
-                    }
-                return {
-                    "imports": Counter(),
-                    "deadlocks": {material_name},
-                    "recipes": Counter(),
-                    "categories": set(),
-                    "building_categories": set(),
-                    "steps": (f"deadlock cycle on {material_name}",),
-                }
+                return _empty_plan(
+                    (f"bootstrap {format_fraction(required_amount)}x {material_name} (cycle)",),
+                )
 
             candidate_recipes = [
                 recipe_name
                 for recipe_name in available_key
                 if any(result_name == material_name for result_name, _, _ in recipe_results(self.recipes[recipe_name]))
+                and not recipe_name.startswith("fill-") and not recipe_name.startswith("empty-")
+                and recipe_category(self.recipes[recipe_name]) in planet_possible_categories
             ]
             if not candidate_recipes:
                 if material_name in self.known_materials:
-                    result = {
-                        "imports": Counter({material_name: required_amount}),
-                        "deadlocks": set(),
-                        "recipes": Counter(),
-                        "categories": set(),
-                        "building_categories": set(),
-                        "steps": (f"import {format_fraction(required_amount)}x {material_name}",),
-                    }
+                    result = _empty_plan(
+                        (f"import {format_fraction(required_amount)}x {material_name}",),
+                        imports=Counter({material_name: required_amount}),
+                    )
                     _rec_memo[memo_key] = result
                     return _copy_plan(result)
-                result = {
-                    "imports": Counter(),
-                    "deadlocks": {material_name},
-                    "recipes": Counter(),
-                    "categories": set(),
-                    "building_categories": set(),
-                    "steps": (f"deadlock missing prototype or recipe for {material_name}",),
-                }
+                result = _empty_plan(
+                    (f"deadlock missing prototype or recipe for {material_name}",),
+                    deadlocks={material_name},
+                )
                 _rec_memo[memo_key] = result
                 return _copy_plan(result)
 
@@ -859,6 +904,7 @@ class PlanetEscapeAnalyzer:
                 recipes = Counter({recipe_name: crafts_needed})
                 categories = {recipe_category(self.recipes[recipe_name])}
                 building_categories = set()
+                import_usage: Dict[str, List[Tuple[str, str, Fraction]]] = {}
                 steps: List[str] = [
                     f"craft {format_fraction(crafts_needed)}x {recipe_name} for {format_fraction(required_amount)}x {material_name}"
                 ]
@@ -867,13 +913,23 @@ class PlanetEscapeAnalyzer:
                     building_categories.add(category)
 
                 for ingredient_name, _, ingredient_amount in recipe_ingredients(self.recipes[recipe_name]):
-                    ingredient_plan = rec(ingredient_name, ingredient_amount * crafts_needed)
+                    needed = ingredient_amount * crafts_needed
+                    ingredient_plan = rec(ingredient_name, needed)
                     merge_counter(imports, ingredient_plan["imports"])
                     deadlocks.update(ingredient_plan["deadlocks"])
                     merge_counter(recipes, ingredient_plan["recipes"])
                     categories.update(ingredient_plan["categories"])
                     building_categories.update(ingredient_plan["building_categories"])
                     steps.extend(indent_steps(ingredient_plan["steps"]))
+                    # Propagate child import_usage
+                    for imp_name, usages in ingredient_plan.get("import_usage", {}).items():
+                        import_usage.setdefault(imp_name, []).extend(usages)
+                    # If this ingredient is directly imported, record which
+                    # recipe consumes it and what it produces.
+                    if ingredient_name in ingredient_plan["imports"]:
+                        import_usage.setdefault(ingredient_name, []).append(
+                            (recipe_name, material_name, needed)
+                        )
 
                 missing_building_categories = {
                     cat
@@ -894,19 +950,16 @@ class PlanetEscapeAnalyzer:
                         "categories": categories,
                         "building_categories": building_categories,
                         "steps": tuple(steps),
+                        "import_usage": import_usage,
                     }
                 )
             _visiting.discard(material_name)
 
             if not plans:
-                result = {
-                    "imports": Counter(),
-                    "deadlocks": {material_name},
-                    "recipes": Counter(),
-                    "categories": set(),
-                    "building_categories": set(),
-                    "steps": (f"deadlock no valid production path for {material_name}",),
-                }
+                result = _empty_plan(
+                    (f"deadlock no valid production path for {material_name}",),
+                    deadlocks={material_name},
+                )
                 _rec_memo[memo_key] = result
                 return _copy_plan(result)
 
@@ -941,11 +994,61 @@ class PlanetEscapeAnalyzer:
         return plan
 
 
+def _render_import_usage(
+    lines: List[str],
+    plan: Dict,
+    analyzer: PlanetEscapeAnalyzer,
+    max_depth: int,
+) -> None:
+    """Render a tree showing how imported materials flow through the recipe chain.
+
+    Uses the plan's recipes counter to trace how each material is consumed.
+    Shows actual amounts consumed (crafts * per-recipe ingredient amount).
+    """
+    import_usage = plan.get("import_usage", {})
+    plan_recipes = plan.get("recipes", Counter())
+
+    # Build a map: material -> [(recipe_name, product_name, amount_consumed)]
+    # where amount_consumed = crafts * per-recipe ingredient amount.
+    consumed_by: Dict[str, List[Tuple[str, str, Fraction]]] = {}
+    for recipe_name, crafts in plan_recipes.items():
+        recipe = analyzer.recipes.get(recipe_name)
+        if not recipe:
+            continue
+        results = recipe_results(recipe)
+        product_name = results[0][0] if results else recipe_name
+        for ing_name, _, ing_amount in recipe_ingredients(recipe):
+            total_consumed = crafts * ing_amount
+            consumed_by.setdefault(ing_name, []).append((recipe_name, product_name, total_consumed))
+
+    def _render(material_name: str, indent: int, depth: int, seen: Set[str]) -> None:
+        if material_name in seen or depth > max_depth:
+            return
+        seen.add(material_name)
+        prefix = " " * indent
+        consumers = consumed_by.get(material_name, [])
+        # Consolidate by (recipe, product)
+        consolidated: Dict[Tuple[str, str], Fraction] = {}
+        for recipe_name, product_name, amount in consumers:
+            key = (recipe_name, product_name)
+            consolidated[key] = consolidated.get(key, Fraction(0)) + amount
+        for (recipe_name, product_name), amount in sorted(consolidated.items()):
+            lines.append(f"{prefix}-> {format_fraction(amount)}x {recipe_name} -> {product_name}")
+            if depth < max_depth:
+                _render(product_name, indent + 3, depth + 1, seen)
+
+    for imp_name in sorted(import_usage):
+        lines.append(f"      {imp_name}:")
+        seen: Set[str] = set()
+        _render(imp_name, 8, 1, seen)
+
+
 def render_planet_section(
     analyzer: PlanetEscapeAnalyzer,
     planet_name: str,
     targets: Sequence[Tuple[str, Fraction]],
     show_steps: bool,
+    import_depth: int,
 ) -> List[str]:
     log.info("[%s] Computing local resources...", planet_name)
     local_resources = analyzer.local_resources_by_planet[planet_name]
@@ -1020,6 +1123,22 @@ def render_planet_section(
     lines.append(
         f"Aggregate imports for selected targets: {', '.join(render_counter(aggregate_imports)) if aggregate_imports else '(none)'}"
     )
+
+    if import_depth > 0 and aggregate_imports:
+        # Build a combined plan with merged recipes and import_usage across targets
+        combined_recipes: Counter = Counter()
+        combined_import_usage: Dict[str, List[Tuple[str, str, Fraction]]] = {}
+        for plan in target_plans:
+            merge_counter(combined_recipes, plan.get("recipes", Counter()))
+            for imp_name, usages in plan.get("import_usage", {}).items():
+                combined_import_usage.setdefault(imp_name, []).extend(usages)
+        combined_plan = {
+            "recipes": combined_recipes,
+            "import_usage": combined_import_usage,
+        }
+        lines.append("Import usage breakdown:")
+        _render_import_usage(lines, combined_plan, analyzer, import_depth)
+
     lines.append(
         f"Aggregate deadlocks: {', '.join(sorted(aggregate_deadlocks)) if aggregate_deadlocks else '(none)'}"
     )
@@ -1041,6 +1160,7 @@ def render_report(
     dump_path: Path,
     targets: Sequence[Tuple[str, Fraction]],
     show_steps: bool,
+    import_depth: int,
 ) -> str:
     lines = [
         "Administratorio Planet Escape Report",
@@ -1052,7 +1172,7 @@ def render_report(
     ]
 
     for planet_name in planets:
-        lines.extend(render_planet_section(analyzer, planet_name, targets, show_steps))
+        lines.extend(render_planet_section(analyzer, planet_name, targets, show_steps, import_depth))
 
     return "\n".join(lines) + "\n"
 
@@ -1100,7 +1220,7 @@ def main() -> int:
                     + ", ".join(unknown)
                 )
 
-        report_text = render_report(analyzer, requested_planets, dump_path, targets, args.show_steps)
+        report_text = render_report(analyzer, requested_planets, dump_path, targets, args.show_steps, args.import_depth)
         report_path = tmp_root / "script-output" / "administratorio-planet-escape-report.txt"
         write_file(report_path, report_text)
         print(report_text, end="")

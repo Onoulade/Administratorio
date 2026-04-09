@@ -104,6 +104,12 @@ notary_office.fluid_boxes = {
     pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {0, 1}}},
     volume = 1000,
   },
+  {
+    production_type = "output",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "output", direction = defines.direction.east, position = {1, 0}}},
+    volume = 1000,
+  },
 }
 notary_office.working_sound = {
   sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.45},

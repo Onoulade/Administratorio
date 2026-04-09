@@ -242,7 +242,7 @@ Instead, they should use one-time or build-time paperwork.
 
 Recommended permit mapping:
 
-- `foundry` -> `industrial-charter` and `lava-safety-endorsement`
+- `foundry` -> `offworld-metallurgy-charter`
 - `biochamber` -> `biosafety-waiver` and `conciliation-order`
 - `electromagnetic assembler` -> `signal-allocation-directive`
 - `advanced chemical plant` -> `cryogenic-operations-license`
