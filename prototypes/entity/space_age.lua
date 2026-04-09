@@ -116,6 +116,48 @@ notary_office.working_sound = {
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
+local conciliation_desk = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
+conciliation_desk.name = "conciliation-desk"
+conciliation_desk.icon = "__administratorio__/graphics/icons/promise.png"
+conciliation_desk.icon_size = 64
+conciliation_desk.minable = {mining_time = 0.2, result = "conciliation-desk"}
+conciliation_desk.placeable_by = placeable_by_item("conciliation-desk")
+conciliation_desk.next_upgrade = nil
+conciliation_desk.crafting_categories = {"bureaucracy-conciliation"}
+conciliation_desk.crafting_speed = 1.75
+conciliation_desk.energy_usage = "450kW"
+conciliation_desk.energy_source = {type = "electric", usage_priority = "secondary-input"}
+conciliation_desk.ingredient_count = 8
+conciliation_desk.module_slots = 4
+conciliation_desk.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+conciliation_desk.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
+conciliation_desk.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+conciliation_desk.fluid_boxes_off_when_no_fluid_recipe = true
+conciliation_desk.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -1}}},
+    volume = 1000,
+  },
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {0, 1}}},
+    volume = 1000,
+  },
+  {
+    production_type = "output",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "output", direction = defines.direction.east, position = {1, 0}}},
+    volume = 1000,
+  },
+}
+conciliation_desk.working_sound = {
+  sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.45},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+}
+
 local trajectory_compliance_array = table.deepcopy(data.raw["ammo-turret"]["gun-turret"])
 trajectory_compliance_array.name = "trajectory-compliance-array"
 trajectory_compliance_array.icon = "__base__/graphics/icons/radar.png"
@@ -135,4 +177,4 @@ trajectory_compliance_array.surface_conditions = {
   },
 }
 
-data:extend({formation_center, chromatic_printer, notary_office, trajectory_compliance_array})
+data:extend({formation_center, chromatic_printer, notary_office, conciliation_desk, trajectory_compliance_array})

@@ -237,6 +237,7 @@ if space_age_enabled then
   shared.ADMIN_BUILDINGS["formation-center"] = true
   shared.ADMIN_BUILDINGS["trajectory-compliance-array"] = true
   shared.ADMIN_BUILDINGS["notary-office"] = true
+  shared.ADMIN_BUILDINGS["conciliation-desk"] = true
 end
 
 -------------------------------------------------------------------------------
@@ -264,13 +265,20 @@ shared.FORM_PRODUCTION_RECIPES = {
 if space_age_enabled then
   shared.PAPERWORK_ITEMS["heatproof-form-stock"] = true
   shared.PAPERWORK_ITEMS["blank-cyan-form"] = true
+  shared.PAPERWORK_ITEMS["mycelial-form-stock"] = true
+  shared.PAPERWORK_ITEMS["blank-yellow-form"] = true
   shared.PAPERWORK_ITEMS["permit-draft"] = true
   shared.PAPERWORK_ITEMS["inspection-docket"] = true
   shared.PAPERWORK_ITEMS["embossed-seal"] = true
   shared.PAPERWORK_ITEMS["industrial-charter"] = true
+  shared.PAPERWORK_ITEMS["symbiosis-record"] = true
+  shared.PAPERWORK_ITEMS["conciliation-order"] = true
+  shared.PAPERWORK_ITEMS["biochamber-operating-waiver"] = true
 
   shared.FORM_PRODUCTION_RECIPES["heatproof-form-stock"] = "heatproof-form-stock"
   shared.FORM_PRODUCTION_RECIPES["blank-cyan-form"] = "blank-cyan-form-production"
+  shared.FORM_PRODUCTION_RECIPES["mycelial-form-stock"] = "mycelial-form-stock"
+  shared.FORM_PRODUCTION_RECIPES["blank-yellow-form"] = "blank-yellow-form-production"
   shared.FORM_PRODUCTION_RECIPES["permit-draft"] = "permit-draft"
   shared.FORM_PRODUCTION_RECIPES["inspection-docket"] = "inspection-docket"
   shared.FORM_PRODUCTION_RECIPES["embossed-seal"] = "embossed-seal"
@@ -278,6 +286,9 @@ if space_age_enabled then
   shared.FORM_PRODUCTION_RECIPES["thermal-process-license"] = "thermal-process-license"
   shared.FORM_PRODUCTION_RECIPES["calcite-reagent-waiver"] = "calcite-reagent-waiver"
   shared.FORM_PRODUCTION_RECIPES["offworld-metallurgy-charter"] = "offworld-metallurgy-charter"
+  shared.FORM_PRODUCTION_RECIPES["symbiosis-record"] = "symbiosis-record"
+  shared.FORM_PRODUCTION_RECIPES["conciliation-order"] = "conciliation-order"
+  shared.FORM_PRODUCTION_RECIPES["biochamber-operating-waiver"] = "biochamber-operating-waiver"
 end
 
 -------------------------------------------------------------------------------

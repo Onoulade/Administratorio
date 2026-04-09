@@ -25,6 +25,13 @@ rules.TAXPAYER_MONEY_COSTS = base_rules.TAXPAYER_MONEY_COSTS
 -- Phase 1 compatibility keeps existing paperwork behavior until each
 -- Space Age recipe family has planet-specific paperwork.
 function rules.get_required_form(recipe_name)
+  local gleba_overrides = {
+    ["rocket-control-unit-gleba"] = "symbiosis-record",
+    ["rocket-silo-gleba"] = "work-order",
+  }
+  if gleba_overrides[recipe_name] then
+    return gleba_overrides[recipe_name]
+  end
   return base_rules.get_required_form(recipe_name)
 end
 

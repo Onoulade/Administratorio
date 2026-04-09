@@ -29,12 +29,20 @@ local recipes = {
   ["tungsten-plate"] = {type = "recipe", name = "tungsten-plate", ingredients = {{type = "item", name = "tungsten-ore", amount = 4}}},
   ["tungsten-carbide"] = {type = "recipe", name = "tungsten-carbide", ingredients = {{type = "item", name = "tungsten-plate", amount = 2}}},
   ["casting-low-density-structure"] = {type = "recipe", name = "casting-low-density-structure", ingredients = {{type = "item", name = "plastic-bar", amount = 20}}},
+  ["advanced-circuit"] = {type = "recipe", name = "advanced-circuit", ingredients = {{type = "item", name = "electronic-circuit", amount = 2}}},
+  ["low-density-structure"] = {type = "recipe", name = "low-density-structure", ingredients = {{type = "item", name = "steel-plate", amount = 10}}},
+  ["rocket-control-unit"] = {type = "recipe", name = "rocket-control-unit", ingredients = {{type = "item", name = "processing-unit", amount = 1}}},
+  ["rocket-silo"] = {type = "recipe", name = "rocket-silo", ingredients = {{type = "item", name = "steel-plate", amount = 100}}},
   ["molten-iron"] = {type = "recipe", name = "molten-iron", ingredients = {{type = "item", name = "calcite", amount = 1}}},
   ["molten-iron-from-lava"] = {type = "recipe", name = "molten-iron-from-lava", ingredients = {{type = "item", name = "calcite", amount = 1}}},
   ["molten-copper"] = {type = "recipe", name = "molten-copper", ingredients = {{type = "item", name = "calcite", amount = 1}}},
   ["molten-copper-from-lava"] = {type = "recipe", name = "molten-copper-from-lava", ingredients = {{type = "item", name = "calcite", amount = 1}}},
   ["simple-coal-liquefaction"] = {type = "recipe", name = "simple-coal-liquefaction", ingredients = {{type = "item", name = "calcite", amount = 1}}},
   ["acid-neutralisation"] = {type = "recipe", name = "acid-neutralisation", ingredients = {{type = "item", name = "calcite", amount = 1}}},
+  ["rocket-fuel-from-jelly"] = {type = "recipe", name = "rocket-fuel-from-jelly", ingredients = {{type = "item", name = "jelly", amount = 1}}},
+  ["bioplastic"] = {type = "recipe", name = "bioplastic", ingredients = {{type = "item", name = "bioflux", amount = 1}}},
+  ["biosulfur"] = {type = "recipe", name = "biosulfur", ingredients = {{type = "item", name = "bioflux", amount = 1}}},
+  ["biolubricant"] = {type = "recipe", name = "biolubricant", ingredients = {{type = "item", name = "bioflux", amount = 1}}},
   biochamber = {type = "recipe", name = "biochamber", ingredients = {{type = "item", name = "iron-plate", amount = 20}}},
   ["electromagnetic-plant"] = {type = "recipe", name = "electromagnetic-plant", ingredients = {{type = "item", name = "holmium-plate", amount = 150}}},
   ["cryogenic-plant"] = {type = "recipe", name = "cryogenic-plant", ingredients = {{type = "item", name = "lithium-plate", amount = 20}}},
@@ -49,6 +57,7 @@ local technologies = {
   ["calcite-processing"] = {type = "technology", name = "calcite-processing", effects = {}},
   ["printing-technology"] = {type = "technology", name = "printing-technology", effects = {}},
   ["industrial-propaganda"] = {type = "technology", name = "industrial-propaganda", effects = {}},
+  ["corporate-hospitality"] = {type = "technology", name = "corporate-hospitality", effects = {}},
   ["agricultural-science-pack"] = {type = "technology", name = "agricultural-science-pack", effects = {}},
   ["electromagnetic-science-pack"] = {type = "technology", name = "electromagnetic-science-pack", effects = {}},
   ["cryogenic-science-pack"] = {type = "technology", name = "cryogenic-science-pack", effects = {}},
@@ -323,6 +332,75 @@ test("MMMM is converted into trajectory-compliance ammo and sink hardware", func
   assert_eq(ammos["middle-management-managing-manager"].ammo_category, "trajectory-compliance", "MMMM should feed trajectory-compliance arrays")
   assert_true(recipes["trajectory-compliance-array"] ~= nil, "trajectory compliance array recipe missing")
   assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "trajectory-compliance-array"), "workforce formation should unlock the compliance array")
+end)
+
+test("gleba conciliation unlocks the yellow chain and conciliation desk", function()
+  local gleba = technologies["gleba-conciliation"]
+  assert_true(gleba ~= nil, "gleba-conciliation missing")
+  for _, recipe_name in ipairs({
+    "conciliation-desk",
+    "yellow-ink-production",
+    "mycelial-form-stock",
+    "blank-yellow-form-production",
+    "symbiosis-record",
+    "conciliation-order",
+    "biochamber-operating-waiver",
+  }) do
+    assert_true(tech_unlocks_recipe(gleba, recipe_name), "gleba-conciliation should unlock " .. recipe_name)
+  end
+end)
+
+test("gleba chromatic chain defines amber sap and printer-fed yellow forms", function()
+  assert_true(fluids["amber-sap"] ~= nil, "amber-sap missing")
+  assert_true(fluids["yellow-ink"] ~= nil, "yellow-ink missing")
+  assert_true(items["mycelial-form-stock"] ~= nil, "mycelial-form-stock missing")
+  assert_true(items["blank-yellow-form"] ~= nil, "blank-yellow-form missing")
+  assert_true(items["symbiosis-record"] ~= nil, "symbiosis-record missing")
+  assert_true(items["conciliation-order"] ~= nil, "conciliation-order missing")
+  assert_true(items["biochamber-operating-waiver"] ~= nil, "biochamber-operating-waiver missing")
+
+  assert_true(has_fluid_ingredient(recipes["yellow-ink-production"], "amber-sap"), "yellow-ink should consume amber-sap")
+  assert_true(has_ingredient(recipes["yellow-ink-production"], "nutrients"), "yellow-ink should consume nutrients")
+  assert_true(has_fluid_ingredient(recipes["mycelial-form-stock"], "yellow-ink"), "mycelial-form-stock should consume yellow-ink")
+  assert_true(has_fluid_ingredient(recipes["blank-yellow-form-production"], "yellow-ink"), "blank-yellow-form should consume yellow-ink")
+end)
+
+test("gleba adds targeted alternates instead of a duplicated paperwork ladder", function()
+  for _, recipe_name in ipairs({
+    "amber-sap-nonsense-seeding",
+    "ink-production-gleba",
+    "carbon-offset-certificate-basic-gleba",
+    "admin-station-gleba",
+    "printer-t1-gleba",
+    "corporate-breakroom-gleba",
+    "administrative-science-pack-production-gleba",
+    "advanced-circuit-gleba",
+    "low-density-structure-gleba",
+    "rocket-control-unit-gleba",
+    "rocket-silo-gleba",
+  }) do
+    assert_true(recipes[recipe_name] ~= nil, recipe_name .. " missing")
+  end
+
+  assert_true(has_ingredient(recipes["rocket-control-unit-gleba"], "symbiosis-record"), "rocket-control-unit-gleba should use symbiosis-record")
+  assert_true(has_ingredient(recipes["rocket-silo-gleba"], "conciliation-order"), "rocket-silo-gleba should use conciliation-order")
+  assert_true(recipes["management-approval-written-gleba"] == nil, "management-approval-written-gleba should not exist")
+  assert_true(recipes["management-approval-verbal-gleba"] == nil, "management-approval-verbal-gleba should not exist")
+  assert_true(recipes["research-grant-approval-gleba"] == nil, "research-grant-approval-gleba should not exist")
+  assert_true(recipes["form-27b-6-gleba"] == nil, "form-27b-6-gleba should not exist")
+end)
+
+test("gleba offworld bio variants require the operating waiver", function()
+  for _, recipe_name in ipairs({
+    "rocket-fuel-from-jelly-offworld",
+    "bioplastic-offworld",
+    "biosulfur-offworld",
+    "biolubricant-offworld",
+  }) do
+    assert_true(recipes[recipe_name] ~= nil, recipe_name .. " missing")
+    assert_true(has_ingredient(recipes[recipe_name], "biochamber-operating-waiver"),
+      recipe_name .. " should require biochamber-operating-waiver")
+  end
 end)
 
 if failed > 0 then
