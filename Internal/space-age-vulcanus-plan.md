@@ -1,190 +1,203 @@
 # Vulcanus Space Age Plan
 
-This file details the Vulcanus paperwork loop under the shared rules in [space-age-compatibility-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-compatibility-plan.md).
+This file records the implemented Vulcanus principles under the shared rules in [space-age-compatibility-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-compatibility-plan.md).
 
 ## Planet Role
 
-Vulcanus is the certification planet.
+Vulcanus is the industrial certification planet.
 
 Its themes are:
 
 - durable paperwork
-- industrial approval
-- land claims, zoning, and expropriation
+- hot-process approvals
+- shortcuts for heavy metallurgy and calcite chemistry
 - productive non-printed bureaucracy
 
 Its global reward is the `Notary Office`.
 
-## Locked Outputs
+## Implemented Design Principles
 
-- Raw resource: `verdigris-crust`
-- Planet ink: `cyan-ink`
-- Upgraded building: `Notary Office`
-- Shared intermediates:
-  - `heatproof-form-stock`
-  - `embossed-seal`
-  - `permit-draft`
-  - `inspection-docket`
-- Core paperwork family:
-  - `industrial-charter`
-  - `zoning-variance`
-  - `lava-safety-endorsement`
-  - `expropriation-dossier`
-  - `foundry-operating-charter`
+### 1. Vulcanus must be a real first-planet bootstrap
 
-## First-Visit Accessibility
+The implemented target is not full Nauvis parity. The target is:
 
-Vulcanus must work as a first basic planet.
+- locally stand up the admin base
+- locally reach `rocket-silo` and `rocket-part`
+- avoid bulk imports of the old administrative blockers
 
-That means:
+This is why Vulcanus has dedicated bootstrap recipes for:
 
-- no Gleba or Fulgora resource is required to start
-- black ink from Nauvis helps, but is not required for the local core loop
-- the first self-sufficient Vulcanus permit loop should not require raw `taxpayer-money`
-- the player should be able to arrive with only `Chromatic Printer`, paper, and a small Nauvis admin seed kit
+- `paper-production-vulcanus`
+- `carbon-offset-certificate-basic-vulcanus`
+- `admin-station-vulcanus`
+- `printer-t1-vulcanus`
+- `research-grant-approval-vulcanus`
+- `administrative-science-pack-production-vulcanus`
+- `plastic-bar-vulcanus`
+- `refined-nonsense-production-vulcanus`
 
-The intended bootstrap is:
+### 2. The planet's easy administrative output is `lie`
 
-1. mine or collect `verdigris-crust`
-2. convert it into `cyan-pigment`
-3. print `cyan-ink`
-4. make `heatproof-form-stock`
-5. rebuild the Vulcanus permit tree locally
+Vulcanus should be dramatically better than Nauvis at turning local materials into politician-fluid derivatives.
 
-## Paperwork Tree
+The implemented direction is:
 
-### Stage 1: Pigment And Certification Material
+- `molten-promises-production`
+- `vulcanus-lie-distillation`
 
-- `verdigris-crust -> cyan-pigment`
-- `cyan-pigment + sulfuric-acid -> cyan-ink`
-- `cyan-pigment + useless-documentation -> embossed-seal`
+This makes `lie` cheap and abundant while keeping `dubious-data` as the more constrained useful byproduct.
 
-`cyan-pigment` is not allowed to be a dead-end. It must feed at least:
+### 3. The chromatic printer stays narrow
 
-- `cyan-ink`
-- `embossed-seal`
-- one low-tier recycle or recovery recipe
+The `chromatic-printer` is not a general bureaucratic reactor.
 
-### Stage 2: Local Stock
+Its Vulcanus role is:
 
-- `paper + cyan-ink + sulfuric-acid -> heatproof-form-stock`
+- consume paper-like stock plus ink fluids
+- produce cyan stock and direct print intermediates
+- avoid support-heavy inputs like `liquid-coffee` or rhetoric materials
 
-`heatproof-form-stock` is the local substitute for black-heavy permit paper.
-
-It must feed at least:
-
-- `permit-draft`
-- `inspection-docket`
-- `industrial-charter`
-- `zoning-variance`
-
-### Stage 3: Shared Draft Layer
-
-- `heatproof-form-stock + cyan-ink -> permit-draft`
-- `heatproof-form-stock + dubious-data + cyan-ink -> inspection-docket`
-
-`permit-draft` is the reusable permit shell. It must feed at least:
-
-- `industrial-charter`
-- `zoning-variance`
-- `foundry-operating-charter`
-
-`inspection-docket` is the reusable industrial review shell. It must feed at least:
-
-- `industrial-charter`
-- `lava-safety-endorsement`
-- `foundry-operating-charter`
-
-### Stage 4: Final Vulcanus Paperwork
-
-- `permit-draft + inspection-docket + embossed-seal -> industrial-charter`
-- `permit-draft + construction-permit + embossed-seal -> zoning-variance`
-- `inspection-docket + basic-excuse + cyan-ink -> lava-safety-endorsement`
-- `industrial-charter + zoning-variance + government-grant -> expropriation-dossier`
-- `industrial-charter + lava-safety-endorsement + government-grant -> foundry-operating-charter`
-
-This keeps the tree readable:
-
-- one local stock item
-- two reusable draft layers
-- one seal intermediate
-- a small family of high-value certified outputs
-- raw `taxpayer-money` only returning at the higher sovereignty layer through `government-grant`
-
-## Notary Office
-
-### Identity
-
-The `Notary Office` is the reward for solving Vulcanus.
-
-It should be the best machine for:
-
-- `embossed-seal`
-- `industrial-charter`
-- `foundry-operating-charter`
-- grants, bonds, personnel packets, and other non-printed official work
-
-It should not be the best machine for:
+The core printer outputs are:
 
 - `heatproof-form-stock`
+- `blank-cyan-form-production`
 - `permit-draft`
-- any explicit printing or copy step
+- `inspection-docket`
 
-### Recipe Split
+### 4. The notary office handles support-heavy conversion
 
-The intended split is:
+The `notary-office` is the real Vulcanus reward building.
 
-- `Chromatic Printer` handles cyan print steps and stock creation
-- `Notary Office` handles certification, sealing, notarization, and dense office intermediates
+Its role is:
 
-If the same final item is craftable efficiently in both places, the split has failed.
+- legalize and finalize chromatic paperwork
+- consume support materials like `lie`, `dubious-data`, `cyan-slurry`, and `liquid-coffee`
+- turn printed cyan substrates into the forms that actually matter
 
-## Global Export Value
+The notarial family currently includes:
 
-Vulcanus should export value in several directions:
+- `embossed-seal`
+- `industrial-charter`
+- `good-excuse-vulcanus`
+- `safety-waiver-vulcanus`
+- `construction-permit-vulcanus`
+- `management-approval-verbal-vulcanus`
+- `heatproof-filler-documentation`
+- `form-27b-6-vulcanus`
+- `thermal-process-license`
+- `calcite-reagent-waiver`
+- `offworld-metallurgy-charter`
 
-- `embossed-seal` for high-tier certified paperwork everywhere
-- `industrial-charter` as a build-time permit ingredient
-- `foundry-operating-charter` for `foundry`
-- `Notary Office` as the premium productivity office for non-printed admin chains
+### 5. Cyan paperwork should be shorter than black paperwork
 
-Late cross-planet uses should include at least:
+The Vulcanus advantage is not "cyan can copy everything." The advantage is:
 
-- one orbital construction packet
-- one mixed-planet development permit
-- one Aquilo license dossier pre-step
+- fewer steps
+- fewer draft layers
+- direct bypass recipes for hot industrial paperwork
 
-## Demolisher Interaction
+Standard black-ink copying still exists for ordinary forms. Vulcanus chromatic forms are their own family and are not meant to become a universal replacement for the normal copy economy.
 
-Demolisher diplomacy is intentionally not part of the bootstrap loop.
+### 6. Off-world recipe variants carry the export pressure
 
-The clean direction is:
+Vulcanus should export permission, not just material.
 
-- `expropriation-dossier` becomes the premium input for a future throughput-based land-claim system
-- that system can be added later without changing the core Vulcanus paperwork tree
+The clean pattern is:
 
-This keeps first-visit Vulcanus readable and prevents the whole planet from depending on a single runtime gimmick.
+- keep home-planet Vulcanus tech readable
+- add off-world variants that require Vulcanus forms
 
-## Multi-Use Audit
+The current implementation follows this for selected off-world variants of:
 
-Every notable Vulcanus intermediate already has at least three real uses:
+- `foundry`
+- `tungsten-plate`
+- `tungsten-carbide`
+- `molten-iron`
+- `molten-iron-from-lava`
+- `molten-copper`
+- `molten-copper-from-lava`
+- `simple-coal-liquefaction`
+- `acid-neutralisation`
+- `casting-low-density-structure`
 
-- `cyan-pigment`: `cyan-ink`, `embossed-seal`, recycle or recovery route
-- `heatproof-form-stock`: `permit-draft`, `inspection-docket`, `industrial-charter`, `zoning-variance`
-- `permit-draft`: `industrial-charter`, `zoning-variance`, `foundry-operating-charter`
-- `inspection-docket`: `industrial-charter`, `lava-safety-endorsement`, `foundry-operating-charter`
-- `embossed-seal`: `zoning-variance`, `expropriation-dossier`, `foundry-operating-charter`, late cross-planet dossiers
+The forms carrying that export role are:
 
-## Balance Notes
+- `thermal-process-license`
+- `calcite-reagent-waiver`
+- `offworld-metallurgy-charter`
 
-- Vulcanus must not require another basic planet to become locally self-sufficient.
-- raw `taxpayer-money` should matter mainly for offworld grants and late sovereign paperwork, not the local first loop
-- `Notary Office` productivity should feel significant on expensive paperwork, not universal on every office recipe.
-- `embossed-seal` should be premium enough that the player does not spam it into trivial items.
-- `foundry-operating-charter` should be a meaningful build-time cost, not a recurring production tax.
+## Implemented Local Pipelines
 
-## Open Questions
+### Cyan input chain
 
-1. Should `cyan-pigment` be an item or fluid-adjacent slurry?
-2. Should `inspection-docket` come from printing, notarization, or a mixed two-step chain?
-3. How expensive should `expropriation-dossier` be before demolisher diplomacy feels earned rather than tedious?
+- `verdigris-crust`
+- `cyan-slurry-production`
+- `cyan-ink-production`
+
+This is the basic local paper-color identity for Vulcanus.
+
+### Stimulant and coffee chain
+
+- `liquid-stimulant-production`
+- `liquid-coffee-vulcanus`
+
+This exists specifically so Vulcanus can satisfy coffee-backed support work without requiring greenhouse farming.
+
+### Paper and filler chain
+
+- `heatproof-paper-production`
+- `heatproof-filler-documentation`
+
+This makes local paperwork feedstock practical without recreating the Nauvis wood chain.
+
+### Draft and docket chain
+
+- `heatproof-form-stock`
+- `blank-cyan-form-production`
+- `permit-draft`
+- `inspection-docket`
+
+This is the core bridge between the printer and the office.
+
+### Notarial certification chain
+
+- `embossed-seal`
+- `industrial-charter`
+- `thermal-process-license`
+- `calcite-reagent-waiver`
+- `offworld-metallurgy-charter`
+
+### Launch-bypass chain
+
+- `good-excuse-vulcanus`
+- `safety-waiver-vulcanus`
+- `construction-permit-vulcanus`
+- `management-approval-verbal-vulcanus`
+- `form-27b-6-vulcanus`
+
+These are the targeted local shortcuts that make the escape path actually usable.
+
+## What Vulcanus Intentionally Does Not Do
+
+- It does not recreate the full Nauvis executive or policy tree.
+- It does not turn `cyan-ink` into a universal copy medium.
+- It does not use the `Corporate Breakroom` as the main Vulcanus special-case machine.
+- It does not solve export pressure by making every home-planet Vulcanus recipe carry extra paperwork.
+
+If a copyable seed form would require a dead-end local subtree, the preferred answer is still import-seeding plus black-ink copying rather than bloating the Vulcanus identity.
+
+## Current Result
+
+The current implemented pass is solver-clean for the intended first target:
+
+- Vulcanus can locally satisfy `rocket-silo`
+- Vulcanus can locally satisfy `100x rocket-part`
+
+That is the success condition this document should preserve as the planet evolves.
+
+## Follow-up Constraints
+
+- Do not let later additions break the strict printer/office split.
+- Do not let off-world export paperwork leak back into the home-planet recipes unless there is a very good reason.
+- Keep greenhouse-style agriculture off Vulcanus.
+- Keep Vulcanus focused on industrial permits, not general office omnipotence.

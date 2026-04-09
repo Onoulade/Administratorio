@@ -1,203 +1,133 @@
 # Gleba Space Age Plan
 
-This file details the Gleba paperwork and enemy loop under the shared rules in [space-age-compatibility-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-compatibility-plan.md).
+This file records the planned Gleba principles under the shared rules in [space-age-compatibility-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-compatibility-plan.md).
 
 ## Planet Role
 
-Gleba is the organic conciliation planet.
+Gleba is the biological exception-handling planet.
 
 Its themes are:
 
-- luring nuisances instead of waiting for them
-- biosafety and calming paperwork
-- satirical "reassignment" of hostile creatures into eggs or workforce
-- simplifying selected bureaucracy through biological shortcuts
+- calming, luring, and reassignment instead of direct force
+- biosafety and personnel paperwork
+- living shortcuts that compress otherwise awkward admin chains
+- high-leverage single-target interaction rather than bulk office throughput
 
 Its global reward is the `Conciliation Desk`.
 
-## Locked Outputs
+## Planned Design Principles
 
-- Raw resource: `spore-resin`
-- Planet ink: `yellow-ink`
-- Upgraded building: `Conciliation Desk`
-- Shared intermediates:
-  - `conciliation-spores`
-  - `mycelial-form-stock`
-  - `symbiosis-record`
-- Core paperwork family:
-  - `conciliation-order`
-  - `biosafety-waiver`
-  - `personnel-dossier`
-  - `calming-writ`
-  - `biochamber-operating-waiver`
+### 1. Gleba should be the easy-`dubious-data` planet
 
-## First-Visit Accessibility
+Gleba's administrative identity should not be "raw bullshit ore everywhere." The planet should instead make the useful derivative easy:
 
-Gleba must work as a first basic planet.
+- abundant `dubious-data`
+- biological or fermentative routes that make nonsense practical
+- local paperwork that spends data to simplify living-process bureaucracy
 
-That means:
+That lets Gleba solve selected paperwork bottlenecks without cloning the whole Nauvis nonsense economy.
 
-- no Vulcanus or Fulgora resource is required to start
-- local paperwork must be reconstructable without coal-derived black ink
-- the first self-sufficient Gleba loop should not require raw `taxpayer-money`
-- the enemy answer must exist entirely inside the Gleba loop once the player has `Chromatic Printer`
+### 2. Gleba must still work as a first basic planet
 
-The intended bootstrap is:
+The target is the same as Vulcanus:
 
-1. gather `spore-resin`
-2. convert it into `yellow-pigment`
-3. make `yellow-ink`
-4. produce `mycelial-form-stock`
-5. print the first Gleba calming and biosafety paperwork
-6. feed a `Conciliation Desk`
+- local launch viability
+- local access to its core paperwork family
+- no dependence on another basic planet for the first usable loop
 
-## Paperwork Tree
+This does not mean full self-sufficiency. If a copyable form would require a deep dead-end executive subtree, Gleba should import-seed it and scale through normal black-ink copying.
 
-### Stage 1: Pigment And Spores
+### 3. Keep the machine split strict
 
-- `spore-resin -> yellow-pigment`
-- `yellow-pigment + nutrients -> yellow-ink`
-- `yellow-pigment + nutrients -> conciliation-spores`
+The planned Gleba split should mirror the Vulcanus structure:
 
-`yellow-pigment` must feed at least:
+- the yellow-capable printer prints stock, blanks, and direct print intermediates
+- the `Conciliation Desk` handles support-heavy living conversions and high-leverage special cases
 
-- `yellow-ink`
-- `conciliation-spores`
-- one low-tier recovery or recycling route
+The desk should not become a generic assembly machine. Its identity should stay:
 
-### Stage 2: Local Stock
+- one target at a time
+- slow
+- powerful
+- specialized
 
-- `paper + yellow-ink + nutrients -> mycelial-form-stock`
+### 4. Black ink remains the universal copy medium
 
-`mycelial-form-stock` is the local substitute for black-heavy personnel and conciliation paper.
+Gleba should not solve copy throughput by letting yellow paperwork replace black-ink copying.
 
-It must feed at least:
+Planned rule:
 
-- `conciliation-order`
-- `biosafety-waiver`
-- `personnel-dossier`
-- `calming-writ`
+- ordinary copy chains stay black-ink based
+- Gleba-special yellow forms are not general copy media
+- Gleba-specific living forms can be intentionally non-copyable if that keeps their identity clean
 
-### Stage 3: Core Gleba Paperwork
+### 5. Gleba shortcuts should focus on living paperwork
 
-- `mycelial-form-stock + bureaucratic-promise + yellow-ink -> conciliation-order`
-- `mycelial-form-stock + basic-excuse + spore-resin -> biosafety-waiver`
-- `mycelial-form-stock + credentials + yellow-ink -> personnel-dossier`
-- `mycelial-form-stock + watercooler-gossip + yellow-ink -> calming-writ`
-- `biosafety-waiver + conciliation-order + yellow-ink -> biochamber-operating-waiver`
+Gleba's special forms should be good at:
 
-The local family stays intentionally compact:
+- pacification
+- biosafety
+- reassignment
+- workforce conversion
+- `biochamber`-adjacent authorization
 
-- one stock item
-- one lure consumable
-- one satirical byproduct
-- a small set of paperwork that all matters on and off planet
+They should not become universal better versions of generic management paperwork.
 
-## Conciliation Desk
+## Planned Paperwork Family
 
-### Identity
+The exact recipes remain open, but the family should stay compact and purposeful.
 
-The `Conciliation Desk` is not a regular complaint desk.
+Working names and roles:
 
-It is:
+- `conciliation-spores`: luring and calming consumable
+- `mycelial-form-stock`: local yellow paperwork stock
+- `conciliation-order`: living-target handling order
+- `biosafety-waiver`: safe handling permission
+- `personnel-dossier`: reassignment and staffing paperwork
+- `calming-writ`: low-tier pacification form
+- `biochamber-operating-waiver`: build-time or process-time biochamber permission
+- `symbiosis-record`: durable byproduct that feeds a small number of higher-tier shortcuts
 
-- one slot
-- one occupant at a time
-- low throughput
-- extremely high leverage
+## Planned Enemy And Workforce Loop
 
-### Gleba Enemy Loop
+Gleba should be the planet where hostile biology becomes administratively tractable.
 
-Pentapods should not behave like Nauvis biters.
+The `Conciliation Desk` should support two export-worthy loops:
 
-The intended loop is:
+- pentapod or feral handling on Gleba
+- workforce reassignment for Nauvis-compatible labor pipelines
 
-1. pentapods wander toward attractive organic infrastructure
-2. if ignored, they damage buildings directly
-3. a loaded `Conciliation Desk` claims one nearby target
-4. the target moves to the desk
-5. the desk processes it through `Voluntary Egg Reassignment`
-6. the outputs are `pentapod-egg` and `symbiosis-record`
+The intended character of the loop is:
 
-Recommended recipe shape:
+- lure a living target
+- process one target at a time
+- produce a useful biological or staffing output
+- also produce Gleba-native paperwork value
 
-- occupant pentapod
-- `conciliation-spores`
-- `conciliation-order`
-- optional `biosafety-waiver` for bigger or nastier targets
+The desk should feel like a targeted premium shortcut, not an infinite free labor machine.
 
-Outputs:
+## Export Identity
 
-- `pentapod-egg`
-- `symbiosis-record`
+Gleba's exported value should center on:
 
-### Rotten Eggs
+- `dubious-data`
+- luring and calming consumables
+- personnel conversion paperwork
+- biosafety waivers
+- `biochamber` operating permissions
 
-Rotten eggs should still create feral threats.
+This makes Gleba the natural home for biological exception handling and satirical workforce reassignment.
 
-The intended response is:
+## Constraints For Future Implementation
 
-- `conciliation-spores` or `calming-writ` can calm them
-- a calmed feral can either despawn naturally or be lured into a free desk
-- successful desk processing should still yield eggs, so getting rid of the threat remains materially useful
-
-### Nauvis Export Loop
-
-The same desk family should export back to Nauvis.
-
-Preferred offworld recipe:
-
-- `Voluntary Workforce Reassignment`
-
-Inputs:
-
-- occupant biter or spitter
-- `conciliation-spores`
-- `personnel-dossier`
-
-Outputs:
-
-- `enrolled-biter`
-- optional small chance or side output of `symbiosis-record`
-
-This makes Gleba the premium shortcut for recruitment without deleting the original complaint loop.
-
-## Symbiosis Record Uses
-
-`symbiosis-record` must stay multi-use. It should feed at least:
-
-- upgraded promise or pacification paperwork
-- specialist deployment paperwork
-- one limited one-step complaint simplification recipe
-
-That last recipe should stay deliberately narrow so the desk does not replace the normal factory-scale resolution chain.
-
-## Global Export Value
-
-Gleba exports should matter everywhere:
-
-- `conciliation-spores` let the player lure targets instead of waiting for them
-- `personnel-dossier` supports workforce conversion and specialist training
-- `biochamber-operating-waiver` is the build-time permit for `biochamber`
-- `Conciliation Desk` is a premium one-slot shortcut building on any surface
-
-## Multi-Use Audit
-
-- `yellow-pigment`: `yellow-ink`, `conciliation-spores`, recovery route
-- `mycelial-form-stock`: `conciliation-order`, `biosafety-waiver`, `personnel-dossier`, `calming-writ`
-- `conciliation-spores`: Gleba luring, feral calming, Nauvis workforce recruitment, optional pacification paperwork
-- `symbiosis-record`: promise upgrades, deployment paperwork, limited simplification recipe
-
-## Balance Notes
-
-- The `Conciliation Desk` must stay one-slot and slow.
-- Gleba core paperwork should stay essentially cashless once the local yellow loop is running.
-- Gleba should give a powerful shortcut, not infinite free eggs or free recruited workforce.
-- `Voluntary Workforce Reassignment` should be strong enough to justify importing spores to Nauvis, but weaker in bulk than solving the normal complaint economy well.
-- Rotten eggs must remain dangerous enough that the player still cares about containment.
+- Keep the desk one-slot and slow.
+- Do not solve the planet by inventing a local `taxpayer-money` economy.
+- Do not let yellow paperwork replace standard black-ink copy logic.
+- Use import-seeding for copyable dead-end forms instead of bloating the local tree.
+- Preserve the sense that Gleba handles living problems unusually well, rather than handling every paperwork problem well.
 
 ## Open Questions
 
-1. Should `conciliation-spores` be consumed only when a target is claimed, or continuously while the desk is broadcasting?
-2. Which Nauvis targets should be valid for `Voluntary Workforce Reassignment`: wild biters, protesters, spitters, or all of them?
-3. Should `biochamber-operating-waiver` also gate one or two advanced Gleba recipes, or only the building itself?
+1. What is the cleanest local route to abundant `dubious-data` without just recreating Nauvis `bullshit-ore` processing?
+2. Which forms should be printer-made blanks versus desk-finalized living paperwork?
+3. Which off-world labor or biosafety recipes should require Gleba paperwork variants first?

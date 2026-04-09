@@ -53,6 +53,7 @@ MACHINE_TYPES = (
 )
 ENTITY_OUTPUT_TYPES = (
     "resource",
+    "plant",
     "tree",
     "simple-entity",
     "simple-entity-with-owner",
@@ -434,6 +435,17 @@ class PlanetEscapeAnalyzer:
             # discovery path in the dump.
             if planet_name == "vulcanus" and "lava" in self.fluid_index:
                 resources[planet_name].add("lava")
+            # Gleba has pumpable surface water, but the dump does not always
+            # surface a concrete offshore-pump entity through the same path.
+            if planet_name == "gleba" and "water" in self.fluid_index:
+                resources[planet_name].add("water")
+            # Gleba crop harvests come from plant entities whose outputs do not
+            # always land in the map-gen entity set cleanly enough for generic
+            # discovery. Treat the core local harvestables as native.
+            if planet_name == "gleba":
+                for crop_name in ("yumako", "jellynut"):
+                    if crop_name in self.item_index:
+                        resources[planet_name].add(crop_name)
 
         return {planet: sorted(resources[planet]) for planet in resources}
 
