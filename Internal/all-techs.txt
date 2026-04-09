@@ -1,5 +1,5 @@
 # All Technology Prototypes
-# Source root: /Users/jv/Library/Application Support/Steam/steamapps/common/Factorio/factorio.app/Contents/data
+# Source root: ~/Library/Application Support/Steam/steamapps/common/Factorio/factorio.app/Contents/data
 
 advanced-asteroid-processing	space-age/prototypes/technology.lua
 advanced-circuit	base/prototypes/technology.lua

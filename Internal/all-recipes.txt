@@ -1,5 +1,5 @@
 # All Recipe Prototypes
-# Source root: /Users/jv/Library/Application Support/Steam/steamapps/common/Factorio/factorio.app/Contents/data
+# Source root: ~/Library/Application Support/Steam/steamapps/common/Factorio/factorio.app/Contents/data
 
 accumulator	base/prototypes/recipe.lua
 acid-neutralisation	space-age/prototypes/recipe.lua
