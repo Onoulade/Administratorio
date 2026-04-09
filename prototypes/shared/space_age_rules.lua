@@ -47,6 +47,13 @@ end
 rules.TAXPAYER_MONEY_COSTS = base_rules.TAXPAYER_MONEY_COSTS
 
 function rules.get_required_form(recipe_name)
+  local gleba_overrides = {
+    ["rocket-control-unit-gleba"] = "symbiosis-record",
+    ["rocket-silo-gleba"] = "work-order",
+  }
+  if gleba_overrides[recipe_name] then
+    return gleba_overrides[recipe_name]
+  end
   return base_rules.get_required_form(recipe_name)
 end
 
