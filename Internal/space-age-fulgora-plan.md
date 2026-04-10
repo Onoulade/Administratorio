@@ -9,23 +9,24 @@ Fulgora is the archive and transmission planet.
 Its themes are:
 
 - ruined records and recoverable templates
+- salvage as an indirect source of paperwork value
 - relay paperwork and routing authority
-- turning archival junk into useful documents
 - reconstructing paperwork remotely instead of shipping every sheet
 
 Its global reward is the `Interplanetary Fax Exchange`.
 
 ## Planned Design Principles
 
-### 1. Fulgora should be the easy-`useless-documentation` planet
+### 1. Fulgora should be the easy-`redundant-rubble` planet indirectly
 
 Fulgora should not just mine "paper junk ore" and call it done. The real local advantage should be:
 
-- extremely easy `useless-documentation`
+- extremely easy `redundant-rubble`
 - salvage and archive recovery loops
 - practical access to paperwork filler, template fragments, and routing material
+- easy `useless-documentation` as a derived filler output of the salvage economy
 
-This makes Fulgora the natural place to rebuild, pad out, and relay administrative value.
+This makes Fulgora the natural place to rebuild, pad out, and relay administrative value without turning it into a universal free-paper planet.
 
 ### 2. Fulgora must still work as a first basic planet
 
@@ -33,7 +34,17 @@ Like Vulcanus and Gleba, Fulgora should be able to reach a local launch threshol
 
 That does not require full parity. Copyable forms that would demand a dead-end subtree should remain import-seeded and black-copied if that is the cleaner outcome.
 
-### 3. Keep stock printing separate from routing logic
+### 3. Do not duplicate ordinary vanilla outputs
+
+Fulgora should not get a second ladder of ordinary recipes just to pretend it is Nauvis with lightning.
+
+The preferred pattern is:
+
+- add new relay, archive, and reconstruction paperwork
+- let those new items make documentation and transmission easier
+- avoid cloning ordinary buildings or vanilla launch items with `-fulgora` recipes unless there is no cleaner paperwork solution
+
+### 4. Keep stock printing separate from routing logic
 
 Fulgora should follow the same machine-identity discipline:
 
@@ -47,7 +58,7 @@ The exchange should not become a generic crafting machine. Its value is:
 - prioritization
 - coordinating reconstruction throughput
 
-### 4. Faxing should reconstruct paperwork, not erase logistics
+### 5. Faxing should reconstruct paperwork, not erase logistics
 
 The network should help with urgency and mixed-planet workflows, but it should not replace all shipping.
 
@@ -58,7 +69,7 @@ Planned rules:
 - bulk cargo still needs shipping
 - faxing moves form value by reconstruction, consuming destination-side media and print capacity
 
-### 5. Black ink remains the standard copy medium
+### 6. Black ink remains the standard copy medium
 
 Fulgora should not delete the core copy rules.
 
@@ -67,6 +78,16 @@ That means:
 - standard copy chains stay black-ink based
 - magenta paperwork is for relay, transmission, archive, and reconstruction roles
 - Fulgora special forms can stay non-copyable when that keeps the planet's export identity clearer
+
+### 7. Escape viability should not imply mall viability
+
+Fulgora should support a first-planet escape path, but that should not mean the player can build a full generic factory there without feeling the planet's logistics identity.
+
+Intended behavior:
+
+- launch-critical paperwork gets a clear salvage and relay path
+- a broad mall still wants shipped materials, routed forms, or reconstructed paperwork
+- the planet should reward paperwork planning and transmission infrastructure rather than brute local duplication
 
 ## Planned Paperwork Family
 
@@ -91,10 +112,10 @@ Fulgora needs productive work even when the player is not actively faxing.
 The archive side should therefore:
 
 - consume ruined or partial paperwork artifacts
-- recover low-tier forms, fragments, or fillers
-- turn documentation abundance into useful relay inputs
+- recover low-tier forms, fragments, rubble, or fillers
+- turn salvage abundance into useful relay inputs
 
-This is also the clean place to express the planet's `useless-documentation` advantage.
+This is also the clean place to express the planet's `redundant-rubble` and `useless-documentation` advantage.
 
 ## Planned Fax Loop
 
@@ -111,6 +132,7 @@ Fulgora should supply the network's routing authority and early reconstruction m
 
 Fulgora's exported value should center on:
 
+- redundant-rubble-heavy filler recovery
 - relay orders
 - priority directives
 - archive recovery permits
@@ -123,12 +145,12 @@ This makes Fulgora the planet that turns paperwork logistics from awkward shippi
 
 - Keep the exchange focused on routing and queue ownership.
 - Do not make magenta ink a universal better copier.
-- Use Fulgora's documentation abundance for salvage and relay work, not as a generic answer to every paperwork problem.
+- Use Fulgora's salvage and documentation abundance for archive and relay work, not as a generic answer to every paperwork problem.
 - Preserve the import-seed rule for copyable dead-end forms.
 - Make sure the first fax loop is useful before Aquilo exists, but not complete enough to trivialize later Aquilo design.
 
 ## Open Questions
 
-1. Which salvage items should become the main source of early archive recovery?
+1. Which salvage items should become the main source of early `redundant-rubble` recovery?
 2. How much of the reconstruction cost should be paid in printer media versus exchange-side routing paperwork?
 3. Which late off-world recipes should first consume Fulgora relay paperwork?

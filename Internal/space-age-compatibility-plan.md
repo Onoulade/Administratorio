@@ -23,17 +23,17 @@ For the three basic planets, "works as a first planet" means:
 
 It is acceptable for some later or niche forms to remain import-seeded or fax-targeted if localizing them would only add a dead-end subtree.
 
-### 2. Each base planet gets one easy administrative derivative
+### 2. Each base planet gets one easy administrative bottleneck indirectly
 
 Each of the three any-order basic planets should trivialize one bureaucratic bottleneck in the same way Space Age planets trivialize selected industrial materials.
 
 The intended identities are:
 
 - Vulcanus: `lie`
-- Gleba: `dubious-data`
-- Fulgora: `useless-documentation`
+- Gleba: `bullshit-ore`, with `dubious-data` as an easy local derivative
+- Fulgora: `redundant-rubble`, with `useless-documentation` and archive filler as easy local derivatives
 
-The goal is not to clone Nauvis raw administrative resources everywhere. The goal is to give each planet one strong local shortcut and then build its paperwork family around that advantage.
+The goal is not to clone Nauvis raw administrative resources everywhere. The goal is to give each planet one strong local shortcut, reached in a planet-themed indirect way, and then build its paperwork family around that advantage.
 
 ### 3. Prefer derivatives and shortcuts over cloned raw resources
 
@@ -42,12 +42,14 @@ Space Age planet support should generally avoid:
 - adding local equivalents of `taxpayer-money`
 - adding local equivalents of every Nauvis-only complaint resource
 - recreating a whole Nauvis subtree just to make one form once
+- cloning vanilla item and building recipes with `-planet` variants unless there is no cleaner administrative alternative
 
 Instead, prefer:
 
 - local substitute forms
 - local derivative-heavy shortcuts
-- alternate recipes that compress a planet-themed chain into fewer steps
+- a small number of new planet-native intermediates that feed the shared recipe graph
+- import-seeding plus black-ink copying when the player only needs a seed form rather than a new local bureaucracy
 
 ### 4. Machine identities must stay strict
 
@@ -109,6 +111,7 @@ That means:
 - local launch viability does not imply late-game self-sufficiency
 - some forms should remain natural exports
 - later faxing should solve transport friction without deleting planetary specialties
+- mall-scale and generic-factory-scale buildouts should still expose the costs of a planet's missing paperwork families
 
 ### 9. Faxing is reconstruction, not teleportation
 
@@ -123,8 +126,8 @@ Fulgora and Aquilo should make it easier to move administrative value between pl
 | Planet | Local Admin Advantage | Upgraded Building | Printer Identity | Export Identity | Status |
 | --- | --- | --- | --- | --- | --- |
 | Vulcanus | `lie` | `Notary Office` | cyan stock, blanks, industrial drafts | industrial and metallurgical certification | Implemented first pass |
-| Gleba | `dubious-data` | `Conciliation Desk` | yellow stock, calming/personnel blanks | biosafety, pacification, workforce paperwork | Planned |
-| Fulgora | `useless-documentation` | `Interplanetary Fax Exchange` | magenta stock, relay stock, reconstruction jobs | archive recovery, routing, fax throughput | Planned |
+| Gleba | `bullshit-ore` by way of `amber-sap`; easy `dubious-data` as a derivative | `Capture Bureau` + `Conciliation Desk` | yellow stock, short-lived exception paperwork, biological blanks | biosafety, pacification, hostile-intake, workforce paperwork | Planned |
+| Fulgora | `redundant-rubble` by way of salvage; easy `useless-documentation` as a derivative | `Interplanetary Fax Exchange` | magenta stock, relay stock, reconstruction jobs | archive recovery, routing, fax throughput | Planned |
 | Aquilo | none; mixed-planet transfer efficiency instead | `Laser Printer` | transfer-medium final printing and rapid reconstruction | high-speed mixed-planet paperwork | Planned |
 
 ## Implemented Vulcanus Principles
@@ -211,10 +214,13 @@ Gleba should inherit the shared rules, but with a biological identity rather tha
 
 Key design principles:
 
-- Gleba should be the easy-`dubious-data` planet
-- its shortcuts should come from biological manipulation, calming, and reassignment rather than from cash or policy
-- the yellow printer should make stock and base forms, while the `Conciliation Desk` handles the high-leverage living conversion work
-- if a normal form is copyable and only needs one seed, it should stay import-seeded instead of forcing Gleba to grow a dead-end executive tree
+- use Gleba's real vanilla strengths first: easy paper from greenhouse wood, easy coffee from greenhouse agriculture, and organic rocket ingredients where vanilla already provides them
+- add exactly one new raw resource, `amber-sap`, and make it the indirect source of cheap local nonsense rather than adding easy `lie` or easy `redundant-rubble`
+- make Gleba the easy-`bullshit-ore` planet and therefore an easy-`dubious-data` planet, but only through biological processing and yellow-paperwork shortcuts
+- keep the specialized surface rules on Gleba-only items, forms, buildings, and intermediates instead of cloning vanilla end-product recipes
+- split the planet reward into a hostile-intake building and a paperwork building: `Capture Bureau` for biter-facing intake, `Conciliation Desk` for yellow exception paperwork
+- make Gleba-special paperwork short-lived and organic: yellow stock and finalized yellow forms should spoil back into `paper`
+- keep escape viable, but do not make Gleba a full self-sufficient mall planet; ordinary factories should still lean on imports, seed forms, and black-ink copying
 
 The export identity should center on:
 
@@ -229,9 +235,12 @@ Fulgora should be the archive and routing planet.
 
 Key design principles:
 
-- Fulgora should be the easy-`useless-documentation` planet
-- its local shortcuts should come from salvage, routing, archive recovery, and template reconstruction
-- magenta work should stay focused on relay stock and transmission paperwork rather than replacing the whole copy ecosystem
+- make Fulgora the easy-`redundant-rubble` planet indirectly through salvage, archive teardown, and ruined-template recovery rather than through a direct paperwork ore patch
+- let `useless-documentation` become an easy derivative of that salvage economy, not the planet's only identity
+- keep magenta work focused on relay stock, transmission warrants, reconstruction shells, and priority routing rather than on a universal replacement for black-ink copying
+- keep faxing as destination-side reconstruction: paperwork value moves, but media, printers, buildings, fluids, and bulk cargo still obey logistics
+- avoid cloning vanilla end-product recipes; Fulgora should solve document logistics and filler bottlenecks, not become a second Nauvis production graph
+- keep first-planet escape viable, but make large generic buildouts still depend on shipped cargo, imported seed forms, and reconstruction capacity
 - the `Interplanetary Fax Exchange` should own queueing and routing, not generic assembling
 
 The export identity should center on:

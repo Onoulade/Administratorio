@@ -134,6 +134,14 @@ local ADMIN_STATION_PLACEABLE_BY = {
   {item = "admin-station", count = 1},
 }
 
+local ADMIN_STATION_NAMES = {
+  "admin-station",
+  "admin-station-north",
+  "admin-station-east",
+  "admin-station-west",
+  "capture-bureau",
+}
+
 -- Admin Station: storage-only biter interface (no crafting).
 -- The station is intentionally walk-through for players and biters. A dedicated footprint collision
 -- layer handles placement feedback against other structures without blocking units in the 5x5 center.
@@ -191,6 +199,18 @@ local function make_admin_station(name)
 end
 
 local admin_station = make_admin_station("admin-station")
+local admin_station_north = make_admin_station("admin-station-north")
+local admin_station_east = make_admin_station("admin-station-east")
+local admin_station_west = make_admin_station("admin-station-west")
+local capture_bureau = make_admin_station("capture-bureau")
+capture_bureau.icon = "__administratorio__/graphics/icons/admin-desk.png"
+capture_bureau.icon_size = 64
+capture_bureau.minable = {mining_time = 0.5, result = "capture-bureau"}
+capture_bureau.placeable_by = placeable_by_item("capture-bureau")
+capture_bureau.localised_name = {"entity-name.capture-bureau"}
+capture_bureau.localised_description = {"entity-description.capture-bureau"}
+capture_bureau.hidden_in_factoriopedia = nil
+capture_bureau.factoriopedia_alternative = nil
 
 local biter_station = table.deepcopy(data.raw["container"]["steel-chest"])
 biter_station.name = "biter-station"

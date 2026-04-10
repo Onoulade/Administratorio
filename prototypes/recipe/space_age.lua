@@ -302,6 +302,22 @@ data:extend({
   },
   surface_limited({
     type = "recipe",
+    name = "capture-bureau",
+    enabled = false,
+    localised_name = {"item-name.capture-bureau"},
+    localised_description = {"item-description.capture-bureau"},
+    ingredients = {
+      {type = "item", name = "admin-station", amount = 1},
+      {type = "item", name = "worker-biter", amount = 1},
+      {type = "item", name = "steel-plate", amount = 20},
+      {type = "item", name = "advanced-circuit", amount = 10},
+      {type = "item", name = "construction-work-order", amount = 1},
+    },
+    results = {{type = "item", name = "capture-bureau", amount = 1}},
+    energy_required = 16
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
     name = "conciliation-desk",
     enabled = false,
     ingredients = {
@@ -429,108 +445,6 @@ data:extend({
       {type = "item", name = "ink", amount = 3},
     },
     energy_required = 2,
-  }, "gleba"),
-  surface_limited({
-    type = "recipe",
-    name = "carbon-offset-certificate-basic-gleba",
-    category = "bureaucratic-bootstrap",
-    enabled = true,
-    localised_name = {"item-name.carbon-offset-certificate-basic"},
-    ingredients = {
-      {type = "fluid", name = "amber-sap", amount = 10},
-      {type = "item", name = "nutrients", amount = 1},
-    },
-    results = {
-      {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
-    },
-    energy_required = 2,
-  }, "gleba"),
-  surface_limited({
-    type = "recipe",
-    name = "admin-station-gleba",
-    enabled = false,
-    localised_name = {"item-name.admin-station"},
-    localised_description = {"item-description.admin-station"},
-    ingredients = {
-      {type = "item", name = "iron-plate", amount = 20},
-      {type = "item", name = "electronic-circuit", amount = 10},
-      {type = "item", name = "dubious-data", amount = 2},
-      {type = "item", name = "nutrients", amount = 2},
-    },
-    results = {
-      {type = "item", name = "admin-station", amount = 1},
-    },
-    energy_required = 15,
-  }, "gleba"),
-  surface_limited({
-    type = "recipe",
-    name = "printer-t1-gleba",
-    enabled = false,
-    localised_name = {"item-name.printer-t1"},
-    localised_description = {"item-description.printer-t1"},
-    ingredients = {
-      {type = "item", name = "iron-plate", amount = 10},
-      {type = "item", name = "iron-gear-wheel", amount = 5},
-      {type = "item", name = "electronic-circuit", amount = 3},
-      {type = "item", name = "dubious-data", amount = 1},
-    },
-    results = {
-      {type = "item", name = "printer-t1", amount = 1},
-    },
-    energy_required = 5,
-  }, "gleba"),
-  surface_limited({
-    type = "recipe",
-    name = "corporate-breakroom-gleba",
-    enabled = false,
-    localised_name = {"item-name.corporate-breakroom"},
-    localised_description = {"item-description.corporate-breakroom"},
-    ingredients = {
-      {type = "item", name = "iron-plate", amount = 16},
-      {type = "item", name = "wood", amount = 8},
-      {type = "item", name = "stone-brick", amount = 8},
-      {type = "item", name = "pipe", amount = 3},
-      {type = "item", name = "electronic-circuit", amount = 4},
-      {type = "item", name = "nutrients", amount = 2},
-    },
-    results = {
-      {type = "item", name = "corporate-breakroom", amount = 1},
-    },
-    energy_required = 10,
-  }, "gleba"),
-  surface_limited({
-    type = "recipe",
-    name = "administrative-science-pack-production-gleba",
-    category = "bureaucracy-registration",
-    enabled = false,
-    hide_from_player_crafting = false,
-    localised_name = {"recipe-name.administrative-science-pack-production"},
-    ingredients = {
-      {type = "item", name = "blank-form", amount = 2},
-      {type = "item", name = "basic-excuse", amount = 1},
-      {type = "item", name = "dubious-data", amount = 1},
-      {type = "item", name = "nutrients", amount = 2},
-    },
-    results = {
-      {type = "item", name = "administrative-science-pack", amount = 1},
-    },
-    energy_required = 5,
-  }, "gleba"),
-  surface_limited({
-    type = "recipe",
-    name = "useless-documentation-production-gleba",
-    category = "bureaucracy-registration",
-    enabled = false,
-    localised_name = {"item-name.useless-documentation"},
-    ingredients = {
-      {type = "item", name = "paper", amount = 3},
-      {type = "item", name = "dubious-data", amount = 1},
-      {type = "item", name = "nutrients", amount = 1},
-    },
-    results = {
-      {type = "item", name = "useless-documentation", amount = 2},
-    },
-    energy_required = 3,
   }, "gleba"),
   surface_limited({
     type = "recipe",
@@ -1095,45 +1009,6 @@ data:extend({
 })
 
 do
-  local gleba_clones = {
-    {source = "advanced-circuit", clone = "advanced-circuit-gleba", add = {{type = "item", name = "nutrients", amount = 2}}},
-    {source = "low-density-structure", clone = "low-density-structure-gleba", add = {{type = "item", name = "nutrients", amount = 5}}},
-    {source = "rocket-control-unit", clone = "rocket-control-unit-gleba", add = {
-      {type = "item", name = "symbiosis-record", amount = 1},
-      {type = "item", name = "nutrients", amount = 5},
-    }},
-    {source = "rocket-silo", clone = "rocket-silo-gleba", add = {
-      {type = "item", name = "symbiosis-record", amount = 2},
-      {type = "item", name = "conciliation-order", amount = 1},
-      {type = "item", name = "nutrients", amount = 20},
-    }},
-  }
-
-  local gleba_recipes = {}
-  for _, spec in ipairs(gleba_clones) do
-    local clone = clone_recipe(spec.source, spec.clone)
-    if clone then
-      for _, ingredient in ipairs(spec.add or {}) do
-        if ingredient.type == "fluid" then
-          table.insert(clone.ingredients, ingredient)
-        else
-          add_item_ingredient(clone, ingredient.name, ingredient.amount)
-        end
-      end
-      surface_limited(clone, "gleba")
-      table.insert(gleba_recipes, clone)
-    end
-  end
-
-  if #gleba_recipes > 0 then
-    data:extend(gleba_recipes)
-    for _, spec in ipairs(gleba_clones) do
-      if data.raw.recipe and data.raw.recipe[spec.clone] then
-        add_unlock_for_clone(spec.source, spec.clone)
-      end
-    end
-  end
-
   local offworld_clones = {
     {source = "foundry", clone = "foundry-offworld", ingredient = "offworld-metallurgy-charter", amount = 1},
     {source = "tungsten-plate", clone = "tungsten-plate-offworld", ingredient = "thermal-process-license", amount = 1},

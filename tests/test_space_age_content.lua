@@ -334,10 +334,11 @@ test("MMMM is converted into trajectory-compliance ammo and sink hardware", func
   assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "trajectory-compliance-array"), "workforce formation should unlock the compliance array")
 end)
 
-test("gleba conciliation unlocks the yellow chain and conciliation desk", function()
+test("gleba conciliation unlocks the yellow chain and gleba specialist buildings", function()
   local gleba = technologies["gleba-conciliation"]
   assert_true(gleba ~= nil, "gleba-conciliation missing")
   for _, recipe_name in ipairs({
+    "capture-bureau",
     "conciliation-desk",
     "yellow-ink-production",
     "mycelial-form-stock",
@@ -374,20 +375,21 @@ test("gleba adds targeted alternates instead of a duplicated paperwork ladder", 
     "printer-t1-gleba",
     "corporate-breakroom-gleba",
     "administrative-science-pack-production-gleba",
-    "advanced-circuit-gleba",
-    "low-density-structure-gleba",
-    "rocket-control-unit-gleba",
-    "rocket-silo-gleba",
+    "capture-bureau",
   }) do
     assert_true(recipes[recipe_name] ~= nil, recipe_name .. " missing")
   end
 
-  assert_true(has_ingredient(recipes["rocket-control-unit-gleba"], "symbiosis-record"), "rocket-control-unit-gleba should use symbiosis-record")
-  assert_true(has_ingredient(recipes["rocket-silo-gleba"], "conciliation-order"), "rocket-silo-gleba should use conciliation-order")
+  assert_true(has_ingredient(recipes["capture-bureau"], "worker-biter"), "capture-bureau should require worker-biter")
+  assert_true(has_ingredient(recipes["capture-bureau"], "construction-work-order"), "capture-bureau should require imported construction paperwork")
   assert_true(recipes["management-approval-written-gleba"] == nil, "management-approval-written-gleba should not exist")
   assert_true(recipes["management-approval-verbal-gleba"] == nil, "management-approval-verbal-gleba should not exist")
   assert_true(recipes["research-grant-approval-gleba"] == nil, "research-grant-approval-gleba should not exist")
   assert_true(recipes["form-27b-6-gleba"] == nil, "form-27b-6-gleba should not exist")
+  assert_true(recipes["advanced-circuit-gleba"] == nil, "advanced-circuit-gleba should not exist")
+  assert_true(recipes["low-density-structure-gleba"] == nil, "low-density-structure-gleba should not exist")
+  assert_true(recipes["rocket-control-unit-gleba"] == nil, "rocket-control-unit-gleba should not exist")
+  assert_true(recipes["rocket-silo-gleba"] == nil, "rocket-silo-gleba should not exist")
 end)
 
 test("gleba offworld bio variants require the operating waiver", function()

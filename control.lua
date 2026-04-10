@@ -26,7 +26,34 @@ local spawner_population = require("scripts.spawner_population")
 biter_station.set_biters_module(biters)
 biterport.set_biters_module(biters)
 
-local ADMIN_STATION_NAMES = "admin-station"
+local ADMIN_STATION_NAMES = {
+  "admin-station",
+  "admin-station-north",
+  "admin-station-east",
+  "admin-station-west",
+}
+local ADMIN_DESK_NAMES = {
+  "admin-station",
+  "admin-station-north",
+  "admin-station-east",
+  "admin-station-west",
+  "capture-bureau",
+}
+local LEGACY_ADMIN_STATION_ITEM_NAMES = {
+  "admin-station-north",
+  "admin-station-east",
+  "admin-station-west",
+}
+
+local ADMIN_DESK_NAME_SET = {}
+for _, name in ipairs(ADMIN_DESK_NAMES) do
+  ADMIN_DESK_NAME_SET[name] = true
+end
+
+local LEGACY_ADMIN_STATION_ITEM_SET = {}
+for _, name in ipairs(LEGACY_ADMIN_STATION_ITEM_NAMES) do
+  LEGACY_ADMIN_STATION_ITEM_SET[name] = true
+end
 
 local UNIT_GROUP_DEBUG_SCAN_INTERVAL = 180
 local UNIT_GROUP_GATHER_REDIRECT_TICKS = 300
@@ -37,16 +64,26 @@ local resolution_processing
 local enable_regulated_variants_for_technology = regulated_unlocks.enable_regulated_variants_for_technology
 local FIELD_OFFICE_DEPLOYMENT_TECH = "field-office-deployment"
 
+local function get_entity_name(entity_or_name)
+  if type(entity_or_name) == "string" then return entity_or_name end
+  if entity_or_name then return entity_or_name.name end
+  return nil
+end
+
+local function is_admin_desk(entity_or_name)
+  local name = get_entity_name(entity_or_name)
+  return name and ADMIN_DESK_NAME_SET[name] == true
+end
+
 local function is_admin_station(entity_or_name)
-  local name = type(entity_or_name) == "string" and entity_or_name or (entity_or_name and entity_or_name.name)
-  return name == ADMIN_STATION_NAMES
+  return is_admin_desk(entity_or_name)
 end
 
 local function normalize_admin_station_inventory(inventory)
   if not inventory then return end
   for i = 1, #inventory do
     local stack = inventory[i]
-    if stack and stack.valid_for_read and is_admin_station(stack.name) and stack.name ~= "admin-station" then
+    if stack and stack.valid_for_read and LEGACY_ADMIN_STATION_ITEM_SET[stack.name] == true then
       local count = stack.count
       local quality = stack.quality
       stack.set_stack{name = "admin-station", count = count, quality = quality and quality.name or nil}
@@ -65,7 +102,7 @@ local function normalize_player_admin_station_quickbar(player)
   if not player or not player.valid then return end
   for slot = 1, 100 do
     local filter = player.get_quick_bar_slot(slot)
-    if filter and filter.name and is_admin_station(filter.name) and filter.name ~= "admin-station" then
+    if filter and filter.name and LEGACY_ADMIN_STATION_ITEM_SET[filter.name] == true then
       player.set_quick_bar_slot(slot, {name = "admin-station", quality = filter.quality})
     end
   end
@@ -199,7 +236,7 @@ end
 
 local function normalize_admin_station_entity(desk, player)
   if not desk or not desk.valid then return nil end
-  if desk.name == "admin-station" then
+  if desk.name == "admin-station" or desk.name == "capture-bureau" then
     freeze_admin_station_rotation(desk)
     storage.admin_desks[desk.unit_number] = desk
     return desk
@@ -260,7 +297,7 @@ end
 local function rebuild_desk_cache()
   storage.admin_desks = {}
   for _, surface in pairs(game.surfaces) do
-    for _, desk in ipairs(surface.find_entities_filtered{name = ADMIN_STATION_NAMES}) do
+    for _, desk in ipairs(surface.find_entities_filtered{name = ADMIN_DESK_NAMES}) do
       if desk.valid then
         refresh_cached_desk(desk)
       end
@@ -655,7 +692,7 @@ local function on_configuration_changed(event)
     local old_corner_blockers = surface.find_entities_filtered{name = "admin-station-corner-blocker"}
     for _, blocker in ipairs(old_corner_blockers) do blocker.destroy() end
 
-    for _, desk in ipairs(surface.find_entities_filtered{name = ADMIN_STATION_NAMES}) do
+    for _, desk in ipairs(surface.find_entities_filtered{name = ADMIN_DESK_NAMES}) do
       desk = normalize_admin_station_entity(desk, nil) or desk
       local desk_id = desk.unit_number
       storage.desk_zones[desk_id] = {
@@ -918,7 +955,7 @@ local function on_entity_built_inner(event)
   end
 
   -- Handle Administration Station placement and zone logic
-  if is_admin_station(entity) then
+  if is_admin_desk(entity) then
     local player = event.player_index and game.get_player(event.player_index)
     entity = normalize_admin_station_entity(entity, player) or entity
     if not entity or not entity.valid then return end
@@ -1088,7 +1125,7 @@ local function on_entity_removed(event)
 
   trains.on_removed(entity)
 
-  if is_admin_station(entity) then
+  if is_admin_desk(entity) then
     local desk_id = entity.unit_number
     local surface = entity.surface
     storage.admin_desks[desk_id] = nil
@@ -1714,7 +1751,7 @@ local function on_entity_died(event)
     field_office.untrack_entity(entity)
   end
   biter_station.untrack_entity(entity, event.tick)
-  if is_admin_station(entity) then
+  if is_admin_desk(entity) then
     local desk_id = entity.unit_number
     local surface = entity.surface
     storage.admin_desks[desk_id] = nil
@@ -1742,6 +1779,10 @@ local ON_ENTITY_DIED_FILTERS = {
   {filter = "type", type = "mining-drill"},
   {filter = "type", type = "train-stop"},
   {filter = "name", name = "admin-station"},
+  {filter = "name", name = "admin-station-north"},
+  {filter = "name", name = "admin-station-east"},
+  {filter = "name", name = "admin-station-west"},
+  {filter = "name", name = "capture-bureau"},
   {filter = "name", name = "biter-station"},
   {filter = "name", name = "biterport"},
   {filter = "name", name = "rideable-biter"},
