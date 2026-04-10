@@ -332,6 +332,18 @@ data:extend({
   },
   {
     type = "item",
+    name = "capture-bureau",
+    icons = {
+      {icon = item_icons .. "admin-desk.png", icon_size = 64},
+      {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    },
+    subgroup = "admin-buildings",
+    order = "j",
+    place_result = "capture-bureau",
+    stack_size = 20
+  },
+  {
+    type = "item",
     name = "conciliation-desk",
     icon = "__administratorio__/graphics/icons/promise.png",
     icon_size = 64,
