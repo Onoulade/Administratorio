@@ -40,7 +40,7 @@ This file tracks the actual progression model implemented by the mod, not just t
 
 | Building | Category / role | Notes |
 | --- | --- | --- |
-| `office-desk` | `bureaucracy-registration` | Base forms, approvals, work-orders, science, excuses, bonds input chain |
+| `office-desk` | `bureaucracy-registration` | Base forms, approvals, work-orders, science, excuses, bonds input chain, verified certificates, environmental permits |
 | `resolution-office` | `bureaucracy-resolution`, `bureaucratic-bootstrap` | All complaint filing / case / final recipes plus legacy brief compatibility crafts; now also covers the shared bootstrap complaint filing entry points |
 | `mechanical-printer` | `printing` | Early printer, burner powered |
 | `printer-t1` | `printing`, `printing-workorder` | Midgame printer |
@@ -48,7 +48,7 @@ This file tracks the actual progression model implemented by the mod, not just t
 | `greenhouse` | `admin-greenhouse` | Renewable wood, coffee discovery, coffee cultivation |
 | `corporate-breakroom` | `watercooler-gossip` | Coffee, gossip, good excuses, verbal approvals |
 | `propaganda-distillery` | `propaganda-distillery` | Lie, misinformation, slush fund, justification chain |
-| `union-headquarters` | `union-negotiation`, `bureaucracy-policy` | Union approval, grants, verified certificates, narrative, written approvals, policy work, tax audits |
+| `union-headquarters` | `union-negotiation`, `bureaucracy-policy` | Union approval, grants, narrative, written approvals, policy work, tax audits |
 | `admin-station` | storage + complaint desk | Holds tickets, resolved items, and payouts |
 
 ## Assembler Form Tiers
@@ -99,8 +99,8 @@ This file tracks the actual progression model implemented by the mod, not just t
 
 | Tech | Main unlocks | Progression meaning |
 | --- | --- | --- |
-| `environmental-compliance` | breakroom, coffee refining, verbal approvals, treasury bonds, petrochemical permit, smog + hazmat resolution, eviction notices | First real funding, coffee economy, and process-industry permitting |
-| `health-and-safety` | union HQ, justification, narrative, written approvals, radiological work order, government grants | Opens late-form, centrifuge paperwork, and grant chain |
+| `environmental-compliance` | breakroom, coffee refining, verbal approvals, treasury bonds, verified certificates, environmental reports, petrochemical permit, smog + hazmat resolution, eviction notices | First real funding, coffee economy, steel/compliance paperwork, and process-industry permitting |
+| `health-and-safety` | union HQ, justification, narrative, written approvals, radiological work order, government grants | Opens late-form, executive paperwork, centrifuge paperwork, and grant chain |
 | `board-meetings` | written management proposal + heavy printer approval pass | Opens the executive committee layer inside Union HQ |
 | `eminent-domain-zoning` | white paper, policy, verified certificates, noise + loitering resolution, slush fund | High-bureaucracy policy tier |
 | `federal-regulation` | regulation | Formal law layer for the final complaint tier |
@@ -143,10 +143,16 @@ Frustration threshold is `600` seconds. Protesters disable a random player build
 
 1. `greenhouse-discovery` gives the first `coffee-bean` at 10% probability while returning some of the input `wood`.
 2. `coffee-plantation` bootstraps bean multiplication.
-3. `coffee-refining` turns `coffee-bean` + `water` into `liquid-coffee`.
+3. `coffee-refining` turns `coffee-bean` + `water` + `work-order` into `liquid-coffee`.
 4. `politician-fluid-refining` makes `lie`.
 5. `misinformation-production` + `credentials-production` + `data-production` build the admin-intelligence layer.
 6. `justification` -> `narrative` -> `white-paper` -> `policy` -> `regulation` is the late chain.
+
+## Machine-Category Notes
+
+- `assembling-machine-1` only crafts `crafting-regulated`.
+- `assembling-machine-2` and `assembling-machine-3` only keep regulated categories as well, but fluid-capable vanilla recipes are reassigned onto `advanced-crafting-regulated` so they remain machine-usable.
+- Above red science, the original vanilla recipe is repurposed onto a regulated category instead of leaving a handcraft-only fallback.
 
 ## Important Structural Bottlenecks
 
