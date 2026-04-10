@@ -51,7 +51,7 @@ Implemented first pass:
 
 Still missing:
 
-- Actual solver / planner verification for the new CMY gating and worker requirements
+- Planner-mod / gameplay follow-up beyond the current dump-based escape verification
 - Any extra Fulgora bootstrap recipes that the solver proves necessary
 - Actual fax-network mechanics beyond the first Aquilo prototype layer
 - Cross-cutting audits
@@ -80,13 +80,18 @@ Status: done.
 
 ### Step 1.4: Verify solver still reaches targets
 
-Run the planner / solver for:
+Status: dump-based first pass run with `tests/test_planet_escape.py`.
 
-- Vulcanus escape after cyan gating and worker requirements
-- Gleba escape after yellow gating, spoilage, and bootstrap additions
-- Fulgora escape after magenta gating and the first-pass bureau chain
+Current findings:
 
-Record any loops or dead ends before expanding past the current Aquilo first pass.
+- Vulcanus escape looks locally clear for the tested rocket targets
+- Gleba, Fulgora, and Aquilo did not show hard deadlocks for the tested targets, but they remain import-heavy in the current local-only analyzer
+- Aquilo's new fax-network layer shows up as imports under that analyzer because the tech and resource model is intentionally stricter than real interplanetary progression
+
+Remaining follow-up:
+
+- run a planner-mod or gameplay validation pass instead of treating the dump-based analyzer as the final word
+- only add more bootstrap shortcuts if that broader verification proves they are necessary
 
 ---
 
@@ -98,7 +103,11 @@ Status: done.
 
 ### Step 2.2: Verify solver still works
 
-Still pending. This should be rolled into Phase 1.4's broader solver verification pass.
+Status: first-pass checked through Phase 1.4's dump-based verification. No hard Vulcanus deadlock was found for the tested rocket targets.
+
+Remaining follow-up:
+
+- confirm in planner-mod / gameplay validation, not just the dump-based analyzer
 
 ---
 
@@ -144,7 +153,12 @@ Status: done by current admin-recipe handling and native Space Age operating-pap
 
 ### Step 3.6: Verify solver for Gleba escape path
 
-Still pending. Run the actual planner and only add more Gleba-local shortcuts if the solver proves they are necessary.
+Status: first-pass checked with the dump-based analyzer. Gleba's tested rocket targets still lean on imports, but no hard deadlock was found.
+
+Remaining follow-up:
+
+- run a broader planner-mod / gameplay pass
+- only add more Gleba-local shortcuts if that broader pass proves they are necessary
 
 ---
 
@@ -231,7 +245,12 @@ Follow-up:
 
 ### Step 4.6: Verify solver for Fulgora escape path
 
-Still pending. Run now against the updated salvage-plus-magenta first pass.
+Status: first-pass checked with the dump-based analyzer. Fulgora's tested targets remain import-heavy, but no hard deadlock was found against the salvage-plus-magenta pass.
+
+Remaining follow-up:
+
+- confirm with planner-mod / gameplay validation
+- only add more Fulgora bootstrap shortcuts if that broader pass proves they are necessary
 
 ---
 
@@ -328,7 +347,17 @@ Still pending. The first pass only adds the buildings, category scaffolding, and
 
 ### Step 5.8: Verify all planet escape paths still work
 
-Still pending. Run after the new Aquilo multicolor replacement has been solver-checked together with the earlier CMY gating.
+Status: first-pass checked with the dump-based analyzer after the Aquilo multicolor replacement landed.
+
+Current findings:
+
+- Vulcanus was locally clear for the tested rocket targets
+- Gleba, Fulgora, and Aquilo remained import-heavy in the current analyzer, but none of the tested targets produced a hard deadlock
+- Aquilo's new multicolor paperwork, printer, and fax exchange layer currently reads as imported in the strict local-only model, which is acceptable for this first pass
+
+Remaining follow-up:
+
+- run planner-mod / gameplay verification before treating the new multicolor paperwork balance as settled
 
 ---
 
