@@ -76,10 +76,12 @@ end)
 
 test("space age admin buildings stay out of vanilla recipe regulation", function()
   assert_true(shared.is_admin_recipe("chromatic-printer"), "chromatic-printer should be treated as an admin recipe")
+  assert_true(shared.is_admin_recipe("laser-printer"), "laser-printer should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("formation-center"), "formation-center should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("trajectory-compliance-array"), "trajectory-compliance-array should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("capture-bureau"), "capture-bureau should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("digital-services-bureau"), "digital-services-bureau should be treated as an admin recipe")
+  assert_true(shared.is_admin_recipe("interplanetary-fax-exchange"), "interplanetary-fax-exchange should be treated as an admin recipe")
 end)
 
 if failed > 0 then

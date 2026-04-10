@@ -234,12 +234,14 @@ shared.ADMIN_BUILDINGS = {
 
 if space_age_enabled then
   shared.ADMIN_BUILDINGS["chromatic-printer"] = true
+  shared.ADMIN_BUILDINGS["laser-printer"] = true
   shared.ADMIN_BUILDINGS["formation-center"] = true
   shared.ADMIN_BUILDINGS["trajectory-compliance-array"] = true
   shared.ADMIN_BUILDINGS["notary-office"] = true
   shared.ADMIN_BUILDINGS["capture-bureau"] = true
   shared.ADMIN_BUILDINGS["conciliation-desk"] = true
   shared.ADMIN_BUILDINGS["digital-services-bureau"] = true
+  shared.ADMIN_BUILDINGS["interplanetary-fax-exchange"] = true
 end
 
 -------------------------------------------------------------------------------
@@ -282,6 +284,10 @@ if space_age_enabled then
   shared.PAPERWORK_ITEMS["digital-processing-certificate"] = true
   shared.PAPERWORK_ITEMS["electromagnetic-operating-license"] = true
   shared.PAPERWORK_ITEMS["data-recovery-order"] = true
+  shared.PAPERWORK_ITEMS["composite-form"] = true
+  shared.PAPERWORK_ITEMS["trichromatic-permit"] = true
+  shared.PAPERWORK_ITEMS["unified-operations-charter"] = true
+  shared.PAPERWORK_ITEMS["cryogenic-operations-license"] = true
 
   shared.FORM_PRODUCTION_RECIPES["heatproof-form-stock"] = "heatproof-form-stock"
   shared.FORM_PRODUCTION_RECIPES["blank-cyan-form"] = "blank-cyan-form-production"
@@ -303,6 +309,10 @@ if space_age_enabled then
   shared.FORM_PRODUCTION_RECIPES["digital-processing-certificate"] = "digital-processing-certificate"
   shared.FORM_PRODUCTION_RECIPES["electromagnetic-operating-license"] = "electromagnetic-operating-license"
   shared.FORM_PRODUCTION_RECIPES["data-recovery-order"] = "data-recovery-order"
+  shared.FORM_PRODUCTION_RECIPES["composite-form"] = "composite-form-cyan-yellow-production"
+  shared.FORM_PRODUCTION_RECIPES["trichromatic-permit"] = "trichromatic-permit-production"
+  shared.FORM_PRODUCTION_RECIPES["unified-operations-charter"] = "unified-operations-charter-production"
+  shared.FORM_PRODUCTION_RECIPES["cryogenic-operations-license"] = "cryogenic-operations-license-production"
 end
 
 -------------------------------------------------------------------------------

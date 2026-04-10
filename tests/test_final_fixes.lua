@@ -550,6 +550,20 @@ recipes["electromagnetic-plant"] = {
   },
 }
 
+recipes["dual-planet-widget"] = {
+  type = "recipe",
+  name = "dual-planet-widget",
+  category = "advanced-crafting",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "tungsten-plate", amount = 2 },
+    { type = "item", name = "carbon-fiber", amount = 2 },
+  },
+  results = {
+    { type = "item", name = "dual-planet-widget", amount = 1 },
+  },
+}
+
 recipes["quantum-processor"] = {
   type = "recipe",
   name = "quantum-processor",
@@ -562,6 +576,75 @@ recipes["quantum-processor"] = {
   },
   results = {
     { type = "item", name = "quantum-processor", amount = 1 },
+  },
+}
+
+recipes["lithium"] = {
+  type = "recipe",
+  name = "lithium",
+  category = "cryogenics",
+  enabled = false,
+  ingredients = {
+    { type = "fluid", name = "lithium-brine", amount = 50 },
+    { type = "fluid", name = "ammonia", amount = 50 },
+  },
+  results = {
+    { type = "item", name = "lithium", amount = 5 },
+  },
+}
+
+recipes["lithium-plate"] = {
+  type = "recipe",
+  name = "lithium-plate",
+  category = "smelting",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "lithium", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "lithium-plate", amount = 1 },
+  },
+}
+
+recipes["fluoroketone"] = {
+  type = "recipe",
+  name = "fluoroketone",
+  category = "cryogenics",
+  enabled = false,
+  ingredients = {
+    { type = "fluid", name = "ammonia", amount = 50 },
+    { type = "fluid", name = "fluorine", amount = 10 },
+    { type = "item", name = "lithium", amount = 1 },
+  },
+  results = {
+    { type = "fluid", name = "fluoroketone-hot", amount = 50 },
+  },
+}
+
+recipes["fluoroketone-cooling"] = {
+  type = "recipe",
+  name = "fluoroketone-cooling",
+  category = "cryogenics",
+  enabled = false,
+  ingredients = {
+    { type = "fluid", name = "fluoroketone-hot", amount = 10 },
+  },
+  results = {
+    { type = "fluid", name = "fluoroketone-cold", amount = 10 },
+  },
+}
+
+recipes["cryogenic-plant"] = {
+  type = "recipe",
+  name = "cryogenic-plant",
+  category = "cryogenics-or-assembling",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "lithium-plate", amount = 20 },
+    { type = "item", name = "superconductor", amount = 20 },
+  },
+  results = {
+    { type = "item", name = "cryogenic-plant", amount = 1 },
   },
 }
 
@@ -1447,20 +1530,47 @@ test("admin building regulated recipes batch and show overlays", function()
     "tube-intake-regulated should show the 10x overlay")
 end)
 
-test("space age intermediate recipes gain the expected chromatic gates", function()
+test("space age intermediate recipes gain the expected chromatic and aquilo gates", function()
   local electromagnetic = get_recipe("electromagnetic-plant")
   assert_true(electromagnetic ~= nil, "electromagnetic-plant missing")
   assert_true(has_ingredient(electromagnetic, "blank-magenta-form"),
     "electromagnetic-plant should gain blank-magenta-form for holmium use")
 
+  local dual = get_recipe("dual-planet-widget")
+  assert_true(dual ~= nil, "dual-planet-widget missing")
+  assert_true(has_ingredient(dual, "composite-form"),
+    "dual-planet-widget should collapse dual-planet paperwork into composite-form")
+  assert_true(not has_ingredient(dual, "blank-cyan-form"),
+    "dual-planet-widget should not keep separate blank-cyan-form once composite-form is available")
+  assert_true(not has_ingredient(dual, "blank-yellow-form"),
+    "dual-planet-widget should not keep separate blank-yellow-form once composite-form is available")
+
   local quantum = get_recipe("quantum-processor")
   assert_true(quantum ~= nil, "quantum-processor missing")
-  assert_true(has_ingredient(quantum, "blank-cyan-form"),
-    "quantum-processor should gain blank-cyan-form for tungsten use")
-  assert_true(has_ingredient(quantum, "blank-yellow-form"),
-    "quantum-processor should gain blank-yellow-form for carbon fiber use")
-  assert_true(has_ingredient(quantum, "blank-magenta-form"),
-    "quantum-processor should gain blank-magenta-form for holmium use")
+  assert_true(has_ingredient(quantum, "unified-operations-charter"),
+    "quantum-processor should gain unified-operations-charter as the top-tier multicolor gate")
+  assert_true(not has_ingredient(quantum, "blank-cyan-form"),
+    "quantum-processor should not keep separate blank-cyan-form once unified multicolor paperwork is used")
+  assert_true(not has_ingredient(quantum, "blank-yellow-form"),
+    "quantum-processor should not keep separate blank-yellow-form once unified multicolor paperwork is used")
+  assert_true(not has_ingredient(quantum, "blank-magenta-form"),
+    "quantum-processor should not keep separate blank-magenta-form once unified multicolor paperwork is used")
+
+  local lithium = get_recipe("lithium")
+  assert_true(has_ingredient(lithium, "composite-form"),
+    "lithium should require composite-form as the first Aquilo convergence gate")
+  local lithium_plate = get_recipe("lithium-plate")
+  assert_true(has_ingredient(lithium_plate, "composite-form"),
+    "lithium-plate should require composite-form")
+  local fluoroketone = get_recipe("fluoroketone")
+  assert_true(has_ingredient(fluoroketone, "cryogenic-operations-license"),
+    "fluoroketone should require cryogenic-operations-license")
+  local cooling = get_recipe("fluoroketone-cooling")
+  assert_true(has_ingredient(cooling, "cryogenic-operations-license"),
+    "fluoroketone-cooling should require cryogenic-operations-license")
+  local cryogenic = get_recipe("cryogenic-plant")
+  assert_true(has_ingredient(cryogenic, "cryogenic-operations-license"),
+    "cryogenic-plant should require cryogenic-operations-license")
 end)
 
 -------------------------------------------------------------------------------

@@ -191,6 +191,41 @@ data:extend({
   },
   {
     type = "item",
+    name = "transfer-emulsion",
+    icons = {
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, tint = {r = 0.72, g = 0.9, b = 1, a = 1}},
+      {icon = item_icons .. "data.png", icon_size = 64, scale = 0.3, shift = {8, 8}, tint = {r = 0.82, g = 0.95, b = 1, a = 1}},
+    },
+    subgroup = "admin-paper-supplies",
+    order = "c1",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "thermal-transfer-sheet",
+    icons = {
+      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.88, g = 0.95, b = 1, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.3, shift = {8, 8}, tint = {r = 0.72, g = 0.9, b = 1, a = 1}},
+    },
+    subgroup = "admin-paper-supplies",
+    order = "c2",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "composite-chroma-ribbon",
+    icons = {
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, tint = {r = 0.92, g = 0.92, b = 0.98, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.25, shift = {-8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.25, shift = {0, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.25, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
+    },
+    subgroup = "admin-paper-supplies",
+    order = "c3",
+    stack_size = 100
+  },
+  {
+    type = "item",
     name = "heatproof-form-stock",
     icons = {
       {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.75, g = 0.95, b = 0.95, a = 1}},
@@ -254,6 +289,18 @@ data:extend({
     },
     subgroup = "forms-printed",
     order = "ddf",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "composite-form",
+    icons = {
+      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.9, g = 0.94, b = 0.98, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {-8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {8, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
+    },
+    subgroup = "forms-printed",
+    order = "ddg",
     stack_size = 100
   },
   {
@@ -363,6 +410,43 @@ data:extend({
   },
   {
     type = "item",
+    name = "trichromatic-permit",
+    icons = {
+      {icon = item_icons .. "construction-permit.png", icon_size = 64},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {-10, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {0, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {10, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
+    },
+    subgroup = "forms-permits",
+    order = "die",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "unified-operations-charter",
+    icons = {
+      {icon = item_icons .. "management-approval-written.png", icon_size = 64},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {-10, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {0, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {10, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
+    },
+    subgroup = "forms-permits",
+    order = "dif",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "cryogenic-operations-license",
+    icons = {
+      {icon = item_icons .. "construction-permit.png", icon_size = 64, tint = {r = 0.88, g = 0.96, b = 1, a = 1}},
+      {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.3, shift = {8, 8}, tint = {r = 0.72, g = 0.9, b = 1, a = 1}},
+    },
+    subgroup = "forms-permits",
+    order = "dig",
+    stack_size = 100
+  },
+  {
+    type = "item",
     name = "embossed-seal",
     icons = {
       {icon = item_icons .. "blank-approval.png", icon_size = 64},
@@ -448,6 +532,30 @@ data:extend({
     subgroup = "admin-buildings",
     order = "l",
     place_result = "digital-services-bureau",
+    stack_size = 20
+  },
+  {
+    type = "item",
+    name = "laser-printer",
+    icons = {
+      {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, tint = {r = 0.86, g = 0.95, b = 1, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.3, shift = {8, 8}, tint = {r = 0.72, g = 0.9, b = 1, a = 1}},
+    },
+    subgroup = "admin-buildings",
+    order = "m",
+    place_result = "laser-printer",
+    stack_size = 20
+  },
+  {
+    type = "item",
+    name = "interplanetary-fax-exchange",
+    icons = {
+      {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.88, g = 0.96, b = 1, a = 1}},
+      {icon = item_icons .. "data.png", icon_size = 64, scale = 0.3, shift = {8, 8}, tint = {r = 0.72, g = 0.9, b = 1, a = 1}},
+    },
+    subgroup = "admin-buildings",
+    order = "n",
+    place_result = "interplanetary-fax-exchange",
     stack_size = 20
   },
   {
