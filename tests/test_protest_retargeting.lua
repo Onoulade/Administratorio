@@ -218,6 +218,8 @@ local function new_test_context()
     issue_desk_route_command = function() end,
     get_cached_desks = function() return {} end,
     normalize_case_progress = function() end,
+    biter_force_name = "neutral",
+    get_biter_force = function() return game.forces["neutral"] end,
     format_position = function(pos)
       if not pos then return "[nil]" end
       return "[" .. tostring(pos.x) .. "," .. tostring(pos.y) .. "]"
@@ -359,6 +361,90 @@ test("invalid protest targets are cleared during processing so the biter can rec
 
   assert_true(ctx.get_pending_request_id() ~= nil, "processing should re-request a protest target when the current one is invalid")
   assert_true(info.target_building == nil, "processing should clear the invalid protest target before rerouting")
+end)
+
+test("stale cached protest targets are filtered before selecting a new target", function()
+  local ctx = new_test_context()
+  local stale_target = new_target(ctx.surface, 95, 10, 10)
+  local fallback_target = new_target(ctx.surface, 96, 24, 24)
+  ctx.set_protest_targets({stale_target, fallback_target})
+
+  local first_entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 1, y = 1},
+    force = "neutral",
+  }
+  first_entity.unit_number = 10
+
+  local first_info = {
+    state = "waiting",
+    entity = first_entity,
+    entity_name = first_entity.name,
+    tracked_unit_number = 10,
+    desk_id = 1,
+    frustration = 600,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[10] = first_info
+  storage.waiting_biter_state_index.waiting[10] = true
+
+  ctx.controller.process_frustration_and_protests(ctx.surface)
+
+  stale_target.valid = false
+  ctx.set_protest_targets({fallback_target})
+
+  local second_entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 2, y = 2},
+    force = "neutral",
+  }
+  second_entity.unit_number = 11
+
+  local second_info = {
+    state = "waiting",
+    entity = second_entity,
+    entity_name = second_entity.name,
+    tracked_unit_number = 11,
+    desk_id = 1,
+    frustration = 600,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[11] = second_info
+  storage.waiting_biter_state_index.waiting[11] = true
+
+  ctx.controller.process_frustration_and_protests(ctx.surface)
+
+  local request_id = ctx.get_pending_request_id()
+  assert_true(request_id ~= nil, "rerouting with a stale cached target should still request a path")
+
+  ctx.controller.on_script_path_request_finished{
+    id = request_id,
+    path = {{x = 18, y = 18}},
+  }
+
+  assert_true(second_info.target_building == fallback_target, "stale cached protest targets should be ignored during reassignment")
+end)
+
+test("removing a protested building ends the protest when no live biter remains", function()
+  local ctx = new_test_context()
+  local old_target = new_target(ctx.surface, 97, 9, 9)
+
+  local info = {
+    state = "protesting",
+    entity = nil,
+    entity_name = "small-biter",
+    tracked_unit_number = 12,
+    target_building = old_target,
+    arrived_at_building = true,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[12] = info
+  storage.waiting_biter_state_index.protesting[12] = true
+
+  ctx.controller.on_protest_target_removed(old_target)
+
+  assert_true(storage.waiting_biters[12] == nil, "missing protesters should be untracked when their protest target is removed")
+  assert_true(storage.waiting_biter_state_index.protesting[12] == nil, "missing protesters should leave the protesting index when their target disappears")
 end)
 
 print(string.format("\n=== PROTEST RETARGETING TESTS ==="))

@@ -395,6 +395,20 @@ local function set_biter_ceasefire()
   if enemy and player then
     enemy.set_cease_fire(player, true)
   end
+
+  local biter_force = game.forces["administratorio-biters"]
+  if not biter_force then
+    biter_force = game.create_force("administratorio-biters")
+  end
+  biter_force.set_cease_fire(player, true)
+  player.set_cease_fire(biter_force, true)
+  biter_force.set_cease_fire(enemy, true)
+  enemy.set_cease_fire(biter_force, true)
+  local neutral = game.forces["neutral"]
+  if neutral then
+    biter_force.set_cease_fire(neutral, true)
+    neutral.set_cease_fire(biter_force, true)
+  end
 end
 
 local function format_percent_text(value)
