@@ -8,9 +8,10 @@
 --   4. Machine-family operating paperwork for hazardous process recipes
 --   5. Deterministic recipe regulation
 --   6. Handcrafting visibility
---   7. Pneumatic form transport recipe generation
---   8. Admin station collision footprint layering
---   9. Taxpayer money fuel compatibility
+--   7. Colored ink gating for planet intermediates
+--   8. Pneumatic form transport recipe generation
+--   9. Admin station collision footprint layering
+--   10. Taxpayer money fuel compatibility
 --
 -- The regulation system:
 --   Red science or below (handcraftable):
@@ -1400,8 +1401,43 @@ for _, recipe in pairs(data.raw["recipe"] or {}) do
   end
 end
 
+-- 7. COLORED INK GATING FOR PLANET INTERMEDIATES
+-- Any recipe that consumes a Space Age planet-specific intermediate must also
+-- consume the corresponding colored ink form. This makes planet ink production
+-- essential for late-game manufacturing everywhere.
+-- One form per batch (not multiplied), added after regulation.
 -------------------------------------------------------------------------------
--- 7. PNEUMATIC TUBE TRANSPORT
+local PLANET_INTERMEDIATE_GATING = {
+  ["tungsten-plate"] = "blank-cyan-form",
+  ["tungsten-carbide"] = "blank-cyan-form",
+  ["carbon-fiber"] = "blank-yellow-form",
+  -- holmium-plate gating will be added when magenta forms are implemented
+}
+
+for recipe_name, recipe in pairs(data.raw["recipe"]) do
+  if shared.is_admin_recipe(recipe_name) then goto next_gating end
+
+  local target = recipe.normal or recipe
+  if not target or not target.ingredients then goto next_gating end
+
+  local required_forms = {}
+  for _, ing in ipairs(target.ingredients) do
+    local name = ing.name or ing[1]
+    local form = PLANET_INTERMEDIATE_GATING[name]
+    if form and not required_forms[form] then
+      required_forms[form] = true
+    end
+  end
+
+  for form_name, _ in pairs(required_forms) do
+    add_special_paperwork(recipe_name, form_name, 1)
+  end
+
+  ::next_gating::
+end
+
+-------------------------------------------------------------------------------
+-- 8. PNEUMATIC TUBE TRANSPORT
 -- Fluid/recipe generation removed — the tube system now uses a script-managed
 -- signal chain.  The pneumatic items list lives in shared.PNEUMATIC_ITEMS.
 -------------------------------------------------------------------------------
@@ -1419,8 +1455,9 @@ for item_name in pairs(shared.PNEUMATIC_ITEMS) do
   end
 end
 
+
 -------------------------------------------------------------------------------
--- 8. ADMIN STATION COLLISION FOOTPRINT
+-- 9. ADMIN STATION COLLISION FOOTPRINT
 -------------------------------------------------------------------------------
 
 local function collision_box_is_zero(box)

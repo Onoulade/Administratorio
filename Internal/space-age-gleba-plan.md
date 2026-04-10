@@ -116,6 +116,20 @@ Gleba's special forms should be good at:
 
 They should not become universal better versions of generic management paperwork.
 
+### 9. Yellow forms gate carbon fiber usage everywhere
+
+Any recipe that consumes carbon fiber must also consume a yellow form as an ingredient. This is the primary mechanism making Gleba's ink production essential even on Nauvis and other planets.
+
+On Gleba, yellow forms are cheap and locally produced (but perishable). Off-world, they must be shipped, creating natural export pressure — and their spoilage means the player must manage logistics carefully.
+
+### 10. Buildings require workers but no operating paperwork
+
+Both `Capture Bureau` and `Conciliation Desk` require a `conciliation-officer` worker to craft but no operating paperwork. The worker must be trained on Nauvis and shipped to Gleba.
+
+### 11. Tax evasion applies — no taxpayer money
+
+Gleba recipes should not require `taxpayer-money`. The planet operates outside the Nauvis tax authority's reach. Local paperwork uses biological resources and yellow ink instead of cash.
+
 ## Planned Paperwork Family
 
 The family should stay compact and purposeful.
@@ -170,6 +184,13 @@ This makes Gleba the natural home for biological exception handling and satirica
 - Do not fork ordinary vanilla outputs into a Gleba clone ladder.
 - Use import-seeding for copyable dead-end forms instead of bloating the local tree.
 - Preserve the sense that Gleba handles living problems unusually well, rather than handling every paperwork problem well.
+
+## Building Requirements
+
+- `Capture Bureau`: requires 1x `conciliation-officer` worker to craft, no operating paperwork
+- `Conciliation Desk`: requires 1x `conciliation-officer` worker to craft, no operating paperwork
+- Both buildings should include biological/organic components in their crafting recipes
+- Surface-limited crafting to Gleba only
 
 ## Open Questions
 

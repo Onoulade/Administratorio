@@ -4,16 +4,17 @@ This file records the planned Aquilo principles under the shared rules in [space
 
 ## Planet Role
 
-Aquilo is the transfer-media and high-speed reconstruction planet.
+Aquilo is the interplanetary convergence and multicolor paperwork planet.
 
 Its themes are:
 
-- cryogenic handling
-- transfer printing instead of wet local ink use
-- extremely fast paperwork reconstruction
-- mixed-planet documents becoming efficient enough to use routinely
+- cryogenic handling and transfer media
+- liquid ink freezes here — only solid transfer printing works
+- the Interplanetary Fax Exchange as the capstone of cross-planet logistics
+- multicolor composite forms that combine the work of multiple planets
+- late-game paperwork unification rather than early bootstrap
 
-Its global reward is the `Laser Printer`.
+Its global rewards are the `Laser Printer` and the `Interplanetary Fax Exchange`.
 
 ## Planned Design Principles
 
@@ -24,98 +25,186 @@ Aquilo can assume earlier planetary progress.
 That means its plan is allowed to assume:
 
 - access to the chromatic printer family already exists somewhere
-- CMY paperwork and forms can be imported or faxed in
-- mixed-planet documents are now a normal part of progression
+- CMY paperwork and forms can be imported
+- multiple planet intermediates are already in the player's logistics network
 
-Aquilo should therefore solve late throughput and reconstruction, not early bootstrap.
+Aquilo should therefore solve late convergence, multicolor unification, and fax logistics — not early bootstrap.
 
-### 2. Aquilo should not add a fourth ink
+### 2. Liquid ink freezes on Aquilo
+
+The Chromatic Printer uses liquid ink and cannot operate on Aquilo. The cryogenic conditions freeze all liquid inks (cyan, yellow, magenta, black).
+
+This means:
+
+- no Chromatic Printer on Aquilo
+- no local ink production
+- all colored forms must be imported from other planets
+- the Laser Printer is the only printer, using solid transfer media instead of liquid ink
+
+This constraint is the defining characteristic of Aquilo's paperwork identity: it consumes what others produce rather than competing with them.
+
+### 3. Aquilo should not add a fourth ink
 
 The Aquilo identity is not a new color. It is:
 
-- transfer media
+- transfer media (solid, toner-based)
 - cryogenic stability
 - premium reprint speed
-- better use of already-existing CMY paperwork
+- convergence of already-existing CMY paperwork into composite documents
 
 This keeps the color model readable and reinforces the earlier planets rather than replacing them.
 
-### 3. The `Laser Printer` should own the fast final print layer
-
-Aquilo should continue the strict machine-split rule.
+### 4. The Laser Printer owns fast final printing and multicolor work
 
 The `Laser Printer` should be the best machine for:
 
 - explicit final print steps
-- reprints
-- rapid copy throughput
+- multicolor composite form production
+- rapid copy and reconstruction throughput
 - fax reconstruction throughput
 
 It should not become the best machine for:
 
-- dense certification work
-- grants and bonds
-- personnel or management office logic
-- anything fundamentally belonging to the `Notary Office` or future equivalent offices
+- dense certification work (that's the Notary Office)
+- biological exception handling (that's the Conciliation Desk)
+- general admin processing (that's the Digital Services Bureau)
+- anything fundamentally belonging to another planet's office
 
-### 4. Aquilo should make faxing materially better, not merely possible
+The Laser Printer uses solid transfer media: `transfer-emulsion`, `thermal-transfer-sheet`, and `composite-chroma-ribbon` instead of liquid ink.
 
-Before Aquilo, faxing should mainly solve urgency.
+### 5. The Interplanetary Fax Exchange is Aquilo's administrative building
 
-After Aquilo, faxing should become attractive because:
+The `Interplanetary Fax Exchange` owns:
 
-- reconstruction is fast
-- local transfer media is efficient
-- mixed-planet forms are increasingly common in late recipes
+- queuing and routing of cross-planet document transfers
+- fax reconstruction jobs (consuming local transfer media)
+- destination management and priority handling
+- coordination of paperwork flows between planets
 
-This is where the network should start feeling central instead of optional.
+It requires a `cryoprint-technician` worker to craft and no operating paperwork.
 
-### 5. Aquilo should consume imported bureaucracy, not replace it
+The fax network unlocking on Aquilo (not earlier) means:
+
+- before Aquilo, players must physically ship all paperwork between planets
+- this keeps the early game focused on local planet identity and real logistics
+- Aquilo becomes the reward for reaching the final planet: your bureaucracy goes interplanetary
+- faxing solves transport friction without deleting the value of each planet's specialization
+
+### 6. Aquilo science unlocks multicolor form recipes
+
+Aquilo research technologies unlock recipes for multicolor composite forms. These forms:
+
+- are produced in the Laser Printer using solid transfer media
+- require imported colored forms or transfer media derived from 2-3 other planets
+- gate late-game recipes that consume intermediates from multiple planets
+- represent the bureaucratic convergence of all planetary administrations into unified documents
+
+Planned multicolor form family:
+
+- `composite-form`: basic multicolor form combining two planet inks — gates recipes using intermediates from two different planets
+- `trichromatic-permit`: advanced three-color form combining all three planet inks — gates the most advanced multi-planet recipes
+- `unified-operations-charter`: top-tier composite authorization for late-game production chains
+- `cryogenic-operations-license`: Aquilo-specific operations permit using transfer media
+
+The multicolor forms answer a real gameplay question: "I have a recipe that uses both tungsten and carbon fiber — do I need both a cyan form AND a yellow form?" Answer: on Aquilo, you can produce a single composite form that covers both, using the Laser Printer and imported materials.
+
+### 7. Aquilo should consume imported bureaucracy, not replace it
 
 Aquilo should intensify the value of the earlier planets:
 
-- import or fax in Vulcanus industrial paperwork
-- import or fax in Gleba biosafety or personnel paperwork
-- import or fax in Fulgora relay paperwork
-- turn them into high-speed local throughput
+- import Vulcanus cyan forms and industrial paperwork
+- import Gleba yellow forms and biosafety paperwork
+- import Fulgora magenta forms and digital certificates
+- combine them into multicolor composites and high-speed reconstructions
 
-That makes Aquilo a capstone for the interplanetary paperwork economy instead of an independent replacement for it.
+That makes Aquilo a capstone for the interplanetary paperwork economy instead of an independent replacement for it. Every planet's paperwork becomes more valuable because Aquilo can combine them.
+
+### 8. Faxing should make logistics better, not trivial
+
+Before Aquilo, paperwork must be physically shipped.
+
+After Aquilo, faxing should become attractive because:
+
+- reconstruction is fast (Laser Printer speed)
+- local transfer media is efficient
+- the Fax Exchange handles routing and prioritization
+- multicolor forms are increasingly common in late recipes
+
+But faxing should not replace all shipping:
+
+- buildings still need physical shipping
+- fluids still need physical shipping
+- bulk cargo still needs physical shipping
+- faxing reconstructs form value by consuming destination-side transfer media
+
+### 9. Tax evasion applies — no taxpayer money
+
+Aquilo recipes should not require `taxpayer-money`. Like all off-world planets, operations are outside the Nauvis tax authority's reach.
 
 ## Planned Paperwork Family
 
-The exact recipe graph remains open, but the late-game family should stay focused on transfer media and mixed-planet finalization.
+### Transfer Media (Laser Printer inputs)
 
-Working names and roles:
+- `transfer-emulsion`: cryogenic transfer medium — base fluid/material for all Laser Printer work
+- `thermal-transfer-sheet`: common solid transfer substrate — the "paper" equivalent for Laser Printing
+- `composite-chroma-ribbon`: premium imported-CMY carrier — requires colored forms from multiple planets to produce
 
-- `transfer-emulsion`: cryogenic transfer medium
-- `thermal-transfer-sheet`: common transfer substrate
-- `composite-chroma-ribbon`: premium imported-CMY carrier
-- `cryo-form-stock`: Aquilo-native late paperwork stock
-- `polar-routing-sheet`: high-speed routing form
-- `thermal-clearance`: heat/cold process permit
-- `cryogenic-operations-license`: Aquilo-special operations license
-- `precision-duplicate-order`: premium high-speed duplication authority
-- `advanced-chemistry-license`: late high-value export form
+### Multicolor Forms (Aquilo science unlocks)
+
+- `composite-form`: two-color composite form — requires forms from any two planets, gates dual-intermediate recipes
+- `trichromatic-permit`: three-color composite form — requires forms from all three basic planets, gates tri-intermediate recipes
+- `unified-operations-charter`: top-tier composite authorization — requires trichromatic-permit plus additional bureaucracy, gates the most advanced production
+- `cryogenic-operations-license`: Aquilo-specific operations permit — gates cryogenic plant usage and Aquilo-native recipes
+
+### Fax Infrastructure
+
+- `fax-routing-order`: destination and priority directive for the Fax Exchange
+- `reconstruction-warrant`: authorization to reconstruct a specific form at the destination
+- `transfer-manifest`: documentation for what is being faxed and where
+
+## Planned Fax Loop
+
+The intended late shape is:
+
+1. source paperwork is created on its home planet (e.g., cyan forms on Vulcanus)
+2. the source is loaded into a fax sender with a routing order
+3. the `Interplanetary Fax Exchange` on Aquilo receives and routes the job
+4. the `Laser Printer` consumes local transfer media and reconstructs the form
+5. the reconstructed form is available for local use or further routing
+
+The fax network is a throughput and convenience system, not free teleportation. Transfer media is consumed, routing orders are consumed, and the destination must have printer capacity.
 
 ## Export Identity
 
 Aquilo's exported value should center on:
 
-- `Laser Printer`
-- transfer media
-- premium reprint or reconstruction supplies
-- mixed-planet late-game print throughput
-- `advanced chemical plant`-adjacent licensing
+- multicolor composite forms (the primary unique export)
+- transfer media for fax reconstruction
+- the `Laser Printer` itself (fast printing on any planet)
+- the `Interplanetary Fax Exchange` itself (fax capability on any planet)
+- `cryogenic plant`-adjacent licensing
+- high-speed reconstruction services
+
+## Building Requirements
+
+- `Laser Printer`: requires 1x `cryoprint-technician` worker to craft, no operating paperwork
+- `Interplanetary Fax Exchange`: requires 1x `cryoprint-technician` worker to craft, no operating paperwork
+- Both buildings should include cryogenic components (processing units, fluoroketone, lithium) in their crafting recipes
+- Surface-limited crafting to Aquilo only
 
 ## Constraints For Future Implementation
 
 - Do not add a fourth chromatic ink.
 - Keep the `Laser Printer` in the print/reconstruction lane, not the certification lane.
 - Make Aquilo depend on earlier planetary paperwork enough that the interplanetary network matters.
-- Use Aquilo to reward faxing and copied logistics, not to erase the value of shipping entirely.
+- Use Aquilo to reward faxing and convergence logistics, not to erase the value of shipping entirely.
+- The Fax Exchange should feel like a capstone reward, not something the player needed three planets ago.
+- Multicolor forms should feel like a real progression reward, not just "craft three colored forms together."
 
 ## Open Questions
 
-1. How much faster should Aquilo reconstruction be than pre-Aquilo fax reconstruction?
-2. Which first late-game mixed-planet recipes should explicitly reward moving paperwork through Aquilo?
-3. Should `precision-duplicate-order` stay as an Aquilo-local premium or become the basis of a broader late-game copy accelerator?
+1. How much faster should the Laser Printer be than the Chromatic Printer?
+2. Which first late-game recipes should explicitly require multicolor forms?
+3. Should faxing have a per-planet relay cost or only a destination reconstruction cost?
+4. How should the fax network interact with existing logistics (trains, rockets, cargo pods)?
+5. Should `composite-form` require literal colored forms as ingredients, or processed transfer media derived from them?

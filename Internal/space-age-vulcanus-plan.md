@@ -126,6 +126,16 @@ The forms carrying that export role are:
 - `calcite-reagent-waiver`
 - `offworld-metallurgy-charter`
 
+Additionally, cyan forms are required as ingredients in any recipe consuming tungsten plate, making Vulcanus paperwork essential for late-game manufacturing everywhere. On Vulcanus, these forms are cheap. Off-world, they must be shipped.
+
+### 7. The notary office requires a worker but no operating paperwork
+
+The `notary-office` requires a `licensed-notary` worker to craft but no operating paperwork. The worker must be trained on Nauvis and shipped to Vulcanus.
+
+### 8. Tax evasion applies — no taxpayer money
+
+Vulcanus recipes should not require `taxpayer-money`. The planet operates outside the Nauvis tax authority's reach. Local paperwork uses volcanic resources and cyan ink instead of cash.
+
 ## Implemented Local Pipelines
 
 ### Cyan input chain
@@ -201,3 +211,9 @@ That is the success condition this document should preserve as the planet evolve
 - Do not let off-world export paperwork leak back into the home-planet recipes unless there is a very good reason.
 - Keep greenhouse-style agriculture off Vulcanus.
 - Keep Vulcanus focused on industrial permits, not general office omnipotence.
+
+## Building Requirements
+
+- `Notary Office`: requires 1x `licensed-notary` worker to craft, no operating paperwork
+- Crafting recipe should include volcanic/industrial components
+- Surface-limited crafting to Vulcanus only

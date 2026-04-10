@@ -108,7 +108,7 @@ local function add_unlock_for_clone(source_name, clone_name)
 end
 
 data:extend({
-  {
+  surface_limited({
     type = "recipe",
     name = "job-offer-production",
     category = "bureaucracy-policy",
@@ -123,7 +123,7 @@ data:extend({
     },
     results = {{type = "item", name = "job-offer", amount = 1}},
     energy_required = 30
-  },
+  }, "nauvis"),
   {
     type = "recipe",
     name = "formation-center",
@@ -138,7 +138,7 @@ data:extend({
     results = {{type = "item", name = "formation-center", amount = 1}},
     energy_required = 30
   },
-  {
+  surface_limited({
     type = "recipe",
     name = "worker-biter-formation",
     category = "workforce-formation",
@@ -151,7 +151,7 @@ data:extend({
     },
     results = {{type = "item", name = "worker-biter", amount = 1}},
     energy_required = 10
-  },
+  }, "nauvis"),
   {
     type = "recipe",
     name = "clerical-trainee-formation",
@@ -165,7 +165,7 @@ data:extend({
     results = {{type = "item", name = "clerical-trainee", amount = 1}},
     energy_required = 15
   },
-  {
+  surface_limited({
     type = "recipe",
     name = "management-trainee-formation",
     category = "workforce-formation",
@@ -178,7 +178,7 @@ data:extend({
     },
     results = {{type = "item", name = "management-trainee", amount = 1}},
     energy_required = 20
-  },
+  }, "nauvis"),
   {
     type = "recipe",
     name = "night-shift-supervisor-formation",
@@ -308,6 +308,7 @@ data:extend({
     localised_description = {"item-description.capture-bureau"},
     ingredients = {
       {type = "item", name = "admin-station", amount = 1},
+      {type = "item", name = "conciliation-officer", amount = 1},
       {type = "item", name = "worker-biter", amount = 1},
       {type = "item", name = "steel-plate", amount = 20},
       {type = "item", name = "advanced-circuit", amount = 10},
@@ -384,7 +385,7 @@ data:extend({
     },
     energy_required = 15,
   },
-  {
+  surface_limited({
     type = "recipe",
     name = "eviction-notice-production-negotiated",
     category = "bureaucracy-policy",
@@ -402,7 +403,7 @@ data:extend({
       {type = "item", name = "eviction-notice", amount = 2},
     },
     energy_required = 25,
-  },
+  }, "nauvis"),
   {
     type = "recipe",
     name = "liquid-black-ink",
