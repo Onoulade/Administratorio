@@ -821,7 +821,9 @@ for name, recipe in pairs(data.raw["recipe"]) do
     regulated_cat = "advanced-crafting-regulated"
   end
 
-  local above_green = not is_red_science_or_below(name)
+  -- Fluid recipes can never be hand-crafted, so leaving the original on
+  -- crafting-with-fluid would orphan it after we repurpose AM3 categories.
+  local above_green = not is_red_science_or_below(name) or cat == "crafting-with-fluid"
 
   if above_green then
     -------------------------------------------------------------------------

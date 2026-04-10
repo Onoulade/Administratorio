@@ -233,6 +233,7 @@ function shared.is_admin_recipe(name)
     ["ink-production"] = true,
   }
   if NOT_ADMIN[name] then return false end
+  if name:match("%-barrel$") or name:match("%-unbarrel$") then return false end
 
   -- Explicit building check
   if shared.ADMIN_BUILDINGS[name] then return true end
