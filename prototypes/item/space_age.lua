@@ -180,6 +180,17 @@ data:extend({
   },
   {
     type = "item",
+    name = "charged-toner",
+    icons = {
+      {icon = item_icons .. "data.png", icon_size = 64},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
+    },
+    subgroup = "admin-raw",
+    order = "b6",
+    stack_size = 100
+  },
+  {
+    type = "item",
     name = "heatproof-form-stock",
     icons = {
       {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.75, g = 0.95, b = 0.95, a = 1}},
@@ -223,6 +234,27 @@ data:extend({
     stack_size = 100,
     spoil_ticks = 18000,
     spoil_result = "paper",
+  },
+  {
+    type = "item",
+    name = "signal-form-stock",
+    icons = {
+      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.95, g = 0.82, b = 0.93, a = 1}},
+    },
+    subgroup = "forms-printed",
+    order = "dde",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "blank-magenta-form",
+    icons = {
+      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.95, g = 0.82, b = 0.93, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
+    },
+    subgroup = "forms-printed",
+    order = "ddf",
+    stack_size = 100
   },
   {
     type = "item",
@@ -284,6 +316,50 @@ data:extend({
     stack_size = 100,
     spoil_ticks = 36000,
     spoil_result = "paper",
+  },
+  {
+    type = "item",
+    name = "archive-recovery-permit",
+    icons = {
+      {icon = item_icons .. "construction-permit.png", icon_size = 64},
+      {icon = item_icons .. "useless-documentation.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    },
+    subgroup = "forms-permits",
+    order = "dia",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "digital-processing-certificate",
+    icons = {
+      {icon = item_icons .. "blank-approval.png", icon_size = 64},
+      {icon = item_icons .. "data.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
+    },
+    subgroup = "forms-permits",
+    order = "dib",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "electromagnetic-operating-license",
+    icons = {
+      {icon = item_icons .. "management-approval-written.png", icon_size = 64},
+      {icon = item_icons .. "data.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
+    },
+    subgroup = "forms-permits",
+    order = "dic",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "data-recovery-order",
+    icons = {
+      {icon = item_icons .. "work-order.png", icon_size = 64},
+      {icon = item_icons .. "data.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
+    },
+    subgroup = "forms-work-orders",
+    order = "cid",
+    stack_size = 100
   },
   {
     type = "item",
@@ -360,6 +436,18 @@ data:extend({
     subgroup = "admin-buildings",
     order = "k",
     place_result = "conciliation-desk",
+    stack_size = 20
+  },
+  {
+    type = "item",
+    name = "digital-services-bureau",
+    icons = {
+      {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.82, g = 0.9, b = 1, a = 1}},
+      {icon = item_icons .. "data.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
+    },
+    subgroup = "admin-buildings",
+    order = "l",
+    place_result = "digital-services-bureau",
     stack_size = 20
   },
   {

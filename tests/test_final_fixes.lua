@@ -114,6 +114,10 @@ util = {
   },
 }
 
+mods = {
+  ["space-age"] = "2.0.0",
+}
+
 -- Minimal vanilla coverage so final-fixes can exercise the Factoriopedia
 -- redirection path for regulated non-admin recipes.
 data.raw.item["iron-plate"] = {
@@ -516,6 +520,34 @@ recipes["heat-pipe"] = {
   },
   results = {
     { type = "item", name = "heat-pipe", amount = 1 },
+  },
+}
+
+recipes["electromagnetic-plant"] = {
+  type = "recipe",
+  name = "electromagnetic-plant",
+  category = "electronics-or-assembling",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "holmium-plate", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "electromagnetic-plant", amount = 1 },
+  },
+}
+
+recipes["quantum-processor"] = {
+  type = "recipe",
+  name = "quantum-processor",
+  category = "advanced-crafting",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "tungsten-plate", amount = 2 },
+    { type = "item", name = "carbon-fiber", amount = 2 },
+    { type = "item", name = "holmium-plate", amount = 2 },
+  },
+  results = {
+    { type = "item", name = "quantum-processor", amount = 1 },
   },
 }
 
@@ -1295,6 +1327,47 @@ test("all recipe ingredient lists are duplicate-free", function()
     assert_unique(recipe.normal, name .. ".normal")
     assert_unique(recipe.expensive, name .. ".expensive")
   end
+end)
+
+test("admin building regulated recipes batch and show overlays", function()
+  local printer = get_recipe("printer-t1-regulated")
+  assert_true(printer ~= nil, "printer-t1-regulated missing")
+  assert_eq(get_ingredient_amount(printer, "provisional-approval"), 5, "printer-t1-regulated should batch its paperwork ingredient")
+  assert_eq(get_result_amount(printer, "printer-t1"), 5, "printer-t1-regulated should batch to 5")
+  assert_true(has_icon_layer(printer, "__base__/graphics/icons/signal/signal_5.png"),
+    "printer-t1-regulated should show the 5x overlay")
+
+  local pipe = get_recipe("pneumatic-pipe-regulated")
+  assert_true(pipe ~= nil, "pneumatic-pipe-regulated missing")
+  assert_eq(get_result_amount(pipe, "pneumatic-pipe"), 20, "pneumatic-pipe-regulated should batch to 20")
+  assert_true(has_icon_layer(pipe, "__base__/graphics/icons/signal/signal_1.png"),
+    "pneumatic-pipe-regulated should show the 10x overlay")
+  assert_true(has_icon_layer(pipe, "__base__/graphics/icons/signal/signal_0.png"),
+    "pneumatic-pipe-regulated should show the 10x overlay")
+
+  local intake = get_recipe("tube-intake-regulated")
+  assert_true(intake ~= nil, "tube-intake-regulated missing")
+  assert_eq(get_result_amount(intake, "tube-intake"), 10, "tube-intake-regulated should batch to 10")
+  assert_true(has_icon_layer(intake, "__base__/graphics/icons/signal/signal_1.png"),
+    "tube-intake-regulated should show the 10x overlay")
+  assert_true(has_icon_layer(intake, "__base__/graphics/icons/signal/signal_0.png"),
+    "tube-intake-regulated should show the 10x overlay")
+end)
+
+test("space age intermediate recipes gain the expected chromatic gates", function()
+  local electromagnetic = get_recipe("electromagnetic-plant")
+  assert_true(electromagnetic ~= nil, "electromagnetic-plant missing")
+  assert_true(has_ingredient(electromagnetic, "blank-magenta-form"),
+    "electromagnetic-plant should gain blank-magenta-form for holmium use")
+
+  local quantum = get_recipe("quantum-processor")
+  assert_true(quantum ~= nil, "quantum-processor missing")
+  assert_true(has_ingredient(quantum, "blank-cyan-form"),
+    "quantum-processor should gain blank-cyan-form for tungsten use")
+  assert_true(has_ingredient(quantum, "blank-yellow-form"),
+    "quantum-processor should gain blank-yellow-form for carbon fiber use")
+  assert_true(has_ingredient(quantum, "blank-magenta-form"),
+    "quantum-processor should gain blank-magenta-form for holmium use")
 end)
 
 -------------------------------------------------------------------------------
