@@ -1377,15 +1377,11 @@ test("fax virtual signals exist for queue visibility", function()
   assert_true(signals["signal-fax-reserved-slots"] ~= nil, "signal-fax-reserved-slots missing")
 end)
 
-test("fulgora digital services unlocks the magenta chain and bureau", function()
+test("fulgora digital services unlocks the bureau and finalized digital paperwork", function()
   local fulgora = technologies["fulgora-digital-services"]
   assert_true(fulgora ~= nil, "fulgora-digital-services missing")
   for _, recipe_name in ipairs({
     "digital-services-bureau",
-    "charged-toner",
-    "magenta-ink-production",
-    "signal-form-stock",
-    "blank-magenta-form-production",
     "archive-recovery-permit",
     "digital-processing-certificate",
     "electromagnetic-operating-license",
@@ -1410,6 +1406,14 @@ test("fulgora magenta chain defines the expected forms and staffed bureau", func
   assert_true(has_ingredient(recipes["digital-services-bureau"], "holmium-plate"),
     "digital-services-bureau should require holmium-plate")
   assert_true(has_ingredient(recipes["charged-toner"], "scrap"), "charged-toner should recover from scrap")
+  assert_true(not has_ingredient(recipes["charged-toner"], "useless-documentation"),
+    "charged-toner should bootstrap directly from scrap")
+  assert_true(has_ingredient(recipes["archive-rubble-recovery"], "scrap"),
+    "archive-rubble-recovery should consume scrap")
+  assert_true(has_ingredient(recipes["archive-documentation-recovery"], "charged-toner"),
+    "archive-documentation-recovery should consume charged-toner")
+  assert_true(has_ingredient(recipes["archive-documentation-recovery"], "scrap"),
+    "archive-documentation-recovery should consume scrap")
   assert_true(has_fluid_ingredient(recipes["signal-form-stock"], "magenta-ink"),
     "signal-form-stock should consume magenta-ink")
   assert_true(has_fluid_ingredient(recipes["blank-magenta-form-production"], "magenta-ink"),
@@ -1424,6 +1428,65 @@ test("fulgora magenta chain defines the expected forms and staffed bureau", func
     "data-recovery-order should require archive-recovery-permit")
   assert_true(not has_ingredient(recipes["magenta-ink-production"], "taxpayer-money"),
     "magenta-ink-production should not require taxpayer-money")
+end)
+
+test("aquilo fax network unlocks the printer, exchange, and multicolor paperwork", function()
+  local aquilo = technologies["aquilo-fax-network"]
+  assert_true(aquilo ~= nil, "aquilo-fax-network missing")
+  for _, recipe_name in ipairs({
+    "laser-printer",
+    "interplanetary-fax-exchange",
+    "transfer-emulsion-production",
+    "thermal-transfer-sheet-production",
+    "composite-chroma-ribbon-production",
+    "composite-form-cyan-yellow-production",
+    "composite-form-cyan-magenta-production",
+    "composite-form-yellow-magenta-production",
+    "trichromatic-permit-production",
+    "unified-operations-charter-production",
+    "cryogenic-operations-license-production",
+  }) do
+    assert_true(tech_unlocks_recipe(aquilo, recipe_name), "aquilo-fax-network should unlock " .. recipe_name)
+  end
+end)
+
+test("aquilo transfer media and multicolor forms define the expected convergence chain", function()
+  assert_true(items["transfer-emulsion"] ~= nil, "transfer-emulsion missing")
+  assert_true(items["thermal-transfer-sheet"] ~= nil, "thermal-transfer-sheet missing")
+  assert_true(items["composite-chroma-ribbon"] ~= nil, "composite-chroma-ribbon missing")
+  assert_true(items["composite-form"] ~= nil, "composite-form missing")
+  assert_true(items["trichromatic-permit"] ~= nil, "trichromatic-permit missing")
+  assert_true(items["unified-operations-charter"] ~= nil, "unified-operations-charter missing")
+  assert_true(items["cryogenic-operations-license"] ~= nil, "cryogenic-operations-license missing")
+  assert_true(items["laser-printer"] ~= nil, "laser-printer missing")
+  assert_true(items["interplanetary-fax-exchange"] ~= nil, "interplanetary-fax-exchange missing")
+
+  assert_true(has_ingredient(recipes["laser-printer"], "cryoprint-technician"),
+    "laser-printer should require cryoprint-technician")
+  assert_true(has_ingredient(recipes["laser-printer"], "lithium-plate"),
+    "laser-printer should require lithium-plate")
+  assert_true(has_ingredient(recipes["interplanetary-fax-exchange"], "cryoprint-technician"),
+    "interplanetary-fax-exchange should require cryoprint-technician")
+  assert_true(has_ingredient(recipes["transfer-emulsion-production"], "plastic-bar"),
+    "transfer-emulsion should require plastic-bar")
+  assert_true(has_ingredient(recipes["thermal-transfer-sheet-production"], "transfer-emulsion"),
+    "thermal-transfer-sheet should require transfer-emulsion")
+  assert_true(has_ingredient(recipes["composite-chroma-ribbon-production"], "blank-magenta-form"),
+    "composite-chroma-ribbon should require blank-magenta-form")
+  assert_true(has_ingredient(recipes["composite-form-cyan-yellow-production"], "blank-cyan-form"),
+    "cyan-yellow composite-form should require blank-cyan-form")
+  assert_true(has_ingredient(recipes["composite-form-cyan-magenta-production"], "blank-magenta-form"),
+    "cyan-magenta composite-form should require blank-magenta-form")
+  assert_true(has_ingredient(recipes["composite-form-yellow-magenta-production"], "blank-yellow-form"),
+    "yellow-magenta composite-form should require blank-yellow-form")
+  assert_true(has_ingredient(recipes["trichromatic-permit-production"], "composite-chroma-ribbon"),
+    "trichromatic-permit should require composite-chroma-ribbon")
+  assert_true(has_ingredient(recipes["unified-operations-charter-production"], "electromagnetic-operating-license"),
+    "unified-operations-charter should require electromagnetic-operating-license")
+  assert_true(has_ingredient(recipes["cryogenic-operations-license-production"], "lithium-plate"),
+    "cryogenic-operations-license should require lithium-plate")
+  assert_true(not has_ingredient(recipes["transfer-emulsion-production"], "taxpayer-money"),
+    "transfer-emulsion should not require taxpayer-money")
 end)
 
 if failed > 0 then
