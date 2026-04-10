@@ -269,16 +269,13 @@ test("gleba alternates are surface-limited and keep the yellow family compact", 
     "printer-t1-gleba",
     "corporate-breakroom-gleba",
     "administrative-science-pack-production-gleba",
+    "capture-bureau",
     "yellow-ink-production",
     "mycelial-form-stock",
     "blank-yellow-form-production",
     "symbiosis-record",
     "conciliation-order",
     "biochamber-operating-waiver",
-    "advanced-circuit-gleba",
-    "low-density-structure-gleba",
-    "rocket-control-unit-gleba",
-    "rocket-silo-gleba",
   }
 
   for _, recipe_name in ipairs(required) do
@@ -290,6 +287,14 @@ test("gleba alternates are surface-limited and keep the yellow family compact", 
 
   assert_true(data.raw.recipe["management-approval-written-gleba"] == nil,
     "management-approval-written-gleba should stay absent")
+  assert_true(data.raw.recipe["advanced-circuit-gleba"] == nil,
+    "advanced-circuit-gleba should stay absent")
+  assert_true(data.raw.recipe["low-density-structure-gleba"] == nil,
+    "low-density-structure-gleba should stay absent")
+  assert_true(data.raw.recipe["rocket-control-unit-gleba"] == nil,
+    "rocket-control-unit-gleba should stay absent")
+  assert_true(data.raw.recipe["rocket-silo-gleba"] == nil,
+    "rocket-silo-gleba should stay absent")
 end)
 
 test("gleba offworld bio exports keep paperwork off the home planet", function()
