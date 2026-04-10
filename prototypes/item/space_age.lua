@@ -207,7 +207,9 @@ data:extend({
     },
     subgroup = "forms-printed",
     order = "dc",
-    stack_size = 100
+    stack_size = 100,
+    spoil_ticks = 18000,
+    spoil_result = "paper",
   },
   {
     type = "item",
@@ -218,7 +220,9 @@ data:extend({
     },
     subgroup = "forms-printed",
     order = "dd",
-    stack_size = 100
+    stack_size = 100,
+    spoil_ticks = 18000,
+    spoil_result = "paper",
   },
   {
     type = "item",
@@ -251,7 +255,9 @@ data:extend({
     },
     subgroup = "forms-permits",
     order = "dg",
-    stack_size = 100
+    stack_size = 100,
+    spoil_ticks = 36000,
+    spoil_result = "paper",
   },
   {
     type = "item",
@@ -262,7 +268,9 @@ data:extend({
     },
     subgroup = "forms-permits",
     order = "dh",
-    stack_size = 100
+    stack_size = 100,
+    spoil_ticks = 36000,
+    spoil_result = "paper",
   },
   {
     type = "item",
@@ -273,7 +281,9 @@ data:extend({
     },
     subgroup = "forms-permits",
     order = "di",
-    stack_size = 100
+    stack_size = 100,
+    spoil_ticks = 36000,
+    spoil_result = "paper",
   },
   {
     type = "item",
