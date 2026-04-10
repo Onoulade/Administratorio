@@ -1411,7 +1411,7 @@ local PLANET_INTERMEDIATE_GATING = {
   ["tungsten-plate"] = "blank-cyan-form",
   ["tungsten-carbide"] = "blank-cyan-form",
   ["carbon-fiber"] = "blank-yellow-form",
-  -- holmium-plate gating will be added when magenta forms are implemented
+  ["holmium-plate"] = "blank-magenta-form",
 }
 
 for recipe_name, recipe in pairs(data.raw["recipe"]) do
