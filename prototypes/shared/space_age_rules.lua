@@ -9,6 +9,8 @@ rules.OPERATING_FORM_EXEMPT_BY_CATEGORY = {
   ["organic"] = true,
   ["electromagnetics"] = true,
   ["cryogenics"] = true,
+  ["bureaucracy-certification"] = true,
+  ["bureaucracy-conciliation"] = true,
 }
 rules.OPERATING_FORM_EXEMPT_BY_RECIPE = {
   ["foundry"] = true,
@@ -19,6 +21,9 @@ rules.OPERATING_FORM_EXEMPT_BY_RECIPE = {
   ["heatproof-paper-production"] = true,
   ["liquid-stimulant-production"] = true,
   ["liquid-coffee-vulcanus"] = true,
+  ["notary-office"] = true,
+  ["capture-bureau"] = true,
+  ["conciliation-desk"] = true,
 }
 rules.TAXPAYER_MONEY_COSTS = base_rules.TAXPAYER_MONEY_COSTS
 

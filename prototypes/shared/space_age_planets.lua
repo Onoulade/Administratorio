@@ -1,6 +1,7 @@
 local M = {}
 
 M.BASIC_PLANET_PROPERTIES = {
+  nauvis = {pressure = 1000, gravity = 10},
   vulcanus = {pressure = 4000, gravity = 40},
   gleba = {pressure = 2000, gravity = 20},
   fulgora = {pressure = 800, gravity = 8},
