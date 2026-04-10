@@ -47,12 +47,21 @@ end
 local function not_on_planet(recipe, planet_name)
   local properties = planets.BASIC_PLANET_PROPERTIES[planet_name]
   if not recipe or not properties then return recipe end
-  recipe.surface_conditions = {
-    {
-      property = "pressure",
-      max = properties.pressure - 1,
-    },
-  }
+  if planet_name == "aquilo" then
+    recipe.surface_conditions = {
+      {
+        property = "pressure",
+        min = properties.pressure + 1,
+      },
+    }
+  else
+    recipe.surface_conditions = {
+      {
+        property = "pressure",
+        max = properties.pressure - 1,
+      },
+    }
+  end
   return recipe
 end
 
@@ -270,7 +279,7 @@ data:extend({
     results = {{type = "item", name = "middle-management-managing-manager", amount = 1}},
     energy_required = 25
   },
-  {
+  not_on_planet({
     type = "recipe",
     name = "chromatic-printer",
     enabled = false,
@@ -284,7 +293,7 @@ data:extend({
     },
     results = {{type = "item", name = "chromatic-printer", amount = 1}},
     energy_required = 12
-  },
+  }, "aquilo"),
   {
     type = "recipe",
     name = "notary-office",
@@ -419,7 +428,7 @@ data:extend({
     },
     energy_required = 25,
   }, "nauvis"),
-  {
+  not_on_planet({
     type = "recipe",
     name = "liquid-black-ink",
     category = "bureaucracy-registration",
@@ -431,7 +440,7 @@ data:extend({
       {type = "fluid", name = "liquid-black-ink", amount = 40},
     },
     energy_required = 2,
-  },
+  }, "aquilo"),
   surface_limited({
     type = "recipe",
     name = "amber-sap-nonsense-seeding",
@@ -643,11 +652,41 @@ data:extend({
     enabled = false,
     ingredients = {
       {type = "item", name = "scrap", amount = 4},
-      {type = "item", name = "useless-documentation", amount = 1},
     },
     results = {
       {type = "item", name = "charged-toner", amount = 2},
     },
+    energy_required = 4,
+  }, "fulgora"),
+  surface_limited({
+    type = "recipe",
+    name = "archive-rubble-recovery",
+    category = "bureaucratic-bootstrap",
+    enabled = false,
+    localised_name = {"item-name.redundant-rubble"},
+    ingredients = {
+      {type = "item", name = "scrap", amount = 4},
+    },
+    results = {
+      {type = "item", name = "redundant-rubble", amount = 6},
+    },
+    energy_required = 3,
+  }, "fulgora"),
+  surface_limited({
+    type = "recipe",
+    name = "archive-documentation-recovery",
+    category = "bureaucratic-bootstrap",
+    enabled = false,
+    localised_name = {"item-name.useless-documentation"},
+    ingredients = {
+      {type = "item", name = "scrap", amount = 4},
+      {type = "item", name = "charged-toner", amount = 1},
+    },
+    results = {
+      {type = "item", name = "useless-documentation", amount = 4},
+      {type = "item", name = "paper", amount = 2},
+    },
+    main_product = "useless-documentation",
     energy_required = 4,
   }, "fulgora"),
   surface_limited({
@@ -754,6 +793,186 @@ data:extend({
     },
     energy_required = 5,
   }, "fulgora"),
+  surface_limited({
+    type = "recipe",
+    name = "laser-printer",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "chromatic-printer", amount = 1},
+      {type = "item", name = "cryoprint-technician", amount = 1},
+      {type = "item", name = "processing-unit", amount = 15},
+      {type = "item", name = "lithium-plate", amount = 20},
+      {type = "item", name = "superconductor", amount = 10},
+      {type = "item", name = "refined-concrete", amount = 20},
+      {type = "item", name = "construction-work-order", amount = 1},
+    },
+    results = {{type = "item", name = "laser-printer", amount = 1}},
+    energy_required = 20,
+  }, "aquilo"),
+  surface_limited({
+    type = "recipe",
+    name = "interplanetary-fax-exchange",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "office-desk", amount = 2},
+      {type = "item", name = "cryoprint-technician", amount = 1},
+      {type = "item", name = "processing-unit", amount = 20},
+      {type = "item", name = "lithium-plate", amount = 15},
+      {type = "item", name = "superconductor", amount = 10},
+      {type = "item", name = "construction-work-order", amount = 1},
+    },
+    results = {{type = "item", name = "interplanetary-fax-exchange", amount = 1}},
+    energy_required = 20,
+  }, "aquilo"),
+  surface_limited({
+    type = "recipe",
+    name = "transfer-emulsion-production",
+    category = "cryogenics",
+    enabled = false,
+    localised_name = {"item-name.transfer-emulsion"},
+    ingredients = {
+      {type = "fluid", name = "ammonia", amount = 40},
+      {type = "item", name = "plastic-bar", amount = 2},
+      {type = "item", name = "ice", amount = 2},
+    },
+    results = {
+      {type = "item", name = "transfer-emulsion", amount = 2},
+    },
+    energy_required = 4,
+  }, "aquilo"),
+  surface_limited({
+    type = "recipe",
+    name = "thermal-transfer-sheet-production",
+    category = "printing-advanced",
+    enabled = false,
+    localised_name = {"item-name.thermal-transfer-sheet"},
+    ingredients = {
+      {type = "item", name = "paper", amount = 2},
+      {type = "item", name = "transfer-emulsion", amount = 1},
+      {type = "item", name = "plastic-bar", amount = 1},
+    },
+    results = {
+      {type = "item", name = "thermal-transfer-sheet", amount = 2},
+    },
+    energy_required = 3,
+  }, "aquilo"),
+  surface_limited({
+    type = "recipe",
+    name = "composite-chroma-ribbon-production",
+    category = "printing-multicolor",
+    enabled = false,
+    localised_name = {"item-name.composite-chroma-ribbon"},
+    ingredients = {
+      {type = "item", name = "blank-cyan-form", amount = 1},
+      {type = "item", name = "blank-yellow-form", amount = 1},
+      {type = "item", name = "blank-magenta-form", amount = 1},
+      {type = "item", name = "transfer-emulsion", amount = 1},
+    },
+    results = {
+      {type = "item", name = "composite-chroma-ribbon", amount = 1},
+    },
+    energy_required = 5,
+  }, "aquilo"),
+  surface_limited({
+    type = "recipe",
+    name = "composite-form-cyan-yellow-production",
+    category = "printing-multicolor",
+    enabled = false,
+    localised_name = {"item-name.composite-form"},
+    ingredients = {
+      {type = "item", name = "blank-cyan-form", amount = 1},
+      {type = "item", name = "blank-yellow-form", amount = 1},
+      {type = "item", name = "thermal-transfer-sheet", amount = 1},
+    },
+    results = {
+      {type = "item", name = "composite-form", amount = 1},
+    },
+    energy_required = 3,
+  }, "aquilo"),
+  surface_limited({
+    type = "recipe",
+    name = "composite-form-cyan-magenta-production",
+    category = "printing-multicolor",
+    enabled = false,
+    localised_name = {"item-name.composite-form"},
+    ingredients = {
+      {type = "item", name = "blank-cyan-form", amount = 1},
+      {type = "item", name = "blank-magenta-form", amount = 1},
+      {type = "item", name = "thermal-transfer-sheet", amount = 1},
+    },
+    results = {
+      {type = "item", name = "composite-form", amount = 1},
+    },
+    energy_required = 3,
+  }, "aquilo"),
+  surface_limited({
+    type = "recipe",
+    name = "composite-form-yellow-magenta-production",
+    category = "printing-multicolor",
+    enabled = false,
+    localised_name = {"item-name.composite-form"},
+    ingredients = {
+      {type = "item", name = "blank-yellow-form", amount = 1},
+      {type = "item", name = "blank-magenta-form", amount = 1},
+      {type = "item", name = "thermal-transfer-sheet", amount = 1},
+    },
+    results = {
+      {type = "item", name = "composite-form", amount = 1},
+    },
+    energy_required = 3,
+  }, "aquilo"),
+  surface_limited({
+    type = "recipe",
+    name = "trichromatic-permit-production",
+    category = "printing-multicolor",
+    enabled = false,
+    localised_name = {"item-name.trichromatic-permit"},
+    ingredients = {
+      {type = "item", name = "blank-cyan-form", amount = 1},
+      {type = "item", name = "blank-yellow-form", amount = 1},
+      {type = "item", name = "blank-magenta-form", amount = 1},
+      {type = "item", name = "composite-chroma-ribbon", amount = 1},
+      {type = "item", name = "thermal-transfer-sheet", amount = 1},
+    },
+    results = {
+      {type = "item", name = "trichromatic-permit", amount = 1},
+    },
+    energy_required = 5,
+  }, "aquilo"),
+  surface_limited({
+    type = "recipe",
+    name = "unified-operations-charter-production",
+    category = "printing-multicolor",
+    enabled = false,
+    localised_name = {"item-name.unified-operations-charter"},
+    ingredients = {
+      {type = "item", name = "trichromatic-permit", amount = 1},
+      {type = "item", name = "offworld-metallurgy-charter", amount = 1},
+      {type = "item", name = "conciliation-order", amount = 1},
+      {type = "item", name = "electromagnetic-operating-license", amount = 1},
+    },
+    results = {
+      {type = "item", name = "unified-operations-charter", amount = 1},
+    },
+    energy_required = 6,
+  }, "aquilo"),
+  surface_limited({
+    type = "recipe",
+    name = "cryogenic-operations-license-production",
+    category = "printing-multicolor",
+    enabled = false,
+    localised_name = {"item-name.cryogenic-operations-license"},
+    ingredients = {
+      {type = "item", name = "composite-form", amount = 1},
+      {type = "item", name = "transfer-emulsion", amount = 1},
+      {type = "item", name = "thermal-transfer-sheet", amount = 1},
+      {type = "item", name = "lithium-plate", amount = 2},
+    },
+    results = {
+      {type = "item", name = "cryogenic-operations-license", amount = 1},
+    },
+    energy_required = 5,
+  }, "aquilo"),
   surface_limited({
     type = "recipe",
     name = "paper-production-vulcanus",

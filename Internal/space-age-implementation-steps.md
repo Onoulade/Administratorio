@@ -22,6 +22,8 @@ Implemented first pass:
 - Fulgora first pass now exists:
   - `digital-services-bureau`
   - `charged-toner`
+  - `archive-rubble-recovery`
+  - `archive-documentation-recovery`
   - `magenta-ink`
   - `signal-form-stock`
   - `blank-magenta-form`
@@ -29,14 +31,29 @@ Implemented first pass:
   - `digital-processing-certificate`
   - `electromagnetic-operating-license`
   - `data-recovery-order`
+- Aquilo first pass now exists:
+  - `laser-printer`
+  - `interplanetary-fax-exchange`
+  - `transfer-emulsion`
+  - `thermal-transfer-sheet`
+  - `composite-chroma-ribbon`
+  - `composite-form`
+  - `trichromatic-permit`
+  - `unified-operations-charter`
+  - `cryogenic-operations-license`
+  - first-pass Aquilo frozen-ink restrictions for `chromatic-printer` and `liquid-black-ink`
+  - first-pass multicolor replacement in `data-final-fixes.lua`:
+    - dual-planet CMY convergence -> `composite-form`
+    - three-planet convergence -> `trichromatic-permit`
+    - top-tier `quantum-processor` convergence -> `unified-operations-charter`
+    - Aquilo cryogenic natives -> `composite-form` / `cryogenic-operations-license`
 - Targeted Lua coverage exists for the current Vulcanus, Gleba, Fulgora, and final-fixes passes
 
 Still missing:
 
 - Actual solver / planner verification for the new CMY gating and worker requirements
-- Fulgora's salvage-to-`redundant-rubble` advantage
 - Any extra Fulgora bootstrap recipes that the solver proves necessary
-- Aquilo / fax / multicolor implementation
+- Actual fax-network mechanics beyond the first Aquilo prototype layer
 - Cross-cutting audits
 
 ---
@@ -55,7 +72,7 @@ Status: first-pass choice made.
 
 - Current rule: all current planet-intermediate gates use the basic blank CMY forms
 - Later refinement: selected high-tier recipes may be upgraded to consume specialized forms instead
-- Aquilo multicolor forms will still own the multi-planet convergence case later
+- Aquilo multicolor forms now own the first-pass multi-planet convergence case
 
 ### Step 1.3: Implement gating as recipe modifications in data-final-fixes
 
@@ -69,7 +86,7 @@ Run the planner / solver for:
 - Gleba escape after yellow gating, spoilage, and bootstrap additions
 - Fulgora escape after magenta gating and the first-pass bureau chain
 
-Record any loops or dead ends before moving deeper into Aquilo.
+Record any loops or dead ends before expanding past the current Aquilo first pass.
 
 ---
 
@@ -155,6 +172,8 @@ Status: first pass done.
 Current implementation:
 
 - `charged-toner`
+- `archive-rubble-recovery`
+- `archive-documentation-recovery`
 - `magenta-ink-production`
 - `signal-form-stock`
 - `blank-magenta-form-production`
@@ -162,11 +181,12 @@ Current implementation:
 Note:
 
 - the source side is currently simplified to one salvage intermediate, `charged-toner`
+- the base Fulgora salvage and magenta stock chain now sits with `chromatic-printing`, not the later bureau tech
 - split toner intermediates can be revisited later if the planet needs more texture
 
 ### Step 4.3: Define Fulgora paperwork family
 
-Status: mostly done, bootstrap still open.
+Status: mostly done, bootstrap now has an initial recovery pass.
 
 Implemented:
 
@@ -185,52 +205,92 @@ Status: done in `data-final-fixes.lua`.
 
 ### Step 4.5: Define Fulgora's `redundant-rubble` advantage
 
-This is the main remaining Fulgora design gap.
+Status: first pass done.
 
-Next task:
+Implemented:
 
-- design a salvage / scrap / archive-recovery loop that turns Fulgora abundance into easy `redundant-rubble` and `useless-documentation`
+- `archive-rubble-recovery`
+- `archive-documentation-recovery`
+- `charged-toner` now bootstraps directly from scrap
+
+Current shape:
+
+- scrap is the root salvage input
+- salvage recovery produces easy `redundant-rubble`
+- salvage recovery also produces easy `useless-documentation` plus some recovered `paper`
+- the loop feeds both the base paperwork economy and the magenta chain without adding a direct rubble ore clone on Fulgora
 
 Constraint:
 
 - do this through salvage recovery, not by adding a trivial direct paper-ore substitute
 
+Follow-up:
+
+- rebalance yields if solver or actual play shows Fulgora is still too starved or too generous
+- decide whether an additional higher-tier archive-recovery recipe should sit on top of the first-pass salvage loop
+
 ### Step 4.6: Verify solver for Fulgora escape path
 
-Still pending. Run after Step 4.5 if the salvage loop is necessary, or immediately if the current first-pass bureau chain might already be enough.
+Still pending. Run now against the updated salvage-plus-magenta first pass.
 
 ---
 
 ## Phase 5: Aquilo — Fax Exchange and Multicolor Forms
 
-This is now the main unimplemented planet slice.
+Status: first pass implemented. The remaining work is deeper fax mechanics, solver verification, and balance cleanup after the new multicolor gates.
 
 ### Step 5.1: Move Interplanetary Fax Exchange to Aquilo
 
-- Update entity definition: surface-limited to Aquilo for crafting
-- Requires 1x `cryoprint-technician` in crafting recipe
-- Update technology unlock to Aquilo progression
+Status: first pass done.
+
+- `interplanetary-fax-exchange` now exists
+- crafting is surface-limited to Aquilo
+- recipe requires 1x `cryoprint-technician`
+- unlock lives on Aquilo progression via `aquilo-fax-network`
 
 ### Step 5.2: Define Laser Printer entity
 
-- Crafting categories: printing, multicolor printing, fax reconstruction
-- Speed: fastest printer in the game
-- Uses solid transfer media inputs instead of liquid ink
-- Requires 1x `cryoprint-technician` in crafting recipe
-- Surface-limited to Aquilo for crafting
+Status: first pass done.
+
+- `laser-printer` now exists
+- current categories:
+  - `printing`
+  - `printing-advanced`
+  - `printing-workorder`
+  - `printing-multicolor`
+  - `fax-reconstruction`
+- currently the fastest printer in the mod
+- uses solid inputs only; no fluid ports
+- recipe requires 1x `cryoprint-technician`
+- crafting is surface-limited to Aquilo
 
 ### Step 5.3: Implement frozen ink constraint
 
-- Prevent Chromatic Printer placement or operation on Aquilo
-- Ensure no liquid ink recipes are available on Aquilo
+Status: first pass done.
+
+- `chromatic-printer` recipe and placement are blocked on Aquilo
+- `liquid-black-ink` is blocked on Aquilo
+- the existing cyan / yellow / magenta liquid-ink chains remain planet-limited off Aquilo
+
+Remaining follow-up:
+
+- verify in actual play that no unexpected path still allows liquid-ink bureaucracy on Aquilo
 
 ### Step 5.4: Define transfer media items
+
+Status: first pass done.
+
+Implemented:
 
 - `transfer-emulsion`
 - `thermal-transfer-sheet`
 - `composite-chroma-ribbon`
 
 ### Step 5.5: Define multicolor form family
+
+Status: first pass done.
+
+Implemented:
 
 - `composite-form`
 - `trichromatic-permit`
@@ -239,7 +299,21 @@ This is now the main unimplemented planet slice.
 
 ### Step 5.6: Implement multicolor gating for multi-planet recipes
 
-Identify recipes using intermediates from 2+ planets and add multicolor form requirements.
+Status: first pass done in `data-final-fixes.lua`.
+
+Current rule:
+
+- recipes that would have required 2 distinct CMY blank forms now consume `composite-form`
+- recipes that would have required 3 distinct CMY blank forms now consume `trichromatic-permit`
+- `quantum-processor` is the current top-tier override and consumes `unified-operations-charter`
+- first Aquilo-native cryogenic gates are in place:
+  - `lithium` / `lithium-plate` -> `composite-form`
+  - `fluoroketone` / `fluoroketone-cooling` / `cryogenic-plant` -> `cryogenic-operations-license`
+
+Remaining follow-up:
+
+- expand the explicit top-tier override list if more late recipes should use `unified-operations-charter`
+- solver-check whether any Aquilo-native recipes need lighter or heavier paperwork than the first pass
 
 ### Step 5.7: Define fax network mechanics
 
@@ -250,7 +324,11 @@ Design the actual faxing loop:
 - reconstruction
 - transfer media consumption
 
+Still pending. The first pass only adds the buildings, category scaffolding, and the multicolor paperwork layer.
+
 ### Step 5.8: Verify all planet escape paths still work
+
+Still pending. Run after the new Aquilo multicolor replacement has been solver-checked together with the earlier CMY gating.
 
 ---
 

@@ -1,3 +1,4 @@
+local planets = require("prototypes.shared.space_age_planets")
 local entity_graphics = "__administratorio__/graphics/entities/"
 local sound_path = "__administratorio__/sound/buildings/"
 
@@ -33,6 +34,12 @@ chromatic_printer.crafting_categories = {"printing", "printing-advanced", "print
 chromatic_printer.crafting_speed = 3
 chromatic_printer.energy_usage = "350kW"
 chromatic_printer.energy_source = {type = "electric", usage_priority = "secondary-input"}
+chromatic_printer.surface_conditions = {
+  {
+    property = "pressure",
+    min = planets.BASIC_PLANET_PROPERTIES.aquilo.pressure + 1,
+  },
+}
 chromatic_printer.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
 chromatic_printer.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
 chromatic_printer.fluid_boxes_off_when_no_fluid_recipe = true
@@ -194,6 +201,59 @@ digital_services_bureau.working_sound = {
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
+local laser_printer = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
+laser_printer.name = "laser-printer"
+laser_printer.icon = "__administratorio__/graphics/icons/steel-forge-icon.png"
+laser_printer.icon_size = 64
+laser_printer.minable = {mining_time = 0.2, result = "laser-printer"}
+laser_printer.placeable_by = placeable_by_item("laser-printer")
+laser_printer.next_upgrade = nil
+laser_printer.crafting_categories = {"printing", "printing-advanced", "printing-workorder", "printing-multicolor", "fax-reconstruction"}
+laser_printer.crafting_speed = 5
+laser_printer.energy_usage = "600kW"
+laser_printer.energy_source = {type = "electric", usage_priority = "secondary-input"}
+laser_printer.ingredient_count = 10
+laser_printer.module_slots = 6
+laser_printer.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+laser_printer.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
+laser_printer.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+laser_printer.fluid_boxes_off_when_no_fluid_recipe = true
+laser_printer.fluid_boxes = {}
+laser_printer.graphics_set = {
+  animation = {
+    layers = {
+      {filename = entity_graphics .. "printer-t2/steel-forge.png", width = 256, height = 301, frame_count = 1, scale = 0.38, shift = {0, -0.15}},
+    }
+  }
+}
+laser_printer.working_sound = {
+  sound = {filename = sound_path .. "industrial-printer-loop.ogg", volume = 0.6},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+}
+
+local interplanetary_fax_exchange = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
+interplanetary_fax_exchange.name = "interplanetary-fax-exchange"
+interplanetary_fax_exchange.icon = "__administratorio__/graphics/icons/office-building.png"
+interplanetary_fax_exchange.icon_size = 64
+interplanetary_fax_exchange.minable = {mining_time = 0.2, result = "interplanetary-fax-exchange"}
+interplanetary_fax_exchange.placeable_by = placeable_by_item("interplanetary-fax-exchange")
+interplanetary_fax_exchange.next_upgrade = nil
+interplanetary_fax_exchange.crafting_categories = {"fax-reconstruction"}
+interplanetary_fax_exchange.crafting_speed = 3.5
+interplanetary_fax_exchange.energy_usage = "800kW"
+interplanetary_fax_exchange.energy_source = {type = "electric", usage_priority = "secondary-input"}
+interplanetary_fax_exchange.ingredient_count = 8
+interplanetary_fax_exchange.module_slots = 4
+interplanetary_fax_exchange.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+interplanetary_fax_exchange.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
+interplanetary_fax_exchange.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+interplanetary_fax_exchange.fluid_boxes_off_when_no_fluid_recipe = true
+interplanetary_fax_exchange.fluid_boxes = {}
+interplanetary_fax_exchange.working_sound = {
+  sound = {filename = sound_path .. "office-ambience-loop.ogg", volume = 0.55},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+}
+
 local trajectory_compliance_array = table.deepcopy(data.raw["ammo-turret"]["gun-turret"])
 trajectory_compliance_array.name = "trajectory-compliance-array"
 trajectory_compliance_array.icon = "__base__/graphics/icons/radar.png"
@@ -216,8 +276,10 @@ trajectory_compliance_array.surface_conditions = {
 data:extend({
   formation_center,
   chromatic_printer,
+  laser_printer,
   notary_office,
   conciliation_desk,
   digital_services_bureau,
+  interplanetary_fax_exchange,
   trajectory_compliance_array,
 })
