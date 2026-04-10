@@ -158,6 +158,42 @@ conciliation_desk.working_sound = {
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
+local digital_services_bureau = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
+digital_services_bureau.name = "digital-services-bureau"
+digital_services_bureau.icon = "__administratorio__/graphics/icons/office-building.png"
+digital_services_bureau.icon_size = 64
+digital_services_bureau.minable = {mining_time = 0.2, result = "digital-services-bureau"}
+digital_services_bureau.placeable_by = placeable_by_item("digital-services-bureau")
+digital_services_bureau.next_upgrade = nil
+digital_services_bureau.crafting_categories = {"bureaucracy-registration", "bureaucratic-bootstrap"}
+digital_services_bureau.crafting_speed = 3
+digital_services_bureau.energy_usage = "1MW"
+digital_services_bureau.energy_source = {type = "electric", usage_priority = "secondary-input"}
+digital_services_bureau.ingredient_count = 10
+digital_services_bureau.module_slots = 6
+digital_services_bureau.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+digital_services_bureau.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
+digital_services_bureau.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+digital_services_bureau.fluid_boxes_off_when_no_fluid_recipe = true
+digital_services_bureau.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -1}}},
+    volume = 1000,
+  },
+  {
+    production_type = "output",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "output", direction = defines.direction.south, position = {0, 1}}},
+    volume = 1000,
+  },
+}
+digital_services_bureau.working_sound = {
+  sound = {filename = sound_path .. "office-ambience-loop.ogg", volume = 0.5},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+}
+
 local trajectory_compliance_array = table.deepcopy(data.raw["ammo-turret"]["gun-turret"])
 trajectory_compliance_array.name = "trajectory-compliance-array"
 trajectory_compliance_array.icon = "__base__/graphics/icons/radar.png"
@@ -177,4 +213,11 @@ trajectory_compliance_array.surface_conditions = {
   },
 }
 
-data:extend({formation_center, chromatic_printer, notary_office, conciliation_desk, trajectory_compliance_array})
+data:extend({
+  formation_center,
+  chromatic_printer,
+  notary_office,
+  conciliation_desk,
+  digital_services_bureau,
+  trajectory_compliance_array,
+})

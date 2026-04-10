@@ -332,6 +332,21 @@ data:extend({
     results = {{type = "item", name = "conciliation-desk", amount = 1}},
     energy_required = 16
   }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "digital-services-bureau",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "office-desk", amount = 1},
+      {type = "item", name = "relay-clerk", amount = 1},
+      {type = "item", name = "processing-unit", amount = 15},
+      {type = "item", name = "holmium-plate", amount = 20},
+      {type = "item", name = "advanced-circuit", amount = 20},
+      {type = "item", name = "construction-work-order", amount = 1},
+    },
+    results = {{type = "item", name = "digital-services-bureau", amount = 1}},
+    energy_required = 20
+  }, "fulgora"),
   {
     type = "recipe",
     name = "trajectory-compliance-array",
@@ -449,6 +464,91 @@ data:extend({
   }, "gleba"),
   surface_limited({
     type = "recipe",
+    name = "carbon-offset-certificate-basic-gleba",
+    category = "bureaucratic-bootstrap",
+    enabled = true,
+    localised_name = {"recipe-name.carbon-offset-certificate-basic"},
+    ingredients = {
+      {type = "item", name = "blank-form", amount = 1},
+      {type = "fluid", name = "amber-sap", amount = 20},
+      {type = "item", name = "nutrients", amount = 1},
+    },
+    results = {
+      {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
+    },
+    energy_required = 3,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "admin-station-gleba",
+    enabled = false,
+    localised_name = {"item-name.admin-station"},
+    localised_description = {"item-description.admin-station"},
+    ingredients = {
+      {type = "item", name = "iron-plate", amount = 20},
+      {type = "item", name = "electronic-circuit", amount = 10},
+      {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
+    },
+    results = {
+      {type = "item", name = "admin-station", amount = 1},
+    },
+    energy_required = 15,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "printer-t1-gleba",
+    enabled = false,
+    localised_name = {"item-name.printer-t1"},
+    localised_description = {"item-description.printer-t1"},
+    ingredients = {
+      {type = "item", name = "iron-plate", amount = 10},
+      {type = "item", name = "iron-gear-wheel", amount = 5},
+      {type = "item", name = "electronic-circuit", amount = 3},
+      {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
+    },
+    results = {
+      {type = "item", name = "printer-t1", amount = 1},
+    },
+    energy_required = 5,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "corporate-breakroom-gleba",
+    enabled = false,
+    localised_name = {"item-name.corporate-breakroom"},
+    localised_description = {"item-description.corporate-breakroom"},
+    ingredients = {
+      {type = "item", name = "iron-plate", amount = 16},
+      {type = "item", name = "wood", amount = 8},
+      {type = "item", name = "stone-brick", amount = 8},
+      {type = "item", name = "pipe", amount = 3},
+      {type = "item", name = "electronic-circuit", amount = 4},
+      {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
+    },
+    results = {
+      {type = "item", name = "corporate-breakroom", amount = 1},
+    },
+    energy_required = 10,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "administrative-science-pack-production-gleba",
+    category = "bureaucracy-registration",
+    enabled = false,
+    localised_name = {"item-name.administrative-science-pack"},
+    ingredients = {
+      {type = "item", name = "blank-form", amount = 2},
+      {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
+      {type = "item", name = "basic-excuse", amount = 1},
+      {type = "item", name = "dubious-data", amount = 1},
+    },
+    results = {
+      {type = "item", name = "administrative-science-pack", amount = 1},
+    },
+    energy_required = 5,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
     name = "yellow-ink-production",
     category = "bureaucracy-registration",
     enabled = false,
@@ -536,6 +636,124 @@ data:extend({
     },
     energy_required = 5,
   }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "charged-toner",
+    category = "bureaucratic-bootstrap",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "scrap", amount = 4},
+      {type = "item", name = "useless-documentation", amount = 1},
+    },
+    results = {
+      {type = "item", name = "charged-toner", amount = 2},
+    },
+    energy_required = 4,
+  }, "fulgora"),
+  surface_limited({
+    type = "recipe",
+    name = "magenta-ink-production",
+    category = "bureaucracy-registration",
+    enabled = false,
+    localised_name = {"fluid-name.magenta-ink"},
+    ingredients = {
+      {type = "item", name = "charged-toner", amount = 2},
+      {type = "item", name = "useless-documentation", amount = 1},
+    },
+    results = {
+      {type = "fluid", name = "magenta-ink", amount = 40},
+    },
+    energy_required = 4,
+  }, "fulgora"),
+  surface_limited({
+    type = "recipe",
+    name = "signal-form-stock",
+    category = "printing-chromatic",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "paper", amount = 2},
+      {type = "fluid", name = "magenta-ink", amount = 10},
+    },
+    results = {
+      {type = "item", name = "signal-form-stock", amount = 2},
+    },
+    energy_required = 3,
+  }, "fulgora"),
+  surface_limited({
+    type = "recipe",
+    name = "blank-magenta-form-production",
+    category = "printing-chromatic",
+    enabled = false,
+    localised_name = {"item-name.blank-magenta-form"},
+    ingredients = {
+      {type = "item", name = "signal-form-stock", amount = 1},
+      {type = "fluid", name = "magenta-ink", amount = 5},
+    },
+    results = {
+      {type = "item", name = "blank-magenta-form", amount = 2},
+    },
+    energy_required = 2,
+  }, "fulgora"),
+  surface_limited({
+    type = "recipe",
+    name = "archive-recovery-permit",
+    category = "bureaucracy-registration",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "blank-magenta-form", amount = 1},
+      {type = "item", name = "charged-toner", amount = 1},
+      {type = "item", name = "useless-documentation", amount = 2},
+    },
+    results = {
+      {type = "item", name = "archive-recovery-permit", amount = 1},
+    },
+    energy_required = 4,
+  }, "fulgora"),
+  surface_limited({
+    type = "recipe",
+    name = "digital-processing-certificate",
+    category = "bureaucracy-registration",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "blank-magenta-form", amount = 1},
+      {type = "item", name = "data", amount = 1},
+      {type = "item", name = "processing-unit", amount = 1},
+    },
+    results = {
+      {type = "item", name = "digital-processing-certificate", amount = 1},
+    },
+    energy_required = 5,
+  }, "fulgora"),
+  surface_limited({
+    type = "recipe",
+    name = "electromagnetic-operating-license",
+    category = "bureaucracy-registration",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "blank-magenta-form", amount = 1},
+      {type = "item", name = "digital-processing-certificate", amount = 1},
+      {type = "item", name = "advanced-circuit", amount = 2},
+    },
+    results = {
+      {type = "item", name = "electromagnetic-operating-license", amount = 1},
+    },
+    energy_required = 6,
+  }, "fulgora"),
+  surface_limited({
+    type = "recipe",
+    name = "data-recovery-order",
+    category = "bureaucracy-registration",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "blank-magenta-form", amount = 1},
+      {type = "item", name = "archive-recovery-permit", amount = 1},
+      {type = "item", name = "data", amount = 1},
+    },
+    results = {
+      {type = "item", name = "data-recovery-order", amount = 1},
+    },
+    energy_required = 5,
+  }, "fulgora"),
   surface_limited({
     type = "recipe",
     name = "paper-production-vulcanus",
