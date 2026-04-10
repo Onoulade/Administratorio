@@ -406,6 +406,36 @@ data:extend({
     order = "h-i",
     upgrade = true,
   },
+  {
+    type = "technology",
+    name = "fulgora-digital-services",
+    icon = "__administratorio__/graphics/icons/data.png",
+    icon_size = 64,
+    effects = {
+      {type = "unlock-recipe", recipe = "digital-services-bureau"},
+      {type = "unlock-recipe", recipe = "charged-toner"},
+      {type = "unlock-recipe", recipe = "magenta-ink-production"},
+      {type = "unlock-recipe", recipe = "signal-form-stock"},
+      {type = "unlock-recipe", recipe = "blank-magenta-form-production"},
+      {type = "unlock-recipe", recipe = "archive-recovery-permit"},
+      {type = "unlock-recipe", recipe = "digital-processing-certificate"},
+      {type = "unlock-recipe", recipe = "electromagnetic-operating-license"},
+      {type = "unlock-recipe", recipe = "data-recovery-order"},
+    },
+    prerequisites = {"chromatic-printing", "electromagnetic-science-pack"},
+    unit = {
+      count = 360,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 45,
+    },
+    order = "h-e",
+  },
 })
 
 data:extend({

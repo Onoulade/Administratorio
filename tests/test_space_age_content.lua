@@ -1377,6 +1377,55 @@ test("fax virtual signals exist for queue visibility", function()
   assert_true(signals["signal-fax-reserved-slots"] ~= nil, "signal-fax-reserved-slots missing")
 end)
 
+test("fulgora digital services unlocks the magenta chain and bureau", function()
+  local fulgora = technologies["fulgora-digital-services"]
+  assert_true(fulgora ~= nil, "fulgora-digital-services missing")
+  for _, recipe_name in ipairs({
+    "digital-services-bureau",
+    "charged-toner",
+    "magenta-ink-production",
+    "signal-form-stock",
+    "blank-magenta-form-production",
+    "archive-recovery-permit",
+    "digital-processing-certificate",
+    "electromagnetic-operating-license",
+    "data-recovery-order",
+  }) do
+    assert_true(tech_unlocks_recipe(fulgora, recipe_name), "fulgora-digital-services should unlock " .. recipe_name)
+  end
+end)
+
+test("fulgora magenta chain defines the expected forms and staffed bureau", function()
+  assert_true(items["charged-toner"] ~= nil, "charged-toner missing")
+  assert_true(items["signal-form-stock"] ~= nil, "signal-form-stock missing")
+  assert_true(items["blank-magenta-form"] ~= nil, "blank-magenta-form missing")
+  assert_true(items["archive-recovery-permit"] ~= nil, "archive-recovery-permit missing")
+  assert_true(items["digital-processing-certificate"] ~= nil, "digital-processing-certificate missing")
+  assert_true(items["electromagnetic-operating-license"] ~= nil, "electromagnetic-operating-license missing")
+  assert_true(items["data-recovery-order"] ~= nil, "data-recovery-order missing")
+  assert_true(items["digital-services-bureau"] ~= nil, "digital-services-bureau missing")
+
+  assert_true(has_ingredient(recipes["digital-services-bureau"], "relay-clerk"),
+    "digital-services-bureau should require relay-clerk")
+  assert_true(has_ingredient(recipes["digital-services-bureau"], "holmium-plate"),
+    "digital-services-bureau should require holmium-plate")
+  assert_true(has_ingredient(recipes["charged-toner"], "scrap"), "charged-toner should recover from scrap")
+  assert_true(has_fluid_ingredient(recipes["signal-form-stock"], "magenta-ink"),
+    "signal-form-stock should consume magenta-ink")
+  assert_true(has_fluid_ingredient(recipes["blank-magenta-form-production"], "magenta-ink"),
+    "blank-magenta-form should consume magenta-ink")
+  assert_true(has_ingredient(recipes["archive-recovery-permit"], "blank-magenta-form"),
+    "archive-recovery-permit should consume blank-magenta-form")
+  assert_true(has_ingredient(recipes["digital-processing-certificate"], "processing-unit"),
+    "digital-processing-certificate should require processing-unit")
+  assert_true(has_ingredient(recipes["electromagnetic-operating-license"], "digital-processing-certificate"),
+    "electromagnetic-operating-license should require digital-processing-certificate")
+  assert_true(has_ingredient(recipes["data-recovery-order"], "archive-recovery-permit"),
+    "data-recovery-order should require archive-recovery-permit")
+  assert_true(not has_ingredient(recipes["magenta-ink-production"], "taxpayer-money"),
+    "magenta-ink-production should not require taxpayer-money")
+end)
+
 if failed > 0 then
   io.stderr:write(("Failed %d/%d tests\n"):format(failed, passed + failed))
   for _, err in ipairs(errors) do
