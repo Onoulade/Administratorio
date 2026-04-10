@@ -37,14 +37,14 @@ local compatibility_rules = require("prototypes.shared.vanilla_rules")
 --
 -- 7. ALL BUILDINGS NEED FORMS
 --    Every vanilla building recipe requires a tier-appropriate form:
---    - In the regulated recipe (AM1/AM2): combined form (tier + work-order, consumed)
---    - In the original recipe (handcraft/AM3): tier form directly
+--    - In the regulated recipe (AM1/AM2/AM3): combined form (tier + work-order, consumed)
+--    - In the original recipe (handcraft before green): tier form directly
 --    Exception: pipes, belts, poles, and basic intermediates (T0 = work-order only).
 --    Machine operation paperwork is handled separately by recipe category.
 --
--- 8. AM3 IS THE REWARD
---    AM3 uses the same regulated recipes as AM1/AM2 but also keeps
---    original categories, so T0 items can be crafted without forms.
+-- 8. TOP-TIER ASSEMBLERS STAY REGULATED
+--    AM2 and AM3 keep vanilla fluid capability, but regulated recipes live on
+--    the regulated categories instead of the original crafting ones.
 --
 -- 9. HANDCRAFTING GATED BY TECH TIER
 --    Only recipes at red science or below are handcraftable.

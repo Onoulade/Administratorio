@@ -190,8 +190,6 @@ These are not "design intent" notes. They are current-code notes.
 - Because of that, T1 and T2 form production is front-loaded instead of being unlocked by later bureaucracy techs.
 - `filing-landscape` still lives in `bureaucratic-bootstrap`, but the `resolution-office` now also has that category so it still handles the full complaint chain. The `office-desk` continues to share `bureaucratic-bootstrap`, but complaint processing is centered on the `resolution-office`.
 - Legacy `brief-*` recipes still exist for save compatibility, but normal progression no longer routes through them.
-- `assembling-machine-3` only keeps regulated categories in `data-final-fixes.lua`, even though shared comments describe AM3 as a reward that should also keep original categories.
-
 ## Files To Re-check When Rebalancing
 
 - `prototypes/technology.lua`
