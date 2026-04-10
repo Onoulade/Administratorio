@@ -199,6 +199,21 @@ test("conciliation desk is the dedicated gleba certification machine", function(
   assert_eq(entity.fluid_boxes[3].production_type, "output", "conciliation-desk should vent fluid outputs")
 end)
 
+test("digital services bureau is a staffed fulgora office upgrade", function()
+  local entity = data.raw["assembling-machine"]["digital-services-bureau"]
+  assert_true(entity ~= nil, "digital-services-bureau missing")
+  assert_eq(entity.placeable_by[1].item, "digital-services-bureau",
+    "digital-services-bureau should build from the digital-services-bureau item")
+  local categories = entity.crafting_categories or {}
+  assert_eq(#categories, 2, "digital-services-bureau should mirror office-desk categories")
+  assert_eq(categories[1], "bureaucracy-registration", "digital-services-bureau should handle registration work")
+  assert_eq(categories[2], "bureaucratic-bootstrap", "digital-services-bureau should handle bootstrap work")
+  assert_eq(entity.crafting_speed, 3, "digital-services-bureau should be significantly faster than an office desk")
+  assert_eq(#(entity.fluid_boxes or {}), 2, "digital-services-bureau should expose one input and one output")
+  assert_eq(entity.fluid_boxes[1].production_type, "input", "digital-services-bureau should take fluid inputs")
+  assert_eq(entity.fluid_boxes[2].production_type, "output", "digital-services-bureau should vent outputs")
+end)
+
 test("planet helper exposes exact basic-planet conditions and abundance outputs", function()
   local vulcanus = planets.surface_conditions_for_planet("vulcanus")
   local gleba = planets.surface_conditions_for_planet("gleba")
@@ -307,6 +322,36 @@ test("gleba offworld bio exports keep paperwork off the home planet", function()
     assert_true(not has_ingredient(source, "biochamber-operating-waiver"),
       recipe_name .. " should not consume biochamber-operating-waiver on Gleba")
   end
+end)
+
+test("fulgora bureau and magenta paperwork stay on fulgora", function()
+  local required = {
+    "digital-services-bureau",
+    "charged-toner",
+    "magenta-ink-production",
+    "signal-form-stock",
+    "blank-magenta-form-production",
+    "archive-recovery-permit",
+    "digital-processing-certificate",
+    "electromagnetic-operating-license",
+    "data-recovery-order",
+  }
+
+  for _, recipe_name in ipairs(required) do
+    local recipe = assert(data.raw.recipe[recipe_name], recipe_name .. " missing")
+    assert_true(recipe.surface_conditions ~= nil and #recipe.surface_conditions >= 2, recipe_name .. " should be surface-limited")
+    assert_eq(recipe.surface_conditions[1].min, 800, recipe_name .. " should target Fulgora pressure")
+    assert_eq(recipe.surface_conditions[2].min, 8, recipe_name .. " should target Fulgora gravity")
+  end
+
+  assert_eq(data.raw.recipe["blank-magenta-form-production"].category, "printing-chromatic",
+    "blank-magenta-form should be printer-made")
+  assert_eq(data.raw.recipe["digital-processing-certificate"].category, "bureaucracy-registration",
+    "digital-processing-certificate should be office-made")
+  assert_true(has_ingredient(data.raw.recipe["digital-services-bureau"], "relay-clerk"),
+    "digital-services-bureau should require relay-clerk")
+  assert_true(has_ingredient(data.raw.recipe["electromagnetic-operating-license"], "digital-processing-certificate"),
+    "electromagnetic-operating-license should build from digital-processing-certificate")
 end)
 
 if failed > 0 then

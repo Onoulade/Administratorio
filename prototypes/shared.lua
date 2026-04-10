@@ -239,6 +239,7 @@ if space_age_enabled then
   shared.ADMIN_BUILDINGS["notary-office"] = true
   shared.ADMIN_BUILDINGS["capture-bureau"] = true
   shared.ADMIN_BUILDINGS["conciliation-desk"] = true
+  shared.ADMIN_BUILDINGS["digital-services-bureau"] = true
 end
 
 -------------------------------------------------------------------------------
@@ -268,6 +269,8 @@ if space_age_enabled then
   shared.PAPERWORK_ITEMS["blank-cyan-form"] = true
   shared.PAPERWORK_ITEMS["mycelial-form-stock"] = true
   shared.PAPERWORK_ITEMS["blank-yellow-form"] = true
+  shared.PAPERWORK_ITEMS["signal-form-stock"] = true
+  shared.PAPERWORK_ITEMS["blank-magenta-form"] = true
   shared.PAPERWORK_ITEMS["permit-draft"] = true
   shared.PAPERWORK_ITEMS["inspection-docket"] = true
   shared.PAPERWORK_ITEMS["embossed-seal"] = true
@@ -275,11 +278,17 @@ if space_age_enabled then
   shared.PAPERWORK_ITEMS["symbiosis-record"] = true
   shared.PAPERWORK_ITEMS["conciliation-order"] = true
   shared.PAPERWORK_ITEMS["biochamber-operating-waiver"] = true
+  shared.PAPERWORK_ITEMS["archive-recovery-permit"] = true
+  shared.PAPERWORK_ITEMS["digital-processing-certificate"] = true
+  shared.PAPERWORK_ITEMS["electromagnetic-operating-license"] = true
+  shared.PAPERWORK_ITEMS["data-recovery-order"] = true
 
   shared.FORM_PRODUCTION_RECIPES["heatproof-form-stock"] = "heatproof-form-stock"
   shared.FORM_PRODUCTION_RECIPES["blank-cyan-form"] = "blank-cyan-form-production"
   shared.FORM_PRODUCTION_RECIPES["mycelial-form-stock"] = "mycelial-form-stock"
   shared.FORM_PRODUCTION_RECIPES["blank-yellow-form"] = "blank-yellow-form-production"
+  shared.FORM_PRODUCTION_RECIPES["signal-form-stock"] = "signal-form-stock"
+  shared.FORM_PRODUCTION_RECIPES["blank-magenta-form"] = "blank-magenta-form-production"
   shared.FORM_PRODUCTION_RECIPES["permit-draft"] = "permit-draft"
   shared.FORM_PRODUCTION_RECIPES["inspection-docket"] = "inspection-docket"
   shared.FORM_PRODUCTION_RECIPES["embossed-seal"] = "embossed-seal"
@@ -290,6 +299,10 @@ if space_age_enabled then
   shared.FORM_PRODUCTION_RECIPES["symbiosis-record"] = "symbiosis-record"
   shared.FORM_PRODUCTION_RECIPES["conciliation-order"] = "conciliation-order"
   shared.FORM_PRODUCTION_RECIPES["biochamber-operating-waiver"] = "biochamber-operating-waiver"
+  shared.FORM_PRODUCTION_RECIPES["archive-recovery-permit"] = "archive-recovery-permit"
+  shared.FORM_PRODUCTION_RECIPES["digital-processing-certificate"] = "digital-processing-certificate"
+  shared.FORM_PRODUCTION_RECIPES["electromagnetic-operating-license"] = "electromagnetic-operating-license"
+  shared.FORM_PRODUCTION_RECIPES["data-recovery-order"] = "data-recovery-order"
 end
 
 -------------------------------------------------------------------------------
