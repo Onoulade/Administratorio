@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 0.2.13 - 2026-04-10
+
+### Changed
+- Tightened the progression report again so strict runs now also flag recipes that stay permanently blocked by machine-category/provider cycles, and the report distinguishes recipes blocked at unlock from ones only delayed until a dependent tech.
+- Environmental compliance paperwork now stays on the office-desk chain: `carbon-offset-certificate-verified`, `environmental-impact-report`, and the baseline `petrochemical-operating-permit` path no longer depend on the Union Headquarters.
+
+### Fixed
+- Reassigned vanilla `crafting-with-fluid` recipes onto the regulated AM2/AM3 path so fluid-capable recipes remain machine-usable after higher-tier vanilla crafting categories are repurposed.
+- Excluded barrel and unbarrel recipes from admin-recipe detection so vanilla fluid logistics keep their normal regulation handling.
+- Removed the office desk from the startup crash-site inventory cleanup path.
+
+### Docs
+- Refreshed the README, English locale, and internal progression notes to match the office-desk environmental-compliance chain and the current regulated AM2/AM3 fluid-crafting behavior.
+
 ## 0.2.12 - 2026-04-09
 
 ### Changed
