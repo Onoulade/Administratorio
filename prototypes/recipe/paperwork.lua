@@ -24,7 +24,7 @@ data:extend({
 
   -- Carbon Offset Certificates (reworked: desk recipe from blank-form + coal)
   { type = "recipe", name = "carbon-offset-certificate-basic",    category = "bureaucratic-bootstrap", enabled = true,  ingredients = {{type="item", name="blank-form", amount=1}, {type="item", name="coal", amount=1}}, results = {{type="item", name="carbon-offset-certificate-basic", amount=1}}, energy_required = 2 },
-  { type = "recipe", name = "carbon-offset-certificate-verified", category = "union-negotiation",          enabled = false, ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=4}, {type="item", name="dubious-data", amount=20}}, results = {{type="item", name="carbon-offset-certificate-verified", amount=1}}, energy_required = 15 },
+  { type = "recipe", name = "carbon-offset-certificate-verified", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=4}, {type="item", name="dubious-data", amount=20}}, results = {{type="item", name="carbon-offset-certificate-verified", amount=1}}, energy_required = 15 },
 
   -- Form 27b-6
   { type = "recipe", name = "form-27b-6", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="blank-form", amount=1}, {type="item", name="useless-documentation", amount=1}}, results = {{type="item", name="form-27b-6", amount=1}}, energy_required = 3 },

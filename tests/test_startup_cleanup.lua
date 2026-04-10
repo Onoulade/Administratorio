@@ -150,7 +150,7 @@ local deps = {
 
 local module = dofile(mod_root .. "scripts/control_resolution_processing.lua")
 
-test("startup cleanup restocks spaceship with printer and admin station", function()
+test("startup cleanup restocks spaceship with printer, office desk, and admin station", function()
   local controller = module.new(deps)
   controller.on_tick({tick = 1})
 
@@ -158,6 +158,7 @@ test("startup cleanup restocks spaceship with printer and admin station", functi
 
   assert_true(ship_inventory.cleared, "spaceship inventory should be cleared")
   assert_eq(ship_inventory.items["mechanical-printer"], 1, "spaceship should receive one mechanical printer")
+  assert_eq(ship_inventory.items["office-desk"], 1, "spaceship should receive one office desk")
   assert_eq(ship_inventory.items["admin-station"], 1, "spaceship should receive one admin station")
 
   assert_true(chest_1_inventory.cleared, "crash chest 1 should be cleared")

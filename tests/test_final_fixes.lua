@@ -990,6 +990,7 @@ end)
 test("high-energy intermediates require verified carbon certificates", function()
   local electric_engine = get_recipe("electric-engine-unit")
   assert_true(electric_engine ~= nil, "electric-engine-unit missing")
+  assert_eq(electric_engine.category, "advanced-crafting-regulated", "electric-engine-unit should be reassigned to the regulated fluid-capable assembler path")
   assert_true(has_ingredient(electric_engine, "carbon-offset-certificate-verified"), "electric-engine-unit missing verified carbon certificate")
 
   local battery = get_recipe("battery")
