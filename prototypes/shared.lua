@@ -237,6 +237,7 @@ if space_age_enabled then
   shared.ADMIN_BUILDINGS["formation-center"] = true
   shared.ADMIN_BUILDINGS["trajectory-compliance-array"] = true
   shared.ADMIN_BUILDINGS["notary-office"] = true
+  shared.ADMIN_BUILDINGS["capture-bureau"] = true
   shared.ADMIN_BUILDINGS["conciliation-desk"] = true
 end
 

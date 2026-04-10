@@ -470,7 +470,7 @@ local function get_cached_desks()
   if #desks == 0 and game and game.surfaces then
     for _, surface in pairs(game.surfaces) do
       for _, desk in ipairs(surface.find_entities_filtered{
-        name = {"admin-station"},
+        name = {"admin-station", "admin-station-north", "admin-station-east", "admin-station-west", "capture-bureau"},
       }) do
         if desk.valid then
           storage.admin_desks[desk.unit_number] = desk

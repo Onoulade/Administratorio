@@ -112,6 +112,7 @@ data:extend({
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "chromatic-printer"},
+      {type = "unlock-recipe", recipe = "capture-bureau"},
       {type = "unlock-recipe", recipe = "conciliation-desk"},
       {type = "unlock-recipe", recipe = "yellow-ink-production"},
       {type = "unlock-recipe", recipe = "mycelial-form-stock"},
