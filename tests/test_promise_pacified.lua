@@ -41,6 +41,8 @@ defines = {
   },
 }
 
+log = function() end
+
 local protest_factory = dofile(mod_root .. "scripts/biters_protests.lua")
 
 local function new_test_context()
@@ -60,6 +62,7 @@ local function new_test_context()
   local pacified_render_calls = 0
   local protest_render_calls = 0
   local desk_available = false
+  local entity_lifecycle_logging_enabled = false
   local next_unit_number = 100
 
   local surface
@@ -256,6 +259,8 @@ local function new_test_context()
       return desks
     end,
     normalize_case_progress = function() end,
+    biter_force_name = "neutral",
+    get_biter_force = function() return game.forces["neutral"] end,
     format_position = function(pos)
       if not pos then return "[nil]" end
       return "[" .. tostring(pos.x) .. "," .. tostring(pos.y) .. "]"
@@ -295,6 +300,9 @@ local function new_test_context()
     remember_home_spawner = function() end,
     send_biter_to_station_with_targets = function() end,
     start_return_home = function() end,
+    should_log_entity_lifecycle = function()
+      return entity_lifecycle_logging_enabled
+    end,
     background_state_shard_count = 4,
     protest_debug_status_ticks = 10 * 60,
     log_prefix = "[Administratorio] ",
@@ -316,7 +324,19 @@ local function new_test_context()
     get_pacified_render_calls = function() return pacified_render_calls end,
     get_protest_render_calls = function() return protest_render_calls end,
     set_desk_available = function(value) desk_available = value end,
+    set_entity_lifecycle_logging = function(value) entity_lifecycle_logging_enabled = value end,
   }
+end
+
+local function new_invalid_entity()
+  return setmetatable({}, {
+    __index = function(_, key)
+      if key == "valid" then
+        return false
+      end
+      error("invalid entity access: " .. tostring(key), 2)
+    end,
+  })
 end
 
 test("pacified invalid biter rematerializes into a parked visible state while waiting", function()
@@ -341,7 +361,7 @@ test("pacified invalid biter rematerializes into a parked visible state while wa
   assert_true(ctx.get_pacified_render_calls() > 0, "pacified waiting biter should show a waiting indicator")
   assert_eq(info.state, "pacified", "recreated biter should remain pacified while waiting")
   assert_true(info.entity and info.entity.valid, "pacified biter should have a live entity again")
-  assert_true(info.entity.active == false, "pacified biter should be parked so it stays stable while visible")
+  assert_true(info.pacified_parked, "pacified biter should be parked so it stays stable while visible")
 end)
 
 test("pacified invalid biter does not keep rematerializing every shard with no desk open", function()
@@ -459,6 +479,28 @@ test("pacified invalid biter rematerializes only when a desk opens", function()
   assert_true(storage.waiting_biters[info.tracked_unit_number] == info, "tracked biter should move to the replacement unit number")
 end)
 
+test("entity lifecycle logging does not dereference invalid protesters", function()
+  local ctx = new_test_context()
+  ctx.set_entity_lifecycle_logging(true)
+
+  local info = {
+    state = "protesting",
+    entity = new_invalid_entity(),
+    entity_name = "small-biter",
+    last_known_position = {x = 4, y = 5},
+    last_known_surface_index = 1,
+    tracked_unit_number = 14,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[14] = info
+  ctx.state_sets.protesting[14] = true
+
+  game.tick = 0
+  ctx.controller.process_frustration_and_protests(ctx.surface)
+
+  assert_true(storage.waiting_biters[14] == info, "logging invalid protesters should not crash processing")
+end)
+
 test("promise without desk capacity pacifies and explicitly stops the protester", function()
   local ctx = new_test_context()
   local target = {
@@ -501,7 +543,7 @@ test("promise without desk capacity pacifies and explicitly stops the protester"
   assert_eq(info.promise_retry_until_tick, 120 + 60 * 60, "promise should preserve the full pacification retry window")
   assert_eq(info.frustration, 300, "promise pacification should only reduce frustration to half threshold")
   assert_true(info.entity == entity, "pacified protester should keep its live entity so it remains visible")
-  assert_true(entity.active == false, "pacified protester should be parked while remaining visible")
+  assert_true(info.pacified_parked, "pacified protester should be parked while remaining visible")
   assert_eq(info.last_known_position.x, 1, "pacified protester should remember its last x position")
   assert_eq(info.last_known_position.y, 1, "pacified protester should remember its last y position")
   assert_true(target.active == true, "promise should release the protested building while the biter is pacified")
@@ -590,7 +632,7 @@ test("pacified roaming biter parks when its roam command completes", function()
   }
 
   assert_eq(info.state, "pacified", "completed pacified roam should stay pacified")
-  assert_true(entity.active == false, "completed pacified roam should park the biter between moves")
+  assert_true(info.pacified_parked, "completed pacified roam should park the biter between moves")
   assert_true(ctx.get_last_stop_command() ~= nil, "completed pacified roam should issue a stop command while parked")
 end)
 
@@ -613,6 +655,7 @@ test("pacified pacing quickly resumes desk loitering after a short idle", functi
     tracked_unit_number = 20,
     promise_retry_until_tick = 60 * 60,
     next_pacified_roam_tick = 20,
+    pacified_parked = true,
   }
   storage.waiting_biters[20] = info
   ctx.state_sets.pacified[20] = true
@@ -620,7 +663,7 @@ test("pacified pacing quickly resumes desk loitering after a short idle", functi
   game.tick = 20
   ctx.controller.process_protest_pacing(ctx.surface)
 
-  assert_true(entity.active == true, "pacified pacing should restart desk loitering after the short idle window")
+  assert_true(not info.pacified_parked, "pacified pacing should restart desk loitering after the short idle window")
   assert_true(ctx.get_last_move_command() ~= nil, "pacified pacing should issue a new roam command")
   local destination = ctx.get_last_move_command().destination
   local desk_dist = (destination.x - ctx.desk.position.x)^2 + (destination.y - ctx.desk.position.y)^2

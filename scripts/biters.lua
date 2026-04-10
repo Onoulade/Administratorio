@@ -99,6 +99,11 @@ local PROTEST_ALERT_SOUND_MAX_DISTANCE = 32
 local PROTEST_MAP_TAG_TEXT = "PROTEST"
 local WAITING_BITER_STATE_NAMES = {"waiting", "pathfinding", "protesting", "pacified", "returning_home"}
 local WAITING_PATHING_PROCESS_SHARD_COUNT = 4
+local BITER_FORCE_NAME = "administratorio-biters"
+
+local function get_biter_force()
+  return game.forces[BITER_FORCE_NAME] or game.forces["neutral"]
+end
 
 local function ensure_runtime_profile_section(runtime_profile, key)
   if not runtime_profile then return nil end
@@ -432,7 +437,6 @@ local function adopt_redirected_biter(info, entity, force_name)
   local surface = entity.surface
   local position = surface.find_non_colliding_position(entity.name, entity.position, 2, 0.25)
   if not position then
-    -- log(LOG_PREFIX .. "Biter adoption fallback for " .. entity.name .. " (unit " .. entity.unit_number .. "): no free replacement position, keeping original entity")
     capture_home_spawner(info, entity, true)
     return entity
   end
@@ -443,7 +447,6 @@ local function adopt_redirected_biter(info, entity, force_name)
     force = force_name or entity.force.name,
   }
   if not replacement or not replacement.valid then
-    -- log(LOG_PREFIX .. "Biter adoption fallback for " .. entity.name .. " (unit " .. entity.unit_number .. "): replacement entity creation failed, keeping original entity")
     capture_home_spawner(info, entity, true)
     return entity
   end
@@ -469,7 +472,7 @@ end
 local function issue_desk_route_command(entity, destination)
   if not entity or not entity.valid or not destination then return false end
 
-  entity.force = game.forces["neutral"]
+  entity.force = get_biter_force()
   entity.active = true
   entity.commandable.set_command({
     type = defines.command.go_to_location,
@@ -485,7 +488,7 @@ local function park_waiting_biter(info, entity)
 
   set_waiting_biter_state(info, "waiting")
   info.desk_dest = nil
-  entity.force = game.forces["neutral"]
+  entity.force = get_biter_force()
   entity.commandable.set_command({
     type = defines.command.stop,
     distraction = defines.distraction.none,
@@ -607,7 +610,7 @@ local function start_return_home(info, entity)
   info.return_dest = dest
   info.return_despawn_tick = game.tick + C.RETURN_DESPAWN_TICKS
 
-  entity.force = game.forces["neutral"]
+  entity.force = get_biter_force()
   entity.active = true
   entity.commandable.set_command({
     type = defines.command.go_to_location,
@@ -673,6 +676,8 @@ protest_rendering = biters_rendering_factory.new({
 protest_system = biters_protests_factory.new({
   adopt_redirected_biter = adopt_redirected_biter,
   background_state_shard_count = WAITING_PATHING_PROCESS_SHARD_COUNT,
+  biter_force_name = BITER_FORCE_NAME,
+  get_biter_force = get_biter_force,
   constants = C,
   copy_complaints = copy_complaints,
   ensure_achievements = ensure_achievements,
@@ -760,7 +765,7 @@ function M.send_biter_to_station_with_targets(entity, targets, opts)
       state = "pathfinding",
     }
     info.entity_name = entity.name
-    entity = adopt_redirected_biter(info, entity, "neutral")
+    entity = adopt_redirected_biter(info, entity, BITER_FORCE_NAME)
     if not entity or not entity.valid then return end
 
     info.entity = entity
@@ -848,7 +853,7 @@ function M.process_walk_in_registration(surface, desks, runtime_profile)
               goto skip_walkin_biter
             end
 
-            local new_biter = surface.create_entity{name = biter.name, position = pos, force = "neutral"}
+            local new_biter = surface.create_entity{name = biter.name, position = pos, force = BITER_FORCE_NAME}
             new_biter.active = false
             zones.reassign_slot_by_index(desk.unit_number, slot, new_biter.unit_number)
             local info = {
