@@ -47,7 +47,7 @@ data = {
     },
     ["assembling-machine"] = {
       ["assembling-machine-1"] = { name = "assembling-machine-1", type = "assembling-machine", crafting_categories = {"crafting"} },
-      ["assembling-machine-2"] = { name = "assembling-machine-2", type = "assembling-machine", crafting_categories = {"crafting", "advanced-crafting"} },
+      ["assembling-machine-2"] = { name = "assembling-machine-2", type = "assembling-machine", crafting_categories = {"crafting", "advanced-crafting", "crafting-with-fluid"} },
       ["assembling-machine-3"] = { name = "assembling-machine-3", type = "assembling-machine", crafting_categories = {"crafting", "advanced-crafting", "crafting-with-fluid"} },
     },
     ["module-category"] = {},
@@ -987,10 +987,22 @@ test("engine units use baseline paperwork plus carbon offsets", function()
   assert_true(not has_ingredient(r, "management-verbal-work-order"), "engine-unit should not use management-verbal-work-order")
 end)
 
+test("regulated advanced assembler path stays available to both AM2 and AM3", function()
+  local am2 = data.raw["assembling-machine"]["assembling-machine-2"]
+  local am3 = data.raw["assembling-machine"]["assembling-machine-3"]
+
+  assert_true(am2 ~= nil, "assembling-machine-2 missing")
+  assert_true(am3 ~= nil, "assembling-machine-3 missing")
+  assert_eq(am2.crafting_categories[1], "crafting-regulated", "AM2 primary regulated category")
+  assert_eq(am2.crafting_categories[2], "advanced-crafting-regulated", "AM2 advanced regulated category")
+  assert_eq(am3.crafting_categories[1], "crafting-regulated", "AM3 primary regulated category")
+  assert_eq(am3.crafting_categories[2], "advanced-crafting-regulated", "AM3 advanced regulated category")
+end)
+
 test("high-energy intermediates require verified carbon certificates", function()
   local electric_engine = get_recipe("electric-engine-unit")
   assert_true(electric_engine ~= nil, "electric-engine-unit missing")
-  assert_eq(electric_engine.category, "advanced-crafting-regulated", "electric-engine-unit should be reassigned to the regulated fluid-capable assembler path")
+  assert_eq(electric_engine.category, "advanced-crafting-regulated", "electric-engine-unit should be reassigned to the regulated fluid-capable AM2/AM3 path")
   assert_true(has_ingredient(electric_engine, "carbon-offset-certificate-verified"), "electric-engine-unit missing verified carbon certificate")
 
   local battery = get_recipe("battery")

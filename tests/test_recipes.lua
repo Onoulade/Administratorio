@@ -59,7 +59,7 @@ data = {
     },
     ["assembling-machine"] = {
       ["assembling-machine-1"] = { crafting_categories = {"crafting"} },
-      ["assembling-machine-2"] = { crafting_categories = {"crafting", "advanced-crafting"} },
+      ["assembling-machine-2"] = { crafting_categories = {"crafting", "advanced-crafting", "crafting-with-fluid"} },
       ["assembling-machine-3"] = { crafting_categories = {"crafting", "advanced-crafting", "crafting-with-fluid"} },
     },
     ["recipe-category"] = {},

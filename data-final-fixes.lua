@@ -822,7 +822,8 @@ for name, recipe in pairs(data.raw["recipe"]) do
   end
 
   -- Fluid recipes can never be hand-crafted, so leaving the original on
-  -- crafting-with-fluid would orphan it after we repurpose AM3 categories.
+  -- crafting-with-fluid would orphan it after we repurpose AM2/AM3 onto
+  -- regulated categories.
   local above_green = not is_red_science_or_below(name) or cat == "crafting-with-fluid"
 
   if above_green then
