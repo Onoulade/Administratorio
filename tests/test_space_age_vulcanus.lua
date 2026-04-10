@@ -214,10 +214,37 @@ test("digital services bureau is a staffed fulgora office upgrade", function()
   assert_eq(entity.fluid_boxes[2].production_type, "output", "digital-services-bureau should vent outputs")
 end)
 
+test("aquilo printer and exchange are specialized endgame bureaucracy machines", function()
+  local laser = data.raw["assembling-machine"]["laser-printer"]
+  assert_true(laser ~= nil, "laser-printer missing")
+  assert_eq(laser.placeable_by[1].item, "laser-printer", "laser-printer should build from the laser-printer item")
+  local laser_categories = {}
+  for _, category in ipairs(laser.crafting_categories or {}) do
+    laser_categories[category] = true
+  end
+  assert_true(laser_categories["printing"], "laser-printer should keep base printing")
+  assert_true(laser_categories["printing-advanced"], "laser-printer should keep advanced printing")
+  assert_true(laser_categories["printing-workorder"], "laser-printer should keep work-order printing")
+  assert_true(laser_categories["printing-multicolor"], "laser-printer should expose multicolor printing")
+  assert_true(laser_categories["fax-reconstruction"], "laser-printer should expose fax reconstruction")
+  assert_eq(laser.crafting_speed, 5, "laser-printer should be the fastest printer")
+  assert_eq(#(laser.fluid_boxes or {}), 0, "laser-printer should use solid transfer media instead of fluid ports")
+
+  local exchange = data.raw["assembling-machine"]["interplanetary-fax-exchange"]
+  assert_true(exchange ~= nil, "interplanetary-fax-exchange missing")
+  assert_eq(exchange.placeable_by[1].item, "interplanetary-fax-exchange",
+    "interplanetary-fax-exchange should build from the fax exchange item")
+  local exchange_categories = exchange.crafting_categories or {}
+  assert_eq(#exchange_categories, 1, "interplanetary-fax-exchange should stay in the fax lane")
+  assert_eq(exchange_categories[1], "fax-reconstruction",
+    "interplanetary-fax-exchange should only expose fax reconstruction for now")
+end)
+
 test("planet helper exposes exact basic-planet conditions and abundance outputs", function()
   local vulcanus = planets.surface_conditions_for_planet("vulcanus")
   local gleba = planets.surface_conditions_for_planet("gleba")
   local fulgora = planets.surface_conditions_for_planet("fulgora")
+  local aquilo = planets.surface_conditions_for_planet("aquilo")
 
   assert_eq(vulcanus[1].property, "pressure", "vulcanus first condition should be pressure")
   assert_eq(vulcanus[1].min, 4000, "vulcanus pressure should match Space Age")
@@ -225,6 +252,8 @@ test("planet helper exposes exact basic-planet conditions and abundance outputs"
   assert_eq(vulcanus[2].min, 40, "vulcanus gravity should match Space Age")
   assert_eq(gleba[1].min, 2000, "gleba pressure should match Space Age")
   assert_eq(fulgora[1].min, 800, "fulgora pressure should match Space Age")
+  assert_eq(aquilo[1].min, 300, "aquilo pressure should match Space Age")
+  assert_eq(aquilo[2].min, 15, "aquilo gravity should match Space Age")
 
   assert_eq(planets.BASIC_PLANET_ABUNDANCE.vulcanus, "lie", "vulcanus abundance should be lie")
   assert_eq(planets.BASIC_PLANET_ABUNDANCE.gleba, "dubious-data", "gleba abundance should be dubious-data")
@@ -267,6 +296,16 @@ test("chromatic recipes stay printer-only while support-heavy paperwork lives in
   assert_eq(data.raw.recipe["offworld-metallurgy-charter"].category, "bureaucracy-certification", "offworld charter should be notary-made")
   assert_true(not has_ingredient(data.raw.recipe["management-approval-verbal-vulcanus"], "cyan-ink"),
     "notary verbal approval should consume support materials, not direct printer ink")
+end)
+
+test("chromatic printer and liquid black ink are excluded from Aquilo", function()
+  local printer_recipe = assert(data.raw.recipe["chromatic-printer"], "chromatic-printer recipe missing")
+  local liquid_black_ink = assert(data.raw.recipe["liquid-black-ink"], "liquid-black-ink recipe missing")
+  local printer_entity = assert(data.raw["assembling-machine"]["chromatic-printer"], "chromatic-printer entity missing")
+
+  assert_eq(printer_recipe.surface_conditions[1].min, 301, "chromatic-printer recipe should exclude Aquilo pressure")
+  assert_eq(liquid_black_ink.surface_conditions[1].min, 301, "liquid-black-ink should exclude Aquilo pressure")
+  assert_eq(printer_entity.surface_conditions[1].min, 301, "chromatic-printer entity should exclude Aquilo placement")
 end)
 
 test("offworld recipe variants keep vulcanus paperwork gates off the home planet", function()
@@ -328,6 +367,8 @@ test("fulgora bureau and magenta paperwork stay on fulgora", function()
   local required = {
     "digital-services-bureau",
     "charged-toner",
+    "archive-rubble-recovery",
+    "archive-documentation-recovery",
     "magenta-ink-production",
     "signal-form-stock",
     "blank-magenta-form-production",
@@ -346,12 +387,48 @@ test("fulgora bureau and magenta paperwork stay on fulgora", function()
 
   assert_eq(data.raw.recipe["blank-magenta-form-production"].category, "printing-chromatic",
     "blank-magenta-form should be printer-made")
+  assert_eq(data.raw.recipe["archive-rubble-recovery"].category, "bureaucratic-bootstrap",
+    "archive-rubble-recovery should stay a bootstrap salvage recipe")
   assert_eq(data.raw.recipe["digital-processing-certificate"].category, "bureaucracy-registration",
     "digital-processing-certificate should be office-made")
   assert_true(has_ingredient(data.raw.recipe["digital-services-bureau"], "relay-clerk"),
     "digital-services-bureau should require relay-clerk")
   assert_true(has_ingredient(data.raw.recipe["electromagnetic-operating-license"], "digital-processing-certificate"),
     "electromagnetic-operating-license should build from digital-processing-certificate")
+end)
+
+test("aquilo fax and multicolor paperwork stay on Aquilo", function()
+  local required = {
+    "laser-printer",
+    "interplanetary-fax-exchange",
+    "transfer-emulsion-production",
+    "thermal-transfer-sheet-production",
+    "composite-chroma-ribbon-production",
+    "composite-form-cyan-yellow-production",
+    "composite-form-cyan-magenta-production",
+    "composite-form-yellow-magenta-production",
+    "trichromatic-permit-production",
+    "unified-operations-charter-production",
+    "cryogenic-operations-license-production",
+  }
+
+  for _, recipe_name in ipairs(required) do
+    local recipe = assert(data.raw.recipe[recipe_name], recipe_name .. " missing")
+    assert_true(recipe.surface_conditions ~= nil and #recipe.surface_conditions >= 2, recipe_name .. " should be surface-limited")
+    assert_eq(recipe.surface_conditions[1].min, 300, recipe_name .. " should target Aquilo pressure")
+    assert_eq(recipe.surface_conditions[2].min, 15, recipe_name .. " should target Aquilo gravity")
+  end
+
+  assert_eq(data.raw.recipe["transfer-emulsion-production"].category, "cryogenics",
+    "transfer-emulsion should be cryogenic chemistry")
+  assert_eq(data.raw.recipe["composite-chroma-ribbon-production"].category, "printing-multicolor",
+    "composite-chroma-ribbon should be laser-printer multicolor work")
+  assert_eq(data.raw.recipe["cryogenic-operations-license-production"].category, "printing-multicolor",
+    "cryogenic-operations-license should be multicolor printed")
+  assert_true(has_ingredient(data.raw.recipe["laser-printer"], "cryoprint-technician"),
+    "laser-printer should require cryoprint-technician")
+  assert_true(has_ingredient(data.raw.recipe["interplanetary-fax-exchange"], "cryoprint-technician"),
+    "interplanetary-fax-exchange should require cryoprint-technician")
 end)
 
 if failed > 0 then

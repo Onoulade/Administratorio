@@ -5,6 +5,7 @@ M.BASIC_PLANET_PROPERTIES = {
   vulcanus = {pressure = 4000, gravity = 40},
   gleba = {pressure = 2000, gravity = 20},
   fulgora = {pressure = 800, gravity = 8},
+  aquilo = {pressure = 300, gravity = 15},
 }
 
 M.BASIC_PLANET_ABUNDANCE = {

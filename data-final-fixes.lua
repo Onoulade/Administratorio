@@ -1365,7 +1365,9 @@ end
 -- 7. COLORED INK GATING FOR PLANET INTERMEDIATES
 -- Any recipe that consumes a Space Age planet-specific intermediate must also
 -- consume the corresponding colored ink form. This makes planet ink production
--- essential for late-game manufacturing everywhere.
+-- essential for late-game manufacturing everywhere. Once Aquilo is online,
+-- multi-planet recipes are consolidated into composite paperwork instead of
+-- stacking multiple raw CMY forms independently.
 -- One form per batch (not multiplied), added after regulation.
 -------------------------------------------------------------------------------
 local PLANET_INTERMEDIATE_GATING = {
@@ -1375,6 +1377,18 @@ local PLANET_INTERMEDIATE_GATING = {
   ["holmium-plate"] = "blank-magenta-form",
 }
 
+local TOP_TIER_MULTICOLOR_GATING = {
+  ["quantum-processor"] = "unified-operations-charter",
+}
+
+local CRYOGENIC_RECIPE_GATING = {
+  ["lithium"] = "composite-form",
+  ["lithium-plate"] = "composite-form",
+  ["fluoroketone"] = "cryogenic-operations-license",
+  ["fluoroketone-cooling"] = "cryogenic-operations-license",
+  ["cryogenic-plant"] = "cryogenic-operations-license",
+}
+
 for recipe_name, recipe in pairs(data.raw["recipe"]) do
   if shared.is_admin_recipe(recipe_name) then goto next_gating end
 
@@ -1382,19 +1396,37 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
   if not target or not target.ingredients then goto next_gating end
 
   local required_forms = {}
+  local required_form_order = {}
   for _, ing in ipairs(target.ingredients) do
     local name = ing.name or ing[1]
     local form = PLANET_INTERMEDIATE_GATING[name]
     if form and not required_forms[form] then
       required_forms[form] = true
+      required_form_order[#required_form_order + 1] = form
     end
   end
 
-  for form_name, _ in pairs(required_forms) do
-    add_special_paperwork(recipe_name, form_name, 1)
+  if #required_form_order >= 2 then
+    local multicolor_gate = TOP_TIER_MULTICOLOR_GATING[recipe_name]
+      or (#required_form_order == 2 and "composite-form" or "trichromatic-permit")
+
+    for _, form_name in ipairs(required_form_order) do
+      remove_ingredient_from_recipe(recipe_name, form_name)
+    end
+    add_special_paperwork(recipe_name, multicolor_gate, 1)
+  else
+    for _, form_name in ipairs(required_form_order) do
+      add_special_paperwork(recipe_name, form_name, 1)
+    end
   end
 
   ::next_gating::
+end
+
+for recipe_name, form_name in pairs(CRYOGENIC_RECIPE_GATING) do
+  if data.raw["recipe"][recipe_name] and not shared.is_admin_recipe(recipe_name) then
+    add_special_paperwork(recipe_name, form_name, 1)
+  end
 end
 
 -------------------------------------------------------------------------------
