@@ -439,6 +439,7 @@ data:extend({
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "laser-printer"},
+      {type = "unlock-recipe", recipe = "fax-emitter"},
       {type = "unlock-recipe", recipe = "interplanetary-fax-exchange"},
       {type = "unlock-recipe", recipe = "transfer-emulsion-production"},
       {type = "unlock-recipe", recipe = "thermal-transfer-sheet-production"},
@@ -463,6 +464,75 @@ data:extend({
       time = 60,
     },
     order = "h-f",
+  },
+  {
+    type = "technology",
+    name = "fax-queue-capacity-1",
+    icon = "__administratorio__/graphics/icons/office-building.png",
+    icon_size = 64,
+    effects = {
+      {type = "nothing", effect_description = {"technology-effect.fax-queue-capacity", "5"}},
+    },
+    prerequisites = {"aquilo-fax-network"},
+    unit = {
+      count = 300,
+      ingredients = {
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"cryogenic-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 60,
+    },
+    order = "h-g",
+    upgrade = true,
+  },
+  {
+    type = "technology",
+    name = "fax-queue-capacity-2",
+    icon = "__administratorio__/graphics/icons/office-building.png",
+    icon_size = 64,
+    effects = {
+      {type = "nothing", effect_description = {"technology-effect.fax-queue-capacity", "5"}},
+    },
+    prerequisites = {"fax-queue-capacity-1"},
+    unit = {
+      count = 425,
+      ingredients = {
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"cryogenic-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 60,
+    },
+    order = "h-h",
+    upgrade = true,
+  },
+  {
+    type = "technology",
+    name = "fax-queue-capacity-3",
+    icon = "__administratorio__/graphics/icons/office-building.png",
+    icon_size = 64,
+    effects = {
+      {type = "nothing", effect_description = {"technology-effect.fax-queue-capacity", "5"}},
+    },
+    prerequisites = {"fax-queue-capacity-2"},
+    unit = {
+      count = 550,
+      ingredients = {
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"cryogenic-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 60,
+    },
+    order = "h-i",
+    upgrade = true,
   },
 })
 
