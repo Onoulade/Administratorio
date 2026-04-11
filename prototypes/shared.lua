@@ -235,6 +235,7 @@ shared.ADMIN_BUILDINGS = {
 if space_age_enabled then
   shared.ADMIN_BUILDINGS["chromatic-printer"] = true
   shared.ADMIN_BUILDINGS["laser-printer"] = true
+  shared.ADMIN_BUILDINGS["fax-emitter"] = true
   shared.ADMIN_BUILDINGS["formation-center"] = true
   shared.ADMIN_BUILDINGS["trajectory-compliance-array"] = true
   shared.ADMIN_BUILDINGS["notary-office"] = true
