@@ -1,5 +1,6 @@
 ---------------------------------------------------------------------------------------------------
-Version: Unreleased
+Version: 0.2.14
+Date: 2026-04-11
   Bugfixes:
     - Fixed protesting and pacified biters flickering in and out of existence due to the engine cleaning up entities on the neutral force. Tracked biters now use a dedicated force with ceasefire against all sides, and parked state is tracked with flags and stop commands instead of entity deactivation.
 
