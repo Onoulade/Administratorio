@@ -84,11 +84,10 @@ data:extend({
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "notary-office"},
+      {type = "unlock-recipe", recipe = "territorial-arbitration-post"},
       {type = "unlock-recipe", recipe = "embossed-seal"},
       {type = "unlock-recipe", recipe = "industrial-charter"},
-      {type = "unlock-recipe", recipe = "thermal-process-license"},
-      {type = "unlock-recipe", recipe = "calcite-reagent-waiver"},
-      {type = "unlock-recipe", recipe = "offworld-metallurgy-charter"},
+      {type = "unlock-recipe", recipe = "territorial-resettlement-order"},
       {type = "unlock-recipe", recipe = "good-excuse-vulcanus"},
       {type = "unlock-recipe", recipe = "safety-waiver-vulcanus"},
       {type = "unlock-recipe", recipe = "construction-permit-vulcanus"},
@@ -97,7 +96,30 @@ data:extend({
       {type = "unlock-recipe", recipe = "form-27b-6-vulcanus"},
       {type = "unlock-recipe", recipe = "vulcanus-lie-distillation"},
     },
-    prerequisites = {"chromatic-printing", "metallurgic-science-pack"},
+    prerequisites = {"chromatic-printing"},
+    unit = {
+      count = 260,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 45,
+    },
+    order = "h-c",
+  },
+  {
+    type = "technology",
+    name = "vulcanus-export-charters",
+    icon = "__administratorio__/graphics/icons/steel-forge-icon.png",
+    icon_size = 64,
+    effects = {
+      {type = "unlock-recipe", recipe = "thermal-process-license"},
+      {type = "unlock-recipe", recipe = "calcite-reagent-waiver"},
+      {type = "unlock-recipe", recipe = "offworld-metallurgy-charter"},
+    },
+    prerequisites = {"vulcanus-certification", "metallurgic-science-pack"},
     unit = {
       count = 320,
       ingredients = {
@@ -109,7 +131,7 @@ data:extend({
       },
       time = 45,
     },
-    order = "h-c",
+    order = "h-c2",
   },
   {
     type = "technology",
@@ -267,7 +289,7 @@ data:extend({
   },
 })
 
-add_tech_unlock("metallurgic-science-pack", "licensed-notary-formation")
+add_tech_unlock("workforce-formation", "licensed-notary-formation")
 add_tech_unlock("administrative-science-research", "research-grant-approval-vulcanus")
 add_tech_unlock("administrative-science-research", "administrative-science-pack-production-vulcanus")
 add_tech_unlock("administrative-science-research", "admin-station-gleba")

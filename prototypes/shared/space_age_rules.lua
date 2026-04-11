@@ -22,6 +22,7 @@ rules.OPERATING_FORM_EXEMPT_BY_RECIPE = {
   ["liquid-stimulant-production"] = true,
   ["liquid-coffee-vulcanus"] = true,
   ["notary-office"] = true,
+  ["territorial-arbitration-post"] = true,
   ["capture-bureau"] = true,
   ["conciliation-desk"] = true,
 }
