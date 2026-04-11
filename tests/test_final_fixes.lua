@@ -83,6 +83,7 @@ data = {
     ["item-with-entity-data"] = {},
     ["rail-planner"] = {},
     ["spidertron-remote"] = {},
+    ["space-platform-starter-pack"] = {},
   },
 }
 
@@ -292,6 +293,49 @@ data.raw.item["plastic-bar"] = {
   name = "plastic-bar",
   stack_size = 100,
   icon = "__base__/graphics/icons/plastic-bar.png",
+  icon_size = 64,
+}
+data.raw.item["cargo-bay"] = {
+  type = "item",
+  name = "cargo-bay",
+  stack_size = 10,
+  subgroup = "space-platform",
+  place_result = "cargo-bay",
+  icon = "__space-age__/graphics/icons/cargo-bay.png",
+  icon_size = 64,
+}
+data.raw.item["space-platform-foundation"] = {
+  type = "item",
+  name = "space-platform-foundation",
+  stack_size = 100,
+  subgroup = "space-platform",
+  icon = "__space-age__/graphics/icons/space-platform-foundation.png",
+  icon_size = 64,
+}
+data.raw.item["heating-tower"] = {
+  type = "item",
+  name = "heating-tower",
+  stack_size = 20,
+  subgroup = "environmental-protection",
+  place_result = "heating-tower",
+  icon = "__space-age__/graphics/icons/heating-tower.png",
+  icon_size = 64,
+}
+data.raw.item["chromatic-printer"] = {
+  type = "item",
+  name = "chromatic-printer",
+  stack_size = 50,
+  subgroup = "admin-printers",
+  place_result = "chromatic-printer",
+  icon = "__administratorio__/graphics/icons/steel-forge-icon.png",
+  icon_size = 64,
+}
+data.raw["space-platform-starter-pack"]["space-platform-starter-pack"] = {
+  type = "space-platform-starter-pack",
+  name = "space-platform-starter-pack",
+  stack_size = 1,
+  subgroup = "space-rocket",
+  icon = "__space-age__/graphics/icons/space-platform-starter-pack.png",
   icon_size = 64,
 }
 data.raw.item["solid-fuel"] = {
@@ -631,6 +675,63 @@ recipes["cryogenic-plant"] = {
   },
   results = {
     { type = "item", name = "cryogenic-plant", amount = 1 },
+  },
+}
+
+recipes["cargo-bay"] = {
+  type = "recipe",
+  name = "cargo-bay",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 20 },
+    { type = "item", name = "low-density-structure", amount = 20 },
+    { type = "item", name = "processing-unit", amount = 5 },
+  },
+  results = {
+    { type = "item", name = "cargo-bay", amount = 1 },
+  },
+}
+
+recipes["space-platform-starter-pack"] = {
+  type = "recipe",
+  name = "space-platform-starter-pack",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "space-platform-foundation", amount = 60 },
+    { type = "item", name = "steel-plate", amount = 20 },
+    { type = "item", name = "processing-unit", amount = 20 },
+  },
+  results = {
+    { type = "item", name = "space-platform-starter-pack", amount = 1 },
+  },
+}
+
+recipes["heating-tower"] = {
+  type = "recipe",
+  name = "heating-tower",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 15 },
+    { type = "item", name = "stone-brick", amount = 20 },
+    { type = "item", name = "pipe", amount = 4 },
+  },
+  results = {
+    { type = "item", name = "heating-tower", amount = 1 },
+  },
+}
+
+recipes["chromatic-printer"] = {
+  type = "recipe",
+  name = "chromatic-printer",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "printer-t2", amount = 1 },
+    { type = "item", name = "steel-plate", amount = 20 },
+    { type = "item", name = "advanced-circuit", amount = 20 },
+    { type = "item", name = "processing-unit", amount = 8 },
+  },
+  results = {
+    { type = "item", name = "chromatic-printer", amount = 1 },
   },
 }
 
@@ -1155,6 +1256,98 @@ test("repair-pack gets a bulked regulated AM recipe", function()
   assert_eq(get_result_amount(regulated, "repair-pack"), 5, "repair-pack-regulated should batch to 5")
   assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_5.png"),
     "repair-pack-regulated should show the 5x overlay")
+end)
+
+test("heat-pipe batches at 10x", function()
+  local regulated = get_recipe("heat-pipe")
+  assert_true(regulated ~= nil, "heat-pipe missing")
+  assert_eq(regulated.category, "advanced-crafting-regulated", "heat-pipe category")
+  assert_true(has_ingredient(regulated, "work-order"), "heat-pipe missing work-order")
+  assert_eq(get_result_amount(regulated, "heat-pipe"), 10, "heat-pipe should batch to 10")
+  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_1.png"),
+    "heat-pipe should show the 10x overlay")
+  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_0.png"),
+    "heat-pipe should show the 10x overlay")
+end)
+
+test("equipment recipes stay unbatched at 1x", function()
+  local solar = get_recipe("solar-panel-equipment")
+  assert_true(solar ~= nil, "solar-panel-equipment missing")
+  assert_eq(get_result_amount(solar, "solar-panel-equipment"), 1, "solar-panel-equipment should stay 1x")
+  assert_true(not has_icon_layer(solar, "__base__/graphics/icons/signal/signal_1.png"),
+    "solar-panel-equipment should not show a 1x overlay")
+  assert_true(not has_icon_layer(solar, "__base__/graphics/icons/signal/signal_2.png"),
+    "solar-panel-equipment should not show a 2x overlay")
+
+  local battery = get_recipe("battery-equipment")
+  assert_true(battery ~= nil, "battery-equipment missing")
+  assert_eq(get_result_amount(battery, "battery-equipment"), 1, "battery-equipment should stay 1x")
+  assert_true(not has_icon_layer(battery, "__base__/graphics/icons/signal/signal_1.png"),
+    "battery-equipment should not show a 1x overlay")
+  assert_true(not has_icon_layer(battery, "__base__/graphics/icons/signal/signal_2.png"),
+    "battery-equipment should not show a 2x overlay")
+
+  local battery_mk2 = get_recipe("battery-mk2-equipment")
+  assert_true(battery_mk2 ~= nil, "battery-mk2-equipment missing")
+  assert_eq(get_result_amount(battery_mk2, "battery-mk2-equipment"), 1, "battery-mk2-equipment should stay 1x")
+  assert_true(not has_icon_layer(battery_mk2, "__base__/graphics/icons/signal/signal_1.png"),
+    "battery-mk2-equipment should not show a 1x overlay")
+  assert_true(not has_icon_layer(battery_mk2, "__base__/graphics/icons/signal/signal_2.png"),
+    "battery-mk2-equipment should not show a 2x overlay")
+
+  local exoskeleton = get_recipe("exoskeleton-equipment")
+  assert_true(exoskeleton ~= nil, "exoskeleton-equipment missing")
+  assert_eq(get_result_amount(exoskeleton, "exoskeleton-equipment"), 1, "exoskeleton-equipment should stay 1x")
+  assert_true(not has_icon_layer(exoskeleton, "__base__/graphics/icons/signal/signal_1.png"),
+    "exoskeleton-equipment should not show a 1x overlay")
+end)
+
+test("space platform structures stay unbatched at 1x", function()
+  local cargo_bay = get_recipe("cargo-bay")
+  assert_true(cargo_bay ~= nil, "cargo-bay missing")
+  assert_eq(get_result_amount(cargo_bay, "cargo-bay"), 1, "cargo-bay should stay 1x")
+  assert_eq(get_ingredient_amount(cargo_bay, "steel-plate"), 20, "cargo-bay ingredients should stay unbatched")
+  assert_true(not has_icon_layer(cargo_bay, "__base__/graphics/icons/signal/signal_1.png"),
+    "cargo-bay should not show a 1x overlay")
+  assert_true(not has_icon_layer(cargo_bay, "__base__/graphics/icons/signal/signal_5.png"),
+    "cargo-bay should not show a 5x overlay")
+end)
+
+test("space platform starter pack stays unbatched at 1x", function()
+  local starter_pack = get_recipe("space-platform-starter-pack")
+  assert_true(starter_pack ~= nil, "space-platform-starter-pack missing")
+  assert_eq(get_result_amount(starter_pack, "space-platform-starter-pack"), 1,
+    "space-platform-starter-pack should stay 1x")
+  assert_eq(get_ingredient_amount(starter_pack, "space-platform-foundation"), 60,
+    "space-platform-starter-pack ingredients should stay unbatched")
+  assert_true(not has_icon_layer(starter_pack, "__base__/graphics/icons/signal/signal_1.png"),
+    "space-platform-starter-pack should not show a 1x overlay")
+  assert_true(not has_icon_layer(starter_pack, "__base__/graphics/icons/signal/signal_5.png"),
+    "space-platform-starter-pack should not show a 5x overlay")
+end)
+
+test("vanilla space age buildings stay unbatched at 1x", function()
+  local heating_tower = get_recipe("heating-tower")
+  assert_true(heating_tower ~= nil, "heating-tower missing")
+  assert_eq(get_result_amount(heating_tower, "heating-tower"), 1, "heating-tower should stay 1x")
+  assert_eq(get_ingredient_amount(heating_tower, "steel-plate"), 15, "heating-tower ingredients should stay unbatched")
+  assert_true(not has_icon_layer(heating_tower, "__base__/graphics/icons/signal/signal_1.png"),
+    "heating-tower should not show a 1x overlay")
+  assert_true(not has_icon_layer(heating_tower, "__base__/graphics/icons/signal/signal_5.png"),
+    "heating-tower should not show a 5x overlay")
+end)
+
+test("mod space age buildings stay unbatched at 1x", function()
+  local chromatic_printer = get_recipe("chromatic-printer-regulated")
+  assert_true(chromatic_printer ~= nil, "chromatic-printer-regulated missing")
+  assert_eq(get_result_amount(chromatic_printer, "chromatic-printer"), 1,
+    "chromatic-printer-regulated should stay 1x")
+  assert_eq(get_ingredient_amount(chromatic_printer, "steel-plate"), 20,
+    "chromatic-printer-regulated ingredients should stay unbatched")
+  assert_true(not has_icon_layer(chromatic_printer, "__base__/graphics/icons/signal/signal_1.png"),
+    "chromatic-printer-regulated should not show a 1x overlay")
+  assert_true(not has_icon_layer(chromatic_printer, "__base__/graphics/icons/signal/signal_5.png"),
+    "chromatic-printer-regulated should not show a 5x overlay")
 end)
 
 test("smelting-basic keeps only explicit batch recipes", function()
