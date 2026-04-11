@@ -403,6 +403,60 @@ function shared.is_admin_recipe(name)
 end
 
 -------------------------------------------------------------------------------
+-- UNBATCHED RESULT SUBGROUPS
+-- Space construction outputs should always stay at 1x even when they live in
+-- normal crafting categories, so platform infrastructure and launch hardware
+-- do not inherit bulk recipe treatment.
+-------------------------------------------------------------------------------
+shared.UNBATCHED_RESULT_SUBGROUPS = {
+  ["space-related"] = true,
+  ["space-platform"] = true,
+  ["space-rocket"] = true,
+  ["space-interactors"] = true,
+}
+
+shared.UNBATCHED_RESULT_NAMES = {
+  -- Vanilla Space Age buildings and launch/space infrastructure.
+  ["rocket-silo"] = true,
+  ["cargo-landing-pad"] = true,
+  ["space-platform-foundation"] = true,
+  ["space-platform-starter-pack"] = true,
+  ["cargo-bay"] = true,
+  ["asteroid-collector"] = true,
+  ["crusher"] = true,
+  ["thruster"] = true,
+  ["foundry"] = true,
+  ["big-mining-drill"] = true,
+  ["agricultural-tower"] = true,
+  ["biochamber"] = true,
+  ["biolab"] = true,
+  ["captive-biter-spawner"] = true,
+  ["rocket-turret"] = true,
+  ["lightning-rod"] = true,
+  ["lightning-collector"] = true,
+  ["heating-tower"] = true,
+  ["electromagnetic-plant"] = true,
+  ["tesla-turret"] = true,
+  ["railgun-turret"] = true,
+  ["fusion-reactor"] = true,
+  ["fusion-generator"] = true,
+  ["cryogenic-plant"] = true,
+
+  -- Administratorio Space Age buildings.
+  ["trajectory-compliance-array"] = true,
+  ["formation-center"] = true,
+  ["chromatic-printer"] = true,
+  ["notary-office"] = true,
+  ["territorial-arbitration-post"] = true,
+  ["capture-bureau"] = true,
+  ["conciliation-desk"] = true,
+  ["digital-services-bureau"] = true,
+  ["laser-printer"] = true,
+  ["fax-emitter"] = true,
+  ["interplanetary-fax-exchange"] = true,
+}
+
+-------------------------------------------------------------------------------
 -- BATCH MULTIPLIERS
 -- How many items are produced per regulated craft.
 -- Determines effective form cost per item:
