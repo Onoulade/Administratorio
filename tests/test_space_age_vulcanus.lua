@@ -318,6 +318,7 @@ test("territorial arbitration post is a Vulcanus-only field office with scripted
   assert_eq(#(entity.fluid_boxes or {}), 1, "territorial-arbitration-post should expose one fluid input")
   assert_eq(entity.fluid_boxes[1].production_type, "input", "territorial-arbitration-post should take fluid input")
 
+  assert_true(has_ingredient(recipe, "licensed-notary"), "territorial-arbitration-post should require licensed-notary")
   assert_true(has_ingredient(recipe, "tungsten-carbide"), "territorial-arbitration-post should require tungsten-carbide")
   assert_true(recipe.surface_conditions ~= nil and #recipe.surface_conditions >= 2,
     "territorial-arbitration-post should be surface-limited")
