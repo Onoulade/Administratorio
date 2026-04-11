@@ -15,6 +15,14 @@ The key change is that Space Age should split public finance into two connected 
 - sovereign cash on Nauvis
 - offworld capital and redemption paperwork across the stars
 
+## Current Implementation Snapshot
+
+The current first-pass code already follows the tax-evasion rule for the planet-local Space Age recipes that exist now:
+
+- Vulcanus, Gleba, Fulgora, and Aquilo local paperwork chains do not rely on raw `taxpayer-money`
+- Aquilo fax infrastructure currently exists as `fax-emitter` plus `interplanetary-fax-exchange`
+- derivative finance instruments such as `money-case`, `offworld-allocation`, `cargo-manifest`, and `customs-appraisal` remain design-stage rather than implemented content
+
 ## Core Direction
 
 ### Raw Cash Should Stay Mostly On Nauvis
@@ -141,7 +149,7 @@ Suggested uses:
 
 - first platform departures
 - `space-office`
-- `Fax Sender`
+- `fax-emitter`
 - `Interplanetary Fax Exchange`
 - platform reactor operating budget
 - `trajectory-compliance-array`

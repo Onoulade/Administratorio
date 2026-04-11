@@ -1,6 +1,6 @@
 # Aquilo Space Age Plan
 
-This file records the planned Aquilo principles under the shared rules in [space-age-compatibility-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-compatibility-plan.md).
+This file records the Aquilo principles and the current first-pass implementation under the shared rules in [space-age-compatibility-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-compatibility-plan.md).
 
 ## Planet Role
 
@@ -15,6 +15,16 @@ Its themes are:
 - late-game paperwork unification rather than early bootstrap
 
 Its global rewards are the `Laser Printer` and the `Interplanetary Fax Exchange`.
+
+## Current Implementation Snapshot
+
+The current codebase already ships a first Aquilo pass:
+
+- `laser-printer`, `fax-emitter`, and `interplanetary-fax-exchange` are in-game and Aquilo-limited to craft
+- `transfer-emulsion`, `thermal-transfer-sheet`, `composite-chroma-ribbon`, `composite-form`, `trichromatic-permit`, `unified-operations-charter`, and `cryogenic-operations-license` are implemented
+- the runtime fax network already handles destination selection, per-planet receiver uniqueness, queue reservations, circuit reporting, quality-preserving reconstruction, and queue-safe stalling
+- the current runtime reconstructs faxed paperwork directly inside the exchange logic and consumes generic `paper` plus `ink`
+- the `Laser Printer` still carries the Aquilo print identity and `fax-reconstruction` category scaffolding, but the live fax runtime is not currently recipe-driven through it
 
 ## Planned Design Principles
 
@@ -60,8 +70,8 @@ The `Laser Printer` should be the best machine for:
 
 - explicit final print steps
 - multicolor composite form production
-- rapid copy and reconstruction throughput
-- fax reconstruction throughput
+- rapid copy throughput
+- premium Aquilo-side print throughput
 
 It should not become the best machine for:
 
@@ -77,7 +87,7 @@ The Laser Printer uses solid transfer media: `transfer-emulsion`, `thermal-trans
 The `Interplanetary Fax Exchange` owns:
 
 - queuing and routing of cross-planet document transfers
-- fax reconstruction jobs (consuming local transfer media)
+- first-pass runtime reconstruction of faxed documents
 - destination management and priority handling
 - coordination of paperwork flows between planets
 
@@ -125,8 +135,8 @@ Before Aquilo, paperwork must be physically shipped.
 
 After Aquilo, faxing should become attractive because:
 
-- reconstruction is fast (Laser Printer speed)
-- local transfer media is efficient
+- reconstruction is automated and queue-aware
+- local destination supplies are cheaper than repeated physical shipping for many documents
 - the Fax Exchange handles routing and prioritization
 - multicolor forms are increasingly common in late recipes
 
@@ -135,7 +145,7 @@ But faxing should not replace all shipping:
 - buildings still need physical shipping
 - fluids still need physical shipping
 - bulk cargo still needs physical shipping
-- faxing reconstructs form value by consuming destination-side transfer media
+- faxing reconstructs form value by consuming destination-side supplies
 
 ### 9. Tax evasion applies — no taxpayer money
 
@@ -158,28 +168,28 @@ Aquilo recipes should not require `taxpayer-money`. Like all off-world planets, 
 
 ### Fax Infrastructure
 
-- `fax-routing-order`: destination and priority directive for the Fax Exchange
-- `reconstruction-warrant`: authorization to reconstruct a specific form at the destination
-- `transfer-manifest`: documentation for what is being faxed and where
+- `fax-emitter`: sender building with destination selection
+- `interplanetary-fax-exchange`: destination building with queue, routing, and reconstruction runtime
+- queue-capacity technologies and circuit signals for network visibility
 
-## Planned Fax Loop
+## Current Fax Loop
 
-The intended late shape is:
+The implemented first-pass shape is:
 
-1. source paperwork is created on its home planet (e.g., cyan forms on Vulcanus)
-2. the source is loaded into a fax sender with a routing order
-3. the `Interplanetary Fax Exchange` on Aquilo receives and routes the job
-4. the `Laser Printer` consumes local transfer media and reconstructs the form
-5. the reconstructed form is available for local use or further routing
+1. source paperwork is created on its home planet
+2. the source is loaded into a `fax-emitter` and assigned a destination planet
+3. the destination planet's `interplanetary-fax-exchange` reserves queue space and receives the job
+4. the exchange reconstructs the document from its own inventory once `paper` and `ink` are available
+5. the reconstructed form is available in the exchange inventory for local use or further logistics
 
-The fax network is a throughput and convenience system, not free teleportation. Transfer media is consumed, routing orders are consumed, and the destination must have printer capacity.
+The current fax network is a throughput and convenience system, not free teleportation. Queue space is limited, quality is preserved, and the destination must provide reconstruction supplies.
 
 ## Export Identity
 
 Aquilo's exported value should center on:
 
 - multicolor composite forms (the primary unique export)
-- transfer media for fax reconstruction
+- transfer media for Aquilo printing and multicolor form production
 - the `Laser Printer` itself (fast printing on any planet)
 - the `Interplanetary Fax Exchange` itself (fax capability on any planet)
 - `cryogenic plant`-adjacent licensing

@@ -145,6 +145,42 @@ local function has_fluid_ingredient(recipe, fluid_name)
   return false
 end
 
+local PLANET_SURFACE_CONDITIONS = {
+  nauvis = {pressure = 1000, gravity = 10},
+  vulcanus = {pressure = 4000, gravity = 40},
+  gleba = {pressure = 2000, gravity = 20},
+  fulgora = {pressure = 800, gravity = 8},
+  aquilo = {pressure = 300, gravity = 15},
+}
+
+local function exact_surface_planet(recipe)
+  local conditions = recipe and recipe.surface_conditions or nil
+  if not conditions then return nil end
+
+  local pressure_min, pressure_max, gravity_min, gravity_max
+  for _, condition in ipairs(conditions) do
+    if condition.property == "pressure" then
+      pressure_min = condition.min
+      pressure_max = condition.max
+    elseif condition.property == "gravity" then
+      gravity_min = condition.min
+      gravity_max = condition.max
+    end
+  end
+
+  for planet_name, properties in pairs(PLANET_SURFACE_CONDITIONS) do
+    if pressure_min == properties.pressure
+      and pressure_max == properties.pressure
+      and gravity_min == properties.gravity
+      and gravity_max == properties.gravity
+    then
+      return planet_name
+    end
+  end
+
+  return nil
+end
+
 test("worker-biter exists as the enrolled-to-workforce intermediate", function()
   assert_true(items["job-offer"] ~= nil, "job-offer missing")
   assert_true(items["enrolled-biter"] ~= nil, "enrolled-biter missing")
@@ -173,6 +209,8 @@ test("native Space Age buildings consume planet-specific specialists", function(
   assert_true(has_ingredient(recipes["foundry-offworld"], "tungsten-carbide"), "offworld foundry should require tungsten-carbide")
   assert_true(has_ingredient(recipes["foundry-offworld"], "offworld-metallurgy-charter"), "offworld foundry should require offworld-metallurgy-charter")
   assert_true(has_ingredient(recipes["notary-office"], "licensed-notary"), "notary-office should require licensed-notary")
+  assert_true(has_ingredient(recipes["territorial-arbitration-post"], "licensed-notary"),
+    "territorial-arbitration-post should require licensed-notary")
   assert_true(has_ingredient(recipes["notary-office"], "tungsten-carbide"), "notary-office should require tungsten-carbide")
   assert_true(has_ingredient(recipes["biochamber"], "conciliation-officer"), "biochamber should require conciliation-officer")
   assert_true(has_ingredient(recipes["electromagnetic-plant"], "relay-clerk"), "electromagnetic-plant should require relay-clerk")
@@ -567,6 +605,16 @@ test("aquilo transfer media and multicolor forms define the expected convergence
     "cryogenic-operations-license should require lithium-plate")
   assert_true(not has_ingredient(recipes["transfer-emulsion-production"], "taxpayer-money"),
     "transfer-emulsion should not require taxpayer-money")
+end)
+
+test("planet-local space age recipes stay free of raw taxpayer money off Nauvis", function()
+  for recipe_name, recipe in pairs(recipes) do
+    local planet_name = exact_surface_planet(recipe)
+    if planet_name and planet_name ~= "nauvis" then
+      assert_true(not has_ingredient(recipe, "taxpayer-money"),
+        recipe_name .. " should not require taxpayer-money on " .. planet_name)
+    end
+  end
 end)
 
 test("fax queue capacity technologies form a dedicated Aquilo follow-up chain", function()

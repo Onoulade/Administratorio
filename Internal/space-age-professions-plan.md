@@ -128,14 +128,14 @@ Home identity:
 
 Best uses:
 
-- `Fax Sender`
-- `Interplanetary Fax Exchange`
+- `Digital Services Bureau`
+- `digital-processing-certificate`
 - `signal-allocation-directive`
 - `priority-directive`
 
 Why it works:
 
-- it makes the fax network feel staffed rather than magical
+- it makes Fulgora's computerized processing feel staffed rather than magical
 - it gives Fulgora a profession that matters on every surface
 
 ### `cryoprint-technician`
@@ -147,6 +147,8 @@ Home identity:
 Best uses:
 
 - `Laser Printer`
+- `fax-emitter`
+- `Interplanetary Fax Exchange`
 - `precision-duplicate-order`
 - premium fax reconstruction
 - `advanced-chemistry-license`
@@ -284,10 +286,10 @@ Later, if the runtime is expanded, that can graduate into a distinct upgraded mo
 
 Besides the night module, the best profession-backed content is:
 
-- `licensed-notary` in `Notary Office` and high-tier Vulcanus certification
-- `relay-clerk` in `Fax Sender` and `Interplanetary Fax Exchange`
+- `licensed-notary` in `Notary Office`, `Territorial Arbitration Post`, and high-tier Vulcanus certification
+- `relay-clerk` in `Digital Services Bureau` and Fulgora digital paperwork
 - `conciliation-officer` in `Conciliation Desk` and reassignment loops
-- `cryoprint-technician` in `Laser Printer` and premium duplicate work
+- `cryoprint-technician` in `Laser Printer`, `fax-emitter`, `Interplanetary Fax Exchange`, and premium duplicate work
 
 These are better hooks than scattering specialists across random paperwork recipes, because they attach personnel directly to the most important new buildings.
 
@@ -366,18 +368,17 @@ If professions are introduced in one pass, the cleanest first set is:
 - `licensed-notary`
 - `conciliation-officer`
 - `relay-clerk`
-- `astronaut`
+- `cryoprint-technician`
+- `field-negotiator`
 - `middle-management-managing-manager`
 
 That set covers:
 
 - the current module hook
 - the tier-3 module sink
-- three basic planets
-- space staffing
+- all currently implemented Space Age planet specialists
+- current negotiation and space staffing hooks
 - the management sink
-
-Aquilo and negotiator roles can come in the next pass without breaking the core tree.
 
 ## Open Questions
 
