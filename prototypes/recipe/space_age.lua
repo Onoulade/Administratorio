@@ -316,6 +316,7 @@ data:extend({
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 1},
+      {type = "item", name = "licensed-notary", amount = 1},
       {type = "item", name = "steel-plate", amount = 20},
       {type = "item", name = "advanced-circuit", amount = 10},
       {type = "item", name = "tungsten-carbide", amount = 6},
