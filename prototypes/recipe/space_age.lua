@@ -201,7 +201,7 @@ data:extend({
     results = {{type = "item", name = "night-shift-supervisor", amount = 1}},
     energy_required = 20
   },
-  {
+  surface_limited({
     type = "recipe",
     name = "licensed-notary-formation",
     category = "workforce-formation",
@@ -213,7 +213,7 @@ data:extend({
     },
     results = {{type = "item", name = "licensed-notary", amount = 1}},
     energy_required = 20
-  },
+  }, "nauvis"),
   {
     type = "recipe",
     name = "conciliation-officer-formation",
@@ -302,12 +302,45 @@ data:extend({
       {type = "item", name = "office-desk", amount = 2},
       {type = "item", name = "chromatic-printer", amount = 1},
       {type = "item", name = "licensed-notary", amount = 1},
+      {type = "item", name = "tungsten-carbide", amount = 4},
       {type = "item", name = "steel-plate", amount = 20},
       {type = "item", name = "advanced-circuit", amount = 10},
       {type = "item", name = "permit-draft", amount = 1},
     },
     results = {{type = "item", name = "notary-office", amount = 1}},
     energy_required = 16
+  },
+  surface_limited({
+    type = "recipe",
+    name = "territorial-arbitration-post",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "office-desk", amount = 1},
+      {type = "item", name = "steel-plate", amount = 20},
+      {type = "item", name = "advanced-circuit", amount = 10},
+      {type = "item", name = "tungsten-carbide", amount = 6},
+      {type = "item", name = "construction-permit", amount = 1},
+      {type = "item", name = "radar", amount = 1},
+    },
+    results = {{type = "item", name = "territorial-arbitration-post", amount = 1}},
+    energy_required = 16
+  }, "vulcanus"),
+  {
+    type = "recipe",
+    name = "territorial-arbitration-processing",
+    category = "territorial-arbitration",
+    enabled = true,
+    hidden = true,
+    hide_from_player_crafting = true,
+    allow_decomposition = false,
+    ingredients = {
+      {type = "item", name = "territorial-resettlement-order", amount = 1},
+      {type = "fluid", name = "liquid-coffee", amount = 25},
+    },
+    results = {
+      {type = "item", name = "useless-documentation", amount = 1},
+    },
+    energy_required = 1,
   },
   surface_limited({
     type = "recipe",
@@ -1300,6 +1333,24 @@ data:extend({
   }, "vulcanus"),
   surface_limited({
     type = "recipe",
+    name = "territorial-resettlement-order",
+    category = "bureaucracy-certification",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "industrial-charter", amount = 1},
+      {type = "item", name = "construction-permit", amount = 1},
+      {type = "item", name = "management-approval-verbal", amount = 1},
+      {type = "item", name = "form-27b-6", amount = 1},
+      {type = "item", name = "embossed-seal", amount = 1},
+      {type = "fluid", name = "lie", amount = 60},
+    },
+    results = {
+      {type = "item", name = "territorial-resettlement-order", amount = 1},
+    },
+    energy_required = 8,
+  }, "vulcanus"),
+  surface_limited({
+    type = "recipe",
     name = "thermal-process-license",
     category = "bureaucracy-certification",
     enabled = false,
@@ -1547,3 +1598,5 @@ for _, recipe_name in ipairs({
 end
 
 add_item_ingredient(data.raw.recipe and data.raw.recipe["foundry-offworld"], "licensed-notary", 1)
+add_item_ingredient(data.raw.recipe and data.raw.recipe["foundry"], "tungsten-carbide", 4)
+add_item_ingredient(data.raw.recipe and data.raw.recipe["foundry-offworld"], "tungsten-carbide", 4)
