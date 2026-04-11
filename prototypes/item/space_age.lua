@@ -469,6 +469,17 @@ data:extend({
   },
   {
     type = "item",
+    name = "territorial-resettlement-order",
+    icons = {
+      {icon = item_icons .. "construction-permit.png", icon_size = 64},
+      {icon = item_icons .. "management-approval-written.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    },
+    subgroup = "forms-permits",
+    order = "dk1",
+    stack_size = 100
+  },
+  {
+    type = "item",
     name = "thermal-process-license",
     icons = {
       {icon = item_icons .. "construction-permit.png", icon_size = 64},
@@ -520,6 +531,18 @@ data:extend({
     subgroup = "admin-buildings",
     order = "k",
     place_result = "conciliation-desk",
+    stack_size = 20
+  },
+  {
+    type = "item",
+    name = "territorial-arbitration-post",
+    icons = {
+      {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.95, g = 0.76, b = 0.42, a = 1}},
+      {icon = item_icons .. "construction-permit.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
+    },
+    subgroup = "admin-buildings",
+    order = "k1",
+    place_result = "territorial-arbitration-post",
     stack_size = 20
   },
   {

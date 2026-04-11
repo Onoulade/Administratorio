@@ -167,9 +167,13 @@ end)
 
 test("native Space Age buildings consume planet-specific specialists", function()
   assert_true(has_ingredient(recipes["foundry"], "licensed-notary"), "foundry should require licensed-notary")
+  assert_true(has_ingredient(recipes["foundry"], "tungsten-carbide"), "foundry should require tungsten-carbide")
   assert_true(not has_ingredient(recipes["foundry"], "offworld-metallurgy-charter"), "home-planet foundry should not require offworld-metallurgy-charter")
   assert_true(has_ingredient(recipes["foundry-offworld"], "licensed-notary"), "offworld foundry should still require licensed-notary")
+  assert_true(has_ingredient(recipes["foundry-offworld"], "tungsten-carbide"), "offworld foundry should require tungsten-carbide")
   assert_true(has_ingredient(recipes["foundry-offworld"], "offworld-metallurgy-charter"), "offworld foundry should require offworld-metallurgy-charter")
+  assert_true(has_ingredient(recipes["notary-office"], "licensed-notary"), "notary-office should require licensed-notary")
+  assert_true(has_ingredient(recipes["notary-office"], "tungsten-carbide"), "notary-office should require tungsten-carbide")
   assert_true(has_ingredient(recipes["biochamber"], "conciliation-officer"), "biochamber should require conciliation-officer")
   assert_true(has_ingredient(recipes["electromagnetic-plant"], "relay-clerk"), "electromagnetic-plant should require relay-clerk")
   assert_true(has_ingredient(recipes["cryogenic-plant"], "cryoprint-technician"), "cryogenic-plant should require cryoprint-technician")
@@ -220,11 +224,10 @@ test("vulcanus certification unlocks the notary office and fallback paperwork", 
   assert_true(certification ~= nil, "vulcanus-certification missing")
   for _, recipe_name in ipairs({
     "notary-office",
+    "territorial-arbitration-post",
     "embossed-seal",
     "industrial-charter",
-    "thermal-process-license",
-    "calcite-reagent-waiver",
-    "offworld-metallurgy-charter",
+    "territorial-resettlement-order",
     "good-excuse-vulcanus",
     "safety-waiver-vulcanus",
     "construction-permit-vulcanus",
@@ -234,6 +237,34 @@ test("vulcanus certification unlocks the notary office and fallback paperwork", 
     "vulcanus-lie-distillation",
   }) do
     assert_true(tech_unlocks_recipe(certification, recipe_name), "vulcanus-certification should unlock " .. recipe_name)
+  end
+  assert_true(not tech_unlocks_recipe(certification, "thermal-process-license"),
+    "vulcanus-certification should no longer unlock thermal-process-license")
+  assert_true(not tech_unlocks_recipe(certification, "calcite-reagent-waiver"),
+    "vulcanus-certification should no longer unlock calcite-reagent-waiver")
+  assert_true(not tech_unlocks_recipe(certification, "offworld-metallurgy-charter"),
+    "vulcanus-certification should no longer unlock offworld-metallurgy-charter")
+end)
+
+test("vulcanus export charters split the later metallurgy paperwork", function()
+  local export_charters = technologies["vulcanus-export-charters"]
+  assert_true(export_charters ~= nil, "vulcanus-export-charters missing")
+  assert_true(export_charters.prerequisites ~= nil, "vulcanus-export-charters should have prerequisites")
+
+  local prerequisite_set = {}
+  for _, prerequisite in ipairs(export_charters.prerequisites) do
+    prerequisite_set[prerequisite] = true
+  end
+
+  assert_true(prerequisite_set["vulcanus-certification"], "vulcanus-export-charters should depend on vulcanus-certification")
+  assert_true(prerequisite_set["metallurgic-science-pack"], "vulcanus-export-charters should depend on metallurgic-science-pack")
+
+  for _, recipe_name in ipairs({
+    "thermal-process-license",
+    "calcite-reagent-waiver",
+    "offworld-metallurgy-charter",
+  }) do
+    assert_true(tech_unlocks_recipe(export_charters, recipe_name), "vulcanus-export-charters should unlock " .. recipe_name)
   end
 end)
 
@@ -316,10 +347,14 @@ end)
 test("workforce tech owns the workforce progression unlocks", function()
   local workforce = technologies["workforce-formation"]
   local chromatic = technologies["chromatic-printing"]
+  local metallurgy = technologies["metallurgic-science-pack"]
   assert_true(workforce ~= nil, "workforce-formation missing")
   assert_true(tech_unlocks_recipe(workforce, "job-offer-production"), "workforce-formation should unlock job-offer-production")
   assert_true(tech_unlocks_recipe(workforce, "worker-biter-formation"), "workforce-formation should unlock worker-biter-formation")
+  assert_true(tech_unlocks_recipe(workforce, "licensed-notary-formation"), "workforce-formation should unlock licensed-notary-formation")
   assert_true(not tech_unlocks_recipe(chromatic, "worker-biter"), "chromatic-printing should not directly unlock worker-biter")
+  assert_true(not tech_unlocks_recipe(metallurgy, "licensed-notary-formation"),
+    "metallurgic-science-pack should no longer unlock licensed-notary-formation")
   assert_eq(workforce.prerequisites[1], "space-science-pack", "workforce-formation should unlock after space science")
 end)
 

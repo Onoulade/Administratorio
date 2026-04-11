@@ -291,6 +291,8 @@ test("vulcanus printer and notary split is present and surface-limited", functio
     "vulcanus-lie-distillation",
     "heatproof-filler-documentation",
     "form-27b-6-vulcanus",
+    "territorial-resettlement-order",
+    "territorial-arbitration-post",
   }
 
   for _, recipe_name in ipairs(required) do
@@ -302,6 +304,30 @@ test("vulcanus printer and notary split is present and surface-limited", functio
 
   assert_true(data.raw.recipe["management-written-approval-vulcanus"] == nil,
     "management-written-approval-vulcanus should stay import-seeded")
+end)
+
+test("territorial arbitration post is a Vulcanus-only field office with scripted upkeep inputs", function()
+  local entity = assert(data.raw["assembling-machine"]["territorial-arbitration-post"], "territorial-arbitration-post entity missing")
+  local recipe = assert(data.raw.recipe["territorial-arbitration-post"], "territorial-arbitration-post recipe missing")
+  local processing = assert(data.raw.recipe["territorial-arbitration-processing"], "territorial-arbitration-processing missing")
+
+  assert_eq(entity.fixed_recipe, "territorial-arbitration-processing",
+    "territorial-arbitration-post should use the hidden processing recipe")
+  assert_eq(entity.crafting_categories[1], "territorial-arbitration",
+    "territorial-arbitration-post should use the territorial-arbitration category")
+  assert_eq(#(entity.fluid_boxes or {}), 1, "territorial-arbitration-post should expose one fluid input")
+  assert_eq(entity.fluid_boxes[1].production_type, "input", "territorial-arbitration-post should take fluid input")
+
+  assert_true(has_ingredient(recipe, "tungsten-carbide"), "territorial-arbitration-post should require tungsten-carbide")
+  assert_true(recipe.surface_conditions ~= nil and #recipe.surface_conditions >= 2,
+    "territorial-arbitration-post should be surface-limited")
+  assert_eq(recipe.surface_conditions[1].min, 4000, "territorial-arbitration-post should target Vulcanus pressure")
+  assert_eq(recipe.surface_conditions[2].min, 40, "territorial-arbitration-post should target Vulcanus gravity")
+
+  assert_eq(processing.category, "territorial-arbitration", "territorial processing should use the arbitration category")
+  assert_true(processing.hidden, "territorial processing should stay hidden")
+  assert_true(has_ingredient(processing, "territorial-resettlement-order"),
+    "territorial processing should consume territorial-resettlement-order")
 end)
 
 test("chromatic recipes stay printer-only while support-heavy paperwork lives in the notary office", function()
@@ -326,10 +352,52 @@ end)
 test("offworld recipe variants keep vulcanus paperwork gates off the home planet", function()
   assert_true(data.raw.recipe["foundry"].surface_conditions ~= nil, "foundry should be home-planet limited")
   assert_true(data.raw.recipe["foundry-offworld"].surface_conditions ~= nil, "foundry-offworld should be surface-limited")
+  assert_true(has_ingredient(data.raw.recipe["foundry"], "licensed-notary"), "foundry should require licensed-notary")
+  assert_true(has_ingredient(data.raw.recipe["foundry"], "tungsten-carbide"), "foundry should require tungsten-carbide")
   assert_true(has_ingredient(data.raw.recipe["foundry-offworld"], "offworld-metallurgy-charter"),
     "foundry-offworld should require the offworld charter")
+  assert_true(has_ingredient(data.raw.recipe["foundry-offworld"], "licensed-notary"),
+    "foundry-offworld should require licensed-notary")
+  assert_true(has_ingredient(data.raw.recipe["foundry-offworld"], "tungsten-carbide"),
+    "foundry-offworld should require tungsten-carbide")
   assert_true(not has_ingredient(data.raw.recipe["foundry"], "offworld-metallurgy-charter"),
     "home-planet foundry should not consume the offworld charter")
+end)
+
+test("licensed notary training moves earlier but stays Nauvis-only", function()
+  local formation = assert(data.raw.recipe["licensed-notary-formation"], "licensed-notary-formation missing")
+  local workforce = assert(data.raw.technology["workforce-formation"], "workforce-formation missing")
+  local metallurgy = assert(data.raw.technology["metallurgic-science-pack"], "metallurgic-science-pack missing")
+  local export_charters = assert(data.raw.technology["vulcanus-export-charters"], "vulcanus-export-charters missing")
+
+  assert_true(formation.surface_conditions ~= nil and #formation.surface_conditions >= 2,
+    "licensed-notary-formation should stay surface-limited")
+  assert_eq(formation.surface_conditions[1].min, 1000, "licensed-notary-formation should target Nauvis pressure")
+  assert_eq(formation.surface_conditions[2].min, 10, "licensed-notary-formation should target Nauvis gravity")
+
+  local workforce_unlocks = {}
+  for _, effect in ipairs(workforce.effects or {}) do
+    if effect.type == "unlock-recipe" then
+      workforce_unlocks[effect.recipe] = true
+    end
+  end
+  local metallurgy_unlocks = {}
+  for _, effect in ipairs(metallurgy.effects or {}) do
+    if effect.type == "unlock-recipe" then
+      metallurgy_unlocks[effect.recipe] = true
+    end
+  end
+  local export_unlocks = {}
+  for _, effect in ipairs(export_charters.effects or {}) do
+    if effect.type == "unlock-recipe" then
+      export_unlocks[effect.recipe] = true
+    end
+  end
+
+  assert_true(workforce_unlocks["licensed-notary-formation"], "workforce-formation should unlock licensed-notary-formation")
+  assert_true(not metallurgy_unlocks["licensed-notary-formation"],
+    "metallurgic-science-pack should not unlock licensed-notary-formation")
+  assert_true(export_unlocks["offworld-metallurgy-charter"], "vulcanus-export-charters should unlock offworld-metallurgy-charter")
 end)
 
 test("gleba alternates are surface-limited and keep the yellow family compact", function()
