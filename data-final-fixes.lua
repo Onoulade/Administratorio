@@ -454,6 +454,7 @@ local ITEM_LIKE_PROTOTYPE_TYPES = {
   "item-with-entity-data",
   "rail-planner",
   "spidertron-remote",
+  "space-platform-starter-pack",
 }
 
 local function find_item_like_prototype(name)
@@ -481,6 +482,12 @@ local function get_recipe_batch_multiplier(recipe_name, recipe)
     local res_name = res.name or res[1]
     if res_name then
       local prototype = find_item_like_prototype(res_name)
+      if shared.UNBATCHED_RESULT_NAMES[res_name] then
+        return 1
+      end
+      if prototype and shared.UNBATCHED_RESULT_SUBGROUPS[prototype.subgroup] then
+        return 1
+      end
       if get_max_stack_size(res_name) == 1 then
         return 1
       end
