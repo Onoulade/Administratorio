@@ -51,6 +51,7 @@ local recipes = {
 local items = {}
 local ammos = {}
 local fluids = {}
+local signals = {}
 local technologies = {
   ["administrative-science-research"] = {type = "technology", name = "administrative-science-research", effects = {}},
   ["metallurgic-science-pack"] = {type = "technology", name = "metallurgic-science-pack", effects = {}},
@@ -76,6 +77,7 @@ data = {
     item = items,
     ammo = ammos,
     fluid = fluids,
+    ["virtual-signal"] = signals,
     technology = technologies,
   },
 }
@@ -92,6 +94,8 @@ function data:extend(prototypes)
       ammos[proto.name] = proto
     elseif proto.type == "fluid" then
       fluids[proto.name] = proto
+    elseif proto.type == "virtual-signal" then
+      signals[proto.name] = proto
     elseif proto.type == "technology" then
       technologies[proto.name] = proto
     end
@@ -109,6 +113,7 @@ dofile(mod_root .. "prototypes/item/space_age.lua")
 dofile(mod_root .. "prototypes/item/capsules-and-fluids.lua")
 dofile(mod_root .. "prototypes/recipe/space_age.lua")
 dofile(mod_root .. "prototypes/technology/space_age.lua")
+dofile(mod_root .. "prototypes/signals.lua")
 
 local function has_ingredient(recipe, item_name)
   if not recipe or not recipe.ingredients then return false end
@@ -469,6 +474,7 @@ test("aquilo fax network unlocks the printer, exchange, and multicolor paperwork
   assert_true(aquilo ~= nil, "aquilo-fax-network missing")
   for _, recipe_name in ipairs({
     "laser-printer",
+    "fax-emitter",
     "interplanetary-fax-exchange",
     "transfer-emulsion-production",
     "thermal-transfer-sheet-production",
@@ -493,14 +499,19 @@ test("aquilo transfer media and multicolor forms define the expected convergence
   assert_true(items["unified-operations-charter"] ~= nil, "unified-operations-charter missing")
   assert_true(items["cryogenic-operations-license"] ~= nil, "cryogenic-operations-license missing")
   assert_true(items["laser-printer"] ~= nil, "laser-printer missing")
+  assert_true(items["fax-emitter"] ~= nil, "fax-emitter missing")
   assert_true(items["interplanetary-fax-exchange"] ~= nil, "interplanetary-fax-exchange missing")
 
   assert_true(has_ingredient(recipes["laser-printer"], "cryoprint-technician"),
     "laser-printer should require cryoprint-technician")
   assert_true(has_ingredient(recipes["laser-printer"], "lithium-plate"),
     "laser-printer should require lithium-plate")
+  assert_true(has_ingredient(recipes["fax-emitter"], "cryoprint-technician"),
+    "fax-emitter should require cryoprint-technician")
   assert_true(has_ingredient(recipes["interplanetary-fax-exchange"], "cryoprint-technician"),
     "interplanetary-fax-exchange should require cryoprint-technician")
+  assert_true(has_ingredient(recipes["interplanetary-fax-exchange"], "fax-emitter"),
+    "interplanetary-fax-exchange should require a fax-emitter as part of the receiver build")
   assert_true(has_ingredient(recipes["transfer-emulsion-production"], "plastic-bar"),
     "transfer-emulsion should require plastic-bar")
   assert_true(has_ingredient(recipes["thermal-transfer-sheet-production"], "transfer-emulsion"),
@@ -521,6 +532,25 @@ test("aquilo transfer media and multicolor forms define the expected convergence
     "cryogenic-operations-license should require lithium-plate")
   assert_true(not has_ingredient(recipes["transfer-emulsion-production"], "taxpayer-money"),
     "transfer-emulsion should not require taxpayer-money")
+end)
+
+test("fax queue capacity technologies form a dedicated Aquilo follow-up chain", function()
+  local capacity_1 = technologies["fax-queue-capacity-1"]
+  local capacity_2 = technologies["fax-queue-capacity-2"]
+  local capacity_3 = technologies["fax-queue-capacity-3"]
+
+  assert_true(capacity_1 ~= nil, "fax-queue-capacity-1 missing")
+  assert_true(capacity_2 ~= nil, "fax-queue-capacity-2 missing")
+  assert_true(capacity_3 ~= nil, "fax-queue-capacity-3 missing")
+  assert_eq(capacity_1.prerequisites[1], "aquilo-fax-network", "fax-queue-capacity-1 should follow Aquilo fax unlocks")
+  assert_eq(capacity_2.prerequisites[1], "fax-queue-capacity-1", "fax-queue-capacity-2 should chain from the first upgrade")
+  assert_eq(capacity_3.prerequisites[1], "fax-queue-capacity-2", "fax-queue-capacity-3 should chain from the second upgrade")
+end)
+
+test("fax virtual signals exist for queue visibility", function()
+  assert_true(signals["signal-fax-queue-size"] ~= nil, "signal-fax-queue-size missing")
+  assert_true(signals["signal-fax-free-slots"] ~= nil, "signal-fax-free-slots missing")
+  assert_true(signals["signal-fax-reserved-slots"] ~= nil, "signal-fax-reserved-slots missing")
 end)
 
 if failed > 0 then

@@ -560,6 +560,18 @@ data:extend({
   },
   {
     type = "item",
+    name = "fax-emitter",
+    icons = {
+      {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.92, g = 0.96, b = 1, a = 1}},
+      {icon = item_icons .. "blank-form.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
+    },
+    subgroup = "admin-buildings",
+    order = "n1",
+    place_result = "fax-emitter",
+    stack_size = 20
+  },
+  {
+    type = "item",
     name = "notary-office",
     icon = "__administratorio__/graphics/icons/management-approval-written.png",
     icon_size = 64,

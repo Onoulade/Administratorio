@@ -32,6 +32,7 @@ data = {
   raw = {
     item = {},
     fluid = {},
+    ["virtual-signal"] = {},
     recipe = {
       foundry = {type = "recipe", name = "foundry", ingredients = {}},
       biochamber = {type = "recipe", name = "biochamber", ingredients = {}},
@@ -76,6 +77,7 @@ data = {
         graphics_set = {},
       },
     },
+    ["container"] = {},
     ["ammo-turret"] = {
       ["gun-turret"] = {
         type = "ammo-turret",
@@ -114,6 +116,17 @@ util = {
 if not table.deepcopy then
   table.deepcopy = util.table.deepcopy
 end
+
+circuit_connector_definitions = {
+  create_vector = function()
+    return {}
+  end,
+  create_single = function()
+    return {}
+  end,
+}
+
+universal_connector_template = {}
 
 defines = {
   direction = {
@@ -230,14 +243,16 @@ test("aquilo printer and exchange are specialized endgame bureaucracy machines",
   assert_eq(laser.crafting_speed, 5, "laser-printer should be the fastest printer")
   assert_eq(#(laser.fluid_boxes or {}), 0, "laser-printer should use solid transfer media instead of fluid ports")
 
-  local exchange = data.raw["assembling-machine"]["interplanetary-fax-exchange"]
+  local emitter = data.raw.container["fax-emitter"]
+  assert_true(emitter ~= nil, "fax-emitter missing")
+  assert_eq(emitter.placeable_by[1].item, "fax-emitter", "fax-emitter should build from the fax-emitter item")
+  assert_eq(emitter.inventory_size, 12, "fax-emitter should buffer multiple source documents")
+
+  local exchange = data.raw.container["interplanetary-fax-exchange"]
   assert_true(exchange ~= nil, "interplanetary-fax-exchange missing")
   assert_eq(exchange.placeable_by[1].item, "interplanetary-fax-exchange",
     "interplanetary-fax-exchange should build from the fax exchange item")
-  local exchange_categories = exchange.crafting_categories or {}
-  assert_eq(#exchange_categories, 1, "interplanetary-fax-exchange should stay in the fax lane")
-  assert_eq(exchange_categories[1], "fax-reconstruction",
-    "interplanetary-fax-exchange should only expose fax reconstruction for now")
+  assert_eq(exchange.inventory_size, 20, "interplanetary-fax-exchange should hold supplies and printed paperwork")
 end)
 
 test("planet helper exposes exact basic-planet conditions and abundance outputs", function()
@@ -400,6 +415,7 @@ end)
 test("aquilo fax and multicolor paperwork stay on Aquilo", function()
   local required = {
     "laser-printer",
+    "fax-emitter",
     "interplanetary-fax-exchange",
     "transfer-emulsion-production",
     "thermal-transfer-sheet-production",
@@ -427,6 +443,8 @@ test("aquilo fax and multicolor paperwork stay on Aquilo", function()
     "cryogenic-operations-license should be multicolor printed")
   assert_true(has_ingredient(data.raw.recipe["laser-printer"], "cryoprint-technician"),
     "laser-printer should require cryoprint-technician")
+  assert_true(has_ingredient(data.raw.recipe["fax-emitter"], "cryoprint-technician"),
+    "fax-emitter should require cryoprint-technician")
   assert_true(has_ingredient(data.raw.recipe["interplanetary-fax-exchange"], "cryoprint-technician"),
     "interplanetary-fax-exchange should require cryoprint-technician")
 end)
