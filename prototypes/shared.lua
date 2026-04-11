@@ -239,6 +239,7 @@ if space_age_enabled then
   shared.ADMIN_BUILDINGS["formation-center"] = true
   shared.ADMIN_BUILDINGS["trajectory-compliance-array"] = true
   shared.ADMIN_BUILDINGS["notary-office"] = true
+  shared.ADMIN_BUILDINGS["territorial-arbitration-post"] = true
   shared.ADMIN_BUILDINGS["capture-bureau"] = true
   shared.ADMIN_BUILDINGS["conciliation-desk"] = true
   shared.ADMIN_BUILDINGS["digital-services-bureau"] = true
@@ -278,6 +279,7 @@ if space_age_enabled then
   shared.PAPERWORK_ITEMS["inspection-docket"] = true
   shared.PAPERWORK_ITEMS["embossed-seal"] = true
   shared.PAPERWORK_ITEMS["industrial-charter"] = true
+  shared.PAPERWORK_ITEMS["territorial-resettlement-order"] = true
   shared.PAPERWORK_ITEMS["symbiosis-record"] = true
   shared.PAPERWORK_ITEMS["conciliation-order"] = true
   shared.PAPERWORK_ITEMS["biochamber-operating-waiver"] = true
@@ -300,6 +302,7 @@ if space_age_enabled then
   shared.FORM_PRODUCTION_RECIPES["inspection-docket"] = "inspection-docket"
   shared.FORM_PRODUCTION_RECIPES["embossed-seal"] = "embossed-seal"
   shared.FORM_PRODUCTION_RECIPES["industrial-charter"] = "industrial-charter"
+  shared.FORM_PRODUCTION_RECIPES["territorial-resettlement-order"] = "territorial-resettlement-order"
   shared.FORM_PRODUCTION_RECIPES["thermal-process-license"] = "thermal-process-license"
   shared.FORM_PRODUCTION_RECIPES["calcite-reagent-waiver"] = "calcite-reagent-waiver"
   shared.FORM_PRODUCTION_RECIPES["offworld-metallurgy-charter"] = "offworld-metallurgy-charter"

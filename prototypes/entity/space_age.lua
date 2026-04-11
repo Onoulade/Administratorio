@@ -133,6 +133,37 @@ notary_office.working_sound = {
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
+local territorial_arbitration_post = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
+territorial_arbitration_post.name = "territorial-arbitration-post"
+territorial_arbitration_post.icon = "__administratorio__/graphics/icons/construction-permit.png"
+territorial_arbitration_post.icon_size = 64
+territorial_arbitration_post.minable = {mining_time = 0.2, result = "territorial-arbitration-post"}
+territorial_arbitration_post.placeable_by = placeable_by_item("territorial-arbitration-post")
+territorial_arbitration_post.next_upgrade = nil
+territorial_arbitration_post.fixed_recipe = "territorial-arbitration-processing"
+territorial_arbitration_post.crafting_categories = {"territorial-arbitration"}
+territorial_arbitration_post.crafting_speed = 1
+territorial_arbitration_post.energy_usage = "300kW"
+territorial_arbitration_post.energy_source = {type = "electric", usage_priority = "secondary-input"}
+territorial_arbitration_post.ingredient_count = 6
+territorial_arbitration_post.module_slots = 0
+territorial_arbitration_post.allowed_effects = {}
+territorial_arbitration_post.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
+territorial_arbitration_post.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+territorial_arbitration_post.fluid_boxes_off_when_no_fluid_recipe = true
+territorial_arbitration_post.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -1}}},
+    volume = 1000,
+  },
+}
+territorial_arbitration_post.working_sound = {
+  sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.4},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+}
+
 local conciliation_desk = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
 conciliation_desk.name = "conciliation-desk"
 conciliation_desk.icon = "__administratorio__/graphics/icons/promise.png"
@@ -351,6 +382,7 @@ data:extend({
   chromatic_printer,
   laser_printer,
   notary_office,
+  territorial_arbitration_post,
   conciliation_desk,
   digital_services_bureau,
   fax_emitter,
