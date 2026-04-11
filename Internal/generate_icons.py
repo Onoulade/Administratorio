@@ -1050,6 +1050,13 @@ ICON_DEFS = {
         "hole_punches": 3,
         "desc": "Gray form with scales and 3 hole punches",
     },
+    "promise": {
+        "base": "form", "tint": C_LIGHT_YELLOW,
+        "stripe": (S_GREEN, "top"),
+        "symbol": SYM_HANDSHAKE, "symbol_color": SC_GREEN, "symbol_pos": "center",
+        "symbol2": SYM_SPEECH, "symbol2_color": SC_GOLD, "symbol2_pos": "br",
+        "desc": "Yellow form with handshake and speech bubble",
+    },
 
     # ===== ECONOMY & MISC =====
     "paper": {
