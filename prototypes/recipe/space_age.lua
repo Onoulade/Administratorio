@@ -811,6 +811,21 @@ data:extend({
   }, "aquilo"),
   surface_limited({
     type = "recipe",
+    name = "fax-emitter",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "office-desk", amount = 1},
+      {type = "item", name = "cryoprint-technician", amount = 1},
+      {type = "item", name = "advanced-circuit", amount = 12},
+      {type = "item", name = "processing-unit", amount = 6},
+      {type = "item", name = "lithium-plate", amount = 8},
+      {type = "item", name = "construction-work-order", amount = 1},
+    },
+    results = {{type = "item", name = "fax-emitter", amount = 1}},
+    energy_required = 15,
+  }, "aquilo"),
+  surface_limited({
+    type = "recipe",
     name = "interplanetary-fax-exchange",
     enabled = false,
     ingredients = {
@@ -819,6 +834,7 @@ data:extend({
       {type = "item", name = "processing-unit", amount = 20},
       {type = "item", name = "lithium-plate", amount = 15},
       {type = "item", name = "superconductor", amount = 10},
+      {type = "item", name = "fax-emitter", amount = 1},
       {type = "item", name = "construction-work-order", amount = 1},
     },
     results = {{type = "item", name = "interplanetary-fax-exchange", amount = 1}},

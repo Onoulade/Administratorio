@@ -48,5 +48,29 @@ signals[#signals + 1] = {
   subgroup = "virtual-signal",
   order = "z[admin]-z",
 }
+signals[#signals + 1] = {
+  type = "virtual-signal",
+  name = "signal-fax-queue-size",
+  icon = "__administratorio__/graphics/icons/office-building.png",
+  icon_size = 64,
+  subgroup = "virtual-signal",
+  order = "z[admin]-za",
+}
+signals[#signals + 1] = {
+  type = "virtual-signal",
+  name = "signal-fax-free-slots",
+  icon = "__administratorio__/graphics/icons/blank-form.png",
+  icon_size = 64,
+  subgroup = "virtual-signal",
+  order = "z[admin]-zb",
+}
+signals[#signals + 1] = {
+  type = "virtual-signal",
+  name = "signal-fax-reserved-slots",
+  icon = "__administratorio__/graphics/icons/data.png",
+  icon_size = 64,
+  subgroup = "virtual-signal",
+  order = "z[admin]-zc",
+}
 
 data:extend(signals)

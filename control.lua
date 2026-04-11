@@ -7,6 +7,7 @@ local frustration = require("scripts.frustration")
 local zones = require("scripts.zones")
 local biters = require("scripts.biters")
 local trains = require("scripts.trains")
+local fax = require("scripts.fax")
 local working_hours = require("scripts.working_hours")
 local field_office = require("scripts.field_office")
 local biter_station = require("scripts.biter_station")
@@ -478,6 +479,7 @@ local function init_storage()
   storage.stats.rockets_launched = storage.stats.rockets_launched or 0
   storage.calmed_spawners = storage.calmed_spawners or {}
   trajectory_compliance.ensure_storage()
+  fax.ensure_storage()
   if WORKING_HOURS_ENABLED then
     working_hours.ensure_storage()
   end
@@ -636,6 +638,7 @@ end
 local function on_init()
   init_storage()
   rebuild_desk_cache()
+  fax.rebuild_registry()
   biters.rebuild_desk_index()
   biters.mark_all_desk_circuit_dirty()
   if WORKING_HOURS_ENABLED then
@@ -667,6 +670,7 @@ local function on_configuration_changed(event)
   warn_about_pre_040_save(event)
   init_storage()
   rebuild_desk_cache()
+  fax.rebuild_registry()
   trains.on_init()
   set_biter_ceasefire()
   
@@ -855,6 +859,7 @@ local function on_selected_entity_changed(event)
     end
     pneumatic.destroy_tube_info_gui(player)
   end
+  fax.on_selected_entity_changed(player, entity)
 end
 
 local function on_player_left_game(event)
@@ -1042,6 +1047,9 @@ local function on_entity_built_inner(event)
         return
       end
     end
+    if fax.is_fax_building(entity) and not fax.on_entity_built(entity, player) then
+      return
+    end
     if biterport.on_entity_built(event) then
       return
     end
@@ -1118,6 +1126,9 @@ local function on_entity_removed(event)
   biterport.on_entity_removed(event)
   biter_station.untrack_entity(entity, game.tick)
   rideable_biter.untrack(entity)
+  if fax.is_fax_building(entity) then
+    fax.on_entity_removed(entity, event.buffer)
+  end
 
   trains.on_removed(entity)
 
@@ -2011,6 +2022,10 @@ local function on_gui_click(event)
   end
 end
 
+local function on_gui_selection_state_changed(event)
+  fax.on_gui_selection_state_changed(event)
+end
+
 
 -- ============================================================
 -- MAIN LOOP (Runs every 1 second)
@@ -2083,6 +2098,7 @@ end
 resolution_processing = control_resolution_processing_factory.new({
   biters = biters,
   collect_runtime_debug_counts = collect_runtime_debug_counts,
+  fax = fax,
   field_office = field_office,
   get_cached_desks = get_cached_desks,
   process_pending_group_redirects = process_pending_group_redirects,
@@ -2106,6 +2122,7 @@ control_event_router.register({
   on_entity_removed = on_entity_removed,
   on_field_agent_waypoint_input = on_field_agent_waypoint_input,
   on_gui_click = on_gui_click,
+  on_gui_selection_state_changed = on_gui_selection_state_changed,
   on_init = on_init,
   on_load = on_load,
   on_main_tick = on_main_tick,

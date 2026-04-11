@@ -8,6 +8,16 @@ local function placeable_by_item(name)
   }
 end
 
+local function fax_picture(filename, width, height, scale, shift)
+  return {
+    filename = filename,
+    width = width,
+    height = height,
+    scale = scale,
+    shift = shift,
+  }
+end
+
 local formation_center = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
 formation_center.name = "formation-center"
 formation_center.icon = "__base__/graphics/icons/biter-spawner.png"
@@ -231,27 +241,90 @@ laser_printer.working_sound = {
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
-local interplanetary_fax_exchange = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
-interplanetary_fax_exchange.name = "interplanetary-fax-exchange"
-interplanetary_fax_exchange.icon = "__administratorio__/graphics/icons/office-building.png"
-interplanetary_fax_exchange.icon_size = 64
-interplanetary_fax_exchange.minable = {mining_time = 0.2, result = "interplanetary-fax-exchange"}
-interplanetary_fax_exchange.placeable_by = placeable_by_item("interplanetary-fax-exchange")
-interplanetary_fax_exchange.next_upgrade = nil
-interplanetary_fax_exchange.crafting_categories = {"fax-reconstruction"}
-interplanetary_fax_exchange.crafting_speed = 3.5
-interplanetary_fax_exchange.energy_usage = "800kW"
-interplanetary_fax_exchange.energy_source = {type = "electric", usage_priority = "secondary-input"}
-interplanetary_fax_exchange.ingredient_count = 8
-interplanetary_fax_exchange.module_slots = 4
-interplanetary_fax_exchange.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
-interplanetary_fax_exchange.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
-interplanetary_fax_exchange.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
-interplanetary_fax_exchange.fluid_boxes_off_when_no_fluid_recipe = true
-interplanetary_fax_exchange.fluid_boxes = {}
-interplanetary_fax_exchange.working_sound = {
-  sound = {filename = sound_path .. "office-ambience-loop.ogg", volume = 0.55},
-  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+local fax_emitter = {
+  type = "container",
+  name = "fax-emitter",
+  icon = "__administratorio__/graphics/icons/office-building.png",
+  icon_size = 64,
+  flags = {"placeable-neutral", "player-creation"},
+  minable = {mining_time = 0.2, result = "fax-emitter"},
+  max_health = 250,
+  corpse = "medium-remnants",
+  placeable_by = placeable_by_item("fax-emitter"),
+  collision_box = {{-0.7, -0.7}, {0.7, 0.7}},
+  selection_box = {{-1, -1}, {1, 1}},
+  inventory_size = 12,
+  circuit_wire_max_distance = 9,
+  circuit_connector = circuit_connector_definitions.create_vector(
+    universal_connector_template,
+    {
+      {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+    }
+  ),
+  picture = fax_picture(entity_graphics .. "printer-t1/mini-assembler.png", 227, 255, 0.28, {0, -0.1}),
+}
+
+local interplanetary_fax_exchange = {
+  type = "container",
+  name = "interplanetary-fax-exchange",
+  icon = "__administratorio__/graphics/icons/office-building.png",
+  icon_size = 64,
+  flags = {"placeable-neutral", "player-creation"},
+  minable = {mining_time = 0.2, result = "interplanetary-fax-exchange"},
+  max_health = 450,
+  corpse = "big-remnants",
+  placeable_by = placeable_by_item("interplanetary-fax-exchange"),
+  collision_box = {{-1.2, -1.2}, {1.2, 1.2}},
+  selection_box = {{-1.5, -1.5}, {1.5, 1.5}},
+  inventory_size = 20,
+  circuit_wire_max_distance = 9,
+  circuit_connector = circuit_connector_definitions.create_vector(
+    universal_connector_template,
+    {
+      {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+    }
+  ),
+  picture = fax_picture(entity_graphics .. "printer-t2/steel-forge.png", 256, 301, 0.38, {0, -0.15}),
+}
+
+local fax_network_combinator = {
+  type = "constant-combinator",
+  name = "fax-network-combinator",
+  icon = "__administratorio__/graphics/icons/office-building.png",
+  icon_size = 64,
+  flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "placeable-off-grid"},
+  collision_mask = {layers = {}},
+  collision_box = {{0, 0}, {0, 0}},
+  selection_box = {{0, 0}, {0, 0}},
+  selectable_in_game = false,
+  hidden = true,
+  item_slot_count = 12,
+  sprites = {
+    north = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
+    east  = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
+    south = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
+    west  = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
+  },
+  activity_led_sprites = {
+    north = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
+    east  = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
+    south = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
+    west  = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
+  },
+  activity_led_light_offsets = {{0, 0}, {0, 0}, {0, 0}, {0, 0}},
+  circuit_wire_connection_points = {
+    { wire = {red = util.by_pixel(104, 33), green = util.by_pixel(106, 40)}, shadow = {red = util.by_pixel(120, 46), green = util.by_pixel(114, 46)} },
+    { wire = {red = util.by_pixel(104, 33), green = util.by_pixel(106, 40)}, shadow = {red = util.by_pixel(120, 46), green = util.by_pixel(114, 46)} },
+    { wire = {red = util.by_pixel(104, 33), green = util.by_pixel(106, 40)}, shadow = {red = util.by_pixel(120, 46), green = util.by_pixel(114, 46)} },
+    { wire = {red = util.by_pixel(104, 33), green = util.by_pixel(106, 40)}, shadow = {red = util.by_pixel(120, 46), green = util.by_pixel(114, 46)} },
+  },
+  circuit_wire_max_distance = 9
 }
 
 local trajectory_compliance_array = table.deepcopy(data.raw["ammo-turret"]["gun-turret"])
@@ -280,6 +353,8 @@ data:extend({
   notary_office,
   conciliation_desk,
   digital_services_bureau,
+  fax_emitter,
   interplanetary_fax_exchange,
+  fax_network_combinator,
   trajectory_compliance_array,
 })
