@@ -68,6 +68,19 @@ test("native Space Age machine build recipes stay exempt on hybrid categories", 
   assert_nil(shared.get_operating_form({name = "cryogenic-plant", category = "cryogenics-or-assembling"}), "cryogenic-plant should be exempt")
 end)
 
+test("space age admin and convergence categories stay free of recurring operating paperwork", function()
+  assert_nil(shared.get_operating_form({name = "industrial-charter", category = "bureaucracy-certification"}),
+    "bureaucracy-certification should be exempt")
+  assert_nil(shared.get_operating_form({name = "biochamber-operating-waiver", category = "bureaucracy-conciliation"}),
+    "bureaucracy-conciliation should be exempt")
+  assert_nil(shared.get_operating_form({name = "territorial-arbitration-processing", category = "territorial-arbitration"}),
+    "territorial-arbitration should stay exempt")
+  assert_nil(shared.get_operating_form({name = "composite-form-cyan-yellow-production", category = "printing-multicolor"}),
+    "printing-multicolor should stay exempt")
+  assert_nil(shared.get_operating_form({name = "faxed-document-reconstruction", category = "fax-reconstruction"}),
+    "fax-reconstruction should stay exempt")
+end)
+
 test("existing vanilla operating-paperwork mappings remain intact under Space Age", function()
   assert_eq(shared.get_operating_form({name = "oil-processing", category = "oil-processing"}), "petrochemical-operating-permit")
   assert_eq(shared.get_operating_form({name = "advanced-oil-processing", category = "oil-processing"}), "chemical-handling-work-order")

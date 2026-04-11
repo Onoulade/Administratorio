@@ -52,8 +52,7 @@ Implemented first pass:
 Still missing:
 
 - Planner-mod / gameplay follow-up beyond the current dump-based escape verification
-- Any extra Fulgora bootstrap recipes that the solver proves necessary
-- Actual fax-network mechanics beyond the first Aquilo prototype layer
+- Any extra Fulgora bootstrap recipes that broader verification proves necessary
 - Cross-cutting audits
 
 ---
@@ -256,7 +255,7 @@ Remaining follow-up:
 
 ## Phase 5: Aquilo — Fax Exchange and Multicolor Forms
 
-Status: first pass implemented. The remaining work is deeper fax mechanics, solver verification, and balance cleanup after the new multicolor gates.
+Status: first pass implemented. The remaining work is solver verification, gameplay validation, and balance cleanup after the new multicolor gates and fax runtime landed.
 
 ### Step 5.1: Move Interplanetary Fax Exchange to Aquilo
 
@@ -336,14 +335,28 @@ Remaining follow-up:
 
 ### Step 5.7: Define fax network mechanics
 
-Design the actual faxing loop:
+Status: current runtime first pass done.
 
-- sender
-- routing
-- reconstruction
-- transfer media consumption
+Implemented:
 
-Still pending. The first pass only adds the buildings, category scaffolding, and the multicolor paperwork layer.
+- sender-side `fax-emitter` destination selection
+- one `interplanetary-fax-exchange` receiver per planet with queueing and reservation backpressure
+- routing state plus circuit visibility for queue size, free slots, reserved slots, and receiver requests
+- faxable-paperwork filtering with colored paperwork excluded from transmission
+- destination-side reconstruction in the receiver runtime, preserving item quality
+- queue-safe stalling when output space or reconstruction supplies are missing
+- queue-capacity follow-up techs and dedicated runtime coverage in `tests/test_fax_runtime.lua`
+
+Current first-pass behavior:
+
+- the active fax runtime reconstructs documents directly inside the exchange logic rather than through recipe-driven `laser-printer` jobs
+- the current reconstruction cost is generic `paper` plus `ink`
+- Aquilo transfer media and `fax-reconstruction` category scaffolding exist alongside that runtime, but they are not the active gate for fax completion
+
+Remaining follow-up:
+
+- verify in real gameplay / planner usage that the current fax runtime feels correct before changing the model again
+- if the design changes later, revisit whether fax reconstruction should move onto Aquilo transfer media instead of the current generic supplies
 
 ### Step 5.8: Verify all planet escape paths still work
 

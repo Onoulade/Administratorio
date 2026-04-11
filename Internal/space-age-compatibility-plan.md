@@ -8,8 +8,9 @@ It records the shared principles that all planet passes should follow, the curre
 
 - Space Age remains an optional compatibility target rather than a hard dependency.
 - Vulcanus has a working first-pass implementation and a solver-clean launch path.
-- Gleba has partial implementation (yellow ink, conciliation paperwork, capture bureau basics).
-- Fulgora and Aquilo are still planning-stage design work.
+- Gleba has a working first-pass implementation (yellow ink, conciliation paperwork, spoilage, and bootstrap variants).
+- Fulgora has a working first-pass implementation (Digital Services Bureau, salvage-backed magenta paperwork, and holmium gating).
+- Aquilo has a working first-pass implementation (Laser Printer, Interplanetary Fax Exchange runtime, frozen-ink restrictions, and multicolor paperwork).
 - The shared rules below should be treated as the baseline for future planet work unless a later implementation proves they need revision.
 
 ## Shared Principles
@@ -158,10 +159,10 @@ All planet-specific factory buildings — both vanilla Space Age machines and th
 
 The specialist workers are:
 
-- `licensed-notary` for Vulcanus buildings (Foundry, Notary Office)
+- `licensed-notary` for Vulcanus buildings (Foundry, Notary Office, Territorial Arbitration Post)
 - `conciliation-officer` for Gleba buildings (Biochamber, Capture Bureau, Conciliation Desk)
 - `relay-clerk` for Fulgora buildings (Electromagnetic Plant, Digital Services Bureau)
-- `cryoprint-technician` for Aquilo buildings (Cryogenic Plant, Laser Printer, Interplanetary Fax Exchange)
+- `cryoprint-technician` for Aquilo buildings (Cryogenic Plant, Laser Printer, Fax Emitter, Interplanetary Fax Exchange)
 
 The worker requirement compensates for the operating paperwork exemption: you pay upfront in workforce logistics instead of ongoing in bureaucratic overhead.
 
@@ -192,9 +193,9 @@ This makes Aquilo the natural capstone where the separate planetary paperwork sy
 | Planet | Local Admin Advantage | Admin Building(s) | Printer | Export Identity | Ink | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | Vulcanus | `lie` | `Notary Office` | Chromatic Printer (cyan) | industrial and metallurgical certification | cyan | Implemented first pass |
-| Gleba | `bullshit-ore` via `amber-sap`; easy `dubious-data` | `Capture Bureau` + `Conciliation Desk` | Chromatic Printer (yellow) | biosafety, pacification, hostile-intake, workforce paperwork | yellow | Partial |
-| Fulgora | `redundant-rubble` via salvage; easy `useless-documentation` | `Digital Services Bureau` | Chromatic Printer (magenta) | fast computerized processing, archive recovery, electromagnetic permits | magenta | Planned |
-| Aquilo | none; multi-planet convergence | `Interplanetary Fax Exchange` | Laser Printer only (ink freezes) | multicolor composite forms, fax routing, transfer media | none (uses imported CMY) | Planned |
+| Gleba | `bullshit-ore` via `amber-sap`; easy `dubious-data` | `Capture Bureau` + `Conciliation Desk` | Chromatic Printer (yellow) | biosafety, pacification, hostile-intake, workforce paperwork | yellow | Implemented first pass |
+| Fulgora | `redundant-rubble` via salvage; easy `useless-documentation` | `Digital Services Bureau` | Chromatic Printer (magenta) | fast computerized processing, archive recovery, electromagnetic permits | magenta | Implemented first pass |
+| Aquilo | none; multi-planet convergence | `Interplanetary Fax Exchange` | Laser Printer only (ink freezes) | multicolor composite forms, fax routing, transfer media | none (uses imported CMY) | Implemented first pass |
 
 ## Implemented Vulcanus Principles
 
