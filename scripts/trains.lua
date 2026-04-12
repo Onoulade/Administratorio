@@ -7,6 +7,7 @@ local M = {}
 
 local CHEST_NAME = "transit-permit-chest"
 local FORM_NAME = "transit-authorization"
+local BYPASS_TRAIN_STOP_NAME = "public-train-stop"
 local CHEST_DEFAULT_OFFSET = {x = -0.5, y = 1.5}
 local CHEST_OFFSET_BY_DIRECTION = {
   -- Train stops are 2x2. Put the chest on the rail-adjacent tile of the edge
@@ -180,7 +181,9 @@ end
 function M.on_built(entity)
   -- control.lua is passing the entity directly, not the event table
   if entity and entity.valid and entity.type == "train-stop" then
-    setup_station(entity)
+    if entity.name ~= BYPASS_TRAIN_STOP_NAME then
+      setup_station(entity)
+    end
   end
 end
 
