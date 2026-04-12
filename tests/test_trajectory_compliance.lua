@@ -43,17 +43,26 @@ defines = {
 
 storage = {}
 
-local function new_inventory(initial_count)
+local function new_inventory(initial_count, initial_orders)
   local count = initial_count or 0
+  local orders = initial_orders or 0
   return {
     valid = true,
     get_item_count = function(name)
+      if name == "orbital-deviation-order" then
+        return orders
+      end
       if name == "middle-management-managing-manager" then
         return count
       end
       return 0
     end,
     remove = function(spec)
+      if spec.name == "orbital-deviation-order" then
+        local removed = math.min(orders, spec.count or 0)
+        orders = orders - removed
+        return removed
+      end
       if spec.name ~= "middle-management-managing-manager" then
         return 0
       end
@@ -64,8 +73,14 @@ local function new_inventory(initial_count)
     set_count = function(value)
       count = value
     end,
+    set_orders = function(value)
+      orders = value
+    end,
     _count = function()
       return count
+    end,
+    _orders = function()
+      return orders
     end,
   }
 end
@@ -73,8 +88,8 @@ end
 local next_unit_number = 100
 local surface
 
-local function new_array(force, inventory_count, position)
-  local inventory = new_inventory(inventory_count)
+local function new_array(force, inventory_count, position, inventory_orders)
+  local inventory = new_inventory(inventory_count, inventory_orders)
   local entity = {
     valid = true,
     name = "trajectory-compliance-array",
@@ -186,6 +201,22 @@ test("arrays spend MMMM to deviate nearby asteroid chunks", function()
   assert_eq(surface._entities[1]._inventory._count(), 1, "array should spend one MMMM when deviating a chunk")
   assert_eq(#destroyed, 1, "array should destroy one chunk when loaded")
   assert_eq(destroyed[1].name, "metallic-asteroid-chunk", "array should target the discovered chunk")
+end)
+
+test("arrays spend orbital deviation orders before MMMM", function()
+  storage = {}
+  destroyed = {}
+  printed_messages = {}
+  chunks = {
+    {name = "metallic-asteroid-chunk", position = {x = 4, y = 2}},
+  }
+  surface._entities = {new_array(force, 1, {x = 0, y = 0}, 1)}
+
+  module.on_tick({tick = 60})
+
+  assert_eq(surface._entities[1]._inventory._orders(), 0, "array should spend an orbital deviation order first")
+  assert_eq(surface._entities[1]._inventory._count(), 1, "array should preserve MMMM when paperwork is available")
+  assert_eq(#destroyed, 1, "array should still destroy the targeted chunk")
 end)
 
 test("arrays report starvation when asteroids arrive but MMMM is empty", function()
