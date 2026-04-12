@@ -977,7 +977,7 @@ local function on_entity_built_inner(event)
     if overlaps_existing then
       if player then
         player.print({"message.admin-station-overlap"})
-        player.insert{name = "admin-station", count = 1, quality = entity.quality and entity.quality.name or nil}
+        player.insert{name = entity.name, count = 1, quality = entity.quality and entity.quality.name or nil}
       end
       entity.destroy()
       return
@@ -986,7 +986,7 @@ local function on_entity_built_inner(event)
     if not area_clear then
       if player then
         player.print({"message.admin-station-blocked"})
-        player.insert{name = "admin-station", count = 1, quality = entity.quality and entity.quality.name or nil}
+        player.insert{name = entity.name, count = 1, quality = entity.quality and entity.quality.name or nil}
       end
       entity.destroy()
       return
@@ -2043,7 +2043,9 @@ end
 
 local function on_protest_pacing_tick(_event)
   runtime_debug.run_profiled_external_sections("protest_pacing", function()
-    biters.process_protest_pacing(game.surfaces[1])
+    for _, surface in pairs(game.surfaces) do
+      biters.process_protest_pacing(surface)
+    end
     refresh_selected_biter_info_guis()
   end)
 end
