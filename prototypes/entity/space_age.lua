@@ -44,7 +44,7 @@ chromatic_printer.icon_size = 64
 chromatic_printer.minable = {mining_time = 0.2, result = "chromatic-printer"}
 chromatic_printer.placeable_by = {{item = "chromatic-printer", count = 1}}
 chromatic_printer.next_upgrade = nil
-chromatic_printer.crafting_categories = {"printing", "printing-advanced", "printing-workorder", "printing-chromatic"}
+chromatic_printer.crafting_categories = {"printing", "printing-advanced", "printing-workorder", "printing-chromatic", "printing-multicolor"}
 chromatic_printer.crafting_speed = 3
 chromatic_printer.energy_usage = "350kW"
 chromatic_printer.energy_source = {type = "electric", usage_priority = "secondary-input"}

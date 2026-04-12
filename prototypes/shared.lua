@@ -292,9 +292,10 @@ if space_age_enabled then
   shared.PAPERWORK_ITEMS["electromagnetic-operating-license"] = true
   shared.PAPERWORK_ITEMS["data-recovery-order"] = true
   shared.PAPERWORK_ITEMS["asteroid-processing-docket"] = true
-  shared.PAPERWORK_ITEMS["composite-form"] = true
+  shared.PAPERWORK_ITEMS["cyan-yellow-form"] = true
+  shared.PAPERWORK_ITEMS["cyan-magenta-form"] = true
+  shared.PAPERWORK_ITEMS["yellow-magenta-form"] = true
   shared.PAPERWORK_ITEMS["trichromatic-permit"] = true
-  shared.PAPERWORK_ITEMS["orbital-tourism-form"] = true
   shared.PAPERWORK_ITEMS["unified-operations-charter"] = true
   shared.PAPERWORK_ITEMS["cryogenic-operations-license"] = true
 
@@ -319,9 +320,10 @@ if space_age_enabled then
   shared.FORM_PRODUCTION_RECIPES["digital-processing-certificate"] = "digital-processing-certificate"
   shared.FORM_PRODUCTION_RECIPES["electromagnetic-operating-license"] = "electromagnetic-operating-license"
   shared.FORM_PRODUCTION_RECIPES["data-recovery-order"] = "data-recovery-order"
-  shared.FORM_PRODUCTION_RECIPES["composite-form"] = "composite-form-cyan-yellow-production"
+  shared.FORM_PRODUCTION_RECIPES["cyan-yellow-form"] = "cyan-yellow-form-production"
+  shared.FORM_PRODUCTION_RECIPES["cyan-magenta-form"] = "cyan-magenta-form-production"
+  shared.FORM_PRODUCTION_RECIPES["yellow-magenta-form"] = "yellow-magenta-form-production"
   shared.FORM_PRODUCTION_RECIPES["trichromatic-permit"] = "trichromatic-permit-production"
-  shared.FORM_PRODUCTION_RECIPES["orbital-tourism-form"] = "orbital-tourism-form-production"
   shared.FORM_PRODUCTION_RECIPES["unified-operations-charter"] = "unified-operations-charter-production"
   shared.FORM_PRODUCTION_RECIPES["cryogenic-operations-license"] = "cryogenic-operations-license-production"
 end

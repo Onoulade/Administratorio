@@ -414,6 +414,7 @@ data:extend({
     },
     ingredients = {
       {type = "item", name = "capture-bureau-processing-token", amount = 1},
+      {type = "item", name = "cyan-yellow-form", amount = 1},
     },
     results = {
       {type = "item", name = "capture-bureau-processing-token", amount = 1},
@@ -1151,54 +1152,54 @@ data:extend({
     },
     energy_required = 5,
   }, "aquilo"),
-  surface_limited({
+  {
     type = "recipe",
-    name = "composite-form-cyan-yellow-production",
+    name = "cyan-yellow-form-production",
     category = "printing-multicolor",
     enabled = false,
-    localised_name = {"item-name.composite-form"},
+    localised_name = {"item-name.cyan-yellow-form"},
     ingredients = {
-      {type = "item", name = "blank-cyan-form", amount = 1},
-      {type = "item", name = "blank-yellow-form", amount = 1},
-      {type = "item", name = "thermal-transfer-sheet", amount = 1},
+      {type = "item", name = "paper", amount = 2},
+      {type = "fluid", name = "cyan-ink", amount = 10},
+      {type = "fluid", name = "yellow-ink", amount = 10},
     },
     results = {
-      {type = "item", name = "composite-form", amount = 1},
+      {type = "item", name = "cyan-yellow-form", amount = 2},
     },
     energy_required = 3,
-  }, "aquilo"),
-  surface_limited({
+  },
+  {
     type = "recipe",
-    name = "composite-form-cyan-magenta-production",
+    name = "cyan-magenta-form-production",
     category = "printing-multicolor",
     enabled = false,
-    localised_name = {"item-name.composite-form"},
+    localised_name = {"item-name.cyan-magenta-form"},
     ingredients = {
-      {type = "item", name = "blank-cyan-form", amount = 1},
-      {type = "item", name = "blank-magenta-form", amount = 1},
-      {type = "item", name = "thermal-transfer-sheet", amount = 1},
+      {type = "item", name = "paper", amount = 2},
+      {type = "fluid", name = "cyan-ink", amount = 10},
+      {type = "fluid", name = "magenta-ink", amount = 10},
     },
     results = {
-      {type = "item", name = "composite-form", amount = 1},
+      {type = "item", name = "cyan-magenta-form", amount = 2},
     },
     energy_required = 3,
-  }, "aquilo"),
-  surface_limited({
+  },
+  {
     type = "recipe",
-    name = "composite-form-yellow-magenta-production",
+    name = "yellow-magenta-form-production",
     category = "printing-multicolor",
     enabled = false,
-    localised_name = {"item-name.composite-form"},
+    localised_name = {"item-name.yellow-magenta-form"},
     ingredients = {
-      {type = "item", name = "blank-yellow-form", amount = 1},
-      {type = "item", name = "blank-magenta-form", amount = 1},
-      {type = "item", name = "thermal-transfer-sheet", amount = 1},
+      {type = "item", name = "paper", amount = 2},
+      {type = "fluid", name = "yellow-ink", amount = 10},
+      {type = "fluid", name = "magenta-ink", amount = 10},
     },
     results = {
-      {type = "item", name = "composite-form", amount = 1},
+      {type = "item", name = "yellow-magenta-form", amount = 2},
     },
     energy_required = 3,
-  }, "aquilo"),
+  },
   surface_limited({
     type = "recipe",
     name = "trichromatic-permit-production",
@@ -1241,7 +1242,7 @@ data:extend({
     enabled = false,
     localised_name = {"item-name.cryogenic-operations-license"},
     ingredients = {
-      {type = "item", name = "composite-form", amount = 1},
+      {type = "item", name = "cyan-yellow-form", amount = 1},
       {type = "item", name = "transfer-emulsion", amount = 1},
       {type = "item", name = "thermal-transfer-sheet", amount = 1},
       {type = "item", name = "lithium-plate", amount = 2},
@@ -1258,9 +1259,8 @@ data:extend({
     enabled = false,
     localised_name = {"item-name.public-transportation-contract"},
     ingredients = {
-      {type = "item", name = "blank-cyan-form", amount = 1},
-      {type = "item", name = "blank-magenta-form", amount = 1},
-      {type = "item", name = "thermal-transfer-sheet", amount = 1},
+      {type = "item", name = "cyan-yellow-form", amount = 1},
+      {type = "item", name = "transit-authorization", amount = 1},
     },
     results = {
       {type = "item", name = "public-transportation-contract", amount = 1},
@@ -1283,6 +1283,20 @@ data:extend({
     },
     energy_required = 5,
   }, "nauvis"),
+  {
+    type = "recipe",
+    name = "anecdotal-data-reprocessing",
+    category = "bureaucracy-registration",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "spoilage", amount = 4},
+      {type = "item", name = "yellow-magenta-form", amount = 1},
+    },
+    results = {
+      {type = "item", name = "dubious-data", amount = 6},
+    },
+    energy_required = 2,
+  },
   surface_limited({
     type = "recipe",
     name = "paper-production-vulcanus",

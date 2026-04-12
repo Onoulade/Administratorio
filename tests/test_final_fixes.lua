@@ -1749,12 +1749,12 @@ test("space age intermediate recipes gain the expected chromatic and aquilo gate
 
   local dual = get_recipe("dual-planet-widget")
   assert_true(dual ~= nil, "dual-planet-widget missing")
-  assert_true(has_ingredient(dual, "composite-form"),
-    "dual-planet-widget should collapse dual-planet paperwork into composite-form")
+  assert_true(has_ingredient(dual, "cyan-yellow-form"),
+    "dual-planet-widget should collapse dual-planet paperwork into cyan-yellow-form")
   assert_true(not has_ingredient(dual, "blank-cyan-form"),
-    "dual-planet-widget should not keep separate blank-cyan-form once composite-form is available")
+    "dual-planet-widget should not keep separate blank-cyan-form once cyan-yellow-form is available")
   assert_true(not has_ingredient(dual, "blank-yellow-form"),
-    "dual-planet-widget should not keep separate blank-yellow-form once composite-form is available")
+    "dual-planet-widget should not keep separate blank-yellow-form once cyan-yellow-form is available")
 
   local quantum = get_recipe("quantum-processor")
   assert_true(quantum ~= nil, "quantum-processor missing")
@@ -1768,11 +1768,11 @@ test("space age intermediate recipes gain the expected chromatic and aquilo gate
     "quantum-processor should not keep separate blank-magenta-form once unified multicolor paperwork is used")
 
   local lithium = get_recipe("lithium")
-  assert_true(has_ingredient(lithium, "composite-form"),
-    "lithium should require composite-form as the first Aquilo convergence gate")
+  assert_true(has_ingredient(lithium, "cyan-yellow-form"),
+    "lithium should require cyan-yellow-form as the first Aquilo convergence gate")
   local lithium_plate = get_recipe("lithium-plate")
-  assert_true(has_ingredient(lithium_plate, "composite-form"),
-    "lithium-plate should require composite-form")
+  assert_true(has_ingredient(lithium_plate, "cyan-yellow-form"),
+    "lithium-plate should require cyan-yellow-form")
   local fluoroketone = get_recipe("fluoroketone")
   assert_true(has_ingredient(fluoroketone, "cryogenic-operations-license"),
     "fluoroketone should require cryogenic-operations-license")

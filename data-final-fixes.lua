@@ -1401,12 +1401,29 @@ local TOP_TIER_MULTICOLOR_GATING = {
 }
 
 local CRYOGENIC_RECIPE_GATING = {
-  ["lithium"] = "composite-form",
-  ["lithium-plate"] = "composite-form",
+  ["lithium"] = "cyan-yellow-form",
+  ["lithium-plate"] = "cyan-yellow-form",
   ["fluoroketone"] = "cryogenic-operations-license",
   ["fluoroketone-cooling"] = "cryogenic-operations-license",
   ["cryogenic-plant"] = "cryogenic-operations-license",
 }
+
+local function get_bicolor_gate(required_form_order)
+  local has = {}
+  for _, form_name in ipairs(required_form_order) do
+    has[form_name] = true
+  end
+  if has["blank-cyan-form"] and has["blank-yellow-form"] then
+    return "cyan-yellow-form"
+  end
+  if has["blank-cyan-form"] and has["blank-magenta-form"] then
+    return "cyan-magenta-form"
+  end
+  if has["blank-yellow-form"] and has["blank-magenta-form"] then
+    return "yellow-magenta-form"
+  end
+  return nil
+end
 
 for recipe_name, recipe in pairs(data.raw["recipe"]) do
   if shared.is_admin_recipe(recipe_name) then goto next_gating end
@@ -1427,12 +1444,14 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
 
   if #required_form_order >= 2 then
     local multicolor_gate = TOP_TIER_MULTICOLOR_GATING[recipe_name]
-      or (#required_form_order == 2 and "composite-form" or "trichromatic-permit")
+      or (#required_form_order == 2 and get_bicolor_gate(required_form_order) or "trichromatic-permit")
 
     for _, form_name in ipairs(required_form_order) do
       remove_ingredient_from_recipe(recipe_name, form_name)
     end
-    add_special_paperwork(recipe_name, multicolor_gate, 1)
+    if multicolor_gate then
+      add_special_paperwork(recipe_name, multicolor_gate, 1)
+    end
   else
     for _, form_name in ipairs(required_form_order) do
       add_special_paperwork(recipe_name, form_name, 1)
