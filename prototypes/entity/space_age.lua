@@ -431,6 +431,11 @@ trajectory_compliance_array.surface_conditions = {
   },
 }
 
+local public_train_stop = table.deepcopy(data.raw["train-stop"]["train-stop"])
+public_train_stop.name = "public-train-stop"
+public_train_stop.minable = {mining_time = 0.2, result = "public-train-stop"}
+public_train_stop.placeable_by = placeable_by_item("public-train-stop")
+
 for _, entity in ipairs({
   formation_center,
   chromatic_printer,
@@ -458,4 +463,5 @@ data:extend({
   interplanetary_fax_exchange,
   fax_network_combinator,
   trajectory_compliance_array,
+  public_train_stop,
 })
