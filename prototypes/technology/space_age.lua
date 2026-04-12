@@ -197,6 +197,68 @@ data:extend({
   },
   {
     type = "technology",
+    name = "cyan-yellow-bureaucracy",
+    icon = "__administratorio__/graphics/icons/blank-form.png",
+    icon_size = 64,
+    effects = {
+      {type = "unlock-recipe", recipe = "orbital-tourism-form-production"},
+      {type = "unlock-recipe", recipe = "public-transportation-contract-production"},
+      {type = "unlock-recipe", recipe = "composite-form-cyan-yellow-production"},
+    },
+    prerequisites = {"vulcanus-certification", "gleba-conciliation", "metallurgic-science-pack", "agricultural-science-pack"},
+    unit = {
+      count = 380,
+      ingredients = {
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 45,
+    },
+    order = "h-e1",
+  },
+  {
+    type = "technology",
+    name = "cyan-magenta-bureaucracy",
+    icon = "__administratorio__/graphics/icons/blank-form.png",
+    icon_size = 64,
+    effects = {
+      {type = "unlock-recipe", recipe = "composite-form-cyan-magenta-production"},
+    },
+    prerequisites = {"vulcanus-certification", "fulgora-digital-services", "metallurgic-science-pack", "electromagnetic-science-pack"},
+    unit = {
+      count = 380,
+      ingredients = {
+        {"metallurgic-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 45,
+    },
+    order = "h-e2",
+  },
+  {
+    type = "technology",
+    name = "yellow-magenta-bureaucracy",
+    icon = "__administratorio__/graphics/icons/blank-form.png",
+    icon_size = 64,
+    effects = {
+      {type = "unlock-recipe", recipe = "composite-form-yellow-magenta-production"},
+    },
+    prerequisites = {"gleba-conciliation", "fulgora-digital-services", "agricultural-science-pack", "electromagnetic-science-pack"},
+    unit = {
+      count = 380,
+      ingredients = {
+        {"agricultural-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 45,
+    },
+    order = "h-e3",
+  },
+  {
+    type = "technology",
     name = "aquilo-fax-network",
     icon = "__administratorio__/graphics/icons/steel-forge-icon.png",
     icon_size = 64,
@@ -207,15 +269,11 @@ data:extend({
       {type = "unlock-recipe", recipe = "transfer-emulsion-production"},
       {type = "unlock-recipe", recipe = "thermal-transfer-sheet-production"},
       {type = "unlock-recipe", recipe = "composite-chroma-ribbon-production"},
-      {type = "unlock-recipe", recipe = "composite-form-cyan-yellow-production"},
-      {type = "unlock-recipe", recipe = "composite-form-cyan-magenta-production"},
-      {type = "unlock-recipe", recipe = "composite-form-yellow-magenta-production"},
       {type = "unlock-recipe", recipe = "trichromatic-permit-production"},
       {type = "unlock-recipe", recipe = "unified-operations-charter-production"},
       {type = "unlock-recipe", recipe = "cryogenic-operations-license-production"},
-      {type = "unlock-recipe", recipe = "public-transportation-contract-production"},
     },
-    prerequisites = {"vulcanus-certification", "gleba-conciliation", "fulgora-digital-services", "cryogenic-science-pack"},
+    prerequisites = {"cyan-yellow-bureaucracy", "cyan-magenta-bureaucracy", "yellow-magenta-bureaucracy", "cryogenic-science-pack"},
     unit = {
       count = 500,
       ingredients = {
