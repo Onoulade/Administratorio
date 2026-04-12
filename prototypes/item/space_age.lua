@@ -304,7 +304,7 @@ data:extend({
   },
   {
     type = "item",
-    name = "composite-form",
+    name = "cyan-yellow-form",
     icons = {
       {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.9, g = 0.94, b = 0.98, a = 1}},
       {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {-8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
@@ -312,6 +312,30 @@ data:extend({
     },
     subgroup = "forms-printed",
     order = "ddg",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "cyan-magenta-form",
+    icons = {
+      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.92, g = 0.92, b = 0.99, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {-8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
+    },
+    subgroup = "forms-printed",
+    order = "ddh",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "yellow-magenta-form",
+    icons = {
+      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.96, g = 0.9, b = 0.9, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {-8, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
+    },
+    subgroup = "forms-printed",
+    order = "ddi",
     stack_size = 100
   },
   {
@@ -434,20 +458,6 @@ data:extend({
   },
   {
     type = "item",
-    name = "orbital-tourism-form",
-    icons = {
-      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.94, g = 0.97, b = 1, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {-10, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {0, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {10, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
-      {icon = item_icons .. "office-building.png", icon_size = 64, scale = 0.28, shift = {8, -8}},
-    },
-    subgroup = "forms-permits",
-    order = "diea",
-    stack_size = 100
-  },
-  {
-    type = "item",
     name = "unified-operations-charter",
     icons = {
       {icon = item_icons .. "management-approval-written.png", icon_size = 64},
@@ -465,7 +475,7 @@ data:extend({
     icons = {
       {icon = item_icons .. "construction-permit.png", icon_size = 64},
       {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {-8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {8, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
     },
     subgroup = "forms-permits",
     order = "dig",
