@@ -36,6 +36,11 @@ local function placeable_by_item(name)
   }
 end
 
+local function require_non_vacuum(entity)
+  if not space_age_enabled then return entity end
+  return planets.require_non_vacuum_surface(entity)
+end
+
 local function tint_sprites(t, tint)
   if type(t) ~= "table" then return end
   if t.filename and not t.draw_as_shadow then
@@ -669,6 +674,7 @@ if space_age_enabled then
       max = planets.BASIC_PLANET_PROPERTIES.vulcanus.pressure - 1,
     },
   }
+  require_non_vacuum(greenhouse)
 end
 
 -- Corporate Breakroom: 5x5 gossip
@@ -1229,5 +1235,22 @@ add_entity(hired_biter_supply_chest)
 add_entity(paperwork_provider_chest)
 add_entity(paperwork_storage_chest)
 add_entity(paperwork_requester_chest)
+
+if space_age_enabled then
+  for _, entity in ipairs({
+    admin_station,
+    admin_station_north,
+    admin_station_east,
+    admin_station_west,
+    capture_bureau,
+    resolution_office,
+    office_desk,
+    breakroom,
+    union_hq,
+    propaganda_distillery,
+  }) do
+    require_non_vacuum(entity)
+  end
+end
 
 data:extend(entities)

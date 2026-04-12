@@ -237,6 +237,7 @@ if space_age_enabled then
   shared.ADMIN_BUILDINGS["laser-printer"] = true
   shared.ADMIN_BUILDINGS["fax-emitter"] = true
   shared.ADMIN_BUILDINGS["formation-center"] = true
+  shared.ADMIN_BUILDINGS["administrative-space-station"] = true
   shared.ADMIN_BUILDINGS["trajectory-compliance-array"] = true
   shared.ADMIN_BUILDINGS["notary-office"] = true
   shared.ADMIN_BUILDINGS["territorial-arbitration-post"] = true
@@ -280,6 +281,9 @@ if space_age_enabled then
   shared.PAPERWORK_ITEMS["embossed-seal"] = true
   shared.PAPERWORK_ITEMS["industrial-charter"] = true
   shared.PAPERWORK_ITEMS["territorial-resettlement-order"] = true
+  shared.PAPERWORK_ITEMS["thermal-process-license"] = true
+  shared.PAPERWORK_ITEMS["calcite-reagent-waiver"] = true
+  shared.PAPERWORK_ITEMS["offworld-metallurgy-charter"] = true
   shared.PAPERWORK_ITEMS["symbiosis-record"] = true
   shared.PAPERWORK_ITEMS["conciliation-order"] = true
   shared.PAPERWORK_ITEMS["biochamber-operating-waiver"] = true
@@ -287,6 +291,7 @@ if space_age_enabled then
   shared.PAPERWORK_ITEMS["digital-processing-certificate"] = true
   shared.PAPERWORK_ITEMS["electromagnetic-operating-license"] = true
   shared.PAPERWORK_ITEMS["data-recovery-order"] = true
+  shared.PAPERWORK_ITEMS["asteroid-processing-docket"] = true
   shared.PAPERWORK_ITEMS["composite-form"] = true
   shared.PAPERWORK_ITEMS["trichromatic-permit"] = true
   shared.PAPERWORK_ITEMS["unified-operations-charter"] = true

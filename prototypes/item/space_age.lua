@@ -48,6 +48,17 @@ data:extend({
   },
   {
     type = "item",
+    name = "astronaut",
+    icons = {
+      {icon = "__base__/graphics/icons/big-biter.png", icon_size = 64},
+      {icon = item_icons .. "transit-authorization.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    },
+    subgroup = "admin-bs-economy",
+    order = "j-c1",
+    stack_size = 20
+  },
+  {
+    type = "item",
     name = "night-shift-supervisor",
     icons = {
       {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64},
@@ -512,6 +523,43 @@ data:extend({
     stack_size = 100
   },
   {
+    type = "ammo",
+    name = "orbital-deviation-order",
+    icons = {
+      {icon = item_icons .. "management-approval-written.png", icon_size = 64},
+      {icon = "__base__/graphics/icons/radar.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    },
+    ammo_category = "trajectory-compliance",
+    ammo_type = {
+      target_type = "entity",
+      action = {
+        type = "direct",
+        action_delivery = {
+          type = "instant",
+          source_effects = {
+            type = "create-explosion",
+            entity_name = "explosion-hit",
+          },
+        },
+      },
+    },
+    magazine_size = 1,
+    subgroup = "forms-permits",
+    order = "do",
+    stack_size = 50
+  },
+  {
+    type = "item",
+    name = "asteroid-processing-docket",
+    icons = {
+      {icon = item_icons .. "construction-work-order.png", icon_size = 64},
+      {icon = "__base__/graphics/icons/processing-unit.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
+    },
+    subgroup = "forms-permits",
+    order = "dp",
+    stack_size = 100
+  },
+  {
     type = "item",
     name = "capture-bureau",
     icons = {
@@ -567,6 +615,18 @@ data:extend({
     subgroup = "admin-buildings",
     order = "m",
     place_result = "laser-printer",
+    stack_size = 20
+  },
+  {
+    type = "item",
+    name = "administrative-space-station",
+    icons = {
+      {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.82, g = 0.92, b = 1, a = 1}},
+      {icon = "__base__/graphics/icons/radar.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
+    },
+    subgroup = "admin-buildings",
+    order = "m1",
+    place_result = "administrative-space-station",
     stack_size = 20
   },
   {

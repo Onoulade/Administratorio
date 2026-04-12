@@ -11,6 +11,7 @@ rules.OPERATING_FORM_EXEMPT_BY_CATEGORY = {
   ["cryogenics"] = true,
   ["bureaucracy-certification"] = true,
   ["bureaucracy-conciliation"] = true,
+  ["orbital-bureaucracy"] = true,
 }
 rules.OPERATING_FORM_EXEMPT_BY_RECIPE = {
   ["foundry"] = true,
