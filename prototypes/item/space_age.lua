@@ -664,3 +664,104 @@ data:extend({
     stack_size = 20
   },
 })
+
+local SPACE_TOURISM_VARIANTS = {
+  {spitter = "small-spitter", package_item = "small-spitter-tourism-package", tourist_item = "small-space-tourist", order = "j-k1"},
+  {spitter = "medium-spitter", package_item = "medium-spitter-tourism-package", tourist_item = "medium-space-tourist", order = "j-k2"},
+  {spitter = "big-spitter", package_item = "big-spitter-tourism-package", tourist_item = "big-space-tourist", order = "j-k3"},
+  {spitter = "behemoth-spitter", package_item = "behemoth-spitter-tourism-package", tourist_item = "behemoth-space-tourist", order = "j-k4"},
+}
+
+local function spitter_icon_layers(spitter_name, overlays)
+  local icons = {
+    {icon = "__base__/graphics/icons/" .. spitter_name .. ".png", icon_size = 64},
+  }
+  for _, overlay in ipairs(overlays) do
+    icons[#icons + 1] = overlay
+  end
+  return icons
+end
+
+local tourism_items = {}
+
+tourism_items[#tourism_items + 1] = {
+  type = "item",
+  name = "capture-bureau-processing-token",
+  icon = item_icons .. "admin-desk.png",
+  icon_size = 64,
+  hidden = true,
+  hidden_in_factoriopedia = true,
+  stack_size = 1,
+}
+
+tourism_items[#tourism_items + 1] = {
+  type = "item",
+  name = "captured-pentapod-specimen",
+  icons = {
+    {icon = item_icons .. "admin-desk.png", icon_size = 64, tint = {r = 0.75, g = 1, b = 0.7, a = 1}},
+    {icon = "__space-age__/graphics/icons/pentapod-egg.png", icon_size = 64, scale = 0.4, shift = {8, 8}},
+  },
+  localised_name = {"", "Captured Pentapod Specimen"},
+  localised_description = {
+    "",
+    "Internal Gleba hostile-acquisitions stock. The ",
+    {"entity-name.capture-bureau"},
+    " converts it into eggs.",
+  },
+  hidden = true,
+  hidden_in_factoriopedia = true,
+  stack_size = 20,
+}
+
+for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
+  tourism_items[#tourism_items + 1] = {
+    type = "item",
+    name = variant.package_item,
+    icons = spitter_icon_layers(variant.spitter, {
+      {icon = item_icons .. "admin-desk.png", icon_size = 64, scale = 0.32, shift = {-8, 8}},
+      {icon = item_icons .. "transit-authorization.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
+    }),
+    localised_name = {"", {"entity-name." .. variant.spitter}, " Tourism Package"},
+    localised_description = {
+      "",
+      "Captured for orbital sightseeing. It spoils like an egg, so launch it fast and process it at an ",
+      {"entity-name.administrative-space-station"},
+      " before it hatches back into an angry spitter.",
+    },
+    subgroup = "admin-bs-economy",
+    order = variant.order,
+    stack_size = 20,
+    spoil_ticks = 18000,
+    spoil_to_trigger_result = {
+      items_per_trigger = 1,
+      trigger = {
+        type = "direct",
+        action_delivery = {
+          type = "instant",
+          source_effects = {
+            {type = "script", effect_id = "administratorio-" .. variant.spitter .. "-tourism-hatch"},
+          },
+        },
+      },
+    },
+  }
+
+  tourism_items[#tourism_items + 1] = {
+    type = "item",
+    name = variant.tourist_item,
+    icons = spitter_icon_layers(variant.spitter, {
+      {icon = item_icons .. "office-building.png", icon_size = 64, scale = 0.3, shift = {-8, 8}},
+      {icon = item_icons .. "taxpayer-money.png", icon_size = 64, scale = 0.32, shift = {8, 8}},
+    }),
+    localised_name = {"", {"entity-name." .. variant.spitter}, " Space Tourist"},
+    localised_description = {
+      "",
+      "Already paid up. Insert into a Nauvis admin desk to let it wander off, or jettison it in orbit for liability paperwork.",
+    },
+    subgroup = "admin-bs-economy",
+    order = variant.order .. "a",
+    stack_size = 20,
+  }
+end
+
+data:extend(tourism_items)

@@ -185,6 +185,58 @@ local function get_hard_mode_attack_force()
   return configure_hard_mode_attack_force(force) or get_biter_force()
 end
 
+local SPITTER_TOURISM_PACKAGE_ITEMS = {
+  ["small-spitter"] = "small-spitter-tourism-package",
+  ["medium-spitter"] = "medium-spitter-tourism-package",
+  ["big-spitter"] = "big-spitter-tourism-package",
+  ["behemoth-spitter"] = "behemoth-spitter-tourism-package",
+}
+local PENTAPOD_EGG_YIELDS = {
+  ["small-wriggler-pentapod"] = 1,
+  ["medium-wriggler-pentapod"] = 2,
+  ["big-wriggler-pentapod"] = 3,
+  ["small-strafer-pentapod"] = 1,
+  ["medium-strafer-pentapod"] = 2,
+  ["big-strafer-pentapod"] = 3,
+  ["small-stomper-pentapod"] = 2,
+  ["medium-stomper-pentapod"] = 3,
+  ["big-stomper-pentapod"] = 4,
+  ["small-pentapod-premature"] = 1,
+  ["medium-pentapod-premature"] = 1,
+  ["big-pentapod-premature"] = 2,
+}
+local SPOILED_SPITTER_HATCH_EFFECTS = {
+  ["administratorio-small-spitter-tourism-hatch"] = "small-spitter",
+  ["administratorio-medium-spitter-tourism-hatch"] = "medium-spitter",
+  ["administratorio-big-spitter-tourism-hatch"] = "big-spitter",
+  ["administratorio-behemoth-spitter-tourism-hatch"] = "behemoth-spitter",
+}
+local SPACE_TOURIST_RELEASE_ITEMS = {
+  ["small-space-tourist"] = "small-spitter",
+  ["medium-space-tourist"] = "medium-spitter",
+  ["big-space-tourist"] = "big-spitter",
+  ["behemoth-space-tourist"] = "behemoth-spitter",
+}
+local CAPTURE_BUREAU_RECIPES = {
+  ["capture-bureau-workforce"] = "workforce",
+  ["capture-bureau-tourism"] = "tourism",
+  ["capture-bureau-pentapod-eggs"] = "pentapod-eggs",
+}
+
+local function get_entity_name(entity_or_name)
+  if type(entity_or_name) == "string" then
+    return entity_or_name
+  end
+  if entity_or_name and entity_or_name.valid then
+    return entity_or_name.name
+  end
+  return nil
+end
+
+local function is_capture_bureau(entity_or_name)
+  return get_entity_name(entity_or_name) == "capture-bureau"
+end
+
 local function ensure_runtime_profile_section(runtime_profile, key)
   if not runtime_profile then return nil end
   local section = runtime_profile[key]
@@ -480,17 +532,132 @@ local function get_cached_desks()
   return desks
 end
 
-local function find_nearest_available_desk(position)
+local function get_entity_output_inventory(entity)
+  if not entity or not entity.valid or not entity.get_inventory then return nil end
+  local inventory_defs = defines and defines.inventory or {}
+  for _, inventory_id in ipairs({
+    inventory_defs.assembling_machine_output,
+    inventory_defs.furnace_result,
+    inventory_defs.chest,
+  }) do
+    if inventory_id ~= nil then
+      local inventory = entity.get_inventory(inventory_id)
+      if inventory then
+        return inventory
+      end
+    end
+  end
+  return nil
+end
+
+local function get_capture_bureau_mode(desk)
+  if not desk or not desk.valid or not is_capture_bureau(desk) or not desk.get_recipe then return nil end
+  local recipe = desk.get_recipe()
+  local recipe_name = recipe and recipe.name or nil
+  return CAPTURE_BUREAU_RECIPES[recipe_name]
+end
+
+local function is_pentapod(entity_name)
+  return entity_name ~= nil and PENTAPOD_EGG_YIELDS[entity_name] ~= nil
+end
+
+local function get_capture_bureau_products(desk, entity_name)
+  local mode = get_capture_bureau_mode(desk)
+  if mode == "workforce" then
+    if entity_name and C.BITER_MAX_TIER[entity_name] ~= nil and not C.IS_SPITTER[entity_name] then
+      return {{name = "worker-biter", count = 1}}
+    end
+    return nil
+  end
+
+  if mode == "tourism" then
+    local package_item = entity_name and SPITTER_TOURISM_PACKAGE_ITEMS[entity_name] or nil
+    if package_item then
+      return {{name = package_item, count = 1}}
+    end
+    return nil
+  end
+
+  if mode == "pentapod-eggs" then
+    local egg_count = entity_name and PENTAPOD_EGG_YIELDS[entity_name] or nil
+    if egg_count then
+      return {{name = "pentapod-egg", count = egg_count}}
+    end
+  end
+
+  return nil
+end
+
+local function can_insert_all_products(inventory, products)
+  if not inventory or not products or #products == 0 then return false end
+  if not inventory.can_insert then return true end
+  for _, product in ipairs(products) do
+    if not inventory.can_insert({name = product.name, count = product.count}) then
+      return false
+    end
+  end
+  return true
+end
+
+local function capture_bureau_can_accept_entity(desk, entity_name)
+  if not desk or not desk.valid or not is_capture_bureau(desk) then return false end
+  local products = get_capture_bureau_products(desk, entity_name)
+  if not products then return false end
+  local output = get_entity_output_inventory(desk)
+  return can_insert_all_products(output, products)
+end
+
+local function get_preferred_desks_for_entity(entity_name, desks)
+  if not entity_name then return desks end
+
+  local capture_desks = {}
+  local fallback_desks = {}
+  for _, desk in ipairs(desks or {}) do
+    if desk and desk.valid and zones.get_available_slots(desk.unit_number) > 0 then
+      if is_capture_bureau(desk) then
+        if capture_bureau_can_accept_entity(desk, entity_name) then
+          capture_desks[#capture_desks + 1] = desk
+        end
+      elseif not is_pentapod(entity_name) then
+        fallback_desks[#fallback_desks + 1] = desk
+      end
+    end
+  end
+
+  if #capture_desks > 0 then
+    return capture_desks
+  end
+
+  if is_pentapod(entity_name) then
+    return {}
+  end
+
+  return fallback_desks
+end
+
+local function surface_has_available_capture_bureau(surface, desks, entity_name)
+  if not surface then return false end
+  for _, desk in ipairs(desks or {}) do
+    if desk and desk.valid and desk.surface == surface and zones.get_available_slots(desk.unit_number) > 0
+       and is_capture_bureau(desk) and capture_bureau_can_accept_entity(desk, entity_name) then
+      return true
+    end
+  end
+  return false
+end
+
+local function find_nearest_available_desk(position, entity_name)
   local best = nil
   local best_dist = math.huge
-  for _, desk in ipairs(get_cached_desks()) do
-    local available = zones.get_available_slots(desk.unit_number)
-    local dx = desk.position.x - position.x
-    local dy = desk.position.y - position.y
-    local dist = dx * dx + dy * dy
-    if available > 0 and dist < best_dist then
-      best_dist = dist
-      best = desk
+  for _, desk in ipairs(get_preferred_desks_for_entity(entity_name, get_cached_desks())) do
+    if zones.get_available_slots(desk.unit_number) > 0 then
+      local dx = desk.position.x - position.x
+      local dy = desk.position.y - position.y
+      local dist = dx * dx + dy * dy
+      if dist < best_dist then
+        best_dist = dist
+        best = desk
+      end
     end
   end
   return best
@@ -565,6 +732,51 @@ local function finalize_enrolled_biter_conversion(desk_id, info, inv)
     storage.stats.cases_resolved = (storage.stats.cases_resolved or 0) + 1
   end
 
+  return true
+end
+
+local function deliver_capture_bureau_products(desk, entity_name)
+  local output = get_entity_output_inventory(desk)
+  local products = get_capture_bureau_products(desk, entity_name)
+  if not output or not products or not can_insert_all_products(output, products) then return false end
+
+  for _, product in ipairs(products) do
+    if output.insert({name = product.name, count = product.count}) <= 0 then
+      return false
+    end
+  end
+
+  return true
+end
+
+local function finalize_capture_bureau_conversion(desk, desk_id, info)
+  if not desk or not desk_id or not info then return false end
+  local entity = info.entity
+  if not entity or not entity.valid then return false end
+  if not deliver_capture_bureau_products(desk, entity.name) then return false end
+
+  local biter_unit = entity.unit_number
+  zones.release_slot(desk_id, biter_unit)
+  unindex_biter_from_desk(desk_id, biter_unit)
+  untrack_waiting_biter(biter_unit, info)
+  entity.destroy()
+  mark_desk_circuit_dirty(desk_id)
+
+  if storage.stats then
+    storage.stats.cases_resolved = (storage.stats.cases_resolved or 0) + 1
+  end
+
+  return true
+end
+
+local function convert_walkin_to_capture_bureau(desk, enemy_entity)
+  if not desk or not enemy_entity or not enemy_entity.valid then return false end
+  if not deliver_capture_bureau_products(desk, enemy_entity.name) then return false end
+  enemy_entity.destroy()
+  mark_desk_circuit_dirty(desk.unit_number)
+  if storage.stats then
+    storage.stats.cases_resolved = (storage.stats.cases_resolved or 0) + 1
+  end
   return true
 end
 
@@ -682,6 +894,16 @@ local function finalize_pathfinding_biter_arrival(info, desk, source)
 
   local entity = info.entity
   local b_id = entity.unit_number
+  if is_capture_bureau(desk) then
+    if finalize_capture_bureau_conversion(desk, desk.unit_number, info) then
+      return true
+    end
+    zones.release_slot(desk.unit_number, b_id)
+    unindex_biter_from_desk(desk.unit_number, b_id)
+    untrack_waiting_biter(b_id, info)
+    M.trigger_immediate_protest(entity, entity.surface, info)
+    return true
+  end
   normalize_case_progress(info)
 
   local complaints = copy_complaints(info.complaints)
@@ -1006,7 +1228,15 @@ function M.send_biter_to_station_with_targets(entity, targets, opts)
 
   local min_dist = math.huge
   local best = nil
-  for _, desk in ipairs(targets) do
+  local preferred_targets = get_preferred_desks_for_entity(entity.name, targets)
+  if #preferred_targets == 0 then
+    if is_pentapod(entity.name) then
+      return
+    end
+    M.trigger_immediate_protest(entity, entity.surface)
+    return
+  end
+  for _, desk in ipairs(preferred_targets) do
     if zones.get_available_slots(desk.unit_number) > 0 then
       local dist = (desk.position.x - entity.position.x)^2 + (desk.position.y - entity.position.y)^2
       if dist < min_dist then
@@ -1085,10 +1315,34 @@ function M.process_walk_in_registration(surface, desks, runtime_profile)
       local search_pos = desk.position
       local search_radius = 10
 
-      if remaining_slots > 0 then
-        for _, biter in ipairs(surface.find_entities_filtered{force = "enemy", type = "unit", position = search_pos, radius = search_radius}) do
-          if biter.valid and biter.force.name == "enemy" and not storage.waiting_biters[biter.unit_number] then
-            if remaining_slots <= 0 then break end
+      for _, biter in ipairs(surface.find_entities_filtered{force = "enemy", type = "unit", position = search_pos, radius = search_radius}) do
+        if biter.valid and biter.force.name == "enemy" and not storage.waiting_biters[biter.unit_number] then
+          if is_pentapod(biter.name) and not is_capture_bureau(desk) then
+            goto skip_walkin_biter
+          end
+          if not is_capture_bureau(desk) and surface_has_available_capture_bureau(surface, desks, biter.name) then
+            goto skip_walkin_biter
+          end
+          if is_capture_bureau(desk) then
+            if not capture_bureau_can_accept_entity(desk, biter.name) then
+              goto skip_walkin_biter
+            end
+            local slot = zones.reserve_slot(desk.unit_number)
+            if not slot then break end
+            if convert_walkin_to_capture_bureau(desk, biter) then
+              zones.release_slot_by_index(desk.unit_number, slot)
+            else
+              zones.release_slot_by_index(desk.unit_number, slot)
+            end
+            goto skip_walkin_biter
+          end
+          if zones.get_available_slots(desk.unit_number) <= 0 then break end
+          local slot = zones.reserve_slot(desk.unit_number)
+          if not slot then break end
+          local reserved = zones.get_slot_position(desk.unit_number, slot)
+          local pos = reserved and (surface.find_non_colliding_position(biter.name, reserved, 1, 0.25) or reserved)
+            or zones.get_biter_placement_pos(surface, desk, biter.name)
+          if pos then
             local complaints = C.generate_complaints(biter.name)
             local info = {
               entity = biter,
@@ -1110,6 +1364,7 @@ function M.process_walk_in_registration(surface, desks, runtime_profile)
             end
           end
         end
+        ::skip_walkin_biter::
       end
     end
     record_runtime_profile(runtime_profile, "registration_walkins", walkins_profiler)
@@ -1252,6 +1507,63 @@ function M.process_resolutions(desks)
   end
 end
 
+local function release_space_tourist(desk, inv, tourist_item, entity_name)
+  if not desk or not desk.valid or not inv or not tourist_item or not entity_name then return false end
+  if not desk.surface or desk.surface.name ~= "nauvis" then return false end
+
+  local surface = desk.surface
+  local release_anchor = {
+    x = desk.position.x,
+    y = desk.position.y + 3,
+  }
+  local position = surface.find_non_colliding_position(entity_name, release_anchor, 8, 0.5) or release_anchor
+
+  if inv.remove({name = tourist_item, count = 1}) <= 0 then return false end
+
+  local entity = surface.create_entity{
+    name = entity_name,
+    position = position,
+    force = "neutral",
+  }
+  if not entity or not entity.valid then
+    inv.insert({name = tourist_item, count = 1})
+    return false
+  end
+
+  local info = {
+    entity = entity,
+    complaints = {},
+    complaints_total = 0,
+    complaints_filed = true,
+    frustration = 0,
+    state = "waiting",
+  }
+  info.entity_name = entity.name
+  track_waiting_biter(entity.unit_number, info)
+  start_return_home(info, entity)
+  return true
+end
+
+function M.process_space_tourist_returns(desks)
+  for _, desk in ipairs(desks or {}) do
+    if desk.valid and desk.surface and desk.surface.name == "nauvis" then
+      local inv = desk.get_inventory(defines.inventory.chest)
+      if inv and not inv.is_empty() then
+        for slot = 1, #inv do
+          local stack = inv[slot]
+          if stack and stack.valid_for_read then
+            local entity_name = SPACE_TOURIST_RELEASE_ITEMS[stack.name]
+            if entity_name and release_space_tourist(desk, inv, stack.name, entity_name) then
+              mark_desk_circuit_dirty(desk.unit_number)
+              break
+            end
+          end
+        end
+      end
+    end
+  end
+end
+
 function M.process_frustration_and_protests(surface)
   protest_system.process_frustration_and_protests(surface)
 end
@@ -1272,7 +1584,39 @@ function M.on_script_path_request_finished(event)
   protest_system.on_script_path_request_finished(event)
 end
 
+local function hatch_spoiled_tourism_package(event)
+  local entity_name = event and SPOILED_SPITTER_HATCH_EFFECTS[event.effect_id] or nil
+  if not entity_name then return false end
+
+  local source_entity = event.source_entity
+  local surface = (source_entity and source_entity.valid and source_entity.surface)
+    or (event.surface_index and game.get_surface(event.surface_index))
+    or game.surfaces[1]
+  if not surface then return true end
+
+  local anchor = (source_entity and source_entity.valid and source_entity.position)
+    or event.source_position
+    or event.target_position
+    or {x = 0, y = 0}
+  local spawn_position = surface.find_non_colliding_position(entity_name, anchor, 8, 0.5) or anchor
+  local hatched = surface.create_entity{
+    name = entity_name,
+    position = spawn_position,
+    force = "enemy",
+  }
+  if hatched and hatched.valid then
+    local desks = get_preferred_desks_for_entity(entity_name, get_cached_desks())
+    if #desks > 0 then
+      M.send_biter_to_station_with_targets(hatched, desks, {initial_frustration = C.PROTEST_THRESHOLD})
+    end
+  end
+  return true
+end
+
 function M.on_script_trigger_effect(event)
+  if hatch_spoiled_tourism_package(event) then
+    return
+  end
   protest_system.on_script_trigger_effect(event)
 end
 

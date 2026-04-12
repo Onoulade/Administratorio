@@ -125,6 +125,26 @@ local function has_ingredient(recipe, item_name)
   return false
 end
 
+local function has_result(recipe, item_name)
+  if not recipe or not recipe.results then return false end
+  for _, result in ipairs(recipe.results) do
+    if (result.name or result[1]) == item_name then
+      return true
+    end
+  end
+  return false
+end
+
+local function get_result_amount(recipe, item_name)
+  if not recipe or not recipe.results then return nil end
+  for _, result in ipairs(recipe.results) do
+    if (result.name or result[1]) == item_name then
+      return result.amount or result[2]
+    end
+  end
+  return nil
+end
+
 local function tech_unlocks_recipe(technology, recipe_name)
   if not technology or not technology.effects then return false end
   for _, effect in ipairs(technology.effects) do
@@ -460,6 +480,8 @@ test("gleba conciliation unlocks the yellow chain and gleba specialist buildings
   assert_true(gleba ~= nil, "gleba-conciliation missing")
   for _, recipe_name in ipairs({
     "capture-bureau",
+    "capture-bureau-tourism",
+    "capture-bureau-pentapod-eggs",
     "conciliation-desk",
     "yellow-ink-production",
     "mycelial-form-stock",
@@ -470,6 +492,83 @@ test("gleba conciliation unlocks the yellow chain and gleba specialist buildings
   }) do
     assert_true(tech_unlocks_recipe(gleba, recipe_name), "gleba-conciliation should unlock " .. recipe_name)
   end
+end)
+
+test("gleba conciliation also unlocks orbital spitter tourism", function()
+  local gleba = technologies["gleba-conciliation"]
+  local expected = {
+    {
+      package_item = "small-spitter-tourism-package",
+      tourist_item = "small-space-tourist",
+      tourism_recipe = "small-spitter-space-tourism",
+      jettison_recipe = "small-space-tourist-jettison",
+      payout = 75,
+    },
+    {
+      package_item = "medium-spitter-tourism-package",
+      tourist_item = "medium-space-tourist",
+      tourism_recipe = "medium-spitter-space-tourism",
+      jettison_recipe = "medium-space-tourist-jettison",
+      payout = 175,
+    },
+    {
+      package_item = "big-spitter-tourism-package",
+      tourist_item = "big-space-tourist",
+      tourism_recipe = "big-spitter-space-tourism",
+      jettison_recipe = "big-space-tourist-jettison",
+      payout = 450,
+    },
+    {
+      package_item = "behemoth-spitter-tourism-package",
+      tourist_item = "behemoth-space-tourist",
+      tourism_recipe = "behemoth-spitter-space-tourism",
+      jettison_recipe = "behemoth-space-tourist-jettison",
+      payout = 1200,
+    },
+  }
+
+  for _, variant in ipairs(expected) do
+    assert_true(items[variant.package_item] ~= nil, variant.package_item .. " missing")
+    assert_true(items[variant.tourist_item] ~= nil, variant.tourist_item .. " missing")
+
+    local tourism_recipe = assert(recipes[variant.tourism_recipe], variant.tourism_recipe .. " missing")
+    assert_eq(tourism_recipe.category, "orbital-bureaucracy", variant.tourism_recipe .. " should use orbital-bureaucracy")
+    assert_eq(tourism_recipe.surface_conditions[1].max, 0, variant.tourism_recipe .. " should stay vacuum-only")
+    assert_true(has_ingredient(tourism_recipe, variant.package_item), variant.tourism_recipe .. " should consume the packaged spitter")
+    assert_true(has_ingredient(tourism_recipe, "astronaut"), variant.tourism_recipe .. " should require astronaut staffing")
+    assert_true(has_ingredient(tourism_recipe, "transit-authorization"), variant.tourism_recipe .. " should require transit authorization")
+    assert_true(has_result(tourism_recipe, variant.tourist_item), variant.tourism_recipe .. " should emit a paid tourist")
+    assert_eq(get_result_amount(tourism_recipe, "taxpayer-money"), variant.payout, variant.tourism_recipe .. " should pay the expected amount")
+    assert_true(tech_unlocks_recipe(gleba, variant.tourism_recipe), "gleba-conciliation should unlock " .. variant.tourism_recipe)
+
+    local jettison_recipe = assert(recipes[variant.jettison_recipe], variant.jettison_recipe .. " missing")
+    assert_eq(jettison_recipe.category, "orbital-bureaucracy", variant.jettison_recipe .. " should use orbital-bureaucracy")
+    assert_eq(jettison_recipe.surface_conditions[1].max, 0, variant.jettison_recipe .. " should stay vacuum-only")
+    assert_true(has_ingredient(jettison_recipe, variant.tourist_item), variant.jettison_recipe .. " should consume the tourist")
+    assert_true(has_result(jettison_recipe, "useless-documentation"), variant.jettison_recipe .. " should leave liability paperwork behind")
+    assert_true(tech_unlocks_recipe(gleba, variant.jettison_recipe), "gleba-conciliation should unlock " .. variant.jettison_recipe)
+  end
+end)
+
+test("capture bureau mode recipes split by surface and role", function()
+  local workforce = assert(recipes["capture-bureau-workforce"], "capture-bureau-workforce missing")
+  local tourism = assert(recipes["capture-bureau-tourism"], "capture-bureau-tourism missing")
+  local pentapods = assert(recipes["capture-bureau-pentapod-eggs"], "capture-bureau-pentapod-eggs missing")
+
+  assert_eq(workforce.category, "hostile-acquisition", "workforce mode should use hostile-acquisition")
+  assert_eq(tourism.category, "hostile-acquisition", "tourism mode should use hostile-acquisition")
+  assert_eq(pentapods.category, "hostile-acquisition", "pentapod mode should use hostile-acquisition")
+
+  assert_eq(exact_surface_planet(workforce), "nauvis", "workforce mode should stay on Nauvis")
+  assert_eq(exact_surface_planet(tourism), "nauvis", "tourism mode should stay on Nauvis")
+  assert_eq(exact_surface_planet(pentapods), "gleba", "pentapod mode should stay on Gleba")
+
+  assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "capture-bureau-workforce"),
+    "workforce-formation should unlock capture-bureau-workforce")
+  assert_true(tech_unlocks_recipe(technologies["gleba-conciliation"], "capture-bureau-tourism"),
+    "gleba-conciliation should unlock capture-bureau-tourism")
+  assert_true(tech_unlocks_recipe(technologies["gleba-conciliation"], "capture-bureau-pentapod-eggs"),
+    "gleba-conciliation should unlock capture-bureau-pentapod-eggs")
 end)
 
 test("gleba chromatic chain defines amber sap and printer-fed yellow forms", function()
