@@ -99,6 +99,7 @@ data:extend({
       {type = "unlock-recipe", recipe = "safety-waiver-vulcanus"},
       {type = "unlock-recipe", recipe = "construction-permit-vulcanus"},
       {type = "unlock-recipe", recipe = "management-approval-verbal-vulcanus"},
+      {type = "unlock-recipe", recipe = "management-approval-written-vulcanus"},
       {type = "unlock-recipe", recipe = "heatproof-filler-documentation"},
       {type = "unlock-recipe", recipe = "form-27b-6-vulcanus"},
       {type = "unlock-recipe", recipe = "vulcanus-lie-distillation"},
@@ -306,7 +307,6 @@ add_tech_unlock("administrative-science-research", "administrative-science-pack-
 add_tech_unlock("calcite-processing", "dubious-data-analysis-vulcanus")
 add_tech_unlock("calcite-processing", "paper-production-vulcanus")
 add_tech_unlock("calcite-processing", "carbon-offset-certificate-basic-vulcanus")
-add_tech_unlock("calcite-processing", "admin-station-vulcanus")
 add_tech_unlock("calcite-processing", "liquid-stimulant-production")
 add_tech_unlock("calcite-processing", "liquid-coffee-vulcanus")
 add_tech_unlock("calcite-processing", "plastic-bar-vulcanus")

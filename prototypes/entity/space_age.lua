@@ -152,14 +152,14 @@ territorial_arbitration_post.energy_source = {type = "electric", usage_priority 
 territorial_arbitration_post.ingredient_count = 6
 territorial_arbitration_post.module_slots = 0
 territorial_arbitration_post.allowed_effects = {}
-territorial_arbitration_post.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
-territorial_arbitration_post.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+territorial_arbitration_post.collision_box = {{-3.25, -3.25}, {3.25, 3.25}}
+territorial_arbitration_post.selection_box = {{-3.5, -3.5}, {3.5, 3.5}}
 territorial_arbitration_post.fluid_boxes_off_when_no_fluid_recipe = true
 territorial_arbitration_post.fluid_boxes = {
   {
     production_type = "input",
     pipe_covers = pipecoverspictures(),
-    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -1}}},
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -3}}},
     volume = 1000,
   },
 }
