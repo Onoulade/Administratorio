@@ -49,20 +49,24 @@ if feature_flags.space_age_enabled() then
   data:extend({
     {
       type = "autoplace-control",
-      name = "amber-sap-seep",
+      name = "gleba_amber_sap_seep",
+      planet = "gleba",
+      localised_name = {"", "[entity=amber-sap-seep] ", {"entity-name.amber-sap-seep"}},
       icon = "__administratorio__/graphics/icons/coffee.png",
       icon_size = 64,
       richness = true,
-      order = "b-d",
+      order = "d-a",
       category = "resource"
     },
     {
       type = "autoplace-control",
-      name = "verdigris-crust",
+      name = "vulcanus_verdigris_crust",
+      planet = "vulcanus",
+      localised_name = {"", "[entity=verdigris-crust] ", {"entity-name.verdigris-crust"}},
       icon = "__administratorio__/graphics/icons/bullshit-ore.png",
       icon_size = 64,
       richness = true,
-      order = "b-e",
+      order = "c-a",
       category = "resource"
     },
   })
