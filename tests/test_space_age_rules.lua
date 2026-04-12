@@ -77,7 +77,7 @@ test("space age admin and convergence categories stay free of recurring operatin
     "territorial-arbitration should stay exempt")
   assert_nil(shared.get_operating_form({name = "asteroid-processing-docket", category = "orbital-bureaucracy"}),
     "orbital-bureaucracy should stay exempt")
-  assert_nil(shared.get_operating_form({name = "composite-form-cyan-yellow-production", category = "printing-multicolor"}),
+  assert_nil(shared.get_operating_form({name = "cyan-yellow-form-production", category = "printing-multicolor"}),
     "printing-multicolor should stay exempt")
   assert_nil(shared.get_operating_form({name = "faxed-document-reconstruction", category = "fax-reconstruction"}),
     "fax-reconstruction should stay exempt")

@@ -479,7 +479,6 @@ test("gleba conciliation unlocks the yellow chain and gleba specialist buildings
   assert_true(gleba ~= nil, "gleba-conciliation missing")
   for _, recipe_name in ipairs({
     "capture-bureau",
-    "capture-bureau-tourism",
     "capture-bureau-pentapod-eggs",
     "conciliation-desk",
     "yellow-ink-production",
@@ -536,17 +535,17 @@ test("gleba yellow paperwork gates orbital spitter tourism with two-color forms"
     assert_true(has_ingredient(tourism_recipe, variant.package_item), variant.tourism_recipe .. " should consume the packaged spitter")
     assert_true(has_ingredient(tourism_recipe, "astronaut"), variant.tourism_recipe .. " should require astronaut staffing")
     assert_true(has_ingredient(tourism_recipe, "transit-authorization"), variant.tourism_recipe .. " should require transit authorization")
-    assert_true(has_ingredient(tourism_recipe, "orbital-tourism-form"), variant.tourism_recipe .. " should require orbital-tourism-form")
+    assert_true(not has_ingredient(tourism_recipe, "cyan-yellow-form"), variant.tourism_recipe .. " should not require cyan-yellow-form directly in orbit")
     assert_true(has_result(tourism_recipe, variant.tourist_item), variant.tourism_recipe .. " should emit a paid tourist")
     assert_eq(get_result_amount(tourism_recipe, "taxpayer-money"), variant.payout, variant.tourism_recipe .. " should pay the expected amount")
-    assert_true(tech_unlocks_recipe(gleba, variant.tourism_recipe), "gleba-conciliation should unlock " .. variant.tourism_recipe)
+    assert_true(tech_unlocks_recipe(technologies["cyan-yellow-bureaucracy"], variant.tourism_recipe), "cyan-yellow-bureaucracy should unlock " .. variant.tourism_recipe)
 
     local jettison_recipe = assert(recipes[variant.jettison_recipe], variant.jettison_recipe .. " missing")
     assert_eq(jettison_recipe.category, "orbital-bureaucracy", variant.jettison_recipe .. " should use orbital-bureaucracy")
     assert_eq(jettison_recipe.surface_conditions[1].max, 0, variant.jettison_recipe .. " should stay vacuum-only")
     assert_true(has_ingredient(jettison_recipe, variant.tourist_item), variant.jettison_recipe .. " should consume the tourist")
     assert_true(has_result(jettison_recipe, "useless-documentation"), variant.jettison_recipe .. " should leave liability paperwork behind")
-    assert_true(tech_unlocks_recipe(gleba, variant.jettison_recipe), "gleba-conciliation should unlock " .. variant.jettison_recipe)
+    assert_true(tech_unlocks_recipe(technologies["cyan-yellow-bureaucracy"], variant.jettison_recipe), "cyan-yellow-bureaucracy should unlock " .. variant.jettison_recipe)
   end
 end)
 
@@ -554,7 +553,7 @@ test("capture bureau mode recipes split by surface and role", function()
   local workforce = assert(recipes["capture-bureau-workforce"], "capture-bureau-workforce missing")
   local tourism = assert(recipes["capture-bureau-tourism"], "capture-bureau-tourism missing")
   local pentapods = assert(recipes["capture-bureau-pentapod-eggs"], "capture-bureau-pentapod-eggs missing")
-  local gleba = technologies["gleba-conciliation"]
+  local cyan_yellow = technologies["cyan-yellow-bureaucracy"]
 
   assert_eq(workforce.category, "hostile-acquisition", "workforce mode should use hostile-acquisition")
   assert_eq(tourism.category, "hostile-acquisition", "tourism mode should use hostile-acquisition")
@@ -566,10 +565,10 @@ test("capture bureau mode recipes split by surface and role", function()
 
   assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "capture-bureau-workforce"),
     "workforce-formation should unlock capture-bureau-workforce")
-  assert_true(has_ingredient(tourism, "orbital-tourism-form"),
-    "tourism mode should consume orbital-tourism-form")
-  assert_true(tech_unlocks_recipe(gleba, "capture-bureau-tourism"),
-    "gleba-conciliation should unlock capture-bureau-tourism")
+  assert_true(has_ingredient(tourism, "cyan-yellow-form"),
+    "tourism mode should consume cyan-yellow-form")
+  assert_true(tech_unlocks_recipe(cyan_yellow, "capture-bureau-tourism"),
+    "cyan-yellow-bureaucracy should unlock capture-bureau-tourism")
   assert_true(tech_unlocks_recipe(technologies["gleba-conciliation"], "capture-bureau-pentapod-eggs"),
     "gleba-conciliation should unlock capture-bureau-pentapod-eggs")
 end)
@@ -717,30 +716,33 @@ test("bicolored paperwork technologies require the matching planet sciences", fu
   assert_true(cyan_yellow_prereqs["gleba-conciliation"], "cyan-yellow-bureaucracy should depend on gleba-conciliation")
   assert_true(cyan_yellow_prereqs["metallurgic-science-pack"], "cyan-yellow-bureaucracy should depend on metallurgic-science-pack")
   assert_true(cyan_yellow_prereqs["agricultural-science-pack"], "cyan-yellow-bureaucracy should depend on agricultural-science-pack")
-  assert_true(tech_unlocks_recipe(cyan_yellow, "orbital-tourism-form-production"), "cyan-yellow-bureaucracy should unlock orbital-tourism-form-production")
+  assert_true(tech_unlocks_recipe(cyan_yellow, "capture-bureau-tourism"), "cyan-yellow-bureaucracy should unlock capture-bureau-tourism")
   assert_true(tech_unlocks_recipe(cyan_yellow, "public-transportation-contract-production"), "cyan-yellow-bureaucracy should unlock public-transportation-contract-production")
-  assert_true(tech_unlocks_recipe(cyan_yellow, "composite-form-cyan-yellow-production"), "cyan-yellow-bureaucracy should unlock composite-form-cyan-yellow-production")
+  assert_true(tech_unlocks_recipe(cyan_yellow, "cyan-yellow-form-production"), "cyan-yellow-bureaucracy should unlock cyan-yellow-form-production")
 
   local cyan_magenta_prereqs = prerequisite_set(cyan_magenta)
   assert_true(cyan_magenta_prereqs["vulcanus-certification"], "cyan-magenta-bureaucracy should depend on vulcanus-certification")
   assert_true(cyan_magenta_prereqs["fulgora-digital-services"], "cyan-magenta-bureaucracy should depend on fulgora-digital-services")
   assert_true(cyan_magenta_prereqs["metallurgic-science-pack"], "cyan-magenta-bureaucracy should depend on metallurgic-science-pack")
   assert_true(cyan_magenta_prereqs["electromagnetic-science-pack"], "cyan-magenta-bureaucracy should depend on electromagnetic-science-pack")
-  assert_true(tech_unlocks_recipe(cyan_magenta, "composite-form-cyan-magenta-production"), "cyan-magenta-bureaucracy should unlock composite-form-cyan-magenta-production")
+  assert_true(tech_unlocks_recipe(cyan_magenta, "cyan-magenta-form-production"), "cyan-magenta-bureaucracy should unlock cyan-magenta-form-production")
 
   local yellow_magenta_prereqs = prerequisite_set(yellow_magenta)
   assert_true(yellow_magenta_prereqs["gleba-conciliation"], "yellow-magenta-bureaucracy should depend on gleba-conciliation")
   assert_true(yellow_magenta_prereqs["fulgora-digital-services"], "yellow-magenta-bureaucracy should depend on fulgora-digital-services")
   assert_true(yellow_magenta_prereqs["agricultural-science-pack"], "yellow-magenta-bureaucracy should depend on agricultural-science-pack")
   assert_true(yellow_magenta_prereqs["electromagnetic-science-pack"], "yellow-magenta-bureaucracy should depend on electromagnetic-science-pack")
-  assert_true(tech_unlocks_recipe(yellow_magenta, "composite-form-yellow-magenta-production"), "yellow-magenta-bureaucracy should unlock composite-form-yellow-magenta-production")
+  assert_true(tech_unlocks_recipe(yellow_magenta, "yellow-magenta-form-production"), "yellow-magenta-bureaucracy should unlock yellow-magenta-form-production")
+  assert_true(tech_unlocks_recipe(yellow_magenta, "anecdotal-data-reprocessing"), "yellow-magenta-bureaucracy should unlock anecdotal-data-reprocessing")
 end)
 
 test("aquilo transfer media and multicolor forms define the expected convergence chain", function()
   assert_true(items["transfer-emulsion"] ~= nil, "transfer-emulsion missing")
   assert_true(items["thermal-transfer-sheet"] ~= nil, "thermal-transfer-sheet missing")
   assert_true(items["composite-chroma-ribbon"] ~= nil, "composite-chroma-ribbon missing")
-  assert_true(items["composite-form"] ~= nil, "composite-form missing")
+  assert_true(items["cyan-yellow-form"] ~= nil, "cyan-yellow-form missing")
+  assert_true(items["cyan-magenta-form"] ~= nil, "cyan-magenta-form missing")
+  assert_true(items["yellow-magenta-form"] ~= nil, "yellow-magenta-form missing")
   assert_true(items["trichromatic-permit"] ~= nil, "trichromatic-permit missing")
   assert_true(items["unified-operations-charter"] ~= nil, "unified-operations-charter missing")
   assert_true(items["cryogenic-operations-license"] ~= nil, "cryogenic-operations-license missing")
@@ -764,12 +766,18 @@ test("aquilo transfer media and multicolor forms define the expected convergence
     "thermal-transfer-sheet should require transfer-emulsion")
   assert_true(has_ingredient(recipes["composite-chroma-ribbon-production"], "blank-magenta-form"),
     "composite-chroma-ribbon should require blank-magenta-form")
-  assert_true(has_ingredient(recipes["composite-form-cyan-yellow-production"], "blank-cyan-form"),
-    "cyan-yellow composite-form should require blank-cyan-form")
-  assert_true(has_ingredient(recipes["composite-form-cyan-magenta-production"], "blank-magenta-form"),
-    "cyan-magenta composite-form should require blank-magenta-form")
-  assert_true(has_ingredient(recipes["composite-form-yellow-magenta-production"], "blank-yellow-form"),
-    "yellow-magenta composite-form should require blank-yellow-form")
+  assert_true(has_fluid_ingredient(recipes["cyan-yellow-form-production"], "cyan-ink"),
+    "cyan-yellow-form should require cyan-ink")
+  assert_true(has_fluid_ingredient(recipes["cyan-yellow-form-production"], "yellow-ink"),
+    "cyan-yellow-form should require yellow-ink")
+  assert_true(has_fluid_ingredient(recipes["cyan-magenta-form-production"], "cyan-ink"),
+    "cyan-magenta-form should require cyan-ink")
+  assert_true(has_fluid_ingredient(recipes["cyan-magenta-form-production"], "magenta-ink"),
+    "cyan-magenta-form should require magenta-ink")
+  assert_true(has_fluid_ingredient(recipes["yellow-magenta-form-production"], "yellow-ink"),
+    "yellow-magenta-form should require yellow-ink")
+  assert_true(has_fluid_ingredient(recipes["yellow-magenta-form-production"], "magenta-ink"),
+    "yellow-magenta-form should require magenta-ink")
   assert_true(has_ingredient(recipes["trichromatic-permit-production"], "composite-chroma-ribbon"),
     "trichromatic-permit should require composite-chroma-ribbon")
   assert_true(has_ingredient(recipes["unified-operations-charter-production"], "electromagnetic-operating-license"),
@@ -780,29 +788,26 @@ test("aquilo transfer media and multicolor forms define the expected convergence
     "transfer-emulsion should not require taxpayer-money")
 end)
 
-test("two-color chromatic forms gate tourism intake and public transit contracts", function()
-  local orbital_tourism_form = assert(recipes["orbital-tourism-form-production"], "orbital-tourism-form-production missing")
+test("two-color forms gate tourism intake and public transit contracts", function()
+  local cyan_yellow_form = assert(recipes["cyan-yellow-form-production"], "cyan-yellow-form-production missing")
   local public_transport = assert(recipes["public-transportation-contract-production"], "public-transportation-contract-production missing")
+  local anecdotal = assert(recipes["anecdotal-data-reprocessing"], "anecdotal-data-reprocessing missing")
 
-  assert_eq(orbital_tourism_form.category, "printing-chromatic", "orbital-tourism-form should use printing-chromatic")
-  assert_true(has_ingredient(orbital_tourism_form, "blank-cyan-form"),
-    "orbital-tourism-form should require blank-cyan-form")
-  assert_true(has_ingredient(orbital_tourism_form, "blank-yellow-form"),
-    "orbital-tourism-form should require blank-yellow-form")
-  assert_true(has_ingredient(orbital_tourism_form, "transit-authorization"),
-    "orbital-tourism-form should require transit-authorization")
+  assert_eq(cyan_yellow_form.category, "printing-multicolor", "cyan-yellow-form should use printing-multicolor")
+  assert_true(has_fluid_ingredient(cyan_yellow_form, "cyan-ink"),
+    "cyan-yellow-form should require cyan-ink")
+  assert_true(has_fluid_ingredient(cyan_yellow_form, "yellow-ink"),
+    "cyan-yellow-form should require yellow-ink")
 
   assert_eq(public_transport.category, "printing-chromatic", "public-transportation-contract should use printing-chromatic")
-  assert_true(has_ingredient(public_transport, "blank-cyan-form"),
-    "public-transportation-contract should require blank-cyan-form")
-  assert_true(has_ingredient(public_transport, "blank-yellow-form"),
-    "public-transportation-contract should require blank-yellow-form")
+  assert_true(has_ingredient(public_transport, "cyan-yellow-form"),
+    "public-transportation-contract should require cyan-yellow-form")
   assert_true(has_ingredient(public_transport, "transit-authorization"),
     "public-transportation-contract should require transit-authorization")
-  assert_true(not has_ingredient(public_transport, "blank-magenta-form"),
-    "public-transportation-contract should no longer require blank-magenta-form")
-  assert_true(not has_ingredient(public_transport, "thermal-transfer-sheet"),
-    "public-transportation-contract should no longer require thermal-transfer-sheet")
+  assert_true(has_ingredient(anecdotal, "yellow-magenta-form"),
+    "anecdotal-data-reprocessing should require yellow-magenta-form")
+  assert_eq(get_result_amount(anecdotal, "dubious-data"), 6,
+    "anecdotal-data-reprocessing should produce a worthwhile amount of dubious-data")
 end)
 
 test("planet-local space age recipes stay free of raw taxpayer money off Nauvis", function()

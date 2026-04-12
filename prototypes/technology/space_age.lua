@@ -149,7 +149,6 @@ data:extend({
     effects = {
       {type = "unlock-recipe", recipe = "chromatic-printer"},
       {type = "unlock-recipe", recipe = "capture-bureau"},
-      {type = "unlock-recipe", recipe = "capture-bureau-tourism"},
       {type = "unlock-recipe", recipe = "capture-bureau-pentapod-eggs"},
       {type = "unlock-recipe", recipe = "conciliation-desk"},
       {type = "unlock-recipe", recipe = "yellow-ink-production"},
@@ -201,9 +200,9 @@ data:extend({
     icon = "__administratorio__/graphics/icons/blank-form.png",
     icon_size = 64,
     effects = {
-      {type = "unlock-recipe", recipe = "orbital-tourism-form-production"},
+      {type = "unlock-recipe", recipe = "capture-bureau-tourism"},
       {type = "unlock-recipe", recipe = "public-transportation-contract-production"},
-      {type = "unlock-recipe", recipe = "composite-form-cyan-yellow-production"},
+      {type = "unlock-recipe", recipe = "cyan-yellow-form-production"},
     },
     prerequisites = {"vulcanus-certification", "gleba-conciliation", "metallurgic-science-pack", "agricultural-science-pack"},
     unit = {
@@ -223,7 +222,7 @@ data:extend({
     icon = "__administratorio__/graphics/icons/blank-form.png",
     icon_size = 64,
     effects = {
-      {type = "unlock-recipe", recipe = "composite-form-cyan-magenta-production"},
+      {type = "unlock-recipe", recipe = "cyan-magenta-form-production"},
     },
     prerequisites = {"vulcanus-certification", "fulgora-digital-services", "metallurgic-science-pack", "electromagnetic-science-pack"},
     unit = {
@@ -243,7 +242,8 @@ data:extend({
     icon = "__administratorio__/graphics/icons/blank-form.png",
     icon_size = 64,
     effects = {
-      {type = "unlock-recipe", recipe = "composite-form-yellow-magenta-production"},
+      {type = "unlock-recipe", recipe = "yellow-magenta-form-production"},
+      {type = "unlock-recipe", recipe = "anecdotal-data-reprocessing"},
     },
     prerequisites = {"gleba-conciliation", "fulgora-digital-services", "agricultural-science-pack", "electromagnetic-science-pack"},
     unit = {
@@ -406,11 +406,11 @@ add_tech_unlock("after-hours-operations", "overtime-exemption-staffed")
 add_tech_unlock("discovery-redundant-rubble", "promise-production-negotiated")
 add_tech_unlock("nest-expropriation", "eviction-notice-production-negotiated")
 add_tech_unlock("workforce-formation", "capture-bureau-workforce")
-add_tech_unlock("gleba-conciliation", "small-spitter-space-tourism")
-add_tech_unlock("gleba-conciliation", "medium-spitter-space-tourism")
-add_tech_unlock("gleba-conciliation", "big-spitter-space-tourism")
-add_tech_unlock("gleba-conciliation", "behemoth-spitter-space-tourism")
-add_tech_unlock("gleba-conciliation", "small-space-tourist-jettison")
-add_tech_unlock("gleba-conciliation", "medium-space-tourist-jettison")
-add_tech_unlock("gleba-conciliation", "big-space-tourist-jettison")
-add_tech_unlock("gleba-conciliation", "behemoth-space-tourist-jettison")
+add_tech_unlock("cyan-yellow-bureaucracy", "small-spitter-space-tourism")
+add_tech_unlock("cyan-yellow-bureaucracy", "medium-spitter-space-tourism")
+add_tech_unlock("cyan-yellow-bureaucracy", "big-spitter-space-tourism")
+add_tech_unlock("cyan-yellow-bureaucracy", "behemoth-spitter-space-tourism")
+add_tech_unlock("cyan-yellow-bureaucracy", "small-space-tourist-jettison")
+add_tech_unlock("cyan-yellow-bureaucracy", "medium-space-tourist-jettison")
+add_tech_unlock("cyan-yellow-bureaucracy", "big-space-tourist-jettison")
+add_tech_unlock("cyan-yellow-bureaucracy", "behemoth-space-tourist-jettison")
