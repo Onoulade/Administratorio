@@ -447,6 +447,18 @@ data:extend({
   },
   {
     type = "item",
+    name = "public-transportation-contract",
+    icons = {
+      {icon = item_icons .. "construction-permit.png", icon_size = 64},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {-8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
+    },
+    subgroup = "forms-permits",
+    order = "dig",
+    stack_size = 100
+  },
+  {
+    type = "item",
     name = "cryogenic-operations-license",
     icons = {
       {icon = item_icons .. "construction-permit.png", icon_size = 64, tint = {r = 0.88, g = 0.96, b = 1, a = 1}},
@@ -673,6 +685,16 @@ data:extend({
     order = "j",
     place_result = "notary-office",
     stack_size = 20
+  },
+  {
+    type = "item",
+    name = "public-train-stop",
+    icon = "__base__/graphics/icons/train-stop.png",
+    icon_size = 64,
+    subgroup = "admin-infrastructure",
+    order = "z",
+    place_result = "public-train-stop",
+    stack_size = 10
   },
 })
 

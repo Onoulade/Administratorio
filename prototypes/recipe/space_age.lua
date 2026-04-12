@@ -1253,6 +1253,38 @@ data:extend({
   }, "aquilo"),
   surface_limited({
     type = "recipe",
+    name = "public-transportation-contract-production",
+    category = "printing-multicolor",
+    enabled = false,
+    localised_name = {"item-name.public-transportation-contract"},
+    ingredients = {
+      {type = "item", name = "blank-cyan-form", amount = 1},
+      {type = "item", name = "blank-magenta-form", amount = 1},
+      {type = "item", name = "thermal-transfer-sheet", amount = 1},
+    },
+    results = {
+      {type = "item", name = "public-transportation-contract", amount = 1},
+    },
+    energy_required = 4,
+  }, "nauvis"),
+  surface_limited({
+    type = "recipe",
+    name = "public-train-stop-production",
+    category = "bureaucracy-registration",
+    enabled = false,
+    localised_name = {"entity-name.public-train-stop"},
+    ingredients = {
+      {type = "item", name = "public-transportation-contract", amount = 1},
+      {type = "item", name = "steel-plate", amount = 5},
+      {type = "item", name = "electronic-circuit", amount = 5},
+    },
+    results = {
+      {type = "item", name = "public-train-stop", amount = 1},
+    },
+    energy_required = 5,
+  }, "nauvis"),
+  surface_limited({
+    type = "recipe",
     name = "paper-production-vulcanus",
     enabled = false,
     localised_name = {"recipe-name.paper-production"},
