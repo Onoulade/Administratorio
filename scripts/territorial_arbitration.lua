@@ -4,8 +4,6 @@ local POST_NAME = "territorial-arbitration-post"
 local ORDER_ITEM = "territorial-resettlement-order"
 local COFFEE_FLUID = "liquid-coffee"
 local PROCESS_INTERVAL = 60
-local STARTUP_GRACE_TICKS = 10 * 60
-local PROTECTION_PROGRESS_THRESHOLD = 1
 
 local SIZE_ORDER_COST = {
   small = 1,
@@ -97,7 +95,7 @@ end
 
 local function get_territory_chunk_positions(territory)
   local positions = {}
-  for _, chunk in ipairs((territory and territory.get_chunks and territory:get_chunks()) or {}) do
+  for _, chunk in ipairs((territory and territory.get_chunks and territory.get_chunks()) or {}) do
     local position = extract_chunk_position(chunk)
     if position then
       positions[#positions + 1] = position
@@ -107,11 +105,9 @@ local function get_territory_chunk_positions(territory)
 end
 
 local function get_demolisher_name(territory)
-  for _, segmented_unit in ipairs((territory and territory.get_segmented_units and territory:get_segmented_units()) or {}) do
-    if segmented_unit and segmented_unit.valid then
-      return segmented_unit.name
-        or (segmented_unit.prototype and segmented_unit.prototype.name)
-        or nil
+  for _, segmented_unit in ipairs((territory and territory.get_segmented_units and territory.get_segmented_units()) or {}) do
+    if segmented_unit and segmented_unit.valid and segmented_unit.prototype then
+      return segmented_unit.prototype.name
     end
   end
   return nil
@@ -128,25 +124,6 @@ local function infer_demolisher_size(name)
     return "medium"
   end
   return "small"
-end
-
-local function update_post_destructibility(post_state, tick, runtime)
-  if not post_state or not post_state.entity or not post_state.entity.valid then return end
-
-  local protected = false
-  if tick < (post_state.startup_grace_until_tick or 0) then
-    protected = true
-  else
-    for _, territory_id in ipairs(post_state.territory_ids or {}) do
-      local territory_state = runtime.territories[territory_id]
-      if territory_state and (territory_state.progress or 0) >= PROTECTION_PROGRESS_THRESHOLD then
-        protected = true
-        break
-      end
-    end
-  end
-
-  post_state.entity.destructible = not protected
 end
 
 local function create_territory_state(runtime, territory, anchor_position)
@@ -313,6 +290,24 @@ local function clear_status(entity)
   end
 end
 
+local function set_progress_status(entity, progress, max_steps)
+  if not entity or not entity.valid then return end
+  if not defines or not defines.entity_status_diode then return end
+  if max_steps <= 0 then return end
+  if progress >= max_steps then
+    entity.custom_status = {
+      diode = defines.entity_status_diode.green,
+      label = {"gui.territorial-arbitration-complete"},
+    }
+  else
+    local pct = math.floor(progress / max_steps * 100)
+    entity.custom_status = {
+      diode = defines.entity_status_diode.green,
+      label = {"gui.territorial-arbitration-progress", pct},
+    }
+  end
+end
+
 local function entity_is_powered(entity)
   if not entity or not entity.valid then return false end
   if entity.energy == nil then return true end
@@ -420,8 +415,7 @@ local function compute_anchor_chunk_keys(post_entity, territory_state)
 end
 
 local function post_protects_territory(post_state, territory_state, tick)
-  return tick < (post_state.startup_grace_until_tick or 0)
-    or (territory_state.progress or 0) >= PROTECTION_PROGRESS_THRESHOLD
+  return true
 end
 
 local function build_forced_removed_keys(runtime, territory_state, tick)
@@ -468,7 +462,7 @@ local function apply_chunk_changes(territory_state, desired_removed_keys)
 
   territory_state.current_removed_keys = desired_removed_keys
   if (#to_remove > 0 or #to_restore > 0) and territory.valid and territory.regenerate_patrol_path then
-    territory:regenerate_patrol_path()
+    territory.regenerate_patrol_path()
   end
 end
 
@@ -495,9 +489,9 @@ end
 local function complete_territory(runtime, territory_state)
   local territory = territory_state.territory
   if territory and territory.valid then
-    for _, segmented_unit in ipairs((territory.get_segmented_units and territory:get_segmented_units()) or {}) do
+    for _, segmented_unit in ipairs((territory.get_segmented_units and territory.get_segmented_units()) or {}) do
       if segmented_unit and segmented_unit.valid and segmented_unit.destroy then
-        segmented_unit:destroy()
+        segmented_unit.destroy()
       end
     end
 
@@ -623,13 +617,10 @@ function M.on_entity_built(entity, player)
     entity = entity,
     territory_ids = {},
     anchor_chunk_keys_by_territory = {},
-    startup_grace_until_tick = (game and game.tick or 0) + STARTUP_GRACE_TICKS,
   }
   runtime.posts[entity.unit_number] = post_state
 
-  if entity.active ~= nil then
-    entity.active = false
-  end
+  entity.destructible = false
 
   for _, territory in ipairs(territories) do
     local territory_state = get_or_create_territory_state(runtime, territory, entity.position)
@@ -641,7 +632,6 @@ function M.on_entity_built(entity, player)
     end
   end
 
-  update_post_destructibility(post_state, game and game.tick or 0, runtime)
   return true
 end
 
@@ -676,13 +666,10 @@ function M.on_tick(event)
 
   local success_counts = {}
   local touched_territories = {}
+  local starved_posts = {}
 
   for _, post_state in pairs(runtime.posts) do
     if post_state.entity and post_state.entity.valid then
-      if post_state.entity.active ~= nil then
-        post_state.entity.active = false
-      end
-
       for _, territory_id in ipairs(post_state.territory_ids or {}) do
         local territory_state = runtime.territories[territory_id]
         if territory_state then
@@ -690,6 +677,8 @@ function M.on_tick(event)
           touched_territories[territory_id] = true
           if success then
             success_counts[territory_id] = (success_counts[territory_id] or 0) + 1
+          else
+            starved_posts[post_state.unit_number] = true
           end
         end
       end
@@ -730,7 +719,15 @@ function M.on_tick(event)
   end
 
   for _, post_state in pairs(runtime.posts) do
-    update_post_destructibility(post_state, event.tick, runtime)
+    if post_state.entity and post_state.entity.valid and not starved_posts[post_state.unit_number] then
+      for _, territory_id in ipairs(post_state.territory_ids or {}) do
+        local territory_state = runtime.territories[territory_id]
+        if territory_state then
+          set_progress_status(post_state.entity, territory_state.progress or 0, #territory_state.shrink_order)
+          break
+        end
+      end
+    end
   end
 end
 

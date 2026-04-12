@@ -314,7 +314,6 @@ test("vulcanus printer and notary split is present and surface-limited", functio
   local required = {
     "paper-production-vulcanus",
     "carbon-offset-certificate-basic-vulcanus",
-    "admin-station-vulcanus",
     "printer-t1-vulcanus",
     "dubious-data-analysis-vulcanus",
     "research-grant-approval-vulcanus",

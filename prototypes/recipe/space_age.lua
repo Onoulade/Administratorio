@@ -357,7 +357,7 @@ data:extend({
       {type = "fluid", name = "liquid-coffee", amount = 25},
     },
     results = {
-      {type = "item", name = "useless-documentation", amount = 1},
+      {type = "item", name = "territorial-deed", amount = 1},
     },
     energy_required = 1,
   },
@@ -1281,22 +1281,6 @@ data:extend({
   }, "vulcanus"),
   surface_limited({
     type = "recipe",
-    name = "admin-station-vulcanus",
-    enabled = false,
-    localised_name = {"item-name.admin-station"},
-    localised_description = {"item-description.admin-station"},
-    ingredients = {
-      {type = "item", name = "iron-plate", amount = 20},
-      {type = "item", name = "electronic-circuit", amount = 10},
-      {type = "item", name = "dubious-data", amount = 1},
-    },
-    results = {
-      {type = "item", name = "admin-station", amount = 1},
-    },
-    energy_required = 15,
-  }, "vulcanus"),
-  surface_limited({
-    type = "recipe",
     name = "printer-t1-vulcanus",
     enabled = false,
     localised_name = {"item-name.printer-t1"},
@@ -1689,6 +1673,24 @@ data:extend({
       {type = "item", name = "management-approval-verbal", amount = 1},
     },
     energy_required = 5,
+  }, "vulcanus"),
+  surface_limited({
+    type = "recipe",
+    name = "management-approval-written-vulcanus",
+    category = "bureaucracy-certification",
+    enabled = false,
+    localised_name = {"item-name.management-approval-written"},
+    localised_description = {"item-description.management-approval-written"},
+    ingredients = {
+      {type = "item", name = "territorial-deed", amount = 1},
+      {type = "item", name = "embossed-seal", amount = 1},
+      {type = "item", name = "blank-cyan-form", amount = 1},
+      {type = "fluid", name = "lie", amount = 40},
+    },
+    results = {
+      {type = "item", name = "management-approval-written", amount = 1},
+    },
+    energy_required = 8,
   }, "vulcanus"),
   surface_limited({
     type = "recipe",
