@@ -8,6 +8,10 @@ local function placeable_by_item(name)
   }
 end
 
+local function require_non_vacuum(entity)
+  return planets.require_non_vacuum_surface(entity)
+end
+
 local function fax_picture(filename, width, height, scale, shift)
   return {
     filename = filename,
@@ -272,6 +276,56 @@ laser_printer.working_sound = {
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
+local administrative_space_station = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
+administrative_space_station.name = "administrative-space-station"
+administrative_space_station.icon = "__administratorio__/graphics/icons/office-building.png"
+administrative_space_station.icon_size = 64
+administrative_space_station.minable = {mining_time = 0.2, result = "administrative-space-station"}
+administrative_space_station.placeable_by = placeable_by_item("administrative-space-station")
+administrative_space_station.next_upgrade = nil
+administrative_space_station.crafting_categories = {"orbital-bureaucracy"}
+administrative_space_station.crafting_speed = 3.5
+administrative_space_station.energy_usage = "750kW"
+administrative_space_station.energy_source = {type = "electric", usage_priority = "secondary-input"}
+administrative_space_station.ingredient_count = 10
+administrative_space_station.module_slots = 4
+administrative_space_station.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+administrative_space_station.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
+administrative_space_station.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+administrative_space_station.surface_conditions = {
+  {
+    property = "pressure",
+    min = 0,
+    max = 0,
+  },
+}
+administrative_space_station.fluid_boxes_off_when_no_fluid_recipe = true
+administrative_space_station.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -1}}},
+    volume = 1000,
+  },
+  {
+    production_type = "output",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "output", direction = defines.direction.south, position = {0, 1}}},
+    volume = 1000,
+  },
+}
+administrative_space_station.graphics_set = {
+  animation = {
+    layers = {
+      {filename = entity_graphics .. "printer-t2/steel-forge.png", width = 256, height = 301, frame_count = 1, scale = 0.38, shift = {0, -0.15}},
+    }
+  }
+}
+administrative_space_station.working_sound = {
+  sound = {filename = sound_path .. "office-ambience-loop.ogg", volume = 0.55},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+}
+
 local fax_emitter = {
   type = "container",
   name = "fax-emitter",
@@ -377,10 +431,25 @@ trajectory_compliance_array.surface_conditions = {
   },
 }
 
+for _, entity in ipairs({
+  formation_center,
+  chromatic_printer,
+  laser_printer,
+  notary_office,
+  territorial_arbitration_post,
+  conciliation_desk,
+  digital_services_bureau,
+  fax_emitter,
+  interplanetary_fax_exchange,
+}) do
+  require_non_vacuum(entity)
+end
+
 data:extend({
   formation_center,
   chromatic_printer,
   laser_printer,
+  administrative_space_station,
   notary_office,
   territorial_arbitration_post,
   conciliation_desk,

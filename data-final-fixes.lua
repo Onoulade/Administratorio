@@ -1269,6 +1269,18 @@ end
 add_special_paperwork("beacon", "treasury-bond", 1)
 add_special_paperwork("rocket-silo", "government-grant", 1)
 
+-- Space-platform asteroid cracking should also consume explicit orbital
+-- processing paperwork instead of running as a free crusher side loop.
+for recipe_name, recipe in pairs(data.raw["recipe"] or {}) do
+  if recipe
+    and not shared.is_admin_recipe(recipe_name)
+    and recipe_name:find("asteroid")
+    and (recipe_name:find("crushing") or recipe_name:find("processing") or recipe_name:find("reprocessing"))
+  then
+    add_special_paperwork(recipe_name, "asteroid-processing-docket", 1)
+  end
+end
+
 -- Cliff charges should stay civilian; remove the hidden military grenade
 -- dependency after any recipe cloning/regulation has happened.
 remove_ingredient_from_recipe("cliff-explosives", "grenade")

@@ -65,6 +65,10 @@ local function not_on_planet(recipe, planet_name)
   return recipe
 end
 
+local function not_in_space(recipe)
+  return planets.require_non_vacuum_surface(recipe)
+end
+
 local function clone_recipe(source_name, clone_name)
   local source = data.raw.recipe and data.raw.recipe[source_name]
   if not source then return nil end
@@ -133,7 +137,7 @@ data:extend({
     results = {{type = "item", name = "job-offer", amount = 1}},
     energy_required = 30
   }, "nauvis"),
-  {
+  not_in_space({
     type = "recipe",
     name = "formation-center",
     enabled = false,
@@ -146,7 +150,7 @@ data:extend({
     },
     results = {{type = "item", name = "formation-center", amount = 1}},
     energy_required = 30
-  },
+  }),
   surface_limited({
     type = "recipe",
     name = "worker-biter-formation",
@@ -188,6 +192,20 @@ data:extend({
     results = {{type = "item", name = "management-trainee", amount = 1}},
     energy_required = 20
   }, "nauvis"),
+  {
+    type = "recipe",
+    name = "astronaut-formation",
+    category = "workforce-formation",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "management-trainee", amount = 1},
+      {type = "item", name = "transit-authorization", amount = 1},
+      {type = "item", name = "low-density-structure", amount = 2},
+      {type = "item", name = "processing-unit", amount = 2},
+    },
+    results = {{type = "item", name = "astronaut", amount = 1}},
+    energy_required = 25
+  },
   {
     type = "recipe",
     name = "night-shift-supervisor-formation",
@@ -294,7 +312,7 @@ data:extend({
     results = {{type = "item", name = "chromatic-printer", amount = 1}},
     energy_required = 12
   }, "aquilo"),
-  {
+  not_in_space({
     type = "recipe",
     name = "notary-office",
     enabled = false,
@@ -309,7 +327,7 @@ data:extend({
     },
     results = {{type = "item", name = "notary-office", amount = 1}},
     energy_required = 16
-  },
+  }),
   surface_limited({
     type = "recipe",
     name = "territorial-arbitration-post",
@@ -404,6 +422,146 @@ data:extend({
     },
     results = {{type = "item", name = "trajectory-compliance-array", amount = 1}},
     energy_required = 20
+  },
+  {
+    type = "recipe",
+    name = "administrative-space-station",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "office-desk", amount = 1},
+      {type = "item", name = "astronaut", amount = 1},
+      {type = "item", name = "processing-unit", amount = 12},
+      {type = "item", name = "low-density-structure", amount = 12},
+      {type = "item", name = "refined-concrete", amount = 20},
+      {type = "item", name = "construction-work-order", amount = 1},
+    },
+    results = {{type = "item", name = "administrative-space-station", amount = 1}},
+    energy_required = 20,
+    surface_conditions = {
+      {
+        property = "pressure",
+        min = 0,
+        max = 0,
+      },
+    },
+  },
+  {
+    type = "recipe",
+    name = "thermal-process-license-orbital",
+    category = "orbital-bureaucracy",
+    enabled = false,
+    localised_name = {"item-name.thermal-process-license"},
+    ingredients = {
+      {type = "item", name = "blank-approval", amount = 1},
+      {type = "item", name = "astronaut", amount = 1},
+      {type = "item", name = "calcite", amount = 2},
+      {type = "item", name = "tungsten-carbide", amount = 2},
+    },
+    results = {
+      {type = "item", name = "thermal-process-license", amount = 1},
+    },
+    energy_required = 6,
+    surface_conditions = {
+      {
+        property = "pressure",
+        min = 0,
+        max = 0,
+      },
+    },
+  },
+  {
+    type = "recipe",
+    name = "calcite-reagent-waiver-orbital",
+    category = "orbital-bureaucracy",
+    enabled = false,
+    localised_name = {"item-name.calcite-reagent-waiver"},
+    ingredients = {
+      {type = "item", name = "blank-approval", amount = 1},
+      {type = "item", name = "astronaut", amount = 1},
+      {type = "item", name = "calcite", amount = 2},
+      {type = "item", name = "good-excuse", amount = 1},
+    },
+    results = {
+      {type = "item", name = "calcite-reagent-waiver", amount = 1},
+    },
+    energy_required = 5,
+    surface_conditions = {
+      {
+        property = "pressure",
+        min = 0,
+        max = 0,
+      },
+    },
+  },
+  {
+    type = "recipe",
+    name = "offworld-metallurgy-charter-orbital",
+    category = "orbital-bureaucracy",
+    enabled = false,
+    localised_name = {"item-name.offworld-metallurgy-charter"},
+    ingredients = {
+      {type = "item", name = "astronaut", amount = 1},
+      {type = "item", name = "thermal-process-license", amount = 1},
+      {type = "item", name = "calcite-reagent-waiver", amount = 1},
+      {type = "item", name = "management-approval-written", amount = 1},
+    },
+    results = {
+      {type = "item", name = "offworld-metallurgy-charter", amount = 1},
+    },
+    energy_required = 6,
+    surface_conditions = {
+      {
+        property = "pressure",
+        min = 0,
+        max = 0,
+      },
+    },
+  },
+  {
+    type = "recipe",
+    name = "orbital-deviation-order",
+    category = "orbital-bureaucracy",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "astronaut", amount = 1},
+      {type = "item", name = "management-approval-written", amount = 1},
+      {type = "item", name = "radar", amount = 1},
+      {type = "item", name = "processing-unit", amount = 2},
+    },
+    results = {
+      {type = "item", name = "orbital-deviation-order", amount = 2},
+    },
+    energy_required = 8,
+    surface_conditions = {
+      {
+        property = "pressure",
+        min = 0,
+        max = 0,
+      },
+    },
+  },
+  {
+    type = "recipe",
+    name = "asteroid-processing-docket",
+    category = "orbital-bureaucracy",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "astronaut", amount = 1},
+      {type = "item", name = "blank-form", amount = 2},
+      {type = "item", name = "data", amount = 1},
+      {type = "item", name = "processing-unit", amount = 1},
+    },
+    results = {
+      {type = "item", name = "asteroid-processing-docket", amount = 2},
+    },
+    energy_required = 6,
+    surface_conditions = {
+      {
+        property = "pressure",
+        min = 0,
+        max = 0,
+      },
+    },
   },
   {
     type = "recipe",
