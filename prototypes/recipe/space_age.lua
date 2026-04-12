@@ -414,6 +414,7 @@ data:extend({
     },
     ingredients = {
       {type = "item", name = "capture-bureau-processing-token", amount = 1},
+      {type = "item", name = "orbital-tourism-form", amount = 1},
     },
     results = {
       {type = "item", name = "capture-bureau-processing-token", amount = 1},
@@ -1219,6 +1220,22 @@ data:extend({
   }, "aquilo"),
   surface_limited({
     type = "recipe",
+    name = "orbital-tourism-form-production",
+    category = "printing-chromatic",
+    enabled = false,
+    localised_name = {"item-name.orbital-tourism-form"},
+    ingredients = {
+      {type = "item", name = "blank-cyan-form", amount = 1},
+      {type = "item", name = "blank-yellow-form", amount = 1},
+      {type = "item", name = "transit-authorization", amount = 1},
+    },
+    results = {
+      {type = "item", name = "orbital-tourism-form", amount = 1},
+    },
+    energy_required = 4,
+  }),
+  surface_limited({
+    type = "recipe",
     name = "unified-operations-charter-production",
     category = "printing-multicolor",
     enabled = false,
@@ -1254,19 +1271,19 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "public-transportation-contract-production",
-    category = "printing-multicolor",
+    category = "printing-chromatic",
     enabled = false,
     localised_name = {"item-name.public-transportation-contract"},
     ingredients = {
       {type = "item", name = "blank-cyan-form", amount = 1},
-      {type = "item", name = "blank-magenta-form", amount = 1},
-      {type = "item", name = "thermal-transfer-sheet", amount = 1},
+      {type = "item", name = "blank-yellow-form", amount = 1},
+      {type = "item", name = "transit-authorization", amount = 1},
     },
     results = {
       {type = "item", name = "public-transportation-contract", amount = 1},
     },
     energy_required = 4,
-  }, "nauvis"),
+  }),
   surface_limited({
     type = "recipe",
     name = "public-train-stop-production",
@@ -1927,6 +1944,7 @@ for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
       {type = "item", name = "astronaut", amount = 1},
       {type = "item", name = "transit-authorization", amount = 1},
       {type = "item", name = "blank-approval", amount = 1},
+      {type = "item", name = "orbital-tourism-form", amount = 1},
     },
     results = {
       {type = "item", name = "taxpayer-money", amount = variant.payout},
