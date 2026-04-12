@@ -219,15 +219,55 @@ local admin_station = make_admin_station("admin-station")
 local admin_station_north = make_admin_station("admin-station-north")
 local admin_station_east = make_admin_station("admin-station-east")
 local admin_station_west = make_admin_station("admin-station-west")
-local capture_bureau = make_admin_station("capture-bureau")
+local capture_bureau = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
+capture_bureau.name = "capture-bureau"
 capture_bureau.icon = "__administratorio__/graphics/icons/admin-desk.png"
 capture_bureau.icon_size = 64
 capture_bureau.minable = {mining_time = 0.5, result = "capture-bureau"}
 capture_bureau.placeable_by = placeable_by_item("capture-bureau")
 capture_bureau.localised_name = {"entity-name.capture-bureau"}
 capture_bureau.localised_description = {"entity-description.capture-bureau"}
-capture_bureau.hidden_in_factoriopedia = nil
-capture_bureau.factoriopedia_alternative = nil
+capture_bureau.next_upgrade = nil
+capture_bureau.crafting_categories = {"hostile-acquisition"}
+capture_bureau.crafting_speed = 1
+capture_bureau.energy_usage = "300kW"
+capture_bureau.energy_source = {type = "electric", usage_priority = "secondary-input"}
+capture_bureau.ingredient_count = 2
+capture_bureau.module_slots = 0
+capture_bureau.allowed_effects = {}
+capture_bureau.flags = {"placeable-neutral", "player-creation"}
+capture_bureau.max_health = 500
+capture_bureau.corpse = "big-remnants"
+capture_bureau.collision_mask = {layers = {administratorio_station_footprint = true, water_tile = true}}
+capture_bureau.collision_box = {{-4.4, -4.4}, {4.4, 4.4}}
+capture_bureau.selection_box = {{-4.5, -4.5}, {4.5, 4.5}}
+capture_bureau.selection_priority = 1
+capture_bureau.fast_replaceable_group = "admin-station"
+capture_bureau.circuit_wire_max_distance = 9
+capture_bureau.circuit_connector = circuit_connector_definitions.create_vector(
+  universal_connector_template,
+  {
+    {variation = 26, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(100, 36), show_shadow = true},
+    {variation = 26, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(100, 36), show_shadow = true},
+    {variation = 26, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(100, 36), show_shadow = true},
+    {variation = 26, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(100, 36), show_shadow = true},
+  }
+)
+capture_bureau.graphics_set = {
+  animation = {
+    layers = {
+      machine_animation_layer("__core__/graphics/empty.png", 1, 1, 1, 1, util.by_pixel(0, 0)),
+    },
+  },
+}
+capture_bureau.stateless_visualisation = table.deepcopy(admin_station_base.stateless_visualisation)
+capture_bureau.draw_stateless_visualisations_in_ghost = true
+capture_bureau.fluid_boxes = {}
+capture_bureau.fluid_boxes_off_when_no_fluid_recipe = true
+capture_bureau.working_sound = {
+  sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.32},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"},
+}
 
 local biter_station = table.deepcopy(data.raw["container"]["steel-chest"])
 biter_station.name = "biter-station"
