@@ -380,6 +380,76 @@ data:extend({
   }, "gleba"),
   surface_limited({
     type = "recipe",
+    name = "capture-bureau-workforce",
+    category = "hostile-acquisition",
+    enabled = false,
+    localised_name = {"", "Capture Bureau: Workforce Intake"},
+    localised_description = {
+      "",
+      "Attract nearby Nauvis biters and convert them directly into ",
+      {"item-name.worker-biter"},
+      ".",
+    },
+    ingredients = {
+      {type = "item", name = "capture-bureau-processing-token", amount = 1},
+    },
+    results = {
+      {type = "item", name = "capture-bureau-processing-token", amount = 1},
+    },
+    hidden_in_factoriopedia = true,
+    allow_as_intermediate = false,
+    allow_intermediates = false,
+    hide_from_player_crafting = true,
+    energy_required = 1,
+  }, "nauvis"),
+  surface_limited({
+    type = "recipe",
+    name = "capture-bureau-tourism",
+    category = "hostile-acquisition",
+    enabled = false,
+    localised_name = {"", "Capture Bureau: Spitter Tourism Intake"},
+    localised_description = {
+      "",
+      "Attract nearby Nauvis spitters and itemize them for offworld tourism before they spoil.",
+    },
+    ingredients = {
+      {type = "item", name = "capture-bureau-processing-token", amount = 1},
+    },
+    results = {
+      {type = "item", name = "capture-bureau-processing-token", amount = 1},
+    },
+    hidden_in_factoriopedia = true,
+    allow_as_intermediate = false,
+    allow_intermediates = false,
+    hide_from_player_crafting = true,
+    energy_required = 1,
+  }, "nauvis"),
+  surface_limited({
+    type = "recipe",
+    name = "capture-bureau-pentapod-eggs",
+    category = "hostile-acquisition",
+    enabled = false,
+    localised_name = {"", "Capture Bureau: Pentapod Egg Harvest"},
+    localised_description = {
+      "",
+      "Attract nearby Gleba pentapods and process them into fresh ",
+      {"item-name.pentapod-egg"},
+      ".",
+    },
+    ingredients = {
+      {type = "item", name = "capture-bureau-processing-token", amount = 1},
+    },
+    results = {
+      {type = "item", name = "capture-bureau-processing-token", amount = 1},
+    },
+    hidden_in_factoriopedia = true,
+    allow_as_intermediate = false,
+    allow_intermediates = false,
+    hide_from_player_crafting = true,
+    energy_required = 1,
+  }, "gleba"),
+  surface_limited({
+    type = "recipe",
     name = "conciliation-desk",
     enabled = false,
     ingredients = {
@@ -1759,3 +1829,111 @@ end
 add_item_ingredient(data.raw.recipe and data.raw.recipe["foundry-offworld"], "licensed-notary", 1)
 add_item_ingredient(data.raw.recipe and data.raw.recipe["foundry"], "tungsten-carbide", 4)
 add_item_ingredient(data.raw.recipe and data.raw.recipe["foundry-offworld"], "tungsten-carbide", 4)
+
+local SPACE_TOURISM_VARIANTS = {
+  {
+    spitter = "small-spitter",
+    package_item = "small-spitter-tourism-package",
+    tourist_item = "small-space-tourist",
+    tourism_recipe = "small-spitter-space-tourism",
+    jettison_recipe = "small-space-tourist-jettison",
+    payout = 75,
+    documentation = 1,
+    energy_required = 8,
+  },
+  {
+    spitter = "medium-spitter",
+    package_item = "medium-spitter-tourism-package",
+    tourist_item = "medium-space-tourist",
+    tourism_recipe = "medium-spitter-space-tourism",
+    jettison_recipe = "medium-space-tourist-jettison",
+    payout = 175,
+    documentation = 2,
+    energy_required = 10,
+  },
+  {
+    spitter = "big-spitter",
+    package_item = "big-spitter-tourism-package",
+    tourist_item = "big-space-tourist",
+    tourism_recipe = "big-spitter-space-tourism",
+    jettison_recipe = "big-space-tourist-jettison",
+    payout = 450,
+    documentation = 4,
+    energy_required = 12,
+  },
+  {
+    spitter = "behemoth-spitter",
+    package_item = "behemoth-spitter-tourism-package",
+    tourist_item = "behemoth-space-tourist",
+    tourism_recipe = "behemoth-spitter-space-tourism",
+    jettison_recipe = "behemoth-space-tourist-jettison",
+    payout = 1200,
+    documentation = 8,
+    energy_required = 16,
+  },
+}
+
+local tourism_recipes = {}
+
+for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
+  tourism_recipes[#tourism_recipes + 1] = {
+    type = "recipe",
+    name = variant.tourism_recipe,
+    category = "orbital-bureaucracy",
+    enabled = false,
+    localised_name = {"", "Monetize ", {"entity-name." .. variant.spitter}, " Space Tourism"},
+    localised_description = {
+      "",
+      "Convert a captured ",
+      {"entity-name." .. variant.spitter},
+      " into orbital revenue and a paid-up tourist.",
+    },
+    ingredients = {
+      {type = "item", name = variant.package_item, amount = 1},
+      {type = "item", name = "astronaut", amount = 1},
+      {type = "item", name = "transit-authorization", amount = 1},
+      {type = "item", name = "blank-approval", amount = 1},
+    },
+    results = {
+      {type = "item", name = "taxpayer-money", amount = variant.payout},
+      {type = "item", name = variant.tourist_item, amount = 1},
+    },
+    main_product = variant.tourist_item,
+    energy_required = variant.energy_required,
+    surface_conditions = {
+      {
+        property = "pressure",
+        min = 0,
+        max = 0,
+      },
+    },
+  }
+
+  tourism_recipes[#tourism_recipes + 1] = {
+    type = "recipe",
+    name = variant.jettison_recipe,
+    category = "orbital-bureaucracy",
+    enabled = false,
+    localised_name = {"", "Jettison ", {"entity-name." .. variant.spitter}, " Tourist"},
+    localised_description = {
+      "",
+      "Airlock the already-paid tourist and retain only the liability paperwork.",
+    },
+    ingredients = {
+      {type = "item", name = variant.tourist_item, amount = 1},
+    },
+    results = {
+      {type = "item", name = "useless-documentation", amount = variant.documentation},
+    },
+    energy_required = math.max(2, variant.energy_required / 2),
+    surface_conditions = {
+      {
+        property = "pressure",
+        min = 0,
+        max = 0,
+      },
+    },
+  }
+end
+
+data:extend(tourism_recipes)
