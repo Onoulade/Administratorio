@@ -201,6 +201,22 @@ test("trainee formation consumes worker-biter instead of enrolled-biter directly
   assert_true(not has_ingredient(recipes["management-trainee-formation"], "enrolled-biter"), "management trainee should not require enrolled-biter directly")
 end)
 
+test("astronaut training unlocks the orbital admin station chain", function()
+  local workforce = technologies["workforce-formation"]
+  assert_true(items["astronaut"] ~= nil, "astronaut missing")
+  assert_true(items["administrative-space-station"] ~= nil, "administrative-space-station missing")
+  assert_true(recipes["astronaut-formation"] ~= nil, "astronaut formation recipe missing")
+  assert_true(has_ingredient(recipes["astronaut-formation"], "management-trainee"), "astronaut should require management-trainee")
+  assert_true(recipes["administrative-space-station"] ~= nil, "administrative-space-station recipe missing")
+  assert_true(has_ingredient(recipes["administrative-space-station"], "astronaut"),
+    "administrative-space-station should require astronaut staffing")
+  assert_true(tech_unlocks_recipe(workforce, "astronaut-formation"), "workforce-formation should unlock astronaut-formation")
+  assert_true(tech_unlocks_recipe(workforce, "administrative-space-station"),
+    "workforce-formation should unlock administrative-space-station")
+  assert_eq(recipes["administrative-space-station"].surface_conditions[1].max, 0,
+    "administrative-space-station should be craftable only in vacuum")
+end)
+
 test("native Space Age buildings consume planet-specific specialists", function()
   assert_true(has_ingredient(recipes["foundry"], "licensed-notary"), "foundry should require licensed-notary")
   assert_true(has_ingredient(recipes["foundry"], "tungsten-carbide"), "foundry should require tungsten-carbide")
@@ -414,8 +430,29 @@ test("MMMM is converted into trajectory-compliance ammo and sink hardware", func
   assert_true(ammos["middle-management-managing-manager"] ~= nil, "MMMM ammo missing")
   assert_eq(ammos["middle-management-managing-manager"].type, "ammo", "MMMM should be ammo-backed for trajectory compliance")
   assert_eq(ammos["middle-management-managing-manager"].ammo_category, "trajectory-compliance", "MMMM should feed trajectory-compliance arrays")
+  assert_true(ammos["orbital-deviation-order"] ~= nil, "orbital deviation order ammo missing")
+  assert_eq(ammos["orbital-deviation-order"].ammo_category, "trajectory-compliance",
+    "orbital-deviation-order should also feed trajectory-compliance arrays")
   assert_true(recipes["trajectory-compliance-array"] ~= nil, "trajectory compliance array recipe missing")
   assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "trajectory-compliance-array"), "workforce formation should unlock the compliance array")
+end)
+
+test("orbital admin station recipes cover offworld metallurgy and asteroid paperwork", function()
+  local workforce = technologies["workforce-formation"]
+  for _, recipe_name in ipairs({
+    "thermal-process-license-orbital",
+    "calcite-reagent-waiver-orbital",
+    "offworld-metallurgy-charter-orbital",
+    "orbital-deviation-order",
+    "asteroid-processing-docket",
+  }) do
+    local recipe = assert(recipes[recipe_name], recipe_name .. " missing")
+    assert_eq(recipe.category, "orbital-bureaucracy", recipe_name .. " should use orbital-bureaucracy")
+    assert_eq(recipe.surface_conditions[1].max, 0, recipe_name .. " should stay vacuum-only")
+    assert_true(has_ingredient(recipe, "astronaut"), recipe_name .. " should require astronaut staffing")
+    assert_true(tech_unlocks_recipe(workforce, recipe_name), "workforce-formation should unlock " .. recipe_name)
+  end
+  assert_true(items["asteroid-processing-docket"] ~= nil, "asteroid-processing-docket missing")
 end)
 
 test("gleba conciliation unlocks the yellow chain and gleba specialist buildings", function()

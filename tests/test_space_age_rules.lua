@@ -75,6 +75,8 @@ test("space age admin and convergence categories stay free of recurring operatin
     "bureaucracy-conciliation should be exempt")
   assert_nil(shared.get_operating_form({name = "territorial-arbitration-processing", category = "territorial-arbitration"}),
     "territorial-arbitration should stay exempt")
+  assert_nil(shared.get_operating_form({name = "asteroid-processing-docket", category = "orbital-bureaucracy"}),
+    "orbital-bureaucracy should stay exempt")
   assert_nil(shared.get_operating_form({name = "composite-form-cyan-yellow-production", category = "printing-multicolor"}),
     "printing-multicolor should stay exempt")
   assert_nil(shared.get_operating_form({name = "faxed-document-reconstruction", category = "fax-reconstruction"}),
@@ -91,6 +93,7 @@ test("space age admin buildings stay out of vanilla recipe regulation", function
   assert_true(shared.is_admin_recipe("chromatic-printer"), "chromatic-printer should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("laser-printer"), "laser-printer should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("formation-center"), "formation-center should be treated as an admin recipe")
+  assert_true(shared.is_admin_recipe("administrative-space-station"), "administrative-space-station should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("trajectory-compliance-array"), "trajectory-compliance-array should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("territorial-arbitration-post"), "territorial-arbitration-post should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("capture-bureau"), "capture-bureau should be treated as an admin recipe")

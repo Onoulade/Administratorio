@@ -53,6 +53,7 @@ if space_age_enabled then
   categories[#categories + 1] = {type = "recipe-category", name = "bureaucracy-conciliation"}
   categories[#categories + 1] = {type = "recipe-category", name = "territorial-arbitration"}
   categories[#categories + 1] = {type = "recipe-category", name = "workforce-formation"}
+  categories[#categories + 1] = {type = "recipe-category", name = "orbital-bureaucracy"}
 end
 
 if working_hours_enabled then

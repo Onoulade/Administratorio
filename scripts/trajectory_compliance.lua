@@ -1,11 +1,16 @@
 local M = {}
 
-local MANAGEMENT_ITEM = "middle-management-managing-manager"
+local MANAGEMENT_ITEMS = {
+  "orbital-deviation-order",
+  "middle-management-managing-manager",
+}
+local PRIMARY_MANAGEMENT_ITEM = MANAGEMENT_ITEMS[1]
 local ARRAY_NAME = "trajectory-compliance-array"
 local RESPONSE_INTERVAL = 60
 local RESPONSE_RADIUS = 32
 
-M.MANAGEMENT_ITEM = MANAGEMENT_ITEM
+M.MANAGEMENT_ITEM = PRIMARY_MANAGEMENT_ITEM
+M.MANAGEMENT_ITEMS = MANAGEMENT_ITEMS
 M.ARRAY_NAME = ARRAY_NAME
 M.RESPONSE_INTERVAL = RESPONSE_INTERVAL
 M.RESPONSE_RADIUS = RESPONSE_RADIUS
@@ -83,10 +88,12 @@ local function spend_management(entity)
   if not inventory or not inventory.valid then
     return false
   end
-  if inventory.get_item_count(MANAGEMENT_ITEM) <= 0 then
-    return false
+  for _, item_name in ipairs(MANAGEMENT_ITEMS) do
+    if inventory.get_item_count(item_name) > 0 then
+      return inventory.remove({name = item_name, count = 1}) > 0
+    end
   end
-  return inventory.remove({name = MANAGEMENT_ITEM, count = 1}) > 0
+  return false
 end
 
 local function process_array(platform, entity, tick)

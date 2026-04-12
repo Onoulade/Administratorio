@@ -227,6 +227,19 @@ test("digital services bureau is a staffed fulgora office upgrade", function()
   assert_eq(entity.fluid_boxes[2].production_type, "output", "digital-services-bureau should vent outputs")
 end)
 
+test("administrative space station is the dedicated vacuum bureaucracy building", function()
+  local entity = data.raw["assembling-machine"]["administrative-space-station"]
+  local recipe = data.raw.recipe["administrative-space-station"]
+  assert_true(entity ~= nil, "administrative-space-station missing")
+  assert_true(recipe ~= nil, "administrative-space-station recipe missing")
+  assert_eq(entity.placeable_by[1].item, "administrative-space-station",
+    "administrative-space-station should build from its own item")
+  assert_eq(entity.crafting_categories[1], "orbital-bureaucracy",
+    "administrative-space-station should only craft orbital paperwork")
+  assert_eq(entity.surface_conditions[1].max, 0, "administrative-space-station entity should stay vacuum-only")
+  assert_eq(recipe.surface_conditions[1].max, 0, "administrative-space-station recipe should stay vacuum-only")
+end)
+
 test("aquilo printer and exchange are specialized endgame bureaucracy machines", function()
   local laser = data.raw["assembling-machine"]["laser-printer"]
   assert_true(laser ~= nil, "laser-printer missing")
@@ -253,6 +266,28 @@ test("aquilo printer and exchange are specialized endgame bureaucracy machines",
   assert_eq(exchange.placeable_by[1].item, "interplanetary-fax-exchange",
     "interplanetary-fax-exchange should build from the fax exchange item")
   assert_eq(exchange.inventory_size, 20, "interplanetary-fax-exchange should hold supplies and printed paperwork")
+end)
+
+test("non-orbital space age admin machines stay out of vacuum", function()
+  for _, entity_name in ipairs({
+    "formation-center",
+    "notary-office",
+    "digital-services-bureau",
+    "laser-printer",
+  }) do
+    local entity = assert(data.raw["assembling-machine"][entity_name], entity_name .. " missing")
+    assert_true(entity.surface_conditions ~= nil and entity.surface_conditions[1] ~= nil,
+      entity_name .. " should define a vacuum-blocking pressure rule")
+    assert_eq(entity.surface_conditions[1].property, "pressure", entity_name .. " should gate on pressure")
+    assert_true((entity.surface_conditions[1].min or 0) >= 1, entity_name .. " should require non-vacuum pressure")
+  end
+
+  for _, entity_name in ipairs({"fax-emitter", "interplanetary-fax-exchange"}) do
+    local entity = assert(data.raw.container[entity_name], entity_name .. " missing")
+    assert_true(entity.surface_conditions ~= nil and entity.surface_conditions[1] ~= nil,
+      entity_name .. " should define a vacuum-blocking pressure rule")
+    assert_true((entity.surface_conditions[1].min or 0) >= 1, entity_name .. " should require non-vacuum pressure")
+  end
 end)
 
 test("planet helper exposes exact basic-planet conditions and abundance outputs", function()
