@@ -271,6 +271,7 @@ if space_age_enabled then
   shared.PAPERWORK_ITEMS["cyan-magenta-form"] = true
   shared.PAPERWORK_ITEMS["yellow-magenta-form"] = true
   shared.PAPERWORK_ITEMS["trichromatic-permit"] = true
+  shared.PAPERWORK_ITEMS["orbital-tourism-form"] = true
   shared.PAPERWORK_ITEMS["unified-operations-charter"] = true
   shared.PAPERWORK_ITEMS["cryogenic-operations-license"] = true
   shared.PAPERWORK_ITEMS["promethium-research-charter"] = true
@@ -302,6 +303,7 @@ if space_age_enabled then
   shared.FORM_PRODUCTION_RECIPES["cyan-magenta-form"] = "cyan-magenta-form-production"
   shared.FORM_PRODUCTION_RECIPES["yellow-magenta-form"] = "yellow-magenta-form-production"
   shared.FORM_PRODUCTION_RECIPES["trichromatic-permit"] = "trichromatic-permit-production"
+  shared.FORM_PRODUCTION_RECIPES["orbital-tourism-form"] = "orbital-tourism-form-production"
   shared.FORM_PRODUCTION_RECIPES["unified-operations-charter"] = "unified-operations-charter-production"
   shared.FORM_PRODUCTION_RECIPES["cryogenic-operations-license"] = "cryogenic-operations-license-production"
   shared.FORM_PRODUCTION_RECIPES["promethium-research-charter"] = "promethium-research-charter-production"
