@@ -450,6 +450,7 @@ data:extend({
       {type = "unlock-recipe", recipe = "trichromatic-permit-production"},
       {type = "unlock-recipe", recipe = "unified-operations-charter-production"},
       {type = "unlock-recipe", recipe = "cryogenic-operations-license-production"},
+      {type = "unlock-recipe", recipe = "public-transportation-contract-production"},
     },
     prerequisites = {"vulcanus-certification", "gleba-conciliation", "fulgora-digital-services", "cryogenic-science-pack"},
     unit = {
@@ -487,6 +488,28 @@ data:extend({
     },
     order = "h-g",
     upgrade = true,
+  },
+  {
+    type = "technology",
+    name = "bureaucratic-transcendence",
+    icon = "__base__/graphics/icons/train-stop.png",
+    icon_size = 64,
+    effects = {
+      {type = "unlock-recipe", recipe = "public-train-stop-production"},
+    },
+    prerequisites = {"aquilo-fax-network"},
+    unit = {
+      count = 400,
+      ingredients = {
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"cryogenic-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 60,
+    },
+    order = "h-f-a",
   },
   {
     type = "technology",
