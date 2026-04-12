@@ -491,6 +491,17 @@ data:extend({
   },
   {
     type = "item",
+    name = "territorial-deed",
+    icons = {
+      {icon = item_icons .. "management-approval-written.png", icon_size = 64},
+      {icon = item_icons .. "construction-permit.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.85, g = 0.55, b = 0.12, a = 1}},
+    },
+    subgroup = "forms-permits",
+    order = "dk2",
+    stack_size = 100
+  },
+  {
+    type = "item",
     name = "thermal-process-license",
     icons = {
       {icon = item_icons .. "construction-permit.png", icon_size = 64},

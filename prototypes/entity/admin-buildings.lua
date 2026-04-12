@@ -189,6 +189,10 @@ local admin_station_base = {
   draw_stateless_visualisations_in_ghost = true,
 }
 
+if space_age_enabled then
+  admin_station_base.surface_conditions = planets.surface_conditions_for_planet("nauvis")
+end
+
 local function make_admin_station(name)
   local station = table.deepcopy(admin_station_base)
   station.name = name

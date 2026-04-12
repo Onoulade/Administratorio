@@ -46,6 +46,7 @@ defines = {
   },
   entity_status_diode = {
     red = 1,
+    green = 2,
   },
 }
 
@@ -123,19 +124,19 @@ end
 local function new_segmented_unit(name)
   local unit = {
     valid = true,
-    name = name,
+    prototype = {name = name},
     destroy_calls = 0,
     die_calls = 0,
   }
 
-  function unit:destroy()
-    self.destroy_calls = self.destroy_calls + 1
-    self.valid = false
+  function unit.destroy()
+    unit.destroy_calls = unit.destroy_calls + 1
+    unit.valid = false
   end
 
-  function unit:die()
-    self.die_calls = self.die_calls + 1
-    self.valid = false
+  function unit.die()
+    unit.die_calls = unit.die_calls + 1
+    unit.valid = false
   end
 
   return unit
@@ -205,21 +206,21 @@ local function new_territory(surface, chunks, demolisher_name)
     surface._territory_by_chunk[chunk_key(chunk)] = territory
   end
 
-  function territory:get_chunks()
+  function territory.get_chunks()
     local result = {}
-    for _, key in ipairs(sorted_chunk_keys(self._chunk_lookup)) do
-      local chunk = self._chunk_lookup[key]
+    for _, key in ipairs(sorted_chunk_keys(territory._chunk_lookup)) do
+      local chunk = territory._chunk_lookup[key]
       result[#result + 1] = {position = {x = chunk.x, y = chunk.y}}
     end
     return result
   end
 
-  function territory:get_segmented_units()
-    return self._segmented_units
+  function territory.get_segmented_units()
+    return territory._segmented_units
   end
 
-  function territory:regenerate_patrol_path()
-    self.patrol_regenerations = self.patrol_regenerations + 1
+  function territory.regenerate_patrol_path()
+    territory.patrol_regenerations = territory.patrol_regenerations + 1
   end
 
   return territory, segmented_unit
@@ -407,8 +408,10 @@ test("multiple posts stack successful upkeep without extra starvation penalty", 
 
   local territory_state = only_territory_state()
   assert_eq(territory_state.progress, 1, "one successful post should still advance shared territory progress")
-  assert_true(fed_post.custom_status == nil, "fed post should clear starvation status")
-  assert_true(starved_post.custom_status ~= nil, "empty post should report starvation")
+  assert_true(fed_post.custom_status ~= nil and fed_post.custom_status.diode == defines.entity_status_diode.green,
+    "fed post should show green progress status")
+  assert_true(starved_post.custom_status ~= nil and starved_post.custom_status.diode == defines.entity_status_diode.red,
+    "empty post should report starvation")
 
   run_tick(120)
   assert_eq(territory_state.progress, 0, "shared territory should decay once when no post maintains it")
@@ -463,7 +466,7 @@ test("completion destroys the demolisher and permanently clears the territory", 
   assert_true(territory.patrol_regenerations >= 1, "completion should refresh the territory patrol path")
 end)
 
-test("startup protection ends after grace expires if progress falls to zero", function()
+test("post is always indestructible regardless of progress", function()
   local world = reset_world()
   new_territory(world.surface, {
     {x = 0, y = 0},
@@ -472,11 +475,13 @@ test("startup protection ends after grace expires if progress falls to zero", fu
   local post = new_post(world.surface, world.force, {{x = 0, y = 0}}, 0, 0)
 
   assert_true(module.on_entity_built(post, world.player), "post should bind")
-  assert_true(not post.destructible, "post should start protected")
+  assert_true(not post.destructible, "post should be indestructible after placement")
+
+  run_tick(60)
+  assert_true(not post.destructible, "post should remain indestructible even with zero progress")
 
   run_tick(660)
-
-  assert_true(post.destructible, "post should lose protection after grace with zero progress")
+  assert_true(not post.destructible, "post should remain indestructible regardless of time")
 end)
 
 print(string.format("\n=== ADMINISTRATORIO TERRITORIAL ARBITRATION TESTS ==="))
