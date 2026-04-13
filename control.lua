@@ -889,6 +889,18 @@ local function refresh_selected_biter_info_guis()
   end
 end
 
+local function on_gui_opened(event)
+  local player = game.get_player(event.player_index)
+  if not player then return end
+  fax.on_gui_opened(player, event.entity)
+end
+
+local function on_gui_closed(event)
+  local player = game.get_player(event.player_index)
+  if not player then return end
+  fax.on_gui_closed(player)
+end
+
 -- ============================================================
 -- ENTITY BUILD / REMOVE HANDLERS
 -- ============================================================
@@ -2037,6 +2049,8 @@ local function on_gui_click(event)
     if player.gui.screen["administratorio-win-screen"] then
       player.gui.screen["administratorio-win-screen"].destroy()
     end
+  elseif fax.on_gui_click(event) then
+    return
   elseif runtime_debug.handle_gui_click(player, event.element.name) then
     return
   end
@@ -2146,6 +2160,8 @@ control_event_router.register({
   on_entity_removed = on_entity_removed,
   on_field_agent_waypoint_input = on_field_agent_waypoint_input,
   on_gui_click = on_gui_click,
+  on_gui_closed = on_gui_closed,
+  on_gui_opened = on_gui_opened,
   on_gui_selection_state_changed = on_gui_selection_state_changed,
   on_init = on_init,
   on_load = on_load,
