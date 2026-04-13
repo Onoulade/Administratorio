@@ -51,6 +51,8 @@ function M.register(deps)
   script.on_event(defines.events.on_train_changed_state, deps.on_train_changed_state)
   script.on_event(defines.events.on_rocket_launched, deps.on_rocket_launched)
   script.on_event(defines.events.on_gui_click, deps.on_gui_click)
+  script.on_event(defines.events.on_gui_checked_state_changed, deps.on_gui_checked_state_changed)
+  script.on_event(defines.events.on_gui_elem_changed, deps.on_gui_elem_changed)
   script.on_event(defines.events.on_gui_selection_state_changed, deps.on_gui_selection_state_changed)
   script.on_event(defines.events.on_research_finished, deps.on_research_finished)
 
