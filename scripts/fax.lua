@@ -10,6 +10,9 @@ local GREEN_WIRE = function()
   return defines.wire_connector_id and defines.wire_connector_id.circuit_green
 end
 
+local EMITTER_DELIVERED_STATUS_TICKS = 180
+local RECEIVER_REQUEST_LIMIT = 6
+
 local function get_quality_name(stack)
   if not stack then return nil end
   local quality = stack.quality
@@ -71,9 +74,87 @@ local function destroy_combinator(state)
   end
 end
 
-local function get_inventory(entity)
+local function get_emitter_inventory(entity)
   if not entity or not entity.valid or not entity.get_inventory then return nil end
   return entity.get_inventory(defines.inventory.chest)
+end
+
+local function get_entity_inventory(entity, inventory_ids)
+  if not entity or not entity.valid or not entity.get_inventory then return nil end
+  local inventory_defs = defines and defines.inventory or {}
+
+  for _, inventory_name in ipairs(inventory_ids) do
+    local inventory_id = inventory_defs[inventory_name]
+    if inventory_id ~= nil then
+      local inventory = entity.get_inventory(inventory_id)
+      if inventory then
+        return inventory
+      end
+    end
+  end
+
+  return nil
+end
+
+local function get_receiver_input_inventory(entity)
+  return get_entity_inventory(entity, {
+    "assembling_machine_input",
+    "furnace_source",
+    "chest",
+  })
+end
+
+local function get_receiver_output_inventory(entity)
+  return get_entity_inventory(entity, {
+    "assembling_machine_output",
+    "furnace_result",
+    "chest",
+  })
+end
+
+local function get_receiver_fluidbox(entity)
+  if not entity or not entity.valid then return nil end
+  return entity.fluidbox
+end
+
+local function fluidbox_length(fluidbox)
+  if not fluidbox then return 0 end
+  return #fluidbox
+end
+
+local function fluid_amount(fluidbox, fluid_name)
+  if not fluidbox or not fluid_name then return 0 end
+  local total = 0
+  for index = 1, fluidbox_length(fluidbox) do
+    local entry = fluidbox[index]
+    if entry and entry.name == fluid_name then
+      total = total + (entry.amount or 0)
+    end
+  end
+  return total
+end
+
+local function remove_fluid(fluidbox, fluid_name, amount)
+  if not fluidbox or amount <= 0 then return 0 end
+  local removed = 0
+  for index = 1, fluidbox_length(fluidbox) do
+    local entry = fluidbox[index]
+    if entry and entry.name == fluid_name and removed < amount then
+      local take = math.min(entry.amount or 0, amount - removed)
+      local remaining = (entry.amount or 0) - take
+      removed = removed + take
+      if remaining > 0 then
+        fluidbox[index] = {
+          name = entry.name,
+          amount = remaining,
+          temperature = entry.temperature,
+        }
+      else
+        fluidbox[index] = nil
+      end
+    end
+  end
+  return removed
 end
 
 local function inventory_has_item(inventory, item_name, count)
@@ -158,6 +239,17 @@ local function remove_stack_from_slot(inventory, slot_index, item_name, quality_
   return true
 end
 
+local function take_stack_from_slot(inventory, slot_index, item_name, quality_name)
+  if remove_stack_from_slot(inventory, slot_index, item_name, quality_name) then
+    return {
+      name = item_name,
+      count = 1,
+      quality = quality_name,
+    }
+  end
+  return nil
+end
+
 local function spill_document(entity, buffer, entry)
   if not entity or not entity.valid or not entry then return end
   local stack = {
@@ -179,6 +271,31 @@ local function spill_document(entity, buffer, entry)
     enable_looted = true,
     force = entity.force,
   }
+end
+
+local function spill_job_document(entity, buffer, job)
+  if not job then return end
+  spill_document(entity, buffer, {
+    name = job.item_name,
+    quality_name = job.quality_name,
+  })
+end
+
+local function return_job_document_to_emitter(state, job)
+  if not state or not state.entity or not state.entity.valid or not job then return false end
+  local inventory = get_emitter_inventory(state.entity)
+  local stack = {
+    name = job.item_name,
+    count = 1,
+    quality = job.quality_name,
+  }
+
+  if can_insert_stack(inventory, stack) and insert_stack(inventory, stack) > 0 then
+    return true
+  end
+
+  spill_job_document(state.entity, nil, job)
+  return false
 end
 
 local function get_receiver_total_load(state)
@@ -221,6 +338,11 @@ local function clear_output_section(state)
   state.output_counts = {}
 end
 
+local function sanitize_output_signal(signal)
+  if not signal then return nil end
+  return signal.name
+end
+
 local function set_output_section(state, slots)
   if not state or not state.combinator or not state.combinator.valid then return end
   local behavior = state.combinator.get_or_create_control_behavior and state.combinator.get_or_create_control_behavior()
@@ -235,7 +357,7 @@ local function set_output_section(state, slots)
   for index = 1, 4 do
     local slot = slots[index]
     if slot and slot.signal and slot.count and slot.count > 0 then
-      section.set_slot(index, {value = slot.signal, min = slot.count})
+      section.set_slot(index, {value = sanitize_output_signal(slot.signal), min = slot.count})
       local key = shared.make_signal_key(slot.signal)
       if key then
         state.output_counts[key] = slot.count
@@ -246,66 +368,427 @@ local function set_output_section(state, slots)
   end
 end
 
+local function append_output_slot(slots, signal, count)
+  if signal and count and count > 0 then
+    slots[#slots + 1] = {
+      signal = signal,
+      count = count,
+    }
+  end
+end
+
 local function build_receiver_slots(state, reserved_counts)
+  local slots = {}
   local queued = get_receiver_total_load(state)
   local reserved = (reserved_counts and reserved_counts[state.planet_name]) or 0
   local capacity = shared.get_queue_capacity(state.entity.force)
   local free = math.max(0, capacity - queued - reserved)
 
-  return {
-    {
-      signal = {type = "virtual", name = shared.SIGNAL_QUEUE_SIZE},
-      count = queued,
-    },
-    {
-      signal = {type = "virtual", name = shared.SIGNAL_FREE_SLOTS},
-      count = free,
-    },
-    {
-      signal = {type = "virtual", name = shared.SIGNAL_RESERVED_SLOTS},
-      count = reserved,
-    },
-    state.current_request_signal and {
-      signal = state.current_request_signal,
-      count = state.current_request_count,
-    } or nil,
-  }
+  if state.read_queue_status ~= false then
+    append_output_slot(slots, {type = "virtual", name = shared.SIGNAL_QUEUE_SIZE}, queued)
+    append_output_slot(slots, {type = "virtual", name = shared.SIGNAL_FREE_SLOTS}, free)
+    append_output_slot(slots, {type = "virtual", name = shared.SIGNAL_RESERVED_SLOTS}, reserved)
+  end
+  if state.read_top_request ~= false then
+    append_output_slot(slots, state.current_request_signal, state.current_request_count)
+  end
+
+  return slots
 end
 
 local function build_emitter_slots(state, reserved_counts)
   local receiver_state = get_receiver_state_for_planet(state.destination_planet)
   if not receiver_state then
-    return {
-      nil,
-      nil,
-      nil,
-      nil,
-    }
+    return {}
   end
 
+  local slots = {}
   local queued = get_receiver_total_load(receiver_state)
   local reserved = (reserved_counts and reserved_counts[state.destination_planet]) or 0
   local capacity = shared.get_queue_capacity(receiver_state.entity.force)
   local free = math.max(0, capacity - queued - reserved)
 
-  return {
-    {
-      signal = {type = "virtual", name = shared.SIGNAL_QUEUE_SIZE},
-      count = queued,
-    },
-    {
-      signal = {type = "virtual", name = shared.SIGNAL_FREE_SLOTS},
-      count = free,
-    },
-    {
-      signal = {type = "virtual", name = shared.SIGNAL_RESERVED_SLOTS},
-      count = reserved,
-    },
-    receiver_state.current_request_signal and {
-      signal = receiver_state.current_request_signal,
-      count = receiver_state.current_request_count,
-    } or nil,
+  if receiver_state.read_queue_status ~= false then
+    append_output_slot(slots, {type = "virtual", name = shared.SIGNAL_QUEUE_SIZE}, queued)
+    append_output_slot(slots, {type = "virtual", name = shared.SIGNAL_FREE_SLOTS}, free)
+    append_output_slot(slots, {type = "virtual", name = shared.SIGNAL_RESERVED_SLOTS}, reserved)
+  end
+  if receiver_state.read_top_request ~= false then
+    append_output_slot(slots, receiver_state.current_request_signal, receiver_state.current_request_count)
+  end
+
+  return slots
+end
+
+local function format_document_label(item_name, quality_name)
+  if not item_name then return "Unknown document" end
+  local label = item_name:gsub("%-", " "):gsub("^%l", string.upper)
+  if quality_name and quality_name ~= "" then
+    return ("%s (%s)"):format(label, quality_name)
+  end
+  return label
+end
+
+local function get_receiver_active_entry(state)
+  if not state then return nil end
+  return state.active_print or (state.queue and state.queue[1]) or nil
+end
+
+local function receiver_entry_is_research_ready(state, entry)
+  if not state or not entry then return false end
+  return shared.can_force_fax_document(state.entity and state.entity.force, entry.name)
+end
+
+local function get_receiver_supply_snapshot(state, entry)
+  local input_inventory = state and state.entity and get_receiver_input_inventory(state.entity) or nil
+  local fluidbox = state and state.entity and get_receiver_fluidbox(state.entity) or nil
+  local required_by_name = {}
+  for _, fluid in ipairs(shared.get_document_ink_requirements(entry and entry.name or nil)) do
+    required_by_name[fluid.name] = fluid
+  end
+
+  local snapshot = {
+    paper = inventory_has_item(input_inventory, shared.RECONSTRUCTION_PAPER_ITEM, 1),
+    paper_required = entry ~= nil,
+    paper_count = input_inventory and input_inventory.get_item_count and input_inventory.get_item_count(shared.RECONSTRUCTION_PAPER_ITEM) or 0,
+    fluids = {},
+    missing_fluids = {},
   }
+
+  for _, fluid in ipairs(shared.RECONSTRUCTION_INK_FLUIDS) do
+    local required = required_by_name[fluid.name]
+    local available = fluid_amount(fluidbox, fluid.name)
+    local is_required = required ~= nil
+    local fluid_state = {
+      id = fluid.id,
+      name = fluid.name,
+      label = fluid.label,
+      available = available,
+      required = required and required.amount or 0,
+      is_required = is_required,
+      ready = not is_required or available >= (required.amount or 0),
+    }
+    snapshot.fluids[#snapshot.fluids + 1] = fluid_state
+    if fluid_state.is_required and not fluid_state.ready then
+      snapshot.missing_fluids[#snapshot.missing_fluids + 1] = fluid_state.label
+    end
+  end
+
+  return snapshot
+end
+
+local function receiver_missing_supplies_text(snapshot)
+  if not snapshot then return nil end
+  local missing = {}
+  if snapshot.paper_required and not snapshot.paper then
+    missing[#missing + 1] = "paper"
+  end
+  for _, fluid_label in ipairs(snapshot.missing_fluids or {}) do
+    missing[#missing + 1] = fluid_label
+  end
+  if #missing == 0 then
+    return nil
+  end
+  return table.concat(missing, ", ")
+end
+
+local function receiver_output_stack(entry)
+  return {
+    name = entry.name,
+    count = 1,
+    quality = entry.quality_name,
+  }
+end
+
+local function receiver_can_output_entry(state, entry)
+  if not state or not state.entity or not entry then return false end
+  local output_inventory = get_receiver_output_inventory(state.entity)
+  return can_insert_stack(output_inventory, receiver_output_stack(entry))
+end
+
+local function receiver_has_required_supplies(state, entry)
+  local snapshot = get_receiver_supply_snapshot(state, entry)
+  local has_paper = (not snapshot.paper_required) or snapshot.paper
+  return has_paper and #(snapshot.missing_fluids or {}) == 0, snapshot
+end
+
+local function consume_receiver_supplies(state, entry)
+  if not entry then return false end
+  local input_inventory = state and state.entity and get_receiver_input_inventory(state.entity) or nil
+  local fluidbox = state and state.entity and get_receiver_fluidbox(state.entity) or nil
+  local has_supplies = receiver_has_required_supplies(state, entry)
+  if not has_supplies then return false end
+  if not remove_one_item(input_inventory, shared.RECONSTRUCTION_PAPER_ITEM) then
+    return false
+  end
+  for _, fluid in ipairs(shared.get_document_ink_requirements(entry.name)) do
+    remove_fluid(fluidbox, fluid.name, fluid.amount)
+  end
+  return true
+end
+
+local function set_receiver_recipe(state, entry)
+  local entity = state and state.entity or nil
+  if not entity or not entity.valid or not entity.set_recipe then return end
+  local recipe_name = nil
+  if entry and receiver_entry_is_research_ready(state, entry) then
+    recipe_name = shared.reconstruction_recipe_name(entry.name)
+  end
+  local current_recipe = entity.get_recipe and entity.get_recipe() or nil
+  local current_name = current_recipe and current_recipe.name or nil
+  if current_name == recipe_name then return end
+  entity.set_recipe(recipe_name)
+end
+
+local function sync_receiver_recipe(state)
+  if not state or not state.entity or not state.entity.valid then return end
+  set_receiver_recipe(state, get_receiver_active_entry(state))
+  if state.entity.active ~= nil then
+    state.entity.active = false
+  end
+end
+
+local function compute_print_progress(entry, tick)
+  if not entry or not tick or not entry.ready_tick then return 0 end
+  local start_tick = entry.start_tick or tick
+  local duration = math.max(1, entry.ready_tick - start_tick)
+  local elapsed = math.max(0, math.min(duration, tick - start_tick))
+  return math.floor(elapsed * 100 / duration)
+end
+
+local function compute_receiver_feedback(state, tick)
+  if not state or not state.entity or not state.entity.valid then
+    return {
+      gui_label = "Receiver unavailable",
+    }
+  end
+
+  local queued = #(state.queue or {})
+  local capacity = shared.get_queue_capacity(state.entity.force)
+  local load = queued + (state.active_print and 1 or 0)
+
+  if state.active_print then
+    if tick and state.active_print.ready_tick and tick < state.active_print.ready_tick then
+      local pct = compute_print_progress(state.active_print, tick)
+      local label = ("Printing %s (%d%%)"):format(
+        format_document_label(state.active_print.name, state.active_print.quality_name),
+        pct)
+      return {
+        entity_label = label,
+        gui_label = ("%s. Queue %d/%d"):format(label, load, capacity),
+        diode = "yellow",
+      }
+    end
+
+    if not receiver_can_output_entry(state, state.active_print) then
+      local label = ("Output blocked for %s"):format(format_document_label(state.active_print.name, state.active_print.quality_name))
+      return {
+        entity_label = label,
+        gui_label = label,
+        diode = "red",
+      }
+    end
+
+    local label = ("Finalizing %s"):format(format_document_label(state.active_print.name, state.active_print.quality_name))
+    return {
+      entity_label = label,
+      gui_label = label,
+      diode = "yellow",
+    }
+  end
+
+  if queued > 0 then
+    local next_entry = state.queue[1]
+    if not receiver_entry_is_research_ready(state, next_entry) then
+      local label = ("Awaiting Color Faxing for %s"):format(format_document_label(next_entry.name, next_entry.quality_name))
+      return {
+        entity_label = label,
+        gui_label = ("%s. Queue %d/%d"):format(label, load, capacity),
+        diode = "yellow",
+      }
+    end
+
+    if not receiver_can_output_entry(state, next_entry) then
+      local label = ("Output slot occupied for %s"):format(format_document_label(next_entry.name, next_entry.quality_name))
+      return {
+        entity_label = label,
+        gui_label = label,
+        diode = "red",
+      }
+    end
+
+    local has_supplies, snapshot = receiver_has_required_supplies(state, next_entry)
+    if not has_supplies then
+      local missing = receiver_missing_supplies_text(snapshot)
+      local label = ("Waiting for %s"):format(missing or "supplies")
+      return {
+        entity_label = label,
+        gui_label = ("%s. Queue %d/%d"):format(label, load, capacity),
+        diode = "yellow",
+      }
+    end
+
+    local label = ("Ready to print %s"):format(format_document_label(next_entry.name, next_entry.quality_name))
+    return {
+      entity_label = label,
+      gui_label = ("%s. Queue %d/%d"):format(label, load, capacity),
+      diode = "green",
+    }
+  end
+
+  if state.current_request_signal then
+    local label = ("Idle. Requesting %s x%d"):format(
+      format_document_label(state.current_request_signal.name, state.current_request_signal.quality),
+      state.current_request_count or 0)
+    return {
+      entity_label = "Idle",
+      gui_label = label,
+      diode = "green",
+    }
+  end
+
+  if state.accept_circuit_requests == false then
+    return {
+      entity_label = "Idle",
+      gui_label = "Idle. Circuit requests disabled",
+      diode = "yellow",
+    }
+  end
+
+  return {
+    entity_label = "Idle",
+    gui_label = "Idle. Queue empty",
+    diode = "green",
+  }
+end
+
+local function get_status_diode(color_name)
+  local diodes = defines and defines.entity_status_diode or nil
+  if not diodes then return nil end
+  return diodes[color_name] or diodes.yellow or diodes.green or diodes.red
+end
+
+local function compute_emitter_feedback(state, tick, reserved_counts)
+  if not state or not state.entity or not state.entity.valid then
+    return {
+      gui_label = "Emitter unavailable",
+    }
+  end
+
+  local destination_name = shared.format_planet_name(state.destination_planet)
+  if state.current_job then
+    local start_tick = state.current_job.start_tick
+      or math.max(0, (state.current_job.complete_tick or tick or 0) - shared.TRANSMIT_TICKS)
+    local complete_tick = state.current_job.complete_tick or start_tick
+    local duration = math.max(1, complete_tick - start_tick)
+    local elapsed = math.max(0, math.min(duration, (tick or complete_tick) - start_tick))
+    local pct = math.floor(elapsed * 100 / duration)
+    local label = ("Sending to %s (%d%%)"):format(destination_name, pct)
+    return {
+      entity_label = label,
+      gui_label = label,
+      diode = "yellow",
+    }
+  end
+
+  if tick and state.last_delivery_tick and tick - state.last_delivery_tick <= EMITTER_DELIVERED_STATUS_TICKS then
+    local label = ("Delivered to %s"):format(destination_name)
+    return {
+      entity_label = label,
+      gui_label = label,
+      diode = "green",
+    }
+  end
+
+  local inventory = get_emitter_inventory(state.entity)
+  local slot_index, stack = find_first_faxable_stack(inventory)
+  if slot_index then
+    if stack and not shared.can_force_fax_document(state.entity.force, stack.name) then
+      return {
+        entity_label = "Requires Color Faxing research",
+        gui_label = ("Requires Color Faxing research for %s"):format(format_document_label(stack.name, get_quality_name(stack))),
+        diode = "yellow",
+      }
+    end
+
+    local receiver_state = get_receiver_state_for_planet(state.destination_planet)
+    if not receiver_state then
+      local label = ("No receiver on %s"):format(destination_name)
+      return {
+        entity_label = label,
+        gui_label = label,
+        diode = "red",
+      }
+    end
+
+    if receiver_state.entity.force ~= state.entity.force then
+      local label = ("Receiver on %s belongs to another force"):format(destination_name)
+      return {
+        entity_label = label,
+        gui_label = label,
+        diode = "red",
+      }
+    end
+
+    local capacity = shared.get_queue_capacity(receiver_state.entity.force)
+    local total_load = get_receiver_total_load(receiver_state)
+    local reserved = (reserved_counts and reserved_counts[state.destination_planet]) or 0
+    if total_load + reserved >= capacity then
+      local label = ("Waiting for a free slot on %s"):format(destination_name)
+      return {
+        entity_label = label,
+        gui_label = label,
+        diode = "yellow",
+      }
+    end
+
+    local label = ("Ready to send to %s"):format(destination_name)
+    return {
+      entity_label = label,
+      gui_label = label,
+      diode = "green",
+    }
+  end
+
+  return {
+    gui_label = "Insert faxable paperwork",
+  }
+end
+
+local function apply_emitter_feedback(state, tick, reserved_counts)
+  if not state or not state.entity or not state.entity.valid then return end
+  local feedback = compute_emitter_feedback(state, tick, reserved_counts)
+  if feedback and feedback.entity_label then
+    local diode = get_status_diode(feedback.diode)
+    if diode then
+      state.entity.custom_status = {
+        diode = diode,
+        label = feedback.entity_label,
+      }
+    else
+      state.entity.custom_status = nil
+    end
+  else
+    state.entity.custom_status = nil
+  end
+end
+
+local function apply_receiver_feedback(state, tick)
+  if not state or not state.entity or not state.entity.valid then return end
+  local feedback = compute_receiver_feedback(state, tick)
+  if feedback and feedback.entity_label then
+    local diode = get_status_diode(feedback.diode)
+    if diode then
+      state.entity.custom_status = {
+        diode = diode,
+        label = feedback.entity_label,
+      }
+    else
+      state.entity.custom_status = nil
+    end
+  else
+    state.entity.custom_status = nil
+  end
 end
 
 local function refresh_receiver_request(state)
@@ -313,7 +796,15 @@ local function refresh_receiver_request(state)
     return
   end
 
+  if state.accept_circuit_requests == false then
+    state.request_signals = {}
+    state.current_request_signal = nil
+    state.current_request_count = nil
+    return
+  end
+
   local signals = state.entity.get_signals(RED_WIRE(), GREEN_WIRE()) or {}
+  state.request_signals = shared.collect_request_signals(signals, state.output_counts, RECEIVER_REQUEST_LIMIT)
   state.current_request_signal, state.current_request_count = shared.select_request_signal(signals, state.output_counts)
 end
 
@@ -341,7 +832,12 @@ local function register_receiver(entity)
   state.planet_name = planet_name
   state.queue = state.queue or {}
   state.output_counts = state.output_counts or {}
+  state.request_signals = state.request_signals or {}
+  state.accept_circuit_requests = state.accept_circuit_requests ~= false
+  state.read_queue_status = state.read_queue_status ~= false
+  state.read_top_request = state.read_top_request ~= false
   ensure_combinator(entity, state)
+  sync_receiver_recipe(state)
 
   storage.fax_receivers_by_planet[planet_name] = entity.unit_number
   return state
@@ -401,13 +897,65 @@ local function return_item_or_spill(entity, player)
   }
 end
 
-local function destroy_gui(player)
-  if not player or not player.valid or not player.gui or not player.gui.left then return end
-  local frame = player.gui.left[shared.GUI_FRAME_NAME]
-  if frame and frame.valid then
-    frame.destroy()
+local function find_gui_element(root, name)
+  if not root or not root.valid or not name then return nil end
+  if root.name == name then
+    return root
   end
+  for _, child in ipairs(root.children or {}) do
+    local found = find_gui_element(child, name)
+    if found then
+      return found
+    end
+  end
+  return nil
+end
+
+local function clear_gui_children(element)
+  if not element or not element.valid then return end
+  if element.clear then
+    element.clear()
+    return
+  end
+  for _, child in ipairs(element.children or {}) do
+    if child.valid and child.destroy then
+      child.destroy()
+    end
+  end
+end
+
+local function get_emitter_gui_frame(player)
+  if not player or not player.valid or not player.gui or not player.gui.left then return nil end
+  return player.gui.left[shared.GUI_FRAME_NAME]
+end
+
+local function get_receiver_gui_frame(player)
+  if not player or not player.valid or not player.gui or not player.gui.screen then return nil end
+  return player.gui.screen[shared.RECEIVER_GUI_FRAME_NAME]
+end
+
+local function destroy_gui(player)
+  if not player or not player.valid or not player.gui then return end
+
+  local emitter_frame = get_emitter_gui_frame(player)
+  if emitter_frame and emitter_frame.valid then
+    emitter_frame.destroy()
+  end
+
+  local receiver_frame = get_receiver_gui_frame(player)
+  if receiver_frame and receiver_frame.valid then
+    receiver_frame.destroy()
+  end
+
   storage.fax_gui_players[player.index] = nil
+end
+
+local function set_gui_label(frame, name, caption)
+  if not frame or not frame.valid then return end
+  local label = find_gui_element(frame, name)
+  if label and label.valid then
+    label.caption = caption
+  end
 end
 
 local function build_emitter_gui(player, state)
@@ -446,10 +994,347 @@ local function build_emitter_gui(player, state)
     selected_index = selected_index,
   }
 
+  frame.add{
+    type = "label",
+    name = shared.GUI_STATUS_NAME,
+    caption = "",
+  }
+
   storage.fax_gui_players[player.index] = {
-    emitter_unit_number = state.entity.unit_number,
+    kind = "emitter",
+    unit_number = state.entity.unit_number,
     planet_names = planet_names,
   }
+end
+
+local function add_receiver_section(parent, caption, content_name)
+  local section = parent.add{
+    type = "frame",
+    direction = "vertical",
+  }
+  section.add{
+    type = "label",
+    caption = caption,
+  }
+  return section.add{
+    type = "flow",
+    direction = "vertical",
+    name = content_name,
+  }
+end
+
+local function build_receiver_gui(player, state)
+  destroy_gui(player)
+  if not player or not player.valid or not player.gui or not player.gui.screen or not state or not state.entity or not state.entity.valid then
+    return
+  end
+
+  local frame = player.gui.screen.add{
+    type = "frame",
+    name = shared.RECEIVER_GUI_FRAME_NAME,
+    direction = "vertical",
+  }
+
+  local title_bar = frame.add{
+    type = "flow",
+    direction = "horizontal",
+  }
+  title_bar.add{
+    type = "label",
+    caption = "Interplanetary Fax Exchange",
+  }
+  title_bar.add{
+    type = "button",
+    name = shared.RECEIVER_GUI_CLOSE_NAME,
+    caption = "Close",
+  }
+
+  frame.add{
+    type = "label",
+    name = shared.RECEIVER_GUI_HEADER_NAME,
+    caption = "",
+  }
+
+  local content = frame.add{
+    type = "flow",
+    direction = "horizontal",
+  }
+  local left_column = content.add{
+    type = "flow",
+    direction = "vertical",
+  }
+  local right_column = content.add{
+    type = "flow",
+    direction = "vertical",
+  }
+
+  add_receiver_section(left_column, "Status", shared.RECEIVER_GUI_STATUS_BODY_NAME)
+
+  local settings = add_receiver_section(left_column, "Signal Settings", "administratorio-fax-receiver-settings")
+  local accept_row = settings.add{type = "flow", direction = "horizontal"}
+  accept_row.add{type = "label", caption = "Accept circuit requests"}
+  accept_row.add{type = "button", name = shared.RECEIVER_GUI_ACCEPT_BUTTON_NAME, caption = ""}
+  local queue_row = settings.add{type = "flow", direction = "horizontal"}
+  queue_row.add{type = "label", caption = "Read queue status"}
+  queue_row.add{type = "button", name = shared.RECEIVER_GUI_QUEUE_BUTTON_NAME, caption = ""}
+  local top_request_row = settings.add{type = "flow", direction = "horizontal"}
+  top_request_row.add{type = "label", caption = "Read top request"}
+  top_request_row.add{type = "button", name = shared.RECEIVER_GUI_TOP_REQUEST_BUTTON_NAME, caption = ""}
+
+  add_receiver_section(left_column, "Supplies", shared.RECEIVER_GUI_SUPPLIES_CONTENT_NAME)
+  add_receiver_section(right_column, "Requests", shared.RECEIVER_GUI_REQUESTS_CONTENT_NAME)
+  add_receiver_section(right_column, "Queue", shared.RECEIVER_GUI_QUEUE_CONTENT_NAME)
+
+  if frame.force_auto_center then
+    frame.force_auto_center()
+  end
+
+  storage.fax_gui_players[player.index] = {
+    kind = "receiver",
+    unit_number = state.entity.unit_number,
+    suppress_close_once = true,
+  }
+
+  if player.opened == state.entity then
+    player.opened = nil
+  end
+end
+
+local function update_emitter_gui(player, state, tick, reserved_counts)
+  local frame = get_emitter_gui_frame(player)
+  if not frame or not frame.valid then return end
+
+  local status = find_gui_element(frame, shared.GUI_STATUS_NAME)
+  if not status or not status.valid then return end
+
+  local feedback = compute_emitter_feedback(state, tick, reserved_counts)
+  status.caption = feedback and feedback.gui_label or ""
+end
+
+local function set_receiver_toggle_button(frame, name, enabled)
+  local button = find_gui_element(frame, name)
+  if button and button.valid then
+    button.caption = enabled and "Enabled" or "Disabled"
+  end
+end
+
+local function add_gui_table_row(table_element, values)
+  for _, value in ipairs(values) do
+    table_element.add{
+      type = "label",
+      caption = value,
+    }
+  end
+end
+
+local function populate_receiver_status(frame, state, tick)
+  local content = find_gui_element(frame, shared.RECEIVER_GUI_STATUS_BODY_NAME)
+  if not content or not content.valid then return end
+  clear_gui_children(content)
+
+  local feedback = compute_receiver_feedback(state, tick)
+  local current_entry = get_receiver_active_entry(state)
+  content.add{
+    type = "label",
+    caption = feedback and feedback.gui_label or "Receiver unavailable",
+  }
+  content.add{
+    type = "label",
+    caption = current_entry
+      and ("Current form: %s"):format(format_document_label(current_entry.name, current_entry.quality_name))
+      or "Current form: none",
+  }
+end
+
+local function populate_receiver_supplies(frame, state)
+  local content = find_gui_element(frame, shared.RECEIVER_GUI_SUPPLIES_CONTENT_NAME)
+  if not content or not content.valid then return end
+  clear_gui_children(content)
+
+  local current_entry = get_receiver_active_entry(state)
+  local snapshot = get_receiver_supply_snapshot(state, current_entry)
+  content.add{
+    type = "label",
+    caption = current_entry
+      and ("Required inks: %s"):format(shared.format_required_inks(current_entry.name))
+      or "Required inks: none",
+  }
+
+  local table_element = content.add{
+    type = "table",
+    column_count = 3,
+  }
+  add_gui_table_row(table_element, {"Supply", "Available", "State"})
+  add_gui_table_row(table_element, {
+    "Paper",
+    tostring(snapshot.paper_count or 0),
+    current_entry and (snapshot.paper and "Ready" or "Missing") or "Idle",
+  })
+
+  for _, fluid in ipairs(snapshot.fluids or {}) do
+    local state_text
+    if not current_entry then
+      state_text = "Idle"
+    elseif fluid.is_required then
+      state_text = fluid.ready and "Ready" or "Missing"
+    else
+      state_text = "Optional"
+    end
+    add_gui_table_row(table_element, {
+      fluid.label,
+      fluid.is_required and ("%.0f/%.0f"):format(fluid.available or 0, fluid.required or 0) or ("%.0f"):format(fluid.available or 0),
+      state_text,
+    })
+  end
+end
+
+local function populate_receiver_requests(frame, state)
+  local content = find_gui_element(frame, shared.RECEIVER_GUI_REQUESTS_CONTENT_NAME)
+  if not content or not content.valid then return end
+  clear_gui_children(content)
+
+  if state.accept_circuit_requests == false then
+    content.add{
+      type = "label",
+      caption = "Circuit requests are disabled.",
+    }
+    return
+  end
+
+  if state.current_request_signal then
+    content.add{
+      type = "label",
+      caption = ("Top request: %s x%d"):format(
+        format_document_label(state.current_request_signal.name, state.current_request_signal.quality),
+        state.current_request_count or 0),
+    }
+  end
+
+  if not state.request_signals or #state.request_signals == 0 then
+    content.add{
+      type = "label",
+      caption = "No outstanding circuit requests.",
+    }
+    return
+  end
+
+  local table_element = content.add{
+    type = "table",
+    column_count = 2,
+  }
+  add_gui_table_row(table_element, {"Count", "Form"})
+  for _, entry in ipairs(state.request_signals) do
+    add_gui_table_row(table_element, {
+      tostring(entry.count or 0),
+      format_document_label(entry.signal.name, entry.signal.quality),
+    })
+  end
+end
+
+local function describe_receiver_queue_row(state, entry, is_active, tick)
+  if is_active then
+    if tick and entry.ready_tick and tick < entry.ready_tick then
+      return ("Printing %d%%"):format(compute_print_progress(entry, tick))
+    end
+    if not receiver_can_output_entry(state, entry) then
+      return "Blocked output"
+    end
+    return "Finalizing"
+  end
+
+  if state.queue and state.queue[1] == entry then
+    if not receiver_entry_is_research_ready(state, entry) then
+      return "Awaiting research"
+    end
+    if not receiver_can_output_entry(state, entry) then
+      return "Blocked output"
+    end
+    local has_supplies = receiver_has_required_supplies(state, entry)
+    if not has_supplies then
+      return "Waiting supplies"
+    end
+    return "Ready"
+  end
+
+  return "Queued"
+end
+
+local function populate_receiver_queue(frame, state, tick)
+  local content = find_gui_element(frame, shared.RECEIVER_GUI_QUEUE_CONTENT_NAME)
+  if not content or not content.valid then return end
+  clear_gui_children(content)
+
+  local has_entries = state.active_print ~= nil or (state.queue and #state.queue > 0)
+  if not has_entries then
+    content.add{
+      type = "label",
+      caption = "Queue empty.",
+    }
+    return
+  end
+
+  local table_element = content.add{
+    type = "table",
+    column_count = 4,
+  }
+  add_gui_table_row(table_element, {"Form", "State", "Provenance", "Required inks"})
+
+  if state.active_print then
+    add_gui_table_row(table_element, {
+      format_document_label(state.active_print.name, state.active_print.quality_name),
+      describe_receiver_queue_row(state, state.active_print, true, tick),
+      shared.format_planet_name(state.active_print.source_planet),
+      shared.format_required_inks(state.active_print.name),
+    })
+  end
+
+  for _, entry in ipairs(state.queue or {}) do
+    add_gui_table_row(table_element, {
+      format_document_label(entry.name, entry.quality_name),
+      describe_receiver_queue_row(state, entry, false, tick),
+      shared.format_planet_name(entry.source_planet),
+      shared.format_required_inks(entry.name),
+    })
+  end
+end
+
+local function update_receiver_gui(player, state, tick)
+  local frame = get_receiver_gui_frame(player)
+  if not frame or not frame.valid then return end
+
+  local load = get_receiver_total_load(state)
+  local capacity = shared.get_queue_capacity(state.entity.force)
+  local top_request = state.current_request_signal
+    and ("%s x%d"):format(format_document_label(state.current_request_signal.name, state.current_request_signal.quality), state.current_request_count or 0)
+    or (state.accept_circuit_requests == false and "Requests disabled" or "No current request")
+
+  set_gui_label(frame, shared.RECEIVER_GUI_HEADER_NAME,
+    ("Planet: %s | Queue: %d/%d | Top request: %s"):format(
+      shared.format_planet_name(state.planet_name),
+      load,
+      capacity,
+      top_request))
+  set_receiver_toggle_button(frame, shared.RECEIVER_GUI_ACCEPT_BUTTON_NAME, state.accept_circuit_requests ~= false)
+  set_receiver_toggle_button(frame, shared.RECEIVER_GUI_QUEUE_BUTTON_NAME, state.read_queue_status ~= false)
+  set_receiver_toggle_button(frame, shared.RECEIVER_GUI_TOP_REQUEST_BUTTON_NAME, state.read_top_request ~= false)
+  populate_receiver_status(frame, state, tick)
+  populate_receiver_supplies(frame, state)
+  populate_receiver_requests(frame, state)
+  populate_receiver_queue(frame, state, tick)
+end
+
+local function is_emitter_open(player, entity)
+  local opened = entity or (player and player.valid and player.opened) or nil
+  return opened
+    and opened.valid
+    and opened.name == shared.EMITTER_NAME
+end
+
+local function is_receiver_open(player, entity)
+  local opened = entity or (player and player.valid and player.opened) or nil
+  return opened
+    and opened.valid
+    and opened.name == shared.RECEIVER_NAME
 end
 
 local function cleanup_invalid_state()
@@ -474,19 +1359,35 @@ end
 local function process_emitter_jobs(tick)
   for _, state in pairs(storage.fax_emitters) do
     local job = state.current_job
+    if job and not job.document_held then
+      local inventory = get_emitter_inventory(state.entity)
+      if job.slot_index then
+        local stack = take_stack_from_slot(inventory, job.slot_index, job.item_name, job.quality_name)
+        if stack then
+          job.document_held = true
+        else
+          state.current_job = nil
+          job = nil
+        end
+      end
+      if job then
+        job.start_tick = job.start_tick or math.max(0, (job.complete_tick or tick) - shared.TRANSMIT_TICKS)
+      end
+    end
+
     if job and tick >= job.complete_tick then
       local receiver_state = get_receiver_state_for_planet(job.destination_planet)
-      local inventory = get_inventory(state.entity)
       if not receiver_state or receiver_state.entity.force ~= state.entity.force then
+        return_job_document_to_emitter(state, job)
         state.current_job = nil
-      elseif remove_stack_from_slot(inventory, job.slot_index, job.item_name, job.quality_name) then
+      else
         receiver_state.queue[#receiver_state.queue + 1] = {
           name = job.item_name,
           quality_name = job.quality_name,
           source_planet = job.source_planet,
         }
-        state.current_job = nil
-      else
+        spill_job_document(state.entity, nil, job)
+        state.last_delivery_tick = tick
         state.current_job = nil
       end
     end
@@ -502,18 +1403,23 @@ local function process_new_emitter_jobs(tick, reserved_counts)
         local total_load = get_receiver_total_load(receiver_state)
         local reserved = reserved_counts[state.destination_planet] or 0
         if total_load + reserved < capacity then
-          local inventory = get_inventory(state.entity)
+          local inventory = get_emitter_inventory(state.entity)
           local slot_index, stack = find_first_faxable_stack(inventory)
-          if slot_index and stack then
-            state.current_job = {
-              slot_index = slot_index,
-              item_name = stack.name,
-              quality_name = get_quality_name(stack),
-              destination_planet = state.destination_planet,
-              source_planet = state.planet_name,
-              complete_tick = tick + shared.TRANSMIT_TICKS,
-            }
-            reserved_counts[state.destination_planet] = reserved + 1
+          if slot_index and stack and shared.can_force_fax_document(state.entity.force, stack.name) then
+            local removed_stack = take_stack_from_slot(inventory, slot_index, stack.name, get_quality_name(stack))
+            if removed_stack then
+              state.current_job = {
+                item_name = removed_stack.name,
+                quality_name = removed_stack.quality,
+                destination_planet = state.destination_planet,
+                source_planet = state.planet_name,
+                slot_index = slot_index,
+                start_tick = tick,
+                complete_tick = tick + shared.TRANSMIT_TICKS,
+                document_held = true,
+              }
+              reserved_counts[state.destination_planet] = reserved + 1
+            end
           end
         end
       end
@@ -523,34 +1429,26 @@ end
 
 local function process_receivers(tick)
   for _, state in pairs(storage.fax_receivers) do
-    local inventory = get_inventory(state.entity)
-    if inventory then
+    sync_receiver_recipe(state)
+    local output_inventory = get_receiver_output_inventory(state.entity)
+    if output_inventory then
       if state.active_print then
         if tick >= state.active_print.ready_tick then
-          local stack = {
-            name = state.active_print.name,
-            count = 1,
-            quality = state.active_print.quality_name,
-          }
-          if can_insert_stack(inventory, stack) and insert_stack(inventory, stack) > 0 then
+          local stack = receiver_output_stack(state.active_print)
+          if can_insert_stack(output_inventory, stack) and insert_stack(output_inventory, stack) > 0 then
             state.active_print = nil
+            sync_receiver_recipe(state)
           end
         end
       elseif #(state.queue or {}) > 0 then
         local next_entry = state.queue[1]
-        local output_stack = {
-          name = next_entry.name,
-          count = 1,
-          quality = next_entry.quality_name,
-        }
-        if can_insert_stack(inventory, output_stack)
-          and inventory_has_item(inventory, "paper", 1)
-          and inventory_has_item(inventory, "ink", 1)
-        then
-          remove_one_item(inventory, "paper")
-          remove_one_item(inventory, "ink")
+        if receiver_entry_is_research_ready(state, next_entry)
+          and receiver_can_output_entry(state, next_entry)
+          and consume_receiver_supplies(state, next_entry) then
           state.active_print = table.remove(state.queue, 1)
+          state.active_print.start_tick = tick
           state.active_print.ready_tick = tick + shared.PRINT_TICKS
+          sync_receiver_recipe(state)
         end
       end
     end
@@ -565,6 +1463,49 @@ local function refresh_outputs(reserved_counts)
   for _, state in pairs(storage.fax_emitters) do
     set_output_section(state, build_emitter_slots(state, reserved_counts))
   end
+end
+
+local function refresh_emitter_feedbacks(tick, reserved_counts)
+  for _, state in pairs(storage.fax_emitters) do
+    apply_emitter_feedback(state, tick, reserved_counts)
+  end
+end
+
+local function refresh_receiver_feedbacks(tick)
+  for _, state in pairs(storage.fax_receivers) do
+    sync_receiver_recipe(state)
+    apply_receiver_feedback(state, tick)
+  end
+end
+
+local function refresh_open_fax_guis(tick, reserved_counts)
+  for player_index, gui_state in pairs(storage.fax_gui_players or {}) do
+    local player = game and game.get_player and game.get_player(player_index) or nil
+    if not player or not player.valid then
+      storage.fax_gui_players[player_index] = nil
+    else
+      local state = gui_state and gui_state.kind == "receiver"
+        and storage.fax_receivers[gui_state.unit_number]
+        or gui_state and gui_state.kind == "emitter"
+        and storage.fax_emitters[gui_state.unit_number]
+        or nil
+      if not state or not state.entity or not state.entity.valid then
+        destroy_gui(player)
+      elseif gui_state.kind == "receiver" then
+        update_receiver_gui(player, state, tick)
+      else
+        update_emitter_gui(player, state, tick, reserved_counts)
+      end
+    end
+  end
+end
+
+local function refresh_visual_state(tick)
+  local reserved_counts = build_reserved_counts()
+  refresh_outputs(reserved_counts)
+  refresh_receiver_feedbacks(tick)
+  refresh_emitter_feedbacks(tick, reserved_counts)
+  refresh_open_fax_guis(tick, reserved_counts)
 end
 
 function M.ensure_storage()
@@ -665,6 +1606,9 @@ function M.on_entity_removed(entity, buffer)
   else
     local state = storage.fax_emitters[entity.unit_number]
     if state then
+      if state.current_job then
+        spill_job_document(entity, buffer, state.current_job)
+      end
       destroy_combinator(state)
       storage.fax_emitters[entity.unit_number] = nil
     end
@@ -684,21 +1628,111 @@ function M.on_tick(event)
   process_new_emitter_jobs(event.tick, reserved_counts)
   process_receivers(event.tick)
   refresh_outputs(reserved_counts)
+  refresh_receiver_feedbacks(event.tick)
+  refresh_emitter_feedbacks(event.tick, reserved_counts)
+  refresh_open_fax_guis(event.tick, reserved_counts)
 end
 
 function M.on_selected_entity_changed(player, entity)
   ensure_storage()
   if not player or not player.valid then return end
-
-  if entity and entity.valid and entity.name == shared.EMITTER_NAME then
-    local state = storage.fax_emitters[entity.unit_number]
-    if state then
-      build_emitter_gui(player, state)
+  local gui_state = storage.fax_gui_players[player.index]
+  if gui_state and gui_state.kind == "receiver" then
+    local receiver_state = storage.fax_receivers[gui_state.unit_number]
+    if receiver_state and receiver_state.entity and receiver_state.entity.valid then
       return
     end
   end
+  if is_emitter_open(player) or is_receiver_open(player) then return end
+  destroy_gui(player)
+end
+
+function M.on_gui_opened(player, entity)
+  ensure_storage()
+  if not player or not player.valid then return end
+  if is_emitter_open(player, entity) then
+    local state = storage.fax_emitters[entity.unit_number]
+    if not state then
+      destroy_gui(player)
+      return
+    end
+
+    build_emitter_gui(player, state)
+    update_emitter_gui(player, state, game and game.tick or 0, build_reserved_counts())
+    return
+  end
+
+  if is_receiver_open(player, entity) then
+    local state = storage.fax_receivers[entity.unit_number]
+    if not state then
+      destroy_gui(player)
+      return
+    end
+
+    build_receiver_gui(player, state)
+    update_receiver_gui(player, state, game and game.tick or 0)
+    return
+  end
 
   destroy_gui(player)
+end
+
+function M.on_gui_closed(player)
+  ensure_storage()
+  if not player or not player.valid then return end
+  local gui_state = storage.fax_gui_players[player.index]
+  if gui_state and gui_state.kind == "receiver" and gui_state.suppress_close_once then
+    gui_state.suppress_close_once = false
+    return
+  end
+  destroy_gui(player)
+end
+
+function M.on_gui_click(event)
+  ensure_storage()
+  if not event or not event.element or not event.element.valid then return false end
+
+  local player = game and game.get_player and game.get_player(event.player_index) or nil
+  if not player or not player.valid then return false end
+
+  local element_name = event.element.name
+  if element_name == shared.RECEIVER_GUI_CLOSE_NAME then
+    destroy_gui(player)
+    return true
+  end
+
+  local gui_state = storage.fax_gui_players[player.index]
+  if not gui_state or gui_state.kind ~= "receiver" then
+    return false
+  end
+
+  local receiver_state = storage.fax_receivers[gui_state.unit_number]
+  if not receiver_state or not receiver_state.entity or not receiver_state.entity.valid then
+    destroy_gui(player)
+    return true
+  end
+
+  local did_toggle = false
+  if element_name == shared.RECEIVER_GUI_ACCEPT_BUTTON_NAME then
+    receiver_state.accept_circuit_requests = not receiver_state.accept_circuit_requests
+    did_toggle = true
+  elseif element_name == shared.RECEIVER_GUI_QUEUE_BUTTON_NAME then
+    receiver_state.read_queue_status = not receiver_state.read_queue_status
+    did_toggle = true
+  elseif element_name == shared.RECEIVER_GUI_TOP_REQUEST_BUTTON_NAME then
+    receiver_state.read_top_request = not receiver_state.read_top_request
+    did_toggle = true
+  end
+
+  if did_toggle then
+    if element_name == shared.RECEIVER_GUI_ACCEPT_BUTTON_NAME then
+      refresh_receiver_request(receiver_state)
+    end
+    refresh_visual_state(game and game.tick or 0)
+    return true
+  end
+
+  return false
 end
 
 function M.on_gui_selection_state_changed(event)
@@ -709,9 +1743,9 @@ function M.on_gui_selection_state_changed(event)
   if not element or not element.valid or element.name ~= shared.GUI_DROPDOWN_NAME then return end
 
   local gui_state = storage.fax_gui_players[player.index]
-  if not gui_state then return end
+  if not gui_state or gui_state.kind ~= "emitter" then return end
 
-  local emitter_state = storage.fax_emitters[gui_state.emitter_unit_number]
+  local emitter_state = storage.fax_emitters[gui_state.unit_number]
   if not emitter_state or not emitter_state.entity or not emitter_state.entity.valid then
     destroy_gui(player)
     return
@@ -720,6 +1754,7 @@ function M.on_gui_selection_state_changed(event)
   local destination_planet = gui_state.planet_names[element.selected_index]
   if destination_planet then
     emitter_state.destination_planet = destination_planet
+    update_emitter_gui(player, emitter_state, game and game.tick or 0, build_reserved_counts())
   end
 end
 

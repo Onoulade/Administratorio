@@ -1,3 +1,5 @@
+local fax_shared = require("scripts.fax_shared")
+
 local function add_tech_unlock(technology_name, recipe_name)
   local technology = data.raw["technology"] and data.raw["technology"][technology_name]
   if not technology or not recipe_name or not (data.raw.recipe and data.raw.recipe[recipe_name]) then return end
@@ -289,6 +291,26 @@ data:extend({
   },
   {
     type = "technology",
+    name = "color-faxing",
+    icon = "__administratorio__/graphics/icons/ink-cartridge.png",
+    icon_size = 64,
+    effects = {},
+    prerequisites = {"aquilo-fax-network"},
+    unit = {
+      count = 400,
+      ingredients = {
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"cryogenic-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 60,
+    },
+    order = "h-f-b",
+  },
+  {
+    type = "technology",
     name = "fax-queue-capacity-1",
     icon = "__administratorio__/graphics/icons/office-building.png",
     icon_size = 64,
@@ -414,3 +436,9 @@ add_tech_unlock("cyan-yellow-bureaucracy", "small-space-tourist-jettison")
 add_tech_unlock("cyan-yellow-bureaucracy", "medium-space-tourist-jettison")
 add_tech_unlock("cyan-yellow-bureaucracy", "big-space-tourist-jettison")
 add_tech_unlock("cyan-yellow-bureaucracy", "behemoth-space-tourist-jettison")
+
+for item_name in pairs(fax_shared.FAX_DOCUMENTS) do
+  add_tech_unlock(
+    fax_shared.reconstruction_unlock_technology(item_name),
+    fax_shared.reconstruction_recipe_name(item_name))
+end

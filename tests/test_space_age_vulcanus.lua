@@ -87,6 +87,14 @@ data = {
         attack_parameters = {},
       },
     },
+    ["train-stop"] = {
+      ["train-stop"] = {
+        type = "train-stop",
+        name = "train-stop",
+        minable = {result = "train-stop"},
+        placeable_by = {{item = "train-stop", count = 1}},
+      },
+    },
   },
 }
 
@@ -259,13 +267,15 @@ test("aquilo printer and exchange are specialized endgame bureaucracy machines",
   local emitter = data.raw.container["fax-emitter"]
   assert_true(emitter ~= nil, "fax-emitter missing")
   assert_eq(emitter.placeable_by[1].item, "fax-emitter", "fax-emitter should build from the fax-emitter item")
-  assert_eq(emitter.inventory_size, 12, "fax-emitter should buffer multiple source documents")
+  assert_eq(emitter.inventory_size, 1, "fax-emitter should hold a single source document")
 
-  local exchange = data.raw.container["interplanetary-fax-exchange"]
+  local exchange = data.raw["assembling-machine"]["interplanetary-fax-exchange"]
   assert_true(exchange ~= nil, "interplanetary-fax-exchange missing")
   assert_eq(exchange.placeable_by[1].item, "interplanetary-fax-exchange",
     "interplanetary-fax-exchange should build from the fax exchange item")
-  assert_eq(exchange.inventory_size, 20, "interplanetary-fax-exchange should hold supplies and printed paperwork")
+  assert_true(exchange.fluid_boxes ~= nil and #exchange.fluid_boxes == 4,
+    "interplanetary-fax-exchange should expose four ink inputs")
+  assert_eq(exchange.ingredient_count, 5, "interplanetary-fax-exchange should take paper plus four inks")
 end)
 
 test("non-orbital space age admin machines stay out of vacuum", function()
@@ -282,8 +292,13 @@ test("non-orbital space age admin machines stay out of vacuum", function()
     assert_true((entity.surface_conditions[1].min or 0) >= 1, entity_name .. " should require non-vacuum pressure")
   end
 
+  local fax_entities = {
+    ["fax-emitter"] = data.raw.container,
+    ["interplanetary-fax-exchange"] = data.raw["assembling-machine"],
+  }
+
   for _, entity_name in ipairs({"fax-emitter", "interplanetary-fax-exchange"}) do
-    local entity = assert(data.raw.container[entity_name], entity_name .. " missing")
+    local entity = assert(fax_entities[entity_name][entity_name], entity_name .. " missing")
     assert_true(entity.surface_conditions ~= nil and entity.surface_conditions[1] ~= nil,
       entity_name .. " should define a vacuum-blocking pressure rule")
     assert_true((entity.surface_conditions[1].min or 0) >= 1, entity_name .. " should require non-vacuum pressure")
