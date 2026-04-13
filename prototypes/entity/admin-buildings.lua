@@ -248,10 +248,10 @@ greenhouse.fluid_boxes = {
     production_type = "input",
     volume = 200,
     pipe_connections = {
-      { flow_direction = "input", direction = defines.direction.north, position = {0, -3} },
-      { flow_direction = "input", direction = defines.direction.south, position = {0, 3} },
-      { flow_direction = "input", direction = defines.direction.east,  position = {3, 0} },
-      { flow_direction = "input", direction = defines.direction.west,  position = {-3, 0} },
+      { flow_direction = "input-output", direction = defines.direction.north, position = {0, -3} },
+      { flow_direction = "input-output", direction = defines.direction.south, position = {0, 3} },
+      { flow_direction = "input-output", direction = defines.direction.east,  position = {3, 0} },
+      { flow_direction = "input-output", direction = defines.direction.west,  position = {-3, 0} },
     },
   },
 }
