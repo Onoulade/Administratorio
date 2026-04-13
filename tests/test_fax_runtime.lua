@@ -27,6 +27,13 @@ end
 defines = {
   inventory = {
     chest = 1,
+    assembling_machine_input = 2,
+    assembling_machine_output = 3,
+  },
+  entity_status_diode = {
+    red = 1,
+    yellow = 2,
+    green = 3,
   },
   wire_connector_id = {
     circuit_red = 1,
@@ -55,33 +62,39 @@ local function alloc_unit_number()
 end
 
 local function new_stack()
-  local stack = {}
-  local meta = {
-    __newindex = function(tbl, key, value)
-      rawset(tbl, key, value)
+  local data = {
+    count = 0,
+    valid_for_read = false,
+    name = nil,
+    quality = nil,
+  }
+
+  return setmetatable({}, {
+    __index = function(_, key)
+      return data[key]
+    end,
+    __newindex = function(_, key, value)
       if key == "count" then
         if value <= 0 then
-          rawset(tbl, "count", 0)
-          rawset(tbl, "valid_for_read", false)
-          rawset(tbl, "name", nil)
-          rawset(tbl, "quality", nil)
+          data.count = 0
+          data.valid_for_read = false
+          data.name = nil
+          data.quality = nil
         else
-          rawset(tbl, "valid_for_read", true)
+          data.count = value
+          data.valid_for_read = true
         end
+      else
+        data[key] = value
       end
     end,
-  }
-  stack = setmetatable({}, meta)
-  rawset(stack, "valid_for_read", false)
-  rawset(stack, "count", 0)
-  return stack
+  })
 end
 
 local function set_stack(stack, spec)
-  rawset(stack, "name", spec.name)
-  rawset(stack, "count", spec.count or 1)
-  rawset(stack, "quality", spec.quality and {name = spec.quality} or nil)
-  rawset(stack, "valid_for_read", (spec.count or 1) > 0)
+  stack.name = spec.name
+  stack.quality = spec.quality and {name = spec.quality} or nil
+  stack.count = spec.count or 1
 end
 
 local function quality_name(stack)
@@ -200,6 +213,22 @@ local function merge_signal_arrays(...)
   return ordered
 end
 
+local function resolve_signal_value(value)
+  if type(value) == "table" then
+    return {
+      type = value.type or "virtual",
+      name = value.name or value,
+      quality = value.quality,
+    }
+  end
+
+  return {
+    type = shared.is_faxable_item_name(value) and "item" or "virtual",
+    name = value,
+    quality = nil,
+  }
+end
+
 local function new_gui_element(parent, params)
   local element = {
     valid = true,
@@ -210,6 +239,7 @@ local function new_gui_element(parent, params)
     selected_index = params.selected_index,
     caption = params.caption,
     direction = params.direction,
+    column_count = params.column_count,
     children = {},
     children_by_name = {},
   }
@@ -234,6 +264,18 @@ local function new_gui_element(parent, params)
         end
       end
     end
+  end
+
+  function methods.clear()
+    for _, child in ipairs(element.children) do
+      child.valid = false
+      child.parent = nil
+    end
+    element.children = {}
+    element.children_by_name = {}
+  end
+
+  function methods.force_auto_center()
   end
 
   setmetatable(element, {
@@ -264,8 +306,10 @@ local function new_player(index)
     valid = true,
     printed_messages = {},
     inserted_items = {},
+    opened = nil,
     gui = {
       left = new_gui_root(),
+      screen = new_gui_root(),
     },
   }
 
@@ -285,6 +329,7 @@ local function new_force()
   return {
     valid = true,
     technologies = {
+      ["color-faxing"] = {researched = false},
       ["fax-queue-capacity-1"] = {researched = false},
       ["fax-queue-capacity-2"] = {researched = false},
       ["fax-queue-capacity-3"] = {researched = false},
@@ -331,12 +376,9 @@ local function new_combinator(surface, params)
     local signals = {}
     for _, slot in pairs(slots) do
       if slot and slot.value and slot.min and slot.min > 0 then
+        local signal = resolve_signal_value(slot.value)
         signals[#signals + 1] = {
-          signal = {
-            type = slot.value.type or "virtual",
-            name = slot.value.name or slot.value,
-            quality = slot.value.quality,
-          },
+          signal = signal,
           count = slot.min,
         }
       end
@@ -423,22 +465,30 @@ local function new_surface(planet_name)
 end
 
 local function new_fax_entity(surface, force, name, x, y, inventory_size)
-  local inventory = new_inventory(inventory_size or 20)
   local entity = {
     valid = true,
     name = name,
-    type = "container",
+    type = name == shared.RECEIVER_NAME and "assembling-machine" or "container",
     force = force,
     surface = surface,
     position = {x = x or 0, y = y or 0},
     unit_number = alloc_unit_number(),
-    inventory = inventory,
     external_signals = {},
   }
 
   function entity.get_inventory(inventory_id)
-    assert_eq(inventory_id, defines.inventory.chest, "fax entities should use chest inventory")
-    return inventory
+    if name == shared.RECEIVER_NAME then
+      if inventory_id == defines.inventory.assembling_machine_input then
+        return entity.input_inventory
+      end
+      if inventory_id == defines.inventory.assembling_machine_output then
+        return entity.output_inventory
+      end
+      return nil
+    end
+
+    assert_eq(inventory_id, defines.inventory.chest, "emitters should use chest inventory")
+    return entity.inventory
   end
 
   function entity.get_wire_connector()
@@ -452,6 +502,25 @@ local function new_fax_entity(surface, force, name, x, y, inventory_size)
   function entity.destroy()
     entity.valid = false
     remove_surface_entity(surface, entity)
+  end
+
+  if name == shared.RECEIVER_NAME then
+    entity.input_inventory = new_inventory(inventory_size or 5)
+    entity.output_inventory = new_inventory(1)
+    entity.fluidbox = {nil, nil, nil, nil}
+    entity.recipe = nil
+    entity.active = false
+
+    function entity.set_recipe(recipe_name)
+      entity.recipe = recipe_name and {name = recipe_name} or nil
+      return true
+    end
+
+    function entity.get_recipe()
+      return entity.recipe
+    end
+  else
+    entity.inventory = new_inventory(inventory_size or 20)
   end
 
   surface.entities[#surface.entities + 1] = entity
@@ -510,6 +579,73 @@ local function find_signal(signals, signal_name)
   return nil, nil
 end
 
+local function charge_receiver(receiver, item_name_or_multiplier, multiplier)
+  local item_name = nil
+  if type(item_name_or_multiplier) == "string" then
+    item_name = item_name_or_multiplier
+    multiplier = multiplier or 1
+  else
+    multiplier = item_name_or_multiplier or 1
+  end
+
+  receiver.input_inventory.insert{name = shared.RECONSTRUCTION_PAPER_ITEM, count = multiplier}
+
+  local required_fluids = {}
+  local source = item_name and shared.get_document_ink_requirements(item_name) or shared.RECONSTRUCTION_INK_FLUIDS
+  for _, fluid in ipairs(source) do
+    required_fluids[fluid.name] = fluid.amount
+  end
+
+  for index, fluid in ipairs(shared.RECONSTRUCTION_INK_FLUIDS) do
+    if required_fluids[fluid.name] then
+      receiver.fluidbox[index] = {
+        name = fluid.name,
+        amount = required_fluids[fluid.name] * multiplier,
+        temperature = 25,
+      }
+    else
+      receiver.fluidbox[index] = nil
+    end
+  end
+end
+
+local function get_fluid_amount(receiver, fluid_name)
+  local total = 0
+  for _, entry in ipairs(receiver.fluidbox or {}) do
+    if entry and entry.name == fluid_name then
+      total = total + (entry.amount or 0)
+    end
+  end
+  return total
+end
+
+local function find_gui_element(root, name)
+  if not root or not root.valid or not name then return nil end
+  if root.name == name then
+    return root
+  end
+  for _, child in ipairs(root.children or {}) do
+    local found = find_gui_element(child, name)
+    if found then
+      return found
+    end
+  end
+  return nil
+end
+
+local function gui_contains_caption(root, caption)
+  if not root or not root.valid then return false end
+  if root.caption == caption then
+    return true
+  end
+  for _, child in ipairs(root.children or {}) do
+    if gui_contains_caption(child, caption) then
+      return true
+    end
+  end
+  return false
+end
+
 test("second receiver on the same planet is rejected", function()
   local ctx = new_context()
   local receiver_a = new_fax_entity(ctx.surfaces.nauvis, ctx.force, shared.RECEIVER_NAME, 0, 0, 20)
@@ -526,9 +662,9 @@ test("emitter destination persists through the GUI dropdown", function()
   local emitter = new_fax_entity(ctx.surfaces.nauvis, ctx.force, shared.EMITTER_NAME, 0, 0, 12)
   assert_true(fax.on_entity_built(emitter, ctx.player), "emitter should place successfully")
 
-  fax.on_selected_entity_changed(ctx.player, emitter)
+  fax.on_gui_opened(ctx.player, emitter)
   local frame = ctx.player.gui.left[shared.GUI_FRAME_NAME]
-  assert_true(frame ~= nil and frame.valid, "emitter GUI should open when the emitter is selected")
+  assert_true(frame ~= nil and frame.valid, "emitter GUI should open when the emitter is opened")
   local dropdown = frame[shared.GUI_DROPDOWN_NAME]
   assert_true(dropdown ~= nil and dropdown.valid, "destination dropdown should exist")
 
@@ -541,11 +677,34 @@ test("emitter destination persists through the GUI dropdown", function()
   assert_eq(storage.fax_emitters[emitter.unit_number].destination_planet, "vulcanus",
     "dropdown selection should update the emitter destination")
 
-  fax.on_selected_entity_changed(ctx.player, nil)
-  fax.on_selected_entity_changed(ctx.player, emitter)
+  fax.on_gui_closed(ctx.player)
+  fax.on_gui_opened(ctx.player, emitter)
   frame = ctx.player.gui.left[shared.GUI_FRAME_NAME]
   dropdown = frame[shared.GUI_DROPDOWN_NAME]
   assert_eq(dropdown.selected_index, 2, "reopening the GUI should preserve the selected destination")
+end)
+
+test("receiver opens a custom screen UI and replaces the vanilla entity window", function()
+  local ctx = new_context()
+  local receiver = new_fax_entity(ctx.surfaces.vulcanus, ctx.force, shared.RECEIVER_NAME, 0, 0, 20)
+  fax.on_entity_built(receiver, ctx.player)
+  storage.fax_receivers[receiver.unit_number].queue = {
+    {name = "work-order", quality_name = nil, source_planet = "nauvis"},
+  }
+
+  ctx.player.opened = receiver
+  fax.on_gui_opened(ctx.player, receiver)
+
+  local frame = ctx.player.gui.screen[shared.RECEIVER_GUI_FRAME_NAME]
+  assert_true(frame ~= nil and frame.valid, "receiver should open a dedicated screen GUI")
+  assert_true(ctx.player.gui.left[shared.GUI_FRAME_NAME] == nil, "receiver should not reuse the emitter side panel")
+  assert_true(ctx.player.opened == nil, "opening the receiver should close the vanilla assembler window")
+  assert_true(gui_contains_caption(frame, "Form"), "receiver queue should expose table-style columns")
+  assert_true(gui_contains_caption(frame, "Provenance"), "receiver queue should show document provenance")
+  assert_true(gui_contains_caption(frame, "Required inks"), "receiver queue should show required inks")
+
+  fax.on_gui_closed(ctx.player)
+  assert_true(frame.valid, "the receiver GUI should survive the synthetic close triggered by replacing the vanilla window")
 end)
 
 test("receiver request is mirrored to emitters without gating what can be sent", function()
@@ -570,7 +729,7 @@ test("receiver request is mirrored to emitters without gating what can be sent",
   assert_eq(mirrored_count, 3, "emitter should mirror the receiver request signal")
 end)
 
-test("colored paperwork is not eligible for faxing", function()
+test("colored paperwork requires color faxing research", function()
   local ctx = new_context()
   local receiver = new_fax_entity(ctx.surfaces.vulcanus, ctx.force, shared.RECEIVER_NAME, 0, 0, 20)
   local emitter = new_fax_entity(ctx.surfaces.nauvis, ctx.force, shared.EMITTER_NAME, 0, 0, 12)
@@ -583,7 +742,13 @@ test("colored paperwork is not eligible for faxing", function()
   fax.on_tick({tick = 60})
 
   assert_true(storage.fax_emitters[emitter.unit_number].current_job == nil,
-    "chromatic paperwork should not enter the fax queue")
+    "colored paperwork should not transmit before color faxing is researched")
+
+  ctx.force.technologies["color-faxing"].researched = true
+  fax.on_tick({tick = 120})
+
+  assert_true(storage.fax_emitters[emitter.unit_number].current_job ~= nil,
+    "colored paperwork should transmit once color faxing is researched")
 end)
 
 test("queue reservations create backpressure across planets", function()
@@ -641,26 +806,72 @@ test("faxed documents consume paper and ink and preserve quality when printed", 
   fax.on_entity_built(emitter, ctx.player)
   storage.fax_emitters[emitter.unit_number].destination_planet = "vulcanus"
 
-  receiver.inventory.insert{name = "paper", count = 1}
-  receiver.inventory.insert{name = "ink", count = 1}
+  charge_receiver(receiver, "construction-permit", 1)
   emitter.inventory.insert{name = "construction-permit", count = 1, quality = "legendary"}
 
   fax.on_tick({tick = 60})
   fax.on_tick({tick = 120})
   fax.on_tick({tick = 240})
 
-  assert_eq(receiver.inventory.get_item_count("paper"), 0, "printing should consume one paper")
-  assert_eq(receiver.inventory.get_item_count("ink"), 0, "printing should consume one ink")
-  assert_eq(receiver.inventory.get_item_count("construction-permit"), 1, "printed document should be inserted into the receiver inventory")
+  assert_eq(receiver.input_inventory.get_item_count("paper"), 0, "printing should consume one paper")
+  assert_eq(get_fluid_amount(receiver, "liquid-black-ink"), 0, "black paperwork should consume black ink")
+  assert_eq(get_fluid_amount(receiver, "cyan-ink"), 0, "black paperwork should not need cyan ink")
+  assert_eq(get_fluid_amount(receiver, "yellow-ink"), 0, "black paperwork should not need yellow ink")
+  assert_eq(get_fluid_amount(receiver, "magenta-ink"), 0, "black paperwork should not need magenta ink")
+  assert_eq(receiver.output_inventory.get_item_count("construction-permit"), 1, "printed document should be inserted into the receiver output slot")
 
   local printed_quality = nil
-  for slot = 1, #receiver.inventory do
-    local stack = receiver.inventory[slot]
+  for slot = 1, #receiver.output_inventory do
+    local stack = receiver.output_inventory[slot]
     if stack.valid_for_read and stack.name == "construction-permit" then
       printed_quality = quality_name(stack)
     end
   end
   assert_eq(printed_quality, "legendary", "printed fax output should preserve quality")
+end)
+
+test("colored faxing only consumes the required inks", function()
+  local ctx = new_context()
+  local receiver = new_fax_entity(ctx.surfaces.vulcanus, ctx.force, shared.RECEIVER_NAME, 0, 0, 20)
+  local emitter = new_fax_entity(ctx.surfaces.nauvis, ctx.force, shared.EMITTER_NAME, 0, 0, 12)
+  fax.on_entity_built(receiver, ctx.player)
+  fax.on_entity_built(emitter, ctx.player)
+  storage.fax_emitters[emitter.unit_number].destination_planet = "vulcanus"
+  ctx.force.technologies["color-faxing"].researched = true
+
+  charge_receiver(receiver, "cyan-yellow-form", 1)
+  emitter.inventory.insert{name = "cyan-yellow-form", count = 1}
+
+  fax.on_tick({tick = 60})
+  fax.on_tick({tick = 120})
+  fax.on_tick({tick = 240})
+
+  assert_eq(receiver.output_inventory.get_item_count("cyan-yellow-form"), 1,
+    "a color document should print once its required inks are available")
+  assert_eq(get_fluid_amount(receiver, "cyan-ink"), 0, "the receiver should consume cyan ink for cyan-yellow paperwork")
+  assert_eq(get_fluid_amount(receiver, "yellow-ink"), 0, "the receiver should consume yellow ink for cyan-yellow paperwork")
+  assert_eq(get_fluid_amount(receiver, "liquid-black-ink"), 0, "the receiver should not require black ink for cyan-yellow paperwork")
+  assert_eq(get_fluid_amount(receiver, "magenta-ink"), 0, "the receiver should not require magenta ink for cyan-yellow paperwork")
+end)
+
+test("successful faxing ejects the original paperwork back at the emitter", function()
+  local ctx = new_context()
+  local receiver = new_fax_entity(ctx.surfaces.vulcanus, ctx.force, shared.RECEIVER_NAME, 0, 0, 20)
+  local emitter = new_fax_entity(ctx.surfaces.nauvis, ctx.force, shared.EMITTER_NAME, 0, 0, 1)
+  fax.on_entity_built(receiver, ctx.player)
+  fax.on_entity_built(emitter, ctx.player)
+  storage.fax_emitters[emitter.unit_number].destination_planet = "vulcanus"
+
+  emitter.inventory.insert{name = "work-order", count = 1}
+
+  fax.on_tick({tick = 60})
+  assert_eq(emitter.inventory.get_item_count("work-order"), 0,
+    "the emitter should hold the original document out of the slot while transmitting")
+
+  fax.on_tick({tick = 120})
+  assert_eq(#ctx.surfaces.nauvis.spilled_items, 1, "successful faxing should eject the original document")
+  assert_eq(ctx.surfaces.nauvis.spilled_items[1].stack.name, "work-order", "the emitted document should match the original")
+  assert_eq(emitter.inventory.get_item_count("work-order"), 0, "the original should not be put back into the emitter slot automatically")
 end)
 
 test("missing supplies and blocked output stall printing without losing the queued document", function()
@@ -675,21 +886,60 @@ test("missing supplies and blocked output stall printing without losing the queu
   assert_eq(#storage.fax_receivers[receiver.unit_number].queue, 1, "queue should remain unchanged when supplies are missing")
   assert_true(storage.fax_receivers[receiver.unit_number].active_print == nil, "no print job should start without paper and ink")
 
-  receiver.inventory.insert{name = "paper", count = 1}
-  receiver.inventory.insert{name = "ink", count = 1}
+  charge_receiver(receiver, 1)
   fax.on_tick({tick = 120})
   assert_true(storage.fax_receivers[receiver.unit_number].active_print ~= nil, "printing should begin once supplies are available")
 
-  receiver.inventory.force_block_insert = true
+  receiver.output_inventory.force_block_insert = true
   fax.on_tick({tick = 240})
   assert_true(storage.fax_receivers[receiver.unit_number].active_print ~= nil,
     "blocked output should keep the finished document in progress instead of deleting it")
-  assert_eq(receiver.inventory.get_item_count("work-order"), 0, "blocked output should not insert the document early")
+  assert_eq(receiver.output_inventory.get_item_count("work-order"), 0, "blocked output should not insert the document early")
 
-  receiver.inventory.force_block_insert = false
+  receiver.output_inventory.force_block_insert = false
   fax.on_tick({tick = 300})
   assert_true(storage.fax_receivers[receiver.unit_number].active_print == nil, "unblocked output should finish the print job")
-  assert_eq(receiver.inventory.get_item_count("work-order"), 1, "the stalled document should eventually print")
+  assert_eq(receiver.output_inventory.get_item_count("work-order"), 1, "the stalled document should eventually print")
+end)
+
+test("receiver signal toggles suppress request intake and exported outputs", function()
+  local ctx = new_context()
+  local receiver = new_fax_entity(ctx.surfaces.vulcanus, ctx.force, shared.RECEIVER_NAME, 0, 0, 20)
+  fax.on_entity_built(receiver, ctx.player)
+  receiver.external_signals = {
+    {signal = {type = "item", name = "work-order"}, count = 4},
+  }
+
+  fax.on_tick({tick = 60})
+  assert_eq(find_signal(storage.fax_receivers[receiver.unit_number].combinator.output_signals, shared.SIGNAL_FREE_SLOTS), 5,
+    "receivers should export free queue slots by default")
+  assert_eq(find_signal(storage.fax_receivers[receiver.unit_number].combinator.output_signals, "work-order"), 4,
+    "receivers should export the top request by default")
+
+  ctx.player.opened = receiver
+  fax.on_gui_opened(ctx.player, receiver)
+  local frame = ctx.player.gui.screen[shared.RECEIVER_GUI_FRAME_NAME]
+  local queue_button = find_gui_element(frame, shared.RECEIVER_GUI_QUEUE_BUTTON_NAME)
+  local request_button = find_gui_element(frame, shared.RECEIVER_GUI_TOP_REQUEST_BUTTON_NAME)
+  local accept_button = find_gui_element(frame, shared.RECEIVER_GUI_ACCEPT_BUTTON_NAME)
+
+  fax.on_gui_click({player_index = ctx.player.index, element = queue_button})
+  assert_true(find_signal(storage.fax_receivers[receiver.unit_number].combinator.output_signals, shared.SIGNAL_FREE_SLOTS) == nil,
+    "disabling queue reads should remove queue visibility signals")
+  assert_eq(find_signal(storage.fax_receivers[receiver.unit_number].combinator.output_signals, "work-order"), 4,
+    "disabling queue reads should leave top-request reads alone")
+
+  fax.on_gui_click({player_index = ctx.player.index, element = request_button})
+  assert_true(find_signal(storage.fax_receivers[receiver.unit_number].combinator.output_signals, "work-order") == nil,
+    "disabling top-request reads should remove the request signal output")
+
+  fax.on_gui_click({player_index = ctx.player.index, element = accept_button})
+  assert_true(storage.fax_receivers[receiver.unit_number].current_request_signal == nil,
+    "disabling circuit requests should clear the active request")
+  assert_true(storage.fax_receivers[receiver.unit_number].request_signals[1] == nil,
+    "disabling circuit requests should ignore imported request signals")
+  assert_true(gui_contains_caption(frame, "Circuit requests are disabled."),
+    "the receiver UI should show that circuit requests are disabled")
 end)
 
 test("removing the receiver spills queued documents and keeps in-flight source paperwork intact", function()

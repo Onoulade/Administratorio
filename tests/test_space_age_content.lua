@@ -108,6 +108,10 @@ if mod_root then
 else
   mod_root = "./"
 end
+package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
+
+package.loaded["scripts.fax_shared"] = nil
+local fax_shared = require("scripts.fax_shared")
 
 dofile(mod_root .. "prototypes/item/space_age.lua")
 dofile(mod_root .. "prototypes/item/capsules-and-fluids.lua")
@@ -163,6 +167,16 @@ local function has_fluid_ingredient(recipe, fluid_name)
     end
   end
   return false
+end
+
+local function get_fluid_ingredient_amount(recipe, fluid_name)
+  if not recipe or not recipe.ingredients then return nil end
+  for _, ingredient in ipairs(recipe.ingredients) do
+    if ingredient.type == "fluid" and ingredient.name == fluid_name then
+      return ingredient.amount
+    end
+  end
+  return nil
 end
 
 local PLANET_SURFACE_CONDITIONS = {
@@ -695,6 +709,45 @@ test("aquilo fax network unlocks the printer, exchange, and multicolor paperwork
     "cryogenic-operations-license-production",
   }) do
     assert_true(tech_unlocks_recipe(aquilo, recipe_name), "aquilo-fax-network should unlock " .. recipe_name)
+  end
+end)
+
+test("fax reconstruction recipes use exact inks and split unlocks between basic and color faxing", function()
+  local aquilo = assert(technologies["aquilo-fax-network"], "aquilo-fax-network missing")
+  local color_faxing = assert(technologies["color-faxing"], "color-faxing missing")
+
+  assert_eq(color_faxing.prerequisites[1], "aquilo-fax-network",
+    "color-faxing should follow the base fax network unlock")
+
+  for item_name in pairs(fax_shared.FAX_DOCUMENTS) do
+    local recipe_name = fax_shared.reconstruction_recipe_name(item_name)
+    local recipe = assert(recipes[recipe_name], recipe_name .. " missing")
+    local required_fluids = {}
+    local expected_tech = fax_shared.document_requires_color(item_name) and color_faxing or aquilo
+    local unexpected_tech = fax_shared.document_requires_color(item_name) and aquilo or color_faxing
+
+    assert_true(recipe.hidden == true, recipe_name .. " should stay hidden")
+    assert_true(recipe.enabled == false, recipe_name .. " should be tech-gated")
+    assert_true(has_ingredient(recipe, fax_shared.RECONSTRUCTION_PAPER_ITEM),
+      recipe_name .. " should require paper")
+
+    for _, fluid in ipairs(fax_shared.get_document_ink_requirements(item_name)) do
+      required_fluids[fluid.name] = true
+      assert_eq(get_fluid_ingredient_amount(recipe, fluid.name), fluid.amount,
+        recipe_name .. " should require the correct amount of " .. fluid.name)
+    end
+
+    for _, fluid in ipairs(fax_shared.RECONSTRUCTION_INK_FLUIDS) do
+      if not required_fluids[fluid.name] then
+        assert_true(not has_fluid_ingredient(recipe, fluid.name),
+          recipe_name .. " should not require unrelated ink " .. fluid.name)
+      end
+    end
+
+    assert_true(tech_unlocks_recipe(expected_tech, recipe_name),
+      expected_tech.name .. " should unlock " .. recipe_name)
+    assert_true(not tech_unlocks_recipe(unexpected_tech, recipe_name),
+      unexpected_tech.name .. " should not unlock " .. recipe_name)
   end
 end)
 
