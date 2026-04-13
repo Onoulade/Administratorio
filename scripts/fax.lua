@@ -16,7 +16,7 @@ local RECEIVER_REQUEST_LIMIT = 6
 local function get_quality_name(stack)
   if not stack then return nil end
   local quality = stack.quality
-  if type(quality) == "table" then
+  if quality and type(quality) ~= "string" and quality.name then
     return quality.name
   end
   return quality
@@ -340,7 +340,44 @@ end
 
 local function sanitize_output_signal(signal)
   if not signal then return nil end
+  if type(signal) == "string" then return signal end
   return signal.name
+end
+
+local function clone_signal(signal, fallback_type, fallback_name)
+  if type(signal) == "string" then
+    return {
+      type = fallback_type or "virtual",
+      name = signal,
+    }
+  end
+  if signal and signal.name then
+    return {
+      type = signal.type or fallback_type or "virtual",
+      name = signal.name,
+      quality = signal.quality,
+    }
+  end
+  if fallback_name then
+    return {
+      type = fallback_type or "virtual",
+      name = fallback_name,
+    }
+  end
+  return nil
+end
+
+local function get_receiver_output_signal(state, kind)
+  if kind == "queue" then
+    return clone_signal(state and state.queue_size_signal, "virtual", shared.SIGNAL_QUEUE_SIZE)
+  end
+  if kind == "free" then
+    return clone_signal(state and state.free_slots_signal, "virtual", shared.SIGNAL_FREE_SLOTS)
+  end
+  if kind == "reserved" then
+    return clone_signal(state and state.reserved_slots_signal, "virtual", shared.SIGNAL_RESERVED_SLOTS)
+  end
+  return nil
 end
 
 local function set_output_section(state, slots)
@@ -385,9 +422,9 @@ local function build_receiver_slots(state, reserved_counts)
   local free = math.max(0, capacity - queued - reserved)
 
   if state.read_queue_status ~= false then
-    append_output_slot(slots, {type = "virtual", name = shared.SIGNAL_QUEUE_SIZE}, queued)
-    append_output_slot(slots, {type = "virtual", name = shared.SIGNAL_FREE_SLOTS}, free)
-    append_output_slot(slots, {type = "virtual", name = shared.SIGNAL_RESERVED_SLOTS}, reserved)
+    append_output_slot(slots, get_receiver_output_signal(state, "queue"), queued)
+    append_output_slot(slots, get_receiver_output_signal(state, "free"), free)
+    append_output_slot(slots, get_receiver_output_signal(state, "reserved"), reserved)
   end
   if state.read_top_request ~= false then
     append_output_slot(slots, state.current_request_signal, state.current_request_count)
@@ -409,9 +446,9 @@ local function build_emitter_slots(state, reserved_counts)
   local free = math.max(0, capacity - queued - reserved)
 
   if receiver_state.read_queue_status ~= false then
-    append_output_slot(slots, {type = "virtual", name = shared.SIGNAL_QUEUE_SIZE}, queued)
-    append_output_slot(slots, {type = "virtual", name = shared.SIGNAL_FREE_SLOTS}, free)
-    append_output_slot(slots, {type = "virtual", name = shared.SIGNAL_RESERVED_SLOTS}, reserved)
+    append_output_slot(slots, get_receiver_output_signal(receiver_state, "queue"), queued)
+    append_output_slot(slots, get_receiver_output_signal(receiver_state, "free"), free)
+    append_output_slot(slots, get_receiver_output_signal(receiver_state, "reserved"), reserved)
   end
   if receiver_state.read_top_request ~= false then
     append_output_slot(slots, receiver_state.current_request_signal, receiver_state.current_request_count)
@@ -422,9 +459,13 @@ end
 
 local function format_document_label(item_name, quality_name)
   if not item_name then return "Unknown document" end
+  local normalized_quality = quality_name
+  if normalized_quality and type(normalized_quality) ~= "string" then
+    normalized_quality = normalized_quality.name or tostring(normalized_quality)
+  end
   local label = item_name:gsub("%-", " "):gsub("^%l", string.upper)
-  if quality_name and quality_name ~= "" then
-    return ("%s (%s)"):format(label, quality_name)
+  if normalized_quality and normalized_quality ~= "" and normalized_quality ~= "normal" then
+    return ("%s (%s)"):format(label, normalized_quality)
   end
   return label
 end
@@ -791,6 +832,14 @@ local function apply_receiver_feedback(state, tick)
   end
 end
 
+local function get_receiver_request_signals(state)
+  local entity = state and state.entity or nil
+  if not entity or not entity.valid or not entity.get_signals then
+    return {}
+  end
+  return entity.get_signals(RED_WIRE(), GREEN_WIRE()) or {}
+end
+
 local function refresh_receiver_request(state)
   if not state or not state.entity or not state.entity.valid or not state.entity.get_signals then
     return
@@ -803,7 +852,7 @@ local function refresh_receiver_request(state)
     return
   end
 
-  local signals = state.entity.get_signals(RED_WIRE(), GREEN_WIRE()) or {}
+  local signals = get_receiver_request_signals(state)
   state.request_signals = shared.collect_request_signals(signals, state.output_counts, RECEIVER_REQUEST_LIMIT)
   state.current_request_signal, state.current_request_count = shared.select_request_signal(signals, state.output_counts)
 end
@@ -836,6 +885,9 @@ local function register_receiver(entity)
   state.accept_circuit_requests = state.accept_circuit_requests ~= false
   state.read_queue_status = state.read_queue_status ~= false
   state.read_top_request = state.read_top_request ~= false
+  state.queue_size_signal = get_receiver_output_signal(state, "queue")
+  state.free_slots_signal = get_receiver_output_signal(state, "free")
+  state.reserved_slots_signal = get_receiver_output_signal(state, "reserved")
   ensure_combinator(entity, state)
   sync_receiver_recipe(state)
 
@@ -944,6 +996,9 @@ local function destroy_gui(player)
 
   local receiver_frame = get_receiver_gui_frame(player)
   if receiver_frame and receiver_frame.valid then
+    if player.opened == receiver_frame then
+      player.opened = nil
+    end
     receiver_frame.destroy()
   end
 
@@ -1007,20 +1062,261 @@ local function build_emitter_gui(player, state)
   }
 end
 
+local function set_element_size(element, width, height)
+  if not element or not element.style then return end
+  if width then
+    element.style.minimal_width = width
+    element.style.maximal_width = width
+  end
+  if height then
+    element.style.minimal_height = height
+    element.style.maximal_height = height
+  end
+end
+
+local function style_section_caption(label)
+  if label and label.style then
+    label.style.font = "default-semibold"
+  end
+end
+
 local function add_receiver_section(parent, caption, content_name)
   local section = parent.add{
     type = "frame",
     direction = "vertical",
   }
-  section.add{
+  if section.style then
+    section.style.horizontally_stretchable = true
+  end
+
+  local header = section.add{
+    type = "flow",
+    direction = "horizontal",
+  }
+  if header.style then
+    header.style.horizontally_stretchable = true
+  end
+  local title = header.add{
     type = "label",
     caption = caption,
   }
+  style_section_caption(title)
+  section.add{type = "line"}
   return section.add{
     type = "flow",
     direction = "vertical",
     name = content_name,
   }
+end
+
+local function add_receiver_scroll_section(parent, caption, content_name, height)
+  local section = parent.add{
+    type = "frame",
+    direction = "vertical",
+  }
+  if section.style then
+    section.style.horizontally_stretchable = true
+    section.style.vertically_stretchable = true
+  end
+
+  local header = section.add{
+    type = "flow",
+    direction = "horizontal",
+  }
+  if header.style then
+    header.style.horizontally_stretchable = true
+  end
+  local title = header.add{
+    type = "label",
+    caption = caption,
+  }
+  style_section_caption(title)
+  section.add{type = "line"}
+
+  local scroll = section.add{
+    type = "scroll-pane",
+    direction = "vertical",
+    name = content_name,
+  }
+  if scroll.style then
+    scroll.style.horizontally_stretchable = true
+    scroll.style.vertically_stretchable = true
+    if height then
+      scroll.style.maximal_height = height
+    end
+  end
+  return scroll
+end
+
+local function add_icon_text_row(parent, icon_text, main_text, detail_text)
+  local row = parent.add{
+    type = "flow",
+    direction = "horizontal",
+  }
+  if row.style then
+    row.style.horizontally_stretchable = true
+  end
+  local icon = row.add{
+    type = "label",
+    caption = icon_text,
+  }
+  set_element_size(icon, 28, nil)
+
+  local text_flow = row.add{
+    type = "flow",
+    direction = "vertical",
+  }
+  if text_flow.style then
+    text_flow.style.horizontally_stretchable = true
+  end
+  local main_label = text_flow.add{
+    type = "label",
+    caption = main_text,
+  }
+  if main_label.style then
+    main_label.style.single_line = false
+  end
+  if detail_text and detail_text ~= "" then
+    local detail_label = text_flow.add{
+      type = "label",
+      caption = detail_text,
+    }
+    if detail_label.style then
+      detail_label.style.single_line = false
+      detail_label.style.font_color = {r = 0.75, g = 0.75, b = 0.75}
+    end
+  end
+  return row
+end
+
+local function add_setting_checkbox(parent, name, caption, description)
+  local row = parent.add{
+    type = "flow",
+    direction = "vertical",
+  }
+  local checkbox = row.add{
+    type = "checkbox",
+    name = name,
+    state = true,
+    caption = caption,
+  }
+  if description and description ~= "" then
+    local label = row.add{
+      type = "label",
+      caption = description,
+    }
+    if label.style then
+      label.style.single_line = false
+      label.style.left_margin = 24
+      label.style.font_color = {r = 0.75, g = 0.75, b = 0.75}
+    end
+  end
+  return checkbox
+end
+
+local function add_signal_selector_row(parent, caption, name)
+  local row = parent.add{
+    type = "flow",
+    direction = "horizontal",
+  }
+  if row.style then
+    row.style.vertical_align = "center"
+    row.style.left_margin = 24
+  end
+  local label = row.add{
+    type = "label",
+    caption = caption,
+  }
+  set_element_size(label, 80, nil)
+  local selector = row.add{
+    type = "choose-elem-button",
+    elem_type = "signal",
+    name = name,
+  }
+  return selector
+end
+
+local function add_queue_header_row(parent)
+  local row = parent.add{
+    type = "flow",
+    direction = "horizontal",
+  }
+  local document = row.add{type = "label", caption = "Form"}
+  set_element_size(document, 200, nil)
+  local state = row.add{type = "label", caption = "State"}
+  set_element_size(state, 120, nil)
+  local source = row.add{type = "label", caption = "From"}
+  set_element_size(source, 80, nil)
+  row.add{type = "label", caption = "Inks"}
+  return row
+end
+
+local function add_receiver_queue_row(parent, entry, state_text)
+  local row = parent.add{
+    type = "frame",
+    direction = "vertical",
+  }
+  if row.style then
+    row.style.horizontally_stretchable = true
+  end
+  local body = row.add{
+    type = "flow",
+    direction = "horizontal",
+  }
+  if body.style then
+    body.style.horizontally_stretchable = true
+  end
+
+  local document = body.add{
+    type = "flow",
+    direction = "horizontal",
+  }
+  set_element_size(document, 200, nil)
+  document.add{
+    type = "label",
+    caption = ("[img=item.%s]"):format(entry.name),
+  }
+  local document_text = document.add{
+    type = "flow",
+    direction = "vertical",
+  }
+  document_text.add{
+    type = "label",
+    caption = format_document_label(entry.name, entry.quality_name),
+  }
+  local quality_name = entry.quality_name
+  if quality_name and type(quality_name) ~= "string" then
+    quality_name = quality_name.name or tostring(quality_name)
+  end
+  if quality_name and quality_name ~= "" and quality_name ~= "normal" then
+    local quality_label = document_text.add{
+      type = "label",
+      caption = ("Quality: %s"):format(quality_name),
+    }
+    if quality_label.style then
+      quality_label.style.font_color = {r = 0.75, g = 0.75, b = 0.75}
+    end
+  end
+
+  local state_label = body.add{
+    type = "label",
+    caption = state_text,
+  }
+  set_element_size(state_label, 120, nil)
+
+  local source_label = body.add{
+    type = "label",
+    caption = shared.format_planet_name(entry.source_planet),
+  }
+  set_element_size(source_label, 80, nil)
+
+  local inks_label = body.add{
+    type = "label",
+    caption = shared.format_required_inks(entry.name),
+  }
+  if inks_label.style then
+    inks_label.style.horizontally_stretchable = true
+  end
 end
 
 local function build_receiver_gui(player, state)
@@ -1034,56 +1330,119 @@ local function build_receiver_gui(player, state)
     name = shared.RECEIVER_GUI_FRAME_NAME,
     direction = "vertical",
   }
+  if frame.style then
+    frame.style.minimal_width = 900
+    frame.style.maximal_width = 900
+    frame.style.minimal_height = 700
+    frame.style.maximal_height = 700
+  end
 
   local title_bar = frame.add{
     type = "flow",
     direction = "horizontal",
   }
-  title_bar.add{
+  if title_bar.style then
+    title_bar.style.horizontally_stretchable = true
+  end
+  title_bar.drag_target = frame
+
+  local title = title_bar.add{
     type = "label",
     caption = "Interplanetary Fax Exchange",
-  }
-  title_bar.add{
-    type = "button",
-    name = shared.RECEIVER_GUI_CLOSE_NAME,
-    caption = "Close",
+    style = "frame_title",
   }
 
-  frame.add{
+  local drag_handle = title_bar.add{
+    type = "empty-widget",
+    style = "draggable_space_header",
+  }
+  if drag_handle.style then
+    drag_handle.style.horizontally_stretchable = true
+    drag_handle.style.height = 24
+  end
+  drag_handle.drag_target = frame
+
+  title_bar.add{
+    type = "sprite-button",
+    name = shared.RECEIVER_GUI_CLOSE_NAME,
+    style = "frame_action_button",
+    sprite = "utility/close",
+    hovered_sprite = "utility/close_black",
+    clicked_sprite = "utility/close_black",
+    tooltip = {"gui.close"},
+  }
+
+  local body = frame.add{
+    type = "flow",
+    direction = "vertical",
+  }
+  if body.style then
+    body.style.horizontally_stretchable = true
+    body.style.vertically_stretchable = true
+  end
+
+  local summary = body.add{
+    type = "frame",
+    direction = "vertical",
+  }
+  if summary.style then
+    summary.style.horizontally_stretchable = true
+  end
+  summary.add{
     type = "label",
     name = shared.RECEIVER_GUI_HEADER_NAME,
     caption = "",
   }
 
-  local content = frame.add{
+  local content = body.add{
     type = "flow",
     direction = "horizontal",
   }
+  if content.style then
+    content.style.horizontally_stretchable = true
+    content.style.vertically_stretchable = true
+  end
+
   local left_column = content.add{
-    type = "flow",
+    type = "scroll-pane",
     direction = "vertical",
   }
+  if left_column.style then
+    left_column.style.minimal_width = 340
+    left_column.style.maximal_width = 340
+    left_column.style.minimal_height = 580
+    left_column.style.maximal_height = 580
+  end
+
   local right_column = content.add{
     type = "flow",
     direction = "vertical",
   }
+  if right_column.style then
+    right_column.style.horizontally_stretchable = true
+    right_column.style.vertically_stretchable = true
+  end
 
   add_receiver_section(left_column, "Status", shared.RECEIVER_GUI_STATUS_BODY_NAME)
 
-  local settings = add_receiver_section(left_column, "Signal Settings", "administratorio-fax-receiver-settings")
-  local accept_row = settings.add{type = "flow", direction = "horizontal"}
-  accept_row.add{type = "label", caption = "Accept circuit requests"}
-  accept_row.add{type = "button", name = shared.RECEIVER_GUI_ACCEPT_BUTTON_NAME, caption = ""}
-  local queue_row = settings.add{type = "flow", direction = "horizontal"}
-  queue_row.add{type = "label", caption = "Read queue status"}
-  queue_row.add{type = "button", name = shared.RECEIVER_GUI_QUEUE_BUTTON_NAME, caption = ""}
-  local top_request_row = settings.add{type = "flow", direction = "horizontal"}
-  top_request_row.add{type = "label", caption = "Read top request"}
-  top_request_row.add{type = "button", name = shared.RECEIVER_GUI_TOP_REQUEST_BUTTON_NAME, caption = ""}
+  local settings = add_receiver_section(left_column, "Circuit Settings", "administratorio-fax-receiver-settings")
+  add_setting_checkbox(settings, shared.RECEIVER_GUI_ACCEPT_BUTTON_NAME, "Accept circuit requests",
+    "Reads incoming document item signals from the attached circuit network.")
+  settings.add{type = "line"}
+  add_setting_checkbox(settings, shared.RECEIVER_GUI_QUEUE_BUTTON_NAME, "Read queue metrics",
+    "Exports queued, free, and reserved slot counts on the selected signals.")
+  add_signal_selector_row(settings, "Queued", shared.RECEIVER_GUI_QUEUE_SIGNAL_NAME)
+  add_signal_selector_row(settings, "Free", shared.RECEIVER_GUI_FREE_SIGNAL_NAME)
+  add_signal_selector_row(settings, "Reserved", shared.RECEIVER_GUI_RESERVED_SIGNAL_NAME)
+  settings.add{type = "line"}
+  add_setting_checkbox(settings, shared.RECEIVER_GUI_TOP_REQUEST_BUTTON_NAME, "Read top request",
+    "Exports the currently leading request as the requested document signal itself.")
 
   add_receiver_section(left_column, "Supplies", shared.RECEIVER_GUI_SUPPLIES_CONTENT_NAME)
   add_receiver_section(right_column, "Requests", shared.RECEIVER_GUI_REQUESTS_CONTENT_NAME)
-  add_receiver_section(right_column, "Queue", shared.RECEIVER_GUI_QUEUE_CONTENT_NAME)
+  local queue_scroll = add_receiver_scroll_section(right_column, "Queue", shared.RECEIVER_GUI_QUEUE_CONTENT_NAME, 400)
+  add_queue_header_row(queue_scroll)
+  queue_scroll.add{type = "line"}
 
   if frame.force_auto_center then
     frame.force_auto_center()
@@ -1098,6 +1457,7 @@ local function build_receiver_gui(player, state)
   if player.opened == state.entity then
     player.opened = nil
   end
+  player.opened = frame
 end
 
 local function update_emitter_gui(player, state, tick, reserved_counts)
@@ -1111,10 +1471,24 @@ local function update_emitter_gui(player, state, tick, reserved_counts)
   status.caption = feedback and feedback.gui_label or ""
 end
 
-local function set_receiver_toggle_button(frame, name, enabled)
-  local button = find_gui_element(frame, name)
-  if button and button.valid then
-    button.caption = enabled and "Enabled" or "Disabled"
+local function set_receiver_toggle_checkbox(frame, name, enabled)
+  local checkbox = find_gui_element(frame, name)
+  if checkbox and checkbox.valid then
+    checkbox.state = enabled
+  end
+end
+
+local function set_receiver_signal_selector(frame, name, signal)
+  local selector = find_gui_element(frame, name)
+  if selector and selector.valid then
+    selector.elem_value = clone_signal(signal)
+  end
+end
+
+local function set_gui_element_enabled(frame, name, enabled)
+  local element = find_gui_element(frame, name)
+  if element and element.valid then
+    element.enabled = enabled
   end
 end
 
@@ -1134,15 +1508,28 @@ local function populate_receiver_status(frame, state, tick)
 
   local feedback = compute_receiver_feedback(state, tick)
   local current_entry = get_receiver_active_entry(state)
-  content.add{
+  local overview = content.add{
+    type = "flow",
+    direction = "vertical",
+  }
+  local status_label = overview.add{
     type = "label",
     caption = feedback and feedback.gui_label or "Receiver unavailable",
   }
-  content.add{
+  if status_label.style then
+    status_label.style.font = "default-semibold"
+  end
+  overview.add{
     type = "label",
     caption = current_entry
-      and ("Current form: %s"):format(format_document_label(current_entry.name, current_entry.quality_name))
-      or "Current form: none",
+      and ("Current job: %s"):format(format_document_label(current_entry.name, current_entry.quality_name))
+      or "Current job: none",
+  }
+  overview.add{
+    type = "label",
+    caption = ("Queue occupancy: %d/%d"):format(
+      get_receiver_total_load(state),
+      shared.get_queue_capacity(state.entity.force)),
   }
 end
 
@@ -1153,12 +1540,11 @@ local function populate_receiver_supplies(frame, state)
 
   local current_entry = get_receiver_active_entry(state)
   local snapshot = get_receiver_supply_snapshot(state, current_entry)
-  content.add{
-    type = "label",
-    caption = current_entry
-      and ("Required inks: %s"):format(shared.format_required_inks(current_entry.name))
-      or "Required inks: none",
-  }
+  add_icon_text_row(
+    content,
+    "[img=item.paper]",
+    current_entry and ("Active requirements: %s"):format(shared.format_required_inks(current_entry.name)) or "Active requirements: none",
+    current_entry and "Paper plus only the inks listed below are needed." or "No queued form is currently being evaluated.")
 
   local table_element = content.add{
     type = "table",
@@ -1194,40 +1580,47 @@ local function populate_receiver_requests(frame, state)
   clear_gui_children(content)
 
   if state.accept_circuit_requests == false then
-    content.add{
-      type = "label",
-      caption = "Circuit requests are disabled.",
-    }
+    add_icon_text_row(content, "[img=virtual-signal.signal-red]", "Circuit requests are disabled.", "")
     return
   end
 
   if state.current_request_signal then
-    content.add{
-      type = "label",
-      caption = ("Top request: %s x%d"):format(
+    local top_request = content.add{
+      type = "frame",
+      direction = "vertical",
+    }
+    add_icon_text_row(
+      top_request,
+      ("[img=item.%s]"):format(state.current_request_signal.name),
+      ("Top request: %s x%d"):format(
         format_document_label(state.current_request_signal.name, state.current_request_signal.quality),
         state.current_request_count or 0),
-    }
+      "Highest-count imported request on the receiver circuit network.")
   end
 
   if not state.request_signals or #state.request_signals == 0 then
-    content.add{
-      type = "label",
-      caption = "No outstanding circuit requests.",
-    }
+    add_icon_text_row(content, "[img=virtual-signal.signal-info]", "No outstanding circuit requests.", "")
     return
   end
 
-  local table_element = content.add{
-    type = "table",
-    column_count = 2,
-  }
-  add_gui_table_row(table_element, {"Count", "Form"})
   for _, entry in ipairs(state.request_signals) do
-    add_gui_table_row(table_element, {
-      tostring(entry.count or 0),
-      format_document_label(entry.signal.name, entry.signal.quality),
-    })
+    local raw_quality = entry.signal.quality
+    if raw_quality and type(raw_quality) ~= "string" then
+      raw_quality = raw_quality.name or tostring(raw_quality)
+    end
+    local quality_suffix = ""
+    if raw_quality and raw_quality ~= "normal" then
+      quality_suffix = (" | Quality: %s"):format(raw_quality)
+    end
+    local row = content.add{
+      type = "frame",
+      direction = "vertical",
+    }
+    add_icon_text_row(
+      row,
+      ("[img=item.%s]"):format(entry.signal.name),
+      ("%dx %s"):format(entry.count or 0, format_document_label(entry.signal.name, entry.signal.quality)),
+      "Imported from circuit network" .. quality_suffix)
   end
 end
 
@@ -1264,37 +1657,29 @@ local function populate_receiver_queue(frame, state, tick)
   if not content or not content.valid then return end
   clear_gui_children(content)
 
+  add_queue_header_row(content)
+  content.add{type = "line"}
+
   local has_entries = state.active_print ~= nil or (state.queue and #state.queue > 0)
   if not has_entries then
-    content.add{
-      type = "label",
-      caption = "Queue empty.",
-    }
+    add_icon_text_row(content, "[img=virtual-signal.signal-info]", "Queue empty.", "Incoming faxes will appear here once reserved.")
     return
   end
 
-  local table_element = content.add{
-    type = "table",
-    column_count = 4,
-  }
-  add_gui_table_row(table_element, {"Form", "State", "Provenance", "Required inks"})
-
   if state.active_print then
-    add_gui_table_row(table_element, {
-      format_document_label(state.active_print.name, state.active_print.quality_name),
-      describe_receiver_queue_row(state, state.active_print, true, tick),
-      shared.format_planet_name(state.active_print.source_planet),
-      shared.format_required_inks(state.active_print.name),
-    })
+    add_receiver_queue_row(
+      content,
+      state.active_print,
+      describe_receiver_queue_row(state, state.active_print, true, tick))
+    content.add{type = "line"}
   end
 
   for _, entry in ipairs(state.queue or {}) do
-    add_gui_table_row(table_element, {
-      format_document_label(entry.name, entry.quality_name),
-      describe_receiver_queue_row(state, entry, false, tick),
-      shared.format_planet_name(entry.source_planet),
-      shared.format_required_inks(entry.name),
-    })
+    add_receiver_queue_row(
+      content,
+      entry,
+      describe_receiver_queue_row(state, entry, false, tick))
+    content.add{type = "line"}
   end
 end
 
@@ -1309,14 +1694,20 @@ local function update_receiver_gui(player, state, tick)
     or (state.accept_circuit_requests == false and "Requests disabled" or "No current request")
 
   set_gui_label(frame, shared.RECEIVER_GUI_HEADER_NAME,
-    ("Planet: %s | Queue: %d/%d | Top request: %s"):format(
+    ("%s | Queue %d/%d | Top request: %s"):format(
       shared.format_planet_name(state.planet_name),
       load,
       capacity,
       top_request))
-  set_receiver_toggle_button(frame, shared.RECEIVER_GUI_ACCEPT_BUTTON_NAME, state.accept_circuit_requests ~= false)
-  set_receiver_toggle_button(frame, shared.RECEIVER_GUI_QUEUE_BUTTON_NAME, state.read_queue_status ~= false)
-  set_receiver_toggle_button(frame, shared.RECEIVER_GUI_TOP_REQUEST_BUTTON_NAME, state.read_top_request ~= false)
+  set_receiver_toggle_checkbox(frame, shared.RECEIVER_GUI_ACCEPT_BUTTON_NAME, state.accept_circuit_requests ~= false)
+  set_receiver_toggle_checkbox(frame, shared.RECEIVER_GUI_QUEUE_BUTTON_NAME, state.read_queue_status ~= false)
+  set_receiver_toggle_checkbox(frame, shared.RECEIVER_GUI_TOP_REQUEST_BUTTON_NAME, state.read_top_request ~= false)
+  set_receiver_signal_selector(frame, shared.RECEIVER_GUI_QUEUE_SIGNAL_NAME, state.queue_size_signal)
+  set_receiver_signal_selector(frame, shared.RECEIVER_GUI_FREE_SIGNAL_NAME, state.free_slots_signal)
+  set_receiver_signal_selector(frame, shared.RECEIVER_GUI_RESERVED_SIGNAL_NAME, state.reserved_slots_signal)
+  set_gui_element_enabled(frame, shared.RECEIVER_GUI_QUEUE_SIGNAL_NAME, state.read_queue_status ~= false)
+  set_gui_element_enabled(frame, shared.RECEIVER_GUI_FREE_SIGNAL_NAME, state.read_queue_status ~= false)
+  set_gui_element_enabled(frame, shared.RECEIVER_GUI_RESERVED_SIGNAL_NAME, state.read_queue_status ~= false)
   populate_receiver_status(frame, state, tick)
   populate_receiver_supplies(frame, state)
   populate_receiver_requests(frame, state)
@@ -1650,6 +2041,17 @@ end
 function M.on_gui_opened(player, entity)
   ensure_storage()
   if not player or not player.valid then return end
+
+  -- Setting player.opened = frame in build_receiver_gui fires on_gui_opened
+  -- again with entity=nil.  Ignore that re-entrant call so we don't
+  -- immediately destroy the frame we just created.
+  if not entity then
+    local gui_state = storage.fax_gui_players[player.index]
+    if gui_state and gui_state.kind == "receiver" then
+      return
+    end
+  end
+
   if is_emitter_open(player, entity) then
     local state = storage.fax_emitters[entity.unit_number]
     if not state then
@@ -1701,37 +2103,6 @@ function M.on_gui_click(event)
     return true
   end
 
-  local gui_state = storage.fax_gui_players[player.index]
-  if not gui_state or gui_state.kind ~= "receiver" then
-    return false
-  end
-
-  local receiver_state = storage.fax_receivers[gui_state.unit_number]
-  if not receiver_state or not receiver_state.entity or not receiver_state.entity.valid then
-    destroy_gui(player)
-    return true
-  end
-
-  local did_toggle = false
-  if element_name == shared.RECEIVER_GUI_ACCEPT_BUTTON_NAME then
-    receiver_state.accept_circuit_requests = not receiver_state.accept_circuit_requests
-    did_toggle = true
-  elseif element_name == shared.RECEIVER_GUI_QUEUE_BUTTON_NAME then
-    receiver_state.read_queue_status = not receiver_state.read_queue_status
-    did_toggle = true
-  elseif element_name == shared.RECEIVER_GUI_TOP_REQUEST_BUTTON_NAME then
-    receiver_state.read_top_request = not receiver_state.read_top_request
-    did_toggle = true
-  end
-
-  if did_toggle then
-    if element_name == shared.RECEIVER_GUI_ACCEPT_BUTTON_NAME then
-      refresh_receiver_request(receiver_state)
-    end
-    refresh_visual_state(game and game.tick or 0)
-    return true
-  end
-
   return false
 end
 
@@ -1740,22 +2111,86 @@ function M.on_gui_selection_state_changed(event)
   local player = game.get_player(event.player_index)
   if not player or not player.valid then return end
   local element = event.element
-  if not element or not element.valid or element.name ~= shared.GUI_DROPDOWN_NAME then return end
+  if not element or not element.valid then return end
 
   local gui_state = storage.fax_gui_players[player.index]
-  if not gui_state or gui_state.kind ~= "emitter" then return end
+  if element.name == shared.GUI_DROPDOWN_NAME then
+    if not gui_state or gui_state.kind ~= "emitter" then return end
 
-  local emitter_state = storage.fax_emitters[gui_state.unit_number]
-  if not emitter_state or not emitter_state.entity or not emitter_state.entity.valid then
+    local emitter_state = storage.fax_emitters[gui_state.unit_number]
+    if not emitter_state or not emitter_state.entity or not emitter_state.entity.valid then
+      destroy_gui(player)
+      return
+    end
+
+    local destination_planet = gui_state.planet_names[element.selected_index]
+    if destination_planet then
+      emitter_state.destination_planet = destination_planet
+      update_emitter_gui(player, emitter_state, game and game.tick or 0, build_reserved_counts())
+    end
+    return
+  end
+end
+
+function M.on_gui_checked_state_changed(event)
+  ensure_storage()
+  if not event or not event.element or not event.element.valid then return end
+
+  local player = game and game.get_player and game.get_player(event.player_index) or nil
+  if not player or not player.valid then return end
+
+  local gui_state = storage.fax_gui_players[player.index]
+  if not gui_state or gui_state.kind ~= "receiver" then return end
+
+  local receiver_state = storage.fax_receivers[gui_state.unit_number]
+  if not receiver_state or not receiver_state.entity or not receiver_state.entity.valid then
     destroy_gui(player)
     return
   end
 
-  local destination_planet = gui_state.planet_names[element.selected_index]
-  if destination_planet then
-    emitter_state.destination_planet = destination_planet
-    update_emitter_gui(player, emitter_state, game and game.tick or 0, build_reserved_counts())
+  local enabled = event.element.state ~= false
+  if event.element.name == shared.RECEIVER_GUI_ACCEPT_BUTTON_NAME then
+    receiver_state.accept_circuit_requests = enabled
+    refresh_receiver_request(receiver_state)
+  elseif event.element.name == shared.RECEIVER_GUI_QUEUE_BUTTON_NAME then
+    receiver_state.read_queue_status = enabled
+  elseif event.element.name == shared.RECEIVER_GUI_TOP_REQUEST_BUTTON_NAME then
+    receiver_state.read_top_request = enabled
+  else
+    return
   end
+
+  refresh_visual_state(game and game.tick or 0)
+end
+
+function M.on_gui_elem_changed(event)
+  ensure_storage()
+  if not event or not event.element or not event.element.valid then return end
+
+  local player = game and game.get_player and game.get_player(event.player_index) or nil
+  if not player or not player.valid then return end
+
+  local gui_state = storage.fax_gui_players[player.index]
+  if not gui_state or gui_state.kind ~= "receiver" then return end
+
+  local receiver_state = storage.fax_receivers[gui_state.unit_number]
+  if not receiver_state or not receiver_state.entity or not receiver_state.entity.valid then
+    destroy_gui(player)
+    return
+  end
+
+  local element = event.element
+  if element.name == shared.RECEIVER_GUI_QUEUE_SIGNAL_NAME then
+    receiver_state.queue_size_signal = clone_signal(element.elem_value, "virtual", shared.SIGNAL_QUEUE_SIZE)
+  elseif element.name == shared.RECEIVER_GUI_FREE_SIGNAL_NAME then
+    receiver_state.free_slots_signal = clone_signal(element.elem_value, "virtual", shared.SIGNAL_FREE_SLOTS)
+  elseif element.name == shared.RECEIVER_GUI_RESERVED_SIGNAL_NAME then
+    receiver_state.reserved_slots_signal = clone_signal(element.elem_value, "virtual", shared.SIGNAL_RESERVED_SLOTS)
+  else
+    return
+  end
+
+  refresh_visual_state(game and game.tick or 0)
 end
 
 return M

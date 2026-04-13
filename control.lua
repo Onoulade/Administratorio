@@ -2050,6 +2050,14 @@ local function on_gui_selection_state_changed(event)
   fax.on_gui_selection_state_changed(event)
 end
 
+local function on_gui_checked_state_changed(event)
+  fax.on_gui_checked_state_changed(event)
+end
+
+local function on_gui_elem_changed(event)
+  fax.on_gui_elem_changed(event)
+end
+
 
 -- ============================================================
 -- MAIN LOOP (Runs every 1 second)
@@ -2149,6 +2157,8 @@ control_event_router.register({
   on_entity_removed = on_entity_removed,
   on_field_agent_waypoint_input = on_field_agent_waypoint_input,
   on_gui_click = on_gui_click,
+  on_gui_checked_state_changed = on_gui_checked_state_changed,
+  on_gui_elem_changed = on_gui_elem_changed,
   on_gui_closed = on_gui_closed,
   on_gui_opened = on_gui_opened,
   on_gui_selection_state_changed = on_gui_selection_state_changed,
