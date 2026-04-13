@@ -8,6 +8,7 @@
 -- bureaucracy-registration    | Office Desk (all desk work: filing, permits, work-orders, modules)
 -- bureaucratic-bootstrap     | Player character + Office Desk (starter paperwork bridge)
 -- bureaucracy-resolution      | Resolution Office (all complaint processing: filing, case, brief, final)
+-- resolution-handcraft        | Player character + Resolution Office (landscape complaint only)
 -- bureaucracy-policy          | Union Headquarters (policies, regulations, audits, written approvals)
 -- admin-greenhouse            | Greenhouse (wood, coffee)
 -- watercooler-gossip          | Corporate Breakroom (gossip, coffee, promises, transit-auth)
@@ -27,6 +28,7 @@ local categories = {
   {type = "recipe-category", name = "bureaucracy-registration"},
   {type = "recipe-category", name = "bureaucratic-bootstrap"},
   {type = "recipe-category", name = "bureaucracy-resolution"},
+  {type = "recipe-category", name = "resolution-handcraft"},
   {type = "recipe-category", name = "bureaucracy-policy"},
   {type = "recipe-category", name = "admin-greenhouse"},
   {type = "recipe-category", name = "watercooler-gossip"},
@@ -52,6 +54,7 @@ if character then
 
   local required_categories = {
     ["bureaucratic-bootstrap"] = true,
+    ["resolution-handcraft"] = true,
   }
 
   for _, category in ipairs(character.crafting_categories) do
