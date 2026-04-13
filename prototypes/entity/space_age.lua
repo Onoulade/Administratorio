@@ -338,7 +338,7 @@ local fax_emitter = {
   placeable_by = placeable_by_item("fax-emitter"),
   collision_box = {{-0.7, -0.7}, {0.7, 0.7}},
   selection_box = {{-1, -1}, {1, 1}},
-  inventory_size = 12,
+  inventory_size = 1,
   circuit_wire_max_distance = 9,
   circuit_connector = circuit_connector_definitions.create_vector(
     universal_connector_template,
@@ -352,30 +352,72 @@ local fax_emitter = {
   picture = fax_picture(entity_graphics .. "printer-t1/mini-assembler.png", 227, 255, 0.28, {0, -0.1}),
 }
 
-local interplanetary_fax_exchange = {
-  type = "container",
-  name = "interplanetary-fax-exchange",
-  icon = "__administratorio__/graphics/icons/office-building.png",
-  icon_size = 64,
-  flags = {"placeable-neutral", "player-creation"},
-  minable = {mining_time = 0.2, result = "interplanetary-fax-exchange"},
-  max_health = 450,
-  corpse = "big-remnants",
-  placeable_by = placeable_by_item("interplanetary-fax-exchange"),
-  collision_box = {{-1.2, -1.2}, {1.2, 1.2}},
-  selection_box = {{-1.5, -1.5}, {1.5, 1.5}},
-  inventory_size = 20,
-  circuit_wire_max_distance = 9,
-  circuit_connector = circuit_connector_definitions.create_vector(
-    universal_connector_template,
-    {
-      {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
-      {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
-      {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
-      {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+local interplanetary_fax_exchange = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
+interplanetary_fax_exchange.name = "interplanetary-fax-exchange"
+interplanetary_fax_exchange.icon = "__administratorio__/graphics/icons/office-building.png"
+interplanetary_fax_exchange.icon_size = 64
+interplanetary_fax_exchange.flags = {"placeable-neutral", "player-creation"}
+interplanetary_fax_exchange.minable = {mining_time = 0.2, result = "interplanetary-fax-exchange"}
+interplanetary_fax_exchange.max_health = 450
+interplanetary_fax_exchange.corpse = "big-remnants"
+interplanetary_fax_exchange.placeable_by = placeable_by_item("interplanetary-fax-exchange")
+interplanetary_fax_exchange.next_upgrade = nil
+interplanetary_fax_exchange.crafting_categories = {"fax-reconstruction"}
+interplanetary_fax_exchange.crafting_speed = 1
+interplanetary_fax_exchange.energy_usage = "450kW"
+interplanetary_fax_exchange.energy_source = {type = "electric", usage_priority = "secondary-input"}
+interplanetary_fax_exchange.ingredient_count = 5
+interplanetary_fax_exchange.module_slots = 0
+interplanetary_fax_exchange.allowed_effects = {}
+interplanetary_fax_exchange.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
+interplanetary_fax_exchange.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+interplanetary_fax_exchange.circuit_wire_max_distance = 9
+interplanetary_fax_exchange.circuit_connector = circuit_connector_definitions.create_vector(
+  universal_connector_template,
+  {
+    {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+    {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+    {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+    {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+  }
+)
+interplanetary_fax_exchange.fluid_boxes_off_when_no_fluid_recipe = false
+interplanetary_fax_exchange.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -1}}},
+    volume = 1000,
+  },
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.east, position = {1, 0}}},
+    volume = 1000,
+  },
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {0, 1}}},
+    volume = 1000,
+  },
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.west, position = {-1, 0}}},
+    volume = 1000,
+  },
+}
+interplanetary_fax_exchange.graphics_set = {
+  animation = {
+    layers = {
+      {filename = entity_graphics .. "printer-t2/steel-forge.png", width = 256, height = 301, frame_count = 1, scale = 0.38, shift = {0, -0.15}},
     }
-  ),
-  picture = fax_picture(entity_graphics .. "printer-t2/steel-forge.png", 256, 301, 0.38, {0, -0.15}),
+  }
+}
+interplanetary_fax_exchange.working_sound = {
+  sound = {filename = sound_path .. "industrial-printer-loop.ogg", volume = 0.55},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
 local fax_network_combinator = {
@@ -404,10 +446,10 @@ local fax_network_combinator = {
   },
   activity_led_light_offsets = {{0, 0}, {0, 0}, {0, 0}, {0, 0}},
   circuit_wire_connection_points = {
-    { wire = {red = util.by_pixel(104, 33), green = util.by_pixel(106, 40)}, shadow = {red = util.by_pixel(120, 46), green = util.by_pixel(114, 46)} },
-    { wire = {red = util.by_pixel(104, 33), green = util.by_pixel(106, 40)}, shadow = {red = util.by_pixel(120, 46), green = util.by_pixel(114, 46)} },
-    { wire = {red = util.by_pixel(104, 33), green = util.by_pixel(106, 40)}, shadow = {red = util.by_pixel(120, 46), green = util.by_pixel(114, 46)} },
-    { wire = {red = util.by_pixel(104, 33), green = util.by_pixel(106, 40)}, shadow = {red = util.by_pixel(120, 46), green = util.by_pixel(114, 46)} },
+    { wire = {red = util.by_pixel(0, 0), green = util.by_pixel(0, 0)}, shadow = {red = util.by_pixel(0, 0), green = util.by_pixel(0, 0)} },
+    { wire = {red = util.by_pixel(0, 0), green = util.by_pixel(0, 0)}, shadow = {red = util.by_pixel(0, 0), green = util.by_pixel(0, 0)} },
+    { wire = {red = util.by_pixel(0, 0), green = util.by_pixel(0, 0)}, shadow = {red = util.by_pixel(0, 0), green = util.by_pixel(0, 0)} },
+    { wire = {red = util.by_pixel(0, 0), green = util.by_pixel(0, 0)}, shadow = {red = util.by_pixel(0, 0), green = util.by_pixel(0, 0)} },
   },
   circuit_wire_max_distance = 9
 }

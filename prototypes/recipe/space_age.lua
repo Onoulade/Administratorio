@@ -1,4 +1,5 @@
 local planets = require("prototypes.shared.space_age_planets")
+local fax_shared = require("scripts.fax_shared")
 
 local function add_item_ingredient(recipe, ingredient_name, amount)
   if not recipe then return end
@@ -63,6 +64,41 @@ local function not_on_planet(recipe, planet_name)
     }
   end
   return recipe
+end
+
+local function make_fax_reconstruction_recipes()
+  local recipes = {}
+
+  for item_name in pairs(fax_shared.FAX_DOCUMENTS) do
+    local ingredients = {
+      {type = "item", name = fax_shared.RECONSTRUCTION_PAPER_ITEM, amount = 1},
+    }
+
+    for _, fluid in ipairs(fax_shared.get_document_ink_requirements(item_name)) do
+      ingredients[#ingredients + 1] = {
+        type = "fluid",
+        name = fluid.name,
+        amount = fluid.amount,
+      }
+    end
+
+    recipes[#recipes + 1] = {
+      type = "recipe",
+      name = fax_shared.reconstruction_recipe_name(item_name),
+      category = "fax-reconstruction",
+      enabled = false,
+      hidden = true,
+      allow_as_intermediate = false,
+      allow_decomposition = false,
+      ingredients = ingredients,
+      results = {
+        {type = "item", name = item_name, amount = 1},
+      },
+      energy_required = 2,
+    }
+  end
+
+  return recipes
 end
 
 local function not_in_space(recipe)
@@ -1985,3 +2021,4 @@ for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
 end
 
 data:extend(tourism_recipes)
+data:extend(make_fax_reconstruction_recipes())
