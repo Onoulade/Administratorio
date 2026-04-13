@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.15
+Date: 2026-04-13
+  Features:
+    - Added menu simulation using a custom save file as the title screen background.
+  Changes:
+    - Reduced taxpayer-money stack size from 500 to 200.
+    - Landscape resolution recipes now use a dedicated handcraft category so they remain player-craftable but can no longer be crafted in the office desk.
+    - Changed greenhouse fluid connections to input-output.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.2.14
 Date: 2026-04-11
   Bugfixes:
