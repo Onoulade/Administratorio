@@ -20,6 +20,9 @@ M.RECEIVER_GUI_SUPPLIES_CONTENT_NAME = "administratorio-fax-receiver-supplies-co
 M.RECEIVER_GUI_ACCEPT_BUTTON_NAME = "administratorio-fax-receiver-accept-requests"
 M.RECEIVER_GUI_QUEUE_BUTTON_NAME = "administratorio-fax-receiver-read-queue"
 M.RECEIVER_GUI_TOP_REQUEST_BUTTON_NAME = "administratorio-fax-receiver-read-top-request"
+M.RECEIVER_GUI_QUEUE_SIGNAL_NAME = "administratorio-fax-receiver-queue-signal"
+M.RECEIVER_GUI_FREE_SIGNAL_NAME = "administratorio-fax-receiver-free-signal"
+M.RECEIVER_GUI_RESERVED_SIGNAL_NAME = "administratorio-fax-receiver-reserved-signal"
 
 M.TRANSMIT_TICKS = 60
 M.PRINT_TICKS = 120

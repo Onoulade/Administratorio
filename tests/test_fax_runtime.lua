@@ -235,11 +235,18 @@ local function new_gui_element(parent, params)
     parent = parent,
     name = params.name,
     type = params.type,
+    style = {},
     items = params.items,
     selected_index = params.selected_index,
+    state = params.state,
+    enabled = params.enabled ~= false,
     caption = params.caption,
     direction = params.direction,
     column_count = params.column_count,
+    elem_type = params.elem_type,
+    elem_value = params.elem_value,
+    sprite = params.sprite,
+    tooltip = params.tooltip,
     children = {},
     children_by_name = {},
   }
@@ -646,6 +653,19 @@ local function gui_contains_caption(root, caption)
   return false
 end
 
+local function gui_contains_text(root, needle)
+  if not root or not root.valid or not needle then return false end
+  if type(root.caption) == "string" and root.caption:find(needle, 1, true) then
+    return true
+  end
+  for _, child in ipairs(root.children or {}) do
+    if gui_contains_text(child, needle) then
+      return true
+    end
+  end
+  return false
+end
+
 test("second receiver on the same planet is rejected", function()
   local ctx = new_context()
   local receiver_a = new_fax_entity(ctx.surfaces.nauvis, ctx.force, shared.RECEIVER_NAME, 0, 0, 20)
@@ -698,10 +718,11 @@ test("receiver opens a custom screen UI and replaces the vanilla entity window",
   local frame = ctx.player.gui.screen[shared.RECEIVER_GUI_FRAME_NAME]
   assert_true(frame ~= nil and frame.valid, "receiver should open a dedicated screen GUI")
   assert_true(ctx.player.gui.left[shared.GUI_FRAME_NAME] == nil, "receiver should not reuse the emitter side panel")
-  assert_true(ctx.player.opened == nil, "opening the receiver should close the vanilla assembler window")
-  assert_true(gui_contains_caption(frame, "Form"), "receiver queue should expose table-style columns")
-  assert_true(gui_contains_caption(frame, "Provenance"), "receiver queue should show document provenance")
-  assert_true(gui_contains_caption(frame, "Required inks"), "receiver queue should show required inks")
+  assert_true(ctx.player.opened == frame, "opening the receiver should replace the vanilla window with the custom screen GUI")
+  assert_true(gui_contains_caption(frame, "Queue"), "receiver queue should expose a dedicated queue section")
+  assert_true(gui_contains_caption(frame, "Required inks"), "receiver queue should include a column for ink requirements")
+  assert_true(gui_contains_text(frame, "Queued"),
+    "receiver queue rows should include explicit state text")
 
   fax.on_gui_closed(ctx.player)
   assert_true(frame.valid, "the receiver GUI should survive the synthetic close triggered by replacing the vanilla window")
@@ -923,23 +944,53 @@ test("receiver signal toggles suppress request intake and exported outputs", fun
   local request_button = find_gui_element(frame, shared.RECEIVER_GUI_TOP_REQUEST_BUTTON_NAME)
   local accept_button = find_gui_element(frame, shared.RECEIVER_GUI_ACCEPT_BUTTON_NAME)
 
-  fax.on_gui_click({player_index = ctx.player.index, element = queue_button})
+  queue_button.state = false
+  fax.on_gui_checked_state_changed({player_index = ctx.player.index, element = queue_button})
   assert_true(find_signal(storage.fax_receivers[receiver.unit_number].combinator.output_signals, shared.SIGNAL_FREE_SLOTS) == nil,
     "disabling queue reads should remove queue visibility signals")
   assert_eq(find_signal(storage.fax_receivers[receiver.unit_number].combinator.output_signals, "work-order"), 4,
     "disabling queue reads should leave top-request reads alone")
 
-  fax.on_gui_click({player_index = ctx.player.index, element = request_button})
+  request_button.state = false
+  fax.on_gui_checked_state_changed({player_index = ctx.player.index, element = request_button})
   assert_true(find_signal(storage.fax_receivers[receiver.unit_number].combinator.output_signals, "work-order") == nil,
     "disabling top-request reads should remove the request signal output")
 
-  fax.on_gui_click({player_index = ctx.player.index, element = accept_button})
+  accept_button.state = false
+  fax.on_gui_checked_state_changed({player_index = ctx.player.index, element = accept_button})
   assert_true(storage.fax_receivers[receiver.unit_number].current_request_signal == nil,
     "disabling circuit requests should clear the active request")
   assert_true(storage.fax_receivers[receiver.unit_number].request_signals[1] == nil,
     "disabling circuit requests should ignore imported request signals")
   assert_true(gui_contains_caption(frame, "Circuit requests are disabled."),
     "the receiver UI should show that circuit requests are disabled")
+end)
+
+test("receiver queue output signals can be remapped from the custom UI", function()
+  local ctx = new_context()
+  local receiver = new_fax_entity(ctx.surfaces.vulcanus, ctx.force, shared.RECEIVER_NAME, 0, 0, 20)
+  fax.on_entity_built(receiver, ctx.player)
+
+  fax.on_tick({tick = 60})
+  assert_eq(find_signal(storage.fax_receivers[receiver.unit_number].combinator.output_signals, shared.SIGNAL_FREE_SLOTS), 5,
+    "receivers should default to the built-in free-slots signal")
+
+  ctx.player.opened = receiver
+  fax.on_gui_opened(ctx.player, receiver)
+  local frame = ctx.player.gui.screen[shared.RECEIVER_GUI_FRAME_NAME]
+  local selector = find_gui_element(frame, shared.RECEIVER_GUI_FREE_SIGNAL_NAME)
+  assert_true(selector ~= nil and selector.valid, "the free-slots signal selector should exist")
+
+  selector.elem_value = {type = "virtual", name = "signal-A"}
+  fax.on_gui_elem_changed({
+    player_index = ctx.player.index,
+    element = selector,
+  })
+
+  assert_true(find_signal(storage.fax_receivers[receiver.unit_number].combinator.output_signals, shared.SIGNAL_FREE_SLOTS) == nil,
+    "changing the selector should stop exporting the old free-slots signal")
+  assert_eq(find_signal(storage.fax_receivers[receiver.unit_number].combinator.output_signals, "signal-A"), 5,
+    "changing the selector should export queue free-space on the chosen virtual signal")
 end)
 
 test("removing the receiver spills queued documents and keeps in-flight source paperwork intact", function()
