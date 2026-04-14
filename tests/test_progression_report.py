@@ -21,6 +21,8 @@ Strict mode:
     the building itself or from a later provider in that building's branch.
   - `--strict` fails when a child technology drops a science pack already
     required by one of its prerequisite technologies.
+  - `--strict` fails when a technology uses a science pack in its research
+    ingredients but does not transitively depend on that pack's technology.
 """
 
 from __future__ import annotations
@@ -1106,12 +1108,44 @@ class ProgressionAnalyzer:
                     )
         return gaps
 
+    def pack_prereq_gaps(self) -> List[Dict]:
+        """Find techs that use a science pack without that pack's tech in their
+        transitive prerequisite closure.  For example, if a tech requires
+        logistic-science-pack in its unit ingredients but never depends on the
+        logistic-science-pack technology (directly or transitively), the player
+        sees no tech-tree arrow enforcing that ordering."""
+        # Only check packs that are also researchable technologies.
+        pack_techs = {
+            name for name in self.technologies if name.endswith("-science-pack")
+        }
+        # automation-science-pack is available from the start — no gating needed.
+        pack_techs.discard("automation-science-pack")
+
+        gaps = []
+        for tech_name in sorted(self.technologies):
+            if not self.tech_visible(tech_name):
+                continue
+            used_packs = self.tech_science_packs(tech_name)
+            if not used_packs:
+                continue
+            closure = set(self.prereq_closure(tech_name))
+            for pack_name in sorted(used_packs & pack_techs):
+                if pack_name not in closure and pack_name != tech_name:
+                    gaps.append(
+                        {
+                            "technology": tech_name,
+                            "pack": pack_name,
+                        }
+                    )
+        return gaps
+
 
 def render_report(
     analyzer: ProgressionAnalyzer,
     missing_building_recipes: Sequence[str],
     direct_target_failures: Sequence[Dict],
     parent_pack_gaps: Sequence[Dict],
+    pack_prereq_gaps: Sequence[Dict],
     enabled_recipe_gating_failures: Sequence[Dict],
     permanent_recipe_machine_cycle_failures: Sequence[Dict],
     start_accessible_recipe_machine_failures: Sequence[Dict],
@@ -1171,6 +1205,17 @@ def render_report(
     for gap in parent_pack_gaps:
         lines.append(
             f"  - {gap['technology']} <- {gap['prerequisite']}: {', '.join(gap['missing_packs'])}"
+        )
+
+    lines.extend(
+        [
+            "",
+            f"Technologies using a science pack without that pack tech in prerequisites: {len(pack_prereq_gaps)}",
+        ]
+    )
+    for gap in pack_prereq_gaps:
+        lines.append(
+            f"  - {gap['technology']} uses {gap['pack']} but does not transitively depend on it"
         )
 
     lines.extend(
@@ -1320,6 +1365,7 @@ def main() -> int:
         missing_building_recipes = analyzer.buildings_without_recipes()
         direct_target_failures = analyzer.direct_target_findings()
         parent_pack_gaps = analyzer.parent_pack_gaps()
+        pack_prereq_gaps = analyzer.pack_prereq_gaps()
         enabled_recipe_gating_failures = analyzer.enabled_recipe_gating_findings()
         permanent_recipe_machine_cycle_failures = (
             analyzer.permanent_recipe_machine_cycle_findings()
@@ -1341,6 +1387,7 @@ def main() -> int:
             missing_building_recipes=missing_building_recipes,
             direct_target_failures=direct_target_failures,
             parent_pack_gaps=parent_pack_gaps,
+            pack_prereq_gaps=pack_prereq_gaps,
             enabled_recipe_gating_failures=enabled_recipe_gating_failures,
             permanent_recipe_machine_cycle_failures=permanent_recipe_machine_cycle_failures,
             start_accessible_recipe_machine_failures=start_accessible_recipe_machine_failures,
@@ -1360,6 +1407,7 @@ def main() -> int:
         if args.strict and (
             hard_target_failures
             or parent_pack_gaps
+            or pack_prereq_gaps
             or enabled_recipe_gating_failures
             or permanent_recipe_machine_cycle_failures
             or building_provider_dependency_failures

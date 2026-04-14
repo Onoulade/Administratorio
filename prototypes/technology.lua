@@ -753,6 +753,7 @@ add_tech_unlock("automation-science-pack", "research-grant-approval-production")
 -- Science-pack tier heads should explicitly depend on the pack tech that
 -- introduces the tier, so the tree matches the actual research requirement.
 add_tech_prerequisite("industrial-printing", "chemical-science-pack")
+add_tech_prerequisite("corporate-hospitality", "logistic-science-pack")
 add_tech_prerequisite("office-agriculture", "logistic-science-pack")
 add_tech_prerequisite("health-and-safety", "chemical-science-pack")
 add_tech_prerequisite("public-finance", "chemical-science-pack")
