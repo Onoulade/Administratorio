@@ -845,7 +845,7 @@ end)
 
 test("all filing recipes require blank-form and use expected categories", function()
   local filings = {
-    {"filing-landscape", "bureaucratic-bootstrap"},
+    {"filing-landscape", "resolution-handcraft"},
     {"filing-smog", "bureaucracy-resolution"},
     {"filing-noise", "bureaucracy-resolution"},
     {"filing-unemployment", "bureaucracy-resolution"},

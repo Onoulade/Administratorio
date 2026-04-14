@@ -284,7 +284,7 @@ test("resolution-office supports bootstrap and resolution categories", function(
   end
 
   assert_true(categories["bureaucracy-resolution"], "resolution-office should craft bureaucracy-resolution recipes")
-  assert_true(categories["bureaucratic-bootstrap"], "resolution-office should also craft bureaucratic-bootstrap recipes")
+  assert_true(not categories["bureaucratic-bootstrap"], "resolution-office should NOT craft bureaucratic-bootstrap recipes (complaints only)")
 end)
 
 test("resolution-office can craft all complaint paper recipes", function()
