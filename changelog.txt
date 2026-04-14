@@ -1,4 +1,17 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.2.16
+Date: 2026-04-14
+  Changes:
+   - Lower down costs for T3-T4 resolutions and make them less punitivie.
+   - Batch steel by 5 instead of 10.
+   - Slow down copy recipes to keep the original printing useful.
+   - Reequilibrate night shift. Office building now enter night shift for longer during the night.
+  Bugfixes:
+   - Have proper recipe separation for the resolution office.
+   - Fix Corporate hospitality tech gating.
+   - Fix admin-station-capacity locale.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.2.15
 Date: 2026-04-13
   Features:
