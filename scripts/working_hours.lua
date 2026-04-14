@@ -53,16 +53,11 @@ local function is_surface_night(surface)
   if not surface or not surface.valid then return false end
 
   local daytime = surface.daytime
-  local evening = surface.evening
-  local morning = surface.morning
-
-  if evening == morning then
+  if surface.dusk == surface.dawn then
     return false
   end
-  if evening < morning then
-    return daytime >= evening and daytime < morning
-  end
-  return daytime >= evening or daytime < morning
+  -- 40% of the day closed, centered on midnight (0.5)
+  return daytime >= 0.30 and daytime < 0.70
 end
 
 local function has_overtime_exemption(entity)
