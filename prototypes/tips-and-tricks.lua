@@ -118,6 +118,19 @@ data:extend({
     }
   },
 
+  -- Hush Money (unlocks with nest-pacification)
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-hush-money",
+    category = "administratorio",
+    order = "g1",
+    indent = 1,
+    trigger = {
+      type = "research",
+      technology = "nest-pacification"
+    }
+  },
+
   -- Propaganda Distillery (unlocks with industrial-propaganda — distillery unlocked here)
   {
     type = "tips-and-tricks-item",

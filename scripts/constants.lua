@@ -96,6 +96,8 @@ M.ZONE_SAFE_TYPES = {
 M.RETURN_WALK_DISTANCE = 200     -- how far resolved biters walk before despawning
 M.RETURN_DESPAWN_TICKS = 30 * 60 -- despawn after 30 seconds regardless of distance
 
+M.HUSH_MONEY_CALM_TICKS = 3 * 60 * 60 -- 3 minutes of suppressed spawning
+
 M.PNEUMATIC_BUILDINGS = {
   ["form-liquifier"]  = "pneumatic-hidden-intake",
   ["form-solidifier"] = "pneumatic-hidden-outtake",

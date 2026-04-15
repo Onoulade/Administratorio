@@ -1014,6 +1014,10 @@ function M.process_frustration_and_protests(surface)
   protest_system.process_frustration_and_protests(surface)
 end
 
+function M.process_calmed_spawners(tick)
+  protest_system.process_calmed_spawners(tick)
+end
+
 function M.process_protest_pacing(surface)
   protest_system.process_protest_pacing(surface)
 end

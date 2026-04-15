@@ -1677,6 +1677,57 @@ function M.new(deps)
           end
         end
       end
+    elseif event.effect_id == "hush-money-target" then
+      local surface = event.source_entity and event.source_entity.surface or game.surfaces[1]
+      local center = event.target_position or (event.source_entity and event.source_entity.position)
+      if not center then return end
+
+      local spawners = surface.find_entities_filtered{type = "unit-spawner", position = center, radius = 6}
+      if #spawners == 0 then return end
+
+      storage.calmed_spawners = storage.calmed_spawners or {}
+      local reactivate_tick = game.tick + C.HUSH_MONEY_CALM_TICKS
+      local calmed_count = 0
+
+      for _, spawner in ipairs(spawners) do
+        if spawner.valid then
+          local info = {
+            name = spawner.name,
+            position = spawner.position,
+            force = spawner.force.name,
+            direction = spawner.direction,
+            surface = surface,
+            reactivate_tick = reactivate_tick,
+          }
+          spawner.destroy()
+
+          local ghost_render = rendering.draw_sprite{
+            sprite = "entity/" .. info.name,
+            target = info.position,
+            surface = surface,
+            tint = {r = 0.15, g = 0.85, b = 0.25, a = 0.4},
+            x_scale = 6,
+            y_scale = 6,
+            render_layer = "object",
+          }
+          info.ghost_render = ghost_render
+
+          local placeholder = surface.create_entity{
+            name = "hush-money-placeholder",
+            position = info.position,
+            force = "neutral",
+          }
+          info.placeholder = placeholder
+
+          local key = info.position.x .. "," .. info.position.y
+          storage.calmed_spawners[key] = info
+          calmed_count = calmed_count + 1
+        end
+      end
+
+      if calmed_count > 0 then
+        if storage.stats then storage.stats.nests_calmed = (storage.stats.nests_calmed or 0) + calmed_count end
+      end
     end
   end
 
@@ -1699,6 +1750,25 @@ function M.new(deps)
       deps.unindex_biter_from_desk(info.desk_id, entity.unit_number)
       zones.release_slot(info.desk_id, entity.unit_number)
       deps.untrack_waiting_biter(entity.unit_number, info)
+    end
+  end
+
+  function controller.process_calmed_spawners(tick)
+    if not storage.calmed_spawners then return end
+    for key, info in pairs(storage.calmed_spawners) do
+      if tick >= info.reactivate_tick then
+        if info.ghost_render and info.ghost_render.valid then info.ghost_render.destroy() end
+        if info.placeholder and info.placeholder.valid then info.placeholder.destroy() end
+        if info.surface and info.surface.valid then
+          info.surface.create_entity{
+            name = info.name,
+            position = info.position,
+            force = info.force,
+            direction = info.direction,
+          }
+        end
+        storage.calmed_spawners[key] = nil
+      end
     end
   end
 

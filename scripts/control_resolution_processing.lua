@@ -120,6 +120,10 @@ function M.new(deps)
       deps.biters.process_frustration_and_protests(surface)
     end)
 
+    runtime_debug.run_profiled_section(runtime_snapshot, "calmed_spawners", function()
+      deps.biters.process_calmed_spawners(event.tick)
+    end)
+
     runtime_debug.run_profiled_section(runtime_snapshot, "circuit", function()
       deps.biters.update_circuit_signals(desks)
     end)
