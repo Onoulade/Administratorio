@@ -14,17 +14,7 @@ local control_resolution_processing_factory = require("scripts.control_resolutio
 local regulated_unlocks = require("scripts.regulated_unlocks")
 local feature_flags = require("feature_flags")
 
-local ADMIN_STATION_NAMES = {
-  "admin-station",
-  "admin-station-north",
-  "admin-station-east",
-  "admin-station-west",
-}
-
-local ADMIN_STATION_NAME_SET = {}
-for _, name in ipairs(ADMIN_STATION_NAMES) do
-  ADMIN_STATION_NAME_SET[name] = true
-end
+local ADMIN_STATION_NAMES = "admin-station"
 
 local UNIT_GROUP_DEBUG_SCAN_INTERVAL = 180
 local UNIT_GROUP_GATHER_REDIRECT_TICKS = 300
@@ -45,7 +35,7 @@ end
 
 local function is_admin_station(entity_or_name)
   local name = get_entity_name(entity_or_name)
-  return name and ADMIN_STATION_NAME_SET[name] == true
+  return name == ADMIN_STATION_NAME
 end
 
 local function normalize_admin_station_inventory(inventory)
@@ -1220,9 +1210,6 @@ local ON_ENTITY_DIED_FILTERS = {
   {filter = "type", type = "mining-drill"},
   {filter = "type", type = "train-stop"},
   {filter = "name", name = "admin-station"},
-  {filter = "name", name = "admin-station-north"},
-  {filter = "name", name = "admin-station-east"},
-  {filter = "name", name = "admin-station-west"},
   {filter = "name", name = "office-desk"},
   {filter = "name", name = "corporate-breakroom"},
   {filter = "name", name = "union-headquarters"},

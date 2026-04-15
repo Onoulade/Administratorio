@@ -29,9 +29,4 @@ data:extend({
   { type = "item", name = "printer-t1",                icon = "__administratorio__/graphics/icons/mini-assembler-icon.png",    icon_size = 64,  subgroup = "admin-printers", order = "b",  place_result = "printer-t1",                stack_size = 50 },
   { type = "item", name = "printer-t2",                icon = "__administratorio__/graphics/icons/steel-forge-icon.png",       icon_size = 64,  subgroup = "admin-printers", order = "c",  place_result = "printer-t2",                stack_size = 50 },
   { type = "item", name = "transit-permit-chest",      icon = "__base__/graphics/icons/steel-chest.png",                         icon_size = 64,  subgroup = "admin-infrastructure", order = "f1", stack_size = 50 },
-  -- Legacy compatibility items kept only so old saves can normalize stale inventory/filter references.
-  -- They must not remain valid placement items, otherwise admin-station ghosts advertise multiple item sources.
-  { type = "item", name = "admin-station-north",       icon = item_icons .. "admin-desk.png", icon_size = 64, hidden = true, hidden_in_factoriopedia = true, factoriopedia_alternative = "admin-station", localised_name = {"item-name.admin-station"}, localised_description = {"item-description.admin-station"}, stack_size = 50 },
-  { type = "item", name = "admin-station-east",        icon = item_icons .. "admin-desk.png", icon_size = 64, hidden = true, hidden_in_factoriopedia = true, factoriopedia_alternative = "admin-station", localised_name = {"item-name.admin-station"}, localised_description = {"item-description.admin-station"}, stack_size = 50 },
-  { type = "item", name = "admin-station-west",        icon = item_icons .. "admin-desk.png", icon_size = 64, hidden = true, hidden_in_factoriopedia = true, factoriopedia_alternative = "admin-station", localised_name = {"item-name.admin-station"}, localised_description = {"item-description.admin-station"}, stack_size = 50 },
 })
