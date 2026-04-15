@@ -73,7 +73,7 @@ data:extend({
   -- Bullshit Economy
   { type = "recipe", name = "dubious-data-refining",     category = "smelting",        enabled = false, ingredients = {{type="item", name="bullshit-ore", amount=10}},                                                     results = {{type="item", name="dubious-data", amount=20}},     energy_required = 64 },
   { type = "recipe", name = "basic-excuse-production",   category = "bureaucratic-bootstrap", enabled = false, ingredients = {{type="item", name="dubious-data", amount=5}},                                                      results = {{type="item", name="basic-excuse", amount=1}},      energy_required = 5 },
-  { type = "recipe", name = "crappy-report-production",  category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="dubious-data", amount=10}, {type="item", name="paper", amount=2}},                            results = {{type="item", name="crappy-report", amount=1}},     energy_required = 5 },
+  { type = "recipe", name = "crappy-report-production",  category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="dubious-data", amount=5}, {type="item", name="paper", amount=2}},                            results = {{type="item", name="crappy-report", amount=1}},     energy_required = 5 },
   {
     type = "recipe", name = "politician-fluid-refining", category = "propaganda-distillery", enabled = false,
     icon = "__administratorio__/graphics/icons/lie.png", icon_size = 64,
