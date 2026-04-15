@@ -105,6 +105,17 @@ data:extend({
     unit = { count = 60, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "b-b"
   },
+  -- T2b2: NEST PACIFICATION (hush money — suppress spawner activity with taxpayer money)
+  {
+    type = "technology", name = "nest-pacification",
+    icon = "__administratorio__/graphics/icons/hush-money-capsule.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "hush-money-production" }
+    },
+    prerequisites = {"local-precedents"},
+    unit = { count = 40, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },
+    order = "b-b2"
+  },
   -- T2c: RUBBLE COMPACTION (shared processed material for multiple later branches)
   {
     type = "technology", name = "rubble-compaction",
