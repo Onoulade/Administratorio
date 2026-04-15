@@ -13,8 +13,8 @@ local working_hours_enabled = feature_flags.working_hours_enabled()
 local entity_graphics = "__administratorio__/graphics/entities/"
 local scrubber_graphics = entity_graphics .. "scrubber/"
 local sound_path = "__administratorio__/sound/buildings/"
-local OFFICE_DESK_SPEED = working_hours_enabled and 0.75 or 0.5
-local BREAKROOM_SPEED = working_hours_enabled and 0.75 or 0.5
+local OFFICE_DESK_SPEED = working_hours_enabled and 1.0 or 0.75
+local BREAKROOM_SPEED = working_hours_enabled and 1.0 or 0.75
 local UNION_HQ_SPEED = working_hours_enabled and 1.0 or 0.75
 local SPRITTER_ANIMATION_SPEED = 1 / 3
 
@@ -78,13 +78,6 @@ local ADMIN_STATION_PLACEABLE_BY = {
   {item = "admin-station", count = 1},
 }
 
-local ADMIN_STATION_NAMES = {
-  "admin-station",
-  "admin-station-north",
-  "admin-station-east",
-  "admin-station-west",
-}
-
 -- Admin Station: storage-only biter interface (no crafting).
 -- The station is intentionally walk-through for players and biters. A dedicated footprint collision
 -- layer handles placement feedback against other structures without blocking units in the 5x5 center.
@@ -132,7 +125,7 @@ local function make_admin_station(name)
   station.name = name
   station.localised_name = {"entity-name.admin-station"}
   station.localised_description = {"entity-description.admin-station"}
-  station.additional_pastable_entities = ADMIN_STATION_NAMES
+  station.additional_pastable_entities = {"admin-station"}
   station.placeable_by = ADMIN_STATION_PLACEABLE_BY
   if name ~= "admin-station" then
     station.hidden_in_factoriopedia = true
@@ -142,9 +135,6 @@ local function make_admin_station(name)
 end
 
 local admin_station = make_admin_station("admin-station")
-local admin_station_north = make_admin_station("admin-station-north")
-local admin_station_east = make_admin_station("admin-station-east")
-local admin_station_west = make_admin_station("admin-station-west")
 
 -- Resolution Office: 3x3 complaint resolution
 local resolution_office = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
@@ -573,7 +563,7 @@ transit_permit_chest.collision_box = {{0, 0}, {0, 0}}
 transit_permit_chest.collision_mask = {layers = {}}
 
 data:extend({
-  admin_station, admin_station_north, admin_station_east, admin_station_west,
+  admin_station,
   resolution_office, office_desk, greenhouse,
   breakroom, union_hq, propaganda_distillery,
   waiting_zone_marker, admin_station_corner_blocker, admin_station_combinator,

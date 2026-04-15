@@ -30,10 +30,6 @@ local PROTEST_TARGET_NAMES = {
 }
 local PROTEST_PROTECTED_NAMES = {
   ["admin-station"] = true,
-  ["admin-station-north"] = true,
-  ["admin-station-east"] = true,
-  ["admin-station-west"] = true,
-  ["resolution-office"] = true,
 }
 local PROTEST_SLOGANS = {
   ["ticket-landscape"] = {
@@ -361,7 +357,7 @@ local function get_cached_desks()
   if #desks == 0 and game and game.surfaces then
     for _, surface in pairs(game.surfaces) do
       for _, desk in ipairs(surface.find_entities_filtered{
-        name = {"admin-station", "admin-station-north", "admin-station-east", "admin-station-west"},
+        name = {"admin-station"},
       }) do
         if desk.valid then
           storage.admin_desks[desk.unit_number] = desk

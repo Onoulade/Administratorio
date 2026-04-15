@@ -212,7 +212,7 @@ test("every visible placeable building item resolves to a robot-buildable entity
 end)
 
 test("admin-station and its directional variants build from the canonical item", function()
-  for _, name in ipairs({"admin-station", "admin-station-north", "admin-station-east", "admin-station-west"}) do
+  for _, name in ipairs({"admin-station"}) do
     local entity, proto_type = find_entity_prototype(name)
     assert_true(entity ~= nil, name .. " prototype missing")
     assert_true(entity.placeable_by ~= nil and entity.placeable_by[1] ~= nil, name .. " missing placeable_by on " .. tostring(proto_type))
@@ -351,9 +351,6 @@ end)
 
 test("legacy directional admin-station items are no longer placement sources", function()
   assert_eq(data.raw.item["admin-station"].place_result, "admin-station", "admin-station should stay placeable")
-  assert_true(data.raw.item["admin-station-north"].place_result == nil, "admin-station-north should not remain placeable")
-  assert_true(data.raw.item["admin-station-east"].place_result == nil, "admin-station-east should not remain placeable")
-  assert_true(data.raw.item["admin-station-west"].place_result == nil, "admin-station-west should not remain placeable")
 end)
 
 test("office-desk circuit connector is shifted to the custom desk position", function()
