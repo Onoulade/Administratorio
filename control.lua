@@ -337,7 +337,9 @@ local function init_storage()
     money_earned = 0,
     protests_suppressed = 0,
     nests_evicted = 0,
+    nests_calmed = 0,
   }
+  storage.calmed_spawners = storage.calmed_spawners or {}
   if WORKING_HOURS_ENABLED then
     working_hours.ensure_storage()
   end

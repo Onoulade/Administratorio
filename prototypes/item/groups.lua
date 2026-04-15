@@ -25,16 +25,6 @@ data:extend({
   { type = "item-subgroup", name = "forms-permits",      group = "admin-paperwork-group", order = "b" },
   { type = "item-subgroup", name = "forms-work-orders",  group = "admin-paperwork-group", order = "c" },
   { type = "item-subgroup", name = "forms-printed",      group = "admin-paperwork-group", order = "d" },
-  -- Resolution by complaint tier
-  { type = "item-subgroup", name = "resolution-landscape",    group = "admin-paperwork-group", order = "e" },
-  { type = "item-subgroup", name = "resolution-smog",         group = "admin-paperwork-group", order = "f" },
-  { type = "item-subgroup", name = "resolution-noise",        group = "admin-paperwork-group", order = "g" },
-  { type = "item-subgroup", name = "resolution-unemployment", group = "admin-paperwork-group", order = "h" },
-  -- Spitter complaint resolution subgroups
-  { type = "item-subgroup", name = "resolution-littering",    group = "admin-paperwork-group", order = "i" },
-  { type = "item-subgroup", name = "resolution-hazmat",       group = "admin-paperwork-group", order = "j" },
-  { type = "item-subgroup", name = "resolution-loitering",    group = "admin-paperwork-group", order = "k" },
-  { type = "item-subgroup", name = "resolution-vagrancy",     group = "admin-paperwork-group", order = "l" },
 })
 
 -- Subgroups (Logistics/Admin Group)
@@ -52,4 +42,19 @@ data:extend({
 -- Admin intermediate subgroup in vanilla intermediate-products group
 data:extend({
   { type = "item-subgroup", name = "admin-intermediate", group = "intermediate-products", order = "za" },
+})
+
+-- Biter complaint resolution subgroups (Military tab)
+data:extend({
+  { type = "item-subgroup", name = "admin-biter-buildings",       group = "combat", order = "za" },
+  -- Biter complaint tiers
+  { type = "item-subgroup", name = "resolution-landscape",        group = "combat", order = "zb" },
+  { type = "item-subgroup", name = "resolution-smog",             group = "combat", order = "zc" },
+  { type = "item-subgroup", name = "resolution-noise",            group = "combat", order = "zd" },
+  { type = "item-subgroup", name = "resolution-unemployment",     group = "combat", order = "ze" },
+  -- Spitter complaint tiers
+  { type = "item-subgroup", name = "resolution-littering",        group = "combat", order = "zf" },
+  { type = "item-subgroup", name = "resolution-hazmat",           group = "combat", order = "zg" },
+  { type = "item-subgroup", name = "resolution-loitering",        group = "combat", order = "zh" },
+  { type = "item-subgroup", name = "resolution-vagrancy",         group = "combat", order = "zi" },
 })
