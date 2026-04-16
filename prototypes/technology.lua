@@ -443,14 +443,59 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "pneumatic-pipe" },
       { type = "unlock-recipe", recipe = "pneumatic-pipe-to-ground" },
-      { type = "unlock-recipe", recipe = "form-liquifier" },
-      { type = "unlock-recipe", recipe = "form-solidifier" }
+      { type = "unlock-recipe", recipe = "tube-intake" },
+      { type = "unlock-recipe", recipe = "tube-outtake" }
     },
     prerequisites = {"printing-technology", "logistic-science-pack", "rubble-compaction"},
     unit = { count = 40, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },
     order = "a-p"
   }
 })
+
+-- PNEUMATIC CAPACITY UPGRADES (tube network max forms)
+local pneumatic_capacity_techs = {}
+local pneumatic_cap_packs = {
+  {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}},
+  {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}},
+  {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}},
+}
+local pneumatic_cap_counts = {60, 120, 200}
+local pneumatic_cap_times = {20, 30, 45}
+local pneumatic_cap_bonuses = {10, 30, 50}
+
+for level = 1, 3 do
+  local name = "pneumatic-capacity-" .. level
+  local prerequisites = {}
+  if level == 1 then
+    prerequisites = {"pneumatic-form-transport"}
+  else
+    prerequisites = {"pneumatic-capacity-" .. (level - 1)}
+  end
+  if level == 2 then
+    prerequisites[#prerequisites + 1] = "chemical-science-pack"
+  elseif level == 3 then
+    prerequisites[#prerequisites + 1] = "production-science-pack"
+  end
+
+  pneumatic_capacity_techs[#pneumatic_capacity_techs + 1] = {
+    type = "technology",
+    name = name,
+    icons = {{icon = "__base__/graphics/icons/pipe.png", icon_size = 64, tint = {r=0.85, g=0.75, b=0.55, a=1}}},
+    effects = {
+      { type = "nothing", effect_description = {"technology-effect.pneumatic-capacity", tostring(pneumatic_cap_bonuses[level])} }
+    },
+    prerequisites = prerequisites,
+    unit = {
+      count = pneumatic_cap_counts[level],
+      ingredients = pneumatic_cap_packs[level],
+      time = pneumatic_cap_times[level],
+    },
+    order = "a-p[" .. string.format("%02d", level) .. "]",
+    upgrade = true,
+  }
+end
+
+data:extend(pneumatic_capacity_techs)
 
 local admin_station_capacity_techs = {}
 local capacity_pack_sets = {

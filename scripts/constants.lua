@@ -98,9 +98,56 @@ M.RETURN_DESPAWN_TICKS = 30 * 60 -- despawn after 30 seconds regardless of dista
 
 M.HUSH_MONEY_CALM_TICKS = 3 * 60 * 60 -- 3 minutes of suppressed spawning
 
+-- Pneumatic tube network capacity (forms per network).
+M.TUBE_BASE_CAPACITY = 10
+M.TUBE_CAPACITY_TECHS = {
+  ["pneumatic-capacity-1"] = 10,  -- total 20
+  ["pneumatic-capacity-2"] = 30,  -- total 50
+  ["pneumatic-capacity-3"] = 50,  -- total 100
+}
+
+-- Maps tube entity names to their hidden inserter (false = no hidden inserter).
 M.PNEUMATIC_BUILDINGS = {
-  ["form-liquifier"]  = "pneumatic-hidden-intake",
-  ["form-solidifier"] = "pneumatic-hidden-outtake",
+  ["tube-intake"]  = "pneumatic-hidden-intake",
+  ["tube-outtake"] = false, -- no hidden inserter; player uses own inserter to extract
+}
+
+-- All items eligible for pneumatic tube transport.
+-- Mirrors shared.PNEUMATIC_ITEMS from the data stage.
+-- Used at runtime to set intake inserter filters.
+M.PNEUMATIC_ITEMS = {
+  -- PAPERWORK_ITEMS
+  "work-order", "form-27b-6", "research-grant-approval", "provisional-approval",
+  "safety-waiver", "safety-waiver-draft", "construction-permit", "construction-permit-draft",
+  "transit-authorization",
+  "management-approval-verbal", "management-verbal-draft",
+  "management-approval-written", "management-written-proposal",
+  "carbon-offset-certificate-basic", "carbon-offset-certificate-verified",
+  "environmental-impact-report", "petrochemical-operating-permit",
+  "blank-form", "blank-approval", "blank-directive",
+  "treasury-bond", "government-grant",
+  "safety-work-order", "construction-work-order",
+  "management-verbal-work-order", "management-written-work-order",
+  "research-grant-work-order", "chemical-handling-work-order", "radiological-work-order",
+  -- Extra pneumatic items
+  "paper", "ink",
+  "ticket-landscape", "ticket-smog", "ticket-noise", "ticket-unemployment",
+  "ticket-littering", "ticket-hazmat", "ticket-loitering", "ticket-vagrancy",
+  "filing-l", "filing-s", "filing-n", "filing-u",
+  "filing-lt", "filing-h", "filing-lo", "filing-v",
+  "case-s", "case-n", "case-u",
+  "case-h", "case-lo", "case-v",
+  "brief-n", "brief-u",
+  "brief-lo", "brief-v",
+  "resolved-landscape", "resolved-smog", "resolved-noise", "resolved-unemployment",
+  "resolved-littering", "resolved-hazmat", "resolved-loitering", "resolved-vagrancy",
+  "osha-violation",
+  "basic-excuse", "crappy-report", "credentials", "data",
+  "good-excuse", "justification", "narrative", "policy", "regulation",
+  "white-paper", "administrative-science-pack",
+  "watercooler-gossip", "office-drama",
+  "taxpayer-money",
+  "useless-documentation", "refined-nonsense",
 }
 
 M.EVOLUTION_COMPLAINT_WARNINGS = {

@@ -40,6 +40,7 @@ local ADMIN_STATION_NON_BLOCKING_NAMES = {
   ["transit-permit-chest"] = true,
   ["pneumatic-hidden-intake"] = true,
   ["pneumatic-hidden-outtake"] = true,
+  ["pneumatic-hidden-network-pipe"] = true,
 }
 
 local ADMIN_STATION_EXCLUDED_TYPES = {
@@ -1117,128 +1118,10 @@ for _, recipe in pairs(data.raw["recipe"] or {}) do
 end
 
 -------------------------------------------------------------------------------
--- 7. PNEUMATIC FORM TRANSPORT — FLUID & RECIPE GENERATION
--- Auto-generates a fluid + liquify/solidify recipe pair for every paperwork item.
--- These fluids flow through pneumatic pipes (connection_category = "pneumatic-forms")
--- and cannot mix with regular fluid pipes.
+-- 7. PNEUMATIC TUBE TRANSPORT
+-- Fluid/recipe generation removed — the tube system now uses a script-managed
+-- signal chain.  The pneumatic items list lives in shared.PNEUMATIC_ITEMS.
 -------------------------------------------------------------------------------
-
-local PNEUMATIC_BATCH = 1
-local PNEUMATIC_FLUID_PER = 10
-
--- All paperwork items from shared, plus complaint pipeline items
-local pneumatic_items = {}
-for name, _ in pairs(shared.PAPERWORK_ITEMS) do
-  pneumatic_items[name] = true
-end
-
--- Add complaint pipeline items
-local extra_pneumatic = {
-  "paper", "ink", "blank-form", "blank-approval", "blank-directive",
-  "safety-waiver-draft", "construction-permit-draft",
-  "management-verbal-draft", "management-written-proposal",
-  "ticket-landscape", "ticket-smog", "ticket-noise", "ticket-unemployment",
-  "ticket-littering", "ticket-hazmat", "ticket-loitering", "ticket-vagrancy",
-  "filing-l", "filing-s", "filing-n", "filing-u",
-  "filing-lt", "filing-h", "filing-lo", "filing-v",
-  "case-s", "case-n", "case-u",
-  "case-h", "case-lo", "case-v",
-  "brief-n", "brief-u",
-  "brief-lo", "brief-v",
-  "resolved-landscape", "resolved-smog", "resolved-noise", "resolved-unemployment",
-  "resolved-littering", "resolved-hazmat", "resolved-loitering", "resolved-vagrancy",
-  "osha-violation",
-  "dubious-data", "basic-excuse", "crappy-report", "credentials", "data",
-  "good-excuse", "justification", "narrative", "policy", "regulation",
-  "white-paper", "administrative-science-pack",
-  "watercooler-gossip", "office-drama",
-  "taxpayer-money",
-  "useless-documentation", "compacted-rubble", "refined-nonsense",
-}
-for _, name in ipairs(extra_pneumatic) do
-  pneumatic_items[name] = true
-end
-
-local pneumatic_fluids = {}
-local pneumatic_recipes = {}
-
-for item_name, _ in pairs(pneumatic_items) do
-  -- Find the item in any item-type table
-  local item_data = nil
-  for _, item_type in ipairs({"item", "tool", "module", "capsule"}) do
-    if data.raw[item_type] and data.raw[item_type][item_name] then
-      item_data = data.raw[item_type][item_name]
-      break
-    end
-  end
-  if not item_data then goto next_pneumatic end
-
-  local fluid_name = "pneumatic-" .. item_name
-  local batch = PNEUMATIC_BATCH
-  if item_data.stack_size and batch > item_data.stack_size then
-    batch = item_data.stack_size
-  end
-  if batch < 1 then batch = 1 end
-
-  -- Create the pneumatic fluid
-  local fluid_icon = item_data.icon or "__administratorio__/graphics/icons/blank-form.png"
-  local fluid_icon_size = item_data.icon_size or 64
-  local fluid_icons = nil
-  if item_data.icons then
-    fluid_icons = table.deepcopy(item_data.icons)
-  else
-    fluid_icons = {{icon = fluid_icon, icon_size = fluid_icon_size}}
-  end
-
-  table.insert(pneumatic_fluids, {
-    type = "fluid",
-    name = fluid_name,
-    icons = fluid_icons,
-    localised_name = {"fluid-name.pneumatic-form-fluid", item_data.localised_name or {"item-name." .. item_name}},
-    default_temperature = 15,
-    base_color = {r = 0.85, g = 0.75, b = 0.55},
-    flow_color = {r = 0.95, g = 0.9, b = 0.75},
-    subgroup = item_data.subgroup,
-    order = item_data.order,
-    auto_barrel = false,
-    hidden_in_factoriopedia = true,
-  })
-
-  -- Create liquify recipe (item -> fluid)
-  table.insert(pneumatic_recipes, {
-    type = "recipe",
-    name = "pneumatic-liquify-" .. item_name,
-    energy_required = 0.4,
-    enabled = true,
-    hide_from_player_crafting = true,
-    hide_from_stats = true,
-    hidden_in_factoriopedia = true,
-    ingredients = {{type = "item", name = item_name, amount = batch}},
-    results = {{type = "fluid", name = fluid_name, amount = batch * PNEUMATIC_FLUID_PER}},
-    category = "pneumatic-liquify",
-    overload_multiplier = 2,
-  })
-
-  -- Create solidify recipe (fluid -> item)
-  table.insert(pneumatic_recipes, {
-    type = "recipe",
-    name = "pneumatic-solidify-" .. item_name,
-    energy_required = 0.4,
-    enabled = true,
-    hide_from_player_crafting = true,
-    hide_from_stats = true,
-    hidden_in_factoriopedia = true,
-    ingredients = {{type = "fluid", name = fluid_name, amount = batch * PNEUMATIC_FLUID_PER}},
-    results = {{type = "item", name = item_name, amount = batch}},
-    category = "pneumatic-solidify",
-    overload_multiplier = 2,
-  })
-
-  ::next_pneumatic::
-end
-
-data:extend(pneumatic_fluids)
-data:extend(pneumatic_recipes)
 
 -------------------------------------------------------------------------------
 -- 8. ADMIN STATION COLLISION FOOTPRINT
