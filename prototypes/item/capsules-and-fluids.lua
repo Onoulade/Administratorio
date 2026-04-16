@@ -132,7 +132,7 @@ data:extend({
   },
   {
     type = "capsule", name = "promise",
-    icon = item_icons .. "blank-form.png", icon_size = 64,
+    icon = item_icons .. "bureaucratic-promise.png", icon_size = 64,
     subgroup = "capsule", order = "z1[promise]", stack_size = 20,
     capsule_action = {
       type = "throw",
