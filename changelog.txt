@@ -1,4 +1,28 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.0
+Date: 2026-04-16
+  Features:
+    - Added Hush Money capsule: throwable item that temporarily suppresses biter nest spawning for 3 minutes. Research Nest Pacification to unlock. Affected spawners are destroyed and replaced with a green smog visual and collision placeholder, then respawn automatically after the timer expires.
+    - Added Pneumatic Capacity research chain (3 tiers) to increase tube network item capacity from 10 up to 100.
+    - Tube intakes and outtakes now expose circuit signals showing network contents via a hidden constant combinator wired to each endpoint.
+    - Tube entities now show a hover GUI panel with live network status, capacity bar, and item contents breakdown.
+  Changes:
+    - Reworked the pneumatic tube system from a fluid-based transport to a script-managed signal chain. Form Liquifier and Form Solidifier replaced by Tube Intake (container with hidden intake inserter) and Tube Outtake (container — use your own inserter to extract). Items are consumed at intakes, tracked in a per-network signal pool, and dispensed at outtakes. Outtakes support inventory slot filters.
+    - Pneumatic network topology is now detected via BFS through hidden network pipes placed at each intake/outtake, with a max radius of 60 tiles. Networks that exceed this radius are disabled.
+    - Pneumatic underground pipe range increased from 10 to 16 tiles.
+    - Removed all auto-generated pneumatic fluids and liquify/solidify recipes — the tube system no longer uses the fluid engine.
+    - Removed pneumatic-liquify and pneumatic-solidify recipe categories.
+    - Moved biter resolution items (admin station, resolution office) and all complaint resolution subgroups from the Administrative Paperwork tab to the Military (combat) tab.
+    - New Bureaucratic Promise icon.
+    - Replaced printer sound files: mechanical printer and office printer loops replaced with industrial and personal printer loops.
+    - Increased office desk and breakroom crafting speed (0.75 to 1.0 with working hours, 0.5 to 0.75 without) to better balance night schedule throughput.
+    - Lowered crappy report dubious data cost from 10 to 5.
+    - Removed legacy directional admin station variants (admin-station-north/east/west) and their compatibility items/entities.
+  Bugfixes:
+    - Fixed English locale for pneumatic form transport technology description, tube outtake item/entity descriptions, crappy report recipe description, and pneumatic tips-and-tricks entry to match the reworked tube system.
+    - Added missing locale entry for the admin-biter-buildings item subgroup.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.2.16
 Date: 2026-04-14
   Changes:
