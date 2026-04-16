@@ -30,6 +30,7 @@ local PROTEST_TARGET_NAMES = {
 }
 local PROTEST_PROTECTED_NAMES = {
   ["admin-station"] = true,
+  ["resolution-office"] = true,
 }
 local PROTEST_SLOGANS = {
   ["ticket-landscape"] = {
