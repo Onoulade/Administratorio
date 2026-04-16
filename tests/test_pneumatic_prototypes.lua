@@ -1,7 +1,7 @@
 -------------------------------------------------------------------------------
 -- ADMINISTRATORIO PNEUMATIC PROTOTYPE TESTS
 --
--- Standalone Lua tests that verify the hidden pneumatic inserter geometry.
+-- Standalone Lua tests that verify the pneumatic tube entity structure.
 -- Run: lua tests/test_pneumatic_prototypes.lua
 -------------------------------------------------------------------------------
 
@@ -119,11 +119,64 @@ dofile(mod_root .. "prototypes/entity/pneumatic.lua")
 -------------------------------------------------------------------------------
 -- 3. TESTS
 -------------------------------------------------------------------------------
-test("hidden outtake inserter uses an off-center drop point", function()
+
+test("tube-intake is a container with 1 slot", function()
+  local intake = data.raw.container["tube-intake"]
+  assert_true(intake ~= nil, "tube-intake missing")
+  assert_eq(intake.type, "container", "tube-intake should be a container")
+  assert_eq(intake.inventory_size, 1, "tube-intake should have 1 inventory slot")
+end)
+
+test("tube-outtake is a container with 1 slot", function()
+  local outtake = data.raw.container["tube-outtake"]
+  assert_true(outtake ~= nil, "tube-outtake missing")
+  assert_eq(outtake.type, "container", "tube-outtake should be a container")
+  assert_eq(outtake.inventory_size, 1, "tube-outtake should have 1 inventory slot")
+end)
+
+test("hidden outtake inserter drops at belt center for even lane distribution", function()
   local outtake = data.raw.inserter["pneumatic-hidden-outtake"]
   assert_true(outtake ~= nil, "pneumatic-hidden-outtake missing")
-  assert_eq(outtake.insert_position[1], 0.2, "outtake insert x offset should lock the belt lane")
+  assert_eq(outtake.insert_position[1], 0, "outtake insert x should be centered for dual-lane distribution")
   assert_eq(outtake.insert_position[2], 1, "outtake should still target the adjacent tile")
+end)
+
+test("hidden intake inserter has no filters (validation is script-side)", function()
+  local intake = data.raw.inserter["pneumatic-hidden-intake"]
+  assert_true(intake ~= nil, "pneumatic-hidden-intake missing")
+  assert_true(not intake.filter_count or intake.filter_count == 0,
+    "intake inserter should not have prototype-level filters (Factorio caps at 5)")
+end)
+
+test("pneumatic-hidden-network-pipe connects to pneumatic-forms category", function()
+  local pipe = data.raw.pipe["pneumatic-hidden-network-pipe"]
+  assert_true(pipe ~= nil, "pneumatic-hidden-network-pipe missing")
+  assert_true(pipe.hidden, "network pipe should be hidden")
+  local found_pneumatic = false
+  for _, pcon in pairs(pipe.fluid_box.pipe_connections) do
+    if pcon.connection_category == "pneumatic-forms" then
+      found_pneumatic = true
+      break
+    end
+  end
+  assert_true(found_pneumatic, "network pipe should use pneumatic-forms connection category")
+end)
+
+test("pneumatic-hidden-network-pipe has no collision layers", function()
+  local pipe = data.raw.pipe["pneumatic-hidden-network-pipe"]
+  assert_true(pipe ~= nil, "pneumatic-hidden-network-pipe missing")
+  assert_true(pipe.collision_mask ~= nil, "network pipe should have collision_mask")
+  assert_true(pipe.collision_mask.layers ~= nil, "collision_mask should have layers")
+  assert_eq(next(pipe.collision_mask.layers), nil, "network pipe collision layers should be empty")
+  -- Box must be non-zero so pipe connection positions fit inside it.
+  assert_true(pipe.collision_box[1][1] < 0, "collision_box should have nonzero extent")
+end)
+
+test("tube-intake and tube-outtake share fast-replaceable group", function()
+  local intake = data.raw.container["tube-intake"]
+  local outtake = data.raw.container["tube-outtake"]
+  assert_eq(intake.fast_replaceable_group, "pneumatic-io", "intake should use pneumatic-io group")
+  assert_eq(outtake.fast_replaceable_group, "pneumatic-io", "outtake should use pneumatic-io group")
 end)
 
 -------------------------------------------------------------------------------

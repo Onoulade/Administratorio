@@ -349,20 +349,9 @@ local function init_storage()
     for _, loco in ipairs(surface.find_entities_filtered{type = "locomotive"}) do
       initialize_bureaucratic_filters(loco)
     end
-    for building_name, _ in pairs(C.PNEUMATIC_BUILDINGS) do
-      for _, building in ipairs(surface.find_entities_filtered{name = building_name}) do
-        local existing = surface.find_entities_filtered{
-          type = "inserter",
-          name = {"pneumatic-hidden-intake", "pneumatic-hidden-outtake"},
-          position = building.position,
-          radius = 0.5
-        }
-        if #existing == 0 then
-          pneumatic.add_pneumatic_inserter(building)
-        end
-      end
-    end
   end
+  pneumatic.ensure_storage()
+  pneumatic.rebuild_all()
 end
 
 local function cleanup_waiting_zone_overlays()
@@ -490,6 +479,9 @@ local function on_configuration_changed()
   storage.frustration_event_accum = nil
   storage.waiting_zones = nil
   storage.player_zone_preview = nil
+  storage.pneumatic_liquifiers = nil -- superseded by tube signal chain
+
+  pneumatic.rebuild_all()
 
   -- Destroy old waiting markers and normalize desks to the single centered station.
   for _, surface in pairs(game.surfaces) do
@@ -543,6 +535,10 @@ local function on_research_finished(event)
   local research = event and event.research
   if not research or not research.valid then return end
   enable_regulated_variants_for_technology(research.force, research)
+  -- Invalidate tube capacity cache when a pneumatic capacity tech is researched.
+  if research.name and research.name:find("^pneumatic%-capacity%-") then
+    pneumatic.invalidate_capacity_cache()
+  end
 end
 
 local function on_load()
@@ -591,14 +587,22 @@ local function on_player_joined_game(event)
 end
 
 -- Update the biter complaint inspection GUI on the left.
+-- Also shows tube network info when hovering tube entities.
 local function on_selected_entity_changed(event)
   local player = game.get_player(event.player_index)
   if not player then return end
   local entity = player.selected
   if entity and entity.valid and entity.type == "unit" and storage.waiting_biters[entity.unit_number] then
+    pneumatic.destroy_tube_info_gui(player)
     frustration.update_biter_info_gui(player, entity)
-  elseif player.gui.left["administratorio-biter-info"] then
-    player.gui.left["administratorio-biter-info"].destroy()
+  elseif entity and entity.valid and (entity.name == "tube-intake" or entity.name == "tube-outtake") then
+    frustration.destroy_biter_info_gui(player)
+    pneumatic.update_tube_info_gui(player, entity)
+  else
+    if player.gui.left["administratorio-biter-info"] then
+      player.gui.left["administratorio-biter-info"].destroy()
+    end
+    pneumatic.destroy_tube_info_gui(player)
   end
 end
 
@@ -654,6 +658,11 @@ local function on_entity_built_inner(event)
   -- Handle Pneumatic Building placement (automatic hidden inserters)
   elseif pneumatic.is_pneumatic_building(entity) then
     pneumatic.add_pneumatic_inserter(entity)
+
+  -- Pipe placement changes tube network topology.
+  elseif entity.name == "pneumatic-pipe" or entity.name == "pneumatic-pipe-to-ground" then
+    pneumatic.ensure_storage()
+    storage.tube_network_dirty = true
 
   -- Prevent building on top of biter waiting zones
   elseif entity.name ~= "waiting-zone-marker" and entity.name ~= "admin-station-combinator" then
@@ -711,6 +720,9 @@ local function on_entity_removed(event)
     biters.clear_desk_circuit_tracking(desk_id)
   elseif pneumatic.is_pneumatic_building(entity) then
     pneumatic.delete_pneumatic_inserters(entity, event.buffer)
+  elseif entity.name == "pneumatic-pipe" or entity.name == "pneumatic-pipe-to-ground" then
+    pneumatic.ensure_storage()
+    storage.tube_network_dirty = true
   end
 end
 
@@ -1420,6 +1432,10 @@ local function on_main_tick(event)
   resolution_processing.on_tick(event)
 end
 
+local function on_pneumatic_tick(_event)
+  pneumatic.on_pneumatic_tick()
+end
+
 resolution_processing = control_resolution_processing_factory.new({
   biters = biters,
   cleanup_waiting_zone_overlays = cleanup_waiting_zone_overlays,
@@ -1445,6 +1461,7 @@ control_event_router.register({
   on_init = on_init,
   on_load = on_load,
   on_main_tick = on_main_tick,
+  on_pneumatic_tick = on_pneumatic_tick,
   on_player_created = on_player_created,
   on_player_joined_game = on_player_joined_game,
   on_player_respawned = on_player_respawned,

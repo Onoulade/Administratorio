@@ -25,8 +25,8 @@ local PROTEST_TARGET_NAMES = {
   "propaganda-distillery",
   "printer-t1",
   "printer-t2",
-  "form-liquifier",
-  "form-solidifier",
+  "tube-intake",
+  "tube-outtake",
 }
 local PROTEST_PROTECTED_NAMES = {
   ["admin-station"] = true,

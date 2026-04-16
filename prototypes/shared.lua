@@ -91,6 +91,45 @@ shared.PAPERWORK_ITEMS = {
 }
 
 -------------------------------------------------------------------------------
+-- PNEUMATIC TUBE ITEMS
+-- All items eligible for transport through the pneumatic tube system.
+-- Includes all PAPERWORK_ITEMS plus complaint pipeline items and other
+-- administrative goods. Used by both data stage (recipe generation if any)
+-- and control stage (intake inserter filter setup).
+-------------------------------------------------------------------------------
+shared.PNEUMATIC_ITEMS = {}
+for name, _ in pairs(shared.PAPERWORK_ITEMS) do
+  shared.PNEUMATIC_ITEMS[name] = true
+end
+do
+  local extra = {
+    "paper", "ink", "blank-form", "blank-approval", "blank-directive",
+    "safety-waiver-draft", "construction-permit-draft",
+    "management-verbal-draft", "management-written-proposal",
+    "ticket-landscape", "ticket-smog", "ticket-noise", "ticket-unemployment",
+    "ticket-littering", "ticket-hazmat", "ticket-loitering", "ticket-vagrancy",
+    "filing-l", "filing-s", "filing-n", "filing-u",
+    "filing-lt", "filing-h", "filing-lo", "filing-v",
+    "case-s", "case-n", "case-u",
+    "case-h", "case-lo", "case-v",
+    "brief-n", "brief-u",
+    "brief-lo", "brief-v",
+    "resolved-landscape", "resolved-smog", "resolved-noise", "resolved-unemployment",
+    "resolved-littering", "resolved-hazmat", "resolved-loitering", "resolved-vagrancy",
+    "osha-violation",
+    "basic-excuse", "crappy-report", "credentials", "data",
+    "good-excuse", "justification", "narrative", "policy", "regulation",
+    "white-paper", "administrative-science-pack",
+    "watercooler-gossip", "office-drama",
+    "taxpayer-money",
+    "useless-documentation", "refined-nonsense",
+  }
+  for _, name in ipairs(extra) do
+    shared.PNEUMATIC_ITEMS[name] = true
+  end
+end
+
+-------------------------------------------------------------------------------
 -- COMBINED FORMS
 -- Maps a tier form to its combined version (tier form + work-order).
 -- Used by AM1/AM2/AM3 regulated recipes. The combined form is consumed (no return).
@@ -179,8 +218,8 @@ shared.ADMIN_BUILDINGS = {
   ["printer-t2"] = true,
   ["union-headquarters"] = true,
   ["mechanical-printer"] = true,
-  ["form-liquifier"] = true,
-  ["form-solidifier"] = true,
+  ["tube-intake"] = true,
+  ["tube-outtake"] = true,
   ["pneumatic-pipe"] = true,
   ["pneumatic-pipe-to-ground"] = true,
 }
@@ -335,8 +374,8 @@ shared.BATCH_MULTIPLIERS = {
   ["ink-production"] = 10,
   ["pneumatic-pipe"] = 10,
   ["pneumatic-pipe-to-ground"] = 10,
-  ["form-liquifier"] = 10,
-  ["form-solidifier"] = 10,
+  ["tube-intake"] = 10,
+  ["tube-outtake"] = 10,
   ["iron-plate"] = 20,
   ["copper-plate"] = 20,
   ["steel-plate"] = 20,

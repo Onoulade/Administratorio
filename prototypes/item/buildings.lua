@@ -14,8 +14,8 @@ data:extend({
   -- Infrastructure
   { type = "item", name = "pneumatic-pipe",            icons = {{icon = "__base__/graphics/icons/pipe.png", icon_size = 64, tint = {r=0.85, g=0.75, b=0.55, a=1}}},            subgroup = "admin-infrastructure", order = "d1", place_result = "pneumatic-pipe",            stack_size = 100 },
   { type = "item", name = "pneumatic-pipe-to-ground",  icons = {{icon = "__base__/graphics/icons/pipe-to-ground.png", icon_size = 64, tint = {r=0.85, g=0.75, b=0.55, a=1}}}, subgroup = "admin-infrastructure", order = "d2", place_result = "pneumatic-pipe-to-ground",  stack_size = 50 },
-  { type = "item", name = "form-liquifier",            icon = item_icons .. "pneumatic/intake.png",  icon_size = 32, subgroup = "admin-infrastructure", order = "e1", place_result = "form-liquifier",            stack_size = 50 },
-  { type = "item", name = "form-solidifier",           icon = item_icons .. "pneumatic/outtake.png", icon_size = 32, subgroup = "admin-infrastructure", order = "e2", place_result = "form-solidifier",           stack_size = 50 },
+  { type = "item", name = "tube-intake",                icon = item_icons .. "pneumatic/intake.png",  icon_size = 32, subgroup = "admin-infrastructure", order = "e1", place_result = "tube-intake",                stack_size = 50 },
+  { type = "item", name = "tube-outtake",               icon = item_icons .. "pneumatic/outtake.png", icon_size = 32, subgroup = "admin-infrastructure", order = "e2", place_result = "tube-outtake",               stack_size = 50 },
 
   -- Buildings
   { type = "item", name = "office-desk",               icon = item_icons .. "office-building.png",                              icon_size = 64,  subgroup = "admin-buildings", order = "a",  place_result = "office-desk",               stack_size = 50, localised_description = disabled_item_description("office-desk-no-working-hours") },

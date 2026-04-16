@@ -36,6 +36,7 @@ function M.register(deps)
   script.on_event(defines.events.on_gui_click, deps.on_gui_click)
   script.on_event(defines.events.on_research_finished, deps.on_research_finished)
 
+  script.on_nth_tick(15, deps.on_pneumatic_tick)
   script.on_nth_tick(20, deps.on_protest_pacing_tick)
   script.on_nth_tick(deps.unit_group_debug_scan_interval, deps.on_unit_group_debug_tick)
   script.on_nth_tick(60, deps.on_main_tick)

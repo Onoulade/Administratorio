@@ -1,12 +1,18 @@
 -------------------------------------------------------------------------------
--- PNEUMATIC FORM TRANSPORT SYSTEM
--- Converts paperwork items to fluids for transport through sealed pipes.
--- Uses "pneumatic-forms" connection_category so pneumatic pipes
--- CANNOT connect to regular fluid pipes.
+-- PNEUMATIC TUBE TRANSPORT SYSTEM
+-- Items enter at tube-intake (container), are voided by script, and counted
+-- in a per-network signal table.  Items reappear at tube-outtake (container)
+-- when the script inserts them from the signal pool.
+--
+-- Visible pneumatic pipes define the network topology.  A hidden
+-- pneumatic-hidden-network-pipe at each intake/outtake position links them
+-- into the pipe graph for BFS-based network detection.
+--
+-- connection_category "pneumatic-forms" keeps the tube network isolated
+-- from regular fluid pipes.
 -------------------------------------------------------------------------------
 
 local pneumatic_tint = {r=0.85, g=0.75, b=0.55, a=1} -- manila/tan
-local pneumatic_sound_path = "__administratorio__/sound/pneumatic/"
 
 local function placeable_by_item(name)
   return {
@@ -39,7 +45,7 @@ local function tint_pipe_pictures(pictures, tint)
   end
 end
 
--- Pneumatic Pipe
+-- Pneumatic Pipe (visible tube segment)
 local pneumatic_pipe = table.deepcopy(data.raw["pipe"]["pipe"])
 pneumatic_pipe.name = "pneumatic-pipe"
 pneumatic_pipe.minable.result = "pneumatic-pipe"
@@ -57,8 +63,9 @@ for _, pcon in pairs(pneumatic_pipe.fluid_box.pipe_connections) do
     pcon.connection_category = "pneumatic-forms"
   end
 end
+pneumatic_pipe.fluid_box.max_pipeline_extent = 60
 
--- Pneumatic Underground Pipe
+-- Pneumatic Underground Pipe (visible underground tube segment)
 local pneumatic_underground = table.deepcopy(data.raw["pipe-to-ground"]["pipe-to-ground"])
 pneumatic_underground.name = "pneumatic-pipe-to-ground"
 pneumatic_underground.minable.result = "pneumatic-pipe-to-ground"
@@ -68,6 +75,7 @@ pneumatic_underground.icons = {{icon = "__base__/graphics/icons/pipe-to-ground.p
 pneumatic_underground.icon = nil
 pneumatic_underground.icon_size = nil
 tint_pipe_pictures(pneumatic_underground.pictures, pneumatic_tint)
+pneumatic_underground.fluid_box.pipe_connections[2].max_underground_distance = 16
 for _, pcon in pairs(pneumatic_underground.fluid_box.pipe_connections) do
   if not pcon.connection_type or pcon.connection_type == "normal" then
     pcon.connection_category = "pneumatic-forms"
@@ -75,6 +83,27 @@ for _, pcon in pairs(pneumatic_underground.fluid_box.pipe_connections) do
     pcon.connection_category = "pneumatic-forms"
   end
 end
+pneumatic_underground.fluid_box.max_pipeline_extent = 60
+
+-- Hidden network pipe: invisible pipe placed at intake/outtake positions
+-- for topology detection via fluidbox.get_connections() BFS.
+local pneumatic_hidden_network_pipe = table.deepcopy(data.raw["pipe"]["pipe"])
+pneumatic_hidden_network_pipe.name = "pneumatic-hidden-network-pipe"
+pneumatic_hidden_network_pipe.hidden = true
+pneumatic_hidden_network_pipe.selectable_in_game = false
+pneumatic_hidden_network_pipe.collision_mask = {layers = {}}
+pneumatic_hidden_network_pipe.collision_box = {{-0.1, -0.1}, {0.1, 0.1}}
+pneumatic_hidden_network_pipe.selection_box = {{0, 0}, {0, 0}}
+pneumatic_hidden_network_pipe.flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "not-flammable"}
+pneumatic_hidden_network_pipe.minable = nil
+pneumatic_hidden_network_pipe.pictures = nil
+pneumatic_hidden_network_pipe.pipe_covers = nil
+for _, pcon in pairs(pneumatic_hidden_network_pipe.fluid_box.pipe_connections) do
+  if not pcon.connection_type or pcon.connection_type == "normal" then
+    pcon.connection_category = "pneumatic-forms"
+  end
+end
+pneumatic_hidden_network_pipe.fluid_box.max_pipeline_extent = 60
 
 -- Empty sheet for hidden inserter graphics
 local empty_sheet = {
@@ -84,139 +113,72 @@ local empty_sheet = {
   frame_count = 1,
 }
 
--- Form Liquifier (intake): furnace that converts items -> pneumatic fluids
-local form_liquifier = {
-  type = "furnace",
-  name = "form-liquifier",
+-- Tube Intake: container that receives items for the signal chain
+local tube_intake = {
+  type = "container",
+  name = "tube-intake",
   icon = "__administratorio__/graphics/icons/pneumatic/intake.png",
   icon_size = 32,
   flags = {"placeable-neutral", "placeable-player", "player-creation"},
-  minable = {mining_time = 0.2, result = "form-liquifier"},
-  placeable_by = placeable_by_item("form-liquifier"),
+  minable = {mining_time = 0.2, result = "tube-intake"},
+  placeable_by = placeable_by_item("tube-intake"),
   fast_replaceable_group = "pneumatic-io",
   max_health = 200,
   corpse = "small-remnants",
   collision_box = {{-0.3, -0.3}, {0.3, 0.3}},
   selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
-  crafting_categories = {"pneumatic-liquify"},
-  crafting_speed = 3,
-  result_inventory_size = 0,
-  source_inventory_size = 1,
-  energy_source = {
-    type = "electric",
-    usage_priority = "secondary-input",
-    emissions_per_minute = {["pollution"] = 0.03},
-  },
-  energy_usage = "20kW",
-  graphics_set = {
-    animation = {
-      north = {
+  inventory_size = 1,
+  circuit_wire_max_distance = 9,
+  circuit_connector = circuit_connector_definitions.create_single(
+    universal_connector_template,
+    {variation = 26, main_offset = util.by_pixel(0, -8), shadow_offset = util.by_pixel(4, -4), show_shadow = true}
+  ),
+  picture = {
+    layers = {
+      {
         filename = "__administratorio__/graphics/entities/pneumatic-intake/intake-up.png",
         priority = "high",
         width = 66,
         height = 72,
       },
-      east = {
-        filename = "__administratorio__/graphics/entities/pneumatic-intake/intake-right.png",
-        priority = "high",
-        width = 46,
-        height = 46,
-      },
-      south = {
-        filename = "__administratorio__/graphics/entities/pneumatic-intake/intake-down.png",
-        priority = "high",
-        width = 66,
-        height = 72,
-      },
-      west = {
-        filename = "__administratorio__/graphics/entities/pneumatic-intake/intake-left.png",
-        priority = "high",
-        width = 46,
-        height = 46,
-      },
     },
-  },
-  fluid_boxes = {
-    {
-      volume = 150,
-      production_type = "output",
-      pipe_covers = pipecoverspictures(),
-      pipe_connections = {{direction = defines.direction.north, flow_direction = "output", position = {0, 0}, connection_category = "pneumatic-forms"}},
-    },
-  },
-  working_sound = {
-    sound = { filename = pneumatic_sound_path .. "pneumatic-send.ogg", volume = 0.32 },
-    idle_sound = { filename = "__base__/sound/idle1.ogg" },
   },
 }
 
--- Form Solidifier (outtake): furnace that converts pneumatic fluids -> items
-local form_solidifier = {
-  type = "furnace",
-  name = "form-solidifier",
+-- Tube Outtake: container that dispenses items from the signal chain
+local tube_outtake = {
+  type = "container",
+  name = "tube-outtake",
   icon = "__administratorio__/graphics/icons/pneumatic/outtake.png",
   icon_size = 32,
   flags = {"placeable-neutral", "placeable-player", "player-creation"},
-  minable = {mining_time = 0.2, result = "form-solidifier"},
-  placeable_by = placeable_by_item("form-solidifier"),
+  minable = {mining_time = 0.2, result = "tube-outtake"},
+  placeable_by = placeable_by_item("tube-outtake"),
   fast_replaceable_group = "pneumatic-io",
   max_health = 200,
   corpse = "small-remnants",
   collision_box = {{-0.3, -0.3}, {0.3, 0.3}},
   selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
-  crafting_categories = {"pneumatic-solidify"},
-  crafting_speed = 3,
-  result_inventory_size = 1,
-  source_inventory_size = 0,
-  energy_source = {
-    type = "electric",
-    usage_priority = "secondary-input",
-    emissions_per_minute = {["pollution"] = 0.03},
-  },
-  energy_usage = "20kW",
-  graphics_set = {
-    animation = {
-      north = {
+  inventory_size = 1,
+  inventory_type = "with_filters_and_bar",
+  circuit_wire_max_distance = 9,
+  circuit_connector = circuit_connector_definitions.create_single(
+    universal_connector_template,
+    {variation = 26, main_offset = util.by_pixel(0, -8), shadow_offset = util.by_pixel(4, -4), show_shadow = true}
+  ),
+  picture = {
+    layers = {
+      {
         filename = "__administratorio__/graphics/entities/pneumatic-outtake/outtake-up.png",
         priority = "high",
         width = 66,
         height = 72,
       },
-      east = {
-        filename = "__administratorio__/graphics/entities/pneumatic-outtake/outtake-right.png",
-        priority = "high",
-        width = 46,
-        height = 46,
-      },
-      south = {
-        filename = "__administratorio__/graphics/entities/pneumatic-outtake/outtake-down.png",
-        priority = "high",
-        width = 66,
-        height = 72,
-      },
-      west = {
-        filename = "__administratorio__/graphics/entities/pneumatic-outtake/outtake-left.png",
-        priority = "high",
-        width = 46,
-        height = 46,
-      },
     },
-  },
-  fluid_boxes = {
-    {
-      volume = 150,
-      production_type = "input",
-      pipe_covers = pipecoverspictures(),
-      pipe_connections = {{direction = defines.direction.north, flow_direction = "input", position = {0, 0}, connection_category = "pneumatic-forms"}},
-    },
-  },
-  working_sound = {
-    sound = { filename = pneumatic_sound_path .. "pneumatic-receive.ogg", volume = 0.3 },
-    idle_sound = { filename = "__base__/sound/idle1.ogg" },
   },
 }
 
--- Hidden inserters for liquifier/solidifier (move items in/out)
+-- Hidden inserters for intake/outtake (move items in/out)
 local hidden_intake_inserter = {
   type = "inserter",
   hidden = true,
@@ -242,8 +204,8 @@ local hidden_outtake_inserter = {
   name = "pneumatic-hidden-outtake",
   energy_source = {type = "void"},
   extension_speed = 1, rotation_speed = 1,
-  -- Keep the drop point off the belt centerline so rotations don't flip lanes.
-  pickup_position = {0, -0.2}, insert_position = {0.2, 1},
+  -- Center drop so Factorio distributes items across both belt lanes.
+  pickup_position = {0, -0.2}, insert_position = {0, 1},
   stack = false, stack_size_bonus = 50,
   draw_held_item = false, draw_inserter_arrow = false, chases_belt_items = false,
   platform_picture = empty_sheet,
@@ -256,4 +218,44 @@ local hidden_outtake_inserter = {
   flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "not-flammable"},
 }
 
-data:extend({pneumatic_pipe, pneumatic_underground, form_liquifier, form_solidifier, hidden_intake_inserter, hidden_outtake_inserter})
+-- Hidden Constant Combinator for tube network circuit signals
+local tube_network_combinator = {
+  type = "constant-combinator",
+  name = "tube-network-combinator",
+  icon = "__administratorio__/graphics/icons/pneumatic/intake.png",
+  icon_size = 32,
+  flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "placeable-off-grid"},
+  collision_mask = {layers = {}},
+  collision_box = {{0, 0}, {0, 0}},
+  selection_box = {{0, 0}, {0, 0}},
+  selectable_in_game = false,
+  hidden = true,
+  item_slot_count = 128,
+  sprites = {
+    north = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
+    east  = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
+    south = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
+    west  = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
+  },
+  activity_led_sprites = {
+    north = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
+    east  = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
+    south = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
+    west  = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
+  },
+  activity_led_light_offsets = {{0, 0}, {0, 0}, {0, 0}, {0, 0}},
+  circuit_wire_connection_points = {
+    { wire = {red = {0, 0}, green = {0, 0}}, shadow = {red = {0, 0}, green = {0, 0}} },
+    { wire = {red = {0, 0}, green = {0, 0}}, shadow = {red = {0, 0}, green = {0, 0}} },
+    { wire = {red = {0, 0}, green = {0, 0}}, shadow = {red = {0, 0}, green = {0, 0}} },
+    { wire = {red = {0, 0}, green = {0, 0}}, shadow = {red = {0, 0}, green = {0, 0}} },
+  },
+  circuit_wire_max_distance = 9,
+}
+
+data:extend({
+  pneumatic_pipe, pneumatic_underground, pneumatic_hidden_network_pipe,
+  tube_intake, tube_outtake,
+  hidden_intake_inserter, hidden_outtake_inserter,
+  tube_network_combinator,
+})

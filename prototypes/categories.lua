@@ -17,8 +17,6 @@
 -- printing                    | Printer T1 (ink-based documents)
 -- printing-advanced           | Printer T2 (document duplication/copying)
 -- printing-workorder          | Printer T1/T2 (direct draft-to-work-order printing)
--- pneumatic-liquify           | Form Liquifier (item -> pneumatic fluid)
--- pneumatic-solidify          | Form Solidifier (pneumatic fluid -> item)
 -- propaganda-distillery        | Propaganda Distillery (admin fluid processing)
 -------------------------------------------------------------------------------
 local feature_flags = require("feature_flags")
@@ -37,8 +35,6 @@ local categories = {
   {type = "recipe-category", name = "printing"},
   {type = "recipe-category", name = "printing-advanced"},
   {type = "recipe-category", name = "printing-workorder"},
-  {type = "recipe-category", name = "pneumatic-liquify"},
-  {type = "recipe-category", name = "pneumatic-solidify"},
   {type = "recipe-category", name = "propaganda-distillery"},
 }
 
