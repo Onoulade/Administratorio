@@ -50,7 +50,7 @@ mechanical_printer.graphics_set = {
   }
 }
 mechanical_printer.working_sound = {
-  sound = { filename = sound_path .. "mechanical-printer-loop.ogg", volume = 0.55 },
+  sound = { filename = sound_path .. "industrial-printer-loop.ogg", volume = 0.55 },
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
 
@@ -76,7 +76,7 @@ printer_t1.graphics_set = {
   }
 }
 printer_t1.working_sound = {
-  sound = { filename = sound_path .. "office-printer-loop.ogg", volume = 0.5 },
+  sound = { filename = sound_path .. "personal-printer-loop.ogg", volume = 0.5 },
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
 
