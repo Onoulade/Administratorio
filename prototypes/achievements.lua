@@ -73,7 +73,7 @@ data:extend({
     to_use = "promise",
     amount = 1,
     limit_quality = "normal",
-    icon = icons .. "basic-excuse.png",
+    icon = icons .. "bureaucratic-promise.png",
     icon_size = 64,
     order = "b[bureaucracy-begins]-d",
     allowed_without_fight = true,
