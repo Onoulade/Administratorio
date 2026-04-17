@@ -63,7 +63,7 @@ RESOURCE_ROOT_TYPES = (
     "simple-entity-with-force",
     "fish",
 )
-SECONDARY_RECIPE_CATEGORIES = {"pneumatic-liquify", "pneumatic-solidify", "pneumatic-intake"}
+SECONDARY_RECIPE_CATEGORIES = {"pneumatic-intake"}
 STARTING_PROVIDER_ITEMS = ("mechanical-printer", "office-desk")
 
 
@@ -193,8 +193,6 @@ def recipe_results(recipe: Dict) -> List[Tuple[str, str]]:
 
 def is_secondary_recipe(name: str, recipe: Dict) -> bool:
     if name.endswith("-regulated"):
-        return True
-    if name.startswith("pneumatic-liquify-") or name.startswith("pneumatic-solidify-"):
         return True
     if recipe_category(recipe) in SECONDARY_RECIPE_CATEGORIES:
         return True

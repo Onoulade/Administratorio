@@ -448,10 +448,12 @@ test("science tier heads and inherited pack requirements are enforced", function
   end
 end)
 
-test("no technology depends on pneumatic form transport", function()
+test("only pneumatic capacity upgrades depend on pneumatic form transport", function()
   for tech_name, tech in pairs(data.raw.technology) do
     for _, prereq in ipairs(tech.prerequisites or {}) do
-      assert_true(prereq ~= "pneumatic-form-transport", tech_name .. " should not require pneumatic-form-transport")
+      if prereq == "pneumatic-form-transport" then
+        assert_true(tech_name == "pneumatic-capacity-1", tech_name .. " should not require pneumatic-form-transport")
+      end
     end
   end
 end)

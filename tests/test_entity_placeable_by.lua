@@ -326,8 +326,6 @@ test("all custom fluid connections are explicitly one-way", function()
     data.raw["assembling-machine"]["corporate-breakroom"],
     data.raw["assembling-machine"]["union-headquarters"],
     data.raw["assembling-machine"]["propaganda-distillery"],
-    data.raw["furnace"]["form-liquifier"],
-    data.raw["furnace"]["form-solidifier"],
   }
 
   for _, prototype in ipairs(prototypes) do

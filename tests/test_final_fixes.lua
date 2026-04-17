@@ -1195,10 +1195,10 @@ test("printer regulated recipes are not duplicated in technology unlock effects"
 end)
 
 test("pneumatic transport does not duplicate regulated unlocks", function()
-  assert_true(tech_unlocks_recipe("pneumatic-form-transport", "form-liquifier"), "pneumatic-form-transport missing form-liquifier unlock")
-  assert_true(not tech_unlocks_recipe("pneumatic-form-transport", "form-liquifier-regulated"), "pneumatic-form-transport should not list form-liquifier-regulated")
-  assert_true(tech_unlocks_recipe("pneumatic-form-transport", "form-solidifier"), "pneumatic-form-transport missing form-solidifier unlock")
-  assert_true(not tech_unlocks_recipe("pneumatic-form-transport", "form-solidifier-regulated"), "pneumatic-form-transport should not list form-solidifier-regulated")
+  assert_true(tech_unlocks_recipe("pneumatic-form-transport", "tube-intake"), "pneumatic-form-transport missing tube-intake unlock")
+  assert_true(not tech_unlocks_recipe("pneumatic-form-transport", "tube-intake-regulated"), "pneumatic-form-transport should not list tube-intake-regulated")
+  assert_true(tech_unlocks_recipe("pneumatic-form-transport", "tube-outtake"), "pneumatic-form-transport missing tube-outtake unlock")
+  assert_true(not tech_unlocks_recipe("pneumatic-form-transport", "tube-outtake-regulated"), "pneumatic-form-transport should not list tube-outtake-regulated")
 end)
 
 test("vanilla recipes redirect Factoriopedia to regulated copies", function()
@@ -1241,13 +1241,13 @@ test("admin building regulated recipes batch and show overlays", function()
   assert_true(has_icon_layer(pipe, "__base__/graphics/icons/signal/signal_0.png"),
     "pneumatic-pipe-regulated should show the 10x overlay")
 
-  local liquifier = get_recipe("form-liquifier-regulated")
-  assert_true(liquifier ~= nil, "form-liquifier-regulated missing")
-  assert_eq(get_result_amount(liquifier, "form-liquifier"), 10, "form-liquifier-regulated should batch to 10")
-  assert_true(has_icon_layer(liquifier, "__base__/graphics/icons/signal/signal_1.png"),
-    "form-liquifier-regulated should show the 10x overlay")
-  assert_true(has_icon_layer(liquifier, "__base__/graphics/icons/signal/signal_0.png"),
-    "form-liquifier-regulated should show the 10x overlay")
+  local intake = get_recipe("tube-intake-regulated")
+  assert_true(intake ~= nil, "tube-intake-regulated missing")
+  assert_eq(get_result_amount(intake, "tube-intake"), 10, "tube-intake-regulated should batch to 10")
+  assert_true(has_icon_layer(intake, "__base__/graphics/icons/signal/signal_1.png"),
+    "tube-intake-regulated should show the 10x overlay")
+  assert_true(has_icon_layer(intake, "__base__/graphics/icons/signal/signal_0.png"),
+    "tube-intake-regulated should show the 10x overlay")
 end)
 
 -------------------------------------------------------------------------------
