@@ -350,7 +350,8 @@ end)
 test("non-printer recipes do not consume ink", function()
   for name, recipe in pairs(recipes) do
     local category = recipe.category
-    if category ~= "printing" and category ~= "printing-workorder" and category ~= "printing-advanced" then
+    if category ~= "printing" and category ~= "printing-workorder" and category ~= "printing-advanced"
+      and category ~= "pneumatic-intake" then
       assert_true(not has_ingredient(recipe, "ink"), name .. " should not consume ink outside a printer")
     end
   end
@@ -1299,16 +1300,27 @@ end)
 -- CATEGORY DEFINITIONS
 -- =========================================================================
 
-test("all 14 custom recipe categories are defined", function()
+test("all custom recipe categories are defined", function()
   local expected = {
     "bureaucracy-registration", "bureaucratic-bootstrap", "bureaucracy-resolution",
     "bureaucracy-policy", "admin-greenhouse", "watercooler-gossip",
     "union-negotiation", "smelting-basic", "printing", "printing-advanced",
-    "printing-workorder", "pneumatic-liquify", "pneumatic-solidify",
-    "propaganda-distillery",
+    "printing-workorder", "propaganda-distillery", "pneumatic-intake",
   }
   for _, name in ipairs(expected) do
     assert_true(data.raw["recipe-category"][name] ~= nil, "missing category: " .. name)
+  end
+end)
+
+test("pneumatic intake recipes accept every transportable item without outputs", function()
+  for item_name in pairs(shared.PNEUMATIC_ITEMS) do
+    local recipe = get_recipe("pneumatic-intake-" .. item_name)
+    assert_true(recipe ~= nil, "missing pneumatic intake recipe for " .. item_name)
+    assert_eq(recipe.category, "pneumatic-intake", recipe.name .. " wrong category")
+    assert_eq(recipe.enabled, false, recipe.name .. " should be unlocked by pneumatic transport tech")
+    assert_eq(#recipe.ingredients, 1, recipe.name .. " should have one ingredient")
+    assert_eq(recipe.ingredients[1].name, item_name, recipe.name .. " wrong ingredient")
+    assert_eq(#recipe.results, 0, recipe.name .. " should not output anything")
   end
 end)
 

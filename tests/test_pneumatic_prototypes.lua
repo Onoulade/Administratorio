@@ -86,9 +86,19 @@ util = {
   },
 }
 
+function util.by_pixel(x, y)
+  return {x / 32, y / 32}
+end
+
 if not table.deepcopy then
   table.deepcopy = util.table.deepcopy
 end
+
+circuit_connector_definitions = {
+  create_single = function(_, definition) return definition end,
+  create_vector = function(_, definitions) return definitions end,
+}
+universal_connector_template = {}
 
 defines = {
   direction = {
@@ -120,11 +130,12 @@ dofile(mod_root .. "prototypes/entity/pneumatic.lua")
 -- 3. TESTS
 -------------------------------------------------------------------------------
 
-test("tube-intake is a container with 1 slot", function()
-  local intake = data.raw.container["tube-intake"]
+test("tube-intake is a furnace-style intake with 1 source slot", function()
+  local intake = data.raw.furnace["tube-intake"]
   assert_true(intake ~= nil, "tube-intake missing")
-  assert_eq(intake.type, "container", "tube-intake should be a container")
-  assert_eq(intake.inventory_size, 1, "tube-intake should have 1 inventory slot")
+  assert_eq(intake.type, "furnace", "tube-intake should use furnace-style ingredient validation")
+  assert_eq(intake.source_inventory_size, 1, "tube-intake should have 1 source slot")
+  assert_eq(intake.crafting_categories[1], "pneumatic-intake", "tube-intake should use pneumatic intake recipes")
 end)
 
 test("tube-outtake is a container with 1 slot", function()
@@ -173,7 +184,7 @@ test("pneumatic-hidden-network-pipe has no collision layers", function()
 end)
 
 test("tube-intake and tube-outtake share fast-replaceable group", function()
-  local intake = data.raw.container["tube-intake"]
+  local intake = data.raw.furnace["tube-intake"]
   local outtake = data.raw.container["tube-outtake"]
   assert_eq(intake.fast_replaceable_group, "pneumatic-io", "intake should use pneumatic-io group")
   assert_eq(outtake.fast_replaceable_group, "pneumatic-io", "outtake should use pneumatic-io group")

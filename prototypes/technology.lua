@@ -1,6 +1,31 @@
 local feature_flags = require("feature_flags")
+local shared = require("prototypes.shared")
 local working_hours_enabled = feature_flags.working_hours_enabled()
 local tech_icons = "__administratorio__/graphics/technology/"
+
+local function pneumatic_form_transport_effects()
+  local effects = {
+    { type = "unlock-recipe", recipe = "pneumatic-pipe" },
+    { type = "unlock-recipe", recipe = "pneumatic-pipe-to-ground" },
+    { type = "unlock-recipe", recipe = "tube-intake" },
+    { type = "unlock-recipe", recipe = "tube-outtake" },
+  }
+
+  local pneumatic_item_names = {}
+  for item_name in pairs(shared.PNEUMATIC_ITEMS) do
+    pneumatic_item_names[#pneumatic_item_names + 1] = item_name
+  end
+  table.sort(pneumatic_item_names)
+
+  for _, item_name in ipairs(pneumatic_item_names) do
+    effects[#effects + 1] = {
+      type = "unlock-recipe",
+      recipe = "pneumatic-intake-" .. item_name,
+    }
+  end
+
+  return effects
+end
 
 data:extend({
   -- DISCOVERY: BULLSHIT (gate tech — mining bullshit ore unlocks the certificate supply chain)
@@ -440,12 +465,7 @@ data:extend({
   {
     type = "technology", name = "pneumatic-form-transport",
     icons = {{icon = "__base__/graphics/icons/pipe.png", icon_size = 64, tint = {r=0.85, g=0.75, b=0.55, a=1}}},
-    effects = {
-      { type = "unlock-recipe", recipe = "pneumatic-pipe" },
-      { type = "unlock-recipe", recipe = "pneumatic-pipe-to-ground" },
-      { type = "unlock-recipe", recipe = "tube-intake" },
-      { type = "unlock-recipe", recipe = "tube-outtake" }
-    },
+    effects = pneumatic_form_transport_effects(),
     prerequisites = {"printing-technology", "logistic-science-pack", "rubble-compaction"},
     unit = { count = 40, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },
     order = "a-p"

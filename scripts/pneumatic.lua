@@ -1,7 +1,7 @@
 -- Pneumatic tube transport: signal-chain logic
 --
--- Items enter at tube-intake (container), are voided by this script, and
--- counted in a per-network signal table.  Items reappear at tube-outtake
+-- Items enter at tube-intake (furnace-style intake), are voided by this script,
+-- and counted in a per-network signal table.  Items reappear at tube-outtake
 -- (container) when this script inserts them from the signal pool.
 --
 -- Visible pneumatic pipes define the network topology.  A hidden
@@ -23,6 +23,21 @@ end
 local PNEUMATIC_SET = {}
 for _, name in ipairs(C.PNEUMATIC_ITEMS) do
   PNEUMATIC_SET[name] = true
+end
+
+local function get_intake_inventory(entity)
+  local source_inventory = defines.inventory.furnace_source
+  if source_inventory then
+    local inv = entity.get_inventory(source_inventory)
+    if inv then return inv end
+  end
+  return entity.get_inventory(defines.inventory.chest)
+end
+
+local function deactivate_intake_machine(entity)
+  if entity and entity.valid and entity.name == "tube-intake" then
+    entity.active = false
+  end
 end
 
 local MAX_NETWORK_RADIUS = 60 -- tiles from the starting pipe
@@ -94,6 +109,26 @@ end
 --- Invalidate the cached capacity (call on research_finished).
 function M.invalidate_capacity_cache()
   storage.tube_capacity_cache = nil
+end
+
+function M.sync_intake_recipe_unlocks(force)
+  if not force or force.valid == false then return end
+  local technology = force.technologies and force.technologies["pneumatic-form-transport"]
+  if not technology or not technology.researched then return end
+
+  for _, item_name in ipairs(C.PNEUMATIC_ITEMS) do
+    local recipe = force.recipes and force.recipes["pneumatic-intake-" .. item_name]
+    if recipe then
+      recipe.enabled = true
+    end
+  end
+end
+
+function M.sync_all_intake_recipe_unlocks()
+  if not game or not game.forces then return end
+  for _, force in pairs(game.forces) do
+    M.sync_intake_recipe_unlocks(force)
+  end
 end
 
 --- Sum all items in a network signal pool.
@@ -169,6 +204,7 @@ end
 
 function M.add_pneumatic_inserter(entity)
   if not is_tube_entity(entity) then return end
+  deactivate_intake_machine(entity)
 
   -- Create the hidden inserter (only for entities that need one).
   local inserter_name = C.PNEUMATIC_BUILDINGS[entity.name]
@@ -359,7 +395,7 @@ function M.on_pneumatic_tick()
 
   local networks_changed = {} -- [net_id] = true when pool was modified
 
-  -- Process intakes: remove 1 item from container, add to signal pool.
+  -- Process intakes: remove 1 item from source slot, add to signal pool.
   for uid, entry in pairs(storage.tube_intakes) do
     local entity = entry.entity
     if not entity or not entity.valid then
@@ -372,7 +408,7 @@ function M.on_pneumatic_tick()
     if not net_id then goto next_intake end
     if storage.tube_network_disabled[net_id] then goto next_intake end
 
-    local inv = entity.get_inventory(defines.inventory.chest)
+    local inv = get_intake_inventory(entity)
     if inv and not inv.is_empty() then
       local stack = inv[1]
       if stack and stack.valid_for_read then
@@ -607,6 +643,8 @@ function M.rebuild_all()
     for building_name, inserter_name in pairs(C.PNEUMATIC_BUILDINGS) do
       for _, entity in ipairs(surface.find_entities_filtered{name = building_name}) do
         if entity.valid then
+          deactivate_intake_machine(entity)
+
           -- Find or create hidden inserter (only for entities that need one).
           local inserter = nil
           if inserter_name then

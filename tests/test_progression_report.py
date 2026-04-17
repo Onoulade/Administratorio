@@ -63,7 +63,7 @@ RESOURCE_ROOT_TYPES = (
     "simple-entity-with-force",
     "fish",
 )
-SECONDARY_RECIPE_CATEGORIES = {"pneumatic-liquify", "pneumatic-solidify"}
+SECONDARY_RECIPE_CATEGORIES = {"pneumatic-liquify", "pneumatic-solidify", "pneumatic-intake"}
 STARTING_PROVIDER_ITEMS = ("mechanical-printer", "office-desk")
 
 

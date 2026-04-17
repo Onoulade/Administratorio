@@ -5,6 +5,26 @@ local function entity_recipe(name, recipe)
   return recipe
 end
 
+local shared = require("prototypes.shared")
+
+local function set_recipe_icon_from_item(recipe, item_name)
+  local item_proto = (data.raw.item and data.raw.item[item_name])
+    or (data.raw.tool and data.raw.tool[item_name])
+    or (data.raw.module and data.raw.module[item_name])
+    or (data.raw.capsule and data.raw.capsule[item_name])
+
+  if item_proto and item_proto.icons then
+    recipe.icons = table.deepcopy(item_proto.icons)
+  elseif item_proto and item_proto.icon then
+    recipe.icon = item_proto.icon
+    recipe.icon_size = item_proto.icon_size
+    recipe.icon_mipmaps = item_proto.icon_mipmaps
+  else
+    recipe.icon = "__core__/graphics/empty.png"
+    recipe.icon_size = 1
+  end
+end
+
 data:extend({
   -- Core Admin Buildings
   entity_recipe("office-desk",               { type = "recipe", enabled = false, ingredients = {{type="item", name="iron-plate", amount=20}, {type="item", name="iron-gear-wheel", amount=10}, {type="item", name="electronic-circuit", amount=10}},                                            results = {{type="item", name="office-desk", amount=2}},      energy_required = 10 }),
@@ -25,3 +45,32 @@ data:extend({
   entity_recipe("tube-intake",              { type = "recipe", enabled = false, ingredients = {{type="item", name="iron-plate", amount=5}, {type="item", name="pipe", amount=2}, {type="item", name="electronic-circuit", amount=2}, {type="item", name="compacted-rubble", amount=3}}, results = {{type="item", name="tube-intake", amount=1}},              energy_required = 3 }),
   entity_recipe("tube-outtake",             { type = "recipe", enabled = false, ingredients = {{type="item", name="iron-plate", amount=5}, {type="item", name="pipe", amount=2}, {type="item", name="electronic-circuit", amount=2}, {type="item", name="compacted-rubble", amount=3}}, results = {{type="item", name="tube-outtake", amount=1}},             energy_required = 3 }),
 })
+
+local pneumatic_intake_recipes = {}
+local pneumatic_item_names = {}
+for item_name in pairs(shared.PNEUMATIC_ITEMS) do
+  pneumatic_item_names[#pneumatic_item_names + 1] = item_name
+end
+table.sort(pneumatic_item_names)
+
+for _, item_name in ipairs(pneumatic_item_names) do
+  local recipe = {
+    type = "recipe",
+    name = "pneumatic-intake-" .. item_name,
+    category = "pneumatic-intake",
+    enabled = false,
+    hidden = true,
+    hidden_in_factoriopedia = true,
+    hide_from_player_crafting = true,
+    allow_as_intermediate = false,
+    allow_decomposition = false,
+    allow_productivity = false,
+    energy_required = 3600,
+    ingredients = {{type = "item", name = item_name, amount = 1}},
+    results = {},
+  }
+  set_recipe_icon_from_item(recipe, item_name)
+  pneumatic_intake_recipes[#pneumatic_intake_recipes + 1] = recipe
+end
+
+data:extend(pneumatic_intake_recipes)
