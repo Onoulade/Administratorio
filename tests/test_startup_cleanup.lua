@@ -142,6 +142,7 @@ local deps = {
     process_walk_in_registration = noop,
     process_resolutions = noop,
     process_frustration_and_protests = noop,
+    process_calmed_spawners = noop,
     update_circuit_signals = noop,
   },
   get_cached_desks = function() return {} end,
@@ -150,7 +151,7 @@ local deps = {
 
 local module = dofile(mod_root .. "scripts/control_resolution_processing.lua")
 
-test("startup cleanup restocks spaceship with printer and admin station", function()
+test("startup cleanup restocks crash pieces with starter tools and paperwork", function()
   local controller = module.new(deps)
   controller.on_tick({tick = 1})
 
@@ -159,11 +160,15 @@ test("startup cleanup restocks spaceship with printer and admin station", functi
   assert_true(ship_inventory.cleared, "spaceship inventory should be cleared")
   assert_eq(ship_inventory.items["mechanical-printer"], 1, "spaceship should receive one mechanical printer")
   assert_eq(ship_inventory.items["admin-station"], 1, "spaceship should receive one admin station")
+  assert_true(ship_inventory.items["construction-permit"] == nil, "spaceship should not receive construction permits")
+  assert_true(ship_inventory.items["safety-waiver"] == nil, "spaceship should not receive safety waivers")
+  assert_eq(ship_inventory.items["carbon-offset-certificate-basic"], 3,
+    "spaceship should receive three basic carbon offset certificates")
 
   assert_true(chest_1_inventory.cleared, "crash chest 1 should be cleared")
   assert_true(chest_2_inventory.cleared, "crash chest 2 should be cleared")
-  assert_true(next(chest_1_inventory.items) == nil, "crash chest 1 should stay empty")
-  assert_true(next(chest_2_inventory.items) == nil, "crash chest 2 should stay empty")
+  assert_true(next(chest_1_inventory.items) == nil, "crash chest 1 should stay empty if present")
+  assert_true(next(chest_2_inventory.items) == nil, "crash chest 2 should stay empty if present")
 end)
 
 print(string.format("\n=== STARTUP CLEANUP TESTS ==="))
