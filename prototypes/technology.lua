@@ -169,12 +169,22 @@ data:extend({
     type = "technology", name = "office-agriculture",
     icon = "__administratorio__/graphics/icons/coffee-bean.png", icon_size = 32,
     effects = {
-      { type = "unlock-recipe", recipe = "coffee-plantation" },
-      { type = "unlock-recipe", recipe = "charcoal-production" }
+      { type = "unlock-recipe", recipe = "coffee-plantation" }
     },
     prerequisites = {"corporate-hospitality", "fluid-handling"},
     unit = { count = 60, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "c-a"
+  },
+  -- T3a2: CHARCOAL PRODUCTION (regulated renewable coal from greenhouse wood)
+  {
+    type = "technology", name = "charcoal-production",
+    icon = "__base__/graphics/icons/coal.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "charcoal-production" }
+    },
+    prerequisites = {"administrative-bureaucracy"},
+    unit = { count = 35, ingredients = {{"automation-science-pack", 1}}, time = 20 },
+    order = "c-a2"
   },
   -- T3b: INDUSTRIAL PROPAGANDA (lies, nonsense, and credentials)
   {

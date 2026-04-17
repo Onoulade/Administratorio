@@ -839,6 +839,9 @@ test("charcoal-production requires carbon offset", function()
   assert_true(r ~= nil)
   assert_eq(r.category, "smelting-basic")
   assert_true(has_ingredient(r, "wood"))
+  assert_eq(get_ingredient_amount(r, "wood"), 30)
+  assert_eq(get_result_amount(r, "coal"), 8)
+  assert_eq(r.energy_required, 30)
   assert_true(has_ingredient(r, "carbon-offset-certificate-basic"),
     "charcoal should need carbon offset")
   assert_eq(r.ingredients[1].name, "carbon-offset-certificate-basic",
@@ -984,6 +987,12 @@ test("greenhouse recipes use admin-greenhouse category", function()
     assert_true(r ~= nil, name .. " missing")
     assert_eq(r.category, "admin-greenhouse", name .. " wrong category")
   end
+end)
+
+test("greenhouse wood growth is moderately accelerated", function()
+  local r = get_recipe("greenhouse-wood")
+  assert_eq(get_result_amount(r, "wood"), 12)
+  assert_eq(r.energy_required, 24)
 end)
 
 test("coffee-plantation grows beans without fertilizer", function()
