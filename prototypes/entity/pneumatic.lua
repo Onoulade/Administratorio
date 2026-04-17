@@ -1,7 +1,7 @@
 -------------------------------------------------------------------------------
 -- PNEUMATIC TUBE TRANSPORT SYSTEM
--- Items enter at tube-intake (container), are voided by script, and counted
--- in a per-network signal table.  Items reappear at tube-outtake (container)
+-- Items enter at tube-intake (furnace-style intake), are voided by script,
+-- and counted in a per-network signal table.  Items reappear at tube-outtake (container)
 -- when the script inserts them from the signal pool.
 --
 -- Visible pneumatic pipes define the network topology.  A hidden
@@ -113,9 +113,10 @@ local empty_sheet = {
   frame_count = 1,
 }
 
--- Tube Intake: container that receives items for the signal chain
+-- Tube Intake: furnace-style receiver that lets inserters use recipe
+-- ingredient validation before items reach the signal chain.
 local tube_intake = {
-  type = "container",
+  type = "furnace",
   name = "tube-intake",
   icon = "__administratorio__/graphics/icons/pneumatic/intake.png",
   icon_size = 32,
@@ -127,19 +128,35 @@ local tube_intake = {
   corpse = "small-remnants",
   collision_box = {{-0.3, -0.3}, {0.3, 0.3}},
   selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
-  inventory_size = 1,
+  crafting_categories = {"pneumatic-intake"},
+  crafting_speed = 0.001,
+  energy_usage = "1W",
+  energy_source = {type = "void"},
+  source_inventory_size = 1,
+  result_inventory_size = 1,
+  module_slots = 0,
+  allowed_effects = {},
+  show_recipe_icon = false,
+  show_recipe_icon_on_map = false,
   circuit_wire_max_distance = 9,
-  circuit_connector = circuit_connector_definitions.create_single(
+  circuit_connector = circuit_connector_definitions.create_vector(
     universal_connector_template,
-    {variation = 26, main_offset = util.by_pixel(0, -8), shadow_offset = util.by_pixel(4, -4), show_shadow = true}
+    {
+      {variation = 26, main_offset = util.by_pixel(0, -8), shadow_offset = util.by_pixel(4, -4), show_shadow = true},
+      {variation = 26, main_offset = util.by_pixel(0, -8), shadow_offset = util.by_pixel(4, -4), show_shadow = true},
+      {variation = 26, main_offset = util.by_pixel(0, -8), shadow_offset = util.by_pixel(4, -4), show_shadow = true},
+      {variation = 26, main_offset = util.by_pixel(0, -8), shadow_offset = util.by_pixel(4, -4), show_shadow = true},
+    }
   ),
-  picture = {
-    layers = {
-      {
-        filename = "__administratorio__/graphics/entities/pneumatic-intake/intake-up.png",
-        priority = "high",
-        width = 66,
-        height = 72,
+  graphics_set = {
+    animation = {
+      layers = {
+        {
+          filename = "__administratorio__/graphics/entities/pneumatic-intake/intake-up.png",
+          priority = "high",
+          width = 66,
+          height = 72,
+        },
       },
     },
   },

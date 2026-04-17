@@ -114,7 +114,7 @@ M.PNEUMATIC_BUILDINGS = {
 
 -- All items eligible for pneumatic tube transport.
 -- Mirrors shared.PNEUMATIC_ITEMS from the data stage.
--- Used at runtime to set intake inserter filters.
+-- Used at runtime to validate intake contents before adding them to a network.
 M.PNEUMATIC_ITEMS = {
   -- PAPERWORK_ITEMS
   "work-order", "form-27b-6", "research-grant-approval", "provisional-approval",

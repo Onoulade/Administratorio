@@ -18,6 +18,7 @@
 -- printing-advanced           | Printer T2 (document duplication/copying)
 -- printing-workorder          | Printer T1/T2 (direct draft-to-work-order printing)
 -- propaganda-distillery        | Propaganda Distillery (admin fluid processing)
+-- pneumatic-intake            | Tube Intake (hidden no-output intake validation)
 -------------------------------------------------------------------------------
 local feature_flags = require("feature_flags")
 local working_hours_enabled = feature_flags.working_hours_enabled()
@@ -36,6 +37,7 @@ local categories = {
   {type = "recipe-category", name = "printing-advanced"},
   {type = "recipe-category", name = "printing-workorder"},
   {type = "recipe-category", name = "propaganda-distillery"},
+  {type = "recipe-category", name = "pneumatic-intake"},
 }
 
 if working_hours_enabled then

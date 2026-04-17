@@ -458,6 +458,7 @@ local function on_init()
     normalize_player_admin_station_quickbar(player)
   end
   sync_all_regulated_recipe_unlocks()
+  pneumatic.sync_all_intake_recipe_unlocks()
   storage.needs_startup_cleanup = true
   storage.needs_protest_refresh = true
   needs_unit_group_scan = true
@@ -520,6 +521,7 @@ local function on_configuration_changed()
     normalize_player_admin_station_quickbar(player)
   end
   sync_all_regulated_recipe_unlocks()
+  pneumatic.sync_all_intake_recipe_unlocks()
   storage.needs_protest_refresh = true
   needs_unit_group_scan = true
 
@@ -538,6 +540,9 @@ local function on_research_finished(event)
   -- Invalidate tube capacity cache when a pneumatic capacity tech is researched.
   if research.name and research.name:find("^pneumatic%-capacity%-") then
     pneumatic.invalidate_capacity_cache()
+  end
+  if research.name == "pneumatic-form-transport" then
+    pneumatic.sync_intake_recipe_unlocks(research.force)
   end
 end
 
