@@ -58,6 +58,7 @@ function M.new(deps)
                 if ship_name == "crash-site-spaceship" then
                   inv.insert({name = "mechanical-printer", count = 1})
                   inv.insert({name = "admin-station", count = 1})
+                  inv.insert({name = "carbon-offset-certificate-basic", count = 3})
                 end
               end
             end

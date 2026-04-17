@@ -821,6 +821,19 @@ test("all smelting-basic recipes require carbon-offset-certificate-basic", funct
   end
 end)
 
+test("starter furnace recipes are enabled from start", function()
+  local starter_smelting_recipes = {
+    "iron-plate-batch", "copper-plate-batch", "steel-plate-batch",
+    "stone-brick-batch", "dubious-data-batch",
+  }
+  for _, name in ipairs(starter_smelting_recipes) do
+    local r = get_recipe(name)
+    assert_true(r ~= nil, name .. " missing")
+    assert_eq(r.category, "smelting-basic", name .. " wrong category")
+    assert_eq(r.enabled, true, name .. " should be enabled from start")
+  end
+end)
+
 test("charcoal-production requires carbon offset", function()
   local r = get_recipe("charcoal-production")
   assert_true(r ~= nil)
@@ -1436,10 +1449,11 @@ test("iron-plate-batch: 10 ore + 1 cert -> 10 plates", function()
   assert_eq(get_result_amount(r, "iron-plate"), 10)
 end)
 
-test("steel-plate-batch: 50 iron-plate + 1 cert -> 10 steel", function()
+test("steel-plate-batch: 25 iron-plate + 1 cert -> 5 steel", function()
   local r = get_recipe("steel-plate-batch")
-  assert_eq(get_ingredient_amount(r, "iron-plate"), 50)
-  assert_eq(get_result_amount(r, "steel-plate"), 10)
+  assert_eq(get_ingredient_amount(r, "iron-plate"), 25)
+  assert_eq(get_ingredient_amount(r, "carbon-offset-certificate-basic"), 1)
+  assert_eq(get_result_amount(r, "steel-plate"), 5)
 end)
 
 test("verified carbon certificate cost is scaled up", function()
