@@ -178,7 +178,7 @@ data:extend({
   -- T3a2: CHARCOAL PRODUCTION (regulated renewable coal from greenhouse wood)
   {
     type = "technology", name = "charcoal-production",
-    icon = "__base__/graphics/icons/coal.png", icon_size = 64,
+    icon = tech_icons .. "coal-production.png", icon_size = 179,
     effects = {
       { type = "unlock-recipe", recipe = "charcoal-production" }
     },
