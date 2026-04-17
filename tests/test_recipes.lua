@@ -283,7 +283,7 @@ test("batch multipliers for high-volume intermediates are 10x or 20x", function(
     ["copper-cable"] = 10, ["iron-gear-wheel"] = 10, ["electronic-circuit"] = 10,
     ["heat-pipe"] = 10, ["ink"] = 10,
     ["pneumatic-pipe"] = 10, ["pneumatic-pipe-to-ground"] = 10,
-    ["form-liquifier"] = 10, ["form-solidifier"] = 10,
+    ["tube-intake"] = 10, ["tube-outtake"] = 10,
     ["iron-plate"] = 20, ["copper-plate"] = 20, ["steel-plate"] = 20,
   }
   for name, expected in pairs(bulk) do
@@ -1384,11 +1384,11 @@ test("pneumatic-pipe-to-ground requires construction-permit", function()
   assert_true(has_ingredient(r, "pneumatic-pipe"))
 end)
 
-test("form-liquifier and form-solidifier require compacted-rubble", function()
-  assert_true(has_ingredient(get_recipe("form-liquifier"), "compacted-rubble"))
-  assert_true(has_ingredient(get_recipe("form-solidifier"), "compacted-rubble"))
-  assert_true(has_ingredient(get_recipe("form-liquifier"), "pipe"))
-  assert_true(has_ingredient(get_recipe("form-solidifier"), "pipe"))
+test("tube intake and outtake require compacted-rubble", function()
+  assert_true(has_ingredient(get_recipe("tube-intake"), "compacted-rubble"))
+  assert_true(has_ingredient(get_recipe("tube-outtake"), "compacted-rubble"))
+  assert_true(has_ingredient(get_recipe("tube-intake"), "pipe"))
+  assert_true(has_ingredient(get_recipe("tube-outtake"), "pipe"))
 end)
 
 test("heavier vanilla integration anchors have exact ingredient counts", function()
@@ -1403,8 +1403,8 @@ test("heavier vanilla integration anchors have exact ingredient counts", functio
     {"union-headquarters", "management-verbal-work-order", 1},
     {"pneumatic-pipe", "pipe", 1},
     {"pneumatic-pipe-to-ground", "construction-permit", 1},
-    {"form-liquifier", "pipe", 2},
-    {"form-solidifier", "pipe", 2},
+    {"tube-intake", "pipe", 2},
+    {"tube-outtake", "pipe", 2},
     {"crappy-report-production", "paper", 2},
     {"credentials-production", "electronic-circuit", 2},
     {"data-production", "advanced-circuit", 2},
@@ -1769,7 +1769,7 @@ test("ADMIN_BUILDINGS includes all expected building names", function()
     "office-desk", "admin-station", "resolution-office", "greenhouse",
     "corporate-breakroom", "printer-t1", "printer-t2",
     "mechanical-printer", "union-headquarters",
-    "form-liquifier", "form-solidifier", "pneumatic-pipe", "pneumatic-pipe-to-ground",
+    "tube-intake", "tube-outtake", "pneumatic-pipe", "pneumatic-pipe-to-ground",
   }
   for _, name in ipairs(expected) do
     assert_true(shared.ADMIN_BUILDINGS[name], name .. " missing from ADMIN_BUILDINGS")

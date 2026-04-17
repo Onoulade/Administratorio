@@ -75,12 +75,12 @@ pneumatic_underground.icons = {{icon = "__base__/graphics/icons/pipe-to-ground.p
 pneumatic_underground.icon = nil
 pneumatic_underground.icon_size = nil
 tint_pipe_pictures(pneumatic_underground.pictures, pneumatic_tint)
-pneumatic_underground.fluid_box.pipe_connections[2].max_underground_distance = 16
 for _, pcon in pairs(pneumatic_underground.fluid_box.pipe_connections) do
   if not pcon.connection_type or pcon.connection_type == "normal" then
     pcon.connection_category = "pneumatic-forms"
   elseif pcon.connection_type == "underground" then
     pcon.connection_category = "pneumatic-forms"
+    pcon.max_underground_distance = 16
   end
 end
 pneumatic_underground.fluid_box.max_pipeline_extent = 60
