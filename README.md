@@ -22,7 +22,7 @@ There are two complaint families: biters escalate through landscape, smog, noise
 
 Every waiting biter has its own frustration bar. If the queue backs up long enough, that biter leaves the desk queue, picks a reachable player building, and **disables it** by protesting there. Active protests raise alerts, show map tags, and keep the outage alive until you intervene.
 
-Your emergency tool is the **Bureaucratic Promise** capsule. Throw it at the protesting biter, not the building. If a desk slot is available, the biter reroutes straight back into the nearest queue. If no slot is free, it becomes temporarily pacified for about 60 seconds and then resumes protesting if capacity still has not opened. A promise suppresses the outage, but it does **not** erase the complaint or any partial case progress already moving through your factory.
+Your emergency tool is the **Bureaucratic Promise** capsule. Throw it at the protesting biter, not the building. If a desk slot is available, the biter reroutes straight back into the nearest queue. If no slot is free, it becomes temporarily pacified for about 60 seconds and then resumes protesting if capacity still has not opened. A promise suppresses the outage, but it does **not** erase the complaint or any partial case progress already moving through your factory. Hovering a waiting, protesting, or pacified biter shows its state, frustration, unresolved complaints, and the next administrative step.
 
 ### Eviction notices are expansion paperwork
 
@@ -53,13 +53,13 @@ I added a bunch of new buildings to support the bureaucratic machine:
 - **Propaganda Distillery** — Weaponizes misinformation for administrative purposes
 - **Resolution Office** — Processes complex complaint chains
 - **Biter Administration Desk** — Receives intercepted attack groups and has a fixed central waiting zone inside a larger walk-through station footprint
-- **Pneumatic Form Transport** — A sealed pipe network dedicated entirely to moving paperwork
+- **Pneumatic Form Transport** — A sealed pipe network dedicated entirely to moving valid paperwork, with filtered intakes, requestable outtakes, live hover status, and capacity upgrades
 
 And yes, coffee is the lifeblood of the operation. You'll grow it in **Greenhouses**, brew it, and funnel it into every critical workflow.
 
 ### A full tech tree built on red tape
 
-I reworked the entire research tree. Military milestones are replaced with bureaucratic ones, and the tree now splits into narrower branches like **Local Precedents**, **Environmental Compliance**, **Corporate Hospitality**, **Information Management**, **Verbal Approvals**, **Public Finance**, **Board Meetings**, **Executive Review**, **Radiological Compliance**, **Federal Regulation**, **Admin Station Capacity**, and the separate late complaint ordinances. Each branch unlocks a different slice of the office: paperwork throughput, coffee, approvals, funding, queue capacity, expansion, or one of the late complaint families.
+I reworked the entire research tree. Military milestones are replaced with bureaucratic ones, and the tree now splits into narrower branches like **Wood Production**, **Charcoal Production**, **Local Precedents**, **Environmental Compliance**, **Corporate Hospitality**, **Information Management**, **Verbal Approvals**, **Public Finance**, **Board Meetings**, **Executive Review**, **Radiological Compliance**, **Federal Regulation**, **Admin Station Capacity**, and the separate late complaint ordinances. Each branch unlocks a different slice of the office: paperwork throughput, renewable wood and coal, coffee, approvals, funding, queue capacity, expansion, or one of the late complaint families.
 
 
 ## Current State

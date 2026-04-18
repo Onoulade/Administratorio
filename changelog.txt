@@ -1,4 +1,19 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.1
+Date: 2026-04-18
+  Features:
+    - Added hover explanations for biter waiting, pathfinding, protesting, pacified, and returning-home states so the inspection panel now describes what is happening and what intervention is needed.
+    - Added a dedicated Charcoal Production technology, separating renewable coal from Office Agriculture so coffee and charcoal progression have clearer branches.
+  Changes:
+    - Tube Intakes now use furnace-style intake validation with hidden per-paperwork recipes, so inserters feed only valid pneumatic paperwork items into tube networks.
+    - Refreshed technology and resource art across the research tree, including new icons for administrative capacity, filing logistics, complaint branches, public finance, federal regulation, eviction notices, greenhouse wood production, charcoal production, and redundant rubble.
+    - Renamed the Administrative Bureaucracy display string to Wood Production and updated related locale text to match its narrower greenhouse role.
+  Bugfixes:
+    - Synchronized hidden pneumatic intake recipe unlocks on init, configuration change, and Pneumatic Form Transport research completion so existing and newly researched forces can use Tube Intakes correctly.
+  Docs:
+    - Updated README and English locale for biter hover guidance, pneumatic intake validation, 16-tile underground pneumatic pipes, Wood Production, and the dedicated Charcoal Production branch.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.0
 Date: 2026-04-16
   Features:
