@@ -7,10 +7,14 @@ It records the shared principles that all planet passes should follow, the curre
 ## Current Status
 
 - Space Age remains an optional compatibility target rather than a hard dependency.
-- Vulcanus has a working first-pass implementation and a solver-clean launch path.
+- The current branch is a broad first-pass implementation, not a completed compatibility pass. The detailed completion backlog and 2026-04-18 assessment live in [space-age-implementation-steps.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-implementation-steps.md).
+- Vulcanus has a working first-pass implementation and the latest Space Age route analyzer run reports no aggregate imports or aggregate deadlocks for selected escape targets.
 - Gleba has a working first-pass implementation (yellow ink, conciliation paperwork, spoilage, and bootstrap variants).
 - Fulgora has a working first-pass implementation (Digital Services Bureau, salvage-backed magenta paperwork, and holmium gating).
 - Aquilo has a working first-pass implementation (Laser Printer, Interplanetary Fax Exchange runtime, frozen-ink restrictions, and multicolor paperwork).
+- Current automated validation status: all Lua tests pass, base-only strict progression passes, and Space Age route analysis passes on Factorio 2.0.76.
+- Current known blockers are design/completion issues rather than load-test failures: unresolved profession surface rules, the removed-`composite-form` / bicolor-form design decision, fax reconstruction economy decisions, faxability policy, and manual balance review of analyzer routes.
+- Latest validation note: Space Age remains optional; `amber-sap-seep`, `verdigris-crust`, and `capture-bureau` are now gated so base-only `--dump-data` no longer receives Space Age-only resources/entities.
 - The shared rules below should be treated as the baseline for future planet work unless a later implementation proves they need revision.
 
 ## Shared Principles

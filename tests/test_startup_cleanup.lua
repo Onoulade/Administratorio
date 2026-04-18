@@ -140,6 +140,7 @@ local deps = {
     refresh_protest_notifications = noop,
     process_walk_in_registration = noop,
     process_resolutions = noop,
+    process_space_tourist_returns = noop,
     process_frustration_and_protests = noop,
     process_calmed_spawners = noop,
     update_circuit_signals = noop,
