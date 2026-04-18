@@ -159,6 +159,7 @@ test("startup cleanup restocks crash pieces with starter tools and paperwork", f
 
   assert_true(ship_inventory.cleared, "spaceship inventory should be cleared")
   assert_eq(ship_inventory.items["mechanical-printer"], 1, "spaceship should receive one mechanical printer")
+  assert_eq(ship_inventory.items["burner-mining-drill"], 2, "spaceship should receive two burner mining drills")
   assert_eq(ship_inventory.items["admin-station"], 1, "spaceship should receive one admin station")
   assert_true(ship_inventory.items["construction-permit"] == nil, "spaceship should not receive construction permits")
   assert_true(ship_inventory.items["safety-waiver"] == nil, "spaceship should not receive safety waivers")
