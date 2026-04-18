@@ -74,7 +74,7 @@ data:extend({
   },
   {
     type = "resource", name = "redundant-rubble",
-    icon = "__administratorio__/graphics/icons/regulation.png", icon_size = 64,
+    icon = "__administratorio__/graphics/icons/redundant-rubble.png", icon_size = 64,
     flags = {"placeable-neutral"}, order="a-b-c",
     tree_removal_probability = 1.0, tree_removal_max_distance = 32 * 32,
     minable = {mining_particle = "stone-particle", mining_time = 1.5, result = "redundant-rubble"},
