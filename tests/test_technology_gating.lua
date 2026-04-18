@@ -279,6 +279,10 @@ test("local precedents and environmental compliance are split", function()
 end)
 
 test("administrative bureaucracy owns only the early greenhouse wood bootstrap", function()
+  assert_true(technologies["administrative-bureaucracy"].icon == "__administratorio__/graphics/technology/greenhouse.png",
+    "administrative-bureaucracy should use the greenhouse technology icon")
+  assert_true(technologies["administrative-bureaucracy"].icon_size == 128,
+    "administrative-bureaucracy should use the 128px greenhouse technology icon size")
   assert_true(tech_unlocks_recipe("administrative-bureaucracy", "greenhouse"), "administrative-bureaucracy should unlock the greenhouse")
   assert_true(tech_unlocks_recipe("administrative-bureaucracy", "greenhouse-wood"), "administrative-bureaucracy should unlock wood growth")
   assert_true(not tech_unlocks_recipe("administrative-bureaucracy", "filing-landscape"), "administrative-bureaucracy should not unlock landscape filing")

@@ -80,7 +80,7 @@ data:extend({
   -- T1: WOOD PRODUCTION (red-science wood bootstrap)
   {
     type = "technology", name = "administrative-bureaucracy",
-    icon = "__base__/graphics/icons/wood.png", icon_size = 64,
+    icon = tech_icons .. "greenhouse.png", icon_size = 128,
     effects = {
       { type = "unlock-recipe", recipe = "greenhouse" },
       { type = "unlock-recipe", recipe = "greenhouse-wood" }
