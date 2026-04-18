@@ -348,7 +348,7 @@ data:extend({
     results = {{type = "item", name = "chromatic-printer", amount = 1}},
     energy_required = 12
   }, "aquilo"),
-  not_in_space({
+  surface_limited({
     type = "recipe",
     name = "notary-office",
     enabled = false,
@@ -363,7 +363,7 @@ data:extend({
     },
     results = {{type = "item", name = "notary-office", amount = 1}},
     energy_required = 16
-  }),
+  }, "vulcanus"),
   surface_limited({
     type = "recipe",
     name = "territorial-arbitration-post",

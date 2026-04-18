@@ -124,7 +124,7 @@ On Gleba, yellow forms are cheap and locally produced (but perishable). Off-worl
 
 ### 10. Buildings require workers but no operating paperwork
 
-Both `Capture Bureau` and `Conciliation Desk` require a `conciliation-officer` worker to craft but no operating paperwork. The worker must be trained on Nauvis and shipped to Gleba.
+Both `Capture Bureau` and `Conciliation Desk` require a `conciliation-officer` worker to craft but no operating paperwork. Current implementation makes the Nauvis workforce seed portable: once the player has worker/trainee stock, a Formation Center, and agricultural science, `conciliation-officer-formation` can happen anywhere rather than requiring a return trip to Nauvis.
 
 ### 11. Tax evasion applies — no taxpayer money
 

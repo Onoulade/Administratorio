@@ -130,7 +130,7 @@ Additionally, cyan forms are required as ingredients in any recipe consuming tun
 
 ### 7. The notary office requires a worker but no operating paperwork
 
-The `notary-office` requires a `licensed-notary` worker to craft but no operating paperwork. The worker must be trained on Nauvis and shipped to Vulcanus.
+The `notary-office` requires a `licensed-notary` worker to craft but no operating paperwork. `licensed-notary-formation` is intentionally Nauvis-bound as part of the taxpayer-funded workforce seed, so the worker must be trained on Nauvis and shipped to Vulcanus.
 
 ### 8. Tax evasion applies — no taxpayer money
 
