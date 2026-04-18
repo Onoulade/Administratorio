@@ -1247,7 +1247,7 @@ local function add_queue_header_row(parent)
   set_element_size(state, 120, nil)
   local source = row.add{type = "label", caption = "From"}
   set_element_size(source, 80, nil)
-  row.add{type = "label", caption = "Inks"}
+  row.add{type = "label", caption = "Required inks"}
   return row
 end
 
