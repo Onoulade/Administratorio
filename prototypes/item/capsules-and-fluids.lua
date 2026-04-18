@@ -153,7 +153,7 @@ data:extend({
   },
   {
     type = "capsule", name = "eviction-notice",
-    icon = item_icons .. "regulation.png", icon_size = 64,
+    icon = item_icons .. "eviction-notice.png", icon_size = 64,
     subgroup = "capsule", order = "z2[eviction-notice]", stack_size = 5,
     capsule_action = {
       type = "throw",

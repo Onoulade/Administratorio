@@ -287,7 +287,7 @@ data:extend({
   -- T4d: NEST EXPROPRIATION (eviction notices for territorial expansion)
   {
     type = "technology", name = "nest-expropriation",
-    icon = "__administratorio__/graphics/icons/eviction-notice.png", icon_size = 64,
+    icon = tech_icons .. "eviction-notice.png", icon_size = 256,
     effects = {
       { type = "unlock-recipe", recipe = "eviction-notice-production" }
     },
