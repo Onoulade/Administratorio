@@ -36,7 +36,7 @@ data:extend({
   {
     type = "autoplace-control",
     name = "redundant-rubble",
-    icon = "__administratorio__/graphics/icons/regulation.png",
+    icon = "__administratorio__/graphics/icons/redundant-rubble.png",
     icon_size = 64,
     richness = true,
     order = "b-c",

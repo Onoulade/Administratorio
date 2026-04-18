@@ -46,7 +46,7 @@ data:extend({
   -- DISCOVERY: RED TAPE
   {
     type = "technology", name = "discovery-redundant-rubble",
-    icon = "__administratorio__/graphics/icons/regulation.png", icon_size = 64,
+    icon = tech_icons .. "redundant-rubble.png", icon_size = 128,
     effects = {
       { type = "unlock-recipe", recipe = "provisional-approval-production" },
       { type = "unlock-recipe", recipe = "burner-mining-drill" }
