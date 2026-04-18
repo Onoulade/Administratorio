@@ -146,6 +146,27 @@ package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 
 dofile(mod_root .. "prototypes/technology.lua")
 
+local function load_locale_section(section_name)
+  local path = mod_root .. "locale/en/config.cfg"
+  local section = {}
+  local in_section = false
+  for line in io.lines(path) do
+    local header = line:match("^%[(.-)%]$")
+    if header then
+      in_section = header == section_name
+    elseif in_section then
+      local key, value = line:match("^([^=]+)=(.*)$")
+      if key then
+        section[key] = value
+      end
+    end
+  end
+  return section
+end
+
+local technology_name_locale = load_locale_section("technology-name")
+local technology_description_locale = load_locale_section("technology-description")
+
 local function tech_unlocks_recipe(tech_name, recipe_name)
   local tech = technologies[tech_name]
   if not tech or not tech.effects then return false end
@@ -290,6 +311,18 @@ test("admin station capacity upgrades are tiered and chain correctly", function(
   assert_true(tech_has_prereq("admin-station-capacity-7", "production-science-pack"), "capacity VII should require production science")
   assert_true(tech_has_prereq("admin-station-capacity-8", "utility-science-pack"), "capacity VIII should require utility science")
   assert_true(tech_uses_pack("admin-station-capacity-8", "utility-science-pack"), "capacity VIII should consume utility science")
+end)
+
+test("pneumatic capacity upgrade chain has base upgrade locale", function()
+  assert_true(technology_name_locale["pneumatic-capacity"] ~= nil, "pneumatic capacity upgrade base name should be localized")
+  assert_true(technology_description_locale["pneumatic-capacity"] ~= nil, "pneumatic capacity upgrade base description should be localized")
+
+  for level = 1, 3 do
+    local tech_name = "pneumatic-capacity-" .. level
+    assert_true(technologies[tech_name] ~= nil, tech_name .. " should exist")
+    assert_true(technology_name_locale[tech_name] ~= nil, tech_name .. " name should be localized")
+    assert_true(technology_description_locale[tech_name] ~= nil, tech_name .. " description should be localized")
+  end
 end)
 
 test("filing cabinet logistics upgrades grant character logistics bonuses", function()
