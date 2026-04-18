@@ -44,6 +44,27 @@ Recommended split:
 
 This keeps the system readable and gives the player only two main training bases to understand.
 
+## Surface Rule
+
+Current implementation uses a hybrid workforce rule:
+
+- taxpayer-funded recruitment and selected seed roles stay Nauvis-bound:
+  - `job-offer-production`
+  - `worker-biter-formation`
+  - `management-trainee-formation`
+  - `licensed-notary-formation`
+- post-seed specialist routing is portable once the player has a Formation Center, the required trainee item, and the relevant prerequisite science:
+  - `clerical-trainee-formation`
+  - `astronaut-formation`
+  - `night-shift-supervisor-formation`
+  - `conciliation-officer-formation`
+  - `relay-clerk-formation`
+  - `cryoprint-technician-formation`
+  - `field-negotiator-formation`
+  - `middle-management-managing-manager-formation`
+
+This keeps the expensive public hiring loop anchored on Nauvis without making every planet specialist require another Nauvis round trip after the player has already established off-world science and a Formation Center.
+
 ## Candidate Shared Training Items
 
 ### `clerical-trainee`

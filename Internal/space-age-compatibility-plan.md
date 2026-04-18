@@ -13,7 +13,7 @@ It records the shared principles that all planet passes should follow, the curre
 - Fulgora has a working first-pass implementation (Digital Services Bureau, salvage-backed magenta paperwork, and holmium gating).
 - Aquilo has a working first-pass implementation (Laser Printer, Interplanetary Fax Exchange runtime, frozen-ink restrictions, and multicolor paperwork).
 - Current automated validation status: all Lua tests pass, base-only strict progression passes, and Space Age route analysis passes on Factorio 2.0.76.
-- Current known blockers are design/completion issues rather than load-test failures: unresolved profession surface rules, the removed-`composite-form` / bicolor-form design decision, fax reconstruction economy decisions, faxability policy, and manual balance review of analyzer routes.
+- Current known blockers are design/completion issues rather than load-test failures: remaining planet-identity surface-rule cleanup, the bicolor-form versus Aquilo transfer-media decision, fax reconstruction economy decisions, faxability policy, and manual balance review of analyzer routes.
 - Latest validation note: Space Age remains optional; `amber-sap-seep`, `verdigris-crust`, and `capture-bureau` are now gated so base-only `--dump-data` no longer receives Space Age-only resources/entities.
 - The shared rules below should be treated as the baseline for future planet work unless a later implementation proves they need revision.
 
@@ -159,7 +159,7 @@ This means:
 All planet-specific factory buildings — both vanilla Space Age machines and the mod's own administrative buildings — follow the same rule:
 
 - **No operating paperwork required**: they are exempt from recurring administrative permits
-- **A specialist worker must be included in the crafting recipe**: this worker must be trained on Nauvis and shipped to the planet
+- **A specialist worker must be included in the crafting recipe**: the Nauvis workforce seed creates portable staffing, then planet-science credentials route those workers into specialist roles
 
 The specialist workers are:
 
@@ -169,6 +169,12 @@ The specialist workers are:
 - `cryoprint-technician` for Aquilo buildings (Cryogenic Plant, Laser Printer, Fax Emitter, Interplanetary Fax Exchange)
 
 The worker requirement compensates for the operating paperwork exemption: you pay upfront in workforce logistics instead of ongoing in bureaucratic overhead.
+
+Current surface rule:
+
+- `job-offer-production`, `worker-biter-formation`, `management-trainee-formation`, and `licensed-notary-formation` are Nauvis-bound.
+- `clerical-trainee-formation`, `astronaut-formation`, `night-shift-supervisor-formation`, `conciliation-officer-formation`, `relay-clerk-formation`, `cryoprint-technician-formation`, `field-negotiator-formation`, and `middle-management-managing-manager-formation` are portable once their prerequisites are unlocked.
+- This keeps taxpayer-funded recruitment anchored on Nauvis without forcing every planet-specialist conversion back to Nauvis after the player already has a Formation Center and the relevant planet science.
 
 ### 13. Liquid ink freezes on Aquilo
 

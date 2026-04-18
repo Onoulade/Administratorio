@@ -52,7 +52,7 @@ The `Digital Services Bureau` is the planet's administrative reward building. It
 - a direct upgrade to the standard administrative office
 - significantly faster crafting speed (electromagnetic-powered computation)
 - operates 24/7 — no night closure, unlike regular admin offices
-- requires a `relay-clerk` worker to craft (trained on Nauvis, shipped in)
+- requires a `relay-clerk` worker to craft; current implementation routes clerical trainees into relay clerks at any Formation Center after electromagnetic science
 - no operating paperwork required (compensated by the worker cost)
 - craftable only on Fulgora (requires electromagnetic components)
 - useful on every planet once shipped — everyone wants a faster 24/7 office
