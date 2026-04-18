@@ -77,10 +77,10 @@ data:extend({
     order = "a-c"
   },
 
-  -- T1: ADMINISTRATIVE BUREAUCRACY (red-science wood bootstrap)
+  -- T1: WOOD PRODUCTION (red-science wood bootstrap)
   {
     type = "technology", name = "administrative-bureaucracy",
-    icon = tech_icons .. "administrative-bureaucracy.png", icon_size = 128,
+    icon = "__base__/graphics/icons/wood.png", icon_size = 64,
     effects = {
       { type = "unlock-recipe", recipe = "greenhouse" },
       { type = "unlock-recipe", recipe = "greenhouse-wood" }
@@ -92,7 +92,7 @@ data:extend({
   -- LITTERING RESOLUTION (standalone — early complaint handling, red + admin only)
   {
     type = "technology", name = "littering-resolution",
-    icon = tech_icons .. "local-precedents.png", icon_size = 256,
+    icon = tech_icons .. "littering-resolution.png", icon_size = 128,
     effects = {
       { type = "unlock-recipe", recipe = "crappy-report-production" },
       { type = "unlock-recipe", recipe = "filing-littering" },
@@ -155,7 +155,7 @@ data:extend({
   -- STREAMLINED WORK ORDERS (direct draft-to-work-order printing at T1/T2 printers)
   {
     type = "technology", name = "streamlined-work-orders",
-    icon = tech_icons .. "administrative-bureaucracy.png", icon_size = 128,
+    icon = tech_icons .. "streamlined-work-orders.png", icon_size = 128,
     effects = {
       { type = "unlock-recipe", recipe = "safety-work-order-printing" },
       { type = "unlock-recipe", recipe = "construction-work-order-printing" }
@@ -189,7 +189,7 @@ data:extend({
   -- T3b: INDUSTRIAL PROPAGANDA (lies, nonsense, and credentials)
   {
     type = "technology", name = "industrial-propaganda",
-    icon = tech_icons .. "environmental-compliance.png", icon_size = 256,
+    icon = "__administratorio__/graphics/icons/misinformation.png", icon_size = 64,
     effects = {
       { type = "unlock-recipe", recipe = "propaganda-distillery" },
       { type = "unlock-recipe", recipe = "politician-fluid-refining" },
@@ -261,7 +261,7 @@ data:extend({
   -- T4b: SMOG ABATEMENT (air-pollution complaint chain)
   {
     type = "technology", name = "smog-abatement",
-    icon = tech_icons .. "environmental-compliance.png", icon_size = 256,
+    icon = tech_icons .. "smog-abatement.png", icon_size = 128,
     effects = {
       { type = "unlock-recipe", recipe = "filing-smog" },
       { type = "unlock-recipe", recipe = "case-smog" },
@@ -274,7 +274,7 @@ data:extend({
   -- T4c: HAZMAT RESPONSE (hazard-material complaint chain)
   {
     type = "technology", name = "hazmat-response",
-    icon = tech_icons .. "health-and-safety.png", icon_size = 256,
+    icon = tech_icons .. "hazmat-response.png", icon_size = 128,
     effects = {
       { type = "unlock-recipe", recipe = "filing-hazmat" },
       { type = "unlock-recipe", recipe = "case-hazmat" },
@@ -308,7 +308,7 @@ data:extend({
   -- T5a: PUBLIC FINANCE (bonds, grants, and union institutions)
   {
     type = "technology", name = "public-finance",
-    icon = "__administratorio__/graphics/icons/taxpayer-money.png", icon_size = 64,
+    icon = tech_icons .. "public-finance.png", icon_size = 256,
     effects = {
       { type = "unlock-recipe", recipe = "treasury-bond-production" },
       { type = "unlock-recipe", recipe = "union-headquarters" },
@@ -336,7 +336,7 @@ data:extend({
   -- T5c: BOARD MEETINGS (executive committee layer inside the Union HQ)
   {
     type = "technology", name = "board-meetings",
-    icon = "__administratorio__/graphics/icons/management-written-proposal.png", icon_size = 64,
+    icon = tech_icons .. "board-meetings.png", icon_size = 128,
     effects = {
       { type = "unlock-recipe", recipe = "management-written-proposal" },
       { type = "unlock-recipe", recipe = "management-written-1st-printing" }
@@ -348,7 +348,7 @@ data:extend({
   -- T6a: EXECUTIVE REVIEW (written approvals and signed directives)
   {
     type = "technology", name = "executive-review",
-    icon = "__administratorio__/graphics/icons/management-approval-written.png", icon_size = 64,
+    icon = tech_icons .. "executive-review.png", icon_size = 128,
     effects = {
       { type = "unlock-recipe", recipe = "management-written-work-order-production" }
     },
@@ -359,7 +359,7 @@ data:extend({
   -- T6b: RADIOLOGICAL COMPLIANCE (centrifuge-family operating paperwork)
   {
     type = "technology", name = "radiological-compliance",
-    icon = tech_icons .. "health-and-safety.png", icon_size = 256,
+    icon = tech_icons .. "radiological-compliance.png", icon_size = 128,
     effects = {
       { type = "unlock-recipe", recipe = "radiological-work-order-production" }
     },
@@ -383,7 +383,7 @@ data:extend({
   -- T7b: WORK ORDER DUPLICATION (industrial printer copies every work-order family)
   {
     type = "technology", name = "work-order-duplication",
-    icon = "__administratorio__/graphics/icons/work-order.png", icon_size = 64,
+    icon = tech_icons .. "work-order-duplication.png", icon_size = 128,
     effects = {
       { type = "unlock-recipe", recipe = "copy-work-order" },
       { type = "unlock-recipe", recipe = "copy-safety-work-order" },
@@ -401,7 +401,7 @@ data:extend({
   -- T7c: FEDERAL REGULATION (codify policy into formal law)
   {
     type = "technology", name = "federal-regulation",
-    icon = "__administratorio__/graphics/icons/regulation.png", icon_size = 64,
+    icon = tech_icons .. "federal-regulation.png", icon_size = 128,
     effects = {
       { type = "unlock-recipe", recipe = "regulation-production" }
     },
@@ -412,7 +412,7 @@ data:extend({
   -- T7d: NOISE ORDINANCES (noise complaint resolution)
   {
     type = "technology", name = "noise-ordinances",
-    icon = tech_icons .. "eminent-domain-zoning.png", icon_size = 256,
+    icon = tech_icons .. "noise-ordinances.png", icon_size = 128,
     effects = {
       { type = "unlock-recipe", recipe = "filing-noise" },
       { type = "unlock-recipe", recipe = "case-noise" },
@@ -425,7 +425,7 @@ data:extend({
   -- T7e: LOITERING ORDINANCES (loitering complaint resolution)
   {
     type = "technology", name = "loitering-ordinances",
-    icon = tech_icons .. "eminent-domain-zoning.png", icon_size = 256,
+    icon = tech_icons .. "loitering-ordinances.png", icon_size = 128,
     effects = {
       { type = "unlock-recipe", recipe = "filing-loitering" },
       { type = "unlock-recipe", recipe = "case-loitering" },
@@ -437,7 +437,7 @@ data:extend({
   },
   {
     type = "technology", name = "creative-accounting",
-    icon = "__administratorio__/graphics/icons/taxpayer-money.png", icon_size = 64,
+    icon = tech_icons .. "creative-accounting.png", icon_size = 256,
     effects = {
       { type = "unlock-recipe", recipe = "tax-audit" },
     },
@@ -461,7 +461,7 @@ data:extend({
   -- T8b: VAGRANCY ORDINANCES (vagrancy complaint resolution)
   {
     type = "technology", name = "vagrancy-ordinances",
-    icon = tech_icons .. "constitutional-law.png", icon_size = 256,
+    icon = tech_icons .. "vagrancy-ordinances.png", icon_size = 128,
     effects = {
       { type = "unlock-recipe", recipe = "filing-vagrancy" },
       { type = "unlock-recipe", recipe = "case-vagrancy" },
@@ -590,8 +590,8 @@ data:extend({
   {
     type = "technology",
     name = "filing-cabinet-logistics-1",
-    icon = "__administratorio__/graphics/icons/filing-l.png",
-    icon_size = 64,
+    icon = tech_icons .. "filing-cabinet-logistics.png",
+    icon_size = 256,
     effects = {
       { type = "character-logistic-requests", modifier = true },
       { type = "character-logistic-trash-slots", modifier = 10 },
@@ -613,8 +613,8 @@ data:extend({
   {
     type = "technology",
     name = "filing-cabinet-logistics-2",
-    icon = "__administratorio__/graphics/icons/filing-n.png",
-    icon_size = 64,
+    icon = tech_icons .. "filing-cabinet-logistics.png",
+    icon_size = 256,
     effects = {
       { type = "character-logistic-requests", modifier = true },
       { type = "character-logistic-trash-slots", modifier = 10 },
@@ -636,8 +636,8 @@ data:extend({
   {
     type = "technology",
     name = "filing-cabinet-logistics-3",
-    icon = "__administratorio__/graphics/icons/filing-v.png",
-    icon_size = 64,
+    icon = tech_icons .. "filing-cabinet-logistics.png",
+    icon_size = 256,
     effects = {
       { type = "character-logistic-requests", modifier = true },
       { type = "character-logistic-trash-slots", modifier = 10 },

@@ -7,6 +7,7 @@ by applying overlays, symbols, tints, stamps, and colored accents.
 
 Usage:
     python generate_icons.py [--base PATH] [--output DIR] [--preview]
+    python generate_icons.py --technology [--output graphics/technology]
 
 Requirements:
     pip install Pillow
@@ -1250,12 +1251,119 @@ ICON_DEFS = {
     },
 }
 
+# Technology icons generated from the administrative-bureaucracy paper base.
+# The source icon is projected onto the visible sheet so it sits with the same
+# perspective as the base artwork instead of looking like a flat UI overlay.
+TECH_ICON_DEFS = {
+    "littering-resolution": "ticket-littering",
+    "streamlined-work-orders": "work-order",
+    "smog-abatement": "ticket-smog",
+    "hazmat-response": "ticket-hazmat",
+    "radiological-compliance": "radiological-work-order",
+    "noise-ordinances": "ticket-noise",
+    "loitering-ordinances": "ticket-loitering",
+    "vagrancy-ordinances": "ticket-vagrancy",
+    "board-meetings": "management-written-proposal",
+    "executive-review": "management-approval-written",
+    "work-order-duplication": "work-order",
+    "federal-regulation": "regulation"
+}
+
 # ---------------------------------------------------------------------------
 # Icon generation
 # ---------------------------------------------------------------------------
 
 # Supersample factor: draw at Nx size, then downscale with LANCZOS for anti-aliasing
 SUPERSAMPLE = 3
+
+
+def _find_perspective_coeffs(src, dst):
+    """Return PIL perspective coefficients mapping dst pixels back to src."""
+    matrix = []
+    vector = []
+    for (x, y), (u, v) in zip(dst, src):
+        matrix.append([x, y, 1, 0, 0, 0, -u * x, -u * y])
+        matrix.append([0, 0, 0, x, y, 1, -v * x, -v * y])
+        vector.extend([u, v])
+
+    # Gaussian elimination for the 8x8 system. This keeps the generator's
+    # runtime dependency to Pillow only.
+    for col in range(8):
+        pivot = max(range(col, 8), key=lambda row: abs(matrix[row][col]))
+        if abs(matrix[pivot][col]) < 1e-12:
+            raise RuntimeError("degenerate perspective transform")
+        if pivot != col:
+            matrix[col], matrix[pivot] = matrix[pivot], matrix[col]
+            vector[col], vector[pivot] = vector[pivot], vector[col]
+
+        scale = matrix[col][col]
+        matrix[col] = [value / scale for value in matrix[col]]
+        vector[col] /= scale
+
+        for row in range(8):
+            if row == col:
+                continue
+            factor = matrix[row][col]
+            if factor == 0:
+                continue
+            matrix[row] = [
+                value - factor * pivot_value
+                for value, pivot_value in zip(matrix[row], matrix[col])
+            ]
+            vector[row] -= factor * vector[col]
+
+    return vector
+
+
+def _content_icon_path(icon_name, root_dir):
+    return root_dir / "graphics" / "icons" / f"{icon_name}.png"
+
+
+def _extract_content_mark(content):
+    """Remove generated paperwork bodies so only the meaningful mark remains."""
+    content = content.convert("RGBA")
+    pixels = content.load()
+    width, height = content.size
+    for y in range(height):
+        for x in range(width):
+            r, g, b, a = pixels[x, y]
+            if a == 0:
+                continue
+
+            brightness = max(r, g, b)
+            darkness = min(r, g, b)
+            saturation = brightness - darkness
+
+            # The item paperwork generator creates light paper/form/ticket bodies.
+            # Tech icons reuse the tech base paper, so drop those pale surfaces and
+            # their soft shadows while keeping saturated/dark symbols, stamps, and badges.
+            if brightness > 170 and darkness >= 135:
+                pixels[x, y] = (r, g, b, 0)
+            elif a < 120 and saturation < 45:
+                pixels[x, y] = (r, g, b, 0)
+
+    return content
+
+
+def generate_technology_icon(name, content_icon_name, output_dir, root_dir):
+    """Generate a technology icon by projecting an item icon onto the base paper."""
+    base_path = root_dir / "graphics" / "technology" / "administrative-bureaucracy.png"
+    content_path = _content_icon_path(content_icon_name, root_dir)
+
+    base = Image.open(base_path).convert("RGBA")
+    content = _extract_content_mark(Image.open(content_path))
+    canvas_size = base.size[0]
+    source = content.resize((canvas_size, canvas_size), Image.LANCZOS)
+
+    src_quad = [(0, 0), (canvas_size, 0), (canvas_size, canvas_size), (0, canvas_size)]
+    dst_quad = [(14, 16), (105, 3), (118, 75), (29, 89)]
+    coeffs = _find_perspective_coeffs(src_quad, dst_quad)
+    projected = source.transform(base.size, Image.PERSPECTIVE, coeffs, Image.BICUBIC)
+    base.alpha_composite(projected)
+
+    out_path = os.path.join(output_dir, f"{name}.png")
+    base.save(out_path, "PNG")
+    return out_path
 
 def generate_icon(name, defn, output_dir):
     """Generate a single icon from its definition."""
@@ -1386,28 +1494,37 @@ def main():
                         help="Generate a preview grid image")
     parser.add_argument("--only", nargs="*",
                         help="Only generate specific icon names")
+    parser.add_argument("--technology", action="store_true",
+                        help="Generate technology icons instead of item icons")
     parser.add_argument("--list", action="store_true",
                         help="List all available icon names")
     args = parser.parse_args()
 
     if args.list:
-        for name, defn in sorted(ICON_DEFS.items()):
-            print(f"  {name:40s} {defn.get('desc', '')}")
+        if args.technology:
+            for name, source in sorted(TECH_ICON_DEFS.items()):
+                print(f"  {name:40s} from {source}")
+        else:
+            for name, defn in sorted(ICON_DEFS.items()):
+                print(f"  {name:40s} {defn.get('desc', '')}")
         return
 
-    # Default output to graphics/icons/ relative to script
+    script_dir = Path(__file__).parent.parent
+
+    # Default output to graphics/icons/ or graphics/technology relative to script
     if args.output:
         output_dir = args.output
+    elif args.technology:
+        output_dir = str(script_dir / "graphics" / "technology")
     else:
-        script_dir = Path(__file__).parent.parent
         output_dir = str(script_dir / "graphics" / "icons")
 
     os.makedirs(output_dir, exist_ok=True)
 
     # Filter icons if --only specified
-    defs = ICON_DEFS
+    defs = TECH_ICON_DEFS if args.technology else ICON_DEFS
     if args.only:
-        defs = {k: v for k, v in ICON_DEFS.items() if k in args.only}
+        defs = {k: v for k, v in defs.items() if k in args.only}
         missing = set(args.only) - set(defs.keys())
         if missing:
             print(f"Warning: unknown icon names: {', '.join(sorted(missing))}")
@@ -1415,7 +1532,10 @@ def main():
     # Generate
     generated = []
     for name, defn in sorted(defs.items()):
-        path = generate_icon(name, defn, output_dir)
+        if args.technology:
+            path = generate_technology_icon(name, defn, output_dir, script_dir)
+        else:
+            path = generate_icon(name, defn, output_dir)
         generated.append((name, path))
         print(f"  Generated: {name}")
 
