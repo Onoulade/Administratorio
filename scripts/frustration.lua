@@ -2,6 +2,19 @@
 local C = require("scripts.constants")
 local M = {}
 
+local STATE_EXPLANATIONS = {
+  waiting = "Waiting for its complaint case to be resolved; return the matching resolved case to this desk.",
+  pathfinding = "Heading to a reserved desk slot to file paperwork; keep the desk reachable and uncrowded.",
+  protesting = "Protesting because the queue failed; use a Bureaucratic Promise so it stops and returns to a desk.",
+  pacified = "It accepted a Bureaucratic Promise and is waiting for an open desk slot before the promise expires.",
+  returning_home = "Its complaint is resolved and it is leaving; no further action is needed.",
+}
+
+local function get_state_explanation(info)
+  if not info then return nil end
+  return STATE_EXPLANATIONS[info.state]
+end
+
 -- Biter inspection GUI (shown when hovering over a waiting biter)
 function M.destroy_biter_info_gui(player)
   if player.gui.left["administratorio-biter-info"] then
@@ -43,6 +56,14 @@ function M.update_biter_info_gui(player, entity)
 
   local state_label = frame.add{type = "label", caption = "State: " .. (info.state or "unknown")}
   state_label.style.font_color = info.state == "protesting" and {r=1, g=0.2, b=0.2} or {r=0.8, g=0.8, b=0.8}
+
+  local explanation = get_state_explanation(info)
+  if explanation then
+    local explanation_label = frame.add{type = "label", caption = explanation}
+    explanation_label.style.single_line = false
+    explanation_label.style.maximal_width = 260
+    explanation_label.style.font_color = {r=0.9, g=0.85, b=0.65}
+  end
 
   if info.complaints and #info.complaints > 0 then
     local complaints_label = frame.add{type = "label", caption = "Pending complaints:"}
