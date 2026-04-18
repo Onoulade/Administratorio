@@ -33,12 +33,12 @@ Verification actually run:
   - `python3 tests/test_planet_escape.py --factorio-bin "~/Library/Application Support/Steam/steamapps/common/Factorio/factorio.app/Contents/MacOS/factorio" --show-steps --import-depth 2`
   - Result: passed.
   - Generated report path:
-    - `/var/folders/6j/hmy0cn8s4zj369_0jzj21t940000gn/T/administratorio-planet-escape-_g5b3ivg/script-output/administratorio-planet-escape-report.txt`
+    - `/var/folders/6j/hmy0cn8s4zj369_0jzj21t940000gn/T/administratorio-planet-escape-rocayff4/script-output/administratorio-planet-escape-report.txt`
 - Base-only strict progression command:
   - `python3 tests/test_progression_report.py --factorio-bin "~/Library/Application Support/Steam/steamapps/common/Factorio/factorio.app/Contents/MacOS/factorio" --strict`
   - Result: passed.
   - Generated report path:
-    - `/var/folders/6j/hmy0cn8s4zj369_0jzj21t940000gn/T/administratorio-techtest-zdijky9g/script-output/administratorio-progression-report.txt`
+    - `/var/folders/6j/hmy0cn8s4zj369_0jzj21t940000gn/T/administratorio-techtest-z1co670p/script-output/administratorio-progression-report.txt`
 
 Current confidence:
 
@@ -54,6 +54,8 @@ Resolved during the 2026-04-18 make-it-work pass:
 - Added `process_space_tourist_returns` to the startup cleanup test dependency stub, matching the controller dependency contract.
 - Gated `amber-sap-seep` and `verdigris-crust` resource prototypes behind `feature_flags.space_age_enabled()`.
 - Gated the shared admin-building `capture-bureau` entity and admin-station paste target reference so base-only loading does not reference missing Space Age items or entities.
+- Locked the workforce surface rule in tests and documentation: recruitment/selected seed roles are Nauvis-bound, later specialist routing is portable.
+- Made `notary-office` crafting Vulcanus-bound to match its planet-specific building role.
 
 ## Remaining Completion Blockers
 
@@ -65,9 +67,9 @@ These should still be resolved before calling Space Age compatibility complete.
    - The detailed routes still include many bootstrap cycles and many required building categories; this proves graph reachability, not a polished gameplay curve.
    - Needed review: inspect the generated report for planet-by-planet weirdness, especially Aquilo bootstrapping, exported paperwork pressure, and whether the broad machine category requirements are intended.
 
-2. Profession and planet-identity surface rules remain unresolved.
-   - The plan says specialists are trained on Nauvis and shipped out, but the current implementation does not enforce that for every specialist.
-   - Needed decision: enforce Nauvis training broadly, or update design/locale to say later specialist training can happen anywhere with a `formation-center`.
+2. A few planet-identity surface rules remain unresolved.
+   - `admin-station-gleba` crafts an `admin-station` item even though Space Age restricts `admin-station` placement to Nauvis.
+   - `public-transportation-contract-production` is wrapped in `surface_limited(...)` without a planet argument, which is effectively a no-op.
 
 3. Fax reconstruction economy and faxability policy remain unresolved.
    - Runtime currently reconstructs directly from `paper` plus required liquid inks.
@@ -389,27 +391,19 @@ Fax runtime:
   - current runtime allows colored faxing after `color-faxing`
   - current runtime does not use transfer media for fax reconstruction
   - current runtime reconstructs directly inside the receiver script
-- Align worker documentation with actual surface conditions. The plan says specialists are trained on Nauvis and shipped out, but the current implementation does not enforce that for every specialist.
+- Worker documentation now matches the portable specialist surface rule:
+  - Nauvis-bound seed: `job-offer-production`, `worker-biter-formation`, `management-trainee-formation`, `licensed-notary-formation`
+  - portable specialist routing: clerical, astronaut, supervisor, conciliation, relay, cryoprint, field-negotiator, and MMMM formation recipes
 - Decide whether `admin-station-gleba` is still a true bootstrap item. It crafts an `admin-station` item on Gleba, but `admin-station` placement is restricted to Nauvis when Space Age is enabled.
 
 ### Surface Conditions And Planet Identity
 
-- Audit every Space Age recipe with a worker or planet identity for surface conditions.
-- Current likely mismatches:
-  - `notary-office` recipe is only `not_in_space`; the Vulcanus plan says it should be crafted on Vulcanus.
-  - `clerical-trainee-formation` has no planet surface condition.
-  - `astronaut-formation` has no planet surface condition.
-  - `night-shift-supervisor-formation` has no planet surface condition.
-  - `conciliation-officer-formation` has no planet surface condition, despite being described as a Nauvis-trained worker shipped to Gleba.
-  - `relay-clerk-formation` has no planet surface condition, despite being described as a Nauvis-trained worker shipped to Fulgora.
-  - `cryoprint-technician-formation` has no planet surface condition, despite being described as a Nauvis-trained worker shipped to Aquilo.
-  - `field-negotiator-formation` has no planet surface condition.
-  - `middle-management-managing-manager-formation` has no planet surface condition.
-- Needed decision:
-  - either enforce Nauvis training for the whole profession spine
-  - or update the design so only `job-offer`, `worker-biter`, `management-trainee`, and `licensed-notary` are Nauvis-limited, while later specialist training can happen anywhere with a `formation-center`
-- If the intended rule is "train on Nauvis", add tests for all specialist formation surface conditions.
-- If the intended rule is "train anywhere after the Nauvis workforce seed", update all plan text and locale assumptions.
+- Worker surface policy is now explicit and covered by `tests/test_space_age_content.lua`:
+  - Nauvis-bound recruitment and seed recipes: `job-offer-production`, `worker-biter-formation`, `management-trainee-formation`, `licensed-notary-formation`
+  - portable post-seed specialist recipes: `clerical-trainee-formation`, `astronaut-formation`, `night-shift-supervisor-formation`, `conciliation-officer-formation`, `relay-clerk-formation`, `cryoprint-technician-formation`, `field-negotiator-formation`, `middle-management-managing-manager-formation`
+- Remaining likely mismatches:
+  - `admin-station-gleba` crafts an `admin-station` item that cannot be placed on Gleba under Space Age placement rules.
+  - `public-transportation-contract-production` is wrapped in `surface_limited(...)` without a planet argument, which is effectively a no-op.
 
 ### Base-Only Compatibility
 
@@ -493,7 +487,7 @@ Fax runtime:
 - Vulcanus:
   - latest Space Age route analyzer run completed successfully after recent fax/UI/public transportation work
   - current selected-target aggregate reports no imports and no deadlocks
-  - verify `notary-office` crafting location against the plan
+  - `notary-office` crafting is now Vulcanus-bound and covered by Space Age content tests
   - verify `thermal-process-license` / `calcite-reagent-waiver` / `offworld-metallurgy-charter` are valuable off-world without polluting home-planet recipes
 - Gleba:
   - latest Space Age route analyzer run completed successfully, but still needs manual report review for import-like diagnostics and bootstrap roughness
@@ -535,7 +529,9 @@ Fax runtime:
 
 ### Professions Completion
 
-- Decide and enforce the surface rule for all specialist training.
+- Profession surface rule is decided and tested:
+  - taxpayer-funded recruitment and selected seed roles stay Nauvis-bound
+  - later specialist routing is portable once the player has a Formation Center and prerequisite science
 - Implement or explicitly drop the planned tier-3 module workforce sink.
   - Planned but not implemented:
     - `speed-module-3` consumes `management-trainee`

@@ -235,6 +235,32 @@ test("trainee formation consumes worker-biter instead of enrolled-biter directly
   assert_true(not has_ingredient(recipes["management-trainee-formation"], "enrolled-biter"), "management trainee should not require enrolled-biter directly")
 end)
 
+test("workforce surface policy keeps seed roles Nauvis-bound and specialists portable", function()
+  for _, recipe_name in ipairs({
+    "job-offer-production",
+    "worker-biter-formation",
+    "management-trainee-formation",
+    "licensed-notary-formation",
+  }) do
+    assert_eq(exact_surface_planet(recipes[recipe_name]), "nauvis", recipe_name .. " should stay Nauvis-bound")
+  end
+
+  for _, recipe_name in ipairs({
+    "clerical-trainee-formation",
+    "astronaut-formation",
+    "night-shift-supervisor-formation",
+    "conciliation-officer-formation",
+    "relay-clerk-formation",
+    "cryoprint-technician-formation",
+    "field-negotiator-formation",
+    "middle-management-managing-manager-formation",
+  }) do
+    assert_true(recipes[recipe_name] ~= nil, recipe_name .. " missing")
+    assert_true(recipes[recipe_name].surface_conditions == nil,
+      recipe_name .. " should stay portable once the workforce seed and relevant science are available")
+  end
+end)
+
 test("astronaut training unlocks the orbital admin station chain", function()
   local workforce = technologies["workforce-formation"]
   assert_true(items["astronaut"] ~= nil, "astronaut missing")
@@ -262,6 +288,7 @@ test("native Space Age buildings consume planet-specific specialists", function(
   assert_true(has_ingredient(recipes["territorial-arbitration-post"], "licensed-notary"),
     "territorial-arbitration-post should require licensed-notary")
   assert_true(has_ingredient(recipes["notary-office"], "tungsten-carbide"), "notary-office should require tungsten-carbide")
+  assert_eq(exact_surface_planet(recipes["notary-office"]), "vulcanus", "notary-office should be crafted on Vulcanus")
   assert_true(has_ingredient(recipes["biochamber"], "conciliation-officer"), "biochamber should require conciliation-officer")
   assert_true(has_ingredient(recipes["electromagnetic-plant"], "relay-clerk"), "electromagnetic-plant should require relay-clerk")
   assert_true(has_ingredient(recipes["cryogenic-plant"], "cryoprint-technician"), "cryogenic-plant should require cryoprint-technician")
