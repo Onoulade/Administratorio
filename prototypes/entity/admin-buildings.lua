@@ -156,8 +156,11 @@ local ADMIN_STATION_NAMES = {
   "admin-station-north",
   "admin-station-east",
   "admin-station-west",
-  "capture-bureau",
 }
+
+if space_age_enabled then
+  ADMIN_STATION_NAMES[#ADMIN_STATION_NAMES + 1] = "capture-bureau"
+end
 
 -- Admin Station: storage-only biter interface (no crafting).
 -- The station is intentionally walk-through for players and biters. A dedicated footprint collision
@@ -1316,6 +1319,10 @@ if space_age_enabled then
   }) do
     require_non_vacuum(entity)
   end
+end
+
+if space_age_enabled then
+  add_entity(capture_bureau)
 end
 
 data:extend(entities)

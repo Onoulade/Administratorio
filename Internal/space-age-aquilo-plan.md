@@ -21,10 +21,11 @@ Its global rewards are the `Laser Printer` and the `Interplanetary Fax Exchange`
 The current codebase already ships a first Aquilo pass:
 
 - `laser-printer`, `fax-emitter`, and `interplanetary-fax-exchange` are in-game and Aquilo-limited to craft
-- `transfer-emulsion`, `thermal-transfer-sheet`, `composite-chroma-ribbon`, `composite-form`, `trichromatic-permit`, `unified-operations-charter`, and `cryogenic-operations-license` are implemented
+- `transfer-emulsion`, `thermal-transfer-sheet`, `composite-chroma-ribbon`, `cyan-yellow-form`, `cyan-magenta-form`, `yellow-magenta-form`, `trichromatic-permit`, `unified-operations-charter`, and `cryogenic-operations-license` are implemented
 - the runtime fax network already handles destination selection, per-planet receiver uniqueness, queue reservations, circuit reporting, quality-preserving reconstruction, and queue-safe stalling
 - the current runtime reconstructs faxed paperwork directly inside the exchange logic and consumes generic `paper` plus `ink`
 - the `Laser Printer` still carries the Aquilo print identity and `fax-reconstruction` category scaffolding, but the live fax runtime is not currently recipe-driven through it
+- `composite-form` is not present in the current implementation; older notes that mention it are stale
 
 ## Planned Design Principles
 
@@ -111,12 +112,12 @@ Aquilo research technologies unlock recipes for multicolor composite forms. Thes
 
 Planned multicolor form family:
 
-- `composite-form`: basic multicolor form combining two planet inks — gates recipes using intermediates from two different planets
+- `cyan-yellow-form`, `cyan-magenta-form`, and `yellow-magenta-form`: bicolor forms combining two planet inks — gate recipes using intermediates from two different planets
 - `trichromatic-permit`: advanced three-color form combining all three planet inks — gates the most advanced multi-planet recipes
 - `unified-operations-charter`: top-tier composite authorization for late-game production chains
 - `cryogenic-operations-license`: Aquilo-specific operations permit using transfer media
 
-The multicolor forms answer a real gameplay question: "I have a recipe that uses both tungsten and carbon fiber — do I need both a cyan form AND a yellow form?" Answer: on Aquilo, you can produce a single composite form that covers both, using the Laser Printer and imported materials.
+The multicolor forms answer a real gameplay question: "I have a recipe that uses both tungsten and carbon fiber — do I need both a cyan form AND a yellow form?" Current answer: the recipe consumes the matching bicolor form, such as `cyan-yellow-form`. The implementation still needs a final decision on whether bicolor forms should remain liquid-ink outputs made before Aquilo, or whether Aquilo should convert that role to transfer-media printing.
 
 ### 7. Aquilo should consume imported bureaucracy, not replace it
 
@@ -161,7 +162,7 @@ Aquilo recipes should not require `taxpayer-money`. Like all off-world planets, 
 
 ### Multicolor Forms (Aquilo science unlocks)
 
-- `composite-form`: two-color composite form — requires forms from any two planets, gates dual-intermediate recipes
+- `cyan-yellow-form`, `cyan-magenta-form`, `yellow-magenta-form`: two-color forms — require inks from two planets and gate dual-intermediate recipes
 - `trichromatic-permit`: three-color composite form — requires forms from all three basic planets, gates tri-intermediate recipes
 - `unified-operations-charter`: top-tier composite authorization — requires trichromatic-permit plus additional bureaucracy, gates the most advanced production
 - `cryogenic-operations-license`: Aquilo-specific operations permit — gates cryogenic plant usage and Aquilo-native recipes
@@ -217,4 +218,4 @@ Aquilo's exported value should center on:
 2. Which first late-game recipes should explicitly require multicolor forms?
 3. Should faxing have a per-planet relay cost or only a destination reconstruction cost?
 4. How should the fax network interact with existing logistics (trains, rockets, cargo pods)?
-5. Should `composite-form` require literal colored forms as ingredients, or processed transfer media derived from them?
+5. Should bicolor forms stay as direct liquid-ink recipes, or should Aquilo replace them with processed transfer media derived from colored paperwork?
