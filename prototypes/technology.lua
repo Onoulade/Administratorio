@@ -568,8 +568,8 @@ for level = 1, 8 do
   admin_station_capacity_techs[#admin_station_capacity_techs + 1] = {
     type = "technology",
     name = name,
-    icon = "__administratorio__/graphics/icons/admin-desk.png",
-    icon_size = 64,
+    icon = tech_icons .. "admin-station-capacity.png",
+    icon_size = 256,
     effects = {
       { type = "nothing", effect_description = {"technology-effect.admin-station-capacity", tostring(level)} }
     },

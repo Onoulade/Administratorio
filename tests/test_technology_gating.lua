@@ -292,10 +292,13 @@ test("administrative bureaucracy owns only the early greenhouse wood bootstrap",
 end)
 
 test("admin station capacity upgrades are tiered and chain correctly", function()
+  local expected_icon = "__administratorio__/graphics/technology/admin-station-capacity.png"
   for level = 1, 8 do
     local tech_name = "admin-station-capacity-" .. level
     assert_true(technologies[tech_name] ~= nil, tech_name .. " should exist")
     assert_true(tech_has_effect(tech_name, "nothing"), tech_name .. " should expose a scripted-effect marker")
+    assert_true(technologies[tech_name].icon == expected_icon, tech_name .. " should use the building-based technology icon")
+    assert_true(technologies[tech_name].icon_size == 256, tech_name .. " should use the 256px technology icon size")
 
     if level == 1 then
       assert_true(tech_has_prereq(tech_name, "administrative-bureaucracy"), tech_name .. " should start from administrative-bureaucracy")
