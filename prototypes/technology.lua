@@ -182,8 +182,8 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "charcoal-production" }
     },
-    prerequisites = {"administrative-bureaucracy"},
-    unit = { count = 35, ingredients = {{"automation-science-pack", 1}}, time = 20 },
+    prerequisites = {"corporate-hospitality", "fluid-handling"},
+    unit = { count = 60, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "c-a2"
   },
   -- T3b: INDUSTRIAL PROPAGANDA (lies, nonsense, and credentials)
@@ -841,6 +841,7 @@ add_tech_unlock("automation-science-pack", "research-grant-approval-production")
 add_tech_prerequisite("industrial-printing", "chemical-science-pack")
 add_tech_prerequisite("corporate-hospitality", "logistic-science-pack")
 add_tech_prerequisite("office-agriculture", "logistic-science-pack")
+add_tech_prerequisite("charcoal-production", "logistic-science-pack")
 add_tech_prerequisite("health-and-safety", "chemical-science-pack")
 add_tech_prerequisite("public-finance", "chemical-science-pack")
 add_tech_prerequisite("public-finance", "steel-processing")
