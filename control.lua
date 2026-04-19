@@ -16,6 +16,7 @@ local biterport = require("scripts.biterport")
 local biterport_hover = require("scripts.biterport_hover")
 local trajectory_compliance = require("scripts.trajectory_compliance")
 local territorial_arbitration = require("scripts.territorial_arbitration")
+local petition_counter = require("scripts.petition_counter")
 local runtime_debug = require("scripts.control_runtime_debug")
 local control_event_router = require("scripts.control_event_router")
 local control_resolution_processing_factory = require("scripts.control_resolution_processing")
@@ -479,6 +480,7 @@ local function init_storage()
   storage.stats.biters_hired = storage.stats.biters_hired or 0
   storage.stats.rockets_launched = storage.stats.rockets_launched or 0
   storage.calmed_spawners = storage.calmed_spawners or {}
+  petition_counter.ensure_storage()
   trajectory_compliance.ensure_storage()
   territorial_arbitration.ensure_storage()
   fax.ensure_storage()
@@ -642,6 +644,7 @@ local function on_init()
   rebuild_desk_cache()
   fax.rebuild_registry()
   territorial_arbitration.rebuild_registry()
+  petition_counter.rebuild_registry()
   biters.rebuild_desk_index()
   biters.mark_all_desk_circuit_dirty()
   if WORKING_HOURS_ENABLED then
@@ -675,6 +678,7 @@ local function on_configuration_changed(event)
   rebuild_desk_cache()
   fax.rebuild_registry()
   territorial_arbitration.rebuild_registry()
+  petition_counter.rebuild_registry()
   trains.on_init()
   set_biter_ceasefire()
   
@@ -1037,6 +1041,8 @@ local function on_entity_built_inner(event)
     storage.desk_grid_slots[desk_id] = {}
     storage.admin_desks[desk_id] = entity
     biters.mark_desk_circuit_dirty(desk_id)
+  elseif entity.name == "petition-counter" then
+    petition_counter.on_entity_built(entity)
   -- Handle pneumatic endpoint support entities.
   elseif pneumatic.is_pneumatic_building(entity) then
     pneumatic.add_pneumatic_supports(entity)
@@ -1150,6 +1156,7 @@ local function on_entity_removed(event)
     fax.on_entity_removed(entity, event.buffer)
   end
   territorial_arbitration.on_entity_removed(entity)
+  petition_counter.on_entity_removed(entity)
 
   trains.on_removed(entity)
 
@@ -1774,6 +1781,7 @@ local function on_entity_died(event)
   end
   biter_station.untrack_entity(entity, event.tick)
   territorial_arbitration.on_entity_removed(entity)
+  petition_counter.on_entity_removed(entity)
   if is_admin_desk(entity) then
     local desk_id = entity.unit_number
     local surface = entity.surface
@@ -2101,6 +2109,7 @@ local function on_main_tick(event)
   end)
   trajectory_compliance.on_tick(event)
   territorial_arbitration.on_tick(event)
+  petition_counter.on_tick(event.tick)
 end
 
 local function on_pneumatic_tick(_event)

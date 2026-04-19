@@ -129,6 +129,11 @@ M.RETURN_EXIT_SEARCH_RADIUS = 24
 M.RETURN_EXIT_SEARCH_PRECISION = 2
 
 M.HUSH_MONEY_CALM_TICKS = 3 * 60 * 60 -- 3 minutes of suppressed spawning
+M.PETITION_COUNTER_NEST_RADIUS = 25
+M.PETITION_COUNTER_SCAN_INTERVAL_TICKS = 60
+M.PETITION_COUNTER_DISABLED_TEXT = "No nearby nests"
+M.PETITION_COUNTER_BONUS_PER_EXTRA_NEST = 0.02
+M.PETITION_COUNTER_MAX_BONUS_PROGRESS_PER_SCAN = 0.08
 
 -- Field office: proximity check for nearby biter spawners
 M.FIELD_OFFICE_SPAWNER_RANGE = 200    -- tiles: max distance to a biter spawner
@@ -214,17 +219,19 @@ M.PNEUMATIC_BUILDINGS = {
 M.PNEUMATIC_ITEMS = {
   -- PAPERWORK_ITEMS
   "work-order", "form-27b-6", "research-grant-approval", "provisional-approval",
-  "safety-waiver", "safety-waiver-draft", "construction-permit", "construction-permit-draft",
+  "safety-waiver", "unapproved-safety-waiver", "safety-waiver-draft",
+  "construction-permit", "unapproved-construction-permit", "construction-permit-draft",
   "transit-authorization",
   "management-approval-verbal", "management-verbal-draft",
   "management-approval-written", "management-written-proposal",
   "carbon-offset-certificate-basic", "carbon-offset-certificate-verified",
-  "environmental-impact-report", "petrochemical-operating-permit",
+  "environmental-impact-report", "petrochemical-operating-permit", "unapproved-petrochemical-operating-permit",
   "blank-form", "blank-approval", "blank-directive",
   "treasury-bond", "government-grant",
   "safety-work-order", "construction-work-order",
   "management-verbal-work-order", "management-written-work-order",
-  "research-grant-work-order", "chemical-handling-work-order", "radiological-work-order",
+  "research-grant-work-order", "chemical-handling-work-order",
+  "radiological-work-order", "unapproved-radiological-work-order",
   -- Extra pneumatic items
   "paper", "ink",
   "ticket-landscape", "ticket-smog", "ticket-noise", "ticket-unemployment",
