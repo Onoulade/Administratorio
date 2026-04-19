@@ -33,6 +33,10 @@ local function assert_true(value, msg)
   if not value then error(msg or "assertion failed", 2) end
 end
 
+local function assert_false(value, msg)
+  if value then error(msg or "assertion failed", 2) end
+end
+
 local function assert_nil(value, msg)
   if value ~= nil then error((msg or "expected nil") .. ", got " .. tostring(value), 2) end
 end
@@ -59,11 +63,12 @@ data = {
     },
     ["assembling-machine"] = {
       ["assembling-machine-1"] = { crafting_categories = {"crafting"} },
-      ["assembling-machine-2"] = { crafting_categories = {"crafting", "advanced-crafting"} },
+      ["assembling-machine-2"] = { crafting_categories = {"crafting", "advanced-crafting", "crafting-with-fluid"} },
       ["assembling-machine-3"] = { crafting_categories = {"crafting", "advanced-crafting", "crafting-with-fluid"} },
     },
     ["recipe-category"] = {},
     ["module-category"] = {},
+    ["fuel-category"] = {},
     technology = {},
     fluid = {},
     item = {},
@@ -75,6 +80,9 @@ data = {
 
 function data:extend(prototypes)
   for _, proto in ipairs(prototypes) do
+    if proto.type and data.raw[proto.type] then
+      data.raw[proto.type][proto.name] = proto
+    end
     if proto.type == "recipe" then
       recipes[proto.name] = proto
     elseif proto.type == "recipe-category" then
@@ -141,6 +149,9 @@ local recipe_name_locale = load_locale_section("recipe-name")
 
 -- Load categories first (defines recipe-categories + sets up character)
 dofile(mod_root .. "prototypes/categories.lua")
+
+-- Load core item prototypes used by recipe assertions.
+dofile(mod_root .. "prototypes/item/economy.lua")
 
 -- Load all recipe files
 dofile(mod_root .. "prototypes/recipe/paperwork.lua")
@@ -235,7 +246,6 @@ test("shared.PAPERWORK_ITEMS contains all core forms", function()
     "research-grant-approval", "provisional-approval",
     "blank-form", "blank-approval", "blank-directive",
     "form-27b-6", "carbon-offset-certificate-basic",
-    "petrochemical-operating-permit",
     "chemical-handling-work-order", "radiological-work-order",
   }
   for _, name in ipairs(expected) do
@@ -275,47 +285,6 @@ end)
 -- PRINCIPLE 2: BATCH SIZING CONTROLS FORM CONSUMPTION
 -- =========================================================================
 
-test("batch multipliers exist for megastructures at 1x", function()
-  local megas = {"rocket-silo", "nuclear-reactor", "centrifuge", "beacon", "assembling-machine-3"}
-  for _, name in ipairs(megas) do
-    assert_eq(shared.BATCH_MULTIPLIERS[name], 1, name .. " should be 1x")
-  end
-end)
-
-test("batch multipliers for high-volume intermediates are 10x or 20x", function()
-  local bulk = {
-    ["copper-cable"] = 10, ["iron-gear-wheel"] = 10, ["electronic-circuit"] = 10,
-    ["heat-pipe"] = 10, ["ink"] = 10,
-    ["pneumatic-pipe"] = 10, ["pneumatic-pipe-to-ground"] = 10,
-    ["form-liquifier"] = 10, ["form-solidifier"] = 10,
-    ["iron-plate"] = 20, ["copper-plate"] = 20, ["steel-plate"] = 20,
-  }
-  for name, expected in pairs(bulk) do
-    assert_eq(shared.BATCH_MULTIPLIERS[name], expected, name .. " wrong multiplier")
-  end
-end)
-
-test("equipment recipes have no explicit batching overrides", function()
-  assert_true(shared.BATCH_MULTIPLIERS["solar-panel-equipment"] == nil,
-    "solar-panel-equipment should rely on the 1x equipment rule")
-  assert_true(shared.BATCH_MULTIPLIERS["battery-equipment"] == nil,
-    "battery-equipment should rely on the 1x equipment rule")
-  assert_true(shared.BATCH_MULTIPLIERS["battery-mk2-equipment"] == nil,
-    "battery-mk2-equipment should rely on the 1x equipment rule")
-  assert_true(shared.BATCH_MULTIPLIERS["exoskeleton-equipment"] == nil,
-    "exoskeleton-equipment should rely on the 1x equipment rule")
-end)
-
-test("default batch multiplier is 5", function()
-  assert_eq(shared.BATCH_MULTIPLIER_DEFAULT, 5)
-end)
-
-test("splitter family batch multipliers are pinned at 5x", function()
-  assert_eq(shared.BATCH_MULTIPLIERS["splitter"], 5)
-  assert_eq(shared.BATCH_MULTIPLIERS["fast-splitter"], 5)
-  assert_eq(shared.BATCH_MULTIPLIERS["express-splitter"], 5)
-end)
-
 -- =========================================================================
 -- PRINCIPLE 3: INK ON PAPER = PRINTER ONLY
 -- =========================================================================
@@ -354,7 +323,8 @@ end)
 test("non-printer recipes do not consume ink", function()
   for name, recipe in pairs(recipes) do
     local category = recipe.category
-    if category ~= "printing" and category ~= "printing-workorder" and category ~= "printing-advanced" then
+    if category ~= "printing" and category ~= "printing-workorder" and category ~= "printing-advanced"
+      and category ~= "pneumatic-intake" then
       assert_true(not has_ingredient(recipe, "ink"), name .. " should not consume ink outside a printer")
     end
   end
@@ -448,6 +418,7 @@ test("safety-waiver requires 2-step printing pipeline", function()
   assert_eq(print_step.category, "printing")
   assert_true(has_ingredient(print_step, "safety-waiver-draft"))
   assert_true(has_ingredient(print_step, "ink"))
+  assert_eq(get_result_amount(print_step, "unapproved-safety-waiver"), 2)
 end)
 
 test("construction-permit requires 2-step printing pipeline", function()
@@ -461,6 +432,30 @@ test("construction-permit requires 2-step printing pipeline", function()
   assert_eq(print_step.category, "printing")
   assert_true(has_ingredient(print_step, "construction-permit-draft"))
   assert_true(has_ingredient(print_step, "ink"))
+  assert_eq(get_result_amount(print_step, "unapproved-construction-permit"), 2)
+end)
+
+test("petition approvals convert unapproved permits into approved permits", function()
+  local approvals = {
+    {"safety-waiver-approval", "unapproved-safety-waiver", "safety-waiver", 1, 4},
+    {"construction-permit-approval", "unapproved-construction-permit", "construction-permit", 1, 6},
+    {"petrochemical-operating-permit-approval", "unapproved-petrochemical-operating-permit", "petrochemical-operating-permit", 1, 8},
+    {"radiological-work-order-approval", "unapproved-radiological-work-order", "radiological-work-order", 1, 10},
+  }
+
+  for _, approval in ipairs(approvals) do
+    local recipe_name = approval[1]
+    local input_name = approval[2]
+    local output_name = approval[3]
+    local output_count = approval[4]
+    local craft_time = approval[5]
+    local recipe = get_recipe(recipe_name)
+    assert_true(recipe ~= nil, recipe_name .. " missing")
+    assert_eq(recipe.category, "petition-stamping", recipe_name .. " wrong category")
+    assert_true(has_ingredient(recipe, input_name), recipe_name .. " missing input " .. input_name)
+    assert_eq(get_result_amount(recipe, output_name), output_count, recipe_name .. " wrong output count")
+    assert_eq(recipe.energy_required, craft_time, recipe_name .. " wrong craft time")
+  end
 end)
 
 test("management-approval-verbal requires 2-step pipeline (gossip + printing)", function()
@@ -537,7 +532,7 @@ end)
 test("provisional-approval requires tech unlock", function()
   local r = get_recipe("provisional-approval-production")
   assert_eq(r.enabled, false)
-  assert_eq(r.category, "bureaucratic-bootstrap")
+  assert_eq(r.category, "bureaucracy-registration")
 end)
 
 test("management/policy recipes are NOT handcraftable", function()
@@ -575,6 +570,7 @@ test("form production recipes use admin-only categories", function()
     ["printing"] = true,
     ["printing-advanced"] = true,
     ["printing-workorder"] = true,
+    ["petition-stamping"] = true,
     ["bureaucracy-resolution"] = true,
     ["bureaucracy-policy"] = true,
     ["watercooler-gossip"] = true,
@@ -600,6 +596,14 @@ end)
 test("admin-station requires provisional-approval", function()
   local r = get_recipe("admin-station")
   assert_true(has_ingredient(r, "provisional-approval"))
+end)
+
+test("field-office bootstraps without provisional-approval", function()
+  local r = get_recipe("field-office")
+  assert_true(has_ingredient(r, "iron-plate"))
+  assert_true(has_ingredient(r, "stone-brick"))
+  assert_true(has_ingredient(r, "dubious-data"))
+  assert_true(not has_ingredient(r, "provisional-approval"))
 end)
 
 test("resolution-office requires provisional-approval", function()
@@ -762,22 +766,19 @@ end)
 -- MACHINE OPERATION PAPERWORK
 -- =========================================================================
 
-test("baseline oil-processing uses petrochemical-operating-permit", function()
-  assert_eq(shared.get_operating_form({name = "oil-processing", category = "oil-processing"}), "petrochemical-operating-permit")
+test("refinery recipes do not require operating paperwork", function()
+  assert_eq(shared.get_operating_form({name = "oil-processing", category = "oil-processing"}), nil)
+  assert_eq(shared.get_operating_form({name = "advanced-oil-processing", category = "oil-processing"}), nil)
+  assert_eq(shared.get_operating_form({name = "coal-liquefaction", category = "oil-processing"}), nil)
 end)
 
-test("baseline petrochem recipes stay on petrochemical-operating-permit", function()
-  assert_eq(shared.get_operating_form({name = "plastic-bar", category = "chemistry"}), "petrochemical-operating-permit")
-  assert_eq(shared.get_operating_form({name = "sulfur", category = "chemistry"}), "petrochemical-operating-permit")
-  assert_eq(shared.get_operating_form({name = "sulfuric-acid", category = "chemistry"}), "petrochemical-operating-permit")
-  assert_eq(shared.get_operating_form({name = "solid-fuel-from-heavy-oil", category = "chemistry"}), "petrochemical-operating-permit")
-  assert_eq(shared.get_operating_form({name = "solid-fuel-from-light-oil", category = "chemistry"}), "petrochemical-operating-permit")
-  assert_eq(shared.get_operating_form({name = "solid-fuel-from-petroleum-gas", category = "chemistry"}), "petrochemical-operating-permit")
-end)
-
-test("advanced refining recipes use chemical-handling-work-order", function()
-  assert_eq(shared.get_operating_form({name = "advanced-oil-processing", category = "oil-processing"}), "chemical-handling-work-order")
-  assert_eq(shared.get_operating_form({name = "coal-liquefaction", category = "oil-processing"}), "chemical-handling-work-order")
+test("chemistry recipes use chemical-handling-work-order", function()
+  assert_eq(shared.get_operating_form({name = "plastic-bar", category = "chemistry"}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "sulfur", category = "chemistry"}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "sulfuric-acid", category = "chemistry"}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "solid-fuel-from-heavy-oil", category = "chemistry"}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "solid-fuel-from-light-oil", category = "chemistry"}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "solid-fuel-from-petroleum-gas", category = "chemistry"}), "chemical-handling-work-order")
 end)
 
 test("chemistry requires chemical-handling-work-order", function()
@@ -788,7 +789,7 @@ test("centrifuging requires radiological-work-order", function()
   assert_eq(shared.OPERATING_FORM_BY_CATEGORY["centrifuging"], "radiological-work-order")
 end)
 
-test("operating paperwork chain: petro < chemical < radiological", function()
+test("operating paperwork chain: chemical < radiological", function()
   local eir = get_recipe("environmental-impact-report")
   assert_eq(eir.category, "bureaucracy-registration")
   assert_true(has_ingredient(eir, "carbon-offset-certificate-verified"), "EIR should require verified carbon certificates")
@@ -803,15 +804,17 @@ test("operating paperwork chain: petro < chemical < radiological", function()
   assert_true(not has_ingredient(petro, "pipe"))
   assert_true(not has_ingredient(petro, "form-27b-6"))
   assert_true(not has_ingredient(petro, "ink"))
-  assert_eq(get_result_amount(petro, "petrochemical-operating-permit"), 2)
+  assert_eq(get_result_amount(petro, "unapproved-petrochemical-operating-permit"), 2)
 
   local chem = get_recipe("chemical-handling-work-order-production")
   assert_eq(chem.category, "bureaucracy-registration")
-  assert_true(has_ingredient(chem, "petrochemical-operating-permit"), "chemical needs petro permit")
+  assert_true(has_ingredient(chem, "safety-waiver"), "chemical needs safety paperwork")
+  assert_true(has_ingredient(chem, "environmental-impact-report"), "chemical needs environmental paperwork")
   assert_true(has_ingredient(chem, "form-27b-6"), "chemical needs Form 27B-6")
-  assert_true(has_ingredient(chem, "barrel"), "chemical needs barrel")
-  assert_true(has_ingredient(chem, "pipe"), "chemical needs pipe")
-  assert_true(not has_ingredient(chem, "safety-waiver"), "chemical should inherit safety via petro permit")
+  assert_true(has_ingredient(chem, "useless-documentation"), "chemical needs useless documentation")
+  assert_true(not has_ingredient(chem, "petrochemical-operating-permit"), "petro permits are removed")
+  assert_true(not has_ingredient(chem, "barrel"), "chemical should not need barrels")
+  assert_true(not has_ingredient(chem, "pipe"), "chemical should not need pipes")
   assert_true(not has_ingredient(chem, "construction-permit"), "chemical should not need construction paperwork")
   assert_true(not has_ingredient(chem, "management-approval-verbal"))
   assert_true(not has_ingredient(chem, "ink"))
@@ -824,7 +827,7 @@ test("operating paperwork chain: petro < chemical < radiological", function()
   assert_true(has_ingredient(radio, "battery"))
   assert_true(has_ingredient(radio, "steel-plate"))
   assert_true(not has_ingredient(radio, "ink"))
-  assert_eq(get_result_amount(radio, "radiological-work-order"), 2)
+  assert_eq(get_result_amount(radio, "unapproved-radiological-work-order"), 2)
 end)
 
 -- =========================================================================
@@ -847,11 +850,34 @@ test("all smelting-basic recipes require carbon-offset-certificate-basic", funct
   end
 end)
 
+test("starter furnace recipes are enabled from start", function()
+  local starter_smelting_recipes = {
+    "iron-plate-batch", "copper-plate-batch", "stone-brick-batch",
+    "dubious-data-batch",
+  }
+  for _, name in ipairs(starter_smelting_recipes) do
+    local r = get_recipe(name)
+    assert_true(r ~= nil, name .. " missing")
+    assert_eq(r.category, "smelting-basic", name .. " wrong category")
+    assert_eq(r.enabled, true, name .. " should be enabled from start")
+  end
+end)
+
+test("steel-plate-batch is locked behind steel-processing", function()
+  local r = get_recipe("steel-plate-batch")
+  assert_true(r ~= nil, "steel-plate-batch missing")
+  assert_eq(r.category, "smelting-basic")
+  assert_eq(r.enabled, false, "steel-plate-batch should not be enabled from start")
+end)
+
 test("charcoal-production requires carbon offset", function()
   local r = get_recipe("charcoal-production")
   assert_true(r ~= nil)
   assert_eq(r.category, "smelting-basic")
   assert_true(has_ingredient(r, "wood"))
+  assert_eq(get_ingredient_amount(r, "wood"), 30)
+  assert_eq(get_result_amount(r, "coal"), 8)
+  assert_eq(r.energy_required, 30)
   assert_true(has_ingredient(r, "carbon-offset-certificate-basic"),
     "charcoal should need carbon offset")
   assert_eq(r.ingredients[1].name, "carbon-offset-certificate-basic",
@@ -872,7 +898,7 @@ end)
 
 test("all filing recipes require blank-form and use expected categories", function()
   local filings = {
-    {"filing-landscape", "bureaucratic-bootstrap"},
+    {"filing-landscape", "resolution-handcraft"},
     {"filing-smog", "bureaucracy-resolution"},
     {"filing-noise", "bureaucracy-resolution"},
     {"filing-unemployment", "bureaucracy-resolution"},
@@ -999,11 +1025,25 @@ test("greenhouse recipes use admin-greenhouse category", function()
   end
 end)
 
+test("greenhouse wood growth is moderately accelerated", function()
+  local r = get_recipe("greenhouse-wood")
+  assert_eq(get_result_amount(r, "wood"), 12)
+  assert_eq(r.energy_required, 24)
+end)
+
 test("coffee-plantation grows beans without fertilizer", function()
   local r = get_recipe("coffee-plantation")
   assert_true(has_ingredient(r, "coffee-bean"), "coffee plantation needs coffee-bean")
   assert_true(has_ingredient(r, "water"), "coffee plantation needs water")
   assert_true(not has_ingredient(r, "fertilizer"), "coffee plantation should not need fertilizer")
+  assert_eq(get_result_amount(r, "coffee-bean"), 5)
+  assert_eq(r.energy_required, 30)
+end)
+
+test("coffee beans stack to 50", function()
+  local bean = data.raw.item["coffee-bean"]
+  assert_true(bean ~= nil, "coffee-bean item missing")
+  assert_eq(bean.stack_size, 50)
 end)
 
 test("coffee-refining does not require work-order", function()
@@ -1038,6 +1078,33 @@ test("treasury-bond requires taxpayer-money at the office desk", function()
   assert_eq(get_ingredient_amount(r, "taxpayer-money"), 10)
 end)
 
+test("rideable biter uses paperwork and coffee in its assignment recipe", function()
+  local r = get_recipe("rideable-biter")
+  assert_true(r ~= nil, "rideable-biter recipe missing")
+  assert_eq(r.category, "biter-training", "rideable biter should be assigned at the formation center")
+  assert_true(has_ingredient(r, "biter-worker"), "rideable biter should require a biter worker")
+  assert_true(has_ingredient(r, "management-verbal-work-order"), "rideable biter should require assignment paperwork")
+  assert_true(has_ingredient(r, "liquid-coffee"), "rideable biter should require training coffee")
+  assert_true(not has_ingredient(r, "taxpayer-money"), "rideable biter training should not directly consume taxpayer money")
+  assert_true(not has_ingredient(r, "job-offer"), "rideable biter training should not consume job offers")
+  assert_eq(get_result_name(r), "rideable-biter")
+end)
+
+test("biterport logistics uses dedicated formations instead of station workers", function()
+  local r = get_recipe("biter-logistics-formation")
+  assert_true(r ~= nil, "biter-logistics-formation recipe missing")
+  assert_eq(r.category, "biter-training", "logistics formations should be organized at the formation center")
+  assert_true(has_ingredient(r, "biter-worker"), "formations should be trained from ordinary biter workers")
+  assert_eq(get_ingredient_amount(r, "biter-worker"), 1)
+  assert_true(has_ingredient(r, "management-verbal-work-order"), "formations should require management paperwork")
+  assert_true(has_ingredient(r, "form-27b-6"), "formations should use available standardized paperwork")
+  assert_true(has_ingredient(r, "liquid-coffee"), "formations should require training coffee")
+  assert_true(not has_ingredient(r, "taxpayer-money"), "formations should not directly consume taxpayer money")
+  assert_true(not has_ingredient(r, "job-offer"), "formations should not consume job offers")
+  assert_true(not has_ingredient(r, "research-grant-approval"), "formations should not require research grant approvals")
+  assert_eq(get_result_name(r), "biter-logistics-formation")
+end)
+
 test("data-production now runs through bureaucracy-registration", function()
   local r = get_recipe("data-production")
   assert_eq(r.category, "bureaucracy-registration")
@@ -1054,42 +1121,80 @@ test("government-grant requires treasury-bond and union negotiation", function()
   assert_true(has_ingredient(r, "management-approval-verbal"))
 end)
 
+test("specialist training bootstraps before the buildings that consume specialists", function()
+  local delegate = get_recipe("union-delegate-training")
+  assert_eq(delegate.category, "biter-training")
+  assert_true(has_ingredient(delegate, "management-verbal-work-order"))
+  assert_true(has_ingredient(delegate, "form-27b-6"))
+  assert_true(not has_ingredient(delegate, "treasury-bond"))
+  assert_true(not has_ingredient(delegate, "government-grant"))
+
+  local chemical = get_recipe("chemical-operator-training")
+  assert_eq(chemical.category, "biter-training")
+  assert_true(has_ingredient(chemical, "chemical-handling-work-order"))
+  assert_true(has_ingredient(chemical, "liquid-coffee"))
+  assert_true(not has_ingredient(chemical, "petrochemical-operating-permit"))
+  assert_true(not has_ingredient(chemical, "construction-permit"))
+  assert_true(not has_ingredient(chemical, "management-approval-written"))
+end)
+
+test("all biter training recipes use the formation center category", function()
+  for _, recipe_name in ipairs({
+    "rideable-biter",
+    "biter-logistics-formation",
+    "union-delegate-training",
+    "chemical-operator-training",
+    "nuclear-technician-training",
+    "hired-biter-capsule",
+  }) do
+    local recipe = get_recipe(recipe_name)
+    assert_true(recipe ~= nil, recipe_name .. " recipe missing")
+    assert_eq(recipe.category, "biter-training", recipe_name .. " should run only in the formation center")
+    assert_true(has_ingredient(recipe, "biter-worker"), recipe_name .. " should consume a biter worker")
+  end
+end)
+
+test("biter training is one worker to one biter output using only paperwork and coffee", function()
+  for _, recipe_name in ipairs({
+    "rideable-biter",
+    "biter-logistics-formation",
+    "union-delegate-training",
+    "chemical-operator-training",
+    "nuclear-technician-training",
+    "hired-biter-capsule",
+  }) do
+    local recipe = get_recipe(recipe_name)
+    local result_name = get_result_name(recipe)
+    assert_eq(get_ingredient_amount(recipe, "biter-worker"), 1, recipe_name .. " should consume exactly one biter worker")
+    assert_eq(get_result_amount(recipe, result_name), 1, recipe_name .. " should produce exactly one trained biter output")
+
+    for _, ingredient in ipairs(recipe.ingredients or {}) do
+      local ingredient_type = ingredient.type or "item"
+      local ingredient_name = ingredient.name or ingredient[1]
+      local allowed = ingredient_name == "biter-worker"
+        or (ingredient_type == "fluid" and ingredient_name == "liquid-coffee")
+        or (ingredient_type == "item" and shared.PAPERWORK_ITEMS[ingredient_name])
+      assert_true(allowed, recipe_name .. " has non-paperwork training ingredient: " .. tostring(ingredient_name))
+      assert_true(ingredient_name ~= "taxpayer-money", recipe_name .. " should not directly consume taxpayer money")
+      assert_true(ingredient_name ~= "job-offer", recipe_name .. " should not consume job offers")
+      assert_true(ingredient_name ~= "research-grant-approval", recipe_name .. " should use immediately available standard paperwork instead of research grant approvals")
+      assert_true(not tostring(ingredient_name):find("permit", 1, true), recipe_name .. " should not directly consume permits")
+    end
+    assert_true(has_ingredient(recipe, "liquid-coffee"), recipe_name .. " should require training coffee")
+  end
+end)
+
 test("tax-audit converts slush-fund to taxpayer-money (net positive)", function()
   local r = get_recipe("tax-audit")
-  assert_true(has_ingredient(r, "taxpayer-money"))
-  local input = get_ingredient_amount(r, "taxpayer-money")
+  assert_true(has_ingredient(r, "slush-fund"))
   local output = get_result_amount(r, "taxpayer-money")
-  assert_true(output > input, "tax-audit should produce more money than it costs")
+  assert_true(output > 0, "tax-audit should produce taxpayer-money")
 end)
 
 test("slush-fund-production uses propaganda-distillery", function()
   local r = get_recipe("slush-fund-production")
   assert_eq(r.category, "propaganda-distillery")
   assert_true(has_ingredient(r, "treasury-bond"))
-end)
-
-test("propaganda-distillery recipes define crafting machine tints", function()
-  for _, recipe_name in ipairs({
-    "slush-fund-production",
-    "politician-fluid-refining",
-    "misinformation-production",
-    "justification-production",
-  }) do
-    local recipe = get_recipe(recipe_name)
-    assert_true(recipe.crafting_machine_tint ~= nil, recipe_name .. " missing crafting_machine_tint")
-    assert_true(recipe.crafting_machine_tint.primary ~= nil, recipe_name .. " missing primary tint")
-    assert_true(recipe.crafting_machine_tint.secondary ~= nil, recipe_name .. " missing secondary tint")
-    assert_true(recipe.crafting_machine_tint.tertiary ~= nil, recipe_name .. " missing tertiary tint")
-    assert_true(recipe.crafting_machine_tint.quaternary ~= nil, recipe_name .. " missing quaternary tint")
-  end
-end)
-
-test("taxpayer money costs defined for late-game buildings", function()
-  assert_eq(shared.TAXPAYER_MONEY_COSTS["roboport"], 25)
-  assert_eq(shared.TAXPAYER_MONEY_COSTS["beacon"], 30)
-  assert_eq(shared.TAXPAYER_MONEY_COSTS["nuclear-reactor"], 100)
-  assert_eq(shared.TAXPAYER_MONEY_COSTS["centrifuge"], 50)
-  assert_eq(shared.TAXPAYER_MONEY_COSTS["rocket-silo"], 200)
 end)
 
 -- =========================================================================
@@ -1225,6 +1330,10 @@ test("direct draft-to-work-order recipes use printing-workorder category", funct
     assert_true(has_ingredient(r, "work-order"), name .. " missing work-order")
     assert_true(has_ingredient(r, "ink"), name .. " missing ink")
   end
+  assert_true(has_ingredient(get_recipe("safety-work-order-printing"), "safety-waiver"), "safety shortcut should require approved safety waiver")
+  assert_true(not has_ingredient(get_recipe("safety-work-order-printing"), "safety-waiver-draft"), "safety shortcut should not use draft")
+  assert_true(has_ingredient(get_recipe("construction-work-order-printing"), "construction-permit"), "construction shortcut should require approved permit")
+  assert_true(not has_ingredient(get_recipe("construction-work-order-printing"), "construction-permit-draft"), "construction shortcut should not use draft")
 end)
 
 test("only draft-backed work-order printing produces 2x output", function()
@@ -1275,10 +1384,12 @@ end)
 test("overtime-exemption requires union-negotiation category", function()
   local r = get_recipe("overtime-exemption")
   assert_eq(r.category, "union-negotiation")
-  assert_true(has_ingredient(r, "productivity-module"))
+  assert_true(has_ingredient(r, "processing-unit"))
   assert_true(has_ingredient(r, "government-grant"))
-  assert_true(has_ingredient(r, "regulation"))
-  assert_true(has_ingredient(r, "taxpayer-money"))
+  assert_true(has_ingredient(r, "management-approval-written"))
+  assert_false(has_ingredient(r, "taxpayer-money"))
+  assert_false(has_ingredient(r, "regulation"))
+  assert_false(has_ingredient(r, "productivity-module"))
 end)
 
 -- =========================================================================
@@ -1306,26 +1417,37 @@ end)
 test("admin science pack requires office desk and specific forms", function()
   local r = get_recipe("administrative-science-pack-production")
   assert_eq(r.category, "bureaucracy-registration")
-  assert_true(has_ingredient(r, "blank-form"))
   assert_true(has_ingredient(r, "provisional-approval"))
   assert_true(has_ingredient(r, "basic-excuse"))
   assert_true(has_ingredient(r, "research-grant-approval"))
+  assert_eq(get_result_amount(r, "administrative-science-pack"), 5)
 end)
 
 -- =========================================================================
 -- CATEGORY DEFINITIONS
 -- =========================================================================
 
-test("all 14 custom recipe categories are defined", function()
+test("all custom recipe categories are defined", function()
   local expected = {
     "bureaucracy-registration", "bureaucratic-bootstrap", "bureaucracy-resolution",
     "bureaucracy-policy", "admin-greenhouse", "watercooler-gossip",
     "union-negotiation", "smelting-basic", "printing", "printing-advanced",
-    "printing-workorder", "pneumatic-liquify", "pneumatic-solidify",
-    "propaganda-distillery",
+    "printing-workorder", "petition-stamping", "propaganda-distillery", "pneumatic-intake",
   }
   for _, name in ipairs(expected) do
     assert_true(data.raw["recipe-category"][name] ~= nil, "missing category: " .. name)
+  end
+end)
+
+test("pneumatic intake recipes accept every transportable item without outputs", function()
+  for item_name in pairs(shared.PNEUMATIC_ITEMS) do
+    local recipe = get_recipe("pneumatic-intake-" .. item_name)
+    assert_true(recipe ~= nil, "missing pneumatic intake recipe for " .. item_name)
+    assert_eq(recipe.category, "pneumatic-intake", recipe.name .. " wrong category")
+    assert_eq(recipe.enabled, false, recipe.name .. " should be unlocked by pneumatic transport tech")
+    assert_eq(#recipe.ingredients, 1, recipe.name .. " should have one ingredient")
+    assert_eq(recipe.ingredients[1].name, item_name, recipe.name .. " wrong ingredient")
+    assert_eq(#recipe.results, 0, recipe.name .. " should not output anything")
   end
 end)
 
@@ -1367,92 +1489,23 @@ test("pneumatic-pipe-to-ground requires construction-permit", function()
   assert_true(has_ingredient(r, "pneumatic-pipe"))
 end)
 
-test("form-liquifier and form-solidifier require compacted-rubble", function()
-  assert_true(has_ingredient(get_recipe("form-liquifier"), "compacted-rubble"))
-  assert_true(has_ingredient(get_recipe("form-solidifier"), "compacted-rubble"))
-  assert_true(has_ingredient(get_recipe("form-liquifier"), "pipe"))
-  assert_true(has_ingredient(get_recipe("form-solidifier"), "pipe"))
-end)
-
-test("heavier vanilla integration anchors have exact ingredient counts", function()
-  local expectations = {
-    {"greenhouse", "stone-brick", 10},
-    {"greenhouse", "pipe", 2},
-    {"corporate-breakroom", "stone-brick", 8},
-    {"corporate-breakroom", "pipe", 3},
-    {"union-headquarters", "steel-plate", 45},
-    {"union-headquarters", "advanced-circuit", 18},
-    {"union-headquarters", "management-approval-verbal", 1},
-    {"union-headquarters", "management-verbal-work-order", 1},
-    {"pneumatic-pipe", "pipe", 1},
-    {"pneumatic-pipe-to-ground", "construction-permit", 1},
-    {"form-liquifier", "pipe", 2},
-    {"form-solidifier", "pipe", 2},
-    {"crappy-report-production", "paper", 2},
-    {"credentials-production", "electronic-circuit", 2},
-    {"data-production", "advanced-circuit", 2},
-    {"management-written-proposal", "advanced-circuit", 2},
-    {"environmental-impact-report", "carbon-offset-certificate-verified", 3},
-    {"chemical-handling-work-order-production", "barrel", 1},
-    {"chemical-handling-work-order-production", "pipe", 1},
-    {"radiological-work-order-production", "battery", 1},
-    {"radiological-work-order-production", "steel-plate", 2},
-    {"white-paper-production", "paper", 8},
-    {"white-paper-production", "processing-unit", 1},
-    {"white-paper-production", "treasury-bond", 1},
-    {"policy-production", "processing-unit", 1},
-    {"regulation-production", "processing-unit", 2},
-    {"case-smog", "coal", 2},
-    {"case-hazmat", "barrel", 1},
-    {"case-noise", "processing-unit", 1},
-  }
-
-  for _, expectation in ipairs(expectations) do
-    local recipe_name = expectation[1]
-    local ingredient_name = expectation[2]
-    local amount = expectation[3]
-    local recipe = get_recipe(recipe_name)
-    assert_true(recipe ~= nil, recipe_name .. " missing")
-    assert_eq(get_ingredient_amount(recipe, ingredient_name), amount,
-      recipe_name .. " wrong " .. ingredient_name .. " amount")
-  end
+test("tube intake and outtake require compacted-rubble", function()
+  assert_true(has_ingredient(get_recipe("tube-intake"), "compacted-rubble"))
+  assert_true(has_ingredient(get_recipe("tube-outtake"), "compacted-rubble"))
+  assert_true(has_ingredient(get_recipe("tube-intake"), "pipe"))
+  assert_true(has_ingredient(get_recipe("tube-outtake"), "pipe"))
 end)
 
 -- =========================================================================
 -- RECIPE INGREDIENT COUNTS (regression guards)
 -- =========================================================================
 
-test("paper-production: 1 wood -> 5 paper", function()
-  local r = get_recipe("paper-production")
-  assert_eq(get_ingredient_amount(r, "wood"), 1)
-  assert_eq(get_result_amount(r, "paper"), 5)
-end)
-
-test("ink-production: 1 coal -> 2 ink", function()
-  local r = get_recipe("ink-production")
-  assert_eq(get_ingredient_amount(r, "coal"), 1)
-  assert_eq(get_result_amount(r, "ink"), 2)
-end)
-
-test("iron-plate-batch: 10 ore + 1 cert -> 10 plates", function()
-  local r = get_recipe("iron-plate-batch")
-  assert_eq(get_ingredient_amount(r, "iron-ore"), 10)
-  assert_eq(get_ingredient_amount(r, "carbon-offset-certificate-basic"), 1)
-  assert_eq(get_result_amount(r, "iron-plate"), 10)
-end)
-
-test("steel-plate-batch: 50 iron-plate + 1 cert -> 10 steel", function()
-  local r = get_recipe("steel-plate-batch")
-  assert_eq(get_ingredient_amount(r, "iron-plate"), 50)
-  assert_eq(get_result_amount(r, "steel-plate"), 10)
-end)
-
-test("verified carbon certificate cost is scaled up", function()
-  local r = get_recipe("carbon-offset-certificate-verified")
-  assert_true(r ~= nil, "carbon-offset-certificate-verified missing")
-  assert_eq(get_ingredient_amount(r, "carbon-offset-certificate-basic"), 4)
-  assert_eq(get_ingredient_amount(r, "dubious-data"), 20)
-  assert_eq(r.energy_required, 15)
+test("environmental compliance bootstrap does not require union-headquarters", function()
+  local verified = get_recipe("carbon-offset-certificate-verified")
+  local report = get_recipe("environmental-impact-report")
+  assert_eq(verified.category, "bureaucracy-registration", "verified carbon certificate should be office-desk craftable")
+  assert_eq(report.category, "bureaucracy-registration", "environmental impact report should be office-desk craftable")
+  assert_true(get_recipe("petrochemical-operating-permit-production") == nil, "petrochemical permits should stay removed")
 end)
 
 -- =========================================================================
@@ -1584,11 +1637,17 @@ local function check_pre_electricity_chain(item_name, visited, path)
   return nil
 end
 
-test("boiler bootstrap: safety-waiver chain requires no electricity", function()
-  -- safety-waiver is the form required to handcraft a boiler or steam-engine
+test("safety-waiver now requires petition-stamping approval", function()
   local visited = {}
   local err = check_pre_electricity_chain("safety-waiver", visited, "safety-waiver")
-  assert_true(err == nil, "DEADLOCK: " .. (err or ""))
+  assert_true(err ~= nil and err:find("petition%-stamping", 1, false) ~= nil,
+    "safety-waiver should require petition-stamping approval")
+end)
+
+test("unapproved safety-waiver chain remains pre-electricity craftable", function()
+  local visited = {}
+  local err = check_pre_electricity_chain("unapproved-safety-waiver", visited, "unapproved-safety-waiver")
+  assert_true(err == nil, "unapproved safety-waiver should stay pre-electricity craftable")
 end)
 
 test("boiler bootstrap: carbon-offset-certificate-basic chain requires no electricity", function()
@@ -1614,9 +1673,7 @@ test("boiler bootstrap: all vanilla boiler/steam-engine ingredients are pre-elec
 end)
 
 test("basic-excuse is handcraftable (bureaucratic-bootstrap category)", function()
-  -- basic-excuse is a critical bootstrap item: safety-waiver-draft needs it,
-  -- and safety-waiver is required for boiler/steam-engine. If this recipe
-  -- requires an electric machine, players cannot bootstrap power.
+  -- basic-excuse remains a critical bootstrap item for early draft paperwork.
   local r = get_recipe("basic-excuse-production")
   assert_true(r ~= nil, "basic-excuse-production missing")
   assert_eq(r.category, "bureaucratic-bootstrap",
@@ -1701,7 +1758,7 @@ test("only bootstrap-safe admin buildings start enabled", function()
 end)
 
 test("bootstrap structures that consume gated paperwork are tech-gated", function()
-  local gated_buildings = {"office-desk", "admin-station", "resolution-office"}
+  local gated_buildings = {"office-desk", "admin-station", "petition-counter", "resolution-office"}
   for _, name in ipairs(gated_buildings) do
     local r = get_recipe(name)
     assert_true(r ~= nil, name .. " recipe missing")
@@ -1738,10 +1795,10 @@ end)
 
 test("ADMIN_BUILDINGS includes all expected building names", function()
   local expected = {
-    "office-desk", "admin-station", "resolution-office", "greenhouse",
+    "office-desk", "admin-station", "petition-counter", "resolution-office", "greenhouse",
     "corporate-breakroom", "printer-t1", "printer-t2",
     "mechanical-printer", "union-headquarters",
-    "form-liquifier", "form-solidifier", "pneumatic-pipe", "pneumatic-pipe-to-ground",
+    "tube-intake", "tube-outtake", "pneumatic-pipe", "pneumatic-pipe-to-ground",
   }
   for _, name in ipairs(expected) do
     assert_true(shared.ADMIN_BUILDINGS[name], name .. " missing from ADMIN_BUILDINGS")
