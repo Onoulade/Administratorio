@@ -676,6 +676,29 @@ formation_center.working_sound = {
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
 
+-- Petition Counter: biter-government permit approval station (3x3)
+local petition_counter = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
+petition_counter.name = "petition-counter"
+petition_counter.minable.result = "petition-counter"
+petition_counter.placeable_by = placeable_by_item("petition-counter")
+petition_counter.next_upgrade = nil
+petition_counter.icon = "__administratorio__/graphics/icons/office-building.png"
+petition_counter.icon_size = 64
+petition_counter.icons = nil
+petition_counter.crafting_categories = {"petition-stamping"}
+petition_counter.crafting_speed = 0.5
+petition_counter.energy_usage = "50kW"
+petition_counter.energy_source = {type = "electric", usage_priority = "secondary-input"}
+petition_counter.ingredient_count = 1
+petition_counter.module_slots = 0
+petition_counter.allowed_effects = {}
+petition_counter.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
+petition_counter.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+petition_counter.working_sound = {
+  sound = { filename = sound_path .. "stamp.ogg", volume = 0.55 },
+  idle_sound = { filename = "__base__/sound/idle1.ogg" }
+}
+
 -- Greenhouse: 7x7 wood and coffee
 local greenhouse = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
 greenhouse.name = "greenhouse"
@@ -1314,6 +1337,7 @@ if space_age_enabled then
     capture_bureau,
     resolution_office,
     office_desk,
+    petition_counter,
     breakroom,
     union_hq,
     propaganda_distillery,
@@ -1321,6 +1345,8 @@ if space_age_enabled then
     require_non_vacuum(entity)
   end
 end
+
+add_entity(petition_counter)
 
 if space_age_enabled then
   add_entity(capture_bureau)

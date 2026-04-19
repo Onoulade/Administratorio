@@ -10,8 +10,10 @@ data:extend({
 
   -- Line 2: Permits & Drafts
   { type = "item", name = "safety-waiver-draft",        icon = item_icons .. "safety-waiver-draft.png",        icon_size = 64, subgroup = "forms-permits", order = "a-a", stack_size = 50 },
+  { type = "item", name = "unapproved-safety-waiver",   icon = item_icons .. "safety-waiver.png",              icon_size = 64, subgroup = "forms-permits", order = "a-aa", stack_size = 50 },
   { type = "item", name = "safety-waiver",              icon = item_icons .. "safety-waiver.png",              icon_size = 64, subgroup = "forms-permits", order = "a-b", stack_size = 50 },
   { type = "item", name = "construction-permit-draft",  icon = item_icons .. "construction-permit-draft.png",  icon_size = 64, subgroup = "forms-permits", order = "b-a", stack_size = 50 },
+  { type = "item", name = "unapproved-construction-permit", icon = item_icons .. "construction-permit.png",    icon_size = 64, subgroup = "forms-permits", order = "b-aa", stack_size = 50 },
   { type = "item", name = "construction-permit",        icon = item_icons .. "construction-permit.png",        icon_size = 64, subgroup = "forms-permits", order = "b-b", stack_size = 50 },
   { type = "item", name = "management-verbal-draft",    icon = item_icons .. "management-verbal-draft.png",    icon_size = 64, subgroup = "forms-permits", order = "c-a", stack_size = 20 },
   { type = "item", name = "management-approval-verbal", icon = item_icons .. "management-approval-verbal.png", icon_size = 64, subgroup = "forms-permits", order = "c-b", stack_size = 20 },
@@ -19,6 +21,8 @@ data:extend({
   { type = "item", name = "management-approval-written",icon = item_icons .. "management-approval-written.png",icon_size = 64, subgroup = "forms-permits", order = "d-c", stack_size = 10 },
   { type = "item", name = "transit-authorization",      icon = item_icons .. "transit-authorization.png",      icon_size = 64, subgroup = "forms-permits", order = "f", stack_size = 50 },
   { type = "item", name = "research-grant-approval",    icon = item_icons .. "research-grant-approval.png",    icon_size = 64, subgroup = "forms-permits", order = "g", stack_size = 50 },
+  { type = "item", name = "unapproved-petrochemical-operating-permit", icon = item_icons .. "petrochemical-operating-permit.png", icon_size = 64, subgroup = "forms-permits", order = "h-a", stack_size = 20 },
+  { type = "item", name = "petrochemical-operating-permit", icon = item_icons .. "petrochemical-operating-permit.png", icon_size = 64, subgroup = "forms-permits", order = "h", stack_size = 20 },
 
   -- Line 3: Work Orders & Machinery Forms
   { type = "item", name = "work-order",                       icon = item_icons .. "work-order.png",                       icon_size = 64, subgroup = "forms-work-orders", order = "a",  stack_size = 50 },
@@ -30,6 +34,7 @@ data:extend({
   { type = "item", name = "management-written-work-order",    icon = item_icons .. "management-written-work-order.png",    icon_size = 64, subgroup = "forms-work-orders", order = "c4", stack_size = 10 },
   { type = "item", name = "research-grant-work-order",        icon = item_icons .. "research-grant-work-order.png",        icon_size = 64, subgroup = "forms-work-orders", order = "c5", stack_size = 50 },
   { type = "item", name = "chemical-handling-work-order",     icon = item_icons .. "chemical-handling-work-order.png",     icon_size = 64, subgroup = "forms-work-orders", order = "c6", stack_size = 20 },
+  { type = "item", name = "unapproved-radiological-work-order", icon = item_icons .. "radiological-work-order.png",        icon_size = 64, subgroup = "forms-work-orders", order = "c7-a", stack_size = 10 },
   { type = "item", name = "radiological-work-order",          icon = item_icons .. "radiological-work-order.png",          icon_size = 64, subgroup = "forms-work-orders", order = "c7", stack_size = 10 },
 
   -- Line 4: Printed Documents
