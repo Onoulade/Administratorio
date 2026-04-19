@@ -67,8 +67,10 @@ shared.PAPERWORK_ITEMS = {
   ["research-grant-approval"] = true,
   ["provisional-approval"] = true,
   ["safety-waiver"] = true,
+  ["unapproved-safety-waiver"] = true,
   ["safety-waiver-draft"] = true,
   ["construction-permit"] = true,
+  ["unapproved-construction-permit"] = true,
   ["construction-permit-draft"] = true,
   ["transit-authorization"] = true,
   ["management-approval-verbal"] = true,
@@ -78,6 +80,8 @@ shared.PAPERWORK_ITEMS = {
   ["carbon-offset-certificate-basic"] = true,
   ["carbon-offset-certificate-verified"] = true,
   ["environmental-impact-report"] = true,
+  ["petrochemical-operating-permit"] = true,
+  ["unapproved-petrochemical-operating-permit"] = true,
   ["blank-form"] = true,
   ["blank-approval"] = true,
   ["blank-directive"] = true,
@@ -92,6 +96,7 @@ shared.PAPERWORK_ITEMS = {
   ["research-grant-work-order"] = true,
   ["chemical-handling-work-order"] = true,
   ["radiological-work-order"] = true,
+  ["unapproved-radiological-work-order"] = true,
 }
 
 -------------------------------------------------------------------------------
@@ -220,6 +225,7 @@ shared.ADMIN_BUILDINGS = {
   ["office-desk"] = true,
   ["formation-center"] = true,
   ["field-office"] = true,
+  ["petition-counter"] = true,
   ["greenhouse"] = true,
   ["corporate-breakroom"] = true,
   ["printer-t1"] = true,
@@ -255,18 +261,19 @@ end
 -------------------------------------------------------------------------------
 shared.FORM_PRODUCTION_RECIPES = {
   ["work-order"] = "work-order-production",
-  ["safety-waiver"] = "safety-waiver-printing",
+  ["safety-waiver"] = "safety-waiver-approval",
   ["form-27b-6"] = "form-27b-6",
-  ["construction-permit"] = "construction-permit-printing",
+  ["construction-permit"] = "construction-permit-approval",
   ["management-approval-verbal"] = "management-verbal-printing",
   ["management-approval-written"] = "management-written-1st-printing",
   ["provisional-approval"] = "provisional-approval-production",
   ["research-grant-approval"] = "research-grant-approval-production",
+  ["petrochemical-operating-permit"] = "petrochemical-operating-permit-approval",
   ["blank-form"] = "blank-form-production",
   ["blank-approval"] = "blank-approval-production",
   ["blank-directive"] = "blank-directive-production",
   ["chemical-handling-work-order"] = "chemical-handling-work-order-production",
-  ["radiological-work-order"] = "radiological-work-order-production",
+  ["radiological-work-order"] = "radiological-work-order-approval",
 }
 
 if space_age_enabled then
