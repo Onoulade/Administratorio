@@ -34,4 +34,31 @@ data:extend({
   { type = "item", name = "taxpayer-money",   icon = item_icons .. "taxpayer-money.png",   icon_size = 64, subgroup = "admin-money", order = "a", stack_size = 200, fuel_category = "chemical", fuel_value = "500kJ", fuel_emissions_multiplier = 1.5 },
   { type = "item", name = "treasury-bond",    icon = item_icons .. "treasury-bond.png",    icon_size = 64, subgroup = "admin-money", order = "b", stack_size = 200 },
   { type = "item", name = "government-grant", icon = item_icons .. "government-grant.png", icon_size = 64, subgroup = "admin-money", order = "c", stack_size = 100 },
+
+  -- Biter Employment
+  {
+    type = "item", name = "job-offer",
+    icons = {{icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r=0.4, g=0.9, b=0.4, a=1}}},
+    subgroup = "admin-biter-buildings", order = "c", stack_size = 20
+  },
+  {
+    type = "item", name = "biter-worker",
+    icons = {{icon = item_icons .. "credentials.png", icon_size = 64, tint = {r=0.6, g=0.4, b=0.2, a=1}}},
+    subgroup = "admin-biter-buildings", order = "d", stack_size = 50
+  },
+  {
+    type = "item", name = "union-delegate",
+    icons = {{icon = item_icons .. "credentials.png", icon_size = 64, tint = {r=0.2, g=0.4, b=0.9, a=1}}},
+    subgroup = "admin-biter-buildings", order = "e1", stack_size = 10
+  },
+  {
+    type = "item", name = "chemical-operator",
+    icons = {{icon = item_icons .. "credentials.png", icon_size = 64, tint = {r=0.9, g=0.6, b=0.1, a=1}}},
+    subgroup = "admin-biter-buildings", order = "e2", stack_size = 10
+  },
+  {
+    type = "item", name = "nuclear-technician",
+    icons = {{icon = item_icons .. "credentials.png", icon_size = 64, tint = {r=0.2, g=0.9, b=0.7, a=1}}},
+    subgroup = "admin-biter-buildings", order = "e3", stack_size = 10
+  },
 })

@@ -17,6 +17,14 @@ M.BITER_PAYOUT = {
   ["big-spitter"] = 50, ["behemoth-spitter"] = 100,
 }
 
+-- How many biter-worker items a hired biter yields (larger = more workers)
+M.BITER_WORKER_YIELD = {
+  ["small-biter"] = 1, ["medium-biter"] = 2,
+  ["big-biter"] = 3, ["behemoth-biter"] = 5,
+  ["small-spitter"] = 1, ["medium-spitter"] = 2,
+  ["big-spitter"] = 3, ["behemoth-spitter"] = 5,
+}
+
 M.PROTEST_THRESHOLD = 600 -- seconds of waiting before protest (~10 minutes)
 M.PROMISE_HOLD_TICKS = 60 * 60 -- 60 seconds to find an open desk after a promise
 M.PACIFIED_FRUSTRATION_RATIO = 0.5
@@ -98,6 +106,12 @@ M.RETURN_DESPAWN_TICKS = 30 * 60 -- despawn after 30 seconds regardless of dista
 
 M.HUSH_MONEY_CALM_TICKS = 3 * 60 * 60 -- 3 minutes of suppressed spawning
 
+-- Field office: proximity check for nearby biter spawners
+M.FIELD_OFFICE_SPAWNER_RANGE = 100    -- tiles: max distance to a biter spawner
+M.FIELD_OFFICE_CHECK_TICKS = 30       -- how often to check state (arrival, craft completion)
+M.FIELD_OFFICE_BITER_DESPAWN_TICKS = 5 * 60 -- despawn worker biter after release
+M.FIELD_OFFICE_ARRIVAL_RADIUS = 2.5   -- distance threshold for "biter has arrived"
+
 -- Pneumatic tube network capacity (forms per network).
 M.TUBE_BASE_CAPACITY = 10
 M.TUBE_CAPACITY_TECHS = {
@@ -148,6 +162,7 @@ M.PNEUMATIC_ITEMS = {
   "watercooler-gossip", "office-drama",
   "taxpayer-money",
   "useless-documentation", "refined-nonsense",
+  "job-offer", "biter-worker", "union-delegate", "chemical-operator", "nuclear-technician",
 }
 
 M.EVOLUTION_COMPLAINT_WARNINGS = {

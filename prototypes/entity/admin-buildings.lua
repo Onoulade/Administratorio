@@ -549,6 +549,46 @@ propaganda_distillery.graphics_set = {
   },
 }
 
+-- Field Office: 3x3 early-game desk that must be placed near biter nests
+local field_office = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
+field_office.name = "field-office"
+field_office.minable.result = "field-office"
+field_office.placeable_by = placeable_by_item("field-office")
+field_office.next_upgrade = nil
+field_office.crafting_categories = {"bureaucracy-registration", "bureaucratic-bootstrap"}
+field_office.crafting_speed = 1.0
+field_office.module_slots = 1
+field_office.allowed_effects = {"consumption"}
+field_office.allowed_module_categories = {"night-work"}
+field_office.localised_description = disabled_entity_description("field-office-no-working-hours")
+field_office.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
+field_office.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+field_office.energy_source = {
+  type = "electric",
+  usage_priority = "secondary-input",
+  emissions_per_minute = { pollution = 0 },
+}
+local field_office_tint = {r=0.75, g=0.65, b=0.45, a=1.0}
+field_office.graphics_set = {
+  animation = {
+    layers = {
+      machine_animation_layer(scrubber_graphics .. "base/scrubber-animation.png", 210, 280, 60, 10, util.by_pixel(0, -10), {
+        tint = field_office_tint,
+      }),
+      machine_shadow_layer(scrubber_graphics .. "base/scrubber-shadow.png", 400, 350, 60, util.by_pixel(16, 4)),
+    }
+  }
+}
+field_office.fluid_boxes = {
+  { production_type = "input",  pipe_connections = {{ flow_direction = "input", direction = defines.direction.north, position = {0, -1} }}, volume = 100 },
+  { production_type = "output", pipe_connections = {{ flow_direction = "output", direction = defines.direction.south, position = {0, 1} }},  volume = 100 },
+}
+field_office.fluid_boxes_off_when_no_fluid_recipe = true
+field_office.working_sound = {
+  sound = { filename = sound_path .. "office-paperwork.ogg", volume = 0.38 },
+  idle_sound = { filename = "__base__/sound/idle1.ogg" }
+}
+
 -- Transit Permit Chest: visible 1x1 chest auto-placed next to train stops
 local transit_permit_chest = table.deepcopy(data.raw["container"]["steel-chest"])
 transit_permit_chest.name = "transit-permit-chest"
@@ -564,7 +604,7 @@ transit_permit_chest.collision_mask = {layers = {}}
 
 data:extend({
   admin_station,
-  resolution_office, office_desk, greenhouse,
+  resolution_office, office_desk, field_office, greenhouse,
   breakroom, union_hq, propaganda_distillery,
   waiting_zone_marker, admin_station_corner_blocker, admin_station_combinator,
   transit_permit_chest

@@ -123,6 +123,7 @@ do
     "watercooler-gossip", "office-drama",
     "taxpayer-money",
     "useless-documentation", "refined-nonsense",
+    "job-offer", "biter-worker", "union-delegate", "chemical-operator", "nuclear-technician",
   }
   for _, name in ipairs(extra) do
     shared.PNEUMATIC_ITEMS[name] = true
@@ -212,6 +213,7 @@ shared.ADMIN_BUILDINGS = {
   ["admin-station"] = true,
   ["resolution-office"] = true,
   ["office-desk"] = true,
+  ["field-office"] = true,
   ["greenhouse"] = true,
   ["corporate-breakroom"] = true,
   ["printer-t1"] = true,
@@ -319,6 +321,9 @@ function shared.is_admin_recipe(name)
     "^pneumatic%-", "^form%-liquifier", "^form%-solidifier",
     -- Science
     "administrative%-science",
+    -- Biter employment
+    "job%-offer", "biter%-worker", "union%-delegate", "chemical%-operator", "nuclear%-technician",
+    "specialist%-training",
   }
   for _, pat in ipairs(patterns) do
     if name:find(pat) then return true end

@@ -253,6 +253,23 @@ function M.untrack_entity(entity)
   storage.working_hours_protest_claims[unit_number] = nil
 end
 
+function M.untrack_entity_by_id(unit_number)
+  if not WORKING_HOURS_ENABLED then return end
+  M.ensure_storage()
+  if not unit_number then return end
+
+  local state = storage.working_hours_state[unit_number]
+  if state then
+    if state.overlay_id then
+      destroy_render_object(state.overlay_id)
+    end
+    storage.working_hours_state[unit_number] = nil
+  end
+
+  storage.working_hours_entities[unit_number] = nil
+  storage.working_hours_protest_claims[unit_number] = nil
+end
+
 function M.claim_protest_target(target, protester_id)
   if not WORKING_HOURS_ENABLED then return false end
   M.ensure_storage()
@@ -391,6 +408,14 @@ function M.update_managed_buildings()
       apply_entity_state(entity, reason)
     end
   end
+end
+
+function M.is_night(surface)
+  return is_surface_night(surface)
+end
+
+function M.entity_has_overtime_exemption(entity)
+  return has_overtime_exemption(entity)
 end
 
 return M

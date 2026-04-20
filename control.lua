@@ -8,6 +8,7 @@ local zones = require("scripts.zones")
 local biters = require("scripts.biters")
 local trains = require("scripts.trains")
 local working_hours = require("scripts.working_hours")
+local field_office = require("scripts.field_office")
 local runtime_debug = require("scripts.control_runtime_debug")
 local control_event_router = require("scripts.control_event_router")
 local control_resolution_processing_factory = require("scripts.control_resolution_processing")
@@ -343,6 +344,7 @@ local function init_storage()
   if WORKING_HOURS_ENABLED then
     working_hours.ensure_storage()
   end
+  field_office.ensure_storage()
 
   -- Ensure all existing locomotives and pneumatic buildings are properly initialized.
   for _, surface in pairs(game.surfaces) do
@@ -451,6 +453,7 @@ local function on_init()
   if WORKING_HOURS_ENABLED then
     working_hours.rebuild_registry()
   end
+  field_office.rebuild_registry()
   set_biter_ceasefire()
   trains.init_all_stations()
   for _, player in pairs(game.players) do
@@ -516,6 +519,7 @@ local function on_configuration_changed()
   biters.rebuild_desk_index()
   biters.mark_all_desk_circuit_dirty()
   working_hours.rebuild_registry()
+  field_office.rebuild_registry()
   for _, player in pairs(game.players) do
     normalize_player_admin_station_items(player)
     normalize_player_admin_station_quickbar(player)
@@ -690,6 +694,9 @@ local function on_entity_built_inner(event)
     if WORKING_HOURS_ENABLED then
       working_hours.track_entity(entity)
     end
+    if entity.name == "field-office" then
+      field_office.track_entity(entity)
+    end
     trains.on_built(entity) -- Passed directly to script
   end
 end
@@ -707,7 +714,10 @@ local function on_entity_removed(event)
   if WORKING_HOURS_ENABLED then
     working_hours.untrack_entity(entity)
   end
-  
+  if entity.name == "field-office" then
+    field_office.untrack_entity(entity)
+  end
+
   trains.on_removed(entity)
 
   if is_admin_station(entity) then
@@ -1201,6 +1211,9 @@ local function on_entity_died(event)
   if WORKING_HOURS_ENABLED then
     working_hours.untrack_entity(entity)
   end
+  if entity.name == "field-office" then
+    field_office.untrack_entity(entity)
+  end
   if is_admin_station(entity) then
     local desk_id = entity.unit_number
     local surface = entity.surface
@@ -1230,6 +1243,7 @@ local ON_ENTITY_DIED_FILTERS = {
   {filter = "type", type = "train-stop"},
   {filter = "name", name = "admin-station"},
   {filter = "name", name = "office-desk"},
+  {filter = "name", name = "field-office"},
   {filter = "name", name = "corporate-breakroom"},
   {filter = "name", name = "union-headquarters"},
 }
@@ -1445,6 +1459,7 @@ resolution_processing = control_resolution_processing_factory.new({
   biters = biters,
   cleanup_waiting_zone_overlays = cleanup_waiting_zone_overlays,
   collect_runtime_debug_counts = collect_runtime_debug_counts,
+  field_office = field_office,
   get_cached_desks = get_cached_desks,
   process_pending_group_redirects = process_pending_group_redirects,
   runtime_debug = runtime_debug,

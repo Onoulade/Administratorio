@@ -130,6 +130,12 @@ function M.new(deps)
       deps.biters.update_circuit_signals(desks)
     end)
 
+    if deps.field_office then
+      runtime_debug.run_profiled_section(runtime_snapshot, "field_office", function()
+        deps.field_office.update(event.tick)
+      end)
+    end
+
     if runtime_snapshot and total_profiler then
       runtime_debug.run_profiled_section(runtime_snapshot, "debug_finalize", function()
         runtime_snapshot.counts = deps.collect_runtime_debug_counts(desks)
