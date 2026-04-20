@@ -9,6 +9,7 @@ local biters = require("scripts.biters")
 local trains = require("scripts.trains")
 local working_hours = require("scripts.working_hours")
 local field_office = require("scripts.field_office")
+local biter_station = require("scripts.biter_station")
 local runtime_debug = require("scripts.control_runtime_debug")
 local control_event_router = require("scripts.control_event_router")
 local control_resolution_processing_factory = require("scripts.control_resolution_processing")
@@ -345,6 +346,7 @@ local function init_storage()
     working_hours.ensure_storage()
   end
   field_office.ensure_storage()
+  biter_station.ensure_storage()
 
   -- Ensure all existing locomotives and pneumatic buildings are properly initialized.
   for _, surface in pairs(game.surfaces) do
@@ -454,6 +456,11 @@ local function on_init()
     working_hours.rebuild_registry()
   end
   field_office.rebuild_registry()
+  biter_station.rebuild_registry()
+  storage.biter_station_crafts_per_visit = C.BITER_STATION_CRAFTS_PER_VISIT
+  for _, force in pairs(game.forces) do
+    biter_station.sync_research(force)
+  end
   set_biter_ceasefire()
   trains.init_all_stations()
   for _, player in pairs(game.players) do
@@ -520,6 +527,11 @@ local function on_configuration_changed()
   biters.mark_all_desk_circuit_dirty()
   working_hours.rebuild_registry()
   field_office.rebuild_registry()
+  biter_station.rebuild_registry()
+  storage.biter_station_crafts_per_visit = C.BITER_STATION_CRAFTS_PER_VISIT
+  for _, force in pairs(game.forces) do
+    biter_station.sync_research(force)
+  end
   for _, player in pairs(game.players) do
     normalize_player_admin_station_items(player)
     normalize_player_admin_station_quickbar(player)
@@ -541,6 +553,7 @@ local function on_research_finished(event)
   local research = event and event.research
   if not research or not research.valid then return end
   enable_regulated_variants_for_technology(research.force, research)
+  biter_station.on_research_finished(research)
   -- Invalidate tube capacity cache when a pneumatic capacity tech is researched.
   if research.name and research.name:find("^pneumatic%-capacity%-") then
     pneumatic.invalidate_capacity_cache()
@@ -697,6 +710,12 @@ local function on_entity_built_inner(event)
     if entity.name == "field-office" then
       field_office.track_entity(entity)
     end
+    if biter_station.is_station(entity) then
+      biter_station.track_station(entity)
+    end
+    if biter_station.is_managed_building(entity) then
+      biter_station.track_managed_building(entity)
+    end
     trains.on_built(entity) -- Passed directly to script
   end
 end
@@ -709,6 +728,7 @@ local function on_entity_removed(event)
   local entity = event.entity
   if not entity or not entity.valid then return end
 
+  biter_station.on_entity_removed(event)
   biters.on_protest_target_removed(entity)
 
   if WORKING_HOURS_ENABLED then
@@ -717,6 +737,7 @@ local function on_entity_removed(event)
   if entity.name == "field-office" then
     field_office.untrack_entity(entity)
   end
+  biter_station.untrack_entity(entity, game.tick)
 
   trains.on_removed(entity)
 
@@ -1205,6 +1226,7 @@ local function on_entity_died(event)
   local entity = event.entity
   if entity.type == "unit" then
     biters.on_biter_died(entity)
+    biter_station.on_entity_died(event)
   else
     biters.on_protest_target_removed(entity)
   end
@@ -1214,6 +1236,7 @@ local function on_entity_died(event)
   if entity.name == "field-office" then
     field_office.untrack_entity(entity)
   end
+  biter_station.untrack_entity(entity, event.tick)
   if is_admin_station(entity) then
     local desk_id = entity.unit_number
     local surface = entity.surface
@@ -1242,6 +1265,7 @@ local ON_ENTITY_DIED_FILTERS = {
   {filter = "type", type = "mining-drill"},
   {filter = "type", type = "train-stop"},
   {filter = "name", name = "admin-station"},
+  {filter = "name", name = "biter-station"},
   {filter = "name", name = "office-desk"},
   {filter = "name", name = "field-office"},
   {filter = "name", name = "corporate-breakroom"},
@@ -1262,6 +1286,10 @@ local function on_ai_command_completed(event)
     else
       -- log(LOG_PREFIX .. "Unit group DEBUG [ai_command_completed] id=" .. tostring(event.unit_number) .. " " .. extra)
     end
+  end
+  biter_station.on_ai_command_completed(event)
+  if biter_station.is_station_worker_unit(event.unit_number) then
+    return
   end
   biters.on_ai_command_completed(event)
 end
@@ -1448,11 +1476,16 @@ local function on_unit_group_debug_tick(event)
 end
 
 local function on_main_tick(event)
+  biter_station.sanitize_external_links()
   resolution_processing.on_tick(event)
 end
 
 local function on_pneumatic_tick(_event)
   pneumatic.on_pneumatic_tick()
+end
+
+local function on_biter_station_tick(event)
+  biter_station.update(event.tick)
 end
 
 resolution_processing = control_resolution_processing_factory.new({
@@ -1472,6 +1505,7 @@ resolution_processing = control_resolution_processing_factory.new({
 
 control_event_router.register({
   on_ai_command_completed = on_ai_command_completed,
+  on_biter_station_tick = on_biter_station_tick,
   on_configuration_changed = on_configuration_changed,
   on_entity_built = on_entity_built,
   on_entity_died = on_entity_died,
@@ -1500,5 +1534,6 @@ control_event_router.register({
   on_unit_group_debug_tick = on_unit_group_debug_tick,
   on_unit_group_finished_gathering = on_unit_group_finished_gathering,
   on_unit_removed_from_group = on_unit_removed_from_group,
+  biter_station_check_ticks = C.BITER_STATION_CHECK_TICKS,
   unit_group_debug_scan_interval = UNIT_GROUP_DEBUG_SCAN_INTERVAL,
 })

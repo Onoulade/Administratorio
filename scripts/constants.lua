@@ -112,6 +112,25 @@ M.FIELD_OFFICE_CHECK_TICKS = 30       -- how often to check state (arrival, craf
 M.FIELD_OFFICE_BITER_DESPAWN_TICKS = 5 * 60 -- despawn worker biter after release
 M.FIELD_OFFICE_ARRIVAL_RADIUS = 2.5   -- distance threshold for "biter has arrived"
 
+-- Biter station: one active worker biter performs rounds of managed machines.
+M.BITER_STATION_RANGE = 30
+M.BITER_STATION_CHECK_TICKS = 10
+M.BITER_STATION_CRAFTS_PER_VISIT = 1
+M.BITER_STATION_SALARY = 1
+M.BITER_STATION_BITER_DESPAWN_TICKS = 5 * 60
+M.BITER_STATION_ARRIVAL_RADIUS = 2.5
+M.BITER_STATION_MANAGED_BUILDINGS = {
+  "union-headquarters",
+  "propaganda-distillery",
+  "corporate-breakroom",
+  "centrifuge",
+  "oil-refinery",
+}
+M.BITER_STATION_MANAGED_BUILDING_SET = {}
+for _, name in ipairs(M.BITER_STATION_MANAGED_BUILDINGS) do
+  M.BITER_STATION_MANAGED_BUILDING_SET[name] = true
+end
+
 -- Pneumatic tube network capacity (forms per network).
 M.TUBE_BASE_CAPACITY = 10
 M.TUBE_CAPACITY_TECHS = {

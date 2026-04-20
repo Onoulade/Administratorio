@@ -136,6 +136,49 @@ end
 
 local admin_station = make_admin_station("admin-station")
 
+local biter_station = table.deepcopy(data.raw["container"]["steel-chest"])
+biter_station.name = "biter-station"
+biter_station.icon = "__administratorio__/graphics/icons/admin-desk.png"
+biter_station.icon_size = 64
+biter_station.icons = {
+  {
+    icon = "__administratorio__/graphics/icons/admin-desk.png",
+    icon_size = 64,
+    tint = {r = 0.72, g = 0.78, b = 0.92, a = 1},
+  },
+}
+biter_station.flags = {"placeable-neutral", "player-creation"}
+biter_station.minable = {mining_time = 0.5, result = "biter-station"}
+biter_station.max_health = 450
+biter_station.collision_box = {{-2.4, -2.4}, {2.4, 2.4}}
+biter_station.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
+biter_station.inventory_size = 40
+biter_station.collision_mask = {layers = {object = true, player = true, water_tile = true}}
+biter_station.circuit_wire_max_distance = 9
+biter_station.circuit_connector = circuit_connector_definitions.create_single(
+  universal_connector_template,
+  {variation = 26, main_offset = util.by_pixel(64, 32), shadow_offset = util.by_pixel(68, 36), show_shadow = true}
+)
+biter_station.picture = {
+  filename = "__core__/graphics/empty.png",
+  width = 1,
+  height = 1,
+}
+biter_station.stateless_visualisation = {
+  render_layer = "ground-patch-higher2",
+  animation = {
+    filename = entity_graphics .. "admin-station/platform-baked.png",
+    width = 1516,
+    height = 1484,
+    frame_count = 1,
+    scale = 0.11,
+    shift = {0.35, -0.2},
+    tint = {r = 0.78, g = 0.86, b = 1.0, a = 1},
+  },
+}
+biter_station.draw_stateless_visualisations_in_ghost = true
+biter_station.placeable_by = placeable_by_item("biter-station")
+
 -- Resolution Office: 3x3 complaint resolution
 local resolution_office = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
 resolution_office.name = "resolution-office"
@@ -604,6 +647,7 @@ transit_permit_chest.collision_mask = {layers = {}}
 
 data:extend({
   admin_station,
+  biter_station,
   resolution_office, office_desk, field_office, greenhouse,
   breakroom, union_hq, propaganda_distillery,
   waiting_zone_marker, admin_station_corner_blocker, admin_station_combinator,
