@@ -479,7 +479,32 @@ data:extend({
     prerequisites = {"printing-technology", "logistic-science-pack", "rubble-compaction"},
     unit = { count = 40, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },
     order = "a-p"
-  }
+  },
+  -- BITER EMPLOYMENT (hire resolved biters as workers)
+  {
+    type = "technology", name = "biter-employment",
+    icons = {{icon = "__administratorio__/graphics/icons/credentials.png", icon_size = 64, tint = {r=0.6, g=0.4, b=0.2, a=1}}},
+    effects = {
+      { type = "unlock-recipe", recipe = "job-offer-production" },
+      { type = "unlock-recipe", recipe = "office-desk" },
+      { type = "unlock-recipe", recipe = "union-delegate-training" },
+    },
+    prerequisites = {"verbal-approvals", "local-precedents"},
+    unit = { count = 120, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "c-h"
+  },
+  -- SPECIALIST TRAINING (train workers into building-specific specialists)
+  {
+    type = "technology", name = "specialist-training",
+    icons = {{icon = "__administratorio__/graphics/icons/credentials.png", icon_size = 64, tint = {r=0.2, g=0.9, b=0.7, a=1}}},
+    effects = {
+      { type = "unlock-recipe", recipe = "chemical-operator-training" },
+      { type = "unlock-recipe", recipe = "nuclear-technician-training" },
+    },
+    prerequisites = {"biter-employment", "executive-review"},
+    unit = { count = 200, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    order = "f-h"
+  },
 })
 
 -- PNEUMATIC CAPACITY UPGRADES (tube network max forms)
@@ -810,9 +835,9 @@ add_tech_unlock("railway", "transit-authorization-production")
 add_tech_prerequisite("railway", "verbal-approvals")
 add_tech_prerequisite("railway", "local-precedents")
 
--- The office desk uses electronic circuits, so it should arrive with the
--- circuit tier instead of pretending to be bootstrap-safe.
-add_tech_unlock("electronics", "office-desk")
+-- The field office is the early-game alternative to the office desk, available
+-- with basic electronics.  The full office desk is gated behind biter-employment.
+add_tech_unlock("electronics", "field-office")
 
 -- Discovery-triggered bootstrap structures should not appear craftable before
 -- their prerequisite paperwork exists.
@@ -938,6 +963,10 @@ for _, tech_name in ipairs({
 end
 
 add_tech_prerequisite("oil-processing", "environmental-compliance")
+
+-- Buildings that require biter-workers or specialists need employment tech
+add_tech_prerequisite("industrial-propaganda", "biter-employment")
+add_tech_prerequisite("nuclear-power", "specialist-training")
 
 for _, tech_name in ipairs({"automation-3", "effect-transmission", "rocket-silo", "nuclear-power"}) do
   add_tech_prerequisite(tech_name, "executive-review")

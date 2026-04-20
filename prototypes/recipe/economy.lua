@@ -107,7 +107,7 @@ data:extend({
   { type = "recipe", name = "eviction-notice-production", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="good-excuse", amount=1}, {type="item", name="credentials", amount=1}, {type="fluid", name="politician-fluid", amount=50}, {type="item", name="taxpayer-money", amount=100}}, results = {{type="item", name="eviction-notice", amount=1}}, energy_required = 30 },
 
   -- Gossip & Corporate
-  entity_recipe("corporate-breakroom", { type = "recipe", enabled = false, ingredients = {{type="item", name="iron-plate", amount=16}, {type="item", name="wood", amount=8}, {type="item", name="stone-brick", amount=8}, {type="item", name="pipe", amount=3}, {type="item", name="electronic-circuit", amount=4}, {type="item", name="construction-permit", amount=1}}, results = {{type="item", name="corporate-breakroom", amount=1}}, energy_required = 10 }),
+  entity_recipe("corporate-breakroom", { type = "recipe", enabled = false, ingredients = {{type="item", name="iron-plate", amount=16}, {type="item", name="wood", amount=8}, {type="item", name="stone-brick", amount=8}, {type="item", name="pipe", amount=3}, {type="item", name="electronic-circuit", amount=4}, {type="item", name="construction-permit", amount=1}, {type="item", name="biter-worker", amount=2}}, results = {{type="item", name="corporate-breakroom", amount=1}}, energy_required = 10 }),
   { type = "recipe", name = "watercooler-gossip-production",  category = "watercooler-gossip", enabled = false, ingredients = {{type="fluid", name="liquid-coffee", amount=50}, {type="item", name="dubious-data", amount=2}}, results = {{type="item", name="watercooler-gossip", amount=1}}, energy_required = 5 },
   {
     type = "recipe", name = "office-drama-recycling", category = "watercooler-gossip", enabled = false,
@@ -160,5 +160,53 @@ data:extend({
     },
     results = {{type="fluid", name="union-approval", amount=150}},
     energy_required = 10
+  },
+
+  -- Biter Employment
+  {
+    type = "recipe", name = "job-offer-production", category = "bureaucracy-registration", enabled = false,
+    ingredients = {
+      {type="item", name="taxpayer-money", amount=50},
+      {type="item", name="blank-form", amount=2},
+      {type="item", name="management-approval-verbal", amount=1},
+      {type="item", name="crappy-report", amount=1},
+    },
+    results = {{type="item", name="job-offer", amount=1}},
+    energy_required = 15
+  },
+
+  -- Specialist Training
+  {
+    type = "recipe", name = "union-delegate-training", category = "bureaucracy-registration", enabled = false,
+    ingredients = {
+      {type="item", name="biter-worker", amount=1},
+      {type="item", name="government-grant", amount=1},
+      {type="item", name="management-approval-verbal", amount=1},
+      {type="fluid", name="liquid-coffee", amount=50},
+    },
+    results = {{type="item", name="union-delegate", amount=1}},
+    energy_required = 20
+  },
+  {
+    type = "recipe", name = "chemical-operator-training", category = "union-negotiation", enabled = false,
+    ingredients = {
+      {type="item", name="biter-worker", amount=1},
+      {type="item", name="petrochemical-operating-permit", amount=1},
+      {type="item", name="management-approval-written", amount=1},
+      {type="item", name="safety-waiver", amount=1},
+    },
+    results = {{type="item", name="chemical-operator", amount=1}},
+    energy_required = 30
+  },
+  {
+    type = "recipe", name = "nuclear-technician-training", category = "union-negotiation", enabled = false,
+    ingredients = {
+      {type="item", name="biter-worker", amount=1},
+      {type="item", name="radiological-work-order", amount=1},
+      {type="item", name="management-approval-written", amount=1},
+      {type="item", name="environmental-impact-report", amount=1},
+    },
+    results = {{type="item", name="nuclear-technician", amount=1}},
+    energy_required = 30
   },
 })

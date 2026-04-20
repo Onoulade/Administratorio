@@ -988,6 +988,18 @@ end
 remove_ingredient_from_recipe("cliff-explosives", "grenade")
 remove_ingredient_from_recipe("cliff-explosives-regulated", "grenade")
 
+-- Specialist workers for vanilla industrial buildings
+local specialist_buildings = {
+  ["chemical-plant"] = {name = "chemical-operator", amount = 1},
+  ["oil-refinery"] = {name = "chemical-operator", amount = 1},
+  ["nuclear-reactor"] = {name = "nuclear-technician", amount = 2},
+  ["centrifuge"] = {name = "nuclear-technician", amount = 1},
+}
+for building_name, specialist in pairs(specialist_buildings) do
+  add_special_paperwork(building_name, specialist.name, specialist.amount)
+  add_special_paperwork(building_name .. "-regulated", specialist.name, specialist.amount)
+end
+
 for product_name, _ in pairs(regulated_factoriopedia_products) do
   local prototype = find_item_like_prototype(product_name)
   if prototype then

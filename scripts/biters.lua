@@ -989,13 +989,32 @@ function M.process_resolutions(desks)
                       local biter_unit = info.entity.unit_number
                       zones.release_slot(desk_id, biter_unit)
                       unindex_biter_from_desk(desk_id, b_id)
-                      start_return_home(info, info.entity)
-                      if storage.stats then storage.stats.cases_resolved = (storage.stats.cases_resolved or 0) + 1 end
-                      local amount = C.BITER_PAYOUT[biter_name]
-                      if amount and inv.can_insert({name = "taxpayer-money", count = amount}) then
-                        inv.insert({name = "taxpayer-money", count = amount})
-                        if storage.stats then storage.stats.money_earned = (storage.stats.money_earned or 0) + amount end
+
+                      -- Try to hire the biter if a job-offer is in the desk
+                      local worker_yield = C.BITER_WORKER_YIELD[biter_name]
+                      local hired = false
+                      if worker_yield and inv.get_item_count("job-offer") > 0
+                         and inv.can_insert({name = "biter-worker", count = worker_yield}) then
+                        inv.remove({name = "job-offer", count = 1})
+                        inv.insert({name = "biter-worker", count = worker_yield})
+                        if info.entity and info.entity.valid then
+                          info.entity.destroy()
+                        end
+                        untrack_waiting_biter(b_id, info)
+                        hired = true
+                        if storage.stats then storage.stats.biters_hired = (storage.stats.biters_hired or 0) + 1 end
                       end
+
+                      if not hired then
+                        start_return_home(info, info.entity)
+                        local amount = C.BITER_PAYOUT[biter_name]
+                        if amount and inv.can_insert({name = "taxpayer-money", count = amount}) then
+                          inv.insert({name = "taxpayer-money", count = amount})
+                          if storage.stats then storage.stats.money_earned = (storage.stats.money_earned or 0) + amount end
+                        end
+                      end
+
+                      if storage.stats then storage.stats.cases_resolved = (storage.stats.cases_resolved or 0) + 1 end
                       mark_desk_circuit_dirty(desk_id)
                     end
                     break

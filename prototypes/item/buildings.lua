@@ -18,6 +18,7 @@ data:extend({
   { type = "item", name = "tube-outtake",               icon = item_icons .. "pneumatic/outtake.png", icon_size = 32, subgroup = "admin-infrastructure", order = "e2", place_result = "tube-outtake",               stack_size = 50 },
 
   -- Buildings
+  { type = "item", name = "field-office",              icons = {{icon = item_icons .. "office-building.png", icon_size = 64, tint = {r=0.75, g=0.65, b=0.45, a=1}}}, subgroup = "admin-buildings", order = "a0", place_result = "field-office",              stack_size = 50 },
   { type = "item", name = "office-desk",               icon = item_icons .. "office-building.png",                              icon_size = 64,  subgroup = "admin-buildings", order = "a",  place_result = "office-desk",               stack_size = 50, localised_description = disabled_item_description("office-desk-no-working-hours") },
   { type = "item", name = "admin-station",             icon = item_icons .. "admin-desk.png",                                  icon_size = 64,  subgroup = "admin-biter-buildings", order = "a",  place_result = "admin-station",             stack_size = 50 },
   { type = "item", name = "resolution-office",         icon = entity_graphics .. "scrubber/base/scrubber-icon.png",                  icon_size = 64,  subgroup = "admin-biter-buildings", order = "b", place_result = "resolution-office",         stack_size = 50 },
