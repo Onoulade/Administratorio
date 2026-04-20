@@ -203,6 +203,8 @@ end
 local function refresh_station_status(station)
   if not station or not station.valid then return end
 
+  station.minable = not station_has_active_workers(station.unit_number)
+
   if station_has_active_workers(station.unit_number) then
     set_station_status(station, "biter-station-calling")
     return
