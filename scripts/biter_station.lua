@@ -8,6 +8,24 @@ local STATION_NAME = "biter-station"
 local WORKER_ITEM_NAME = "biter-worker"
 local MONEY_ITEM_NAME = "taxpayer-money"
 local WORKER_ENTITY_NAME = "small-biter"
+
+local function get_crafts_tier()
+  local crafts = storage and storage.biter_station_crafts_per_visit or C.BITER_STATION_CRAFTS_PER_VISIT
+  if crafts >= 5 then return 3
+  elseif crafts >= 3 then return 2
+  else return 1 end
+end
+
+local function get_worker_entity_name()
+  local tier = get_crafts_tier()
+  if tier == 3 then return "biter-worker-t3"
+  elseif tier == 2 then return "biter-worker-t2"
+  else return WORKER_ENTITY_NAME end
+end
+
+local function get_dispatch_salary()
+  return get_crafts_tier()
+end
 local MIN_PHASE_TRAVEL_DISTANCE = 0.75
 local PHASE_STUCK_TIMEOUT_TICKS = 90
 local DEBUG_LOGS = true
@@ -191,7 +209,7 @@ local function has_station_inputs(station)
   if not inv then return false, false end
 
   local has_worker = inv.get_item_count(WORKER_ITEM_NAME) > 0
-  local has_money = inv.get_item_count(MONEY_ITEM_NAME) >= C.BITER_STATION_SALARY
+  local has_money = inv.get_item_count(MONEY_ITEM_NAME) >= get_dispatch_salary()
   return has_worker, has_money
 end
 
@@ -410,7 +428,7 @@ local function resolve_command_destination(biter, destination, radius)
     local best_dist = math.huge
     for _, candidate in ipairs(candidates) do
       local approach = biter.surface.find_non_colliding_position(
-        WORKER_ENTITY_NAME,
+        biter.name,
         candidate,
         1.0,
         0.25
@@ -736,7 +754,7 @@ local function spawn_station_biter(station)
   end
 
   local biter = station.surface.create_entity{
-    name = WORKER_ENTITY_NAME,
+    name = get_worker_entity_name(),
     position = spawn_pos,
     force = spawn_force,
   }
@@ -884,7 +902,7 @@ local function dispatch_station_biters(station)
   end
 
   local enablements_per_trip = get_enablements_per_trip()
-  local max_by_money = math.floor(money_count / C.BITER_STATION_SALARY)
+  local max_by_money = math.floor(money_count / get_dispatch_salary())
   local needed_workers = math.ceil(#queue / enablements_per_trip)
   local worker_dispatches = math.min(worker_count, max_by_money, needed_workers)
   if worker_dispatches <= 0 then
@@ -928,7 +946,7 @@ local function finish_station_circuit(station_id, station, active_state)
   if station and station.valid then
     local inv = get_station_inventory(station)
     if inv then
-      inv.remove({name = MONEY_ITEM_NAME, count = C.BITER_STATION_SALARY})
+      inv.remove({name = MONEY_ITEM_NAME, count = get_dispatch_salary()})
       maybe_reinsert_worker(station)
     end
   end
