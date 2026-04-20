@@ -8,6 +8,7 @@ function M.register(deps)
   script.on_event(defines.events.on_player_created, deps.on_player_created)
   script.on_event(defines.events.on_player_respawned, deps.on_player_respawned)
   script.on_event(defines.events.on_player_joined_game, deps.on_player_joined_game)
+  script.on_event(defines.events.on_player_left_game, deps.on_player_left_game)
   script.on_event(defines.events.on_selected_entity_changed, deps.on_selected_entity_changed)
 
   script.on_event(defines.events.on_built_entity, deps.on_entity_built)

@@ -150,8 +150,8 @@ biter_station.icons = {
 biter_station.flags = {"placeable-neutral", "player-creation"}
 biter_station.minable = {mining_time = 0.5, result = "biter-station"}
 biter_station.max_health = 450
-biter_station.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
-biter_station.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+biter_station.collision_box = {{-1.8, -1.8}, {1.8, 1.8}}
+biter_station.selection_box = {{-2.0, -2.0}, {2.0, 2.0}}
 biter_station.inventory_size = 40
 biter_station.collision_mask = {layers = {object = true, player = true, water_tile = true}}
 biter_station.circuit_wire_max_distance = 9
@@ -165,8 +165,8 @@ biter_station.picture = {
       filename = entity_graphics .. "work-station/work-station.png",
       width = 512,
       height = 466,
-      scale = 0.4,
-      shift = util.by_pixel(0, -16),
+      scale = 0.27,
+      shift = util.by_pixel(0, 0),
     },
   },
 }
