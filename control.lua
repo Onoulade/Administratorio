@@ -10,6 +10,7 @@ local trains = require("scripts.trains")
 local working_hours = require("scripts.working_hours")
 local field_office = require("scripts.field_office")
 local biter_station = require("scripts.biter_station")
+local biter_station_hover = require("scripts.biter_station_hover")
 local runtime_debug = require("scripts.control_runtime_debug")
 local control_event_router = require("scripts.control_event_router")
 local control_resolution_processing_factory = require("scripts.control_resolution_processing")
@@ -347,6 +348,7 @@ local function init_storage()
   end
   field_office.ensure_storage()
   biter_station.ensure_storage()
+  biter_station_hover.ensure_storage()
 
   -- Ensure all existing locomotives and pneumatic buildings are properly initialized.
   for _, surface in pairs(game.surfaces) do
@@ -610,10 +612,20 @@ end
 
 -- Update the biter complaint inspection GUI on the left.
 -- Also shows tube network info when hovering tube entities.
+-- Also shows biter station zone or building station membership on hover.
 local function on_selected_entity_changed(event)
   local player = game.get_player(event.player_index)
   if not player then return end
+
+  biter_station_hover.clear(event.player_index)
+
   local entity = player.selected
+  if entity and entity.valid and biter_station.is_station(entity) then
+    biter_station_hover.show_station_zone(player, entity)
+  elseif entity and entity.valid and biter_station.is_managed_building(entity) then
+    biter_station_hover.show_building_hover(player, entity)
+  end
+
   if entity and entity.valid and entity.type == "unit" and storage.waiting_biters[entity.unit_number] then
     pneumatic.destroy_tube_info_gui(player)
     frustration.update_biter_info_gui(player, entity)
@@ -626,6 +638,10 @@ local function on_selected_entity_changed(event)
     end
     pneumatic.destroy_tube_info_gui(player)
   end
+end
+
+local function on_player_left_game(event)
+  biter_station_hover.clear(event.player_index)
 end
 
 -- ============================================================
@@ -1518,6 +1534,7 @@ control_event_router.register({
   on_pneumatic_tick = on_pneumatic_tick,
   on_player_created = on_player_created,
   on_player_joined_game = on_player_joined_game,
+  on_player_left_game = on_player_left_game,
   on_player_respawned = on_player_respawned,
   on_research_finished = on_research_finished,
   on_player_rotated_entity = on_player_rotated_entity,

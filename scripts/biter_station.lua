@@ -554,7 +554,8 @@ local function release_biter_for_despawn(biter, station, tick)
   if not biter or not biter.valid then return end
 
   if station and station.valid then
-    issue_move_command(biter, station.position, C.BITER_STATION_ARRIVAL_RADIUS)
+    local despawn_pos = station.surface.find_non_colliding_position(WORKER_ENTITY_NAME, station.position, 8, 0.5)
+    issue_move_command(biter, despawn_pos or station.position, C.BITER_STATION_ARRIVAL_RADIUS)
   end
 
   debug_log(string.format(
@@ -722,7 +723,7 @@ end
 local function spawn_station_biter(station)
   if not station or not station.valid then return nil end
 
-  local spawn_pos = station.surface.find_non_colliding_position(WORKER_ENTITY_NAME, station.position, 5, 0.5)
+  local spawn_pos = station.surface.find_non_colliding_position(WORKER_ENTITY_NAME, station.position, 8, 0.5)
   if not spawn_pos then
     debug_log("spawn-failed no-non-colliding-position station=" .. entity_ref(station))
     return nil
