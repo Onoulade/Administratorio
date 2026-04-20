@@ -640,9 +640,23 @@ transit_permit_chest.max_health = 200
 transit_permit_chest.collision_box = {{0, 0}, {0, 0}}
 transit_permit_chest.collision_mask = {layers = {}}
 
+local function make_worker_biter(name, source_name)
+  local biter = table.deepcopy(data.raw["unit"][source_name])
+  biter.name = name
+  biter.localised_name = {"entity-name.biter-station"}
+  biter.minable = nil
+  biter.placeable_by = nil
+  biter.hidden_in_factoriopedia = true
+  return biter
+end
+
+local biter_worker_t2 = make_worker_biter("biter-worker-t2", "medium-biter")
+local biter_worker_t3 = make_worker_biter("biter-worker-t3", "big-biter")
+
 data:extend({
   admin_station,
   biter_station,
+  biter_worker_t2, biter_worker_t3,
   resolution_office, office_desk, field_office, greenhouse,
   breakroom, union_hq, propaganda_distillery,
   waiting_zone_marker, admin_station_corner_blocker, admin_station_combinator,

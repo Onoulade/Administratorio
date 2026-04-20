@@ -167,9 +167,9 @@ data:extend({
     type = "recipe", name = "job-offer-production", category = "bureaucracy-registration", enabled = false,
     ingredients = {
       {type="item", name="taxpayer-money", amount=50},
-      {type="item", name="blank-form", amount=2},
-      {type="item", name="management-approval-verbal", amount=1},
-      {type="item", name="crappy-report", amount=1},
+      {type="item", name="blank-form", amount=5},
+      {type="item", name="provisional-approval", amount=1},
+      {type="item", name="promise", amount=1},
     },
     results = {{type="item", name="job-offer", amount=1}},
     energy_required = 15

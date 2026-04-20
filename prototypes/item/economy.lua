@@ -43,8 +43,8 @@ data:extend({
   },
   {
     type = "item", name = "biter-worker",
-    icons = {{icon = item_icons .. "credentials.png", icon_size = 64, tint = {r=0.6, g=0.4, b=0.2, a=1}}},
-    subgroup = "admin-biter-buildings", order = "d", stack_size = 50
+    icons = {{icon = "__base__/graphics/icons/small-biter.png", icon_size = 64}},
+    subgroup = "admin-biter-buildings", order = "d", stack_size = 1
   },
   {
     type = "item", name = "biter-station",
