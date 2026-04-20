@@ -37,6 +37,9 @@ function M.register(deps)
   script.on_event(defines.events.on_research_finished, deps.on_research_finished)
 
   script.on_nth_tick(15, deps.on_pneumatic_tick)
+  if deps.on_biter_station_tick then
+    script.on_nth_tick(deps.biter_station_check_ticks or 10, deps.on_biter_station_tick)
+  end
   script.on_nth_tick(20, deps.on_protest_pacing_tick)
   script.on_nth_tick(deps.unit_group_debug_scan_interval, deps.on_unit_group_debug_tick)
   script.on_nth_tick(60, deps.on_main_tick)

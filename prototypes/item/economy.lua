@@ -47,6 +47,11 @@ data:extend({
     subgroup = "admin-biter-buildings", order = "d", stack_size = 50
   },
   {
+    type = "item", name = "biter-station",
+    icons = {{icon = item_icons .. "admin-desk.png", icon_size = 64, tint = {r=0.72, g=0.78, b=0.92, a=1}}},
+    subgroup = "admin-buildings", order = "a1", place_result = "biter-station", stack_size = 40
+  },
+  {
     type = "item", name = "union-delegate",
     icons = {{icon = item_icons .. "credentials.png", icon_size = 64, tint = {r=0.2, g=0.4, b=0.9, a=1}}},
     subgroup = "admin-biter-buildings", order = "e1", stack_size = 10

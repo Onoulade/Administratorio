@@ -487,11 +487,32 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "job-offer-production" },
       { type = "unlock-recipe", recipe = "office-desk" },
+      { type = "unlock-recipe", recipe = "biter-station" },
       { type = "unlock-recipe", recipe = "union-delegate-training" },
     },
     prerequisites = {"verbal-approvals", "local-precedents"},
     unit = { count = 120, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "c-h"
+  },
+  {
+    type = "technology", name = "biter-labor-efficiency-1",
+    icons = {{icon = "__administratorio__/graphics/icons/credentials.png", icon_size = 64, tint = {r=0.55, g=0.75, b=0.45, a=1}}},
+    effects = {
+      { type = "nothing" },
+    },
+    prerequisites = {"biter-employment"},
+    unit = { count = 140, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "c-h1"
+  },
+  {
+    type = "technology", name = "biter-labor-efficiency-2",
+    icons = {{icon = "__administratorio__/graphics/icons/credentials.png", icon_size = 64, tint = {r=0.35, g=0.65, b=0.35, a=1}}},
+    effects = {
+      { type = "nothing" },
+    },
+    prerequisites = {"biter-labor-efficiency-1"},
+    unit = { count = 220, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
+    order = "c-h2"
   },
   -- SPECIALIST TRAINING (train workers into building-specific specialists)
   {
