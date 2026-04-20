@@ -195,11 +195,15 @@ local function has_station_inputs(station)
   return has_worker, has_money
 end
 
+local function station_has_active_workers(station_id)
+  local station_map = storage.biter_station_active_by_station and storage.biter_station_active_by_station[station_id]
+  return station_map and next(station_map) ~= nil or false
+end
+
 local function refresh_station_status(station)
   if not station or not station.valid then return end
 
-  local active_state = storage.biter_station_biter and storage.biter_station_biter[station.unit_number]
-  if active_state then
+  if station_has_active_workers(station.unit_number) then
     set_station_status(station, "biter-station-calling")
     return
   end
@@ -212,6 +216,68 @@ local function refresh_station_status(station)
   else
     set_station_status(station, "biter-station-idle")
   end
+end
+
+local function register_active_biter_state(active_state)
+  if not active_state or not active_state.biter_unit_number then return end
+  storage.biter_station_biter[active_state.biter_unit_number] = active_state
+  local station_id = active_state.station_id
+  if station_id then
+    storage.biter_station_active_by_station[station_id] = storage.biter_station_active_by_station[station_id] or {}
+    storage.biter_station_active_by_station[station_id][active_state.biter_unit_number] = true
+  end
+end
+
+local function unregister_active_biter_state(active_state)
+  if not active_state then return end
+  local biter_unit_number = active_state.biter_unit_number
+  if biter_unit_number then
+    storage.biter_station_biter[biter_unit_number] = nil
+  end
+  local station_id = active_state.station_id
+  if station_id and storage.biter_station_active_by_station then
+    local station_map = storage.biter_station_active_by_station[station_id]
+    if station_map and biter_unit_number then
+      station_map[biter_unit_number] = nil
+      if not next(station_map) then
+        storage.biter_station_active_by_station[station_id] = nil
+      end
+    end
+  end
+end
+
+local function normalize_active_biter_storage()
+  storage.biter_station_biter = storage.biter_station_biter or {}
+  storage.biter_station_active_by_station = storage.biter_station_active_by_station or {}
+
+  local normalized = {}
+  local by_station = {}
+  for key, state in pairs(storage.biter_station_biter) do
+    if state and type(state) == "table" then
+      local unit = state.biter_unit_number
+      if not unit and state.biter and state.biter.valid then
+        unit = state.biter.unit_number
+      end
+      if not unit then
+        unit = tonumber(key) or key
+      end
+      state.biter_unit_number = unit
+      normalized[unit] = state
+
+      local station_id = state.station_id
+      if not station_id and type(key) == "number" and storage.biter_stations and storage.biter_stations[key] then
+        station_id = key
+        state.station_id = station_id
+      end
+      if station_id then
+        by_station[station_id] = by_station[station_id] or {}
+        by_station[station_id][unit] = true
+      end
+    end
+  end
+
+  storage.biter_station_biter = normalized
+  storage.biter_station_active_by_station = by_station
 end
 
 local function distance_squared(pos1, pos2)
@@ -284,21 +350,89 @@ local function resolve_destination_position(destination)
   return nil
 end
 
+local function clamp(value, min_value, max_value)
+  if value < min_value then return min_value end
+  if value > max_value then return max_value end
+  return value
+end
+
 local function resolve_command_destination(biter, destination, radius)
   local target_position = resolve_destination_position(destination)
   if not target_position then return nil end
   if not biter or not biter.valid then return target_position end
 
   if destination and destination.valid and destination.bounding_box then
-    local search_radius = math.max(2.0, (radius or C.BITER_STATION_ARRIVAL_RADIUS) + 2.0)
-    local approach = biter.surface.find_non_colliding_position(
+    local box = destination.bounding_box
+    local from = biter.position
+    local pad = math.max(0.75, (radius or C.BITER_STATION_ARRIVAL_RADIUS) * 0.5)
+    local left = box.left_top.x - pad
+    local right = box.right_bottom.x + pad
+    local top = box.left_top.y - pad
+    local bottom = box.right_bottom.y + pad
+
+    local px = clamp(from.x, left, right)
+    local py = clamp(from.y, top, bottom)
+
+    if from.x >= left and from.x <= right and from.y >= top and from.y <= bottom then
+      local d_left = math.abs(from.x - left)
+      local d_right = math.abs(right - from.x)
+      local d_top = math.abs(from.y - top)
+      local d_bottom = math.abs(bottom - from.y)
+      local best_side = math.min(d_left, d_right, d_top, d_bottom)
+      if best_side == d_left then
+        px = left
+      elseif best_side == d_right then
+        px = right
+      elseif best_side == d_top then
+        py = top
+      else
+        py = bottom
+      end
+    end
+
+    local mid_x = (left + right) * 0.5
+    local mid_y = (top + bottom) * 0.5
+    local candidates = {
+      {x = px, y = py},
+      {x = left, y = mid_y},
+      {x = right, y = mid_y},
+      {x = mid_x, y = top},
+      {x = mid_x, y = bottom},
+      {x = left, y = top},
+      {x = right, y = top},
+      {x = left, y = bottom},
+      {x = right, y = bottom},
+    }
+
+    local best_pos = nil
+    local best_dist = math.huge
+    for _, candidate in ipairs(candidates) do
+      local approach = biter.surface.find_non_colliding_position(
+        WORKER_ENTITY_NAME,
+        candidate,
+        1.0,
+        0.25
+      )
+      if approach then
+        local dist = distance_squared(from, approach)
+        if dist < best_dist then
+          best_dist = dist
+          best_pos = approach
+        end
+      end
+    end
+    if best_pos then
+      return best_pos
+    end
+
+    local fallback = biter.surface.find_non_colliding_position(
       WORKER_ENTITY_NAME,
       target_position,
-      search_radius,
+      math.max(2.0, (radius or C.BITER_STATION_ARRIVAL_RADIUS) + 2.0),
       0.25
     )
-    if approach then
-      return approach
+    if fallback then
+      return fallback
     end
   end
 
@@ -435,11 +569,11 @@ local function release_biter_for_despawn(biter, station, tick)
   }
 end
 
-local function cleanup_active_biter(station_id, active_state, tick, release_entity, reason)
+local function cleanup_active_biter(active_state, tick, release_entity, reason)
   if not active_state then
-    storage.biter_station_biter[station_id] = nil
     return
   end
+  local station_id = active_state.station_id
 
   debug_log(string.format(
     "tick=%d cleanup-active station_id=%s release=%s reason=%s phase=%s idx=%s biter=%s",
@@ -475,7 +609,7 @@ local function cleanup_active_biter(station_id, active_state, tick, release_enti
     end
   end
 
-  storage.biter_station_biter[station_id] = nil
+  unregister_active_biter_state(active_state)
 end
 
 local function is_building_blocked_by_working_hours(building)
@@ -532,7 +666,7 @@ local function activate_building_for_visit(building, biter_unit_number)
   end
 
   building.active = true
-  run_state.crafts_remaining = math.max(1, storage.biter_station_crafts_per_visit or C.BITER_STATION_CRAFTS_PER_VISIT)
+  run_state.crafts_remaining = 1
   run_state.products_at_last_check = building.products_finished or 0
   run_state.claimed_by = nil
   debug_log("activate-ok building=" .. entity_ref(building) .. " crafts_remaining=" .. tostring(run_state.crafts_remaining))
@@ -630,6 +764,10 @@ local function claim_queue_for_biter(queue, biter_unit_number)
   end
 end
 
+local function get_enablements_per_trip()
+  return math.max(1, storage.biter_station_crafts_per_visit or C.BITER_STATION_CRAFTS_PER_VISIT)
+end
+
 maybe_reinsert_worker = function(station)
   local inv = get_station_inventory(station)
   if not inv then return end
@@ -647,50 +785,18 @@ maybe_reinsert_worker = function(station)
   end
 end
 
-local function dispatch_station_biter(station)
+local function dispatch_single_station_biter(station, queue)
   if not station or not station.valid or not station.unit_number then return false end
-  if storage.biter_station_biter[station.unit_number] then return false end
+  if not queue or #queue == 0 then return false end
 
   local inv = get_station_inventory(station)
   if not inv then
-    debug_log("dispatch-skip no-inventory station=" .. entity_ref(station))
-    refresh_station_status(station)
-    return false
-  end
-
-  local worker_count = inv.get_item_count(WORKER_ITEM_NAME)
-  local money_count = inv.get_item_count(MONEY_ITEM_NAME)
-  if worker_count <= 0 then
-    debug_log(string.format(
-      "dispatch-skip no-workers station=%s workers=%d money=%d",
-      entity_ref(station), worker_count, money_count
-    ))
-    set_station_status(station, "biter-station-no-workers")
-    return false
-  end
-
-  if money_count < C.BITER_STATION_SALARY then
-    debug_log(string.format(
-      "dispatch-skip no-money station=%s workers=%d money=%d",
-      entity_ref(station), worker_count, money_count
-    ))
-    set_station_status(station, "biter-station-no-money")
-    return false
-  end
-
-  local queue = build_building_queue(station)
-  if #queue == 0 then
-    debug_log(string.format(
-      "dispatch-skip empty-queue station=%s workers=%d money=%d",
-      entity_ref(station), worker_count, money_count
-    ))
-    set_station_status(station, "biter-station-idle")
+    debug_log("dispatch-single-skip no-inventory station=" .. entity_ref(station))
     return false
   end
 
   if inv.remove({name = WORKER_ITEM_NAME, count = 1}) < 1 then
     debug_log("dispatch-failed remove-worker-item station=" .. entity_ref(station))
-    refresh_station_status(station)
     return false
   end
 
@@ -703,8 +809,8 @@ local function dispatch_station_biter(station)
   end
 
   debug_log(string.format(
-    "dispatch-start tick=%d station=%s biter=%s queue=%d workers_before=%d money_before=%d",
-    game.tick, entity_ref(station), entity_ref(biter), #queue, worker_count, money_count
+    "dispatch-start tick=%d station=%s biter=%s queue=%d",
+    game.tick, entity_ref(station), entity_ref(biter), #queue
   ))
 
   claim_queue_for_biter(queue, biter.unit_number)
@@ -719,7 +825,7 @@ local function dispatch_station_biter(station)
     overlay_id = create_worker_overlay(biter),
     phase = "to_building",
   }
-  storage.biter_station_biter[station.unit_number] = active_state
+  register_active_biter_state(active_state)
   mark_station_worker_unit(biter.unit_number, station.unit_number)
   if detach_station_worker_from_waiting_system(biter.unit_number) then
     debug_log("dispatch-worker-collision-resolved unit=" .. tostring(biter.unit_number))
@@ -728,6 +834,87 @@ local function dispatch_station_biter(station)
 
   set_station_status(station, "biter-station-calling")
   return true
+end
+
+local function dispatch_station_biters(station)
+  if not station or not station.valid or not station.unit_number then return 0 end
+
+  local inv = get_station_inventory(station)
+  if not inv then
+    debug_log("dispatch-skip no-inventory station=" .. entity_ref(station))
+    refresh_station_status(station)
+    return 0
+  end
+
+  local worker_count = inv.get_item_count(WORKER_ITEM_NAME)
+  local money_count = inv.get_item_count(MONEY_ITEM_NAME)
+  if worker_count <= 0 then
+    debug_log(string.format(
+      "dispatch-skip no-workers station=%s workers=%d money=%d",
+      entity_ref(station), worker_count, money_count
+    ))
+    set_station_status(station, "biter-station-no-workers")
+    return 0
+  end
+
+  if money_count < C.BITER_STATION_SALARY then
+    debug_log(string.format(
+      "dispatch-skip no-money station=%s workers=%d money=%d",
+      entity_ref(station), worker_count, money_count
+    ))
+    set_station_status(station, "biter-station-no-money")
+    return 0
+  end
+
+  local queue = build_building_queue(station)
+  if #queue == 0 then
+    debug_log(string.format(
+      "dispatch-skip empty-queue station=%s workers=%d money=%d",
+      entity_ref(station), worker_count, money_count
+    ))
+    if station_has_active_workers(station.unit_number) then
+      set_station_status(station, "biter-station-calling")
+    else
+      set_station_status(station, "biter-station-idle")
+    end
+    return 0
+  end
+
+  local enablements_per_trip = get_enablements_per_trip()
+  local max_by_money = math.floor(money_count / C.BITER_STATION_SALARY)
+  local needed_workers = math.ceil(#queue / enablements_per_trip)
+  local worker_dispatches = math.min(worker_count, max_by_money, needed_workers)
+  if worker_dispatches <= 0 then
+    set_station_status(station, "biter-station-no-money")
+    return 0
+  end
+
+  local queue_idx = 1
+  local dispatched = 0
+  for _ = 1, worker_dispatches do
+    local worker_queue = {}
+    for _ = 1, enablements_per_trip do
+      local building = queue[queue_idx]
+      if not building then break end
+      worker_queue[#worker_queue + 1] = building
+      queue_idx = queue_idx + 1
+    end
+    if #worker_queue == 0 then
+      break
+    end
+    if dispatch_single_station_biter(station, worker_queue) then
+      dispatched = dispatched + 1
+    else
+      break
+    end
+  end
+
+  if dispatched > 0 then
+    set_station_status(station, "biter-station-calling")
+  else
+    refresh_station_status(station)
+  end
+  return dispatched
 end
 
 local function finish_station_circuit(station_id, station, active_state)
@@ -752,12 +939,11 @@ local function finish_station_circuit(station_id, station, active_state)
     active_state.biter.destroy()
   end
 
-  storage.biter_station_biter[station_id] = nil
+  unregister_active_biter_state(active_state)
 
   if station and station.valid then
-    if not dispatch_station_biter(station) then
-      refresh_station_status(station)
-    end
+    dispatch_station_biters(station)
+    refresh_station_status(station)
   end
 end
 
@@ -802,17 +988,26 @@ local function advance_running_buildings()
 end
 
 local function advance_active_biters(tick)
-  for station_id, active_state in pairs(storage.biter_station_biter) do
+  local active_states = {}
+  for _, active_state in pairs(storage.biter_station_biter) do
+    active_states[#active_states + 1] = active_state
+  end
+
+  for _, active_state in ipairs(active_states) do
+    if not active_state or not storage.biter_station_biter[active_state.biter_unit_number] then
+      goto continue
+    end
+    local station_id = active_state.station_id
     local station = storage.biter_stations[station_id]
 
     if not station or not station.valid then
-      cleanup_active_biter(station_id, active_state, tick, true, "station-invalid")
+      cleanup_active_biter(active_state, tick, true, "station-invalid")
       goto continue
     end
 
     local biter = active_state.biter
     if not biter or not biter.valid then
-      cleanup_active_biter(station_id, active_state, tick, false, "biter-invalid")
+      cleanup_active_biter(active_state, tick, false, "biter-invalid")
       refresh_station_status(station)
       goto continue
     end
@@ -912,16 +1107,24 @@ end
 
 local function initial_dispatch_check()
   for station_id, station in pairs(storage.biter_stations) do
-    local active_state = storage.biter_station_biter[station_id]
     if not station or not station.valid then
-      if active_state then
-        cleanup_active_biter(station_id, active_state, game.tick, true, "initial-dispatch-station-invalid")
+      local active_units = storage.biter_station_active_by_station and storage.biter_station_active_by_station[station_id] or nil
+      if active_units then
+        local units_to_cleanup = {}
+        for biter_unit_number in pairs(active_units) do
+          units_to_cleanup[#units_to_cleanup + 1] = biter_unit_number
+        end
+        for _, biter_unit_number in ipairs(units_to_cleanup) do
+          local active_state = storage.biter_station_biter[biter_unit_number]
+          if active_state then
+            cleanup_active_biter(active_state, game.tick, true, "initial-dispatch-station-invalid")
+          end
+        end
       end
       storage.biter_stations[station_id] = nil
-    elseif not active_state then
-      if not dispatch_station_biter(station) then
-        refresh_station_status(station)
-      end
+    else
+      dispatch_station_biters(station)
+      refresh_station_status(station)
     end
   end
 end
@@ -930,6 +1133,7 @@ function M.ensure_storage()
   ensure_worker_force()
   storage.biter_stations = storage.biter_stations or {}
   storage.biter_station_biter = storage.biter_station_biter or {}
+  storage.biter_station_active_by_station = storage.biter_station_active_by_station or {}
   storage.biter_station_releasing = storage.biter_station_releasing or {}
   storage.biter_station_worker_units = storage.biter_station_worker_units or {}
   storage.managed_building_registry = storage.managed_building_registry or {}
@@ -937,6 +1141,7 @@ function M.ensure_storage()
   if storage.biter_station_crafts_per_visit == nil then
     storage.biter_station_crafts_per_visit = C.BITER_STATION_CRAFTS_PER_VISIT
   end
+  normalize_active_biter_storage()
 end
 
 function M.is_station(entity_or_name)
@@ -978,9 +1183,18 @@ function M.untrack_station(entity, tick)
   if not entity or not entity.unit_number then return end
 
   local station_id = entity.unit_number
-  local active_state = storage.biter_station_biter[station_id]
-  if active_state then
-    cleanup_active_biter(station_id, active_state, tick or game.tick, true, "untrack-station")
+  local active_units = storage.biter_station_active_by_station and storage.biter_station_active_by_station[station_id] or nil
+  if active_units then
+    local units_to_cleanup = {}
+    for biter_unit_number in pairs(active_units) do
+      units_to_cleanup[#units_to_cleanup + 1] = biter_unit_number
+    end
+    for _, biter_unit_number in ipairs(units_to_cleanup) do
+      local active_state = storage.biter_station_biter[biter_unit_number]
+      if active_state then
+        cleanup_active_biter(active_state, tick or game.tick, true, "untrack-station")
+      end
+    end
   end
 
   storage.biter_stations[station_id] = nil
@@ -1034,13 +1248,14 @@ end
 
 local function find_active_station_by_biter_unit(unit_number)
   if not unit_number then return nil, nil end
-  for station_id, active_state in pairs(storage.biter_station_biter or {}) do
-    if active_state and active_state.biter_unit_number == unit_number then
-      return station_id, active_state
-    end
-    local biter = active_state and active_state.biter or nil
+  local active_state = storage.biter_station_biter and storage.biter_station_biter[unit_number] or nil
+  if active_state then
+    return active_state.station_id, active_state
+  end
+  for _, fallback_state in pairs(storage.biter_station_biter or {}) do
+    local biter = fallback_state and fallback_state.biter or nil
     if biter and biter.valid and biter.unit_number == unit_number then
-      return station_id, active_state
+      return fallback_state.station_id, fallback_state
     end
   end
   return nil, nil
@@ -1154,7 +1369,7 @@ local function get_crafts_per_visit_for_force(force)
 
   local technologies = force.technologies
   if technologies and technologies["biter-labor-efficiency-2"] and technologies["biter-labor-efficiency-2"].researched then
-    return 8
+    return 5
   end
   if technologies and technologies["biter-labor-efficiency-1"] and technologies["biter-labor-efficiency-1"].researched then
     return 3
@@ -1207,8 +1422,12 @@ end
 function M.rebuild_registry()
   M.ensure_storage()
 
-  for station_id, active_state in pairs(storage.biter_station_biter) do
-    cleanup_active_biter(station_id, active_state, game.tick, false, "rebuild-registry")
+  local active_states = {}
+  for _, active_state in pairs(storage.biter_station_biter) do
+    active_states[#active_states + 1] = active_state
+  end
+  for _, active_state in ipairs(active_states) do
+    cleanup_active_biter(active_state, game.tick, false, "rebuild-registry")
   end
 
   for biter_unit_number, info in pairs(storage.biter_station_releasing) do
@@ -1220,6 +1439,7 @@ function M.rebuild_registry()
 
   storage.biter_stations = {}
   storage.biter_station_biter = {}
+  storage.biter_station_active_by_station = {}
   storage.biter_station_releasing = {}
   storage.biter_station_worker_units = {}
   storage.managed_building_registry = {}
