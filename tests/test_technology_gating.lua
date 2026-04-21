@@ -352,7 +352,7 @@ test("bootstrap paperwork is gated behind both discovery chains", function()
     "geological inefficiency should use the redundant rubble technology icon")
   assert_true(technologies["discovery-redundant-rubble"].icon_size == 128,
     "geological inefficiency should use the 128px redundant rubble technology icon size")
-  assert_true(tech_unlocks_recipe("electronics", "office-desk"), "electronics should unlock the office desk")
+  assert_true(tech_unlocks_recipe("biter-employment", "office-desk"), "biter-employment should unlock the office desk")
   assert_true(tech_unlocks_recipe("discovery-redundant-rubble", "admin-station"), "discovery-redundant-rubble should unlock the admin station")
   assert_true(tech_unlocks_recipe("discovery-redundant-rubble", "resolution-office"), "discovery-redundant-rubble should unlock the resolution office")
   assert_true(tech_unlocks_recipe("discovery-redundant-rubble", "promise-production"), "discovery-redundant-rubble should unlock promises")

@@ -514,6 +514,39 @@ data:extend({
     unit = { count = 220, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
     order = "c-h2"
   },
+  -- BITER STATION CAPACITY (unlock more inventory slots per station)
+  {
+    type = "technology", name = "biter-station-capacity-1",
+    icons = {{icon = "__administratorio__/graphics/icons/credentials.png", icon_size = 64, tint = {r=0.7, g=0.5, b=0.9, a=1}}},
+    effects = {{ type = "nothing" }},
+    prerequisites = {"biter-employment"},
+    unit = { count = 100, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },
+    order = "c-h3"
+  },
+  {
+    type = "technology", name = "biter-station-capacity-2",
+    icons = {{icon = "__administratorio__/graphics/icons/credentials.png", icon_size = 64, tint = {r=0.6, g=0.4, b=0.85, a=1}}},
+    effects = {{ type = "nothing" }},
+    prerequisites = {"biter-station-capacity-1"},
+    unit = { count = 150, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "c-h4"
+  },
+  {
+    type = "technology", name = "biter-station-capacity-3",
+    icons = {{icon = "__administratorio__/graphics/icons/credentials.png", icon_size = 64, tint = {r=0.5, g=0.3, b=0.8, a=1}}},
+    effects = {{ type = "nothing" }},
+    prerequisites = {"biter-station-capacity-2"},
+    unit = { count = 200, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 40 },
+    order = "c-h5"
+  },
+  {
+    type = "technology", name = "biter-station-capacity-4",
+    icons = {{icon = "__administratorio__/graphics/icons/credentials.png", icon_size = 64, tint = {r=0.4, g=0.2, b=0.75, a=1}}},
+    effects = {{ type = "nothing" }},
+    prerequisites = {"biter-station-capacity-3"},
+    unit = { count = 300, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 50 },
+    order = "c-h6"
+  },
   -- SPECIALIST TRAINING (train workers into building-specific specialists)
   {
     type = "technology", name = "specialist-training",

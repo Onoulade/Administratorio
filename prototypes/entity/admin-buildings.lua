@@ -152,7 +152,7 @@ biter_station.minable = {mining_time = 0.5, result = "biter-station"}
 biter_station.max_health = 450
 biter_station.collision_box = {{-1.8, -1.8}, {1.8, 1.8}}
 biter_station.selection_box = {{-2.0, -2.0}, {2.0, 2.0}}
-biter_station.inventory_size = 40
+biter_station.inventory_size = 10
 biter_station.collision_mask = {layers = {object = true, player = true, water_tile = true}}
 biter_station.circuit_wire_max_distance = 9
 biter_station.circuit_connector = circuit_connector_definitions.create_single(
@@ -641,7 +641,9 @@ transit_permit_chest.collision_box = {{0, 0}, {0, 0}}
 transit_permit_chest.collision_mask = {layers = {}}
 
 local function make_worker_biter(name, source_name)
-  local biter = table.deepcopy(data.raw["unit"][source_name])
+  local unit_table = data.raw["unit"]
+  if not unit_table or not unit_table[source_name] then return nil end
+  local biter = table.deepcopy(unit_table[source_name])
   biter.name = name
   biter.localised_name = {"entity-name.biter-station"}
   biter.minable = nil
@@ -653,12 +655,15 @@ end
 local biter_worker_t2 = make_worker_biter("biter-worker-t2", "medium-biter")
 local biter_worker_t3 = make_worker_biter("biter-worker-t3", "big-biter")
 
-data:extend({
+local entities = {
   admin_station,
   biter_station,
-  biter_worker_t2, biter_worker_t3,
   resolution_office, office_desk, field_office, greenhouse,
   breakroom, union_hq, propaganda_distillery,
   waiting_zone_marker, admin_station_corner_blocker, admin_station_combinator,
   transit_permit_chest
-})
+}
+if biter_worker_t2 then table.insert(entities, biter_worker_t2) end
+if biter_worker_t3 then table.insert(entities, biter_worker_t3) end
+
+data:extend(entities)

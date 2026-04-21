@@ -114,6 +114,7 @@ M.FIELD_OFFICE_ARRIVAL_RADIUS = 2.5   -- distance threshold for "biter has arriv
 
 -- Biter station: one active worker biter performs rounds of managed machines.
 M.BITER_STATION_RANGE = 30
+M.BITER_STATION_BASE_SLOTS = 10
 M.BITER_STATION_CHECK_TICKS = 10
 M.BITER_STATION_CRAFTS_PER_VISIT = 1
 M.BITER_STATION_SALARY = 1
