@@ -62,30 +62,6 @@ local function get_dispatch_salary()
 end
 local MIN_PHASE_TRAVEL_DISTANCE = 0.75
 local PHASE_STUCK_TIMEOUT_TICKS = 90
-local DEBUG_LOGS = true
-
-local function fmt_position(pos)
-  if not pos then return "[nil]" end
-  return string.format("[%.2f,%.2f]", pos.x or 0, pos.y or 0)
-end
-
-local function entity_ref(entity)
-  if not entity then return "nil" end
-  local valid = entity.valid
-  if valid == false then
-    return "<invalid-entity>"
-  end
-  local name = entity.name or "?"
-  local unit = entity.unit_number or "?"
-  local force_name = (entity.force and entity.force.name) or "nil"
-  local pos = fmt_position(entity.position)
-  return string.format("%s#%s force=%s pos=%s valid=%s", name, tostring(unit), force_name, pos, tostring(valid))
-end
-
-local function debug_log(message)
-  if not DEBUG_LOGS then return end
-  log("[BiterStation] " .. tostring(message))
-end
 
 local maybe_reinsert_worker
 
@@ -142,9 +118,7 @@ end
 local function sanitize_station_worker_registry_links()
   if not storage.biter_station_worker_units then return end
   for unit_number in pairs(storage.biter_station_worker_units) do
-    if detach_station_worker_from_waiting_system(unit_number) then
-      debug_log("sanitized-worker-registry-collision unit=" .. tostring(unit_number))
-    end
+    detach_station_worker_from_waiting_system(unit_number)
   end
 end
 
@@ -152,7 +126,6 @@ local function ensure_worker_force()
   local force = game.forces[WORKER_FORCE_NAME]
   if not force then
     force = game.create_force(WORKER_FORCE_NAME)
-    debug_log("created-worker-force name=" .. WORKER_FORCE_NAME)
   end
   if not force then return nil end
 
@@ -184,7 +157,6 @@ local function get_biter_force()
   if force and force.valid and force.name ~= "enemy" then
     return force
   end
-  debug_log("fallback-worker-force worker-force-missing-or-invalid")
   return game.forces["player"] or game.forces["neutral"]
 end
 
@@ -365,20 +337,12 @@ local function phase_has_departed(active_state, biter, tick)
 
   if phase_origin_distance_squared(active_state, biter) >= (MIN_PHASE_TRAVEL_DISTANCE * MIN_PHASE_TRAVEL_DISTANCE) then
     active_state.phase_departed = true
-    debug_log(string.format(
-      "tick=%d phase-departed-by-distance station=%s biter=%s phase=%s",
-      tick, tostring(active_state.station_id or "?"), entity_ref(biter), tostring(active_state.phase)
-    ))
     return true
   end
 
   local started_tick = active_state.phase_started_tick or tick
   if (tick - started_tick) >= PHASE_STUCK_TIMEOUT_TICKS then
     active_state.phase_departed = true
-    debug_log(string.format(
-      "tick=%d phase-departed-by-timeout station=%s biter=%s phase=%s started_tick=%s",
-      tick, tostring(active_state.station_id or "?"), entity_ref(biter), tostring(active_state.phase), tostring(started_tick)
-    ))
     return true
   end
 
@@ -525,18 +489,6 @@ local function begin_phase_move(active_state, biter, phase, destination, radius,
   active_state.phase_arrived_tick = nil
   clear_pending_path_request(active_state)
   issue_move_command(biter, command_destination, active_state.phase_command_radius)
-  debug_log(string.format(
-    "tick=%d phase-start station=%s biter=%s phase=%s destination=%s command_destination=%s radius=%.2f idx=%s queue=%s",
-    active_state.phase_started_tick,
-    tostring(active_state.station_id or "?"),
-    entity_ref(biter),
-    tostring(phase),
-    fmt_position(target_position),
-    fmt_position(command_destination),
-    radius or 0,
-    tostring(active_state.current_idx),
-    tostring(active_state.building_queue and #active_state.building_queue or 0)
-  ))
 end
 
 local function phase_is_arrived(active_state, biter, fallback_position, fallback_radius)
@@ -610,13 +562,6 @@ local function release_biter_for_despawn(biter, station, tick)
     issue_move_command(biter, despawn_pos or station.position, C.BITER_STATION_ARRIVAL_RADIUS)
   end
 
-  debug_log(string.format(
-    "tick=%d release-for-despawn biter=%s station=%s despawn_tick=%d",
-    tick or game.tick,
-    entity_ref(biter),
-    entity_ref(station),
-    (tick or game.tick) + C.BITER_STATION_BITER_DESPAWN_TICKS
-  ))
   storage.biter_station_releasing[biter.unit_number] = {
     entity = biter,
     station = station,
@@ -630,17 +575,6 @@ local function cleanup_active_biter(active_state, tick, release_entity, reason)
   end
   local station_id = active_state.station_id
 
-  debug_log(string.format(
-    "tick=%d cleanup-active station_id=%s release=%s reason=%s phase=%s idx=%s biter=%s",
-    tick or game.tick,
-    tostring(station_id),
-    tostring(release_entity),
-    tostring(reason),
-    tostring(active_state.phase),
-    tostring(active_state.current_idx),
-    entity_ref(active_state.biter)
-  ))
-
   clear_active_queue_claims(active_state)
   destroy_overlay(active_state)
   unmark_station_worker_unit(active_state.biter_unit_number)
@@ -650,7 +584,6 @@ local function cleanup_active_biter(active_state, tick, release_entity, reason)
     local station = storage.biter_stations and storage.biter_stations[station_id] or nil
     if station and station.valid then
       maybe_reinsert_worker(station)
-      debug_log("cleanup-refund-worker station=" .. entity_ref(station) .. " reason=" .. tostring(reason))
     end
   end
 
@@ -659,7 +592,6 @@ local function cleanup_active_biter(active_state, tick, release_entity, reason)
       local station = storage.biter_stations and storage.biter_stations[station_id] or nil
       release_biter_for_despawn(active_state.biter, station, tick)
     else
-      debug_log("cleanup-destroy-worker biter=" .. entity_ref(active_state.biter) .. " reason=" .. tostring(reason))
       active_state.biter.destroy()
     end
   end
@@ -689,11 +621,9 @@ end
 
 local function activate_building_for_visit(building, biter_unit_number)
   if not building or not building.valid or not building.unit_number then
-    debug_log("activate-skip invalid-building biter_unit=" .. tostring(biter_unit_number))
     return false
   end
   if not building_has_recipe(building) then
-    debug_log("activate-skip no-recipe building=" .. entity_ref(building) .. " biter_unit=" .. tostring(biter_unit_number))
     return false
   end
 
@@ -702,12 +632,10 @@ local function activate_building_for_visit(building, biter_unit_number)
   if not run_state then return false end
 
   if run_state.claimed_by and run_state.claimed_by ~= biter_unit_number then
-    debug_log("activate-skip claimed-by-other building=" .. entity_ref(building) .. " claimed_by=" .. tostring(run_state.claimed_by))
     return false
   end
 
   if is_building_blocked_by_working_hours(building) then
-    debug_log("activate-skip blocked-by-working-hours building=" .. entity_ref(building))
     run_state.claimed_by = nil
     clear_run_state_if_idle(unit_number, run_state)
     return false
@@ -715,7 +643,6 @@ local function activate_building_for_visit(building, biter_unit_number)
 
   local crafts_remaining = run_state.crafts_remaining or 0
   if crafts_remaining > 0 then
-    debug_log("activate-skip already-running building=" .. entity_ref(building) .. " crafts_remaining=" .. tostring(crafts_remaining))
     run_state.claimed_by = nil
     return false
   end
@@ -724,7 +651,6 @@ local function activate_building_for_visit(building, biter_unit_number)
   run_state.crafts_remaining = 1
   run_state.products_at_last_check = building.products_finished or 0
   run_state.claimed_by = nil
-  debug_log("activate-ok building=" .. entity_ref(building) .. " crafts_remaining=" .. tostring(run_state.crafts_remaining))
   return true
 end
 
@@ -761,14 +687,6 @@ local function build_building_queue(station)
     return distance_squared(a.position, station.position) < distance_squared(b.position, station.position)
   end)
 
-  debug_log(string.format(
-    "tick=%d queue-built station=%s nearby=%d eligible=%d",
-    game.tick,
-    entity_ref(station),
-    #nearby,
-    #filtered
-  ))
-
   return filtered
 end
 
@@ -778,14 +696,11 @@ local function spawn_station_biter(station)
   local actual_entity_name = get_worker_entity_name()
   local spawn_pos = station.surface.find_non_colliding_position(actual_entity_name, station.position, 8, 0.5)
   if not spawn_pos then
-    debug_log("spawn-failed no-non-colliding-position station=" .. entity_ref(station))
     return nil
   end
   local spawn_force = get_biter_force()
   if not spawn_force or not spawn_force.valid or spawn_force.name == "enemy" then
-    local original_force_name = spawn_force and spawn_force.name or "nil"
     spawn_force = station.force or game.forces["player"] or game.forces["neutral"]
-    debug_log("spawn-force-fallback original=" .. original_force_name .. " fallback=" .. (spawn_force and spawn_force.name or "nil"))
   end
 
   local biter = station.surface.create_entity{
@@ -795,14 +710,11 @@ local function spawn_station_biter(station)
   }
 
   if not biter or not biter.valid then
-    debug_log("spawn-failed create-entity-returned-nil station=" .. entity_ref(station))
     return nil
   end
-  debug_log("spawned-worker station=" .. entity_ref(station) .. " biter=" .. entity_ref(biter))
   if biter.force and biter.force.name == "enemy" then
     local safe_force = station.force or game.forces["player"] or game.forces["neutral"]
     if safe_force and safe_force.valid and safe_force.name ~= "enemy" then
-      debug_log("spawned-worker-on-enemy correcting-force to=" .. safe_force.name .. " biter=" .. entity_ref(biter))
       biter.force = safe_force
     end
   end
@@ -847,27 +759,19 @@ local function dispatch_single_station_biter(station, queue)
 
   local inv = get_station_inventory(station)
   if not inv then
-    debug_log("dispatch-single-skip no-inventory station=" .. entity_ref(station))
     return false
   end
 
   if inv.remove({name = WORKER_ITEM_NAME, count = 1}) < 1 then
-    debug_log("dispatch-failed remove-worker-item station=" .. entity_ref(station))
     return false
   end
 
   local biter = spawn_station_biter(station)
   if not biter then
-    debug_log("dispatch-failed spawn-worker station=" .. entity_ref(station))
     maybe_reinsert_worker(station)
     set_station_status(station, "biter-station-no-workers")
     return false
   end
-
-  debug_log(string.format(
-    "dispatch-start tick=%d station=%s biter=%s queue=%d",
-    game.tick, entity_ref(station), entity_ref(biter), #queue
-  ))
 
   claim_queue_for_biter(queue, biter.unit_number)
 
@@ -883,9 +787,7 @@ local function dispatch_single_station_biter(station, queue)
   }
   register_active_biter_state(active_state)
   mark_station_worker_unit(biter.unit_number, station.unit_number)
-  if detach_station_worker_from_waiting_system(biter.unit_number) then
-    debug_log("dispatch-worker-collision-resolved unit=" .. tostring(biter.unit_number))
-  end
+  detach_station_worker_from_waiting_system(biter.unit_number)
   begin_phase_move(active_state, biter, "to_building", queue[1], C.BITER_STATION_ARRIVAL_RADIUS, game.tick)
 
   set_station_status(station, "biter-station-calling")
@@ -897,7 +799,6 @@ local function dispatch_station_biters(station)
 
   local inv = get_station_inventory(station)
   if not inv then
-    debug_log("dispatch-skip no-inventory station=" .. entity_ref(station))
     refresh_station_status(station)
     return 0
   end
@@ -905,29 +806,17 @@ local function dispatch_station_biters(station)
   local worker_count = inv.get_item_count(WORKER_ITEM_NAME)
   local money_count = inv.get_item_count(MONEY_ITEM_NAME)
   if worker_count <= 0 then
-    debug_log(string.format(
-      "dispatch-skip no-workers station=%s workers=%d money=%d",
-      entity_ref(station), worker_count, money_count
-    ))
     set_station_status(station, "biter-station-no-workers")
     return 0
   end
 
   if money_count < C.BITER_STATION_SALARY then
-    debug_log(string.format(
-      "dispatch-skip no-money station=%s workers=%d money=%d",
-      entity_ref(station), worker_count, money_count
-    ))
     set_station_status(station, "biter-station-no-money")
     return 0
   end
 
   local queue = build_building_queue(station)
   if #queue == 0 then
-    debug_log(string.format(
-      "dispatch-skip empty-queue station=%s workers=%d money=%d",
-      entity_ref(station), worker_count, money_count
-    ))
     if station_has_active_workers(station.unit_number) then
       set_station_status(station, "biter-station-calling")
     else
@@ -974,10 +863,6 @@ local function dispatch_station_biters(station)
 end
 
 local function finish_station_circuit(station_id, station, active_state)
-  debug_log(string.format(
-    "tick=%d finish-circuit station=%s biter=%s",
-    game.tick, entity_ref(station), entity_ref(active_state and active_state.biter)
-  ))
   if station and station.valid then
     local inv = get_station_inventory(station)
     if inv then
@@ -991,7 +876,6 @@ local function finish_station_circuit(station_id, station, active_state)
   clear_pending_path_request(active_state)
 
   if active_state.biter and active_state.biter.valid then
-    debug_log("finish-circuit-destroy-worker biter=" .. entity_ref(active_state.biter))
     active_state.biter.destroy()
   end
 
@@ -1075,10 +959,6 @@ local function advance_active_biters(tick)
         local building = queue[active_state.current_idx]
 
         if not building or not building.valid or not building.unit_number then
-          debug_log(string.format(
-            "tick=%d skip-invalid-building station_id=%s biter=%s idx=%s",
-            tick, tostring(station_id), entity_ref(biter), tostring(active_state.current_idx)
-          ))
           if building and building.unit_number then
             clear_building_claim(building.unit_number, biter.unit_number)
           end
@@ -1087,11 +967,7 @@ local function advance_active_biters(tick)
           local arrived = phase_has_departed(active_state, biter, tick)
             and phase_is_arrived(active_state, biter, building.position, C.BITER_STATION_ARRIVAL_RADIUS)
           if arrived then
-            local activated = activate_building_for_visit(building, biter.unit_number)
-            debug_log(string.format(
-              "tick=%d arrived-building station_id=%s biter=%s building=%s activated=%s",
-              tick, tostring(station_id), entity_ref(biter), entity_ref(building), tostring(activated)
-            ))
+            activate_building_for_visit(building, biter.unit_number)
             active_state.current_idx = active_state.current_idx + 1
             local next_building = queue[active_state.current_idx]
             if next_building and next_building.valid then
@@ -1112,10 +988,6 @@ local function advance_active_biters(tick)
         ::continue_building_queue::
       end
 
-      debug_log(string.format(
-        "tick=%d queue-exhausted station_id=%s biter=%s returning-to-station",
-        tick, tostring(station_id), entity_ref(biter)
-      ))
       begin_phase_move(active_state, biter, "to_station", station, C.BITER_STATION_ARRIVAL_RADIUS, tick)
       set_station_status(station, "biter-station-calling")
 
@@ -1147,13 +1019,8 @@ local function despawn_released_biters(tick)
     local entity = info.entity
     if not entity or not entity.valid then
       unmark_station_worker_unit(biter_unit_number)
-      debug_log("released-worker-missing biter_unit=" .. tostring(biter_unit_number))
       storage.biter_station_releasing[biter_unit_number] = nil
     elseif tick >= (info.despawn_tick or 0) then
-      debug_log(string.format(
-        "tick=%d despawn-released-worker biter=%s due_tick=%d",
-        tick, entity_ref(entity), info.despawn_tick or -1
-      ))
       entity.destroy()
       unmark_station_worker_unit(biter_unit_number)
       storage.biter_station_releasing[biter_unit_number] = nil
@@ -1324,24 +1191,10 @@ function M.on_entity_died(event)
   if not entity or not entity.valid then return end
   if entity.name ~= WORKER_ENTITY_NAME then return end
 
-  local station_id, active_state = find_active_station_by_biter_unit(entity.unit_number)
+  local station_id = find_active_station_by_biter_unit(entity.unit_number)
   local releasing = storage.biter_station_releasing and storage.biter_station_releasing[entity.unit_number] or nil
   if not station_id and not releasing then return end
   unmark_station_worker_unit(entity.unit_number)
-
-  local cause = event.cause
-  local cause_ref = cause and entity_ref(cause) or "nil"
-  debug_log(string.format(
-    "tick=%d worker-died entity=%s station_id=%s phase=%s releasing=%s cause=%s damage_type=%s event_force=%s",
-    event.tick or game.tick,
-    entity_ref(entity),
-    tostring(station_id),
-    tostring(active_state and active_state.phase or "nil"),
-    tostring(releasing ~= nil),
-    cause_ref,
-    tostring(event.damage_type and event.damage_type.name or "nil"),
-    tostring(event.force and event.force.name or "nil")
-  ))
 end
 
 function M.on_entity_removed(event)
@@ -1350,22 +1203,10 @@ function M.on_entity_removed(event)
   if not entity or not entity.valid then return end
   if entity.name ~= WORKER_ENTITY_NAME then return end
 
-  local station_id, active_state = find_active_station_by_biter_unit(entity.unit_number)
+  local station_id = find_active_station_by_biter_unit(entity.unit_number)
   local releasing = storage.biter_station_releasing and storage.biter_station_releasing[entity.unit_number] or nil
   if not station_id and not releasing then return end
   unmark_station_worker_unit(entity.unit_number)
-
-  debug_log(string.format(
-    "tick=%d worker-removed event=%s entity=%s station_id=%s phase=%s releasing=%s player_index=%s robot=%s",
-    event.tick or game.tick,
-    tostring(event.name),
-    entity_ref(entity),
-    tostring(station_id),
-    tostring(active_state and active_state.phase or "nil"),
-    tostring(releasing ~= nil),
-    tostring(event.player_index),
-    tostring(event.robot and event.robot.valid and event.robot.unit_number or nil)
-  ))
 end
 
 function M.on_ai_command_completed(event)
@@ -1376,18 +1217,6 @@ function M.on_ai_command_completed(event)
   if not station_id and not releasing then return end
 
   local entity = active_state and active_state.biter or (releasing and releasing.entity) or nil
-  debug_log(string.format(
-    "tick=%d worker-ai-complete unit=%s result=%s distracted=%s station_id=%s phase=%s releasing=%s entity=%s",
-    event.tick or game.tick,
-    tostring(event.unit_number),
-    tostring(event.result),
-    tostring(event.was_distracted),
-    tostring(station_id),
-    tostring(active_state and active_state.phase or "nil"),
-    tostring(releasing ~= nil),
-    entity_ref(entity)
-  ))
-
   if not active_state or releasing then return end
   if not entity or not entity.valid then return end
   local destination = active_state.phase_destination
@@ -1396,26 +1225,9 @@ function M.on_ai_command_completed(event)
   local retry_radius = active_state.phase_command_radius or active_state.phase_radius or C.BITER_STATION_ARRIVAL_RADIUS
   if has_arrived_position(entity, destination, retry_radius) then
     active_state.phase_arrived_tick = event.tick or game.tick
-    debug_log(string.format(
-      "tick=%d worker-ai-arrived unit=%s station_id=%s phase=%s at=%s",
-      event.tick or game.tick,
-      tostring(event.unit_number),
-      tostring(station_id),
-      tostring(active_state.phase),
-      fmt_position(entity.position)
-    ))
     return
   end
 
-  debug_log(string.format(
-    "tick=%d worker-ai-reissue unit=%s result=%s station_id=%s phase=%s retry=%s",
-    event.tick or game.tick,
-    tostring(event.unit_number),
-    tostring(event.result),
-    tostring(station_id),
-    tostring(active_state.phase),
-    fmt_position(destination)
-  ))
   issue_move_command(entity, destination, retry_radius)
 end
 
