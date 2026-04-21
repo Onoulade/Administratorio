@@ -164,6 +164,21 @@ data:extend({
 
   -- Biter Employment
   {
+    type = "recipe", name = "rideable-biter",
+    localised_name = {"item-name.rideable-biter"},
+    localised_description = {"item-description.rideable-biter"},
+    category = "bureaucracy-registration", enabled = false,
+    ingredients = {
+      {type="item", name="biter-worker", amount=1},
+      {type="item", name="job-offer", amount=1},
+      {type="item", name="blank-approval", amount=2},
+      {type="item", name="iron-gear-wheel", amount=8},
+      {type="item", name="taxpayer-money", amount=25},
+    },
+    results = {{type="item", name="rideable-biter", amount=1}},
+    energy_required = 20
+  },
+  {
     type = "recipe", name = "job-offer-production", category = "bureaucracy-registration", enabled = false,
     ingredients = {
       {type="item", name="taxpayer-money", amount=50},

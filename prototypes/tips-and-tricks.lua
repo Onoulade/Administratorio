@@ -235,6 +235,19 @@ data:extend({
     }
   },
 
+  -- Rideable Biter (unlocks with civic-biter-riding)
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-rideable-biter",
+    category = "administratorio",
+    order = "q1",
+    indent = 1,
+    trigger = {
+      type = "research",
+      technology = "civic-biter-riding"
+    }
+  },
+
   -- Biter Employment Office (unlocks when the first biter station is built)
   {
     type = "tips-and-tricks-item",

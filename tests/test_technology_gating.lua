@@ -131,6 +131,9 @@ vanilla_tech("rocket-silo", {"concrete", "rocket-fuel", "utility-science-pack"},
   {type = "unlock-recipe", recipe = "rocket-silo"},
 }, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack", "utility-science-pack"})
 vanilla_tech("engine", nil, nil, {"automation-science-pack", "logistic-science-pack"})
+vanilla_tech("automobilism", {"engine"}, {
+  {type = "unlock-recipe", recipe = "car"},
+}, {"automation-science-pack", "logistic-science-pack"})
 vanilla_tech("gate", nil, nil, {"automation-science-pack", "logistic-science-pack"})
 vanilla_tech("electric-mining-drill", nil, nil, {"automation-science-pack"})
 vanilla_tech("stone-wall", nil, nil, {"automation-science-pack"})
@@ -368,6 +371,15 @@ test("bootstrap paperwork is gated behind both discovery chains", function()
   assert_true(tech_depends_on("printing-technology", "discovery-bullshit"), "printing-technology should depend on discovery-bullshit")
   assert_true(tech_depends_on("printing-technology", "discovery-redundant-rubble"), "printing-technology should depend on discovery-redundant-rubble")
   assert_true(tech_depends_on("administrative-bureaucracy", "discovery-redundant-rubble"), "administrative-bureaucracy should stay behind discovery-redundant-rubble")
+end)
+
+test("rideable biter unlocks before the vanilla car", function()
+  assert_true(technologies["civic-biter-riding"] ~= nil, "civic-biter-riding technology should exist")
+  assert_true(tech_unlocks_recipe("civic-biter-riding", "rideable-biter"), "civic-biter-riding should unlock the rideable biter")
+  assert_true(tech_has_prereq("civic-biter-riding", "biter-employment"), "rideable biter should require biter employment")
+  assert_true(tech_has_prereq("civic-biter-riding", "engine"), "rideable biter should require engine")
+  assert_true(tech_has_prereq("automobilism", "civic-biter-riding"), "automobilism should come after civic-biter-riding")
+  assert_true(tech_unlocks_recipe("automobilism", "car"), "automobilism should still unlock the vanilla car")
 end)
 
 test("office agriculture now owns only the later coffee branch", function()

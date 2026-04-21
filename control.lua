@@ -17,6 +17,7 @@ local control_resolution_processing_factory = require("scripts.control_resolutio
 local regulated_unlocks = require("scripts.regulated_unlocks")
 local feature_flags = require("feature_flags")
 local hired_biter = require("scripts.hired_biter")
+local rideable_biter = require("scripts.rideable_biter")
 
 local ADMIN_STATION_NAMES = "admin-station"
 
@@ -351,6 +352,7 @@ local function init_storage()
   biter_station.ensure_storage()
   hired_biter.ensure_storage()
   hired_biter.cleanup_supply_chests()
+  rideable_biter.ensure_storage()
   biter_station_hover.ensure_storage()
 
   -- Ensure all existing locomotives and pneumatic buildings are properly initialized.
@@ -463,6 +465,7 @@ local function on_init()
   field_office.rebuild_registry()
   biter_station.rebuild_registry()
   hired_biter.ensure_storage()
+  rideable_biter.rebuild_registry()
   storage.biter_station_crafts_per_visit = C.BITER_STATION_CRAFTS_PER_VISIT
   for _, force in pairs(game.forces) do
     biter_station.sync_research(force)
@@ -534,6 +537,7 @@ local function on_configuration_changed()
   working_hours.rebuild_registry()
   field_office.rebuild_registry()
   biter_station.rebuild_registry()
+  rideable_biter.rebuild_registry()
   storage.biter_station_crafts_per_visit = C.BITER_STATION_CRAFTS_PER_VISIT
   for _, force in pairs(game.forces) do
     biter_station.sync_research(force)
@@ -736,6 +740,9 @@ local function on_entity_built_inner(event)
     if biter_station.is_station(entity) then
       biter_station.track_station(entity)
     end
+    if rideable_biter.is_rideable(entity) then
+      rideable_biter.track(entity, event.tick or game.tick)
+    end
     if biter_station.is_managed_building(entity) then
       biter_station.track_managed_building(entity)
     end
@@ -764,6 +771,7 @@ local function on_entity_removed(event)
     hired_biter.untrack(entity, event)
   end
   biter_station.untrack_entity(entity, game.tick)
+  rideable_biter.untrack(entity)
 
   trains.on_removed(entity)
 
@@ -1253,6 +1261,7 @@ local function on_entity_died(event)
   if entity.name == C.HIRED_BITER_UNIT_NAME then
     hired_biter.untrack(entity, event)
   end
+  rideable_biter.untrack(entity)
   if entity.type == "unit" then
     biters.on_biter_died(entity)
     biter_station.on_entity_died(event)
@@ -1295,6 +1304,7 @@ local ON_ENTITY_DIED_FILTERS = {
   {filter = "type", type = "train-stop"},
   {filter = "name", name = "admin-station"},
   {filter = "name", name = "biter-station"},
+  {filter = "name", name = "rideable-biter"},
   {filter = "name", name = "office-desk"},
   {filter = "name", name = "field-office"},
   {filter = "name", name = "corporate-breakroom"},
@@ -1538,6 +1548,7 @@ local function on_main_tick(event)
   biter_station.sanitize_external_links()
   resolution_processing.on_tick(event)
   hired_biter.update(event.tick)
+  rideable_biter.update(event.tick)
 end
 
 local function on_pneumatic_tick(_event)
