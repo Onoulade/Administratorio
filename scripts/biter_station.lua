@@ -9,6 +9,40 @@ local WORKER_ITEM_NAME = "biter-worker"
 local MONEY_ITEM_NAME = "taxpayer-money"
 local WORKER_ENTITY_NAME = "small-biter"
 
+local SLOT_TIER_TECHS = {
+  {"biter-station-capacity-1", 20},
+  {"biter-station-capacity-2", 30},
+  {"biter-station-capacity-3", 40},
+  {"biter-station-capacity-4", 50},
+}
+
+local function get_station_slots_for_force(force)
+  if not force or not force.valid then return C.BITER_STATION_BASE_SLOTS end
+  local slots = C.BITER_STATION_BASE_SLOTS
+  for _, tier in ipairs(SLOT_TIER_TECHS) do
+    local tech = force.technologies[tier[1]]
+    if tech and tech.researched then
+      slots = tier[2]
+    else
+      break
+    end
+  end
+  return slots
+end
+
+local function apply_station_inventory(station)
+  local inv = get_station_inventory(station)
+  if not inv then return end
+  local target = get_station_slots_for_force(station.force)
+  if #inv < target then
+    inv.resize(target)
+  end
+  inv.set_filter(1, {name = MONEY_ITEM_NAME})
+  for i = 2, #inv do
+    inv.set_filter(i, {name = WORKER_ITEM_NAME})
+  end
+end
+
 local function get_crafts_tier()
   local crafts = storage and storage.biter_station_crafts_per_visit or C.BITER_STATION_CRAFTS_PER_VISIT
   if crafts >= 5 then return 3
@@ -1196,6 +1230,7 @@ function M.track_station(entity)
   end
 
   storage.biter_stations[entity.unit_number] = entity
+  apply_station_inventory(entity)
   refresh_station_status(entity)
 end
 
@@ -1430,6 +1465,16 @@ function M.on_research_finished(research)
   if name == "biter-employment" then
     return
   end
+
+  if name:find("^biter%-station%-capacity%-") then
+    for _, station in pairs(storage.biter_stations or {}) do
+      if station and station.valid then
+        apply_station_inventory(station)
+      end
+    end
+    return
+  end
+
   if name ~= "biter-labor-efficiency-1" and name ~= "biter-labor-efficiency-2" then
     return
   end
