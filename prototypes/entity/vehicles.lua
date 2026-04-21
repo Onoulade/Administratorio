@@ -38,6 +38,7 @@ local function rideable_biter_run_animation()
   if not (util and util.sprite_load) then return nil end
 
   local scale = 0.7
+  local animation_speed = 3.0
   local tint1 = {0.49, 0.46, 0.51, 1}
   local tint2 = {0.6, 0.36, 0.36, 0.7}
 
@@ -49,6 +50,7 @@ local function rideable_biter_run_animation()
         direction_count = 16,
         scale = scale * 0.5,
         multiply_shift = scale,
+        animation_speed = animation_speed,
         allow_forced_downscale = true,
         surface = "nauvis",
         usage = "enemy",
@@ -61,6 +63,7 @@ local function rideable_biter_run_animation()
         tint = tint1,
         scale = scale * 0.5,
         multiply_shift = scale,
+        animation_speed = animation_speed,
         allow_forced_downscale = true,
         surface = "nauvis",
         usage = "enemy",
@@ -74,6 +77,7 @@ local function rideable_biter_run_animation()
         tint_as_overlay = true,
         scale = scale * 0.5,
         multiply_shift = scale,
+        animation_speed = animation_speed,
         allow_forced_downscale = true,
         surface = "nauvis",
         usage = "enemy",
@@ -85,6 +89,7 @@ local function rideable_biter_run_animation()
         draw_as_shadow = true,
         scale = scale * 0.5,
         multiply_shift = scale,
+        animation_speed = animation_speed,
         allow_forced_downscale = true,
         surface = "nauvis",
         usage = "enemy",
@@ -146,23 +151,6 @@ local function make_rideable_biter()
     },
   }
   vehicle.working_sound = {
-    main_sounds = {
-      {
-        sound = biter_sound("__base__/sound/creatures/biter-walk", 7, 0.22, 0.42),
-        match_volume_to_activity = true,
-        activity_to_volume_modifiers = {
-          multiplier = 1.1,
-          offset = 0.25,
-        },
-        match_speed_to_activity = true,
-        activity_to_speed_modifiers = {
-          multiplier = 0.35,
-          minimum = 0.8,
-          maximum = 1.25,
-          offset = 0.85,
-        },
-      },
-    },
     activate_sound = biter_sound("__base__/sound/creatures/biter-roar-mid", 7, 0.24, 0.36, 1),
     deactivate_sound = biter_sound("__base__/sound/creatures/biter-call", 5, 0.12, 0.22, 2),
   }
