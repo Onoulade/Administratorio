@@ -141,12 +141,15 @@ test("rideable biter is a taxpayer-money fueled car with tiny storage", function
   assert_true(vehicle.energy_source.smoke == nil, "rideable biter should not emit car exhaust smoke")
   assert_true(vehicle.animation.layers ~= nil, "rideable biter should use layered biter animation assets")
   assert_eq(vehicle.animation.layers[1].filename, "__administratorio__/graphics/entities/rideable-biter/biter-run")
+  for _, layer in ipairs(vehicle.animation.layers) do
+    assert_eq(layer.animation_speed, 3.0, "rideable biter visual run animation should be faster without changing vehicle movement")
+  end
   assert_true(vehicle.guns == nil, "rideable biter should not inherit vanilla car weapons")
   assert_true(vehicle.light_animation == nil, "rideable biter should not inherit car headlight animation")
   assert_true(vehicle.turret_animation == nil, "rideable biter should not render the vanilla car turret overlay")
   assert_true(vehicle.turret_rotation_speed == nil, "rideable biter should not keep turret rotation behavior")
   assert_true(vehicle.track_particle_triggers == nil, "rideable biter should not kick up vanilla car movement particles")
-  assert_eq(vehicle.working_sound.main_sounds[1].sound.variations[1].filename, "__base__/sound/creatures/biter-walk-1.ogg")
+  assert_true(vehicle.working_sound.main_sounds == nil, "rideable biter should not loop short biter walk samples while moving")
   assert_eq(vehicle.working_sound.activate_sound.variations[1].filename, "__base__/sound/creatures/biter-roar-mid-1.ogg")
   assert_eq(vehicle.working_sound.deactivate_sound.variations[1].filename, "__base__/sound/creatures/biter-call-1.ogg")
   assert_eq(vehicle.open_sound.variations[1].filename, "__base__/sound/creatures/biter-call-1.ogg")
