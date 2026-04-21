@@ -1,6 +1,8 @@
 local item_icons = "__administratorio__/graphics/icons/"
 
 data:extend({
+  { type = "fuel-category", name = "administratorio-taxpayer-money" },
+
   -- Raw Resources (admin group)
   { type = "item", name = "bullshit-ore",     icon = item_icons .. "bullshit-ore.png",  icon_size = 64, subgroup = "admin-raw", order = "a", stack_size = 100 },
   { type = "item", name = "redundant-rubble", icon = item_icons .. "redundant-rubble.png", icon_size = 64, subgroup = "admin-raw", order = "b", stack_size = 100 },
@@ -31,7 +33,7 @@ data:extend({
   },
 
   -- Money
-  { type = "item", name = "taxpayer-money",   icon = item_icons .. "taxpayer-money.png",   icon_size = 64, subgroup = "admin-money", order = "a", stack_size = 200, fuel_category = "chemical", fuel_value = "500kJ", fuel_emissions_multiplier = 1.5 },
+  { type = "item", name = "taxpayer-money",   icon = item_icons .. "taxpayer-money.png",   icon_size = 64, subgroup = "admin-money", order = "a", stack_size = 200, fuel_category = "administratorio-taxpayer-money", fuel_value = "500kJ", fuel_emissions_multiplier = 1.5 },
   { type = "item", name = "treasury-bond",    icon = item_icons .. "treasury-bond.png",    icon_size = 64, subgroup = "admin-money", order = "b", stack_size = 200 },
   { type = "item", name = "government-grant", icon = item_icons .. "government-grant.png", icon_size = 64, subgroup = "admin-money", order = "c", stack_size = 100 },
 
@@ -45,6 +47,15 @@ data:extend({
     type = "item", name = "biter-worker",
     icons = {{icon = "__base__/graphics/icons/small-biter.png", icon_size = 64}},
     subgroup = "admin-biter-buildings", order = "d", stack_size = 1
+  },
+  {
+    type = "item", name = "rideable-biter",
+    icons = {
+      {icon = "__base__/graphics/icons/medium-biter.png", icon_size = 64},
+      {icon = item_icons .. "taxpayer-money.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    },
+    subgroup = "transport", order = "b[personal-transport]-a[rideable-biter]",
+    place_result = "rideable-biter", stack_size = 1
   },
   {
     type = "item", name = "biter-station",

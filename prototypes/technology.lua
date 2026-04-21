@@ -495,6 +495,16 @@ data:extend({
     order = "c-h"
   },
   {
+    type = "technology", name = "civic-biter-riding",
+    icon = "__base__/graphics/icons/medium-biter.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "rideable-biter" },
+    },
+    prerequisites = {"biter-employment", "engine"},
+    unit = { count = 80, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "c-h0"
+  },
+  {
     type = "technology", name = "biter-labor-efficiency-1",
     icons = {{icon = "__administratorio__/graphics/icons/credentials.png", icon_size = 64, tint = {r=0.55, g=0.75, b=0.45, a=1}}},
     effects = {
@@ -616,6 +626,21 @@ for level = 1, 3 do
 end
 
 data:extend(pneumatic_capacity_techs)
+
+local function add_unique_prerequisite(tech_name, prereq_name)
+  local tech = data.raw["technology"] and data.raw["technology"][tech_name]
+  if not tech then return end
+
+  tech.prerequisites = tech.prerequisites or {}
+  for _, existing in ipairs(tech.prerequisites) do
+    if existing == prereq_name then
+      return
+    end
+  end
+  tech.prerequisites[#tech.prerequisites + 1] = prereq_name
+end
+
+add_unique_prerequisite("automobilism", "civic-biter-riding")
 
 local admin_station_capacity_techs = {}
 local capacity_pack_sets = {
