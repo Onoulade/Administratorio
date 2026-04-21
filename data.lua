@@ -70,4 +70,22 @@ data:extend({{
   name = "administratorio-toggle-runtime-debug",
   key_sequence = "CONTROL + SHIFT + D",
   consuming = "none"
+}, {
+  type = "custom-input",
+  name = "administratorio-field-agent-toggle-select",
+  key_sequence = "mouse-button-1",
+  consuming = "none",
+  action = "lua"
+}, {
+  type = "custom-input",
+  name = "administratorio-field-agent-set-waypoint",
+  key_sequence = "mouse-button-2",
+  consuming = "none",
+  action = "lua"
+}, {
+  type = "custom-input",
+  name = "administratorio-field-agent-append-waypoint",
+  key_sequence = "SHIFT + mouse-button-2",
+  consuming = "none",
+  action = "lua"
 }})

@@ -1113,4 +1113,9 @@ function M.update_circuit_signals(desks)
   end
 end
 
+function M.evict_target(surface, target)
+  if not protest_system then return false end
+  return protest_system.evict_target(surface, target)
+end
+
 return M

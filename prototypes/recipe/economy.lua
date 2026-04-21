@@ -209,4 +209,33 @@ data:extend({
     results = {{type="item", name="nuclear-technician", amount=1}},
     energy_required = 30
   },
+  {
+    type = "recipe", name = "hired-biter-capsule",
+    localised_name = {"item-name.hired-biter-capsule"},
+    localised_description = {"item-description.hired-biter-capsule"},
+    category = "bureaucracy-registration", enabled = false,
+    ingredients = {
+      {type="item", name="biter-worker",    amount=1},
+      {type="item", name="regulation",      amount=5},
+      {type="item", name="job-offer",       amount=10},
+      {type="item", name="taxpayer-money",  amount=100},
+      {type="item", name="processing-unit", amount=10},
+      {type="item", name="treasury-bond",   amount=5},
+    },
+    results = {{type="item", name="hired-biter-capsule", amount=1}},
+    energy_required = 120
+  },
+  {
+    type = "recipe", name = "hired-biter-command-capsule",
+    localised_name = {"item-name.hired-biter-command-capsule"},
+    localised_description = {"item-description.hired-biter-command-capsule"},
+    category = "bureaucracy-registration", enabled = false,
+    ingredients = {
+      {type="item", name="processing-unit",  amount=1},
+      {type="item", name="advanced-circuit", amount=3},
+      {type="item", name="taxpayer-money",   amount=5},
+    },
+    results = {{type="item", name="hired-biter-command-capsule", amount=1}},
+    energy_required = 5
+  },
 })

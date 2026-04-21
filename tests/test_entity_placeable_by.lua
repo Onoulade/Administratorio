@@ -101,6 +101,77 @@ data = {
         inventory_size = 48,
       },
     },
+    ["logistic-container"] = {
+      ["logistic-chest-requester"] = {
+        type = "logistic-container",
+        name = "logistic-chest-requester",
+        logistic_mode = "requester",
+        inventory_size = 48,
+      },
+    },
+    ["spider-vehicle"] = {
+      spidertron = {
+        type = "spider-vehicle",
+        name = "spidertron",
+        minable = {result = "spidertron"},
+        placeable_by = {{item = "spidertron", count = 1}},
+        inventory_size = 80,
+        trash_inventory_size = 10,
+        energy_source = {type = "void"},
+        guns = {"spidertron-rocket-launcher-1"},
+        automatic_weapon_cycling = true,
+        spider_engine = {
+          legs = {
+            {leg = "spidertron-leg-1", mount_position = {1, 1}, ground_position = {2, 2}, walking_group = 1},
+          },
+          walking_group_overlap = 0,
+        },
+        graphics_set = {base_animation = {filename = "spidertron.png", width = 1, height = 1}},
+      },
+    },
+    ["spider-leg"] = {
+      ["spidertron-leg-1"] = {
+        type = "spider-leg",
+        name = "spidertron-leg-1",
+        collision_box = {{-0.1, -0.1}, {0.1, 0.1}},
+        collision_mask = {layers = {object = true}},
+        graphics_set = {joint = {filename = "leg.png", width = 1, height = 1}},
+      },
+    },
+    unit = {
+      ["behemoth-biter"] = {
+        type = "unit",
+        name = "behemoth-biter",
+        run_animation = {filename = "behemoth-biter.png", width = 1, height = 1, frame_count = 1},
+        attack_parameters = {range = 1, cooldown = 10, damage_modifier = 1},
+        collision_box = {{-0.6, -0.6}, {0.6, 0.6}},
+        selection_box = {{-0.8, -1.0}, {0.8, 0.6}},
+      },
+    },
+    ["item-with-entity-data"] = {
+      spidertron = {
+        type = "item-with-entity-data",
+        name = "spidertron",
+        place_result = "spidertron",
+        stack_size = 1,
+      },
+    },
+    ["spidertron-remote"] = {
+      ["spidertron-remote"] = {
+        type = "spidertron-remote",
+        name = "spidertron-remote",
+        stack_size = 1,
+      },
+    },
+    ["selection-tool"] = {
+      ["copy-paste-tool"] = {
+        type = "selection-tool",
+        name = "copy-paste-tool",
+        select = {},
+        alt_select = {},
+        stack_size = 1,
+      },
+    },
   },
 }
 
@@ -169,6 +240,7 @@ end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 
 dofile(mod_root .. "prototypes/item/buildings.lua")
+dofile(mod_root .. "prototypes/item/capsules-and-fluids.lua")
 dofile(mod_root .. "prototypes/entity/admin-buildings.lua")
 dofile(mod_root .. "prototypes/entity/printers.lua")
 dofile(mod_root .. "prototypes/entity/pneumatic.lua")
@@ -381,6 +453,42 @@ test("admin-station hidden circuit helper matches the desk connector position", 
   assert_eq(point.shadow.red[2], 46 / 32, "helper red shadow should match desk connector shadow y")
   assert_eq(point.shadow.green[1], 114 / 32, "helper green shadow should match desk connector shadow x")
   assert_eq(point.shadow.green[2], 46 / 32, "helper green shadow should match desk connector shadow y")
+end)
+
+test("hired biter supply chest is hidden and non-selectable", function()
+  local chest = assert(find_entity_prototype("hired-biter-supply-chest"))
+  assert_true(chest.hidden, "hired-biter-supply-chest should be hidden")
+  assert_true(chest.selectable_in_game == false, "hired-biter-supply-chest should not be selectable")
+  assert_eq(chest.picture.filename, "__core__/graphics/empty.png", "hired-biter-supply-chest should use an empty sprite")
+
+  local flags = {}
+  for _, flag in ipairs(chest.flags or {}) do
+    flags[flag] = true
+  end
+  assert_true(flags["not-on-map"], "hired-biter-supply-chest should not appear on the map")
+end)
+
+test("hired biter field agent is a real biter unit with a custom remote", function()
+  local item = data.raw.item["hired-biter-capsule"]
+  local remote = data.raw["selection-tool"]["hired-biter-command-capsule"]
+  local agent = data.raw.unit["hired-biter-unit"]
+
+  assert_true(item ~= nil, "hired-biter-capsule should be a normal placeable item")
+  assert_eq(item.place_result, "hired-biter-unit", "hired-biter-capsule should place the field agent")
+  assert_true(remote ~= nil, "deployment order should be a custom selection tool")
+  assert_true(agent ~= nil, "hired-biter-unit biter unit missing")
+  assert_eq(agent.placeable_by[1].item, "hired-biter-capsule", "field agent should be placeable by the crafted item")
+  assert_eq(agent.run_animation.filename, "behemoth-biter.png", "field agent should keep the native behemoth biter asset")
+  assert_true(agent.collision_mask.layers.object, "field agent should collide with objects and trees")
+  assert_true(agent.collision_mask.layers.player, "field agent should use ground-unit collision")
+  assert_eq(agent.vision_distance, 0, "field agent should not acquire nearby combat targets")
+  assert_eq(agent.max_pursue_distance, 0, "field agent should not pursue combat targets")
+  assert_true(agent.ai_settings.join_attacks == false, "field agent should not join attack groups")
+  assert_eq(agent.attack_parameters.damage_modifier, 0, "field agent attacks should be harmless if forced")
+  assert_eq(remote.select.entity_filters[1], "hired-biter-unit", "remote should select field agents")
+  assert_eq(remote.select.mode[1], "any-entity", "remote should select entities")
+  assert_eq(remote.select.mode[2], "same-force", "remote should be limited to same-force agents")
+  assert_true(data.raw["spider-vehicle"]["hired-biter-unit"] == nil, "field agent should not be a spider vehicle")
 end)
 
 if failed > 0 then

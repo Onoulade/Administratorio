@@ -16,6 +16,7 @@ local control_event_router = require("scripts.control_event_router")
 local control_resolution_processing_factory = require("scripts.control_resolution_processing")
 local regulated_unlocks = require("scripts.regulated_unlocks")
 local feature_flags = require("feature_flags")
+local hired_biter = require("scripts.hired_biter")
 
 local ADMIN_STATION_NAMES = "admin-station"
 
@@ -348,6 +349,8 @@ local function init_storage()
   end
   field_office.ensure_storage()
   biter_station.ensure_storage()
+  hired_biter.ensure_storage()
+  hired_biter.cleanup_supply_chests()
   biter_station_hover.ensure_storage()
 
   -- Ensure all existing locomotives and pneumatic buildings are properly initialized.
@@ -459,6 +462,7 @@ local function on_init()
   end
   field_office.rebuild_registry()
   biter_station.rebuild_registry()
+  hired_biter.ensure_storage()
   storage.biter_station_crafts_per_visit = C.BITER_STATION_CRAFTS_PER_VISIT
   for _, force in pairs(game.forces) do
     biter_station.sync_research(force)
@@ -726,6 +730,9 @@ local function on_entity_built_inner(event)
     if entity.name == "field-office" then
       field_office.track_entity(entity)
     end
+    if entity.name == C.HIRED_BITER_UNIT_NAME then
+      hired_biter.track_entity(entity)
+    end
     if biter_station.is_station(entity) then
       biter_station.track_station(entity)
     end
@@ -752,6 +759,9 @@ local function on_entity_removed(event)
   end
   if entity.name == "field-office" then
     field_office.untrack_entity(entity)
+  end
+  if entity.name == C.HIRED_BITER_UNIT_NAME then
+    hired_biter.untrack(entity, event)
   end
   biter_station.untrack_entity(entity, game.tick)
 
@@ -1240,6 +1250,9 @@ end
 
 local function on_entity_died(event)
   local entity = event.entity
+  if entity.name == C.HIRED_BITER_UNIT_NAME then
+    hired_biter.untrack(entity, event)
+  end
   if entity.type == "unit" then
     biters.on_biter_died(entity)
     biter_station.on_entity_died(event)
@@ -1290,6 +1303,33 @@ local ON_ENTITY_DIED_FILTERS = {
 
 local function on_script_trigger_effect(event)
   biters.on_script_trigger_effect(event)
+  if event.effect_id == "hired-biter-deploy" then
+    local pos = event.target_position
+    local surface = event.surface_index and game.get_surface(event.surface_index)
+      or (event.source_entity and event.source_entity.valid and event.source_entity.surface)
+    if pos and surface then
+      hired_biter.on_deploy(surface, pos)
+    end
+  elseif event.effect_id == "hired-biter-command" then
+    local pos = event.target_position
+    local surface = event.surface_index and game.get_surface(event.surface_index)
+      or (event.source_entity and event.source_entity.valid and event.source_entity.surface)
+    if pos and surface then
+      hired_biter.on_command(surface, pos)
+    end
+  end
+end
+
+local function on_player_selected_area(event)
+  hired_biter.on_player_selected_area(event)
+end
+
+local function on_player_reverse_selected_area(event)
+  hired_biter.on_player_reverse_selected_area(event)
+end
+
+local function on_field_agent_waypoint_input(event)
+  hired_biter.on_remote_waypoint_input(event)
 end
 
 local function on_ai_command_completed(event)
@@ -1305,6 +1345,9 @@ local function on_ai_command_completed(event)
   end
   biter_station.on_ai_command_completed(event)
   if biter_station.is_station_worker_unit(event.unit_number) then
+    return
+  end
+  if hired_biter.on_ai_command_completed(event) then
     return
   end
   biters.on_ai_command_completed(event)
@@ -1494,6 +1537,7 @@ end
 local function on_main_tick(event)
   biter_station.sanitize_external_links()
   resolution_processing.on_tick(event)
+  hired_biter.update(event.tick)
 end
 
 local function on_pneumatic_tick(_event)
@@ -1527,6 +1571,7 @@ control_event_router.register({
   on_entity_died = on_entity_died,
   on_entity_died_filters = ON_ENTITY_DIED_FILTERS,
   on_entity_removed = on_entity_removed,
+  on_field_agent_waypoint_input = on_field_agent_waypoint_input,
   on_gui_click = on_gui_click,
   on_init = on_init,
   on_load = on_load,
@@ -1536,7 +1581,9 @@ control_event_router.register({
   on_player_joined_game = on_player_joined_game,
   on_player_left_game = on_player_left_game,
   on_player_respawned = on_player_respawned,
+  on_player_reverse_selected_area = on_player_reverse_selected_area,
   on_research_finished = on_research_finished,
+  on_player_selected_area = on_player_selected_area,
   on_player_rotated_entity = on_player_rotated_entity,
   on_protest_pacing_tick = on_protest_pacing_tick,
   on_rocket_launched = on_rocket_launched,

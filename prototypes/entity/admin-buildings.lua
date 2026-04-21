@@ -640,6 +640,45 @@ transit_permit_chest.max_health = 200
 transit_permit_chest.collision_box = {{0, 0}, {0, 0}}
 transit_permit_chest.collision_mask = {layers = {}}
 
+-- Legacy supply cache from pre-spider field agents. Kept hidden so old saves can
+-- load cleanly; runtime destroys any remaining instances.
+local _lc_src = data.raw["logistic-container"] and (
+  data.raw["logistic-container"]["logistic-chest-requester"] or
+  data.raw["logistic-container"]["passive-provider-chest"]
+)
+local hired_biter_supply_chest
+if _lc_src then
+  hired_biter_supply_chest = table.deepcopy(_lc_src)
+  hired_biter_supply_chest.logistic_mode = "requester"
+else
+  -- Build minimal logistic-container from steel-chest visuals
+  local _base = table.deepcopy(data.raw["container"]["steel-chest"])
+  _base.type = "logistic-container"
+  _base.logistic_mode = "requester"
+  hired_biter_supply_chest = _base
+end
+hired_biter_supply_chest.name = "hired-biter-supply-chest"
+hired_biter_supply_chest.localised_name = {"entity-name.hired-biter-supply-chest"}
+hired_biter_supply_chest.icon = "__administratorio__/graphics/icons/eviction-notice.png"
+hired_biter_supply_chest.icon_size = 64
+hired_biter_supply_chest.flags = {"not-on-map", "not-deconstructable", "not-blueprintable", "not-upgradable", "placeable-off-grid"}
+hired_biter_supply_chest.minable = nil
+hired_biter_supply_chest.hidden = true
+hired_biter_supply_chest.hidden_in_factoriopedia = true
+hired_biter_supply_chest.selectable_in_game = false
+hired_biter_supply_chest.inventory_size = 1
+hired_biter_supply_chest.max_logistic_slots = 1
+hired_biter_supply_chest.max_health = 9999
+hired_biter_supply_chest.collision_box = {{0, 0}, {0, 0}}
+hired_biter_supply_chest.collision_mask = {layers = {}}
+hired_biter_supply_chest.selection_box = {{0, 0}, {0, 0}}
+hired_biter_supply_chest.picture = {
+  filename = "__core__/graphics/empty.png",
+  width = 1,
+  height = 1,
+}
+hired_biter_supply_chest.render_not_in_network_icon = false
+
 local function make_worker_biter(name, source_name)
   local unit_table = data.raw["unit"]
   if not unit_table or not unit_table[source_name] then return nil end
@@ -652,8 +691,45 @@ local function make_worker_biter(name, source_name)
   return biter
 end
 
-local biter_worker_t2 = make_worker_biter("biter-worker-t2", "medium-biter")
-local biter_worker_t3 = make_worker_biter("biter-worker-t3", "big-biter")
+local biter_worker_t2 = make_worker_biter("biter-worker-t2", "small-biter")
+local biter_worker_t3 = make_worker_biter("biter-worker-t3", "small-biter")
+
+local function make_hired_biter_unit()
+  local biter_table = data.raw["unit"]
+  if not biter_table or not biter_table["behemoth-biter"] then return nil end
+  local unit = table.deepcopy(biter_table["behemoth-biter"])
+  unit.name = "hired-biter-unit"
+  unit.localised_name = {"entity-name.hired-biter-unit"}
+  unit.icon = "__base__/graphics/icons/behemoth-biter.png"
+  unit.icon_size = 64
+  unit.minable = {mining_time = 1, result = "hired-biter-capsule"}
+  unit.placeable_by = placeable_by_item("hired-biter-capsule")
+  unit.flags = {"placeable-player", "player-creation", "not-flammable"}
+  unit.hidden_in_factoriopedia = true
+  unit.max_health = 2000
+  unit.collision_box = unit.collision_box or {{-0.6, -0.6}, {0.6, 0.6}}
+  unit.selection_box = unit.selection_box or {{-0.8, -1.0}, {0.8, 0.6}}
+  unit.collision_mask = {layers = {object = true, player = true, water_tile = true}}
+  unit.vision_distance = 0
+  unit.max_pursue_distance = 0
+  unit.min_pursue_time = 0
+  unit.distraction_cooldown = 60 * 60 * 60
+  unit.ai_settings = table.deepcopy(unit.ai_settings or {})
+  unit.ai_settings.join_attacks = false
+  if unit.attack_parameters then
+    unit.attack_parameters.range = 0.01
+    unit.attack_parameters.min_range = 0
+    unit.attack_parameters.min_attack_distance = 0
+    unit.attack_parameters.cooldown = 60 * 60 * 60
+    unit.attack_parameters.damage_modifier = 0
+    unit.attack_parameters.sound = nil
+    unit.attack_parameters.cyclic_sound = nil
+  end
+  unit.map_color = {r = 0.4, g = 0.8, b = 0.35, a = 1}
+  return unit
+end
+
+local hired_biter_unit = make_hired_biter_unit()
 
 local entities = {
   admin_station,
@@ -665,5 +741,7 @@ local entities = {
 }
 if biter_worker_t2 then table.insert(entities, biter_worker_t2) end
 if biter_worker_t3 then table.insert(entities, biter_worker_t3) end
+if hired_biter_unit then table.insert(entities, hired_biter_unit) end
+table.insert(entities, hired_biter_supply_chest)
 
 data:extend(entities)

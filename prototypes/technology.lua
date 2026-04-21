@@ -559,6 +559,17 @@ data:extend({
     unit = { count = 200, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "f-h"
   },
+  {
+    type = "technology", name = "hired-biter-fieldwork",
+    icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "hired-biter-capsule" },
+      { type = "unlock-recipe", recipe = "hired-biter-command-capsule" },
+    },
+    prerequisites = {"biter-employment", "federal-regulation", "biter-labor-efficiency-2"},
+    unit = { count = 500, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    order = "f-i"
+  },
 })
 
 -- PNEUMATIC CAPACITY UPGRADES (tube network max forms)
