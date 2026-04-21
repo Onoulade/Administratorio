@@ -250,4 +250,13 @@ function M.generate_complaints(entity_name)
   return complaints
 end
 
+-- Hired Biter Field Agent
+M.HIRED_BITER_SCAN_RADIUS   = 60   -- tiles: scan radius for enemy nests
+M.HIRED_BITER_SCAN_COOLDOWN = 300  -- ticks between nest scans (~5 seconds)
+M.HIRED_BITER_ARRIVE_RADIUS = 5    -- tiles: "arrived at position" threshold
+M.HIRED_BITER_UNIT_NAME     = "hired-biter-unit"
+M.HIRED_BITER_REMOTE_NAME   = "hired-biter-command-capsule"
+M.HIRED_BITER_NOTICE_CAPACITY = 20
+M.HIRED_BITER_INVENTORY_SLOTS = 4
+
 return M

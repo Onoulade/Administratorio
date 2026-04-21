@@ -1,5 +1,16 @@
 local item_icons = "__administratorio__/graphics/icons/"
 
+local function deepcopy(value)
+  if table.deepcopy then return table.deepcopy(value) end
+  if util and util.table and util.table.deepcopy then return util.table.deepcopy(value) end
+  if type(value) ~= "table" then return value end
+  local copy = {}
+  for k, v in pairs(value) do
+    copy[deepcopy(k)] = deepcopy(v)
+  end
+  return copy
+end
+
 local smoke_animation = {
   width = 152,
   height = 120,
@@ -12,8 +23,49 @@ local smoke_animation = {
   flags = { "smoke" }
 }
 
--- Hush Money cloud (green smog visual)
+local hired_biter_item = deepcopy(data.raw.item and data.raw.item["behemoth-biter"] or {type = "item"})
+hired_biter_item.type = "item"
+hired_biter_item.name = "hired-biter-capsule"
+hired_biter_item.localised_name = {"item-name.hired-biter-capsule"}
+hired_biter_item.localised_description = {"item-description.hired-biter-capsule"}
+hired_biter_item.icon = "__base__/graphics/icons/behemoth-biter.png"
+hired_biter_item.icons = nil
+hired_biter_item.icon_size = 64
+hired_biter_item.subgroup = "capsule"
+hired_biter_item.order = "z3[hired-biter-capsule]"
+hired_biter_item.stack_size = 1
+hired_biter_item.place_result = "hired-biter-unit"
+
+local function field_agent_selection(color)
+  return {
+    border_color = color,
+    chart_color = color,
+    cursor_box_type = "entity",
+    mode = {"any-entity", "same-force"},
+    entity_filters = {"hired-biter-unit"},
+    entity_filter_mode = "whitelist",
+  }
+end
+
+local hired_biter_remote = deepcopy(data.raw["selection-tool"] and data.raw["selection-tool"]["copy-paste-tool"] or {type = "selection-tool"})
+hired_biter_remote.type = "selection-tool"
+hired_biter_remote.name = "hired-biter-command-capsule"
+hired_biter_remote.localised_name = {"item-name.hired-biter-command-capsule"}
+hired_biter_remote.localised_description = {"item-description.hired-biter-command-capsule"}
+hired_biter_remote.icon = nil
+hired_biter_remote.icons = {{icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, tint = {r=0.4, g=0.8, b=1.0, a=1}}}
+hired_biter_remote.icon_size = nil
+hired_biter_remote.subgroup = "capsule"
+hired_biter_remote.order = "z4[hired-biter-command]"
+hired_biter_remote.stack_size = 1
+hired_biter_remote.select = field_agent_selection({r = 0.25, g = 0.85, b = 1.0, a = 1})
+hired_biter_remote.alt_select = field_agent_selection({r = 1.0, g = 0.82, b = 0.25, a = 1})
+hired_biter_remote.reverse_select = nil
+hired_biter_remote.alt_reverse_select = nil
+hired_biter_remote.skip_fog_of_war = false
+
 data:extend({
+  -- Hush Money cloud (green smog visual)
   {
     name = "hush-money-cloud",
     type = "smoke-with-trigger",
@@ -171,7 +223,9 @@ data:extend({
         }
       }
     }
-  }
+  },
+  hired_biter_item,
+  hired_biter_remote
 })
 
 -- Fluids

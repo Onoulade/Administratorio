@@ -1731,6 +1731,16 @@ function M.new(deps)
     end
   end
 
+  function controller.evict_target(surface, target)
+    if not target or not target.valid then return false end
+    local displaced_biters, displaced_surface = collect_evicted_biters(target)
+    target.destroy()
+    if storage.stats then storage.stats.nests_evicted = (storage.stats.nests_evicted or 0) + 1 end
+    redirect_evicted_biters(displaced_surface or surface, displaced_biters)
+    game.print({"message.eviction-served"})
+    return true
+  end
+
   function controller.on_biter_died(entity)
     local info = storage.waiting_biters[entity.unit_number]
     if info then
