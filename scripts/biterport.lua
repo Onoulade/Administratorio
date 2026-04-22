@@ -154,9 +154,11 @@ local function get_port_worker_slots_for_force(force)
 end
 
 local function entity_prototype_exists(name)
-  return name
-    and (not game or not game.entity_prototypes or game.entity_prototypes[name] ~= nil)
-    or false
+  if not name then return false end
+  if prototypes and prototypes.entity then
+    return prototypes.entity[name] ~= nil
+  end
+  return true
 end
 
 local function get_worker_entity_name(force)

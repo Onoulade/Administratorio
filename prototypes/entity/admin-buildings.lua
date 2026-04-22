@@ -39,6 +39,49 @@ local function tint_sprites(t, tint)
   for _, v in pairs(t) do tint_sprites(v, tint) end
 end
 
+local function worker_biter_helmet_layer(run_animation)
+  if type(run_animation) ~= "table" then return nil end
+  local source_layer = run_animation.layers and run_animation.layers[1] or run_animation
+  local layer = {
+    filenames = {
+      entity_graphics .. "worker-biter/biter-helmet-1.png",
+      entity_graphics .. "worker-biter/biter-helmet-2.png",
+      entity_graphics .. "worker-biter/biter-helmet-3.png",
+      entity_graphics .. "worker-biter/biter-helmet-4.png",
+    },
+    slice = 8,
+    lines_per_file = 8,
+    line_length = 8,
+    width = 177,
+    height = 138,
+    frame_count = 16,
+    direction_count = 16,
+    shift = source_layer and source_layer.shift or nil,
+    scale = source_layer and (source_layer.scale * 398 / 177) or nil,
+    animation_speed = source_layer and source_layer.animation_speed or nil,
+    allow_forced_downscale = true,
+    surface = "nauvis",
+    usage = "enemy",
+  }
+  return layer
+end
+
+local function add_worker_biter_helmet_overlay(biter)
+  if type(biter) ~= "table" or type(biter.run_animation) ~= "table" then return end
+  local helmet = worker_biter_helmet_layer(biter.run_animation)
+  if not helmet then return end
+  if biter.run_animation.layers then
+    table.insert(biter.run_animation.layers, helmet)
+  else
+    biter.run_animation = {
+      layers = {
+        biter.run_animation,
+        helmet,
+      },
+    }
+  end
+end
+
 local function machine_animation_layer(filename, width, height, frame_count, line_length, shift, extra)
   local layer = {
     filename = filename,
@@ -756,6 +799,7 @@ local function make_worker_biter(name, source_name, localised_name, speed_multip
   biter.minable = nil
   biter.placeable_by = nil
   biter.hidden_in_factoriopedia = true
+  add_worker_biter_helmet_overlay(biter)
   if speed_multiplier then
     if biter.movement_speed then
       biter.movement_speed = biter.movement_speed * speed_multiplier
