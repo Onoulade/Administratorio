@@ -34,6 +34,9 @@ local technologies = {}
 
 data = {
   raw = {
+    recipe = {
+      car = {name = "car", enabled = true},
+    },
     technology = technologies,
   },
 }
@@ -373,13 +376,15 @@ test("bootstrap paperwork is gated behind both discovery chains", function()
   assert_true(tech_depends_on("administrative-bureaucracy", "discovery-redundant-rubble"), "administrative-bureaucracy should stay behind discovery-redundant-rubble")
 end)
 
-test("rideable biter unlocks before the vanilla car", function()
-  assert_true(technologies["civic-biter-riding"] ~= nil, "civic-biter-riding technology should exist")
-  assert_true(tech_unlocks_recipe("civic-biter-riding", "rideable-biter"), "civic-biter-riding should unlock the rideable biter")
-  assert_true(tech_has_prereq("civic-biter-riding", "biter-employment"), "rideable biter should require biter employment")
-  assert_true(tech_has_prereq("civic-biter-riding", "engine"), "rideable biter should require engine")
-  assert_true(tech_has_prereq("automobilism", "civic-biter-riding"), "automobilism should come after civic-biter-riding")
-  assert_true(tech_unlocks_recipe("automobilism", "car"), "automobilism should still unlock the vanilla car")
+test("rideable biter replaces the vanilla car unlock", function()
+  assert_true(technologies["civic-biter-riding"] == nil, "rideable biter should not require an extra custom vehicle tech")
+  assert_true(tech_unlocks_recipe("automobilism", "rideable-biter"), "automobilism should unlock the rideable biter")
+  assert_true(not tech_unlocks_recipe("automobilism", "car"), "automobilism should not unlock the vanilla car")
+  assert_true(tech_has_prereq("automobilism", "biter-employment"), "rideable biter should still require biter employment")
+  assert_true(tech_has_prereq("automobilism", "engine"), "rideable biter should still require engine")
+  assert_true(data.raw.recipe.car.enabled == false, "vanilla car recipe should stay disabled")
+  assert_true(data.raw.recipe.car.hidden, "vanilla car recipe should be hidden")
+  assert_true(data.raw.recipe.car.hide_from_player_crafting, "vanilla car should not appear in player crafting")
 end)
 
 test("office agriculture now owns only the later coffee branch", function()

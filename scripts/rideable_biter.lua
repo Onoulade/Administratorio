@@ -2,11 +2,11 @@ local M = {}
 local biters = require("scripts.biters")
 
 local NAME = "rideable-biter"
-local MIN_IDLE_TICKS = 180
-local MAX_IDLE_TICKS = 420
-local MAX_TURN = 0.055
-local MIN_WANDER_SPEED = 0.012
-local MAX_WANDER_SPEED = 0.035
+local MIN_IDLE_TICKS = 40
+local MAX_IDLE_TICKS = 100
+local MAX_TURN = 0.2
+local MIN_WANDER_SPEED = 0.02
+local MAX_WANDER_SPEED = 0.06
 local UNFUNDED_TIMEOUT_TICKS = 10 * 60 * 60
 
 function M.ensure_storage()

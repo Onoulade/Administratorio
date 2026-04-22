@@ -235,7 +235,7 @@ data:extend({
     }
   },
 
-  -- Rideable Biter (unlocks with civic-biter-riding)
+  -- Rideable Biter (replaces the vanilla car unlock)
   {
     type = "tips-and-tricks-item",
     name = "administratorio-rideable-biter",
@@ -244,7 +244,7 @@ data:extend({
     indent = 1,
     trigger = {
       type = "research",
-      technology = "civic-biter-riding"
+      technology = "automobilism"
     }
   },
 
