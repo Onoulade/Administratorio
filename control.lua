@@ -570,6 +570,7 @@ local function on_research_finished(event)
   if not research or not research.valid then return end
   enable_regulated_variants_for_technology(research.force, research)
   biter_station.on_research_finished(research)
+  biterport.on_research_finished(research)
   -- Invalidate tube capacity cache when a pneumatic capacity tech is researched.
   if research.name and research.name:find("^pneumatic%-capacity%-") then
     pneumatic.invalidate_capacity_cache()

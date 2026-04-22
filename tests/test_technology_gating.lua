@@ -172,6 +172,7 @@ end
 
 local technology_name_locale = load_locale_section("technology-name")
 local technology_description_locale = load_locale_section("technology-description")
+local technology_effect_locale = load_locale_section("technology-effect")
 
 local function tech_unlocks_recipe(tech_name, recipe_name)
   local tech = technologies[tech_name]
@@ -336,6 +337,46 @@ test("pneumatic capacity upgrade chain has base upgrade locale", function()
     assert_true(technology_name_locale[tech_name] ~= nil, tech_name .. " name should be localized")
     assert_true(technology_description_locale[tech_name] ~= nil, tech_name .. " description should be localized")
   end
+end)
+
+test("biterport capacity and worker speed upgrades are tiered and localized", function()
+  assert_true(technology_effect_locale["biterport-capacity"] ~= nil, "biterport capacity effect should be localized")
+  assert_true(technology_effect_locale["biterport-worker-speed"] ~= nil, "biterport worker speed effect should be localized")
+
+  local expected_capacities = {8, 10, 12, 15}
+  for level = 1, 4 do
+    local tech_name = "biterport-capacity-" .. level
+    assert_true(technologies[tech_name] ~= nil, tech_name .. " should exist")
+    assert_true(technology_name_locale[tech_name] ~= nil, tech_name .. " name should be localized")
+    assert_true(technology_description_locale[tech_name] ~= nil, tech_name .. " description should be localized")
+    assert_true(tech_has_effect(tech_name, "nothing"), tech_name .. " should expose a scripted-effect marker")
+    assert_true(
+      technologies[tech_name].effects[1].effect_description[2] == tostring(expected_capacities[level]),
+      tech_name .. " should advertise " .. expected_capacities[level] .. " worker slots"
+    )
+    if level == 1 then
+      assert_true(tech_has_prereq(tech_name, "biter-employment"), tech_name .. " should start from biter employment")
+    else
+      assert_true(tech_has_prereq(tech_name, "biterport-capacity-" .. (level - 1)), tech_name .. " should chain from prior level")
+    end
+  end
+
+  for level = 1, 2 do
+    local tech_name = "biterport-worker-speed-" .. level
+    assert_true(technologies[tech_name] ~= nil, tech_name .. " should exist")
+    assert_true(technology_name_locale[tech_name] ~= nil, tech_name .. " name should be localized")
+    assert_true(technology_description_locale[tech_name] ~= nil, tech_name .. " description should be localized")
+    assert_true(tech_has_effect(tech_name, "nothing"), tech_name .. " should expose a scripted-effect marker")
+    if level == 1 then
+      assert_true(tech_has_prereq(tech_name, "biter-employment"), tech_name .. " should start from biter employment")
+    else
+      assert_true(tech_has_prereq(tech_name, "biterport-worker-speed-" .. (level - 1)), tech_name .. " should chain from prior level")
+    end
+  end
+
+  assert_true(tech_uses_pack("biterport-capacity-3", "chemical-science-pack"), "capacity III should use chemical science")
+  assert_true(tech_uses_pack("biterport-capacity-4", "chemical-science-pack"), "capacity IV should use chemical science")
+  assert_true(tech_uses_pack("biterport-worker-speed-2", "chemical-science-pack"), "speed II should use chemical science")
 end)
 
 test("filing cabinet logistics upgrades grant character logistics bonuses", function()

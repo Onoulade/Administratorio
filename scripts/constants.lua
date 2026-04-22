@@ -135,6 +135,9 @@ end
 -- Biterport: walking-worker construction/logistics network.
 M.BITERPORT_NAME = "biterport"
 M.BITERPORT_HIDDEN_ROBOPORT_NAME = "biterport-hidden-roboport"
+M.BITERPORT_WORKER_ENTITY_NAME = "biterport-worker"
+M.BITERPORT_WORKER_FAST_ENTITY_NAME = "biterport-worker-fast"
+M.BITERPORT_WORKER_EXPRESS_ENTITY_NAME = "biterport-worker-express"
 M.BITERPORT_WORKER_SLOTS = 5
 M.BITERPORT_INVENTORY_SLOTS = M.BITERPORT_WORKER_SLOTS + 1
 M.BITERPORT_LOGISTICS_RADIUS = 10

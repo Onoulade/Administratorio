@@ -157,6 +157,16 @@ data = {
       },
     },
     unit = {
+      ["small-biter"] = {
+        type = "unit",
+        name = "small-biter",
+        run_animation = {filename = "small-biter.png", width = 1, height = 1, frame_count = 1},
+        attack_parameters = {range = 1, cooldown = 10, damage_modifier = 1},
+        collision_box = {{-0.2, -0.2}, {0.2, 0.2}},
+        selection_box = {{-0.4, -0.5}, {0.4, 0.3}},
+        movement_speed = 0.2,
+        distance_per_frame = 0.1,
+      },
       ["behemoth-biter"] = {
         type = "unit",
         name = "behemoth-biter",
@@ -503,6 +513,25 @@ test("biterport has worker storage and a hidden robot service cell", function()
   assert_eq(hidden.robot_slots_count, 0, "hidden roboport should not store regular robots")
   assert_eq(hidden.material_slots_count, 0, "hidden roboport should not store repair packs")
   assert_eq(hidden.recharge_minimum, "1kJ", "hidden roboport should satisfy the roboport recharge invariant")
+end)
+
+test("biterport worker speed tiers use hidden custom biter units", function()
+  local base = data.raw.unit["biterport-worker"]
+  local fast = data.raw.unit["biterport-worker-fast"]
+  local express = data.raw.unit["biterport-worker-express"]
+
+  assert_true(base ~= nil, "base biterport worker unit missing")
+  assert_true(fast ~= nil, "fast biterport worker unit missing")
+  assert_true(express ~= nil, "express biterport worker unit missing")
+  assert_true(base.hidden_in_factoriopedia, "base biterport worker should stay hidden")
+  assert_true(fast.hidden_in_factoriopedia, "fast biterport worker should stay hidden")
+  assert_true(express.hidden_in_factoriopedia, "express biterport worker should stay hidden")
+  assert_true(base.placeable_by == nil, "biterport workers should not be player-placeable")
+  assert_eq(base.movement_speed, data.raw.unit["small-biter"].movement_speed, "base worker should preserve small-biter speed")
+  assert_true(fast.movement_speed > base.movement_speed, "speed tier I should be faster than the base worker")
+  assert_true(express.movement_speed > fast.movement_speed, "speed tier II should be faster than speed tier I")
+  assert_true(fast.distance_per_frame > base.distance_per_frame, "speed tier I animation pacing should scale with movement")
+  assert_true(express.distance_per_frame > fast.distance_per_frame, "speed tier II animation pacing should scale with movement")
 end)
 
 test("hired biter field agent is a real biter unit with a custom remote", function()
