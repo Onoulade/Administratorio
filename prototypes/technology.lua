@@ -495,16 +495,6 @@ data:extend({
     order = "c-h"
   },
   {
-    type = "technology", name = "civic-biter-riding",
-    icon = "__base__/graphics/icons/medium-biter.png", icon_size = 64,
-    effects = {
-      { type = "unlock-recipe", recipe = "rideable-biter" },
-    },
-    prerequisites = {"biter-employment", "engine"},
-    unit = { count = 80, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
-    order = "c-h0"
-  },
-  {
     type = "technology", name = "biter-labor-efficiency-1",
     icons = {{icon = "__administratorio__/graphics/icons/credentials.png", icon_size = 64, tint = {r=0.55, g=0.75, b=0.45, a=1}}},
     effects = {
@@ -640,7 +630,7 @@ local function add_unique_prerequisite(tech_name, prereq_name)
   tech.prerequisites[#tech.prerequisites + 1] = prereq_name
 end
 
-add_unique_prerequisite("automobilism", "civic-biter-riding")
+add_unique_prerequisite("automobilism", "biter-employment")
 
 local admin_station_capacity_techs = {}
 local capacity_pack_sets = {
@@ -795,6 +785,30 @@ local function add_tech_unlock(technology_name, recipe_name)
   end
   table.insert(technology.effects, { type = "unlock-recipe", recipe = recipe_name })
 end
+
+local function remove_tech_unlock(technology_name, recipe_name)
+  local technology = data.raw["technology"] and data.raw["technology"][technology_name]
+  if not technology or not technology.effects or not recipe_name then return end
+  for i = #technology.effects, 1, -1 do
+    local effect = technology.effects[i]
+    if effect.type == "unlock-recipe" and effect.recipe == recipe_name then
+      table.remove(technology.effects, i)
+    end
+  end
+end
+
+local function disable_recipe(recipe_name)
+  local recipe = data.raw["recipe"] and data.raw["recipe"][recipe_name]
+  if not recipe then return end
+  recipe.enabled = false
+  recipe.hidden = true
+  recipe.hidden_in_factoriopedia = true
+  recipe.hide_from_player_crafting = true
+end
+
+remove_tech_unlock("automobilism", "car")
+add_tech_unlock("automobilism", "rideable-biter")
+disable_recipe("car")
 
 local science_pack_order = {
   ["automation-science-pack"] = 1,

@@ -784,8 +784,13 @@ end
 
 local regulated_recipes = {}
 local regulated_factoriopedia_products = {}
+local REMOVED_VANILLA_RECIPES = {
+  car = true,
+}
 
 for name, recipe in pairs(data.raw["recipe"]) do
+  if REMOVED_VANILLA_RECIPES[name] then goto continue end
+
   -- Skip our mod's recipes
   if shared.is_admin_recipe(name) or shared.ADMIN_BUILDINGS[name]
      or FORM_PRODUCTION_RECIPE_SET[name] then
@@ -911,6 +916,7 @@ data:extend(regulated_list)
 -------------------------------------------------------------------------------
 local admin_building_regulated = {}
 for recipe_name, recipe in pairs(data.raw["recipe"]) do
+  if REMOVED_VANILLA_RECIPES[recipe_name] then goto next_admin_building end
   if recipe_name:find("%-regulated$") then goto next_admin_building end
 
   local cat = recipe.category or "crafting"
@@ -938,6 +944,17 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
   ::next_admin_building::
 end
 data:extend(admin_building_regulated)
+
+for recipe_name in pairs(REMOVED_VANILLA_RECIPES) do
+  local recipe = data.raw["recipe"][recipe_name]
+  if recipe then
+    recipe.enabled = false
+    recipe.hidden = true
+    recipe.hidden_in_factoriopedia = true
+    recipe.hide_from_player_crafting = true
+  end
+  data.raw["recipe"][recipe_name .. "-regulated"] = nil
+end
 
 -- Demolition products need explicit construction paperwork on top of their
 -- normal process permits so cliff clearance and blasting stay on-theme.
@@ -1232,4 +1249,30 @@ for _, prototype_set in pairs(data.raw) do
       prototype.allowed_module_categories = categories
     end
   end
+end
+
+-------------------------------------------------------------------------------
+-- 9. RIDEABLE BITER SOUND OVERRIDE
+-- Force biter sounds onto the rideable-biter car last, after all mods run.
+-- The car type defaults to engine sounds; this must be set in final-fixes
+-- to guarantee it survives any data-stage ordering issues.
+-------------------------------------------------------------------------------
+local rideable = data.raw["car"] and data.raw["car"]["rideable-biter"]
+if rideable then
+  rideable.working_sound = nil
+  rideable.stop_trigger = nil
+  rideable.stop_trigger_speed = nil
+  rideable.sound_no_fuel = nil
+  rideable.open_sound = nil
+  rideable.close_sound = nil
+  rideable.track_particle_triggers = nil
+  rideable.vehicle_impact_sound = nil
+  rideable.crash_trigger = nil
+  rideable.mined_sound = nil
+  rideable.dying_sound = nil
+  -- Factorio 2.x candidates
+  rideable.rolling_sound = nil
+  rideable.idle_sound = nil
+  rideable.starting_sound = nil
+  rideable.engine_sound = nil
 end
