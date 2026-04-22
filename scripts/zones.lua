@@ -62,6 +62,7 @@ function M.zone_area_is_clear(surface, bounds, exclude_entity)
   for _, ent in ipairs(entities) do
     if ent.valid and ent ~= exclude_entity
        and ent.name ~= "waiting-zone-marker" and ent.name ~= CORNER_BLOCKER_NAME and ent.name ~= "admin-station-combinator"
+       and ent.name ~= C.BITERPORT_HIDDEN_ROBOPORT_NAME
        and not C.ZONE_SAFE_TYPES[ent.type] then
       return false
     end
