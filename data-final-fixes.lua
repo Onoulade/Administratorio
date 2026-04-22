@@ -36,6 +36,7 @@ local NIGHT_WORK_BUILDINGS = {
 
 local ADMIN_STATION_NON_BLOCKING_NAMES = {
   ["admin-station-combinator"] = true,
+  ["biterport-hidden-roboport"] = true,
   ["waiting-zone-marker"] = true,
   ["transit-permit-chest"] = true,
   ["pneumatic-hidden-intake"] = true,

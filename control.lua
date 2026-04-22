@@ -11,6 +11,8 @@ local working_hours = require("scripts.working_hours")
 local field_office = require("scripts.field_office")
 local biter_station = require("scripts.biter_station")
 local biter_station_hover = require("scripts.biter_station_hover")
+local biterport = require("scripts.biterport")
+local biterport_hover = require("scripts.biterport_hover")
 local runtime_debug = require("scripts.control_runtime_debug")
 local control_event_router = require("scripts.control_event_router")
 local control_resolution_processing_factory = require("scripts.control_resolution_processing")
@@ -350,10 +352,12 @@ local function init_storage()
   end
   field_office.ensure_storage()
   biter_station.ensure_storage()
+  biterport.ensure_storage()
   hired_biter.ensure_storage()
   hired_biter.cleanup_supply_chests()
   rideable_biter.ensure_storage()
   biter_station_hover.ensure_storage()
+  biterport_hover.ensure_storage()
 
   -- Ensure all existing locomotives and pneumatic buildings are properly initialized.
   for _, surface in pairs(game.surfaces) do
@@ -464,6 +468,7 @@ local function on_init()
   end
   field_office.rebuild_registry()
   biter_station.rebuild_registry()
+  biterport.rebuild_registry()
   hired_biter.ensure_storage()
   rideable_biter.rebuild_registry()
   storage.biter_station_crafts_per_visit = C.BITER_STATION_CRAFTS_PER_VISIT
@@ -537,6 +542,7 @@ local function on_configuration_changed()
   working_hours.rebuild_registry()
   field_office.rebuild_registry()
   biter_station.rebuild_registry()
+  biterport.rebuild_registry()
   rideable_biter.rebuild_registry()
   storage.biter_station_crafts_per_visit = C.BITER_STATION_CRAFTS_PER_VISIT
   for _, force in pairs(game.forces) do
@@ -626,12 +632,15 @@ local function on_selected_entity_changed(event)
   if not player then return end
 
   biter_station_hover.clear(event.player_index)
+  biterport_hover.clear(event.player_index)
 
   local entity = player.selected
   if entity and entity.valid and biter_station.is_station(entity) then
     biter_station_hover.show_station_zone(player, entity)
   elseif entity and entity.valid and biter_station.is_managed_building(entity) then
     biter_station_hover.show_building_hover(player, entity)
+  elseif entity and entity.valid and biterport.is_port(entity) then
+    biterport_hover.show_port(player, entity)
   end
 
   if entity and entity.valid and entity.type == "unit" and storage.waiting_biters[entity.unit_number] then
@@ -650,6 +659,7 @@ end
 
 local function on_player_left_game(event)
   biter_station_hover.clear(event.player_index)
+  biterport_hover.clear(event.player_index)
 end
 
 -- ============================================================
@@ -727,6 +737,9 @@ local function on_entity_built_inner(event)
         return
       end
     end
+    if biterport.on_entity_built(event) then
+      return
+    end
     initialize_bureaucratic_filters(entity)
     if WORKING_HOURS_ENABLED then
       working_hours.track_entity(entity)
@@ -739,6 +752,9 @@ local function on_entity_built_inner(event)
     end
     if biter_station.is_station(entity) then
       biter_station.track_station(entity)
+    end
+    if biterport.is_port(entity) then
+      biterport.track_port(entity)
     end
     if rideable_biter.is_rideable(entity) then
       rideable_biter.track(entity, event.tick or game.tick)
@@ -770,6 +786,7 @@ local function on_entity_removed(event)
   if entity.name == C.HIRED_BITER_UNIT_NAME then
     hired_biter.untrack(entity, event)
   end
+  biterport.on_entity_removed(event)
   biter_station.untrack_entity(entity, game.tick)
   rideable_biter.untrack(entity)
 
@@ -1262,10 +1279,16 @@ local function on_entity_died(event)
     hired_biter.untrack(entity, event)
   end
   rideable_biter.untrack(entity)
+  if entity.type == "unit" and biterport.is_worker_unit(entity.unit_number) then
+    biterport.on_entity_died(event)
+    return
+  end
   if entity.type == "unit" then
     biters.on_biter_died(entity)
+    biterport.on_entity_died(event)
     biter_station.on_entity_died(event)
   else
+    biterport.on_entity_died(event)
     biters.on_protest_target_removed(entity)
   end
   if WORKING_HOURS_ENABLED then
@@ -1304,6 +1327,7 @@ local ON_ENTITY_DIED_FILTERS = {
   {filter = "type", type = "train-stop"},
   {filter = "name", name = "admin-station"},
   {filter = "name", name = "biter-station"},
+  {filter = "name", name = "biterport"},
   {filter = "name", name = "rideable-biter"},
   {filter = "name", name = "office-desk"},
   {filter = "name", name = "field-office"},
@@ -1355,6 +1379,9 @@ local function on_ai_command_completed(event)
   end
   biter_station.on_ai_command_completed(event)
   if biter_station.is_station_worker_unit(event.unit_number) then
+    return
+  end
+  if biterport.on_ai_command_completed(event) then
     return
   end
   if hired_biter.on_ai_command_completed(event) then
@@ -1559,6 +1586,10 @@ local function on_biter_station_tick(event)
   biter_station.update(event.tick)
 end
 
+local function on_biterport_tick(event)
+  biterport.update(event.tick)
+end
+
 resolution_processing = control_resolution_processing_factory.new({
   biters = biters,
   cleanup_waiting_zone_overlays = cleanup_waiting_zone_overlays,
@@ -1577,6 +1608,7 @@ resolution_processing = control_resolution_processing_factory.new({
 control_event_router.register({
   on_ai_command_completed = on_ai_command_completed,
   on_biter_station_tick = on_biter_station_tick,
+  on_biterport_tick = on_biterport_tick,
   on_configuration_changed = on_configuration_changed,
   on_entity_built = on_entity_built,
   on_entity_died = on_entity_died,
@@ -1610,5 +1642,6 @@ control_event_router.register({
   on_unit_group_finished_gathering = on_unit_group_finished_gathering,
   on_unit_removed_from_group = on_unit_removed_from_group,
   biter_station_check_ticks = C.BITER_STATION_CHECK_TICKS,
+  biterport_check_ticks = C.BITERPORT_CHECK_TICKS,
   unit_group_debug_scan_interval = UNIT_GROUP_DEBUG_SCAN_INTERVAL,
 })

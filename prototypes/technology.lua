@@ -488,6 +488,7 @@ data:extend({
       { type = "unlock-recipe", recipe = "job-offer-production" },
       { type = "unlock-recipe", recipe = "office-desk" },
       { type = "unlock-recipe", recipe = "biter-station" },
+      { type = "unlock-recipe", recipe = "biterport" },
       { type = "unlock-recipe", recipe = "union-delegate-training" },
     },
     prerequisites = {"verbal-approvals", "local-precedents"},

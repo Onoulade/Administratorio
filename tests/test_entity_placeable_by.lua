@@ -109,6 +109,24 @@ data = {
         inventory_size = 48,
       },
     },
+    ["roboport"] = {
+      roboport = {
+        type = "roboport",
+        name = "roboport",
+        minable = {result = "roboport"},
+        logistics_radius = 25,
+        logistics_connection_distance = 50,
+        construction_radius = 55,
+        robot_slots_count = 7,
+        material_slots_count = 7,
+        energy_source = {type = "electric"},
+        energy_usage = "50kW",
+        recharge_minimum = "40MJ",
+        charging_energy = "500kW",
+        collision_box = {{-1.7, -1.7}, {1.7, 1.7}},
+        selection_box = {{-2, -2}, {2, 2}},
+      },
+    },
     ["spider-vehicle"] = {
       spidertron = {
         type = "spider-vehicle",
@@ -466,6 +484,25 @@ test("hired biter supply chest is hidden and non-selectable", function()
     flags[flag] = true
   end
   assert_true(flags["not-on-map"], "hired-biter-supply-chest should not appear on the map")
+end)
+
+test("biterport has worker storage and a hidden robot service cell", function()
+  local port = assert(find_entity_prototype("biterport"))
+  local hidden = assert(find_entity_prototype("biterport-hidden-roboport"))
+
+  assert_eq(port.placeable_by[1].item, "biterport", "biterport should be placeable by its item")
+  assert_eq(port.inventory_size, 6, "biterport should expose one money slot plus five worker slots")
+  assert_eq(port.inventory_type, "with_filters_and_bar", "biterport inventory should support worker slot filters")
+  assert_true(port.collision_mask.layers.object, "biterport should be a ground building")
+
+  assert_true(hidden.hidden, "hidden biterport roboport should be hidden")
+  assert_true(hidden.selectable_in_game == false, "hidden biterport roboport should not be selectable")
+  assert_eq(hidden.logistics_radius, 10, "hidden roboport should expose the biter logistics radius to robots")
+  assert_eq(hidden.logistics_connection_distance, 20, "hidden roboport should link biter cells only when logistics areas touch")
+  assert_eq(hidden.construction_radius, 20, "hidden roboport should expose the biter construction radius to robots")
+  assert_eq(hidden.robot_slots_count, 0, "hidden roboport should not store regular robots")
+  assert_eq(hidden.material_slots_count, 0, "hidden roboport should not store repair packs")
+  assert_eq(hidden.recharge_minimum, "1kJ", "hidden roboport should satisfy the roboport recharge invariant")
 end)
 
 test("hired biter field agent is a real biter unit with a custom remote", function()

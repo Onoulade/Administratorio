@@ -174,6 +174,74 @@ biter_station.stateless_visualisation = nil
 biter_station.draw_stateless_visualisations_in_ghost = nil
 biter_station.placeable_by = placeable_by_item("biter-station")
 
+local biterport = table.deepcopy(data.raw["container"]["steel-chest"])
+biterport.name = "biterport"
+biterport.localised_name = {"entity-name.biterport"}
+biterport.localised_description = {"entity-description.biterport"}
+biterport.icon = "__administratorio__/graphics/icons/admin-desk.png"
+biterport.icon_size = 64
+biterport.icons = {
+  {
+    icon = "__administratorio__/graphics/icons/admin-desk.png",
+    icon_size = 64,
+    tint = {r = 0.55, g = 0.85, b = 0.5, a = 1},
+  },
+}
+biterport.flags = {"placeable-neutral", "player-creation"}
+biterport.minable = {mining_time = 0.5, result = "biterport"}
+biterport.max_health = 450
+biterport.collision_box = {{-1.8, -1.8}, {1.8, 1.8}}
+biterport.selection_box = {{-2.0, -2.0}, {2.0, 2.0}}
+biterport.inventory_size = 6
+biterport.inventory_type = "with_filters_and_bar"
+biterport.collision_mask = {layers = {object = true, player = true, water_tile = true}}
+biterport.circuit_wire_max_distance = 9
+biterport.circuit_connector = circuit_connector_definitions.create_single(
+  universal_connector_template,
+  {variation = 26, main_offset = util.by_pixel(0, 0), shadow_offset = util.by_pixel(4, 4), show_shadow = true}
+)
+biterport.picture = {
+  layers = {
+    {
+      filename = entity_graphics .. "work-station/work-station.png",
+      width = 512,
+      height = 466,
+      scale = 0.27,
+      shift = util.by_pixel(0, 0),
+    },
+  },
+}
+biterport.stateless_visualisation = nil
+biterport.draw_stateless_visualisations_in_ghost = nil
+biterport.placeable_by = placeable_by_item("biterport")
+
+local hidden_biterport_roboport
+local roboport_source = data.raw["roboport"] and data.raw["roboport"]["roboport"]
+if roboport_source then
+  hidden_biterport_roboport = table.deepcopy(roboport_source)
+  hidden_biterport_roboport.name = "biterport-hidden-roboport"
+  hidden_biterport_roboport.localised_name = {"entity-name.biterport"}
+  hidden_biterport_roboport.localised_description = {"entity-description.biterport"}
+  hidden_biterport_roboport.flags = {"not-on-map", "not-deconstructable", "not-blueprintable", "not-upgradable", "placeable-off-grid"}
+  hidden_biterport_roboport.minable = nil
+  hidden_biterport_roboport.placeable_by = nil
+  hidden_biterport_roboport.hidden = true
+  hidden_biterport_roboport.hidden_in_factoriopedia = true
+  hidden_biterport_roboport.selectable_in_game = false
+  hidden_biterport_roboport.collision_box = {{0, 0}, {0, 0}}
+  hidden_biterport_roboport.selection_box = {{0, 0}, {0, 0}}
+  hidden_biterport_roboport.collision_mask = {layers = {}}
+  hidden_biterport_roboport.logistics_radius = 10
+  hidden_biterport_roboport.logistics_connection_distance = 20
+  hidden_biterport_roboport.construction_radius = 20
+  hidden_biterport_roboport.robot_slots_count = 0
+  hidden_biterport_roboport.material_slots_count = 0
+  hidden_biterport_roboport.energy_source = {type = "void"}
+  hidden_biterport_roboport.energy_usage = "1W"
+  hidden_biterport_roboport.recharge_minimum = "1kJ"
+  hidden_biterport_roboport.charging_energy = "1W"
+end
+
 -- Resolution Office: 3x3 complaint resolution
 local resolution_office = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
 resolution_office.name = "resolution-office"
@@ -734,11 +802,13 @@ local hired_biter_unit = make_hired_biter_unit()
 local entities = {
   admin_station,
   biter_station,
+  biterport,
   resolution_office, office_desk, field_office, greenhouse,
   breakroom, union_hq, propaganda_distillery,
   waiting_zone_marker, admin_station_corner_blocker, admin_station_combinator,
   transit_permit_chest
 }
+if hidden_biterport_roboport then table.insert(entities, hidden_biterport_roboport) end
 if biter_worker_t2 then table.insert(entities, biter_worker_t2) end
 if biter_worker_t3 then table.insert(entities, biter_worker_t3) end
 if hired_biter_unit then table.insert(entities, hired_biter_unit) end
