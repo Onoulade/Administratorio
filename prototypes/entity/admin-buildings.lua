@@ -747,20 +747,31 @@ hired_biter_supply_chest.picture = {
 }
 hired_biter_supply_chest.render_not_in_network_icon = false
 
-local function make_worker_biter(name, source_name)
+local function make_worker_biter(name, source_name, localised_name, speed_multiplier)
   local unit_table = data.raw["unit"]
   if not unit_table or not unit_table[source_name] then return nil end
   local biter = table.deepcopy(unit_table[source_name])
   biter.name = name
-  biter.localised_name = {"entity-name.biter-station"}
+  biter.localised_name = localised_name or {"entity-name.biter-station"}
   biter.minable = nil
   biter.placeable_by = nil
   biter.hidden_in_factoriopedia = true
+  if speed_multiplier then
+    if biter.movement_speed then
+      biter.movement_speed = biter.movement_speed * speed_multiplier
+    end
+    if biter.distance_per_frame then
+      biter.distance_per_frame = biter.distance_per_frame * speed_multiplier
+    end
+  end
   return biter
 end
 
 local biter_worker_t2 = make_worker_biter("biter-worker-t2", "small-biter")
 local biter_worker_t3 = make_worker_biter("biter-worker-t3", "small-biter")
+local biterport_worker = make_worker_biter("biterport-worker", "small-biter", {"entity-name.biterport-worker"}, 1.0)
+local biterport_worker_fast = make_worker_biter("biterport-worker-fast", "small-biter", {"entity-name.biterport-worker-fast"}, 1.35)
+local biterport_worker_express = make_worker_biter("biterport-worker-express", "small-biter", {"entity-name.biterport-worker-express"}, 1.7)
 
 local function make_hired_biter_unit()
   local biter_table = data.raw["unit"]
@@ -811,6 +822,9 @@ local entities = {
 if hidden_biterport_roboport then table.insert(entities, hidden_biterport_roboport) end
 if biter_worker_t2 then table.insert(entities, biter_worker_t2) end
 if biter_worker_t3 then table.insert(entities, biter_worker_t3) end
+if biterport_worker then table.insert(entities, biterport_worker) end
+if biterport_worker_fast then table.insert(entities, biterport_worker_fast) end
+if biterport_worker_express then table.insert(entities, biterport_worker_express) end
 if hired_biter_unit then table.insert(entities, hired_biter_unit) end
 table.insert(entities, hired_biter_supply_chest)
 

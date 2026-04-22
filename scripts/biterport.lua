@@ -7,7 +7,20 @@ local HIDDEN_ROBOPORT_NAME = C.BITERPORT_HIDDEN_ROBOPORT_NAME
 local WORKER_FORCE_NAME = "administratorio-biters"
 local WORKER_ITEM_NAME = "biter-worker"
 local MONEY_ITEM_NAME = "taxpayer-money"
-local WORKER_ENTITY_NAME = "small-biter"
+local WORKER_ENTITY_NAME = C.BITERPORT_WORKER_ENTITY_NAME or "small-biter"
+local FALLBACK_WORKER_ENTITY_NAME = "small-biter"
+
+local SLOT_TIER_TECHS = {
+  {"biterport-capacity-1", 8},
+  {"biterport-capacity-2", 10},
+  {"biterport-capacity-3", 12},
+  {"biterport-capacity-4", 15},
+}
+
+local SPEED_TIER_TECHS = {
+  {"biterport-worker-speed-2", C.BITERPORT_WORKER_EXPRESS_ENTITY_NAME},
+  {"biterport-worker-speed-1", C.BITERPORT_WORKER_FAST_ENTITY_NAME},
+}
 
 local SOURCE_CHEST_NAMES = {
   ["logistic-chest-active-provider"] = true,
@@ -122,6 +135,41 @@ local function get_worker_force()
   return game.forces["player"] or game.forces["neutral"]
 end
 
+local function force_has_researched(force, tech_name)
+  if not force or not force.valid or not force.technologies then return false end
+  local tech = force.technologies[tech_name]
+  return tech and tech.researched or false
+end
+
+local function get_port_worker_slots_for_force(force)
+  local slots = C.BITERPORT_WORKER_SLOTS
+  for _, tier in ipairs(SLOT_TIER_TECHS) do
+    if force_has_researched(force, tier[1]) then
+      slots = tier[2]
+    else
+      break
+    end
+  end
+  return slots
+end
+
+local function entity_prototype_exists(name)
+  return name
+    and (not game or not game.entity_prototypes or game.entity_prototypes[name] ~= nil)
+    or false
+end
+
+local function get_worker_entity_name(force)
+  for _, tier in ipairs(SPEED_TIER_TECHS) do
+    local tech_name, entity_name = tier[1], tier[2]
+    if force_has_researched(force, tech_name) and entity_prototype_exists(entity_name) then
+      return entity_name
+    end
+  end
+  if entity_prototype_exists(WORKER_ENTITY_NAME) then return WORKER_ENTITY_NAME end
+  return FALLBACK_WORKER_ENTITY_NAME
+end
+
 local function set_entity_force(entity, force_name)
   if not entity or not entity.valid or not force_name then return false end
   local force = game and game.forces and game.forces[force_name] or force_name
@@ -132,12 +180,13 @@ end
 local function apply_port_inventory(port)
   local inv = get_station_inventory(port)
   if not inv then return end
-  if #inv < C.BITERPORT_INVENTORY_SLOTS and inv.resize then
-    inv.resize(C.BITERPORT_INVENTORY_SLOTS)
+  local target = get_port_worker_slots_for_force(port.force) + 1
+  if #inv < target and inv.resize then
+    inv.resize(target)
   end
   if inv.set_filter and inv.supports_filters and inv.supports_filters() then
     inv.set_filter(1, {name = MONEY_ITEM_NAME})
-    for i = 2, math.min(#inv, C.BITERPORT_INVENTORY_SLOTS) do
+    for i = 2, math.min(#inv, target) do
       inv.set_filter(i, {name = WORKER_ITEM_NAME})
     end
   end
@@ -877,10 +926,11 @@ local function phase_is_arrived(active, biter, destination, fallback_radius)
 end
 
 local function spawn_worker(port)
-  local spawn_pos = port.surface.find_non_colliding_position(WORKER_ENTITY_NAME, port.position, 8, 0.5)
+  local worker_entity_name = get_worker_entity_name(port.force)
+  local spawn_pos = port.surface.find_non_colliding_position(worker_entity_name, port.position, 8, 0.5)
   if not spawn_pos then return nil end
   return port.surface.create_entity{
-    name = WORKER_ENTITY_NAME,
+    name = worker_entity_name,
     position = spawn_pos,
     force = get_worker_force(),
   }
@@ -1383,6 +1433,19 @@ function M.on_ai_command_completed(event)
     issue_move_command(biter, destination, active.phase_command_radius)
   end
   return true
+end
+
+function M.on_research_finished(research)
+  if not research or not research.valid or not research.name then return end
+  if not research.name:find("^biterport%-capacity%-") then return end
+
+  M.ensure_storage()
+  for _, port in pairs(storage.biterports or {}) do
+    if port and port.valid and port.force == research.force then
+      apply_port_inventory(port)
+      refresh_port_status(port)
+    end
+  end
 end
 
 function M.rebuild_registry()
