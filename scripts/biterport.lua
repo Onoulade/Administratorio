@@ -324,6 +324,17 @@ local function destroy_render(render_id)
   if object then object.destroy() end
 end
 
+local JOB_TINT_COLORS = {
+  construction = {r = 0.4, g = 1.0, b = 0.4},
+  logistics    = {r = 0.4, g = 0.6, b = 1.0},
+}
+
+local function apply_job_tint(biter, job_kind)
+  if not biter or not biter.valid then return end
+  local color = JOB_TINT_COLORS[job_kind]
+  if color then biter.color = color end
+end
+
 local function create_reserved_overlay(job)
   if not rendering or not rendering.draw_text or not job or not job.surface or not job.position then
     return nil
@@ -1263,6 +1274,7 @@ local function dispatch_job(worker_port, job)
     return false
   end
 
+  apply_job_tint(biter, job.kind)
   local active = {
     biter = biter,
     biter_unit_number = biter.unit_number,
