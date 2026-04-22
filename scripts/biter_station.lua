@@ -189,6 +189,11 @@ local function create_worker_overlay(biter)
   return render_obj and render_obj.id or nil
 end
 
+local function apply_machine_tint(biter)
+  if not biter or not biter.valid then return end
+  biter.color = {r = 1.0, g = 0.55, b = 0.1}
+end
+
 local function set_station_status(station, key)
   if not station or not station.valid then return end
 
@@ -775,6 +780,7 @@ local function dispatch_single_station_biter(station, queue)
 
   claim_queue_for_biter(queue, biter.unit_number)
 
+  apply_machine_tint(biter)
   local active_state = {
     biter = biter,
     biter_unit_number = biter.unit_number,
