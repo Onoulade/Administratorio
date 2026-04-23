@@ -562,26 +562,6 @@ union_hq.working_sound = {
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
 
--- Waiting Zone Marker (floor overlay, no collision)
-local waiting_zone_marker = {
-  type = "simple-entity-with-owner",
-  name = "waiting-zone-marker",
-  icon = "__administratorio__/graphics/icons/ticket-landscape.png",
-  icon_size = 64,
-  flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "placeable-off-grid"},
-  max_health = 1,
-  render_layer = "floor",
-  collision_mask = {layers = {}},
-  collision_box = {{0, 0}, {0, 0}},
-  selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
-  selectable_in_game = false,
-  hidden = true,
-  picture = {
-    filename = "__administratorio__/graphics/entities/waiting-zone/zone-marker.png",
-    width = 64, height = 64, scale = 0.5
-  }
-}
-
 local admin_station_corner_blocker = {
   type = "simple-entity-with-owner",
   name = "admin-station-corner-blocker",
@@ -919,23 +899,33 @@ end
 
 local hired_biter_unit = make_hired_biter_unit()
 
-local entities = {
-  admin_station,
-  biter_station,
-  biterport,
-  resolution_office, office_desk, field_office, greenhouse,
-  breakroom, union_hq, propaganda_distillery,
-  waiting_zone_marker, admin_station_corner_blocker, admin_station_combinator,
-  transit_permit_chest
-}
-if hidden_biterport_roboport then table.insert(entities, hidden_biterport_roboport) end
-if biterport_placement_preview then table.insert(entities, biterport_placement_preview) end
-if biter_worker_t2 then table.insert(entities, biter_worker_t2) end
-if biter_worker_t3 then table.insert(entities, biter_worker_t3) end
-if biterport_worker then table.insert(entities, biterport_worker) end
-if biterport_worker_fast then table.insert(entities, biterport_worker_fast) end
-if biterport_worker_express then table.insert(entities, biterport_worker_express) end
-if hired_biter_unit then table.insert(entities, hired_biter_unit) end
-table.insert(entities, hired_biter_supply_chest)
+local entities = {}
+local function add_entity(entity)
+  if entity then entities[#entities + 1] = entity end
+end
+
+add_entity(admin_station)
+add_entity(biter_station)
+add_entity(biterport)
+add_entity(resolution_office)
+add_entity(office_desk)
+add_entity(field_office)
+add_entity(greenhouse)
+add_entity(breakroom)
+add_entity(union_hq)
+add_entity(propaganda_distillery)
+add_entity(waiting_zone_marker)
+add_entity(admin_station_corner_blocker)
+add_entity(admin_station_combinator)
+add_entity(transit_permit_chest)
+add_entity(hidden_biterport_roboport)
+add_entity(biterport_placement_preview)
+add_entity(biter_worker_t2)
+add_entity(biter_worker_t3)
+add_entity(biterport_worker)
+add_entity(biterport_worker_fast)
+add_entity(biterport_worker_express)
+add_entity(hired_biter_unit)
+add_entity(hired_biter_supply_chest)
 
 data:extend(entities)

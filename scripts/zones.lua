@@ -61,7 +61,7 @@ function M.zone_area_is_clear(surface, bounds, exclude_entity)
   }
   for _, ent in ipairs(entities) do
     if ent.valid and ent ~= exclude_entity
-       and ent.name ~= "waiting-zone-marker" and ent.name ~= CORNER_BLOCKER_NAME and ent.name ~= "admin-station-combinator"
+       and ent.name ~= CORNER_BLOCKER_NAME and ent.name ~= "admin-station-combinator"
        and ent.name ~= C.BITERPORT_HIDDEN_ROBOPORT_NAME
        and not C.ZONE_SAFE_TYPES[ent.type] then
       return false
@@ -81,10 +81,6 @@ function M.zone_overlaps_existing(bounds, exclude_desk_id)
     end
   end
   return false
-end
-
-function M.create_zone_markers(surface, bounds)
-  return {}
 end
 
 function M.create_corner_blockers(surface, footprint, force)
@@ -115,16 +111,6 @@ function M.create_corner_blockers(surface, footprint, force)
   end
 
   return blockers
-end
-
-function M.destroy_zone_markers(surface, bounds)
-  local markers = surface.find_entities_filtered{
-    name = "waiting-zone-marker",
-    area = {bounds.left_top, bounds.right_bottom}
-  }
-  for _, m in ipairs(markers) do
-    if m.valid then m.destroy() end
-  end
 end
 
 function M.destroy_corner_blockers(surface, footprint)
@@ -399,7 +385,6 @@ function M.cleanup_desk_zone(desk_id)
     return
   end
   for _, surface in pairs(game.surfaces) do
-    M.destroy_zone_markers(surface, zone.bounds)
     if zone.footprint then
       M.destroy_corner_blockers(surface, zone.footprint)
     end
