@@ -213,6 +213,7 @@ shared.ADMIN_BUILDINGS = {
   ["admin-station"] = true,
   ["resolution-office"] = true,
   ["office-desk"] = true,
+  ["formation-center"] = true,
   ["field-office"] = true,
   ["greenhouse"] = true,
   ["corporate-breakroom"] = true,

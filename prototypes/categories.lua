@@ -10,6 +10,7 @@
 -- bureaucracy-resolution      | Resolution Office (all complaint processing: filing, case, brief, final)
 -- resolution-handcraft        | Player character + Resolution Office (landscape complaint only)
 -- bureaucracy-policy          | Union Headquarters (policies, regulations, audits, written approvals)
+-- biter-training              | Formation Center (all biter worker assignments and specialist training)
 -- admin-greenhouse            | Greenhouse (wood, coffee)
 -- watercooler-gossip          | Corporate Breakroom (gossip, coffee, promises, transit-auth)
 -- union-negotiation           | Union Headquarters (union approval, grants, narrative, OSHA)
@@ -29,6 +30,7 @@ local categories = {
   {type = "recipe-category", name = "bureaucracy-resolution"},
   {type = "recipe-category", name = "resolution-handcraft"},
   {type = "recipe-category", name = "bureaucracy-policy"},
+  {type = "recipe-category", name = "biter-training"},
   {type = "recipe-category", name = "admin-greenhouse"},
   {type = "recipe-category", name = "watercooler-gossip"},
   {type = "recipe-category", name = "union-negotiation"},

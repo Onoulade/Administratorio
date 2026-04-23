@@ -11,6 +11,16 @@ local function deepcopy(value)
   return copy
 end
 
+local function biter_role_icons(biter_icon, tint, overlay_icon)
+  local icons = {
+    {icon = biter_icon, icon_size = 64, tint = tint},
+  }
+  if overlay_icon then
+    icons[#icons + 1] = {icon = overlay_icon, icon_size = 64, scale = 0.35, shift = {8, 8}}
+  end
+  return icons
+end
+
 local smoke_animation = {
   width = 152,
   height = 120,
@@ -28,9 +38,9 @@ hired_biter_item.type = "item"
 hired_biter_item.name = "hired-biter-capsule"
 hired_biter_item.localised_name = {"item-name.hired-biter-capsule"}
 hired_biter_item.localised_description = {"item-description.hired-biter-capsule"}
-hired_biter_item.icon = "__base__/graphics/icons/behemoth-biter.png"
-hired_biter_item.icons = nil
-hired_biter_item.icon_size = 64
+hired_biter_item.icon = nil
+hired_biter_item.icons = biter_role_icons("__base__/graphics/icons/behemoth-biter.png", {r=0.45, g=0.85, b=1.0, a=1}, item_icons .. "credentials.png")
+hired_biter_item.icon_size = nil
 hired_biter_item.subgroup = "capsule"
 hired_biter_item.order = "z3[hired-biter-capsule]"
 hired_biter_item.stack_size = 1

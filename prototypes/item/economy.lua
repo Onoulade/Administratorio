@@ -1,5 +1,15 @@
 local item_icons = "__administratorio__/graphics/icons/"
 
+local function biter_role_icons(biter_icon, tint, overlay_icon)
+  local icons = {
+    {icon = biter_icon, icon_size = 64, tint = tint},
+  }
+  if overlay_icon then
+    icons[#icons + 1] = {icon = overlay_icon, icon_size = 64, scale = 0.35, shift = {8, 8}}
+  end
+  return icons
+end
+
 data:extend({
   { type = "fuel-category", name = "administratorio-taxpayer-money" },
 
@@ -45,44 +55,38 @@ data:extend({
   },
   {
     type = "item", name = "biter-worker",
-    icons = {{icon = "__base__/graphics/icons/small-biter.png", icon_size = 64}},
+    icons = biter_role_icons("__base__/graphics/icons/small-biter.png", {r=0.75, g=0.95, b=0.65, a=1}),
     subgroup = "admin-biter-buildings", order = "d", stack_size = 1
   },
   {
     type = "item", name = "biter-logistics-formation",
-    icons = {
-      {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64},
-      {icon = item_icons .. "form-27b-6.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
-    },
+    icons = biter_role_icons("__base__/graphics/icons/small-biter.png", {r=0.45, g=0.85, b=0.55, a=1}, item_icons .. "form-27b-6.png"),
     subgroup = "admin-biter-buildings", order = "d1", stack_size = 1
   },
   {
     type = "item", name = "rideable-biter",
-    icons = {
-      {icon = "__base__/graphics/icons/medium-biter.png", icon_size = 64},
-      {icon = item_icons .. "taxpayer-money.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
-    },
+    icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=0.55, g=0.75, b=1.0, a=1}, item_icons .. "transit-authorization.png"),
     subgroup = "transport", order = "b[personal-transport]-a[rideable-biter]",
     place_result = "rideable-biter", stack_size = 1
   },
   {
     type = "item", name = "biter-station",
-    icons = {{icon = item_icons .. "admin-desk.png", icon_size = 64, tint = {r=0.72, g=0.78, b=0.92, a=1}}},
+    icon = item_icons .. "biter-station.png", icon_size = 64,
     subgroup = "admin-buildings", order = "a1", place_result = "biter-station", stack_size = 40
   },
   {
     type = "item", name = "union-delegate",
-    icons = {{icon = item_icons .. "credentials.png", icon_size = 64, tint = {r=0.2, g=0.4, b=0.9, a=1}}},
+    icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=0.45, g=0.55, b=1.0, a=1}, item_icons .. "credentials.png"),
     subgroup = "admin-biter-buildings", order = "e1", stack_size = 10
   },
   {
     type = "item", name = "chemical-operator",
-    icons = {{icon = item_icons .. "credentials.png", icon_size = 64, tint = {r=0.9, g=0.6, b=0.1, a=1}}},
+    icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=1.0, g=0.75, b=0.25, a=1}, item_icons .. "credentials.png"),
     subgroup = "admin-biter-buildings", order = "e2", stack_size = 10
   },
   {
     type = "item", name = "nuclear-technician",
-    icons = {{icon = item_icons .. "credentials.png", icon_size = 64, tint = {r=0.2, g=0.9, b=0.7, a=1}}},
+    icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=0.35, g=1.0, b=0.85, a=1}, item_icons .. "credentials.png"),
     subgroup = "admin-biter-buildings", order = "e3", stack_size = 10
   },
 })

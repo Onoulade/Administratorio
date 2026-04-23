@@ -13,6 +13,7 @@ local working_hours_enabled = feature_flags.working_hours_enabled()
 local entity_graphics = "__administratorio__/graphics/entities/"
 local scrubber_graphics = entity_graphics .. "scrubber/"
 local sound_path = "__administratorio__/sound/buildings/"
+local biter_building_icons = "__administratorio__/graphics/icons/"
 local OFFICE_DESK_SPEED = working_hours_enabled and 1.0 or 0.75
 local BREAKROOM_SPEED = working_hours_enabled and 1.0 or 0.75
 local UNION_HQ_SPEED = working_hours_enabled and 1.0 or 0.75
@@ -181,15 +182,9 @@ local admin_station = make_admin_station("admin-station")
 
 local biter_station = table.deepcopy(data.raw["container"]["steel-chest"])
 biter_station.name = "biter-station"
-biter_station.icon = "__administratorio__/graphics/icons/admin-desk.png"
+biter_station.icon = biter_building_icons .. "biter-station.png"
 biter_station.icon_size = 64
-biter_station.icons = {
-  {
-    icon = "__administratorio__/graphics/icons/admin-desk.png",
-    icon_size = 64,
-    tint = {r = 0.72, g = 0.78, b = 0.92, a = 1},
-  },
-}
+biter_station.icons = nil
 biter_station.flags = {"placeable-neutral", "player-creation"}
 biter_station.minable = {mining_time = 0.5, result = "biter-station"}
 biter_station.max_health = 450
@@ -221,15 +216,9 @@ local biterport = table.deepcopy(data.raw["container"]["steel-chest"])
 biterport.name = "biterport"
 biterport.localised_name = {"entity-name.biterport"}
 biterport.localised_description = {"entity-description.biterport"}
-biterport.icon = "__administratorio__/graphics/icons/admin-desk.png"
+biterport.icon = biter_building_icons .. "biterport.png"
 biterport.icon_size = 64
-biterport.icons = {
-  {
-    icon = "__administratorio__/graphics/icons/admin-desk.png",
-    icon_size = 64,
-    tint = {r = 0.55, g = 0.85, b = 0.5, a = 1},
-  },
-}
+biterport.icons = nil
 biterport.flags = {"placeable-neutral", "player-creation"}
 biterport.minable = {mining_time = 0.5, result = "biterport"}
 biterport.max_health = 450
@@ -433,6 +422,54 @@ office_desk.fluid_boxes = {
 office_desk.fluid_boxes_off_when_no_fluid_recipe = true
 office_desk.working_sound = {
   sound = { filename = sound_path .. "office-paperwork.ogg", volume = 0.48 },
+  idle_sound = { filename = "__base__/sound/idle1.ogg" }
+}
+
+-- Formation Center: 5x5 biter assignment and specialist training
+local formation_center = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
+formation_center.name = "formation-center"
+formation_center.minable.result = "formation-center"
+formation_center.placeable_by = placeable_by_item("formation-center")
+formation_center.next_upgrade = nil
+formation_center.crafting_categories = {"biter-training"}
+formation_center.crafting_speed = 1.0
+formation_center.ingredient_count = 10
+formation_center.module_slots = 3
+formation_center.allowed_effects = {"speed", "consumption", "pollution"}
+formation_center.collision_box = {{-2.25, -2.25}, {2.25, 2.25}}
+formation_center.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
+formation_center.icon = biter_building_icons .. "formation-center.png"
+formation_center.icon_size = 64
+formation_center.icons = nil
+formation_center.graphics_set = {
+  animation = {
+    layers = {
+      {
+        filename = entity_graphics .. "formation-center/formation-center.png",
+        priority = "high",
+        width = 480,
+        height = 435,
+        frame_count = 1,
+        repeat_count = 32,
+        scale = 1 / 3,
+        shift = util.by_pixel(0, -8),
+      },
+    },
+  },
+}
+formation_center.fluid_boxes = {
+  { production_type = "input", pipe_connections = {{ flow_direction = "input", direction = defines.direction.north, position = {0, -2} }}, volume = 100 },
+  { production_type = "input", pipe_connections = {{ flow_direction = "input", direction = defines.direction.south, position = {0, 2} }}, volume = 100 },
+}
+formation_center.fluid_boxes_off_when_no_fluid_recipe = true
+formation_center.working_sound = {
+  sound = {
+    allow_random_repeat = true,
+    variations = {
+      { filename = sound_path .. "people-talking.ogg", volume = 0.34 },
+      { filename = sound_path .. "stamp.ogg", volume = 0.28 },
+    },
+  },
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
 
@@ -909,6 +946,7 @@ add_entity(biter_station)
 add_entity(biterport)
 add_entity(resolution_office)
 add_entity(office_desk)
+add_entity(formation_center)
 add_entity(field_office)
 add_entity(greenhouse)
 add_entity(breakroom)

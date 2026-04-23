@@ -167,13 +167,12 @@ data:extend({
     type = "recipe", name = "rideable-biter",
     localised_name = {"item-name.rideable-biter"},
     localised_description = {"item-description.rideable-biter"},
-    category = "bureaucracy-registration", enabled = false,
+    category = "biter-training", enabled = false,
     ingredients = {
       {type="item", name="biter-worker", amount=1},
-      {type="item", name="job-offer", amount=1},
       {type="item", name="blank-approval", amount=2},
-      {type="item", name="iron-gear-wheel", amount=8},
-      {type="item", name="taxpayer-money", amount=25},
+      {type="item", name="management-verbal-work-order", amount=1},
+      {type="fluid", name="liquid-coffee", amount=25},
     },
     results = {{type="item", name="rideable-biter", amount=1}},
     energy_required = 20
@@ -190,12 +189,12 @@ data:extend({
     energy_required = 15
   },
   {
-    type = "recipe", name = "biter-logistics-formation", category = "bureaucracy-registration", enabled = false,
+    type = "recipe", name = "biter-logistics-formation", category = "biter-training", enabled = false,
     ingredients = {
-      {type="item", name="biter-worker", amount=3},
-      {type="item", name="job-offer", amount=1},
+      {type="item", name="biter-worker", amount=1},
       {type="item", name="management-verbal-work-order", amount=1},
-      {type="item", name="taxpayer-money", amount=40},
+      {type="item", name="form-27b-6", amount=1},
+      {type="fluid", name="liquid-coffee", amount=35},
     },
     results = {{type="item", name="biter-logistics-formation", amount=1}},
     energy_required = 30
@@ -203,7 +202,7 @@ data:extend({
 
   -- Specialist Training
   {
-    type = "recipe", name = "union-delegate-training", category = "bureaucracy-registration", enabled = false,
+    type = "recipe", name = "union-delegate-training", category = "biter-training", enabled = false,
     ingredients = {
       {type="item", name="biter-worker", amount=1},
       {type="item", name="treasury-bond", amount=1},
@@ -214,23 +213,24 @@ data:extend({
     energy_required = 20
   },
   {
-    type = "recipe", name = "chemical-operator-training", category = "bureaucracy-registration", enabled = false,
+    type = "recipe", name = "chemical-operator-training", category = "biter-training", enabled = false,
     ingredients = {
       {type="item", name="biter-worker", amount=1},
-      {type="item", name="petrochemical-operating-permit", amount=1},
-      {type="item", name="construction-permit", amount=1},
+      {type="item", name="chemical-handling-work-order", amount=1},
       {type="item", name="safety-waiver", amount=1},
+      {type="fluid", name="liquid-coffee", amount=45},
     },
     results = {{type="item", name="chemical-operator", amount=1}},
     energy_required = 30
   },
   {
-    type = "recipe", name = "nuclear-technician-training", category = "union-negotiation", enabled = false,
+    type = "recipe", name = "nuclear-technician-training", category = "biter-training", enabled = false,
     ingredients = {
       {type="item", name="biter-worker", amount=1},
       {type="item", name="radiological-work-order", amount=1},
       {type="item", name="management-approval-written", amount=1},
       {type="item", name="environmental-impact-report", amount=1},
+      {type="fluid", name="liquid-coffee", amount=60},
     },
     results = {{type="item", name="nuclear-technician", amount=1}},
     energy_required = 30
@@ -239,14 +239,13 @@ data:extend({
     type = "recipe", name = "hired-biter-capsule",
     localised_name = {"item-name.hired-biter-capsule"},
     localised_description = {"item-description.hired-biter-capsule"},
-    category = "bureaucracy-registration", enabled = false,
+    category = "biter-training", enabled = false,
     ingredients = {
       {type="item", name="biter-worker",    amount=1},
-      {type="item", name="regulation",      amount=5},
-      {type="item", name="job-offer",       amount=10},
-      {type="item", name="taxpayer-money",  amount=100},
-      {type="item", name="processing-unit", amount=10},
-      {type="item", name="treasury-bond",   amount=5},
+      {type="item", name="government-grant", amount=2},
+      {type="item", name="management-written-work-order", amount=2},
+      {type="item", name="research-grant-work-order", amount=1},
+      {type="fluid", name="liquid-coffee", amount=100},
     },
     results = {{type="item", name="hired-biter-capsule", amount=1}},
     energy_required = 120

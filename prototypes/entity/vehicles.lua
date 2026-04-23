@@ -110,8 +110,8 @@ local function make_rideable_biter()
   vehicle.icon = "__base__/graphics/icons/medium-biter.png"
   vehicle.icon_size = 64
   vehicle.icons = {
-    {icon = "__base__/graphics/icons/medium-biter.png", icon_size = 64},
-    {icon = "__administratorio__/graphics/icons/taxpayer-money.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    {icon = "__base__/graphics/icons/medium-biter.png", icon_size = 64, tint = {r=0.55, g=0.75, b=1.0, a=1}},
+    {icon = "__administratorio__/graphics/icons/transit-authorization.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
   }
   vehicle.minable = nil
   vehicle.placeable_by = {{item = "rideable-biter", count = 1}}
