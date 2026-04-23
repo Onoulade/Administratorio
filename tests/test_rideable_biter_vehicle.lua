@@ -139,6 +139,9 @@ test("rideable biter is a taxpayer-money fueled car with tiny storage", function
   assert_true(vehicle.energy_source.fuel_categories[2] == nil, "rideable biter should accept only the taxpayer-money fuel category")
   assert_true(vehicle.energy_source.fuel_category == nil, "rideable biter should not accept generic chemical fuel")
   assert_true(vehicle.energy_source.smoke == nil, "rideable biter should not emit car exhaust smoke")
+  assert_eq(vehicle.icons[1].icon, "__base__/graphics/icons/medium-biter.png", "rideable vehicle icon should match the medium biter it uses/reverts to")
+  assert_true(vehicle.icons[1].tint ~= nil, "rideable vehicle medium biter icon should use the role tint")
+  assert_eq(vehicle.icons[2].icon, "__administratorio__/graphics/icons/transit-authorization.png", "rideable vehicle icon overlay should match the assignment paperwork")
   assert_true(vehicle.animation.layers ~= nil, "rideable biter should use layered biter animation assets")
   assert_eq(vehicle.animation.layers[1].filename, "__administratorio__/graphics/entities/rideable-biter/biter-run")
   for _, layer in ipairs(vehicle.animation.layers) do

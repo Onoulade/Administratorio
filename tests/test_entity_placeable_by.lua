@@ -374,6 +374,28 @@ test("union-headquarters now supports both union negotiation and policy work", f
   assert_true(output_count >= 1, "union-headquarters should have at least one fluid output")
 end)
 
+test("formation-center is the only biter-training machine", function()
+  local formation_center = data.raw["assembling-machine"]["formation-center"]
+  assert_true(formation_center ~= nil, "formation-center prototype missing")
+  assert_eq(formation_center.placeable_by[1].item, "formation-center", "formation-center should be placeable by its item")
+
+  local formation_categories = {}
+  for _, category in ipairs(formation_center.crafting_categories or {}) do
+    formation_categories[category] = true
+  end
+  assert_true(formation_categories["biter-training"], "formation-center should craft biter-training recipes")
+  assert_eq(formation_center.collision_box[1][1], -2.25, "formation-center should use a 5x5 footprint")
+  assert_eq(formation_center.selection_box[2][2], 2.5, "formation-center should select as a 5x5 building")
+
+  for name, entity in pairs(data.raw["assembling-machine"] or {}) do
+    if name ~= "formation-center" then
+      for _, category in ipairs(entity.crafting_categories or {}) do
+        assert_true(category ~= "biter-training", name .. " should not craft biter-training recipes")
+      end
+    end
+  end
+end)
+
 test("resolution-office supports bootstrap and resolution categories", function()
   local entity = data.raw["assembling-machine"]["resolution-office"]
   assert_true(entity ~= nil, "resolution-office prototype missing")
@@ -426,6 +448,7 @@ test("all custom fluid connections are explicitly one-way", function()
     data.raw["assembling-machine"]["corporate-breakroom"],
     data.raw["assembling-machine"]["union-headquarters"],
     data.raw["assembling-machine"]["propaganda-distillery"],
+    data.raw["assembling-machine"]["formation-center"],
   }
 
   for _, prototype in ipairs(prototypes) do
