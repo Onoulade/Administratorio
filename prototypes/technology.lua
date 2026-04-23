@@ -548,7 +548,7 @@ data:extend({
   {
     type = "technology", name = "biter-station-capacity-1",
     icon = "__administratorio__/graphics/icons/biter-station.png", icon_size = 64,
-    effects = {{ type = "nothing" }},
+    effects = {{ type = "nothing", effect_description = {"technology-effect.biter-station-capacity", "20"} }},
     prerequisites = {"biter-employment"},
     unit = { count = 100, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },
     order = "c-h3"
@@ -556,7 +556,7 @@ data:extend({
   {
     type = "technology", name = "biter-station-capacity-2",
     icon = "__administratorio__/graphics/icons/biter-station.png", icon_size = 64,
-    effects = {{ type = "nothing" }},
+    effects = {{ type = "nothing", effect_description = {"technology-effect.biter-station-capacity", "30"} }},
     prerequisites = {"biter-station-capacity-1"},
     unit = { count = 150, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "c-h4"
@@ -564,7 +564,7 @@ data:extend({
   {
     type = "technology", name = "biter-station-capacity-3",
     icon = "__administratorio__/graphics/icons/biter-station.png", icon_size = 64,
-    effects = {{ type = "nothing" }},
+    effects = {{ type = "nothing", effect_description = {"technology-effect.biter-station-capacity", "40"} }},
     prerequisites = {"biter-station-capacity-2"},
     unit = { count = 200, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 40 },
     order = "c-h5"
@@ -572,7 +572,7 @@ data:extend({
   {
     type = "technology", name = "biter-station-capacity-4",
     icon = "__administratorio__/graphics/icons/biter-station.png", icon_size = 64,
-    effects = {{ type = "nothing" }},
+    effects = {{ type = "nothing", effect_description = {"technology-effect.biter-station-capacity", "50"} }},
     prerequisites = {"biter-station-capacity-3"},
     unit = { count = 300, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 50 },
     order = "c-h6"
@@ -613,7 +613,10 @@ data:extend({
   -- BITERPORT WORKER SPEED (swap dispatched logistics workers to faster unit prototypes)
   {
     type = "technology", name = "biterport-worker-speed-1",
-    icons = {{icon = "__administratorio__/graphics/icons/credentials.png", icon_size = 64, tint = {r=0.8, g=0.75, b=0.35, a=1}}},
+    icons = {
+      {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, tint = {r=0.45, g=0.85, b=0.55, a=1}},
+      {icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
+    },
     effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-worker-speed", "35%"} }},
     prerequisites = {"biterport-logistics"},
     unit = { count = 140, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
@@ -621,7 +624,10 @@ data:extend({
   },
   {
     type = "technology", name = "biterport-worker-speed-2",
-    icons = {{icon = "__administratorio__/graphics/icons/credentials.png", icon_size = 64, tint = {r=0.9, g=0.55, b=0.2, a=1}}},
+    icons = {
+      {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, tint = {r=0.45, g=0.85, b=0.55, a=1}},
+      {icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
+    },
     effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-worker-speed", "70%"} }},
     prerequisites = {"biterport-worker-speed-1"},
     unit = { count = 240, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
@@ -673,8 +679,8 @@ data:extend({
       { type = "unlock-recipe", recipe = "hired-biter-capsule" },
       { type = "unlock-recipe", recipe = "hired-biter-command-capsule" },
     },
-    prerequisites = {"biter-employment", "federal-regulation", "biter-labor-efficiency-2"},
-    unit = { count = 500, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    prerequisites = {"biter-employment", "loitering-ordinances", "biter-labor-efficiency-2"},
+    unit = { count = 500, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"utility-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "f-i"
   },
 })
@@ -1026,17 +1032,16 @@ if working_hours_enabled then
       effects = {
         { type = "unlock-recipe", recipe = "overtime-exemption" }
       },
-      prerequisites = {"federal-regulation", "productivity-module"},
+      prerequisites = {"executive-review"},
       unit = {
-        count = 250,
+        count = 175,
         ingredients = {
           {"automation-science-pack", 1},
           {"logistic-science-pack", 1},
           {"chemical-science-pack", 1},
-          {"utility-science-pack", 1},
           {"administrative-science-pack", 1},
         },
-        time = 60
+        time = 45
       },
       order = "f-z"
     },
@@ -1101,7 +1106,6 @@ add_tech_prerequisite("eminent-domain-zoning", "production-science-pack")
 add_tech_prerequisite("constitutional-law", "production-science-pack")
 add_tech_prerequisite("loitering-ordinances", "utility-science-pack")
 add_tech_prerequisite("vagrancy-ordinances", "utility-science-pack")
-add_tech_prerequisite("after-hours-operations", "utility-science-pack")
 add_tech_prerequisite("power-armor-mk2", "utility-science-pack")
 
 add_tech_prerequisite("information-management", "advanced-circuit")
