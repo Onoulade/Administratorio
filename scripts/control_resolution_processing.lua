@@ -2,7 +2,6 @@ local M = {}
 
 function M.new(deps)
   local needs_loaded_protest_refresh = false
-  local needs_loaded_zone_overlay_cleanup = false
   local needs_loaded_working_hours_refresh = false
 
   local runtime_debug = deps.runtime_debug
@@ -12,7 +11,6 @@ function M.new(deps)
 
   function controller.on_load()
     needs_loaded_protest_refresh = true
-    needs_loaded_zone_overlay_cleanup = true
     needs_loaded_working_hours_refresh = true
   end
 
@@ -69,11 +67,6 @@ function M.new(deps)
     end)
 
     deps.warn_force_about_evolution_complaints(game.forces["player"])
-
-    if needs_loaded_zone_overlay_cleanup then
-      deps.cleanup_waiting_zone_overlays()
-      needs_loaded_zone_overlay_cleanup = false
-    end
 
     if needs_loaded_working_hours_refresh then
       if deps.working_hours.is_enabled() then

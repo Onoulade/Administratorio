@@ -369,17 +369,6 @@ local function init_storage()
   pneumatic.rebuild_all()
 end
 
-local function cleanup_waiting_zone_overlays()
-  for _, surface in pairs(game.surfaces) do
-    local markers = surface.find_entities_filtered{name = "waiting-zone-marker"}
-    for _, marker in ipairs(markers) do
-      if marker.valid then
-        marker.destroy()
-      end
-    end
-  end
-end
-
 -- ============================================================
 -- LIFECYCLE EVENTS
 -- ============================================================
@@ -510,8 +499,6 @@ local function on_configuration_changed()
 
   -- Destroy old waiting markers and normalize desks to the single centered station.
   for _, surface in pairs(game.surfaces) do
-    local old_markers = surface.find_entities_filtered{name = "waiting-zone-marker"}
-    for _, marker in ipairs(old_markers) do marker.destroy() end
     local old_corner_blockers = surface.find_entities_filtered{name = "admin-station-corner-blocker"}
     for _, blocker in ipairs(old_corner_blockers) do blocker.destroy() end
 
@@ -522,7 +509,6 @@ local function on_configuration_changed()
         bounds = zones.get_zone_bounds(desk.position),
         footprint = zones.get_desk_footprint_bounds(desk.position)
       }
-      zones.create_zone_markers(surface, storage.desk_zones[desk_id].bounds)
       zones.create_corner_blockers(surface, storage.desk_zones[desk_id].footprint, desk.force)
       ensure_desk_combinator(desk)
       biters.mark_desk_circuit_dirty(desk_id)
@@ -732,7 +718,6 @@ local function on_entity_built_inner(event)
     end
 
     storage.desk_zones[desk_id] = {bounds = bounds, footprint = footprint}
-    zones.create_zone_markers(surface, bounds)
     zones.create_corner_blockers(surface, footprint, entity.force)
     ensure_desk_combinator(entity)
     storage.desk_reserved_slots[desk_id] = 0
@@ -749,7 +734,7 @@ local function on_entity_built_inner(event)
     storage.tube_network_dirty = true
 
   -- Prevent building on top of biter waiting zones
-  elseif entity.name ~= "waiting-zone-marker" and entity.name ~= "admin-station-combinator" then
+  elseif entity.name ~= "admin-station-combinator" then
     if next(storage.desk_zones) then
       local box = entity.bounding_box
       if box and zones.is_in_admin_zone(entity.surface, box) then
@@ -1620,7 +1605,6 @@ end
 
 resolution_processing = control_resolution_processing_factory.new({
   biters = biters,
-  cleanup_waiting_zone_overlays = cleanup_waiting_zone_overlays,
   collect_runtime_debug_counts = collect_runtime_debug_counts,
   field_office = field_office,
   get_cached_desks = get_cached_desks,

@@ -37,7 +37,6 @@ local NIGHT_WORK_BUILDINGS = {
 local ADMIN_STATION_NON_BLOCKING_NAMES = {
   ["admin-station-combinator"] = true,
   ["biterport-hidden-roboport"] = true,
-  ["waiting-zone-marker"] = true,
   ["transit-permit-chest"] = true,
   ["pneumatic-hidden-intake"] = true,
   ["pneumatic-hidden-outtake"] = true,
@@ -1250,6 +1249,17 @@ for _, prototype_set in pairs(data.raw) do
       prototype.allowed_module_categories = categories
     end
   end
+end
+
+-------------------------------------------------------------------------------
+-- 8b. BITERPORT ITEM PLACE_RESULT FALLBACK
+-- biterport-placement-preview is only created when the base roboport prototype
+-- exists. If it wasn't registered, fall back to the real container so the item
+-- doesn't cause an assignID error on load.
+-------------------------------------------------------------------------------
+local biterport_item = data.raw["item"]["biterport"]
+if biterport_item and not (data.raw["roboport"] and data.raw["roboport"]["biterport-placement-preview"]) then
+  biterport_item.place_result = "biterport"
 end
 
 -------------------------------------------------------------------------------

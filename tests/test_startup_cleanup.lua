@@ -131,7 +131,6 @@ local deps = {
   trains = {on_tick = noop},
   strip_weapons = noop,
   warn_force_about_evolution_complaints = noop,
-  cleanup_waiting_zone_overlays = noop,
   working_hours = {
     is_enabled = function() return false end,
     rebuild_registry = noop,
