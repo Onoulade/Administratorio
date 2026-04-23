@@ -315,7 +315,7 @@ data:extend({
       { type = "unlock-recipe", recipe = "union-approval-production" },
       { type = "unlock-recipe", recipe = "government-grant-production" }
     },
-    prerequisites = {"verbal-approvals", "local-precedents", "advanced-circuit"},
+    prerequisites = {"verbal-approvals", "local-precedents", "advanced-circuit", "union-delegate-training"},
     unit = { count = 145, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
     order = "e-a"
   },
@@ -540,7 +540,7 @@ data:extend({
       { type = "unlock-recipe", recipe = "buffer-chest" },
       { type = "unlock-recipe", recipe = "requester-chest" },
     },
-    prerequisites = {"formation-center"},
+    prerequisites = {"formation-center", "steel-processing", "advanced-circuit"},
     unit = { count = 140, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 35 },
     order = "c-h2a"
   },
@@ -598,7 +598,7 @@ data:extend({
     type = "technology", name = "biterport-capacity-3",
     icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64,
     effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-capacity", "12"} }},
-    prerequisites = {"biterport-capacity-2"},
+    prerequisites = {"biterport-capacity-2", "chemical-science-pack"},
     unit = { count = 220, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 40 },
     order = "c-h9"
   },
@@ -651,7 +651,7 @@ data:extend({
       {icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
     },
     effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity", "10"} }},
-    prerequisites = {"biterport-transport-capacity-3"},
+    prerequisites = {"biterport-transport-capacity-3", "chemical-science-pack"},
     unit = { count = 320, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 50 },
     order = "c-h9e"
   },
@@ -685,7 +685,7 @@ data:extend({
       {icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
     },
     effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-worker-speed", "70%"} }},
-    prerequisites = {"biterport-worker-speed-1"},
+    prerequisites = {"biterport-worker-speed-1", "chemical-science-pack"},
     unit = { count = 240, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
     order = "c-i2"
   },
@@ -698,7 +698,7 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "union-delegate-training" },
     },
-    prerequisites = {"formation-center", "public-finance"},
+    prerequisites = {"formation-center", "verbal-approvals", "local-precedents", "chemical-science-pack"},
     unit = { count = 160, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
     order = "e-h1"
   },
@@ -735,7 +735,7 @@ data:extend({
       { type = "unlock-recipe", recipe = "hired-biter-capsule" },
       { type = "unlock-recipe", recipe = "hired-biter-command-capsule" },
     },
-    prerequisites = {"biter-employment", "loitering-ordinances", "biter-labor-efficiency-2"},
+    prerequisites = {"biter-employment", "loitering-ordinances", "biter-labor-efficiency-2", "executive-review"},
     unit = { count = 500, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"utility-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "f-i"
   },
@@ -1088,7 +1088,7 @@ if working_hours_enabled then
       effects = {
         { type = "unlock-recipe", recipe = "overtime-exemption" }
       },
-      prerequisites = {"executive-review"},
+      prerequisites = {"executive-review", "federal-regulation", "utility-science-pack"},
       unit = {
         count = 175,
         ingredients = {
@@ -1118,11 +1118,11 @@ add_tech_prerequisite("railway", "local-precedents")
 -- with basic electronics.  The full office desk is gated behind biter-employment.
 add_tech_unlock("electronics", "field-office")
 
--- Discovery-triggered bootstrap structures should not appear craftable before
--- their prerequisite paperwork exists.
-add_tech_unlock("discovery-redundant-rubble", "admin-station")
-add_tech_unlock("discovery-redundant-rubble", "resolution-office")
+-- Discovery-triggered bootstrap paperwork can appear early, but buildings that
+-- still need the printer chain should wait until printing-technology.
 add_tech_unlock("discovery-redundant-rubble", "promise-production")
+add_tech_unlock("printing-technology", "admin-station")
+add_tech_unlock("printing-technology", "resolution-office")
 
 -- Early paperwork that consumes bootstrap resources should unlock only after
 -- the matching discovery chain is in play.
@@ -1130,6 +1130,48 @@ add_tech_unlock("discovery-redundant-rubble", "filing-landscape")
 add_tech_unlock("discovery-bullshit", "landscape-final")
 add_tech_prerequisite("printing-technology", "discovery-bullshit")
 add_tech_prerequisite("printing-technology", "discovery-redundant-rubble")
+
+-- Delay unlocks until the first technology where their recipes are actually
+-- machine-usable, so the tree only exposes craftable outcomes.
+remove_tech_unlock("advanced-material-processing", "steel-furnace")
+add_tech_unlock("concrete", "steel-furnace")
+
+for _, recipe_name in ipairs({
+  "arithmetic-combinator",
+  "decider-combinator",
+  "constant-combinator",
+  "power-switch",
+  "programmable-speaker",
+  "display-panel",
+}) do
+  remove_tech_unlock("circuit-network", recipe_name)
+  add_tech_unlock("advanced-combinators", recipe_name)
+end
+
+remove_tech_unlock("electric-energy-distribution-1", "medium-electric-pole")
+remove_tech_unlock("electric-energy-distribution-1", "big-electric-pole")
+add_tech_unlock("electric-energy-distribution-2", "medium-electric-pole")
+add_tech_unlock("electric-energy-distribution-2", "big-electric-pole")
+
+for _, recipe_name in ipairs({
+  "fast-transport-belt",
+  "fast-underground-belt",
+  "fast-splitter",
+}) do
+  remove_tech_unlock("logistics-2", recipe_name)
+  add_tech_unlock("bulk-inserter", recipe_name)
+end
+
+remove_tech_unlock("engine", "engine-unit")
+add_tech_unlock("fluid-handling", "engine-unit")
+
+remove_tech_unlock("productivity-module-3", "productivity-module-3")
+remove_tech_unlock("speed-module-3", "speed-module-3")
+add_tech_unlock("rocket-silo", "productivity-module-3")
+add_tech_unlock("rocket-silo", "speed-module-3")
+
+remove_tech_unlock("railway", "locomotive")
+add_tech_unlock("production-science-pack", "locomotive")
 
 -- Unlock Work Orders with Automation (fuel for AM1)
 add_tech_unlock("automation", "work-order-production")
@@ -1163,6 +1205,7 @@ add_tech_prerequisite("constitutional-law", "production-science-pack")
 add_tech_prerequisite("loitering-ordinances", "utility-science-pack")
 add_tech_prerequisite("vagrancy-ordinances", "utility-science-pack")
 add_tech_prerequisite("power-armor-mk2", "utility-science-pack")
+add_tech_prerequisite("robotics", "federal-regulation")
 
 add_tech_prerequisite("information-management", "advanced-circuit")
 add_tech_prerequisite("environmental-compliance", "fluid-handling")
@@ -1233,6 +1276,7 @@ add_tech_prerequisite("speed-module-2", "information-management")
 add_tech_prerequisite("speed-module-3", "processing-unit")
 add_tech_prerequisite("efficiency-module-3", "processing-unit")
 add_tech_prerequisite("productivity-module-3", "processing-unit")
+add_tech_prerequisite("logistics-3", "bulk-inserter")
 add_tech_prerequisite("uranium-processing", "board-meetings")
 add_tech_prerequisite("uranium-processing", "nuclear-technician-training")
 add_tech_prerequisite("after-hours-operations", "executive-review")
@@ -1247,6 +1291,14 @@ for _, tech_name in ipairs({
   "personal-roboport-mk2-equipment",
 }) do
   add_tech_prerequisite(tech_name, "verbal-approvals")
+end
+
+for _, tech_name in ipairs({
+  "construction-robotics",
+  "logistic-robotics",
+  "personal-roboport-equipment",
+}) do
+  add_tech_prerequisite(tech_name, "utility-science-pack")
 end
 
 for _, tech_name in ipairs({
