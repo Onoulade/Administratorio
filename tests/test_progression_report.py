@@ -63,7 +63,7 @@ RESOURCE_ROOT_TYPES = (
     "simple-entity-with-force",
     "fish",
 )
-SECONDARY_RECIPE_CATEGORIES = {"pneumatic-intake"}
+SECONDARY_RECIPE_CATEGORIES = {"pneumatic-intake", "smelting"}
 STARTING_PROVIDER_ITEMS = ("mechanical-printer", "office-desk")
 
 
@@ -251,7 +251,7 @@ class ProgressionAnalyzer:
         self.start_enabled_recipes = set(self.always_enabled_recipes) | self.world_trigger_recipes
 
     def _build_root_materials(self) -> Set[str]:
-        roots = {"water", "taxpayer-money"}
+        roots = {"water", "taxpayer-money", "biter-worker"}
         for proto_type in RESOURCE_ROOT_TYPES:
             for proto in self.data_raw.get(proto_type, {}).values():
                 minable = proto.get("minable") or {}

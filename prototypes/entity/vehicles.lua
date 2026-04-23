@@ -144,9 +144,15 @@ local function make_rideable_biter()
   vehicle.open_sound = biter_sound("__base__/sound/creatures/biter-call", 5, 0.18, 0.3, 2)
   vehicle.close_sound = biter_sound("__base__/sound/creatures/biter-call", 5, 0.14, 0.24, 2)
   vehicle.vehicle_impact_sound = nil
-  vehicle.stop_trigger = nil
+  vehicle.stop_trigger = {{
+    type = "play-sound",
+    sound = biter_sound("__base__/sound/creatures/biter-call", 5, 0.12, 0.22, 1),
+  }}
   vehicle.stop_trigger_speed = nil
-  vehicle.working_sound = nil
+  vehicle.working_sound = {
+    activate_sound = biter_sound("__base__/sound/creatures/biter-roar-mid", 7, 0.2, 0.35, 1),
+    deactivate_sound = biter_sound("__base__/sound/creatures/biter-call", 5, 0.12, 0.22, 1),
+  }
 
   if vehicle.energy_source then
     vehicle.energy_source.fuel_categories = {"administratorio-taxpayer-money"}

@@ -5,7 +5,7 @@ local M = {}
 local PORT_NAME = C.BITERPORT_NAME
 local HIDDEN_ROBOPORT_NAME = C.BITERPORT_HIDDEN_ROBOPORT_NAME
 local WORKER_FORCE_NAME = "administratorio-biters"
-local WORKER_ITEM_NAME = "biter-worker"
+local WORKER_ITEM_NAME = "biter-logistics-formation"
 local MONEY_ITEM_NAME = "taxpayer-money"
 local WORKER_ENTITY_NAME = C.BITERPORT_WORKER_ENTITY_NAME or "small-biter"
 local FALLBACK_WORKER_ENTITY_NAME = "small-biter"
@@ -23,6 +23,10 @@ local SPEED_TIER_TECHS = {
 }
 
 local SOURCE_CHEST_NAMES = {
+  ["active-provider-chest"] = true,
+  ["passive-provider-chest"] = true,
+  ["storage-chest"] = true,
+  ["buffer-chest"] = true,
   ["logistic-chest-active-provider"] = true,
   ["logistic-chest-passive-provider"] = true,
   ["logistic-chest-storage"] = true,
@@ -30,11 +34,18 @@ local SOURCE_CHEST_NAMES = {
 }
 
 local REQUESTER_CHEST_NAMES = {
+  ["requester-chest"] = true,
+  ["buffer-chest"] = true,
   ["logistic-chest-requester"] = true,
   ["logistic-chest-buffer"] = true,
 }
 
 local LOGISTIC_CHEST_NAMES = {
+  ["active-provider-chest"] = true,
+  ["passive-provider-chest"] = true,
+  ["storage-chest"] = true,
+  ["buffer-chest"] = true,
+  ["requester-chest"] = true,
   ["logistic-chest-active-provider"] = true,
   ["logistic-chest-passive-provider"] = true,
   ["logistic-chest-storage"] = true,
