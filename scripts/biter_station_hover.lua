@@ -1,10 +1,12 @@
 local C = require("scripts.constants")
+local working_hours = require("scripts.working_hours")
 
 local M = {}
 
 local ZONE_COLOR      = {r = 0.9, g = 0.7, b = 0.2, a = 0.7}
 local BUILDING_BORDER = {r = 0.9, g = 0.7, b = 0.2, a = 0.55}
 local TEXT_COLOR      = {r = 0.9, g = 0.7, b = 0.2}
+local COFFEE_INPUT_COLOR = {r = 0.75, g = 0.42, b = 0.18, a = 0.9}
 
 local function zone_box(pos)
   local r = C.BITER_STATION_RANGE
@@ -19,6 +21,54 @@ local function add_render(player_index, obj)
   local t = storage.biter_station_hover_renders[player_index] or {}
   t[#t + 1] = obj.id
   storage.biter_station_hover_renders[player_index] = t
+end
+
+local function rear_input_position(entity)
+  local direction = entity and entity.direction or defines.direction.north
+  local position = entity and entity.position or {x = 0, y = 0}
+  if direction == defines.direction.east then
+    return {x = position.x + 2.5, y = position.y}
+  elseif direction == defines.direction.south then
+    return {x = position.x + 0.5, y = position.y + 2}
+  elseif direction == defines.direction.west then
+    return {x = position.x - 1.5, y = position.y}
+  end
+  return {x = position.x + 0.5, y = position.y - 2}
+end
+
+local function draw_coffee_input_marker(player, station)
+  if not working_hours.is_enabled() or not station or not station.valid then return end
+  local surface = station.surface
+  local input_position = rear_input_position(station)
+
+  add_render(player.index, rendering.draw_line{
+    color = COFFEE_INPUT_COLOR,
+    width = 3,
+    from = station.position,
+    to = input_position,
+    surface = surface,
+    players = {player},
+    draw_on_ground = true,
+  })
+
+  add_render(player.index, rendering.draw_circle{
+    color = COFFEE_INPUT_COLOR,
+    radius = 0.45,
+    width = 4,
+    target = input_position,
+    surface = surface,
+    players = {player},
+    draw_on_ground = true,
+  })
+
+  add_render(player.index, rendering.draw_sprite{
+    sprite = "fluid/liquid-coffee",
+    target = input_position,
+    surface = surface,
+    x_scale = 0.45,
+    y_scale = 0.45,
+    players = {player},
+  })
 end
 
 local function clear_renders(player_index)
@@ -86,6 +136,8 @@ function M.show_station_zone(player, station)
     scale_with_zoom      = true,
     players              = {player},
   })
+
+  draw_coffee_input_marker(player, station)
 end
 
 function M.show_building_hover(player, building)

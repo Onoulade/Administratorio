@@ -113,6 +113,22 @@ test("rideable biter tip unlocks with automobilism", function()
   )
 end)
 
+test("formation center tip unlocks when first formation center is built", function()
+  local item = tip("administratorio-formation-center")
+  assert_true(
+    trigger_contains(item.trigger, "build-entity", "entity", "formation-center"),
+    "formation-center tip should unlock from building the formation-center entity"
+  )
+end)
+
+test("biterport tip unlocks with biterport-logistics technology", function()
+  local item = tip("administratorio-biterport")
+  assert_true(
+    trigger_contains(item.trigger, "research", "technology", "biterport-logistics"),
+    "biterport tip should unlock from the biterport-logistics technology"
+  )
+end)
+
 print(("Tips & Tricks tests: %d passed, %d failed"):format(passed, failed))
 if failed > 0 then
   for _, err in ipairs(errors) do

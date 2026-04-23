@@ -191,6 +191,7 @@ biter_station.max_health = 450
 biter_station.collision_box = {{-1.8, -1.8}, {1.8, 1.8}}
 biter_station.selection_box = {{-2.0, -2.0}, {2.0, 2.0}}
 biter_station.inventory_size = 10
+biter_station.inventory_type = "with_filters_and_bar"
 biter_station.collision_mask = {layers = {object = true, player = true, water_tile = true}}
 biter_station.circuit_wire_max_distance = 9
 biter_station.circuit_connector = circuit_connector_definitions.create_single(
@@ -246,6 +247,45 @@ biterport.picture = {
 biterport.stateless_visualisation = nil
 biterport.draw_stateless_visualisations_in_ghost = nil
 biterport.placeable_by = placeable_by_item("biterport")
+
+local function make_hidden_coffee_input(name, localised_name, localised_description)
+  local input = table.deepcopy(data.raw["pipe"]["pipe"])
+  input.name = name
+  input.localised_name = localised_name
+  input.localised_description = localised_description
+  input.hidden = true
+  input.hidden_in_factoriopedia = true
+  input.selectable_in_game = false
+  input.flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "not-flammable"}
+  input.minable = nil
+  input.placeable_by = nil
+  input.collision_mask = {layers = {}}
+  input.collision_box = {{-0.1, -0.1}, {0.1, 0.1}}
+  input.selection_box = {{0, 0}, {0, 0}}
+  input.damaged_trigger_effect = nil
+  input.pictures = nil
+  input.pipe_covers = nil
+  input.fluid_box = {
+    filter = "liquid-coffee",
+    volume = 100,
+    pipe_connections = {
+      { direction = defines.direction.north, position = {0, 0} },
+    },
+    max_pipeline_extent = 60,
+  }
+  return input
+end
+
+local biter_station_coffee_input = make_hidden_coffee_input(
+  "biter-station-coffee-input",
+  {"entity-name.biter-station"},
+  {"entity-description.biter-station"}
+)
+local biterport_coffee_input = make_hidden_coffee_input(
+  "biterport-coffee-input",
+  {"entity-name.biterport"},
+  {"entity-description.biterport"}
+)
 
 local hidden_biterport_roboport
 local biterport_placement_preview
@@ -956,6 +996,8 @@ add_entity(waiting_zone_marker)
 add_entity(admin_station_corner_blocker)
 add_entity(admin_station_combinator)
 add_entity(transit_permit_chest)
+add_entity(biter_station_coffee_input)
+add_entity(biterport_coffee_input)
 add_entity(hidden_biterport_roboport)
 add_entity(biterport_placement_preview)
 add_entity(biter_worker_t2)

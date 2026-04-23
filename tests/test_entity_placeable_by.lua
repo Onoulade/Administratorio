@@ -538,6 +538,32 @@ test("biterport has formation storage and a hidden robot service cell", function
   assert_eq(hidden.recharge_minimum, "1kJ", "hidden roboport should satisfy the roboport recharge invariant")
 end)
 
+test("biter station inventory supports worker slot filters", function()
+  local station = assert(find_entity_prototype("biter-station"))
+  assert_eq(station.inventory_size, 10, "biter station base inventory size")
+  assert_eq(station.inventory_type, "with_filters_and_bar", "biter station inventory should support funding and worker filters")
+end)
+
+test("biter dispatch buildings expose hidden rear coffee inputs", function()
+  for _, name in ipairs({"biter-station-coffee-input", "biterport-coffee-input"}) do
+    local input = assert(data.raw.pipe[name], name .. " prototype missing")
+    assert_true(input.hidden, name .. " should be hidden")
+    assert_true(input.selectable_in_game == false, name .. " should not be selectable")
+    assert_eq(input.fluid_box.filter, "liquid-coffee", name .. " should only accept liquid coffee")
+
+    local connection = input.fluid_box.pipe_connections and input.fluid_box.pipe_connections[1]
+    assert_true(connection ~= nil, name .. " should expose a pipe connection")
+    assert_true(connection.flow_direction == nil, name .. " pipe connection should not set unsupported flow_direction")
+    assert_eq(connection.direction, defines.direction.north, name .. " should connect at the rear")
+    assert_eq(connection.position[1], 0, name .. " connection x")
+    assert_eq(connection.position[2], 0, name .. " connection y")
+    assert_true(input.collision_box[1][1] <= 0 and input.collision_box[2][1] >= 0,
+      name .. " collision box should contain the pipe connection x")
+    assert_true(input.collision_box[1][2] <= 0 and input.collision_box[2][2] >= 0,
+      name .. " collision box should contain the pipe connection y")
+  end
+end)
+
 test("biterport worker speed tiers use hidden custom biter units", function()
   local base = data.raw.unit["biterport-worker"]
   local fast = data.raw.unit["biterport-worker-fast"]

@@ -1,14 +1,64 @@
 local biterport = require("scripts.biterport")
+local working_hours = require("scripts.working_hours")
 
 local M = {}
 
 local LINK_COLOR = {r = 0.55, g = 1.0, b = 0.45, a = 0.5}
+local COFFEE_INPUT_COLOR = {r = 0.75, g = 0.42, b = 0.18, a = 0.9}
 
 local function add_render(player_index, obj)
   if not obj then return end
   local renders = storage.biterport_hover_renders[player_index] or {}
   renders[#renders + 1] = obj.id
   storage.biterport_hover_renders[player_index] = renders
+end
+
+local function rear_input_position(entity)
+  local direction = entity and entity.direction or defines.direction.north
+  local position = entity and entity.position or {x = 0, y = 0}
+  if direction == defines.direction.east then
+    return {x = position.x + 2.5, y = position.y}
+  elseif direction == defines.direction.south then
+    return {x = position.x + 0.5, y = position.y + 2}
+  elseif direction == defines.direction.west then
+    return {x = position.x - 1.5, y = position.y}
+  end
+  return {x = position.x + 0.5, y = position.y - 2}
+end
+
+local function draw_coffee_input_marker(player, port)
+  if not working_hours.is_enabled() or not port or not port.valid then return end
+  local surface = port.surface
+  local input_position = rear_input_position(port)
+
+  add_render(player.index, rendering.draw_line{
+    color = COFFEE_INPUT_COLOR,
+    width = 3,
+    from = port.position,
+    to = input_position,
+    surface = surface,
+    players = {player},
+    draw_on_ground = true,
+  })
+
+  add_render(player.index, rendering.draw_circle{
+    color = COFFEE_INPUT_COLOR,
+    radius = 0.45,
+    width = 4,
+    target = input_position,
+    surface = surface,
+    players = {player},
+    draw_on_ground = true,
+  })
+
+  add_render(player.index, rendering.draw_sprite{
+    sprite = "fluid/liquid-coffee",
+    target = input_position,
+    surface = surface,
+    x_scale = 0.45,
+    y_scale = 0.45,
+    players = {player},
+  })
 end
 
 local function clear_renders(player_index)
@@ -53,6 +103,8 @@ function M.show_port(player, port)
       end
     end
   end
+
+  draw_coffee_input_marker(player, port)
 end
 
 return M

@@ -1,12 +1,15 @@
 local C = require("scripts.constants")
+local working_hours = require("scripts.working_hours")
 
 local M = {}
 
 local PORT_NAME = C.BITERPORT_NAME
 local HIDDEN_ROBOPORT_NAME = C.BITERPORT_HIDDEN_ROBOPORT_NAME
+local COFFEE_INPUT_NAME = "biterport-coffee-input"
 local WORKER_FORCE_NAME = "administratorio-biters"
 local WORKER_ITEM_NAME = "biter-logistics-formation"
 local MONEY_ITEM_NAME = "taxpayer-money"
+local COFFEE_FLUID_NAME = "liquid-coffee"
 local WORKER_ENTITY_NAME = C.BITERPORT_WORKER_ENTITY_NAME or "small-biter"
 local FALLBACK_WORKER_ENTITY_NAME = "small-biter"
 
@@ -215,10 +218,99 @@ local function port_money_count(port)
   return inv and inv.get_item_count and inv.get_item_count(MONEY_ITEM_NAME) or 0
 end
 
+local function rear_input_position(entity)
+  local direction = entity and entity.direction or defines.direction.north
+  local position = entity and entity.position or {x = 0, y = 0}
+  if direction == defines.direction.east then
+    return {x = position.x + 2, y = position.y}
+  elseif direction == defines.direction.south then
+    return {x = position.x, y = position.y + 2}
+  elseif direction == defines.direction.west then
+    return {x = position.x - 2, y = position.y}
+  end
+  return {x = position.x, y = position.y - 2}
+end
+
+local function create_hidden_coffee_input(port)
+  if not port or not port.valid or not port.unit_number then return nil end
+  storage.biterport_coffee_inputs = storage.biterport_coffee_inputs or {}
+  local input = storage.biterport_coffee_inputs[port.unit_number]
+  if input and input.valid then
+    return input
+  end
+
+  local created = port.surface.create_entity{
+    name = COFFEE_INPUT_NAME,
+    position = rear_input_position(port),
+    direction = port.direction or defines.direction.north,
+    force = port.force,
+    create_build_effect_smoke = false,
+  }
+  if created and created.valid then
+    created.destructible = false
+    created.minable = false
+    created.operable = false
+    storage.biterport_coffee_inputs[port.unit_number] = created
+  end
+  return created
+end
+
+local function destroy_hidden_coffee_input(port_id)
+  local input = storage.biterport_coffee_inputs and storage.biterport_coffee_inputs[port_id]
+  if input and input.valid then
+    input.destroy()
+  end
+  if storage.biterport_coffee_inputs then
+    storage.biterport_coffee_inputs[port_id] = nil
+  end
+end
+
+local function dispatch_requires_coffee(port)
+  return port and port.valid
+    and working_hours.is_enabled()
+    and working_hours.is_night(port.surface)
+end
+
+local function available_dispatch_coffee(port)
+  if not dispatch_requires_coffee(port) then
+    return math.huge
+  end
+
+  local input = create_hidden_coffee_input(port)
+  local fluidbox = input and input.valid and input.fluidbox
+  local fluid = fluidbox and fluidbox[1] or nil
+  if fluid and fluid.name == COFFEE_FLUID_NAME then
+    return fluid.amount or 0
+  end
+  return 0
+end
+
+local function has_dispatch_coffee(port)
+  return available_dispatch_coffee(port) >= C.BITERPORT_NIGHT_COFFEE_PER_DISPATCH
+end
+
+local function remove_dispatch_coffee(port)
+  if not dispatch_requires_coffee(port) then
+    return true
+  end
+
+  local input = create_hidden_coffee_input(port)
+  if not input or not input.valid or not input.remove_fluid then
+    return false
+  end
+
+  local ok, removed = pcall(input.remove_fluid, {
+    name = COFFEE_FLUID_NAME,
+    amount = C.BITERPORT_NIGHT_COFFEE_PER_DISPATCH,
+  })
+  return ok and (removed or 0) >= C.BITERPORT_NIGHT_COFFEE_PER_DISPATCH
+end
+
 local function port_can_dispatch(port)
   return port and port.valid
     and port_worker_count(port) > 0
     and port_money_count(port) >= C.BITERPORT_WORKER_SALARY
+    and has_dispatch_coffee(port)
 end
 
 local function station_has_active_workers(port_id)
@@ -233,7 +325,7 @@ local function set_port_status(port, key)
       diode = defines.entity_status_diode.yellow,
       label = {"gui.biterport-calling"},
     }
-  elseif key == "biterport-no-workers" or key == "biterport-no-money" then
+  elseif key == "biterport-no-workers" or key == "biterport-no-money" or key == "biterport-no-coffee" then
     port.custom_status = {
       diode = defines.entity_status_diode.red,
       label = {"gui." .. key},
@@ -255,6 +347,8 @@ local function refresh_port_status(port)
     set_port_status(port, "biterport-no-workers")
   elseif port_money_count(port) < C.BITERPORT_WORKER_SALARY then
     set_port_status(port, "biterport-no-money")
+  elseif not has_dispatch_coffee(port) then
+    set_port_status(port, "biterport-no-coffee")
   else
     set_port_status(port, "biterport-idle")
   end
@@ -949,9 +1043,11 @@ local function phase_is_arrived(active, biter, destination, fallback_radius)
   return false
 end
 
-local function spawn_worker(port)
+local function spawn_worker(port, job_kind)
   local worker_entity_name = get_worker_entity_name(port.force)
-  local spawn_pos = port.surface.find_non_colliding_position(worker_entity_name, port.position, 8, 0.5)
+  local offset_x = job_kind == "logistics" and -1.5 or 1.5
+  local spawn_origin = {x = port.position.x + offset_x, y = port.position.y + 2.5}
+  local spawn_pos = port.surface.find_non_colliding_position(worker_entity_name, spawn_origin, 8, 0.5)
   if not spawn_pos then return nil end
   return port.surface.create_entity{
     name = worker_entity_name,
@@ -984,6 +1080,11 @@ local function remove_dispatch_inputs(port)
   if not inv then return false end
   if inv.remove({name = WORKER_ITEM_NAME, count = 1}) < 1 then return false end
   if inv.remove({name = MONEY_ITEM_NAME, count = C.BITERPORT_WORKER_SALARY}) < C.BITERPORT_WORKER_SALARY then
+    inv.insert({name = WORKER_ITEM_NAME, count = 1})
+    return false
+  end
+  if not remove_dispatch_coffee(port) then
+    inv.insert({name = MONEY_ITEM_NAME, count = C.BITERPORT_WORKER_SALARY})
     inv.insert({name = WORKER_ITEM_NAME, count = 1})
     return false
   end
@@ -1277,7 +1378,7 @@ local function dispatch_job(worker_port, job)
     return false
   end
 
-  local biter = spawn_worker(worker_port)
+  local biter = spawn_worker(worker_port, job.kind)
   if not biter or not biter.valid then
     maybe_reinsert_worker(worker_port)
     if job.kind == "construction" then restore_construction_ghost(job) end
@@ -1330,6 +1431,7 @@ function M.ensure_storage()
   ensure_worker_force()
   storage.biterports = storage.biterports or {}
   storage.biterport_hidden_roboports = storage.biterport_hidden_roboports or {}
+  storage.biterport_coffee_inputs = storage.biterport_coffee_inputs or {}
   storage.biterport_workers = storage.biterport_workers or {}
   storage.biterport_active_by_port = storage.biterport_active_by_port or {}
   storage.biterport_worker_units = storage.biterport_worker_units or {}
@@ -1365,6 +1467,9 @@ function M.track_port(entity)
   storage.biterports[entity.unit_number] = entity
   apply_port_inventory(entity)
   create_hidden_roboport(entity)
+  if working_hours.is_enabled() then
+    create_hidden_coffee_input(entity)
+  end
   refresh_port_status(entity)
 end
 
@@ -1393,6 +1498,7 @@ function M.untrack_port(entity, tick)
   if not entity or not entity.unit_number then return end
   local port_id = entity.unit_number
   destroy_hidden_roboport(port_id)
+  destroy_hidden_coffee_input(port_id)
   storage.biterports[port_id] = nil
 
   local active_set = storage.biterport_active_by_port[port_id]
@@ -1417,6 +1523,13 @@ function M.on_entity_removed(event)
     for port_id, hidden in pairs(storage.biterport_hidden_roboports) do
       if hidden == entity then
         storage.biterport_hidden_roboports[port_id] = nil
+        break
+      end
+    end
+  elseif entity.name == COFFEE_INPUT_NAME and storage.biterport_coffee_inputs then
+    for port_id, input in pairs(storage.biterport_coffee_inputs) do
+      if input == entity then
+        storage.biterport_coffee_inputs[port_id] = nil
         break
       end
     end
@@ -1489,10 +1602,14 @@ function M.rebuild_registry()
     for _, hidden in ipairs(surface.find_entities_filtered{name = HIDDEN_ROBOPORT_NAME}) do
       if hidden.valid then hidden.destroy() end
     end
+    for _, input in ipairs(surface.find_entities_filtered{name = COFFEE_INPUT_NAME}) do
+      if input.valid then input.destroy() end
+    end
   end
 
   storage.biterports = {}
   storage.biterport_hidden_roboports = {}
+  storage.biterport_coffee_inputs = {}
   storage.biterport_workers = {}
   storage.biterport_active_by_port = {}
   storage.biterport_worker_units = {}
@@ -1542,6 +1659,11 @@ function M.update(tick)
       if not storage.biterport_hidden_roboports[port_id]
          or not storage.biterport_hidden_roboports[port_id].valid then
         create_hidden_roboport(port)
+      end
+      if working_hours.is_enabled()
+         and (not storage.biterport_coffee_inputs[port_id]
+           or not storage.biterport_coffee_inputs[port_id].valid) then
+        create_hidden_coffee_input(port)
       end
       refresh_port_status(port)
     end
