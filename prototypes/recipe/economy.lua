@@ -205,8 +205,8 @@ data:extend({
     type = "recipe", name = "union-delegate-training", category = "biter-training", enabled = false,
     ingredients = {
       {type="item", name="biter-worker", amount=1},
-      {type="item", name="treasury-bond", amount=1},
-      {type="item", name="management-approval-verbal", amount=1},
+      {type="item", name="management-verbal-work-order", amount=1},
+      {type="item", name="form-27b-6", amount=1},
       {type="fluid", name="liquid-coffee", amount=50},
     },
     results = {{type="item", name="union-delegate", amount=1}},

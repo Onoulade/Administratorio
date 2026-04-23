@@ -100,6 +100,40 @@ vanilla_tech("nuclear-power", {"uranium-processing"}, {
 vanilla_tech("rocket-fuel", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack", "utility-science-pack"})
 vanilla_tech("concrete", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
 vanilla_tech("low-density-structure", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
+vanilla_tech("advanced-material-processing", nil, {
+  {type = "unlock-recipe", recipe = "steel-furnace"},
+}, {"automation-science-pack", "logistic-science-pack"})
+vanilla_tech("circuit-network", nil, {
+  {type = "unlock-recipe", recipe = "arithmetic-combinator"},
+  {type = "unlock-recipe", recipe = "decider-combinator"},
+  {type = "unlock-recipe", recipe = "constant-combinator"},
+  {type = "unlock-recipe", recipe = "power-switch"},
+  {type = "unlock-recipe", recipe = "programmable-speaker"},
+  {type = "unlock-recipe", recipe = "display-panel"},
+}, {"automation-science-pack", "logistic-science-pack"})
+vanilla_tech("advanced-combinators", {"circuit-network"}, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
+vanilla_tech("electric-energy-distribution-1", nil, {
+  {type = "unlock-recipe", recipe = "medium-electric-pole"},
+  {type = "unlock-recipe", recipe = "big-electric-pole"},
+}, {"automation-science-pack", "logistic-science-pack"})
+vanilla_tech("electric-energy-distribution-2", {"electric-energy-distribution-1"}, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
+vanilla_tech("logistics-2", nil, {
+  {type = "unlock-recipe", recipe = "fast-transport-belt"},
+  {type = "unlock-recipe", recipe = "fast-underground-belt"},
+  {type = "unlock-recipe", recipe = "fast-splitter"},
+}, {"automation-science-pack", "logistic-science-pack"})
+vanilla_tech("bulk-inserter", {"logistics-2"}, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
+vanilla_tech("logistics-3", {"logistics-2"}, {
+  {type = "unlock-recipe", recipe = "express-transport-belt"},
+  {type = "unlock-recipe", recipe = "express-underground-belt"},
+  {type = "unlock-recipe", recipe = "express-splitter"},
+}, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
+vanilla_tech("productivity-module-3", nil, {
+  {type = "unlock-recipe", recipe = "productivity-module-3"},
+}, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
+vanilla_tech("speed-module-3", nil, {
+  {type = "unlock-recipe", recipe = "speed-module-3"},
+}, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
 
 vanilla_tech("railway", {"logistics-2", "engine"}, {
   {type = "unlock-recipe", recipe = "rail"},
@@ -144,7 +178,9 @@ vanilla_tech("uranium-processing", {"uranium-mining"}, {
 vanilla_tech("rocket-silo", {"concrete", "rocket-fuel", "utility-science-pack"}, {
   {type = "unlock-recipe", recipe = "rocket-silo"},
 }, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack", "utility-science-pack"})
-vanilla_tech("engine", nil, nil, {"automation-science-pack", "logistic-science-pack"})
+vanilla_tech("engine", nil, {
+  {type = "unlock-recipe", recipe = "engine-unit"},
+}, {"automation-science-pack", "logistic-science-pack"})
 vanilla_tech("automobilism", {"engine"}, {
   {type = "unlock-recipe", recipe = "car"},
 }, {"automation-science-pack", "logistic-science-pack"})
@@ -293,7 +329,8 @@ test("local precedents and environmental compliance are split", function()
   assert_true(tech_unlocks_recipe("environmental-compliance", "environmental-impact-report"), "environmental-compliance should unlock environmental impact reports")
   assert_true(tech_unlocks_recipe("environmental-compliance", "chemical-handling-work-order-production"), "environmental-compliance should unlock chemical handling work orders")
   assert_true(tech_unlocks_recipe("environmental-compliance", "carbon-offset-certificate-verified"), "environmental-compliance should unlock verified carbon certificates")
-  assert_true(tech_unlocks_recipe("environmental-compliance", "chemical-operator-training"), "environmental-compliance should unlock chemical operator training")
+  assert_true(not tech_unlocks_recipe("environmental-compliance", "chemical-operator-training"), "environmental-compliance should not unlock chemical operator training directly")
+  assert_true(tech_has_prereq("chemical-operator-training", "environmental-compliance"), "chemical operator training should branch from environmental-compliance")
   assert_true(not tech_unlocks_recipe("environmental-compliance", "copy-environmental-impact-report"), "environmental-compliance should not unlock impact-report copying")
 end)
 
@@ -358,8 +395,10 @@ test("biterport capacity, transport, and logistics speed upgrades are tiered and
   assert_true(technologies["biterport-logistics"] ~= nil, "biterport-logistics should exist")
   assert_true(technology_name_locale["biterport-logistics"] ~= nil, "biterport-logistics name should be localized")
   assert_true(technology_description_locale["biterport-logistics"] ~= nil, "biterport-logistics description should be localized")
-  assert_true(tech_has_prereq("biterport-logistics", "biter-employment"), "biterport logistics should require biter employment (via formation-center)")
+  assert_true(tech_depends_on("biterport-logistics", "biter-employment"), "biterport logistics should require biter employment via formation-center")
   assert_true(tech_has_prereq("biterport-logistics", "formation-center"), "biterport logistics should be gated behind formation-center")
+  assert_true(tech_has_prereq("biterport-logistics", "steel-processing"), "biterport logistics should require steel-processing for steel chests")
+  assert_true(tech_has_prereq("biterport-logistics", "advanced-circuit"), "biterport logistics should require advanced circuits for chest electronics")
   assert_true(tech_unlocks_recipe("biterport-logistics", "biterport"), "biterport logistics should unlock biterports")
   assert_true(tech_unlocks_recipe("biterport-logistics", "biter-logistics-formation"), "biterport logistics should unlock dedicated logistics formations")
   assert_true(not tech_unlocks_recipe("biter-employment", "biterport"), "biter-employment should not unlock biterports directly")
@@ -426,11 +465,14 @@ test("biterport capacity, transport, and logistics speed upgrades are tiered and
   end
 
   assert_true(tech_uses_pack("biterport-capacity-3", "chemical-science-pack"), "capacity III should use chemical science")
+  assert_true(tech_has_prereq("biterport-capacity-3", "chemical-science-pack"), "capacity III should depend on chemical science")
   assert_true(tech_uses_pack("biterport-capacity-4", "chemical-science-pack"), "capacity IV should use chemical science")
   assert_true(not tech_uses_pack("biterport-transport-capacity-3", "chemical-science-pack"), "transport III should not use chemical science")
   assert_true(tech_uses_pack("biterport-transport-capacity-4", "chemical-science-pack"), "transport IV should use chemical science")
+  assert_true(tech_has_prereq("biterport-transport-capacity-4", "chemical-science-pack"), "transport IV should depend on chemical science")
   assert_true(not tech_uses_pack("biterport-transport-capacity-5", "production-science-pack"), "transport V should not use production science")
   assert_true(tech_uses_pack("biterport-worker-speed-2", "chemical-science-pack"), "speed II should use chemical science")
+  assert_true(tech_has_prereq("biterport-worker-speed-2", "chemical-science-pack"), "speed II should depend on chemical science")
 end)
 
 test("filing cabinet logistics upgrades grant character logistics bonuses", function()
@@ -454,10 +496,10 @@ test("bootstrap paperwork is gated behind both discovery chains", function()
   assert_true(technologies["discovery-redundant-rubble"].icon_size == 128,
     "geological inefficiency should use the 128px redundant rubble technology icon size")
   assert_true(tech_unlocks_recipe("biter-employment", "office-desk"), "biter-employment should unlock the office desk")
-  assert_true(tech_unlocks_recipe("discovery-redundant-rubble", "admin-station"), "discovery-redundant-rubble should unlock the admin station")
-  assert_true(tech_unlocks_recipe("discovery-redundant-rubble", "resolution-office"), "discovery-redundant-rubble should unlock the resolution office")
   assert_true(tech_unlocks_recipe("discovery-redundant-rubble", "promise-production"), "discovery-redundant-rubble should unlock promises")
   assert_true(tech_unlocks_recipe("discovery-redundant-rubble", "filing-landscape"), "discovery-redundant-rubble should unlock landscape filing")
+  assert_true(tech_unlocks_recipe("printing-technology", "admin-station"), "printing-technology should unlock the admin station")
+  assert_true(tech_unlocks_recipe("printing-technology", "resolution-office"), "printing-technology should unlock the resolution office")
   assert_true(tech_unlocks_recipe("discovery-bullshit", "landscape-final"), "discovery-bullshit should unlock landscape resolution")
   assert_true(tech_unlocks_recipe("discovery-bullshit", "safety-waiver-draft"), "discovery-bullshit should unlock safety waiver drafts")
   assert_true(tech_unlocks_recipe("discovery-bullshit", "construction-permit-draft"), "discovery-bullshit should unlock construction permit drafts")
@@ -475,7 +517,8 @@ test("rideable biter replaces the vanilla car unlock", function()
   assert_true(technologies["civic-biter-riding"] == nil, "rideable biter should not require an extra custom vehicle tech")
   assert_true(tech_unlocks_recipe("automobilism", "rideable-biter"), "automobilism should unlock the rideable biter")
   assert_true(not tech_unlocks_recipe("automobilism", "car"), "automobilism should not unlock the vanilla car")
-  assert_true(tech_has_prereq("automobilism", "biter-employment"), "rideable biter should still require biter employment")
+  assert_true(tech_depends_on("automobilism", "biter-employment"), "rideable biter should still require biter employment through formation-center")
+  assert_true(tech_has_prereq("automobilism", "formation-center"), "rideable biter should be gated behind formation-center")
   assert_true(tech_has_prereq("automobilism", "engine"), "rideable biter should still require engine")
   assert_true(data.raw.recipe.car.enabled == false, "vanilla car recipe should stay disabled")
   assert_true(data.raw.recipe.car.hidden, "vanilla car recipe should be hidden")
@@ -551,6 +594,7 @@ test("late administrative branches are split into finance meetings and nuclear p
   assert_true(tech_unlocks_recipe("public-finance", "union-headquarters"), "public-finance should unlock union headquarters")
   assert_true(tech_has_prereq("public-finance", "steel-processing"), "public-finance should require steel-processing")
   assert_true(tech_has_prereq("public-finance", "biter-employment"), "public-finance should require biter employment for union delegates")
+  assert_true(tech_has_prereq("public-finance", "union-delegate-training"), "public-finance should require union delegate training first")
   assert_true(tech_unlocks_recipe("board-meetings", "management-written-proposal"), "board-meetings should unlock written proposals")
   assert_true(tech_unlocks_recipe("board-meetings", "management-written-1st-printing"), "board-meetings should unlock written approval printing")
   assert_true(tech_unlocks_recipe("executive-review", "management-written-work-order-production"), "executive-review should unlock written management work orders")
@@ -558,6 +602,31 @@ test("late administrative branches are split into finance meetings and nuclear p
   assert_true(tech_unlocks_recipe("radiological-compliance", "radiological-work-order-production"), "radiological-compliance should unlock radiological paperwork")
   assert_true(tech_has_prereq("radiological-compliance", "environmental-compliance"), "radiological-compliance should require environmental-compliance")
   assert_true(tech_has_prereq("radiological-compliance", "battery"), "radiological-compliance should require battery")
+end)
+
+test("delegate training and delayed unlocks now appear only once they are usable", function()
+  assert_true(tech_has_prereq("union-delegate-training", "formation-center"), "union delegate training should require the formation center")
+  assert_true(tech_has_prereq("union-delegate-training", "verbal-approvals"), "union delegate training should require verbal approvals")
+  assert_true(tech_has_prereq("union-delegate-training", "local-precedents"), "union delegate training should require local precedents")
+  assert_true(tech_has_prereq("union-delegate-training", "chemical-science-pack"), "union delegate training should require chemical science")
+
+  assert_true(not tech_unlocks_recipe("advanced-material-processing", "steel-furnace"), "advanced material processing should not unlock steel furnaces early")
+  assert_true(tech_unlocks_recipe("concrete", "steel-furnace"), "concrete should unlock steel furnaces")
+  assert_true(not tech_unlocks_recipe("circuit-network", "arithmetic-combinator"), "circuit network should not unlock arithmetic combinators early")
+  assert_true(tech_unlocks_recipe("advanced-combinators", "arithmetic-combinator"), "advanced combinators should unlock arithmetic combinators")
+  assert_true(not tech_unlocks_recipe("electric-energy-distribution-1", "medium-electric-pole"), "electric-energy-distribution-1 should not unlock medium poles early")
+  assert_true(tech_unlocks_recipe("electric-energy-distribution-2", "medium-electric-pole"), "electric-energy-distribution-2 should unlock medium poles")
+  assert_true(not tech_unlocks_recipe("logistics-2", "fast-transport-belt"), "logistics-2 should not unlock fast belts early")
+  assert_true(tech_unlocks_recipe("bulk-inserter", "fast-transport-belt"), "bulk-inserter should unlock fast belts")
+  assert_true(tech_has_prereq("logistics-3", "bulk-inserter"), "logistics-3 should require bulk inserter so express belts have fast belts available")
+  assert_true(not tech_unlocks_recipe("engine", "engine-unit"), "engine should not unlock engine units early")
+  assert_true(tech_unlocks_recipe("fluid-handling", "engine-unit"), "fluid-handling should unlock engine units")
+  assert_true(not tech_unlocks_recipe("productivity-module-3", "productivity-module-3"), "productivity module 3 tech should not unlock itself early")
+  assert_true(not tech_unlocks_recipe("speed-module-3", "speed-module-3"), "speed module 3 tech should not unlock itself early")
+  assert_true(not tech_unlocks_recipe("railway", "locomotive"), "railway should not unlock locomotives before the production-tier recipe is usable")
+  assert_true(tech_unlocks_recipe("production-science-pack", "locomotive"), "production science should unlock locomotives once their full ingredient chain exists")
+  assert_true(tech_unlocks_recipe("rocket-silo", "productivity-module-3"), "rocket-silo should unlock productivity module 3")
+  assert_true(tech_unlocks_recipe("rocket-silo", "speed-module-3"), "rocket-silo should unlock speed module 3")
 end)
 
 test("late complaint tiers are split by family and science tier", function()
@@ -631,6 +700,9 @@ test("vanilla branches gain the required bureaucracy prerequisites", function()
   assert_true(tech_has_prereq("logistic-robotics", "verbal-approvals"), "logistic-robotics should require verbal-approvals")
   assert_true(tech_has_prereq("personal-roboport-equipment", "verbal-approvals"), "personal-roboport-equipment should require verbal-approvals")
   assert_true(tech_has_prereq("personal-roboport-mk2-equipment", "verbal-approvals"), "personal-roboport-mk2-equipment should require verbal-approvals")
+  assert_true(tech_has_prereq("construction-robotics", "utility-science-pack"), "construction-robotics should explicitly require utility science")
+  assert_true(tech_has_prereq("logistic-robotics", "utility-science-pack"), "logistic-robotics should explicitly require utility science")
+  assert_true(tech_has_prereq("personal-roboport-equipment", "utility-science-pack"), "personal-roboport-equipment should explicitly require utility science")
   assert_true(tech_has_prereq("robotics", "federal-regulation"), "robotics should be delayed to the production-era bureaucracy branch")
   assert_true(tech_unlocks_recipe("robotics", "flying-robot-frame"), "robotics should still own robot frames")
   assert_true(tech_depends_on("construction-robotics", "federal-regulation"), "construction robots should be late-game")
@@ -645,6 +717,7 @@ test("vanilla branches gain the required bureaucracy prerequisites", function()
   assert_true(tech_has_prereq("uranium-processing", "radiological-compliance"), "uranium-processing should require radiological-compliance")
   assert_true(tech_has_prereq("uranium-processing", "nuclear-technician-training"), "uranium-processing should require nuclear technician training for centrifuge technicians")
   assert_true(tech_has_prereq("rocket-silo", "executive-review"), "rocket-silo should require executive-review")
+  assert_true(tech_has_prereq("hired-biter-fieldwork", "executive-review"), "hired biter fieldwork should require written management work orders")
   assert_true(tech_has_prereq("power-armor-mk2", "utility-science-pack"), "power armor mk2 should require utility science explicitly")
 end)
 
