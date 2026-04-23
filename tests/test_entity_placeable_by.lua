@@ -496,13 +496,13 @@ test("hired biter supply chest is hidden and non-selectable", function()
   assert_true(flags["not-on-map"], "hired-biter-supply-chest should not appear on the map")
 end)
 
-test("biterport has worker storage and a hidden robot service cell", function()
+test("biterport has formation storage and a hidden robot service cell", function()
   local port = assert(find_entity_prototype("biterport"))
   local hidden = assert(find_entity_prototype("biterport-hidden-roboport"))
 
   assert_eq(port.placeable_by[1].item, "biterport", "biterport should be placeable by its item")
-  assert_eq(port.inventory_size, 6, "biterport should expose one money slot plus five worker slots")
-  assert_eq(port.inventory_type, "with_filters_and_bar", "biterport inventory should support worker slot filters")
+  assert_eq(port.inventory_size, 6, "biterport should expose one money slot plus five formation slots")
+  assert_eq(port.inventory_type, "with_filters_and_bar", "biterport inventory should support formation slot filters")
   assert_true(port.collision_mask.layers.object, "biterport should be a ground building")
 
   assert_true(hidden.hidden, "hidden biterport roboport should be hidden")

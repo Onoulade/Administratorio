@@ -276,7 +276,7 @@ if roboport_source then
   hidden_biterport_roboport.selection_box = {{0, 0}, {0, 0}}
   hidden_biterport_roboport.collision_mask = {layers = {}}
   hidden_biterport_roboport.logistics_radius = 10
-  hidden_biterport_roboport.logistics_connection_distance = 10
+  hidden_biterport_roboport.logistics_connection_distance = 20
   hidden_biterport_roboport.construction_radius = 20
   hidden_biterport_roboport.robot_slots_count = 0
   hidden_biterport_roboport.material_slots_count = 0

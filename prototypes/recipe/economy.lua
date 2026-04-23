@@ -189,13 +189,24 @@ data:extend({
     results = {{type="item", name="job-offer", amount=1}},
     energy_required = 15
   },
+  {
+    type = "recipe", name = "biter-logistics-formation", category = "bureaucracy-registration", enabled = false,
+    ingredients = {
+      {type="item", name="biter-worker", amount=3},
+      {type="item", name="job-offer", amount=1},
+      {type="item", name="management-verbal-work-order", amount=1},
+      {type="item", name="taxpayer-money", amount=40},
+    },
+    results = {{type="item", name="biter-logistics-formation", amount=1}},
+    energy_required = 30
+  },
 
   -- Specialist Training
   {
     type = "recipe", name = "union-delegate-training", category = "bureaucracy-registration", enabled = false,
     ingredients = {
       {type="item", name="biter-worker", amount=1},
-      {type="item", name="government-grant", amount=1},
+      {type="item", name="treasury-bond", amount=1},
       {type="item", name="management-approval-verbal", amount=1},
       {type="fluid", name="liquid-coffee", amount=50},
     },
@@ -203,11 +214,11 @@ data:extend({
     energy_required = 20
   },
   {
-    type = "recipe", name = "chemical-operator-training", category = "union-negotiation", enabled = false,
+    type = "recipe", name = "chemical-operator-training", category = "bureaucracy-registration", enabled = false,
     ingredients = {
       {type="item", name="biter-worker", amount=1},
       {type="item", name="petrochemical-operating-permit", amount=1},
-      {type="item", name="management-approval-written", amount=1},
+      {type="item", name="construction-permit", amount=1},
       {type="item", name="safety-waiver", amount=1},
     },
     results = {{type="item", name="chemical-operator", amount=1}},

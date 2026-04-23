@@ -123,7 +123,7 @@ do
     "watercooler-gossip", "office-drama",
     "taxpayer-money",
     "useless-documentation", "refined-nonsense",
-    "job-offer", "biter-worker", "union-delegate", "chemical-operator", "nuclear-technician",
+    "job-offer", "biter-worker", "biter-logistics-formation", "union-delegate", "chemical-operator", "nuclear-technician",
   }
   for _, name in ipairs(extra) do
     shared.PNEUMATIC_ITEMS[name] = true
@@ -322,7 +322,7 @@ function shared.is_admin_recipe(name)
     -- Science
     "administrative%-science",
     -- Biter employment
-    "job%-offer", "biter%-worker", "union%-delegate", "chemical%-operator", "nuclear%-technician",
+    "job%-offer", "biter%-worker", "biter%-logistics%-formation", "union%-delegate", "chemical%-operator", "nuclear%-technician",
     "specialist%-training",
   }
   for _, pat in ipairs(patterns) do
