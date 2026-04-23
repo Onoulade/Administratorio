@@ -522,6 +522,7 @@ end)
 test("biterport has formation storage and a hidden robot service cell", function()
   local port = assert(find_entity_prototype("biterport"))
   local hidden = assert(find_entity_prototype("biterport-hidden-roboport"))
+  local preview = assert(find_entity_prototype("biterport-placement-preview"))
 
   assert_eq(port.placeable_by[1].item, "biterport", "biterport should be placeable by its item")
   assert_eq(port.inventory_size, 6, "biterport should expose one money slot plus five formation slots")
@@ -530,12 +531,18 @@ test("biterport has formation storage and a hidden robot service cell", function
 
   assert_true(hidden.hidden, "hidden biterport roboport should be hidden")
   assert_true(hidden.selectable_in_game == false, "hidden biterport roboport should not be selectable")
-  assert_eq(hidden.logistics_radius, 10, "hidden roboport should expose the biter logistics radius to robots")
-  assert_eq(hidden.logistics_connection_distance, 20, "hidden roboport should link biter cells only when logistics areas touch")
-  assert_eq(hidden.construction_radius, 20, "hidden roboport should expose the biter construction radius to robots")
+  assert_eq(hidden.logistics_radius, 25, "hidden roboport should expose vanilla logistics coverage")
+  assert_eq(hidden.logistics_connection_distance, 50, "hidden roboport should link cells like a vanilla roboport")
+  assert_eq(hidden.construction_radius, 55, "hidden roboport should expose vanilla construction coverage")
   assert_eq(hidden.robot_slots_count, 0, "hidden roboport should not store regular robots")
   assert_eq(hidden.material_slots_count, 0, "hidden roboport should not store repair packs")
   assert_eq(hidden.recharge_minimum, "1kJ", "hidden roboport should satisfy the roboport recharge invariant")
+
+  local preview_flags = {}
+  for _, flag in ipairs(preview.flags or {}) do
+    preview_flags[flag] = true
+  end
+  assert_true(not preview_flags["not-blueprintable"], "biterport placement preview should still allow shift-click ghost placement")
 end)
 
 test("biter station inventory supports worker slot filters", function()

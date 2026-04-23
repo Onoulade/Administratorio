@@ -408,6 +408,113 @@ test("biterport empties player trash into network storage", function()
   assert_eq(storage_chest.inventory.get_item_count("stone"), 1, "storage chest should receive trashed item")
 end)
 
+test("returned logistics workers wait 30 ticks before redeploying", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+
+  local surface = new_surface()
+  local force = {
+    name = "player",
+    technologies = {},
+    set_cease_fire = function() end,
+  }
+
+  game = {
+    tick = 0,
+    connected_players = {},
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 1, 3)
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {["iron-plate"] = 5})
+  provider.force = force
+  local player = new_player(surface, force, {{name = "iron-plate", count = 2}}, {}, {})
+  game.connected_players = {player}
+
+  biterport.ensure_storage()
+  biterport.track_port(port)
+  biterport.update(30)
+
+  local active = first_active_worker()
+  assert_true(active ~= nil, "first request should dispatch immediately")
+  advance_worker_to(active, provider.position, 30, biterport)
+  active = first_active_worker()
+  advance_worker_to(active, player.character.position, 31, biterport)
+  active = first_active_worker()
+  advance_worker_to(active, port.position, 32, biterport)
+
+  assert_true(first_active_worker() == nil, "worker should be back inside the port")
+  biterport.update(60)
+  assert_true(first_active_worker() == nil, "worker should still be cooling down 28 ticks after return")
+
+  biterport.update(90)
+  assert_true(first_active_worker() ~= nil, "worker should be dispatchable again after the 30 tick cooldown")
+end)
+
+test("transport capacity research increases items carried per trip", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+
+  local surface = new_surface()
+  local force = {
+    name = "player",
+    technologies = {
+      ["biterport-transport-capacity-1"] = {researched = true},
+      ["biterport-transport-capacity-2"] = {researched = true},
+      ["biterport-transport-capacity-3"] = {researched = true},
+    },
+    set_cease_fire = function() end,
+  }
+
+  game = {
+    tick = 0,
+    connected_players = {},
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 2, 2)
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {["iron-plate"] = 10})
+  provider.force = force
+  local player = new_player(surface, force, {{name = "iron-plate", count = 5}}, {}, {})
+  game.connected_players = {player}
+
+  biterport.ensure_storage()
+  biterport.track_port(port)
+  biterport.update(30)
+
+  local active = first_active_worker()
+  assert_true(active ~= nil, "transport request should dispatch a logistics worker")
+  assert_eq(active.job.count, 5, "capacity III should let a logistics biter carry five items")
+  advance_worker_to(active, provider.position, 30, biterport)
+  active = first_active_worker()
+  advance_worker_to(active, player.character.position, 31, biterport)
+
+  assert_eq(player.main_inventory.get_item_count("iron-plate"), 5, "player should receive the full transport-capacity batch")
+  assert_eq(provider.inventory.get_item_count("iron-plate"), 5, "provider chest should lose the full carried batch")
+end)
+
 test("biterport ignores players without a character body", function()
   storage = {}
   package.loaded["scripts.biterport"] = nil

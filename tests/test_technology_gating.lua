@@ -351,8 +351,9 @@ test("pneumatic capacity upgrade chain has base upgrade locale", function()
   end
 end)
 
-test("biterport capacity and logistics speed upgrades are tiered and localized", function()
+test("biterport capacity, transport, and logistics speed upgrades are tiered and localized", function()
   assert_true(technology_effect_locale["biterport-capacity"] ~= nil, "biterport capacity effect should be localized")
+  assert_true(technology_effect_locale["biterport-transport-capacity"] ~= nil, "biterport transport effect should be localized")
   assert_true(technology_effect_locale["biterport-worker-speed"] ~= nil, "biterport worker speed effect should be localized")
   assert_true(technologies["biterport-logistics"] ~= nil, "biterport-logistics should exist")
   assert_true(technology_name_locale["biterport-logistics"] ~= nil, "biterport-logistics name should be localized")
@@ -393,6 +394,24 @@ test("biterport capacity and logistics speed upgrades are tiered and localized",
     end
   end
 
+  local expected_transport = {1, 2, 5, 10, 25}
+  for level = 1, 5 do
+    local tech_name = "biterport-transport-capacity-" .. level
+    assert_true(technologies[tech_name] ~= nil, tech_name .. " should exist")
+    assert_true(technology_name_locale[tech_name] ~= nil, tech_name .. " name should be localized")
+    assert_true(technology_description_locale[tech_name] ~= nil, tech_name .. " description should be localized")
+    assert_true(tech_has_effect(tech_name, "nothing"), tech_name .. " should expose a scripted-effect marker")
+    assert_true(
+      technologies[tech_name].effects[1].effect_description[2] == tostring(expected_transport[level]),
+      tech_name .. " should advertise " .. expected_transport[level] .. " items per trip"
+    )
+    if level == 1 then
+      assert_true(tech_has_prereq(tech_name, "biterport-logistics"), tech_name .. " should start from biterport logistics")
+    else
+      assert_true(tech_has_prereq(tech_name, "biterport-transport-capacity-" .. (level - 1)), tech_name .. " should chain from prior level")
+    end
+  end
+
   for level = 1, 2 do
     local tech_name = "biterport-worker-speed-" .. level
     assert_true(technologies[tech_name] ~= nil, tech_name .. " should exist")
@@ -408,6 +427,9 @@ test("biterport capacity and logistics speed upgrades are tiered and localized",
 
   assert_true(tech_uses_pack("biterport-capacity-3", "chemical-science-pack"), "capacity III should use chemical science")
   assert_true(tech_uses_pack("biterport-capacity-4", "chemical-science-pack"), "capacity IV should use chemical science")
+  assert_true(not tech_uses_pack("biterport-transport-capacity-3", "chemical-science-pack"), "transport III should not use chemical science")
+  assert_true(tech_uses_pack("biterport-transport-capacity-4", "chemical-science-pack"), "transport IV should use chemical science")
+  assert_true(not tech_uses_pack("biterport-transport-capacity-5", "production-science-pack"), "transport V should not use production science")
   assert_true(tech_uses_pack("biterport-worker-speed-2", "chemical-science-pack"), "speed II should use chemical science")
 end)
 
