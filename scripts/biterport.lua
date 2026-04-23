@@ -20,6 +20,14 @@ local SLOT_TIER_TECHS = {
   {"biterport-capacity-4", 15},
 }
 
+local TRANSPORT_TIER_TECHS = {
+  {"biterport-transport-capacity-1", 1},
+  {"biterport-transport-capacity-2", 2},
+  {"biterport-transport-capacity-3", 5},
+  {"biterport-transport-capacity-4", 10},
+  {"biterport-transport-capacity-5", 25},
+}
+
 local SPEED_TIER_TECHS = {
   {"biterport-worker-speed-2", C.BITERPORT_WORKER_EXPRESS_ENTITY_NAME},
   {"biterport-worker-speed-1", C.BITERPORT_WORKER_FAST_ENTITY_NAME},
@@ -96,6 +104,11 @@ local function radius_box(pos, radius)
   }
 end
 
+local function current_tick(fallback_tick)
+  if fallback_tick ~= nil then return fallback_tick end
+  return game and game.tick or 0
+end
+
 local function get_station_inventory(entity)
   if not entity or not entity.valid or not entity.get_inventory then return nil end
   local ok, inv = pcall(entity.get_inventory, defines.inventory.chest)
@@ -155,7 +168,7 @@ local function get_worker_force()
 end
 
 local function force_has_researched(force, tech_name)
-  if not force or not force.valid or not force.technologies then return false end
+  if not force or force.valid == false or not force.technologies then return false end
   local tech = force.technologies[tech_name]
   return tech and tech.researched or false
 end
@@ -170,6 +183,18 @@ local function get_port_worker_slots_for_force(force)
     end
   end
   return slots
+end
+
+local function get_transport_capacity_for_force(force)
+  local capacity = 1
+  for _, tier in ipairs(TRANSPORT_TIER_TECHS) do
+    if force_has_researched(force, tier[1]) then
+      capacity = tier[2]
+    else
+      break
+    end
+  end
+  return capacity
 end
 
 local function entity_prototype_exists(name)
@@ -216,6 +241,48 @@ end
 local function port_worker_count(port)
   local inv = get_station_inventory(port)
   return inv and inv.get_item_count and inv.get_item_count(WORKER_ITEM_NAME) or 0
+end
+
+local function prune_worker_cooldowns(port_id, tick)
+  if not port_id or not storage.biterport_worker_cooldowns then return 0 end
+  local cooldowns = storage.biterport_worker_cooldowns[port_id]
+  if not cooldowns then return 0 end
+
+  local now = current_tick(tick)
+  local kept = 0
+  for i = 1, #cooldowns do
+    local ready_tick = cooldowns[i]
+    if ready_tick and ready_tick > now then
+      kept = kept + 1
+      cooldowns[kept] = ready_tick
+    end
+  end
+  for i = kept + 1, #cooldowns do
+    cooldowns[i] = nil
+  end
+
+  if kept <= 0 then
+    storage.biterport_worker_cooldowns[port_id] = nil
+    return 0
+  end
+  return kept
+end
+
+local function add_worker_cooldown(port_id, ready_tick)
+  if not port_id or not ready_tick then return end
+  storage.biterport_worker_cooldowns = storage.biterport_worker_cooldowns or {}
+  local cooldowns = storage.biterport_worker_cooldowns[port_id]
+  if not cooldowns then
+    cooldowns = {}
+    storage.biterport_worker_cooldowns[port_id] = cooldowns
+  end
+  cooldowns[#cooldowns + 1] = ready_tick
+end
+
+local function port_available_worker_count(port, tick)
+  if not port or not port.valid or not port.unit_number then return 0 end
+  local cooling = prune_worker_cooldowns(port.unit_number, tick)
+  return math.max(0, port_worker_count(port) - cooling)
 end
 
 local function port_money_count(port)
@@ -311,9 +378,9 @@ local function remove_dispatch_coffee(port)
   return ok and (removed or 0) >= C.BITERPORT_NIGHT_COFFEE_PER_DISPATCH
 end
 
-local function port_can_dispatch(port)
+local function port_can_dispatch(port, tick)
   return port and port.valid
-    and port_worker_count(port) > 0
+    and port_available_worker_count(port, tick) > 0
     and port_money_count(port) >= C.BITERPORT_WORKER_SALARY
     and has_dispatch_coffee(port)
 end
@@ -577,7 +644,7 @@ local function build_networks(surface, force)
     if ra ~= rb then parent[rb] = ra end
   end
 
-  local link_sq = (C.BITERPORT_LOGISTICS_RADIUS * 2) * (C.BITERPORT_LOGISTICS_RADIUS * 2)
+  local link_sq = C.BITERPORT_LOGISTICS_CONNECTION_DISTANCE * C.BITERPORT_LOGISTICS_CONNECTION_DISTANCE
   for i = 1, #ports do
     for j = i + 1, #ports do
       if distance_squared(ports[i].position, ports[j].position) <= link_sq then
@@ -636,12 +703,46 @@ local function position_in_network_radius(network, position, radius)
   return false
 end
 
-local function for_each_logistic_chest(network, callback)
+local function port_scan_area(port, radius, subdivisions, tick, salt)
+  subdivisions = math.max(1, subdivisions or 1)
+  if subdivisions == 1 then
+    return radius_box(port.position, radius)
+  end
+
+  local total = subdivisions * subdivisions
+  local cycle = math.floor(current_tick(tick) / math.max(1, C.BITERPORT_CHECK_TICKS))
+  local phase = ((cycle + (port.unit_number or 0) + (salt or 0)) % total)
+  local row = math.floor(phase / subdivisions)
+  local col = phase % subdivisions
+  local step = (radius * 2) / subdivisions
+  local left = port.position.x - radius + (col * step)
+  local top = port.position.y - radius + (row * step)
+  local right = col == (subdivisions - 1) and (port.position.x + radius) or (left + step)
+  local bottom = row == (subdivisions - 1) and (port.position.y + radius) or (top + step)
+  return {
+    left_top = {x = left, y = top},
+    right_bottom = {x = right, y = bottom},
+  }
+end
+
+local function for_each_logistic_chest(network, callback, options)
+  options = options or {}
+  local full_scan = options.full_scan == true
+  local tick = options.tick
   local seen = {}
   for _, port in ipairs(network.ports) do
+    local area = full_scan
+      and radius_box(port.position, C.BITERPORT_LOGISTICS_RADIUS)
+      or port_scan_area(
+        port,
+        C.BITERPORT_LOGISTICS_RADIUS,
+        C.BITERPORT_LOGISTICS_SCAN_SUBDIVISIONS,
+        tick,
+        0
+      )
     local chests = network.surface.find_entities_filtered{
       type = "logistic-container",
-      area = radius_box(port.position, C.BITERPORT_LOGISTICS_RADIUS),
+      area = area,
       force = network.force,
       limit = C.BITERPORT_MAX_CHESTS_PER_PORT_SCAN,
     }
@@ -656,7 +757,7 @@ local function for_each_logistic_chest(network, callback)
   return false
 end
 
-local function find_source_for_item(network, item_name, position, excluded_unit_number)
+local function find_source_for_item(network, item_name, position, excluded_unit_number, tick)
   local best, best_inv, best_score = nil, nil, math.huge
   for_each_logistic_chest(network, function(chest)
     if is_source_chest(chest) and chest.unit_number ~= excluded_unit_number then
@@ -671,14 +772,14 @@ local function find_source_for_item(network, item_name, position, excluded_unit_
       end
     end
     return false
-  end)
+  end, {full_scan = true, tick = tick})
   return best, best_inv
 end
 
-local function choose_worker_port(network, pickup_position, target_position)
+local function choose_worker_port(network, pickup_position, target_position, tick)
   local best, best_score = nil, math.huge
   for _, port in ipairs(network.ports) do
-    if port_can_dispatch(port) then
+    if port_can_dispatch(port, tick) then
       local score = distance_squared(port.position, pickup_position)
         + distance_squared(pickup_position, target_position)
         + distance_squared(target_position, port.position)
@@ -713,11 +814,18 @@ local function claim_ghost(ghost, source)
   return job
 end
 
-local function find_construction_job(network)
+local function find_construction_job(network, tick)
   for _, port in ipairs(network.ports) do
+    local area = port_scan_area(
+      port,
+      C.BITERPORT_CONSTRUCTION_RADIUS,
+      C.BITERPORT_CONSTRUCTION_SCAN_SUBDIVISIONS,
+      tick,
+      13
+    )
     local ghosts = network.surface.find_entities_filtered{
       type = "entity-ghost",
-      area = radius_box(port.position, C.BITERPORT_CONSTRUCTION_RADIUS),
+      area = area,
       force = network.force,
       limit = C.BITERPORT_MAX_GHOSTS_PER_PORT_SCAN,
     }
@@ -729,9 +837,9 @@ local function find_construction_job(network)
       if ghost.valid and position_in_network_radius(network, ghost.position, C.BITERPORT_CONSTRUCTION_RADIUS) then
         local item_name = get_ghost_item_name(ghost)
         if item_name then
-          local source = find_source_for_item(network, item_name, ghost.position)
+          local source = find_source_for_item(network, item_name, ghost.position, nil, tick)
           if source and source.valid then
-            local worker_port = choose_worker_port(network, source.position, ghost.position)
+            local worker_port = choose_worker_port(network, source.position, ghost.position, tick)
             if worker_port then
               local job = claim_ghost(ghost, source)
               if job then
@@ -767,10 +875,11 @@ local function find_construction_job_for_ghost(network, ghost)
   local item_name = get_ghost_item_name(ghost)
   if not item_name then return nil, nil end
 
-  local source = find_source_for_item(network, item_name, ghost.position)
+  local tick = current_tick()
+  local source = find_source_for_item(network, item_name, ghost.position, nil, tick)
   if not source or not source.valid then return nil, nil end
 
-  local worker_port = choose_worker_port(network, source.position, ghost.position)
+  local worker_port = choose_worker_port(network, source.position, ghost.position, tick)
   if not worker_port then return nil, nil end
 
   local job = claim_ghost(ghost, source)
@@ -844,7 +953,7 @@ local function counted_items(subject, inv, item_name)
   return inv and inv.get_item_count and inv.get_item_count(item_name) or 0
 end
 
-local function requested_missing_stack(entity, inv, tracking_key, counted_subject)
+local function requested_missing_stack(entity, inv, tracking_key, counted_subject, max_count)
   local filters = requester_filters(entity)
   if not filters then return nil end
   for _, filter in ipairs(filters) do
@@ -858,14 +967,14 @@ local function requested_missing_stack(entity, inv, tracking_key, counted_subjec
         item_name
       )
       if current + in_flight < target then
-        return item_name, math.min(1, target - current - in_flight)
+        return item_name, math.min(max_count or 1, target - current - in_flight)
       end
     end
   end
   return nil
 end
 
-local function find_trash_target(network, item_name, position)
+local function find_trash_target(network, item_name, position, tick)
   local best, best_score = nil, math.huge
   for_each_logistic_chest(network, function(chest)
     if not is_source_chest(chest) then return false end
@@ -888,11 +997,11 @@ local function find_trash_target(network, item_name, position)
       best_score = score
     end
     return false
-  end)
+  end, {full_scan = true, tick = tick})
   return best
 end
 
-local function next_player_trash_stack(player)
+local function next_player_trash_stack(player, max_count)
   local inv = get_player_trash_inventory(player)
   local tracking_key = make_player_tracking_key(player)
   if not inv then return nil end
@@ -902,25 +1011,26 @@ local function next_player_trash_stack(player)
       local total = inv.get_item_count and inv.get_item_count(stack.name) or stack.count
       local in_flight = active_logistics_count("source_tracking_key", tracking_key, stack.name)
       if total > in_flight then
-        return stack.name, 1, inv
+        return stack.name, math.min(max_count or 1, total - in_flight), inv
       end
     end
   end
   return nil
 end
 
-local function find_logistics_job(network)
+local function find_logistics_job(network, tick)
   local found_job, found_port
+  local transport_capacity = get_transport_capacity_for_force(network.force)
   for_each_logistic_chest(network, function(requester)
     if found_job then return true end
     if not is_requester_chest(requester) then return false end
     local target_inv = get_entity_inventory(requester)
     if not target_inv or not target_inv.insert then return false end
-    local item_name, count = requested_missing_stack(requester, target_inv)
+    local item_name, count = requested_missing_stack(requester, target_inv, nil, nil, transport_capacity)
     if not item_name then return false end
-    local source = find_source_for_item(network, item_name, requester.position, requester.unit_number)
+    local source = find_source_for_item(network, item_name, requester.position, requester.unit_number, tick)
     if not source or not source.valid then return false end
-    local worker_port = choose_worker_port(network, source.position, requester.position)
+    local worker_port = choose_worker_port(network, source.position, requester.position, tick)
     if not worker_port then return false end
 
     found_job = {
@@ -933,11 +1043,12 @@ local function find_logistics_job(network)
     }
     found_port = worker_port
     return true
-  end)
+  end, {tick = tick})
   return found_job, found_port
 end
 
-local function find_player_delivery_job(network)
+local function find_player_delivery_job(network, tick)
+  local transport_capacity = get_transport_capacity_for_force(network.force)
   for _, player in ipairs(game.connected_players or {}) do
     local character = get_player_character(player)
     if player and player.valid
@@ -948,11 +1059,11 @@ local function find_player_delivery_job(network)
       local target_inv = get_player_main_inventory(player)
       if target_inv and player.insert then
         local tracking_key = make_player_tracking_key(player)
-        local item_name, count = requested_missing_stack(player, target_inv, tracking_key, player)
+        local item_name, count = requested_missing_stack(player, target_inv, tracking_key, player, transport_capacity)
         if item_name then
-          local source = find_source_for_item(network, item_name, player.position)
+          local source = find_source_for_item(network, item_name, player.position, nil, tick)
           if source and source.valid then
-            local worker_port = choose_worker_port(network, source.position, player.position)
+            local worker_port = choose_worker_port(network, source.position, player.position, tick)
             if worker_port then
               return {
                 kind = "logistics",
@@ -972,7 +1083,8 @@ local function find_player_delivery_job(network)
   return nil, nil
 end
 
-local function find_player_trash_job(network)
+local function find_player_trash_job(network, tick)
+  local transport_capacity = get_transport_capacity_for_force(network.force)
   for _, player in ipairs(game.connected_players or {}) do
     local character = get_player_character(player)
     if player and player.valid
@@ -980,16 +1092,16 @@ local function find_player_trash_job(network)
        and player.surface == network.surface
        and player.force == network.force
        and position_in_network_radius(network, player.position, C.BITERPORT_LOGISTICS_RADIUS) then
-      local item_name = next_player_trash_stack(player)
+      local item_name, count = next_player_trash_stack(player, transport_capacity)
       if item_name then
-        local target = find_trash_target(network, item_name, player.position)
+        local target = find_trash_target(network, item_name, player.position, tick)
         if target and target.valid then
-          local worker_port = choose_worker_port(network, player.position, target.position)
+          local worker_port = choose_worker_port(network, player.position, target.position, tick)
           if worker_port then
             return {
               kind = "logistics",
               item_name = item_name,
-              count = 1,
+              count = count or 1,
               source = player,
               source_destination = character,
               source_tracking_key = make_player_tracking_key(player),
@@ -1255,9 +1367,10 @@ local function maybe_reinsert_worker(port)
   return false
 end
 
-local function remove_dispatch_inputs(port)
+local function remove_dispatch_inputs(port, tick)
   local inv = get_station_inventory(port)
   if not inv then return false end
+  if port_available_worker_count(port, tick) <= 0 then return false end
   if inv.remove({name = WORKER_ITEM_NAME, count = 1}) < 1 then return false end
   if inv.remove({name = MONEY_ITEM_NAME, count = C.BITERPORT_WORKER_SALARY}) < C.BITERPORT_WORKER_SALARY then
     inv.insert({name = WORKER_ITEM_NAME, count = 1})
@@ -1339,7 +1452,9 @@ local function finish_worker(active, tick, return_worker)
     local port = active.return_port_id and storage.biterports[active.return_port_id]
       or active.home_port_id and storage.biterports[active.home_port_id]
     if port and port.valid then
-      maybe_reinsert_worker(port)
+      if maybe_reinsert_worker(port) then
+        add_worker_cooldown(port.unit_number, current_tick(tick) + C.BITERPORT_RETURN_COOLDOWN_TICKS)
+      end
       refresh_port_status(port)
     end
   end
@@ -1569,9 +1684,9 @@ local function advance_active_workers(tick)
   end
 end
 
-local function dispatch_job(worker_port, job)
+local function dispatch_job(worker_port, job, tick)
   if not worker_port or not worker_port.valid or not job then return false end
-  if not remove_dispatch_inputs(worker_port) then
+  if not remove_dispatch_inputs(worker_port, tick) then
     if job.kind == "construction" then restore_construction_ghost(job) end
     refresh_port_status(worker_port)
     return false
@@ -1595,18 +1710,18 @@ local function dispatch_job(worker_port, job)
   }
   register_active_worker(active)
   mark_worker_unit(biter.unit_number, worker_port.unit_number)
-  begin_phase_move(active, "to_pickup", job.source_destination or job.source, C.BITERPORT_ARRIVAL_RADIUS, game.tick)
+  begin_phase_move(active, "to_pickup", job.source_destination or job.source, C.BITERPORT_ARRIVAL_RADIUS, current_tick(tick))
   refresh_port_status(worker_port)
   return true
 end
 
-local function dispatch_network_jobs(network)
+local function dispatch_network_jobs(network, tick)
   local dispatched = 0
 
   while true do
-    local job, worker_port = find_construction_job(network)
+    local job, worker_port = find_construction_job(network, tick)
     if not job or not worker_port then break end
-    if dispatch_job(worker_port, job) then
+    if dispatch_job(worker_port, job, tick) then
       dispatched = dispatched + 1
     else
       break
@@ -1614,9 +1729,9 @@ local function dispatch_network_jobs(network)
   end
 
   while true do
-    local job, worker_port = find_logistics_job(network)
+    local job, worker_port = find_logistics_job(network, tick)
     if not job or not worker_port then break end
-    if dispatch_job(worker_port, job) then
+    if dispatch_job(worker_port, job, tick) then
       dispatched = dispatched + 1
     else
       break
@@ -1624,9 +1739,9 @@ local function dispatch_network_jobs(network)
   end
 
   while true do
-    local job, worker_port = find_player_delivery_job(network)
+    local job, worker_port = find_player_delivery_job(network, tick)
     if not job or not worker_port then break end
-    if dispatch_job(worker_port, job) then
+    if dispatch_job(worker_port, job, tick) then
       dispatched = dispatched + 1
     else
       break
@@ -1634,9 +1749,9 @@ local function dispatch_network_jobs(network)
   end
 
   while true do
-    local job, worker_port = find_player_trash_job(network)
+    local job, worker_port = find_player_trash_job(network, tick)
     if not job or not worker_port then break end
-    if dispatch_job(worker_port, job) then
+    if dispatch_job(worker_port, job, tick) then
       dispatched = dispatched + 1
     else
       break
@@ -1654,6 +1769,7 @@ function M.ensure_storage()
   storage.biterport_workers = storage.biterport_workers or {}
   storage.biterport_active_by_port = storage.biterport_active_by_port or {}
   storage.biterport_worker_units = storage.biterport_worker_units or {}
+  storage.biterport_worker_cooldowns = storage.biterport_worker_cooldowns or {}
 end
 
 function M.is_port(entity_or_name)
@@ -1709,7 +1825,7 @@ function M.on_entity_built(event)
 
   local job, worker_port = find_construction_job_for_ghost(network, entity)
   if not job or not worker_port then return false end
-  return dispatch_job(worker_port, job)
+  return dispatch_job(worker_port, job, event and event.tick)
 end
 
 function M.untrack_port(entity, tick)
@@ -1719,6 +1835,9 @@ function M.untrack_port(entity, tick)
   destroy_hidden_roboport(port_id)
   destroy_hidden_coffee_input(port_id)
   storage.biterports[port_id] = nil
+  if storage.biterport_worker_cooldowns then
+    storage.biterport_worker_cooldowns[port_id] = nil
+  end
 
   local active_set = storage.biterport_active_by_port[port_id]
   if active_set then
@@ -1794,12 +1913,17 @@ end
 
 function M.on_research_finished(research)
   if not research or not research.valid or not research.name then return end
-  if not research.name:find("^biterport%-capacity%-") then return end
+  if not research.name:find("^biterport%-capacity%-")
+     and not research.name:find("^biterport%-transport%-capacity%-") then
+    return
+  end
 
   M.ensure_storage()
   for _, port in pairs(storage.biterports or {}) do
     if port and port.valid and port.force == research.force then
-      apply_port_inventory(port)
+      if research.name:find("^biterport%-capacity%-") then
+        apply_port_inventory(port)
+      end
       refresh_port_status(port)
     end
   end
@@ -1832,6 +1956,7 @@ function M.rebuild_registry()
   storage.biterport_workers = {}
   storage.biterport_active_by_port = {}
   storage.biterport_worker_units = {}
+  storage.biterport_worker_cooldowns = {}
 
   for _, surface in pairs(game.surfaces) do
     for _, port in ipairs(surface.find_entities_filtered{name = PORT_NAME}) do
@@ -1867,14 +1992,18 @@ function M.update(tick)
   if tick % C.BITERPORT_CHECK_TICKS ~= 0 then return end
 
   for _, network in ipairs(build_all_networks()) do
-    dispatch_network_jobs(network)
+    dispatch_network_jobs(network, tick)
   end
 
   for port_id, port in pairs(storage.biterports or {}) do
     if not port or not port.valid then
       destroy_hidden_roboport(port_id)
       storage.biterports[port_id] = nil
+      if storage.biterport_worker_cooldowns then
+        storage.biterport_worker_cooldowns[port_id] = nil
+      end
     else
+      prune_worker_cooldowns(port_id, tick)
       if not storage.biterport_hidden_roboports[port_id]
          or not storage.biterport_hidden_roboports[port_id].valid then
         create_hidden_roboport(port)

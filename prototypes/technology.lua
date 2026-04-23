@@ -610,6 +610,62 @@ data:extend({
     unit = { count = 300, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 50 },
     order = "c-h9a"
   },
+  -- BITERPORT TRANSPORT CAPACITY (increase items carried per logistics trip)
+  {
+    type = "technology", name = "biterport-transport-capacity-1",
+    icons = {
+      {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, tint = {r=0.45, g=0.85, b=0.55, a=1}},
+      {icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
+    },
+    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity", "1"} }},
+    prerequisites = {"biterport-logistics"},
+    unit = { count = 90, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },
+    order = "c-h9b"
+  },
+  {
+    type = "technology", name = "biterport-transport-capacity-2",
+    icons = {
+      {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, tint = {r=0.45, g=0.85, b=0.55, a=1}},
+      {icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
+    },
+    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity", "2"} }},
+    prerequisites = {"biterport-transport-capacity-1"},
+    unit = { count = 140, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "c-h9c"
+  },
+  {
+    type = "technology", name = "biterport-transport-capacity-3",
+    icons = {
+      {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, tint = {r=0.45, g=0.85, b=0.55, a=1}},
+      {icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
+    },
+    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity", "5"} }},
+    prerequisites = {"biterport-transport-capacity-2"},
+    unit = { count = 220, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 40 },
+    order = "c-h9d"
+  },
+  {
+    type = "technology", name = "biterport-transport-capacity-4",
+    icons = {
+      {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, tint = {r=0.45, g=0.85, b=0.55, a=1}},
+      {icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
+    },
+    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity", "10"} }},
+    prerequisites = {"biterport-transport-capacity-3"},
+    unit = { count = 320, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 50 },
+    order = "c-h9e"
+  },
+  {
+    type = "technology", name = "biterport-transport-capacity-5",
+    icons = {
+      {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, tint = {r=0.45, g=0.85, b=0.55, a=1}},
+      {icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
+    },
+    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity", "25"} }},
+    prerequisites = {"biterport-transport-capacity-4"},
+    unit = { count = 450, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    order = "c-h9f"
+  },
   -- BITERPORT WORKER SPEED (swap dispatched logistics workers to faster unit prototypes)
   {
     type = "technology", name = "biterport-worker-speed-1",

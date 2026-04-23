@@ -304,9 +304,9 @@ if roboport_source then
   hidden_biterport_roboport.collision_box = {{0, 0}, {0, 0}}
   hidden_biterport_roboport.selection_box = {{0, 0}, {0, 0}}
   hidden_biterport_roboport.collision_mask = {layers = {}}
-  hidden_biterport_roboport.logistics_radius = 10
-  hidden_biterport_roboport.logistics_connection_distance = 20
-  hidden_biterport_roboport.construction_radius = 20
+  hidden_biterport_roboport.logistics_radius = roboport_source.logistics_radius or 25
+  hidden_biterport_roboport.logistics_connection_distance = roboport_source.logistics_connection_distance or 50
+  hidden_biterport_roboport.construction_radius = roboport_source.construction_radius or 55
   hidden_biterport_roboport.robot_slots_count = 0
   hidden_biterport_roboport.material_slots_count = 0
   hidden_biterport_roboport.energy_source = {type = "void"}
@@ -340,7 +340,7 @@ if roboport_source then
   biterport_placement_preview.name = "biterport-placement-preview"
   biterport_placement_preview.localised_name = {"entity-name.biterport"}
   biterport_placement_preview.localised_description = {"entity-description.biterport"}
-  biterport_placement_preview.flags = {"placeable-neutral", "player-creation", "not-blueprintable", "not-upgradable", "not-in-kill-statistics"}
+  biterport_placement_preview.flags = {"placeable-neutral", "player-creation", "not-upgradable", "not-in-kill-statistics"}
   biterport_placement_preview.minable = {mining_time = 0.5, result = "biterport"}
   biterport_placement_preview.placeable_by = placeable_by_item("biterport")
   biterport_placement_preview.hidden_in_factoriopedia = true
