@@ -206,8 +206,8 @@ biter_station.picture = {
   layers = {
     {
       filename = entity_graphics .. "work-station/work-station.png",
-      width = 512,
-      height = 466,
+      width = 480,
+      height = 472,
       scale = 0.27,
       shift = util.by_pixel(0, 0),
     },
