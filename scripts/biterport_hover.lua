@@ -1,19 +1,8 @@
-local C = require("scripts.constants")
 local biterport = require("scripts.biterport")
 
 local M = {}
 
-local LOGISTICS_COLOR = {r = 0.95, g = 0.72, b = 0.28, a = 0.75}
-local CONSTRUCTION_COLOR = {r = 0.45, g = 1.0, b = 0.55, a = 0.55}
 local LINK_COLOR = {r = 0.55, g = 1.0, b = 0.45, a = 0.5}
-local TEXT_COLOR = {r = 0.55, g = 1.0, b = 0.45}
-
-local function radius_box(pos, radius)
-  return {
-    left_top = {x = pos.x - radius, y = pos.y - radius},
-    right_bottom = {x = pos.x + radius, y = pos.y + radius},
-  }
-end
 
 local function add_render(player_index, obj)
   if not obj then return end
@@ -47,28 +36,6 @@ function M.show_port(player, port)
   if not port or not port.valid then return end
 
   local surface = port.surface
-  local logistics = radius_box(port.position, C.BITERPORT_LOGISTICS_RADIUS)
-  local construction = radius_box(port.position, C.BITERPORT_CONSTRUCTION_RADIUS)
-
-  add_render(player.index, rendering.draw_rectangle{
-    color = CONSTRUCTION_COLOR,
-    width = 2,
-    left_top = construction.left_top,
-    right_bottom = construction.right_bottom,
-    surface = surface,
-    players = {player},
-    draw_on_ground = true,
-  })
-
-  add_render(player.index, rendering.draw_rectangle{
-    color = LOGISTICS_COLOR,
-    width = 3,
-    left_top = logistics.left_top,
-    right_bottom = logistics.right_bottom,
-    surface = surface,
-    players = {player},
-    draw_on_ground = true,
-  })
 
   local summary = biterport.get_network_summary(port)
   if summary and summary.network then
@@ -83,33 +50,9 @@ function M.show_port(player, port)
           players = {player},
           draw_on_ground = true,
         })
-        local box = radius_box(member.position, C.BITERPORT_LOGISTICS_RADIUS)
-        add_render(player.index, rendering.draw_rectangle{
-          color = LINK_COLOR,
-          width = 1,
-          left_top = box.left_top,
-          right_bottom = box.right_bottom,
-          surface = surface,
-          players = {player},
-          draw_on_ground = true,
-        })
       end
     end
   end
-
-  local ports = summary and summary.ports or 1
-  local workers = summary and summary.workers or 0
-  add_render(player.index, rendering.draw_text{
-    text = {"gui.biterport-network", ports, workers},
-    surface = surface,
-    target = {entity = port, offset = {0, -2.5}},
-    color = TEXT_COLOR,
-    alignment = "center",
-    vertical_alignment = "middle",
-    scale = 1.1,
-    scale_with_zoom = true,
-    players = {player},
-  })
 end
 
 return M
