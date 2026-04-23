@@ -43,6 +43,11 @@ local REQUESTER_CHEST_NAMES = {
   ["logistic-chest-buffer"] = true,
 }
 
+local STORAGE_CHEST_NAMES = {
+  ["storage-chest"] = true,
+  ["logistic-chest-storage"] = true,
+}
+
 local LOGISTIC_CHEST_NAMES = {
   ["active-provider-chest"] = true,
   ["passive-provider-chest"] = true,
@@ -780,12 +785,50 @@ local function requester_filters(entity)
   return point.filters
 end
 
-local function active_delivery_count(target_unit_number, item_name)
+local function get_player_character(player)
+  local character = safe_entity_field(player, "character")
+  if character and character.valid then return character end
+  return nil
+end
+
+local function get_player_main_inventory(player)
+  if not player or not player.valid then return nil end
+  if player.get_main_inventory then
+    local ok, inv = pcall(player.get_main_inventory)
+    if ok and inv then return inv end
+  end
+  if player.get_inventory and defines and defines.inventory and defines.inventory.character_main then
+    local ok, inv = pcall(player.get_inventory, defines.inventory.character_main)
+    if ok and inv then return inv end
+  end
+  return nil
+end
+
+local function get_player_trash_inventory(player)
+  if not player or not player.valid or not player.get_inventory then return nil end
+  local trash_inventory = defines and defines.inventory and defines.inventory.character_trash
+  if not trash_inventory then return nil end
+  local ok, inv = pcall(player.get_inventory, trash_inventory)
+  if ok and inv then return inv end
+  return nil
+end
+
+local function player_delivery_destination(player)
+  return get_player_character(player) or player
+end
+
+local function make_player_tracking_key(player)
+  if not player or not player.index then return nil end
+  return "player:" .. player.index
+end
+
+local function active_logistics_count(key_name, key_value, item_name)
+  if not key_name or key_value == nil then return 0 end
   local count = 0
   for _, active in pairs(storage.biterport_workers or {}) do
     local job = active.job
     if job and job.kind == "logistics"
-       and job.target_unit_number == target_unit_number
+       and job[key_name] == key_value
        and job.item_name == item_name then
       count = count + (job.count or 1)
     end
@@ -793,17 +836,73 @@ local function active_delivery_count(target_unit_number, item_name)
   return count
 end
 
-local function requested_missing_stack(entity, inv)
+local function counted_items(subject, inv, item_name)
+  if subject and subject.valid and subject.get_item_count then
+    local ok, count = pcall(subject.get_item_count, item_name)
+    if ok then return count or 0 end
+  end
+  return inv and inv.get_item_count and inv.get_item_count(item_name) or 0
+end
+
+local function requested_missing_stack(entity, inv, tracking_key, counted_subject)
   local filters = requester_filters(entity)
   if not filters then return nil end
   for _, filter in ipairs(filters) do
     local item_name = filter.name
     local target = filter.count or 0
     if item_name and target > 0 then
-      local current = inv and inv.get_item_count and inv.get_item_count(item_name) or 0
-      local in_flight = active_delivery_count(entity.unit_number, item_name)
+      local current = counted_items(counted_subject or entity, inv, item_name)
+      local in_flight = active_logistics_count(
+        tracking_key and "target_tracking_key" or "target_unit_number",
+        tracking_key or entity.unit_number,
+        item_name
+      )
       if current + in_flight < target then
         return item_name, math.min(1, target - current - in_flight)
+      end
+    end
+  end
+  return nil
+end
+
+local function find_trash_target(network, item_name, position)
+  local best, best_score = nil, math.huge
+  for_each_logistic_chest(network, function(chest)
+    if not is_source_chest(chest) then return false end
+    local inv = get_entity_inventory(chest)
+    if not inv or not inv.insert then return false end
+    if inv.can_insert and not inv.can_insert({name = item_name, count = 1}) then
+      return false
+    end
+
+    local score = position and distance_squared(chest.position, position) or 0
+    if STORAGE_CHEST_NAMES[chest.name]
+       or (chest.prototype and chest.prototype.logistic_mode == "storage") then
+      score = score - 1000
+    end
+    if inv.get_item_count and inv.get_item_count(item_name) > 0 then
+      score = score - 25
+    end
+    if score < best_score then
+      best = chest
+      best_score = score
+    end
+    return false
+  end)
+  return best
+end
+
+local function next_player_trash_stack(player)
+  local inv = get_player_trash_inventory(player)
+  local tracking_key = make_player_tracking_key(player)
+  if not inv then return nil end
+  for i = 1, #inv do
+    local stack = inv[i]
+    if stack and stack.valid_for_read and stack.name and stack.count and stack.count > 0 then
+      local total = inv.get_item_count and inv.get_item_count(stack.name) or stack.count
+      local in_flight = active_logistics_count("source_tracking_key", tracking_key, stack.name)
+      if total > in_flight then
+        return stack.name, 1, inv
       end
     end
   end
@@ -838,6 +937,73 @@ local function find_logistics_job(network)
   return found_job, found_port
 end
 
+local function find_player_delivery_job(network)
+  for _, player in ipairs(game.connected_players or {}) do
+    local character = get_player_character(player)
+    if player and player.valid
+       and character
+       and player.surface == network.surface
+       and player.force == network.force
+       and position_in_network_radius(network, player.position, C.BITERPORT_LOGISTICS_RADIUS) then
+      local target_inv = get_player_main_inventory(player)
+      if target_inv and player.insert then
+        local tracking_key = make_player_tracking_key(player)
+        local item_name, count = requested_missing_stack(player, target_inv, tracking_key, player)
+        if item_name then
+          local source = find_source_for_item(network, item_name, player.position)
+          if source and source.valid then
+            local worker_port = choose_worker_port(network, source.position, player.position)
+            if worker_port then
+              return {
+                kind = "logistics",
+                item_name = item_name,
+                count = count or 1,
+                source = source,
+                target = player,
+                target_destination = character,
+                target_tracking_key = tracking_key,
+              }, worker_port
+            end
+          end
+        end
+      end
+    end
+  end
+  return nil, nil
+end
+
+local function find_player_trash_job(network)
+  for _, player in ipairs(game.connected_players or {}) do
+    local character = get_player_character(player)
+    if player and player.valid
+       and character
+       and player.surface == network.surface
+       and player.force == network.force
+       and position_in_network_radius(network, player.position, C.BITERPORT_LOGISTICS_RADIUS) then
+      local item_name = next_player_trash_stack(player)
+      if item_name then
+        local target = find_trash_target(network, item_name, player.position)
+        if target and target.valid then
+          local worker_port = choose_worker_port(network, player.position, target.position)
+          if worker_port then
+            return {
+              kind = "logistics",
+              item_name = item_name,
+              count = 1,
+              source = player,
+              source_destination = character,
+              source_tracking_key = make_player_tracking_key(player),
+              target = target,
+              target_unit_number = target.unit_number,
+            }, worker_port
+          end
+        end
+      end
+    end
+  end
+  return nil, nil
+end
+
 local function clamp(value, min_value, max_value)
   if value < min_value then return min_value end
   if value > max_value then return max_value end
@@ -852,9 +1018,15 @@ local function resolve_destination_position(destination)
   return nil
 end
 
+local function resolve_destination_unit_number(destination)
+  if not destination or (destination.valid ~= nil and not destination.valid) then return nil end
+  return safe_entity_field(destination, "unit_number")
+end
+
 local function position_reaches_entity(position, entity, radius)
-  if not position or not entity or (entity.valid ~= nil and not entity.valid) or not entity.bounding_box then return false end
-  local box = entity.bounding_box
+  if not position or not entity or (entity.valid ~= nil and not entity.valid) then return false end
+  local box = safe_entity_field(entity, "bounding_box")
+  if not box then return false end
   local pad = math.max(0.5, radius or C.BITERPORT_ARRIVAL_RADIUS)
   return position.x >= box.left_top.x - pad
     and position.x <= box.right_bottom.x + pad
@@ -867,8 +1039,8 @@ local function resolve_command_destination(biter, destination, radius)
   if not target_position then return nil end
   if not biter or not biter.valid then return target_position end
 
-  if destination and (destination.valid == nil or destination.valid) and destination.bounding_box then
-    local box = destination.bounding_box
+  local box = destination and (destination.valid == nil or destination.valid) and safe_entity_field(destination, "bounding_box") or nil
+  if box then
     local from = biter.position
     local pad = math.max(0.75, (radius or C.BITERPORT_ARRIVAL_RADIUS) * 0.5)
     local left = box.left_top.x - pad
@@ -968,6 +1140,14 @@ local function move_worker_clear_of_construction(active, job)
   return false
 end
 
+local function phase_target_shifted(active, destination)
+  local current = resolve_destination_position(destination)
+  local previous = active and active.phase_target_position
+  if not current or not previous then return false end
+  local threshold = math.max(1.0, active.phase_command_radius or C.BITERPORT_ARRIVAL_RADIUS)
+  return distance_squared(current, previous) > threshold * threshold
+end
+
 local function issue_move_command(biter, destination, radius)
   if not biter or not biter.valid or not destination or not biter.commandable then return false end
   biter.force = get_worker_force()
@@ -994,7 +1174,7 @@ local function begin_phase_move(active, phase, destination, radius, tick)
   active.phase_origin = copy_position(biter.position)
   active.phase_departed = false
   active.phase_target_position = copy_position(target_position)
-  active.phase_target_unit_number = destination and destination.valid and destination.unit_number or nil
+  active.phase_target_unit_number = resolve_destination_unit_number(destination)
   active.phase_destination = copy_position(command_destination)
   active.phase_radius = radius
   active.phase_command_radius = math.max(0.5, (radius or 0) * 0.5)
@@ -1091,17 +1271,24 @@ local function remove_dispatch_inputs(port)
   return true
 end
 
+local function insert_stack_into_target(target, stack)
+  if not target or not stack or not stack.name or (stack.count or 0) <= 0 then return 0 end
+  if target.valid and target.insert then
+    local ok, inserted = pcall(target.insert, stack)
+    if ok then return inserted or 0 end
+  end
+  local inv = get_entity_inventory(target)
+  if inv and inv.insert then
+    return inv.insert(stack) or 0
+  end
+  return 0
+end
+
 local function return_carried_item(active, preferred_entity)
   local stack = active and active.carried_stack
   if not stack or not stack.name or (stack.count or 0) <= 0 then return end
 
-  local inserted = 0
-  if preferred_entity and preferred_entity.valid then
-    local inv = get_entity_inventory(preferred_entity)
-    if inv and inv.insert then
-      inserted = inv.insert(stack) or 0
-    end
-  end
+  local inserted = insert_stack_into_target(preferred_entity, stack)
 
   local remaining = (stack.count or 0) - inserted
   if remaining > 0 then
@@ -1181,23 +1368,30 @@ end
 local function perform_pickup(active, tick)
   local job = active.job
   local source = job and job.source
-  if not source or not source.valid then
+  local source_inv
+  if source == nil or (source.valid ~= nil and not source.valid) then
     fail_job_and_return(active, tick)
     return
   end
-  local inv = get_entity_inventory(source)
-  if not inv or not inv.remove then
+  if job and job.source_tracking_key then
+    source_inv = get_player_trash_inventory(source)
+  else
+    source_inv = get_entity_inventory(source)
+  end
+  if not source_inv or not source_inv.remove then
     fail_job_and_return(active, tick)
     return
   end
   local count = job.count or 1
-  local removed = inv.remove({name = job.item_name, count = count}) or 0
+  local removed = source_inv.remove({name = job.item_name, count = count}) or 0
   if removed <= 0 then
     fail_job_and_return(active, tick)
     return
   end
   active.carried_stack = {name = job.item_name, count = removed}
-  local target = job.kind == "construction" and construction_destination(job) or job.target
+  local target = job.kind == "construction" and construction_destination(job)
+    or job.target_destination
+    or job.target
   begin_phase_move(active, "to_target", target, C.BITERPORT_ARRIVAL_RADIUS, tick)
 end
 
@@ -1255,20 +1449,18 @@ end
 local function deliver_logistics_job(active, tick)
   local job = active.job
   local target = job and job.target
-  if not target or not target.valid then
+  if not target or (target.valid ~= nil and not target.valid) then
     return_carried_item(active, job and job.source)
     if not start_return(active, tick) then finish_worker(active, tick, true) end
     return
   end
-  local inv = get_entity_inventory(target)
-  if not inv or not inv.insert then
-    return_carried_item(active, job and job.source)
-    if not start_return(active, tick) then finish_worker(active, tick, true) end
-    return
-  end
-
   local stack = active.carried_stack
-  local inserted = stack and inv.insert(stack) or 0
+  local inserted = insert_stack_into_target(target, stack)
+  if inserted <= 0 then
+    return_carried_item(active, job and job.source)
+    if not start_return(active, tick) then finish_worker(active, tick, true) end
+    return
+  end
   local remaining = stack and ((stack.count or 0) - inserted) or 0
   if remaining > 0 then
     active.carried_stack = {name = stack.name, count = remaining}
@@ -1308,8 +1500,9 @@ local function advance_active_workers(tick)
     end
 
     if active.phase == "to_pickup" then
-      local source = active.job and active.job.source
-      if not source or not source.valid then
+      local job = active.job
+      local source = job and (job.source_destination or job.source)
+      if not source or (source.valid ~= nil and not source.valid) then
         fail_job_and_return(active, tick)
         goto continue
       end
@@ -1317,14 +1510,19 @@ local function advance_active_workers(tick)
         and (active.phase_arrived_tick or phase_has_departed(active, biter, tick))
       if arrived then
         perform_pickup(active, tick)
-      elseif active.phase_target_unit_number ~= source.unit_number
+      elseif active.phase_target_unit_number ~= resolve_destination_unit_number(source)
+          or phase_target_shifted(active, source)
           or (biter.commandable and not biter.commandable.has_command) then
         begin_phase_move(active, "to_pickup", source, C.BITERPORT_ARRIVAL_RADIUS, tick)
     end
 
     elseif active.phase == "to_target" then
       local job = active.job
-      local target = job and (job.kind == "construction" and construction_destination(job) or job.target)
+      local target = job and (
+        job.kind == "construction" and construction_destination(job)
+        or job.target_destination
+        or job.target
+      )
       local target_position = resolve_destination_position(target)
       if not target_position then
         fail_job_and_return(active, tick)
@@ -1338,7 +1536,8 @@ local function advance_active_workers(tick)
         else
           deliver_logistics_job(active, tick)
         end
-      elseif active.phase_target_unit_number ~= (target and target.valid and target.unit_number or nil)
+      elseif active.phase_target_unit_number ~= resolve_destination_unit_number(target)
+          or phase_target_shifted(active, target)
           or (biter.commandable and not biter.commandable.has_command) then
         begin_phase_move(active, "to_target", target, C.BITERPORT_ARRIVAL_RADIUS, tick)
       end
@@ -1396,7 +1595,7 @@ local function dispatch_job(worker_port, job)
   }
   register_active_worker(active)
   mark_worker_unit(biter.unit_number, worker_port.unit_number)
-  begin_phase_move(active, "to_pickup", job.source, C.BITERPORT_ARRIVAL_RADIUS, game.tick)
+  begin_phase_move(active, "to_pickup", job.source_destination or job.source, C.BITERPORT_ARRIVAL_RADIUS, game.tick)
   refresh_port_status(worker_port)
   return true
 end
@@ -1416,6 +1615,26 @@ local function dispatch_network_jobs(network)
 
   while true do
     local job, worker_port = find_logistics_job(network)
+    if not job or not worker_port then break end
+    if dispatch_job(worker_port, job) then
+      dispatched = dispatched + 1
+    else
+      break
+    end
+  end
+
+  while true do
+    local job, worker_port = find_player_delivery_job(network)
+    if not job or not worker_port then break end
+    if dispatch_job(worker_port, job) then
+      dispatched = dispatched + 1
+    else
+      break
+    end
+  end
+
+  while true do
+    local job, worker_port = find_player_trash_job(network)
     if not job or not worker_port then break end
     if dispatch_job(worker_port, job) then
       dispatched = dispatched + 1
