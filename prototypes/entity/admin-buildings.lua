@@ -57,7 +57,7 @@ local function worker_biter_helmet_layer(run_animation)
     frame_count = 16,
     direction_count = 16,
     shift = source_layer and source_layer.shift or nil,
-    scale = source_layer and (source_layer.scale * 398 / 177) or nil,
+    scale = source_layer and ((source_layer.scale or 1) * 398 / 177) or nil,
     animation_speed = source_layer and source_layer.animation_speed or nil,
     allow_forced_downscale = true,
     surface = "nauvis",
@@ -246,11 +246,11 @@ biterport.circuit_connector = circuit_connector_definitions.create_single(
 biterport.picture = {
   layers = {
     {
-      filename = entity_graphics .. "work-station/work-station.png",
-      width = 512,
-      height = 466,
-      scale = 0.27,
-      shift = util.by_pixel(0, 0),
+      filename = entity_graphics .. "biterport/biterport.png",
+      width = 480,
+      height = 497,
+      scale = 0.3,
+      shift = util.by_pixel(0, -8),
     },
   },
 }
@@ -259,6 +259,7 @@ biterport.draw_stateless_visualisations_in_ghost = nil
 biterport.placeable_by = placeable_by_item("biterport")
 
 local hidden_biterport_roboport
+local biterport_placement_preview
 local roboport_source = data.raw["roboport"] and data.raw["roboport"]["roboport"]
 if roboport_source then
   hidden_biterport_roboport = table.deepcopy(roboport_source)
@@ -275,7 +276,7 @@ if roboport_source then
   hidden_biterport_roboport.selection_box = {{0, 0}, {0, 0}}
   hidden_biterport_roboport.collision_mask = {layers = {}}
   hidden_biterport_roboport.logistics_radius = 10
-  hidden_biterport_roboport.logistics_connection_distance = 20
+  hidden_biterport_roboport.logistics_connection_distance = 10
   hidden_biterport_roboport.construction_radius = 20
   hidden_biterport_roboport.robot_slots_count = 0
   hidden_biterport_roboport.material_slots_count = 0
@@ -283,6 +284,70 @@ if roboport_source then
   hidden_biterport_roboport.energy_usage = "1W"
   hidden_biterport_roboport.recharge_minimum = "1kJ"
   hidden_biterport_roboport.charging_energy = "1W"
+
+  local invis_sprite = {
+    filename = entity_graphics .. "work-station/work-station.png",
+    width = 1, height = 1, tint = {r = 0, g = 0, b = 0, a = 0},
+  }
+  local invis_anim = {
+    filename = entity_graphics .. "work-station/work-station.png",
+    width = 1, height = 1, frame_count = 1,
+    tint = {r = 0, g = 0, b = 0, a = 0},
+  }
+  hidden_biterport_roboport.base = {
+    filename = entity_graphics .. "work-station/work-station.png",
+    width = 1, height = 1, direction_count = 1, tint = {r=0,g=0,b=0,a=0},
+  }
+  hidden_biterport_roboport.base_patch = invis_sprite
+  hidden_biterport_roboport.base_animation = invis_anim
+  hidden_biterport_roboport.door_animation_up = invis_anim
+  hidden_biterport_roboport.door_animation_down = invis_anim
+  hidden_biterport_roboport.recharging_animation = invis_anim
+
+  -- Transient placement entity: gives the player Factorio's native roboport
+  -- zone + connection-line preview while holding the biterport item. Swapped
+  -- to the real biterport container in on_entity_built.
+  biterport_placement_preview = table.deepcopy(hidden_biterport_roboport)
+  biterport_placement_preview.name = "biterport-placement-preview"
+  biterport_placement_preview.localised_name = {"entity-name.biterport"}
+  biterport_placement_preview.localised_description = {"entity-description.biterport"}
+  biterport_placement_preview.flags = {"placeable-neutral", "player-creation", "not-blueprintable", "not-upgradable", "not-in-kill-statistics"}
+  biterport_placement_preview.minable = {mining_time = 0.5, result = "biterport"}
+  biterport_placement_preview.placeable_by = placeable_by_item("biterport")
+  biterport_placement_preview.hidden_in_factoriopedia = true
+  biterport_placement_preview.selectable_in_game = false
+  biterport_placement_preview.collision_box = biterport.collision_box
+  biterport_placement_preview.selection_box = biterport.selection_box
+  biterport_placement_preview.collision_mask = biterport.collision_mask
+  biterport_placement_preview.icon = biterport.icon
+  biterport_placement_preview.icon_size = biterport.icon_size
+  biterport_placement_preview.icons = biterport.icons
+  biterport_placement_preview.next_upgrade = nil
+  biterport_placement_preview.fast_replaceable_group = nil
+
+  -- Use biterport sprite instead of vanilla roboport for the placement ghost.
+  -- base must be a RotatedSprite (direction_count required).
+  biterport_placement_preview.base = {
+    filename = entity_graphics .. "biterport/biterport.png",
+    size = 480, scale = 0.3, shift = {0, -1},
+    direction_count = 1,
+  }
+  -- Hide all roboport overlay animations; they won't play (entity is swapped immediately)
+  -- but they would appear in the cursor ghost otherwise.
+  local invis_sprite = {
+    filename = entity_graphics .. "work-station/work-station.png",
+    width = 1, height = 1, tint = {r = 0, g = 0, b = 0, a = 0},
+  }
+  local invis_anim = {
+    filename = entity_graphics .. "work-station/work-station.png",
+    width = 1, height = 1, frame_count = 1,
+    tint = {r = 0, g = 0, b = 0, a = 0},
+  }
+  biterport_placement_preview.base_patch = invis_sprite
+  biterport_placement_preview.base_animation = invis_anim
+  biterport_placement_preview.door_animation_up = invis_anim
+  biterport_placement_preview.door_animation_down = invis_anim
+  biterport_placement_preview.recharging_animation = invis_anim
 end
 
 -- Resolution Office: 3x3 complaint resolution
@@ -864,6 +929,7 @@ local entities = {
   transit_permit_chest
 }
 if hidden_biterport_roboport then table.insert(entities, hidden_biterport_roboport) end
+if biterport_placement_preview then table.insert(entities, biterport_placement_preview) end
 if biter_worker_t2 then table.insert(entities, biter_worker_t2) end
 if biter_worker_t3 then table.insert(entities, biter_worker_t3) end
 if biterport_worker then table.insert(entities, biterport_worker) end

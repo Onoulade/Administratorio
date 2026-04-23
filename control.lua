@@ -667,9 +667,36 @@ end
 -- ENTITY BUILD / REMOVE HANDLERS
 -- ============================================================
 
+local function swap_biterport_placement_preview(preview, player_index)
+  if not preview or not preview.valid then return nil end
+  local surface = preview.surface
+  local params = {
+    name = C.BITERPORT_NAME,
+    position = preview.position,
+    direction = preview.direction,
+    force = preview.force,
+    quality = preview.quality and preview.quality.name or nil,
+    player = player_index,
+    raise_built = false,
+    create_build_effect_smoke = false,
+  }
+  preview.destroy()
+  local biterport = surface.create_entity(params)
+  if not biterport or not biterport.valid then return nil end
+  return biterport
+end
+
 local function on_entity_built_inner(event)
   local entity = event.entity or event.created_entity
   if not entity or not entity.valid then return end
+
+  -- Swap the transient placement-preview roboport to the real biterport container.
+  -- The preview entity is only used to drive Factorio's native zone/connection
+  -- visualisation while the player holds the biterport item.
+  if entity.name == "biterport-placement-preview" then
+    entity = swap_biterport_placement_preview(entity, event.player_index)
+    if not entity or not entity.valid then return end
+  end
 
   -- Handle Administration Station placement and zone logic
   if is_admin_station(entity) then
