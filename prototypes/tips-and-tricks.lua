@@ -235,6 +235,19 @@ data:extend({
     }
   },
 
+  -- Formation Center (unlocks when the first formation center is built)
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-formation-center",
+    category = "administratorio",
+    order = "q2",
+    indent = 1,
+    trigger = {
+      type = "build-entity",
+      entity = "formation-center"
+    }
+  },
+
   -- Rideable Biter (replaces the vanilla car unlock)
   {
     type = "tips-and-tricks-item",
@@ -271,6 +284,19 @@ data:extend({
     trigger = {
       type = "research",
       technology = "biter-labor-efficiency-2"
+    }
+  },
+
+  -- Biterport (unlocks with biterport-logistics)
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-biterport",
+    category = "administratorio",
+    order = "t1",
+    indent = 1,
+    trigger = {
+      type = "research",
+      technology = "biterport-logistics"
     }
   },
 })

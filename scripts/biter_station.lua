@@ -5,8 +5,10 @@ local M = {}
 
 local WORKER_FORCE_NAME = "administratorio-biters"
 local STATION_NAME = "biter-station"
+local COFFEE_INPUT_NAME = "biter-station-coffee-input"
 local WORKER_ITEM_NAME = "biter-worker"
 local MONEY_ITEM_NAME = "taxpayer-money"
+local COFFEE_FLUID_NAME = "liquid-coffee"
 local WORKER_ENTITY_NAME = "small-biter"
 
 local SLOT_TIER_TECHS = {
@@ -30,6 +32,8 @@ local function get_station_slots_for_force(force)
   return slots
 end
 
+local get_station_inventory
+
 local function apply_station_inventory(station)
   local inv = get_station_inventory(station)
   if not inv then return end
@@ -37,9 +41,11 @@ local function apply_station_inventory(station)
   if #inv < target then
     inv.resize(target)
   end
-  inv.set_filter(1, {name = MONEY_ITEM_NAME})
-  for i = 2, #inv do
-    inv.set_filter(i, {name = WORKER_ITEM_NAME})
+  if inv.set_filter and inv.supports_filters and inv.supports_filters() then
+    inv.set_filter(1, {name = MONEY_ITEM_NAME})
+    for i = 2, #inv do
+      inv.set_filter(i, {name = WORKER_ITEM_NAME})
+    end
   end
 end
 
@@ -160,9 +166,97 @@ local function get_biter_force()
   return game.forces["player"] or game.forces["neutral"]
 end
 
-local function get_station_inventory(station)
+get_station_inventory = function(station)
   if not station or not station.valid then return nil end
   return station.get_inventory(defines.inventory.chest)
+end
+
+local function rear_input_position(entity)
+  local direction = entity and entity.direction or defines.direction.north
+  local position = entity and entity.position or {x = 0, y = 0}
+  if direction == defines.direction.east then
+    return {x = position.x + 2, y = position.y}
+  elseif direction == defines.direction.south then
+    return {x = position.x, y = position.y + 2}
+  elseif direction == defines.direction.west then
+    return {x = position.x - 2, y = position.y}
+  end
+  return {x = position.x, y = position.y - 2}
+end
+
+local function create_hidden_coffee_input(station)
+  if not station or not station.valid or not station.unit_number then return nil end
+  storage.biter_station_coffee_inputs = storage.biter_station_coffee_inputs or {}
+  local input = storage.biter_station_coffee_inputs[station.unit_number]
+  if input and input.valid then
+    return input
+  end
+
+  local created = station.surface.create_entity{
+    name = COFFEE_INPUT_NAME,
+    position = rear_input_position(station),
+    direction = station.direction or defines.direction.north,
+    force = station.force,
+    create_build_effect_smoke = false,
+  }
+  if created and created.valid then
+    created.destructible = false
+    created.minable = false
+    created.operable = false
+    storage.biter_station_coffee_inputs[station.unit_number] = created
+  end
+  return created
+end
+
+local function destroy_hidden_coffee_input(station_id)
+  local input = storage.biter_station_coffee_inputs and storage.biter_station_coffee_inputs[station_id]
+  if input and input.valid then
+    input.destroy()
+  end
+  if storage.biter_station_coffee_inputs then
+    storage.biter_station_coffee_inputs[station_id] = nil
+  end
+end
+
+local function dispatch_requires_coffee(station)
+  return station and station.valid
+    and working_hours.is_enabled()
+    and working_hours.is_night(station.surface)
+end
+
+local function available_dispatch_coffee(station)
+  if not dispatch_requires_coffee(station) then
+    return math.huge
+  end
+
+  local input = create_hidden_coffee_input(station)
+  local fluidbox = input and input.valid and input.fluidbox
+  local fluid = fluidbox and fluidbox[1] or nil
+  if fluid and fluid.name == COFFEE_FLUID_NAME then
+    return fluid.amount or 0
+  end
+  return 0
+end
+
+local function has_dispatch_coffee(station)
+  return available_dispatch_coffee(station) >= C.BITER_STATION_NIGHT_COFFEE_PER_DISPATCH
+end
+
+local function remove_dispatch_coffee(station)
+  if not dispatch_requires_coffee(station) then
+    return true
+  end
+
+  local input = create_hidden_coffee_input(station)
+  if not input or not input.valid or not input.remove_fluid then
+    return false
+  end
+
+  local ok, removed = pcall(input.remove_fluid, {
+    name = COFFEE_FLUID_NAME,
+    amount = C.BITER_STATION_NIGHT_COFFEE_PER_DISPATCH,
+  })
+  return ok and (removed or 0) >= C.BITER_STATION_NIGHT_COFFEE_PER_DISPATCH
 end
 
 local function destroy_overlay(active_state)
@@ -202,7 +296,9 @@ local function set_station_status(station, key)
       diode = defines.entity_status_diode.yellow,
       label = {"gui." .. key},
     }
-  elseif key == "biter-station-no-workers" or key == "biter-station-no-money" then
+  elseif key == "biter-station-no-workers"
+      or key == "biter-station-no-money"
+      or key == "biter-station-no-coffee" then
     station.custom_status = {
       diode = defines.entity_status_diode.red,
       label = {"gui." .. key},
@@ -217,11 +313,12 @@ end
 
 local function has_station_inputs(station)
   local inv = get_station_inventory(station)
-  if not inv then return false, false end
+  if not inv then return false, false, false end
 
   local has_worker = inv.get_item_count(WORKER_ITEM_NAME) > 0
   local has_money = inv.get_item_count(MONEY_ITEM_NAME) >= get_dispatch_salary()
-  return has_worker, has_money
+  local has_coffee = has_dispatch_coffee(station)
+  return has_worker, has_money, has_coffee
 end
 
 local function station_has_active_workers(station_id)
@@ -239,11 +336,13 @@ local function refresh_station_status(station)
     return
   end
 
-  local has_worker, has_money = has_station_inputs(station)
+  local has_worker, has_money, has_coffee = has_station_inputs(station)
   if not has_worker then
     set_station_status(station, "biter-station-no-workers")
   elseif not has_money then
     set_station_status(station, "biter-station-no-money")
+  elseif not has_coffee then
+    set_station_status(station, "biter-station-no-coffee")
   else
     set_station_status(station, "biter-station-idle")
   end
@@ -699,7 +798,8 @@ local function spawn_station_biter(station)
   if not station or not station.valid then return nil end
 
   local actual_entity_name = get_worker_entity_name()
-  local spawn_pos = station.surface.find_non_colliding_position(actual_entity_name, station.position, 8, 0.5)
+  local spawn_origin = {x = station.position.x, y = station.position.y + 0.5}
+  local spawn_pos = station.surface.find_non_colliding_position(actual_entity_name, spawn_origin, 8, 0.5)
   if not spawn_pos then
     return nil
   end
@@ -761,6 +861,10 @@ end
 local function dispatch_single_station_biter(station, queue)
   if not station or not station.valid or not station.unit_number then return false end
   if not queue or #queue == 0 then return false end
+  if not has_dispatch_coffee(station) then
+    set_station_status(station, "biter-station-no-coffee")
+    return false
+  end
 
   local inv = get_station_inventory(station)
   if not inv then
@@ -778,6 +882,28 @@ local function dispatch_single_station_biter(station, queue)
     return false
   end
 
+  local salary_paid = false
+  if dispatch_requires_coffee(station) then
+    local salary = get_dispatch_salary()
+    if inv.remove({name = MONEY_ITEM_NAME, count = salary}) < salary then
+      biter.destroy()
+      maybe_reinsert_worker(station)
+      set_station_status(station, "biter-station-no-money")
+      return false
+    end
+    salary_paid = true
+  end
+
+  if not remove_dispatch_coffee(station) then
+    if salary_paid then
+      inv.insert({name = MONEY_ITEM_NAME, count = get_dispatch_salary()})
+    end
+    biter.destroy()
+    maybe_reinsert_worker(station)
+    set_station_status(station, "biter-station-no-coffee")
+    return false
+  end
+
   claim_queue_for_biter(queue, biter.unit_number)
 
   apply_machine_tint(biter)
@@ -788,6 +914,7 @@ local function dispatch_single_station_biter(station, queue)
     station = station,
     building_queue = queue,
     current_idx = 1,
+    salary_paid = salary_paid,
     overlay_id = create_worker_overlay(biter),
     phase = "to_building",
   }
@@ -821,6 +948,12 @@ local function dispatch_station_biters(station)
     return 0
   end
 
+  local coffee_count = available_dispatch_coffee(station)
+  if coffee_count < C.BITER_STATION_NIGHT_COFFEE_PER_DISPATCH then
+    set_station_status(station, "biter-station-no-coffee")
+    return 0
+  end
+
   local queue = build_building_queue(station)
   if #queue == 0 then
     if station_has_active_workers(station.unit_number) then
@@ -833,10 +966,15 @@ local function dispatch_station_biters(station)
 
   local enablements_per_trip = get_enablements_per_trip()
   local max_by_money = math.floor(money_count / get_dispatch_salary())
+  local max_by_coffee = math.floor(coffee_count / C.BITER_STATION_NIGHT_COFFEE_PER_DISPATCH)
   local needed_workers = math.ceil(#queue / enablements_per_trip)
-  local worker_dispatches = math.min(worker_count, max_by_money, needed_workers)
+  local worker_dispatches = math.min(worker_count, max_by_money, max_by_coffee, needed_workers)
   if worker_dispatches <= 0 then
-    set_station_status(station, "biter-station-no-money")
+    if max_by_money <= 0 then
+      set_station_status(station, "biter-station-no-money")
+    else
+      set_station_status(station, "biter-station-no-coffee")
+    end
     return 0
   end
 
@@ -872,7 +1010,9 @@ local function finish_station_circuit(station_id, station, active_state)
   if station and station.valid then
     local inv = get_station_inventory(station)
     if inv then
-      inv.remove({name = MONEY_ITEM_NAME, count = get_dispatch_salary()})
+      if not active_state.salary_paid then
+        inv.remove({name = MONEY_ITEM_NAME, count = get_dispatch_salary()})
+      end
       maybe_reinsert_worker(station)
     end
   end
@@ -1052,6 +1192,11 @@ local function initial_dispatch_check()
       end
       storage.biter_stations[station_id] = nil
     else
+      if working_hours.is_enabled()
+         and (not storage.biter_station_coffee_inputs[station_id]
+           or not storage.biter_station_coffee_inputs[station_id].valid) then
+        create_hidden_coffee_input(station)
+      end
       dispatch_station_biters(station)
       refresh_station_status(station)
     end
@@ -1065,6 +1210,7 @@ function M.ensure_storage()
   storage.biter_station_active_by_station = storage.biter_station_active_by_station or {}
   storage.biter_station_releasing = storage.biter_station_releasing or {}
   storage.biter_station_worker_units = storage.biter_station_worker_units or {}
+  storage.biter_station_coffee_inputs = storage.biter_station_coffee_inputs or {}
   storage.managed_building_registry = storage.managed_building_registry or {}
   storage.managed_building_run = storage.managed_building_run or {}
   if storage.biter_station_crafts_per_visit == nil then
@@ -1105,6 +1251,9 @@ function M.track_station(entity)
 
   storage.biter_stations[entity.unit_number] = entity
   apply_station_inventory(entity)
+  if working_hours.is_enabled() then
+    create_hidden_coffee_input(entity)
+  end
   refresh_station_status(entity)
 end
 
@@ -1127,6 +1276,7 @@ function M.untrack_station(entity, tick)
     end
   end
 
+  destroy_hidden_coffee_input(station_id)
   storage.biter_stations[station_id] = nil
 end
 
@@ -1207,6 +1357,15 @@ function M.on_entity_removed(event)
   if not event then return end
   local entity = event.entity
   if not entity or not entity.valid then return end
+  if entity.name == COFFEE_INPUT_NAME and storage.biter_station_coffee_inputs then
+    for station_id, input in pairs(storage.biter_station_coffee_inputs) do
+      if input == entity then
+        storage.biter_station_coffee_inputs[station_id] = nil
+        break
+      end
+    end
+    return
+  end
   if entity.name ~= WORKER_ENTITY_NAME then return end
 
   local station_id = find_active_station_by_biter_unit(entity.unit_number)
@@ -1322,11 +1481,18 @@ function M.rebuild_registry()
     storage.biter_station_releasing[biter_unit_number] = nil
   end
 
+  for _, surface in pairs(game.surfaces) do
+    for _, input in ipairs(surface.find_entities_filtered{name = COFFEE_INPUT_NAME}) do
+      if input.valid then input.destroy() end
+    end
+  end
+
   storage.biter_stations = {}
   storage.biter_station_biter = {}
   storage.biter_station_active_by_station = {}
   storage.biter_station_releasing = {}
   storage.biter_station_worker_units = {}
+  storage.biter_station_coffee_inputs = {}
   storage.managed_building_registry = {}
   storage.managed_building_run = {}
 
@@ -1346,6 +1512,9 @@ function M.rebuild_registry()
   end
 
   for _, station in pairs(storage.biter_stations) do
+    if working_hours.is_enabled() then
+      create_hidden_coffee_input(station)
+    end
     refresh_station_status(station)
   end
 end

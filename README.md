@@ -32,7 +32,7 @@ The catch is that nearby biters are not deleted. They get displaced into your co
 
 ### Working hours and overtime exemptions
 
-The bureaucracy now has office hours. When night falls, the lights go out, the clerks go home, and some of your most important administrative buildings simply stop pretending to care. **Office Desks**, **Corporate Breakrooms**, and **Union Headquarters** all close for the night unless you've filed the proper exception.
+The bureaucracy now has office hours. When night falls, the lights go out, the clerks go home, and some of your most important administrative buildings simply stop pretending to care. **Office Desks**, **Corporate Breakrooms**, and **Union Headquarters** all close for the night unless you've filed the proper exception. **Biter Employment Offices** and **Biterports** also stop dispatching night jobs unless liquid coffee is piped into their rear input.
 
 That exception is the **Overtime Exemption**. Research **After-Hours Operations**, install a single exemption module in the building, and suddenly the paperwork machine keeps humming long after sunset. Unsurprisingly, the permit for legally forcing night shift work is expensive, caffeine-dependent, and held together by public money. It only protects against the night shutdown, though — a protester can still disable that building during the day.
 

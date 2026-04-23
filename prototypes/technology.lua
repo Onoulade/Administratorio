@@ -253,7 +253,6 @@ data:extend({
       { type = "unlock-recipe", recipe = "environmental-impact-report" },
       { type = "unlock-recipe", recipe = "chemical-handling-work-order-production" },
       { type = "unlock-recipe", recipe = "carbon-offset-certificate-verified" },
-      { type = "unlock-recipe", recipe = "chemical-operator-training" }
     },
     prerequisites = {"local-precedents", "fluid-handling", "steel-processing"},
     unit = { count = 95, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
@@ -481,24 +480,33 @@ data:extend({
     unit = { count = 40, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },
     order = "a-p"
   },
-  -- BITER EMPLOYMENT (hire resolved biters as workers)
+  -- BITER EMPLOYMENT (hire resolved biters as workers — red + admin science only)
   {
     type = "technology", name = "biter-employment",
-    icons = {{icon = "__administratorio__/graphics/icons/credentials.png", icon_size = 64, tint = {r=0.6, g=0.4, b=0.2, a=1}}},
+    icon = tech_icons .. "worker-biter.png", icon_size = 256,
     effects = {
       { type = "unlock-recipe", recipe = "job-offer-production" },
       { type = "unlock-recipe", recipe = "office-desk" },
       { type = "unlock-recipe", recipe = "biter-station" },
-      { type = "unlock-recipe", recipe = "formation-center" },
-      { type = "unlock-recipe", recipe = "union-delegate-training" },
     },
     prerequisites = {"verbal-approvals", "local-precedents"},
-    unit = { count = 120, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    unit = { count = 120, ingredients = {{"automation-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "c-h"
+  },
+  -- FORMATION CENTER (unlock the training building — gate tech for all profession training)
+  {
+    type = "technology", name = "formation-center",
+    icon = "__administratorio__/graphics/icons/formation-center.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "formation-center" },
+    },
+    prerequisites = {"biter-employment"},
+    unit = { count = 100, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "c-h0"
   },
   {
     type = "technology", name = "biter-labor-efficiency-1",
-    icons = {{icon = "__administratorio__/graphics/icons/credentials.png", icon_size = 64, tint = {r=0.55, g=0.75, b=0.45, a=1}}},
+    icon = tech_icons .. "worker-biter.png", icon_size = 256,
     effects = {
       { type = "nothing" },
     },
@@ -508,7 +516,7 @@ data:extend({
   },
   {
     type = "technology", name = "biter-labor-efficiency-2",
-    icons = {{icon = "__administratorio__/graphics/icons/credentials.png", icon_size = 64, tint = {r=0.35, g=0.65, b=0.35, a=1}}},
+    icon = tech_icons .. "worker-biter.png", icon_size = 256,
     effects = {
       { type = "nothing" },
     },
@@ -519,18 +527,21 @@ data:extend({
   -- BITERPORT LOGISTICS (walking construction/logistics before true robots)
   {
     type = "technology", name = "biterport-logistics",
-    icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64,
+    icons = {
+      {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, tint = {r=0.45, g=0.85, b=0.55, a=1}},
+      {icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
+    },
     effects = {
-      { type = "unlock-recipe", recipe = "biter-logistics-formation" },
       { type = "unlock-recipe", recipe = "biterport" },
+      { type = "unlock-recipe", recipe = "biter-logistics-formation" },
       { type = "unlock-recipe", recipe = "active-provider-chest" },
       { type = "unlock-recipe", recipe = "passive-provider-chest" },
       { type = "unlock-recipe", recipe = "storage-chest" },
       { type = "unlock-recipe", recipe = "buffer-chest" },
       { type = "unlock-recipe", recipe = "requester-chest" },
     },
-    prerequisites = {"biter-employment", "biter-labor-efficiency-2", "executive-review"},
-    unit = { count = 170, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
+    prerequisites = {"formation-center"},
+    unit = { count = 140, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 35 },
     order = "c-h2a"
   },
   -- BITER STATION CAPACITY (unlock more inventory slots per station)
@@ -616,16 +627,44 @@ data:extend({
     unit = { count = 240, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
     order = "c-i2"
   },
-  -- SPECIALIST TRAINING (train workers into building-specific specialists)
+  -- UNION DELEGATE TRAINING (train union representative specialists)
   {
-    type = "technology", name = "specialist-training",
-    icons = {{icon = "__administratorio__/graphics/icons/credentials.png", icon_size = 64, tint = {r=0.2, g=0.9, b=0.7, a=1}}},
+    type = "technology", name = "union-delegate-training",
+    icons = {
+      {icon = "__base__/graphics/icons/medium-biter.png", icon_size = 64, tint = {r=0.45, g=0.55, b=1.0, a=1}},
+    },
+    effects = {
+      { type = "unlock-recipe", recipe = "union-delegate-training" },
+    },
+    prerequisites = {"formation-center", "public-finance"},
+    unit = { count = 160, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
+    order = "e-h1"
+  },
+  -- CHEMICAL OPERATOR TRAINING (certify workers for chemical plant and hazmat operations)
+  {
+    type = "technology", name = "chemical-operator-training",
+    icons = {
+      {icon = "__base__/graphics/icons/medium-biter.png", icon_size = 64, tint = {r=1.0, g=0.75, b=0.25, a=1}},
+    },
+    effects = {
+      { type = "unlock-recipe", recipe = "chemical-operator-training" },
+    },
+    prerequisites = {"formation-center", "environmental-compliance"},
+    unit = { count = 120, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 35 },
+    order = "d-h1"
+  },
+  -- NUCLEAR TECHNICIAN TRAINING (certify workers for nuclear reactor operations)
+  {
+    type = "technology", name = "nuclear-technician-training",
+    icons = {
+      {icon = "__base__/graphics/icons/medium-biter.png", icon_size = 64, tint = {r=0.35, g=1.0, b=0.85, a=1}},
+    },
     effects = {
       { type = "unlock-recipe", recipe = "nuclear-technician-training" },
     },
-    prerequisites = {"biter-employment", "executive-review"},
-    unit = { count = 200, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
-    order = "f-h"
+    prerequisites = {"formation-center", "radiological-compliance"},
+    unit = { count = 200, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
+    order = "f-h1"
   },
   {
     type = "technology", name = "hired-biter-fieldwork",
@@ -698,7 +737,7 @@ local function add_unique_prerequisite(tech_name, prereq_name)
   tech.prerequisites[#tech.prerequisites + 1] = prereq_name
 end
 
-add_unique_prerequisite("automobilism", "biter-employment")
+add_unique_prerequisite("automobilism", "formation-center")
 
 local admin_station_capacity_techs = {}
 local capacity_pack_sets = {
@@ -878,6 +917,13 @@ remove_tech_unlock("automobilism", "car")
 add_tech_unlock("automobilism", "rideable-biter")
 disable_recipe("car")
 
+local automobilism_tech = data.raw["technology"]["automobilism"]
+if automobilism_tech then
+  automobilism_tech.icon = tech_icons .. "rideable biter.png"
+  automobilism_tech.icon_size = 256
+  automobilism_tech.icons = nil
+end
+
 local science_pack_order = {
   ["automation-science-pack"] = 1,
   ["logistic-science-pack"] = 2,
@@ -1050,7 +1096,7 @@ add_tech_prerequisite("synthetic-stationery", "chemical-science-pack")
 add_tech_prerequisite("biter-labor-efficiency-2", "chemical-science-pack")
 add_tech_prerequisite("biter-station-capacity-3", "chemical-science-pack")
 add_tech_prerequisite("biter-station-capacity-4", "production-science-pack")
-add_tech_prerequisite("specialist-training", "production-science-pack")
+add_tech_prerequisite("nuclear-technician-training", "production-science-pack")
 add_tech_prerequisite("eminent-domain-zoning", "production-science-pack")
 add_tech_prerequisite("constitutional-law", "production-science-pack")
 add_tech_prerequisite("loitering-ordinances", "utility-science-pack")
@@ -1075,7 +1121,6 @@ add_tech_prerequisite("electric-engine", "environmental-compliance")
 add_tech_prerequisite("rocket-fuel", "environmental-compliance")
 add_tech_prerequisite("lubricant", "environmental-compliance")
 add_tech_prerequisite("explosives", "environmental-compliance")
-add_tech_prerequisite("robotics", "federal-regulation")
 
 for _, tech_name in ipairs({
   "advanced-combinators",
@@ -1129,7 +1174,7 @@ add_tech_prerequisite("speed-module-3", "processing-unit")
 add_tech_prerequisite("efficiency-module-3", "processing-unit")
 add_tech_prerequisite("productivity-module-3", "processing-unit")
 add_tech_prerequisite("uranium-processing", "board-meetings")
-add_tech_prerequisite("uranium-processing", "specialist-training")
+add_tech_prerequisite("uranium-processing", "nuclear-technician-training")
 add_tech_prerequisite("after-hours-operations", "executive-review")
 
 for _, tech_name in ipairs({
@@ -1144,7 +1189,17 @@ for _, tech_name in ipairs({
   add_tech_prerequisite(tech_name, "verbal-approvals")
 end
 
+for _, tech_name in ipairs({
+  "construction-robotics",
+  "logistic-robotics",
+  "personal-roboport-equipment",
+  "personal-roboport-mk2-equipment",
+}) do
+  add_tech_science_pack(tech_name, "utility-science-pack")
+end
+
 add_tech_prerequisite("oil-processing", "environmental-compliance")
+add_tech_prerequisite("oil-processing", "chemical-operator-training")
 
 -- Biterports own chest-based logistics now. True robots stay as the late-game
 -- achievement branch, without holding requester chests hostage until utility
@@ -1165,9 +1220,15 @@ for _, tech_name in ipairs({
   end
 end
 
+-- logistic-system no longer serves a visible purpose; hide it from the tech tree.
+local logistic_system_tech = data.raw["technology"]["logistic-system"]
+if logistic_system_tech then
+  logistic_system_tech.hidden = true
+end
+
 -- Buildings that require biter-workers or specialists need employment tech
 add_tech_prerequisite("industrial-propaganda", "biter-employment")
-add_tech_prerequisite("nuclear-power", "specialist-training")
+add_tech_prerequisite("nuclear-power", "nuclear-technician-training")
 
 for _, tech_name in ipairs({"automation-3", "effect-transmission", "rocket-silo", "nuclear-power"}) do
   add_tech_prerequisite(tech_name, "executive-review")
