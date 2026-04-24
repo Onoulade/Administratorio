@@ -505,6 +505,16 @@ data:extend({
     order = "c-h0"
   },
   {
+    type = "technology", name = "rideable-biter",
+    icon = tech_icons .. "rideable biter.png", icon_size = 256,
+    effects = {
+      { type = "unlock-recipe", recipe = "rideable-biter" },
+    },
+    prerequisites = {"formation-center", "engine"},
+    unit = { count = 110, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "c-h0a"
+  },
+  {
     type = "technology", name = "biter-labor-efficiency-1",
     icon = tech_icons .. "worker-biter.png", icon_size = 256,
     effects = {
@@ -786,21 +796,6 @@ end
 
 data:extend(pneumatic_capacity_techs)
 
-local function add_unique_prerequisite(tech_name, prereq_name)
-  local tech = data.raw["technology"] and data.raw["technology"][tech_name]
-  if not tech then return end
-
-  tech.prerequisites = tech.prerequisites or {}
-  for _, existing in ipairs(tech.prerequisites) do
-    if existing == prereq_name then
-      return
-    end
-  end
-  tech.prerequisites[#tech.prerequisites + 1] = prereq_name
-end
-
-add_unique_prerequisite("automobilism", "formation-center")
-
 local admin_station_capacity_techs = {}
 local capacity_pack_sets = {
   {{"automation-science-pack", 1}, {"administrative-science-pack", 1}},
@@ -966,24 +961,11 @@ local function remove_tech_unlock(technology_name, recipe_name)
   end
 end
 
-local function disable_recipe(recipe_name)
-  local recipe = data.raw["recipe"] and data.raw["recipe"][recipe_name]
-  if not recipe then return end
-  recipe.enabled = false
-  recipe.hidden = true
-  recipe.hidden_in_factoriopedia = true
-  recipe.hide_from_player_crafting = true
-end
-
-remove_tech_unlock("automobilism", "car")
-add_tech_unlock("automobilism", "rideable-biter")
-disable_recipe("car")
-
 local automobilism_tech = data.raw["technology"]["automobilism"]
 if automobilism_tech then
-  automobilism_tech.icon = tech_icons .. "rideable biter.png"
-  automobilism_tech.icon_size = 256
-  automobilism_tech.icons = nil
+  add_tech_prerequisite("automobilism", "utility-science-pack")
+  automobilism_tech.unit.count = 220
+  automobilism_tech.unit.time = 30
 end
 
 local science_pack_order = {

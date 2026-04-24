@@ -105,11 +105,11 @@ test("eviction and night-shift tips stay wired to the relevant unlocks", functio
   end
 end)
 
-test("rideable biter tip unlocks with automobilism", function()
+test("rideable biter tip unlocks with its dedicated technology", function()
   local item = tip("administratorio-rideable-biter")
   assert_true(
-    trigger_contains(item.trigger, "research", "technology", "automobilism"),
-    "rideable biter tip should unlock from automobilism"
+    trigger_contains(item.trigger, "research", "technology", "rideable-biter"),
+    "rideable biter tip should unlock from rideable-biter"
   )
 end)
 
