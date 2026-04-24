@@ -12,7 +12,7 @@ data:extend({
     results = {{type="item", name="paper", amount=20}},
     energy_required = 4
   },
-  { type = "recipe", name = "ink-production",        enabled = true, ingredients = {{type="item", name="coal", amount=1}},  results = {{type="item", name="ink", amount=2}},   energy_required = 1 },
+  { type = "recipe", name = "ink-production",        enabled = true, ingredients = {{type="item", name="coal", amount=1}},  results = {{type="item", name="ink", amount=3}},   energy_required = 1 },
 
   -- Base Printed Forms (printing category)
   { type = "recipe", name = "blank-form-production",      category = "printing", enabled = true,  ingredients = {{type="item", name="paper", amount=4}, {type="item", name="ink", amount=1}}, results = {{type="item", name="blank-form", amount=2}}, energy_required = 3 },
@@ -23,7 +23,7 @@ data:extend({
   { type = "recipe", name = "provisional-approval-production", category = "bureaucratic-bootstrap", enabled = false, ingredients = {{type="item", name="blank-form", amount=1}, {type="item", name="redundant-rubble", amount=1}}, results = {{type="item", name="provisional-approval", amount=1}}, energy_required = 1 },
 
   -- Carbon Offset Certificates (reworked: desk recipe from blank-form + coal)
-  { type = "recipe", name = "carbon-offset-certificate-basic",    category = "bureaucratic-bootstrap", enabled = true,  ingredients = {{type="item", name="blank-form", amount=1}, {type="item", name="coal", amount=1}}, results = {{type="item", name="carbon-offset-certificate-basic", amount=1}}, energy_required = 2 },
+  { type = "recipe", name = "carbon-offset-certificate-basic",    category = "bureaucratic-bootstrap", enabled = true,  ingredients = {{type="item", name="blank-form", amount=2}, {type="item", name="coal", amount=1}}, results = {{type="item", name="carbon-offset-certificate-basic", amount=2}}, energy_required = 2 },
   { type = "recipe", name = "carbon-offset-certificate-verified", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=4}, {type="item", name="dubious-data", amount=20}}, results = {{type="item", name="carbon-offset-certificate-verified", amount=1}}, energy_required = 15 },
 
   -- Form 27b-6

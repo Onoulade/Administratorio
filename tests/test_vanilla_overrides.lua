@@ -31,6 +31,16 @@ local function tech_has_prereq(tech, prereq_name)
   return false
 end
 
+local function tech_unlocks_recipe(tech, recipe_name)
+  if not tech or not tech.effects then return false end
+  for _, effect in ipairs(tech.effects) do
+    if effect.type == "unlock-recipe" and effect.recipe == recipe_name then
+      return true
+    end
+  end
+  return false
+end
+
 local technologies = {
   ["laser-weapons-damage-1"] = {name = "laser-weapons-damage-1", enabled = true, hidden = false, unit = {ingredients = {{"automation-science-pack", 1}}}},
   ["laser-weapons-damage-2"] = {name = "laser-weapons-damage-2", enabled = true, hidden = false, prerequisites = {"laser-weapons-damage-1"}, unit = {ingredients = {{"automation-science-pack", 1}}}},
@@ -117,6 +127,11 @@ test("cliff explosives research is rewired away from military prerequisites", fu
   assert_true(tech_has_prereq(tech, "discovery-bullshit"), "cliff-explosives should require discovery-bullshit")
   assert_true(not tech_has_prereq(tech, "military-2"), "cliff-explosives should no longer require military-2")
   assert_true(not tech_has_prereq(tech, "military"), "cliff-explosives should no longer require military")
+end)
+
+test("steel processing unlocks batch steel smelting", function()
+  local tech = technologies["steel-processing"]
+  assert_true(tech_unlocks_recipe(tech, "steel-plate-batch"), "steel-processing should unlock steel-plate-batch")
 end)
 
 if failed > 0 then
