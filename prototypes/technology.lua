@@ -500,8 +500,8 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "biter-station" },
     },
-    prerequisites = {"biter-employment"},
-    unit = { count = 140, ingredients = {{"automation-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    prerequisites = {"biter-employment", "fluid-handling"},
+    unit = { count = 140, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "c-h0z"
   },
   -- FORMATION CENTER (unlock the training building — gate tech for all profession training)
@@ -511,7 +511,7 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "formation-center" },
     },
-    prerequisites = {"biter-employment"},
+    prerequisites = {"biter-employment", "logistic-science-pack"},
     unit = { count = 100, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "c-h0"
   },
@@ -531,8 +531,8 @@ data:extend({
     effects = {
       { type = "nothing" },
     },
-    prerequisites = {"biter-employment"},
-    unit = { count = 140, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    prerequisites = {"biter-employment", "chemical-science-pack"},
+    unit = { count = 140, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "c-h1"
   },
   {
@@ -1311,6 +1311,7 @@ end
 
 add_tech_prerequisite("oil-processing", "environmental-compliance")
 add_tech_prerequisite("oil-processing", "chemical-operator-training")
+add_tech_prerequisite("oil-processing", "biter-employment-office")
 
 -- Biterports own chest-based logistics now. True robots stay as the late-game
 -- achievement branch, without holding requester chests hostage until utility

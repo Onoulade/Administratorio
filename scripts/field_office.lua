@@ -332,6 +332,17 @@ function M.update(tick)
         goto continue
       end
 
+      -- Release if the machine has nothing left to do (office is already active, check status directly)
+      local status = office.status
+      if not office.get_recipe()
+         or (status ~= defines.entity_status.working and status ~= defines.entity_status.normal) then
+        release_biter(state, tick)
+        state.phase = "idle"
+        office.active = false
+        office.custom_status = nil
+        goto continue
+      end
+
       -- Check if the biter has completed its shift (5 crafts)
       if office.products_finished >= (state.products_at_arrival or 0) + CRAFTS_PER_BITER then
         -- Release the biter

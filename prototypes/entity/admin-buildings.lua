@@ -640,7 +640,7 @@ union_hq.working_sound = {
 }
 
 local admin_station_corner_blocker = {
-  type = "simple-entity-with-owner",
+  type = "simple-entity",
   name = "admin-station-corner-blocker",
   icon = "__administratorio__/graphics/icons/admin-desk.png",
   icon_size = 64,
@@ -650,7 +650,6 @@ local admin_station_corner_blocker = {
   collision_mask = {layers = {object = true, player = true, water_tile = true}},
   selection_box = {{0, 0}, {0, 0}},
   selectable_in_game = false,
-  hidden = true,
   picture = {
     filename = "__core__/graphics/empty.png",
     width = 1,
@@ -828,7 +827,7 @@ field_office.minable.result = "field-office"
 field_office.placeable_by = placeable_by_item("field-office")
 field_office.next_upgrade = nil
 field_office.crafting_categories = {"bureaucracy-registration", "bureaucratic-bootstrap", "resolution-handcraft"}
-field_office.crafting_speed = 1.0
+field_office.crafting_speed = 0.5
 field_office.module_slots = 1
 field_office.allowed_effects = {"consumption"}
 field_office.allowed_module_categories = {"night-work"}

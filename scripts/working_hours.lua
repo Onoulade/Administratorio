@@ -56,8 +56,8 @@ local function is_surface_night(surface)
   if surface.dusk == surface.dawn then
     return false
   end
-  -- 40% of the day closed, centered on midnight (0.5)
-  return daytime >= 0.30 and daytime < 0.70
+  -- 30% of the day closed, centered on midnight (0.5)
+  return daytime >= 0.35 and daytime < 0.65
 end
 
 local function has_overtime_exemption(entity)
