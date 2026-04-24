@@ -127,6 +127,7 @@ M.BITER_STATION_MANAGED_BUILDINGS = {
   "corporate-breakroom",
   "centrifuge",
   "oil-refinery",
+  "printer-t2",
 }
 M.BITER_STATION_MANAGED_BUILDING_SET = {}
 for _, name in ipairs(M.BITER_STATION_MANAGED_BUILDINGS) do
