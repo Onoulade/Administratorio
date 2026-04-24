@@ -183,7 +183,7 @@ data:extend({
       { type = "unlock-recipe", recipe = "charcoal-production" }
     },
     prerequisites = {"corporate-hospitality", "fluid-handling"},
-    unit = { count = 60, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    unit = { count = 60, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "c-a2"
   },
   -- T3b: INDUSTRIAL PROPAGANDA (lies, nonsense, and credentials)
@@ -488,8 +488,9 @@ data:extend({
       { type = "unlock-recipe", recipe = "job-offer-production" },
       { type = "unlock-recipe", recipe = "office-desk" },
       { type = "unlock-recipe", recipe = "biter-station" },
+      { type = "unlock-recipe", recipe = "resolution-office" },
     },
-    prerequisites = {"verbal-approvals", "local-precedents"},
+    prerequisites = {"administrative-bureaucracy", "littering-resolution"},
     unit = { count = 120, ingredients = {{"automation-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "c-h"
   },
@@ -1096,15 +1097,19 @@ add_tech_unlock("railway", "transit-authorization-production")
 add_tech_prerequisite("railway", "verbal-approvals")
 add_tech_prerequisite("railway", "local-precedents")
 
--- The field office is the early-game alternative to the office desk, available
--- with basic electronics.  The full office desk is gated behind biter-employment.
-add_tech_unlock("electronics", "field-office")
+-- The field office is the early-game alternative to the office desk, unlocked
+-- alongside the first rubble discovery.  The full office desk is gated behind
+-- biter-employment.
+add_tech_unlock("discovery-redundant-rubble", "field-office")
 
 -- Discovery-triggered bootstrap paperwork can appear early, but buildings that
 -- still need the printer chain should wait until printing-technology.
 add_tech_unlock("discovery-redundant-rubble", "promise-production")
-add_tech_unlock("printing-technology", "admin-station")
-add_tech_unlock("printing-technology", "resolution-office")
+-- Admin-station is a red-tier building (no biter required), so it unlocks as
+-- soon as rubble discovery provides the provisional-approval recipe.
+-- Resolution-office needs a biter-worker, so it unlocks with biter-employment
+-- (wired directly in that tech's effects above).
+add_tech_unlock("discovery-redundant-rubble", "admin-station")
 
 -- Early paperwork that consumes bootstrap resources should unlock only after
 -- the matching discovery chain is in play.
@@ -1169,7 +1174,7 @@ add_tech_unlock("automation-science-pack", "research-grant-approval-production")
 add_tech_prerequisite("industrial-printing", "chemical-science-pack")
 add_tech_prerequisite("corporate-hospitality", "logistic-science-pack")
 add_tech_prerequisite("office-agriculture", "logistic-science-pack")
-add_tech_prerequisite("charcoal-production", "logistic-science-pack")
+add_tech_prerequisite("charcoal-production", "chemical-science-pack")
 add_tech_prerequisite("local-precedents", "logistic-science-pack")
 add_tech_prerequisite("nest-pacification", "logistic-science-pack")
 add_tech_prerequisite("health-and-safety", "chemical-science-pack")

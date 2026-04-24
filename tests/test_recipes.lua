@@ -33,6 +33,10 @@ local function assert_true(value, msg)
   if not value then error(msg or "assertion failed", 2) end
 end
 
+local function assert_false(value, msg)
+  if value then error(msg or "assertion failed", 2) end
+end
+
 local function assert_nil(value, msg)
   if value ~= nil then error((msg or "expected nil") .. ", got " .. tostring(value), 2) end
 end
@@ -823,8 +827,8 @@ end)
 
 test("starter furnace recipes are enabled from start", function()
   local starter_smelting_recipes = {
-    "iron-plate-batch", "copper-plate-batch", "steel-plate-batch",
-    "stone-brick-batch", "dubious-data-batch",
+    "iron-plate-batch", "copper-plate-batch", "stone-brick-batch",
+    "dubious-data-batch",
   }
   for _, name in ipairs(starter_smelting_recipes) do
     local r = get_recipe(name)
@@ -832,6 +836,13 @@ test("starter furnace recipes are enabled from start", function()
     assert_eq(r.category, "smelting-basic", name .. " wrong category")
     assert_eq(r.enabled, true, name .. " should be enabled from start")
   end
+end)
+
+test("steel-plate-batch is locked behind steel-processing", function()
+  local r = get_recipe("steel-plate-batch")
+  assert_true(r ~= nil, "steel-plate-batch missing")
+  assert_eq(r.category, "smelting-basic")
+  assert_eq(r.enabled, false, "steel-plate-batch should not be enabled from start")
 end)
 
 test("charcoal-production requires carbon offset", function()
@@ -1537,10 +1548,10 @@ test("paper-production: 1 wood -> 5 paper", function()
   assert_eq(get_result_amount(r, "paper"), 5)
 end)
 
-test("ink-production: 1 coal -> 2 ink", function()
+test("ink-production: 1 coal -> 3 ink", function()
   local r = get_recipe("ink-production")
   assert_eq(get_ingredient_amount(r, "coal"), 1)
-  assert_eq(get_result_amount(r, "ink"), 2)
+  assert_eq(get_result_amount(r, "ink"), 3)
 end)
 
 test("iron-plate-batch: 10 ore + 1 cert -> 10 plates", function()
