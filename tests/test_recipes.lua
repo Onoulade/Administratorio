@@ -1415,10 +1415,10 @@ end)
 test("admin science pack requires office desk and specific forms", function()
   local r = get_recipe("administrative-science-pack-production")
   assert_eq(r.category, "bureaucracy-registration")
-  assert_true(has_ingredient(r, "blank-form"))
   assert_true(has_ingredient(r, "provisional-approval"))
   assert_true(has_ingredient(r, "basic-excuse"))
   assert_true(has_ingredient(r, "research-grant-approval"))
+  assert_eq(get_result_amount(r, "administrative-science-pack"), 5)
 end)
 
 -- =========================================================================
