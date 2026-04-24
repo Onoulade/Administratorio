@@ -487,12 +487,22 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "job-offer-production" },
       { type = "unlock-recipe", recipe = "office-desk" },
-      { type = "unlock-recipe", recipe = "biter-station" },
       { type = "unlock-recipe", recipe = "resolution-office" },
     },
-    prerequisites = {"administrative-bureaucracy", "littering-resolution"},
+    prerequisites = {"administrative-bureaucracy", "rubble-compaction"},
     unit = { count = 120, ingredients = {{"automation-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "c-h"
+  },
+  -- BITER EMPLOYMENT OFFICE (formal dispatch building — gates managed-building techs)
+  {
+    type = "technology", name = "biter-employment-office",
+    icon = "__administratorio__/graphics/icons/biter-station.png", icon_size = 64,
+    effects = {
+      { type = "unlock-recipe", recipe = "biter-station" },
+    },
+    prerequisites = {"biter-employment"},
+    unit = { count = 140, ingredients = {{"automation-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "c-h0z"
   },
   -- FORMATION CENTER (unlock the training building — gate tech for all profession training)
   {
@@ -560,7 +570,7 @@ data:extend({
     type = "technology", name = "biter-station-capacity-1",
     icon = "__administratorio__/graphics/icons/biter-station.png", icon_size = 64,
     effects = {{ type = "nothing", effect_description = {"technology-effect.biter-station-capacity", "20"} }},
-    prerequisites = {"biter-employment"},
+    prerequisites = {"biter-employment-office"},
     unit = { count = 100, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },
     order = "c-h3"
   },
@@ -1180,7 +1190,9 @@ add_tech_prerequisite("nest-pacification", "logistic-science-pack")
 add_tech_prerequisite("health-and-safety", "chemical-science-pack")
 add_tech_prerequisite("public-finance", "chemical-science-pack")
 add_tech_prerequisite("public-finance", "steel-processing")
-add_tech_prerequisite("public-finance", "biter-employment")
+add_tech_prerequisite("public-finance", "biter-employment-office")
+add_tech_prerequisite("corporate-hospitality", "biter-employment-office")
+add_tech_prerequisite("industrial-printing", "biter-employment-office")
 add_tech_prerequisite("board-meetings", "chemical-science-pack")
 add_tech_prerequisite("synthetic-stationery", "chemical-science-pack")
 add_tech_prerequisite("biter-labor-efficiency-2", "chemical-science-pack")
@@ -1326,7 +1338,7 @@ if logistic_system_tech then
 end
 
 -- Buildings that require biter-workers or specialists need employment tech
-add_tech_prerequisite("industrial-propaganda", "biter-employment")
+add_tech_prerequisite("industrial-propaganda", "biter-employment-office")
 add_tech_prerequisite("nuclear-power", "nuclear-technician-training")
 
 for _, tech_name in ipairs({"automation-3", "effect-transmission", "rocket-silo", "nuclear-power"}) do

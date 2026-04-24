@@ -183,7 +183,7 @@ data:extend({
       {type="item", name="taxpayer-money", amount=50},
       {type="item", name="blank-form", amount=5},
       {type="item", name="provisional-approval", amount=1},
-      {type="item", name="promise", amount=1},
+      {type="item", name="redundant-rubble", amount=1},
     },
     results = {{type="item", name="job-offer", amount=1}},
     energy_required = 15

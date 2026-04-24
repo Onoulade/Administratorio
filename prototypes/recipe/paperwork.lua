@@ -74,7 +74,7 @@ data:extend({
   { type = "recipe", name = "construction-work-order-printing",  category = "printing-workorder", enabled = false, ingredients = {{type="item", name="construction-permit-draft", amount=1}, {type="item", name="work-order", amount=1}, {type="item", name="ink", amount=1}}, results = {{type="item", name="construction-work-order", amount=2}}, energy_required = 6 },
 
   -- Administrative Science Pack
-  { type = "recipe", name = "administrative-science-pack-production", category = "bureaucracy-registration", enabled = false, hide_from_player_crafting = false, ingredients = {{type="item", name="blank-form", amount=2}, {type="item", name="provisional-approval", amount=1}, {type="item", name="basic-excuse", amount=1}, {type="item", name="research-grant-approval", amount=1}}, results = {{type="item", name="administrative-science-pack", amount=1}}, energy_required = 5 },
+  { type = "recipe", name = "administrative-science-pack-production", category = "bureaucracy-registration", enabled = false, hide_from_player_crafting = false, ingredients = {{type="item", name="provisional-approval", amount=1}, {type="item", name="basic-excuse", amount=1}, {type="item", name="research-grant-approval", amount=1}}, results = {{type="item", name="administrative-science-pack", amount=1}}, energy_required = 5 },
 
   -- Useless Documentation (T1 derivative — rubble wrapped in paper)
   { type = "recipe", name = "useless-documentation-production", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="redundant-rubble", amount=2}, {type="item", name="paper", amount=3}}, results = {{type="item", name="useless-documentation", amount=2}}, energy_required = 3 },

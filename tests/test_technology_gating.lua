@@ -599,7 +599,7 @@ test("late administrative branches are split into finance meetings and nuclear p
   assert_true(tech_unlocks_recipe("public-finance", "treasury-bond-production"), "public-finance should unlock treasury bonds")
   assert_true(tech_unlocks_recipe("public-finance", "union-headquarters"), "public-finance should unlock union headquarters")
   assert_true(tech_has_prereq("public-finance", "steel-processing"), "public-finance should require steel-processing")
-  assert_true(tech_has_prereq("public-finance", "biter-employment"), "public-finance should require biter employment for union delegates")
+  assert_true(tech_has_prereq("public-finance", "biter-employment-office"), "public-finance should require biter employment office for union delegates")
   assert_true(tech_has_prereq("public-finance", "union-delegate-training"), "public-finance should require union delegate training first")
   assert_true(tech_unlocks_recipe("board-meetings", "management-written-proposal"), "board-meetings should unlock written proposals")
   assert_true(tech_unlocks_recipe("board-meetings", "management-written-1st-printing"), "board-meetings should unlock written approval printing")

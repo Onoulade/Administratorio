@@ -68,6 +68,8 @@ local function get_dispatch_salary()
 end
 local MIN_PHASE_TRAVEL_DISTANCE = 0.75
 local PHASE_STUCK_TIMEOUT_TICKS = 90
+local ABANDON_STUCK_TICKS = 1800
+local PROGRESS_DISTANCE_SQUARED = 1.0
 
 local maybe_reinsert_worker
 
@@ -591,8 +593,27 @@ local function begin_phase_move(active_state, biter, phase, destination, radius,
   active_state.phase_radius = radius
   active_state.phase_command_radius = math.max(0.5, (radius or 0) * 0.5)
   active_state.phase_arrived_tick = nil
+  active_state.last_progress_tick = tick or game.tick
+  active_state.last_progress_position = {x = biter.position.x, y = biter.position.y}
   clear_pending_path_request(active_state)
   issue_move_command(biter, command_destination, active_state.phase_command_radius)
+end
+
+local function check_and_update_progress(active_state, biter, tick)
+  if not active_state or not biter or not biter.valid then return false end
+  local last_pos = active_state.last_progress_position
+  if not last_pos then
+    active_state.last_progress_position = {x = biter.position.x, y = biter.position.y}
+    active_state.last_progress_tick = tick
+    return false
+  end
+  if distance_squared(biter.position, last_pos) >= PROGRESS_DISTANCE_SQUARED then
+    active_state.last_progress_position = {x = biter.position.x, y = biter.position.y}
+    active_state.last_progress_tick = tick
+    return false
+  end
+  local since = tick - (active_state.last_progress_tick or tick)
+  return since >= ABANDON_STUCK_TICKS
 end
 
 local function phase_is_arrived(active_state, biter, fallback_position, fallback_radius)
@@ -684,7 +705,7 @@ local function cleanup_active_biter(active_state, tick, release_entity, reason)
   unmark_station_worker_unit(active_state.biter_unit_number)
   clear_pending_path_request(active_state)
 
-  if reason == "biter-invalid" then
+  if reason == "biter-invalid" or reason == "stuck" then
     local station = storage.biter_stations and storage.biter_stations[station_id] or nil
     if station and station.valid then
       maybe_reinsert_worker(station)
@@ -1098,6 +1119,12 @@ local function advance_active_biters(tick)
       goto continue
     end
 
+    if check_and_update_progress(active_state, biter, tick) then
+      cleanup_active_biter(active_state, tick, false, "stuck")
+      refresh_station_status(station)
+      goto continue
+    end
+
     if active_state.phase == "to_building" then
       local queue = active_state.building_queue or {}
 
@@ -1419,8 +1446,8 @@ local function sync_station_recipe_unlock(force)
 
   local technologies = force.technologies
   local researched = technologies
-    and technologies["biter-employment"]
-    and technologies["biter-employment"].researched
+    and technologies["biter-employment-office"]
+    and technologies["biter-employment-office"].researched
   if researched then
     recipe.enabled = true
   end
@@ -1440,7 +1467,7 @@ function M.on_research_finished(research)
   sync_station_recipe_unlock(research.force)
 
   local name = research.name
-  if name == "biter-employment" then
+  if name == "biter-employment-office" then
     return
   end
 
