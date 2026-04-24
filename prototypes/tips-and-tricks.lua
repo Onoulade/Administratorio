@@ -248,7 +248,7 @@ data:extend({
     }
   },
 
-  -- Rideable Biter (replaces the vanilla car unlock)
+  -- Rideable Biter (personal vehicle training)
   {
     type = "tips-and-tricks-item",
     name = "administratorio-rideable-biter",
@@ -257,7 +257,7 @@ data:extend({
     indent = 1,
     trigger = {
       type = "research",
-      technology = "automobilism"
+      technology = "rideable-biter"
     }
   },
 
