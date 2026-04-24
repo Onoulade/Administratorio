@@ -199,16 +199,34 @@ end
 local function count_tracked_desk_occupants(desk_id)
   local waiting_biters = storage.waiting_biters
   local desk_biters = storage.desk_biters and storage.desk_biters[desk_id]
-  if not waiting_biters or not desk_biters then return 0 end
+  if not waiting_biters then return 0 end
 
   local occupied = 0
-  for unit_number in pairs(desk_biters) do
-    local info = waiting_biters[unit_number]
-    if info and info.desk_id == desk_id and (info.state == "waiting" or info.state == "pathfinding")
-       and info.entity and info.entity.valid then
-      occupied = occupied + 1
+  local seen = {}
+
+  if desk_biters then
+    for unit_number in pairs(desk_biters) do
+      local info = waiting_biters[unit_number]
+      if info and info.desk_id == desk_id and (info.state == "waiting" or info.state == "pathfinding")
+         and info.entity and info.entity.valid then
+        occupied = occupied + 1
+        seen[unit_number] = true
+      end
     end
   end
+
+  for unit_number, info in pairs(waiting_biters) do
+    if not seen[unit_number]
+       and info
+       and info.desk_id == desk_id
+       and (info.state == "waiting" or info.state == "pathfinding")
+       and info.entity
+       and info.entity.valid then
+      occupied = occupied + 1
+      seen[unit_number] = true
+    end
+  end
+
   return occupied
 end
 
@@ -259,7 +277,8 @@ function M.get_available_slots(desk_id)
     occupied_by_slots = occupied_by_slots + 1
   end
   local occupied = math.max(occupied_by_slots, count_tracked_desk_occupants(desk_id))
-  return math.max(0, M.get_zone_capacity(desk_id) - occupied)
+  local capacity = M.get_zone_capacity(desk_id)
+  return math.max(0, capacity - occupied)
 end
 
 -- Claim the next free grid slot for a biter. Returns the slot index, or nil if full.

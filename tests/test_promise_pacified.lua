@@ -413,10 +413,9 @@ test("invalid pathfinding biter recovers directly into desk waiting state", func
   game.tick = 0
   ctx.controller.process_frustration_and_protests(ctx.surface)
 
-  assert_eq(ctx.get_create_calls(), 1, "invalid pathfinding biter should be recreated once")
-  assert_eq(ctx.get_finalize_calls(), 1, "invalid pathfinding biter should be finalized into desk waiting state")
-  assert_eq(info.state, "waiting", "recovered pathfinding biter should enter waiting state")
-  assert_true(info.entity and info.entity.valid, "recovered pathfinding biter should have a live entity")
+  assert_eq(ctx.get_create_calls(), 0, "invalid pathfinding biter should not be recreated and snapped back into place")
+  assert_eq(ctx.get_finalize_calls(), 0, "invalid pathfinding biter should not be finalized after engine invalidation")
+  assert_true(storage.waiting_biters[4] == nil, "invalid pathfinding biter should be untracked instead of teleported back")
 end)
 
 test("pacified biter reroute preserves half-threshold frustration when a desk opens", function()

@@ -209,6 +209,9 @@ local function track_waiting_biter(unit_number, info)
 
   storage.waiting_biters[unit_number] = info
   info.tracked_unit_number = unit_number
+  if info.entity and info.entity.valid and info.state ~= "returning_home" then
+    info.entity.force = get_biter_force()
+  end
 
   local state = info.state
   if state then
@@ -375,14 +378,13 @@ local function find_nearest_available_desk(position)
   local best = nil
   local best_dist = math.huge
   for _, desk in ipairs(get_cached_desks()) do
-    if zones.get_available_slots(desk.unit_number) > 0 then
-      local dx = desk.position.x - position.x
-      local dy = desk.position.y - position.y
-      local dist = dx * dx + dy * dy
-      if dist < best_dist then
-        best_dist = dist
-        best = desk
-      end
+    local available = zones.get_available_slots(desk.unit_number)
+    local dx = desk.position.x - position.x
+    local dy = desk.position.y - position.y
+    local dist = dx * dx + dy * dy
+    if available > 0 and dist < best_dist then
+      best_dist = dist
+      best = desk
     end
   end
   return best
@@ -459,10 +461,8 @@ end
 
 local function get_desk_waiting_destination(entity, desk, unit_number)
   if not entity or not entity.valid or not desk or not desk.valid then return nil end
-
-  local surface = entity.surface
-  return zones.get_zone_position(surface, desk.unit_number, entity.name, unit_number)
-    or surface.find_non_colliding_position(entity.name, zones.get_queue_pos(desk), 5, 0.5)
+  return zones.get_zone_position(entity.surface, desk.unit_number, entity.name, unit_number)
+    or zones.get_zone_position(entity.surface, desk.unit_number, entity.name, nil)
     or zones.get_queue_pos(desk)
 end
 
@@ -646,9 +646,7 @@ local function route_biter_to_desk(info, entity, desk, opts)
     return false
   end
   info.desk_dest = dest
-  if issue_desk_route_command(entity, dest) then
-    return true
-  end
+  if issue_desk_route_command(entity, dest) then return true end
   zones.release_slot_by_index(desk.unit_number, slot)
   unindex_biter_from_desk(desk.unit_number, entity.unit_number)
   return false
@@ -826,62 +824,23 @@ function M.process_walk_in_registration(surface, desks, runtime_profile)
             or zones.get_biter_placement_pos(surface, desk, biter.name)
           if pos then
             local complaints = C.generate_complaints(biter.name)
-            local inv = desk.get_inventory(defines.inventory.chest)
-            local chest_ok = true
-            if inv then
-              local inserted = {}
-              for _, complaint in ipairs(complaints) do
-                if inv.insert({name = complaint, count = 1}) > 0 then
-                  inserted[#inserted + 1] = complaint
-                else
-                  for _, inserted_name in ipairs(inserted) do
-                    inv.remove({name = inserted_name, count = 1})
-                  end
-                  chest_ok = false
-                  break
-                end
-              end
-            else
-              chest_ok = false
-            end
-            if not chest_ok then
-              -- log(LOG_PREFIX .. "Walk-in REJECTED at desk " .. desk.unit_number .. ": chest full, cannot insert complaints for " .. biter.name)
-              zones.release_slot_by_index(desk.unit_number, slot)
-              goto skip_walkin_biter
-            end
-
-            local new_biter = surface.create_entity{name = biter.name, position = pos, force = BITER_FORCE_NAME}
-            new_biter.active = false
-            zones.reassign_slot_by_index(desk.unit_number, slot, new_biter.unit_number)
+            zones.release_slot_by_index(desk.unit_number, slot)
             local info = {
-              entity = new_biter,
-              desk_id = desk.unit_number,
+              entity = biter,
+              desk_id = nil,
               complaints = complaints,
               complaints_total = #complaints,
-              complaints_filed = true,
+              complaints_filed = false,
               frustration = 0,
-              state = "waiting",
+              state = "pathfinding",
             }
-            info.entity_name = new_biter.name
-            track_waiting_biter(new_biter.unit_number, info)
-            capture_home_spawner(info, biter, false)
-            index_biter_to_desk(desk.unit_number, new_biter.unit_number)
-
-            if not storage.achievements.first_complaint then
-              storage.achievements.first_complaint = true
-              for _, player in pairs(game.connected_players) do
-                player.unlock_achievement("first-complaint")
-              end
+            info.entity_name = biter.name
+            capture_home_spawner(info, biter, true)
+            track_waiting_biter(biter.unit_number, info)
+            if not route_biter_to_desk(info, biter, desk) then
+              untrack_waiting_biter(biter.unit_number, info)
+              M.trigger_immediate_protest(biter, surface, info)
             end
-            if not storage.achievements.behemoth_registered then
-              if biter.name == "behemoth-biter" or biter.name == "behemoth-spitter" then
-                storage.achievements.behemoth_registered = true
-                for _, player in pairs(game.connected_players) do
-                  player.unlock_achievement("behemoth-paperwork")
-                end
-              end
-            end
-            biter.destroy()
           else
             -- log(LOG_PREFIX .. "Walk-in REJECTED at desk " .. desk.unit_number .. ": no valid placement position for " .. biter.name)
             zones.release_slot_by_index(desk.unit_number, slot)

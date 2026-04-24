@@ -42,7 +42,7 @@ end
 
 local function is_admin_station(entity_or_name)
   local name = get_entity_name(entity_or_name)
-  return name == ADMIN_STATION_NAME
+  return name == ADMIN_STATION_NAMES
 end
 
 local function normalize_admin_station_inventory(inventory)

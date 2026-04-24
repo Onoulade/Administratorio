@@ -5,6 +5,9 @@ function M.new(deps)
   local zones = deps.zones
   local working_hours = deps.working_hours
   local render = deps.render
+  local function debug_log(message)
+    if log then log(message) end
+  end
 
   local controller = {
     last_eviction_tick = 0,
@@ -952,6 +955,9 @@ function M.new(deps)
 
   local function revive_tracked_biter(b_id, info, fallback_surface)
     if not info or info.state == "returning_home" then return false end
+    if info.state == "protesting" or info.state == "pathfinding" or info.state == "waiting" then
+      return false
+    end
     local surface = find_revival_surface(info, fallback_surface)
     local position = find_revival_position(b_id, info, surface)
     if not surface or not position or not info.entity_name then
@@ -1093,12 +1099,33 @@ function M.new(deps)
   function controller.reroute_desk_biters(desk_id, surface)
     deps.ensure_desk_biters()
     local biters_to_reroute = {}
+    local seen = {}
     local desk_set = storage.desk_biters[desk_id]
     if desk_set then
       for b_id in pairs(desk_set) do
         local info = storage.waiting_biters[b_id]
         if info and info.entity and info.entity.valid then
           biters_to_reroute[#biters_to_reroute + 1] = {b_id = b_id, info = info}
+          seen[b_id] = true
+        end
+      end
+    end
+
+    for b_id, info in pairs(storage.waiting_biters or {}) do
+      if not seen[b_id]
+         and info
+         and info.desk_id == desk_id
+         and info.entity
+         and info.entity.valid then
+        biters_to_reroute[#biters_to_reroute + 1] = {b_id = b_id, info = info}
+        seen[b_id] = true
+      end
+    end
+
+    if desk_set then
+      for b_id in pairs(desk_set) do
+        if not seen[b_id] then
+          deps.unindex_biter_from_desk(desk_id, b_id)
         end
       end
     end
@@ -1225,7 +1252,24 @@ function M.new(deps)
           end
         end
 
-        if not bypass_retry and game.tick < (info.next_revival_retry_tick or 0) then
+      if not bypass_retry and game.tick < (info.next_revival_retry_tick or 0) then
+        goto continue_biter
+      end
+
+        if info.state == "protesting" or info.state == "pathfinding" or info.state == "waiting" then
+          debug_log(deps.log_prefix .. "Tracked unit invalidated without revive unit=" .. tostring(b_id)
+            .. " state=" .. tostring(info.state)
+            .. " desk=" .. tostring(info.desk_id)
+            .. " last_pos=" .. deps.format_position(info.last_known_position)
+            .. " surface=" .. tostring(info.last_known_surface_index))
+          if info.state == "protesting" then
+            reset_protest_targeting(info, b_id)
+          end
+          render.destroy_protest_rendering(info)
+          render.destroy_pacified_rendering(info)
+          clear_pacified_runtime(info)
+          deps.unindex_biter_from_desk(info.desk_id, b_id)
+          deps.untrack_waiting_biter(b_id, info)
           goto continue_biter
         end
 
@@ -1249,6 +1293,9 @@ function M.new(deps)
         end
         info.revival_failures = recovery_attempt
         if revive_tracked_biter(b_id, info, surface) then
+          debug_log(deps.log_prefix .. "Tracked unit revived unit=" .. tostring(b_id)
+            .. " state=" .. tostring(info.state)
+            .. " new_unit=" .. tostring(info.tracked_unit_number))
           goto continue_biter
         end
         info.next_revival_retry_tick = game.tick + C.INVALIDATED_BITER_REVIVE_RETRY_TICKS
@@ -1663,9 +1710,7 @@ function M.new(deps)
             initial_frustration = get_pacified_frustration(),
           }) then
             clear_pacified_runtime(info)
-            -- log(deps.log_prefix .. "Promise: routing protesting " .. biter_entity.name .. " to desk " .. desk.unit_number)
           else
-            -- log(deps.log_prefix .. "Promise: no desk has capacity for " .. biter_entity.name .. ", pacifying temporarily")
             deps.set_waiting_biter_state(info, "pacified")
             info.frustration = get_pacified_frustration()
             reset_protest_targeting(info)
