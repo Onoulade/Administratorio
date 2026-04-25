@@ -1081,13 +1081,14 @@ if working_hours_enabled then
       effects = {
         { type = "unlock-recipe", recipe = "overtime-exemption" }
       },
-      prerequisites = {"executive-review", "federal-regulation", "utility-science-pack"},
+      prerequisites = {"executive-review", "federal-regulation", "production-science-pack"},
       unit = {
         count = 175,
         ingredients = {
           {"automation-science-pack", 1},
           {"logistic-science-pack", 1},
           {"chemical-science-pack", 1},
+          {"production-science-pack", 1},
           {"administrative-science-pack", 1},
         },
         time = 45
@@ -1312,6 +1313,10 @@ end
 add_tech_prerequisite("oil-processing", "environmental-compliance")
 add_tech_prerequisite("oil-processing", "chemical-operator-training")
 add_tech_prerequisite("oil-processing", "biter-employment-office")
+-- chemical-operator training needs liquid-coffee, so the breakroom/coffee
+-- branch must already be in play before oil-processing exposes oil-refinery
+-- and chemical-plant as machine-craftable.
+add_tech_prerequisite("oil-processing", "corporate-hospitality")
 
 -- Biterports own chest-based logistics now. True robots stay as the late-game
 -- achievement branch, without holding requester chests hostage until utility
@@ -1339,7 +1344,12 @@ if logistic_system_tech then
 end
 
 -- Buildings that require biter-workers or specialists need employment tech
+add_tech_prerequisite("rideable-biter", "corporate-hospitality")
+add_tech_prerequisite("rideable-biter", "verbal-approvals")
 add_tech_prerequisite("industrial-propaganda", "biter-employment-office")
+-- refined-nonsense is crafted in the corporate-breakroom (watercooler-gossip
+-- category), so propaganda can't unlock before corporate-hospitality.
+add_tech_prerequisite("industrial-propaganda", "corporate-hospitality")
 add_tech_prerequisite("nuclear-power", "nuclear-technician-training")
 
 for _, tech_name in ipairs({"automation-3", "effect-transmission", "rocket-silo", "nuclear-power"}) do
