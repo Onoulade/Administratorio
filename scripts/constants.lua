@@ -111,6 +111,7 @@ M.FIELD_OFFICE_SPAWNER_RANGE = 100    -- tiles: max distance to a biter spawner
 M.FIELD_OFFICE_CHECK_TICKS = 30       -- how often to check state (arrival, craft completion)
 M.FIELD_OFFICE_BITER_DESPAWN_TICKS = 5 * 60 -- despawn worker biter after release
 M.FIELD_OFFICE_ARRIVAL_RADIUS = 2.5   -- distance threshold for "biter has arrived"
+M.FIELD_OFFICE_SPAWNER_CACHE_TTL = 10 * 60 -- ticks between background spawner cache refreshes
 
 -- Biter station: one active worker biter performs rounds of managed machines.
 M.BITER_STATION_RANGE = 30

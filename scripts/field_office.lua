@@ -52,15 +52,50 @@ function M.untrack_entity(entity)
   storage.field_offices[entity.unit_number] = nil
 end
 
+local function distance_squared(pos1, pos2)
+  local dx = pos1.x - pos2.x
+  local dy = pos1.y - pos2.y
+  return dx * dx + dy * dy
+end
+
+-- find_entities_filtered with limit=1 is not sorted by distance (engine scans chunks
+-- northwest-first), so fetch all and sort by actual squared distance instead.
 local function find_nearest_spawner(surface, position, range)
   local spawners = surface.find_entities_filtered{
     type = SPAWNER_TYPES,
     position = position,
     radius = range,
     force = "enemy",
-    limit = 1,
   }
-  return spawners[1]
+  if #spawners == 0 then return nil end
+  table.sort(spawners, function(a, b)
+    return distance_squared(a.position, position) < distance_squared(b.position, position)
+  end)
+  for _, s in ipairs(spawners) do
+    if s.valid then return s end
+  end
+  return nil
+end
+
+-- Refresh the cached nearest spawner for an office, staggered across offices so
+-- the work is spread over multiple ticks rather than happening all at once.
+local function try_refresh_spawner_cache(state, office, office_id, tick)
+  local ttl = C.FIELD_OFFICE_SPAWNER_CACHE_TTL
+  if tick % ttl ~= office_id % ttl then return end
+  state.cached_spawner = find_nearest_spawner(office.surface, office.position, C.FIELD_OFFICE_SPAWNER_RANGE)
+  state.spawner_cache_tick = tick
+end
+
+-- Return the cached nearest spawner, falling back to an immediate search if the
+-- cache is empty (e.g. first call after build / after a spawner was destroyed).
+local function get_nearest_spawner(state, office, tick)
+  if state.cached_spawner and state.cached_spawner.valid then
+    return state.cached_spawner
+  end
+  local spawner = find_nearest_spawner(office.surface, office.position, C.FIELD_OFFICE_SPAWNER_RANGE)
+  state.cached_spawner = spawner
+  state.spawner_cache_tick = tick
+  return spawner
 end
 
 local function spawn_worker_biter(office, spawner)
@@ -85,12 +120,6 @@ local function spawn_worker_biter(office, spawner)
   })
 
   return biter
-end
-
-local function distance_squared(pos1, pos2)
-  local dx = pos1.x - pos2.x
-  local dy = pos1.y - pos2.y
-  return dx * dx + dy * dy
 end
 
 local function biter_has_arrived(biter, office)
@@ -207,6 +236,9 @@ function M.update(tick)
       storage.field_office_state[office_id] = state
     end
 
+    -- Background cache refresh: staggered per office so searches are spread across ticks.
+    try_refresh_spawner_cache(state, office, office_id, tick)
+
     local night = is_night_shutdown(office)
 
     if state.phase == "idle" then
@@ -228,8 +260,8 @@ function M.update(tick)
         goto continue
       end
 
-      -- Search for a spawner and summon a biter
-      local spawner = find_nearest_spawner(office.surface, office.position, C.FIELD_OFFICE_SPAWNER_RANGE)
+      -- Summon a biter using cached nearest spawner (pre-computed in background)
+      local spawner = get_nearest_spawner(state, office, tick)
       if spawner then
         local biter = spawn_worker_biter(office, spawner)
         if biter then
@@ -349,8 +381,8 @@ function M.update(tick)
         release_biter(state, tick)
         office.active = false
 
-        -- Immediately try to summon next biter
-        local spawner = find_nearest_spawner(office.surface, office.position, C.FIELD_OFFICE_SPAWNER_RANGE)
+        -- Summon next biter using cached nearest spawner (pre-computed in background)
+        local spawner = get_nearest_spawner(state, office, tick)
         if spawner then
           local biter = spawn_worker_biter(office, spawner)
           if biter then
