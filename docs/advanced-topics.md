@@ -1,0 +1,138 @@
+# Advanced Topics
+
+## Hired Biter (Field Agent)
+
+The **Hired Biter** is a controllable worker entity that you deploy via capsule to perform manual tasks.
+
+### Deployment
+1. Research `hired-biter-capsule` to unlock the capsule.
+2. Deploy with the capsule to summon a `hired-biter-unit`.
+3. The hired biter comes with an internal inventory (4 slots) for holding eviction notices.
+
+### Control
+Hold the **Field Agent Deployment Order** (`hired-biter-command-capsule`) and use:
+- **Left-click** on the ground: toggle selection of hired biters at cursor position
+- **Left-click** on a nest (after loading eviction notices): send selected biters to that nest
+- **Right-click** on the ground: set waypoint for all selected biters
+- **Shift+right-click** on the ground: append waypoint (multi-waypoint)
+- **Shift+left-click** on a supply entity: load eviction notices from that entity
+
+### Behavior States
+
+| State | Description |
+| --- | --- |
+| Exploring | Scanning for enemy nests within 60 tiles |
+| Moving to command | Walking to waypoint/goal |
+| Moving to supply | Walking to a supply entity to collect eviction notices |
+| Moving to nest | Deploying eviction notice at enemy spawner |
+
+### Nest Eviction
+Hired biters scan for enemy spawners within 60 tiles. When they find one and have eviction notices, they deliver a notice to the spawner, destroying it and replacing it with a green smog visual and collision placeholder. Spawners auto-respawn after 3 minutes. Each delivery is tracked (`notices_delivered`).
+
+### Supply System
+Biters can be supplied with eviction notices from any entity that can hold them. They refill their internal inventory and continue operating until notices run out.
+
+### Capacity
+Each hired biter carries up to 20 eviction notices.
+
+## Working Hours System
+
+When enabled (default), certain administrative buildings close at night.
+
+### Shutdown Buildings
+- `office-desk`
+- `corporate-breakroom`
+- `union-headquarters`
+
+Night is defined as 30% of the day cycle, centered on midnight (daytime 0.35 to 0.65).
+
+### Overtime Exemption
+Install the `overtime-exemption` module in any building's module inventory to keep it running 24/7. This module acts as a perpetual overtime permit for that specific building.
+
+### Impact on Other Systems
+- **Biter Employment Office** and **Biterport** keep working past sunset, but their night dispatches require `liquid-coffee` (5 per dispatch).
+- **Field Office** releases its biter worker at night (unless overtime-exempted).
+- Night status is shown as a red diode and "Closed for the night" label on buildings, with a floating text overlay.
+
+### Planner Compatibility
+The Working Hours shutdown is runtime logic, so planner mods like Factory Planner will mis-model those buildings. Disable Working Hours in startup settings if you prefer planner accuracy.
+
+## Module System
+
+Three module types parallel the vanilla modules, themed around bureaucracy:
+
+| Module Type | Vanilla Equivalent | Effect |
+| --- | --- | --- |
+| Subpoena Module 1/2/3 | Speed Module 1/2/3 | Speed bonus |
+| Audit Module 1/2/3 | Productivity Module 1/2/3 | Productivity bonus |
+| Embezzlement Module 1/2/3 | Efficiency Module 1/2/3 | Efficiency bonus |
+
+These modules only apply when working hours is enabled, reinforcing the theme.
+
+## Funding Chain
+
+1. Resolve biter complaints → receive `taxpayer-money`
+2. Convert to `treasury-bond`
+3. Build the first `union-headquarters`
+4. Convert to `government-grant`
+5. Spend grants on Union HQ policy work, late modules, and complaint chains
+6. `tax-audit` launders `slush-fund` plus paperwork back into extra `taxpayer-money`
+
+## Coffee Economy
+
+1. `greenhouse-discovery` gives the first `coffee-bean` at 10% probability while returning some input `wood`.
+2. `coffee-plantation` bootstraps bean multiplication.
+3. `coffee-refining` turns `coffee-bean` + `water` + `work-order` into `liquid-coffee`.
+4. Liquid coffee is piped into buildings for night-shift operation.
+5. Coffee is required for verbal approvals, gossip, protest mitigation support, and many midgame recipes.
+
+## The Bullshit Economy
+
+| Resource | Source | Use |
+| --- | --- | --- |
+| `bullshit-ore` | Naturally occurring resource | Triggers `discovery-bullshit` when mined |
+| `redundant-rubble` | Naturally occurring resource | Triggers `discovery-redundant-rubble` when mined |
+| `compacted-rubble` | Compression of redundant rubble | Intermediate for pneumatic systems |
+| `dubious-data` | Refined from bullshit ore | Intermediate in the excuse chain |
+| `basic-excuse` | Desk recipe | Starter paperwork |
+| `useless-documentation` | Midgame production | Administrative intermediary |
+| `refined-nonsense` | Distillery output | Advanced bureaucracy intermediary |
+
+## Late Chain: Justification → Regulation
+
+```
+justification → narrative → white-paper → policy → regulation
+```
+
+Each step requires the previous output plus additional paperwork and administrative resources. This is the endgame bureaucracy chain that unlocks the final complaint resolution types.
+
+## Train Transit System
+
+The train system requires paperwork:
+1. Each train stop auto-generates a `transit-permit-chest` on the rail-facing side.
+2. The chest starts empty; fill it with `transit-authorization` items.
+3. Each train arriving at the station consumes one transit-authorization.
+4. Limit = permits in chest.
+
+## Key Structural Bottlenecks
+
+### 1. Desk Inventory is the Real Complaint Cap
+`admin-station` has `inventory_size = 20`. Each waiting zone has 8 biter slots. Big and behemoth citizens generate 6 to 10 tickets each. Practical desk throughput is inventory-limited long before zone capacity is reached.
+
+### 2. Complaint Tech Unlocks Lag Vanilla Evolution
+Medium enemies can generate tier-2 complaints before `environmental-compliance`. Big enemies can generate tier-3 complaints before `eminent-domain-zoning`. Behemoths can generate tier-4 complaints before `constitutional-law`. Nothing in runtime filters complaint tiers by player tech.
+
+### 3. Taxpayer Funding Depends on Complaint Stability
+`taxpayer-money` is needed for bonds, grants, breakrooms, Union HQ expansion, and some late regulated recipes. Any disruption in complaint resolution directly slows tech progression.
+
+### 4. Coffee Starts with RNG
+The first `coffee-bean` comes from `greenhouse-discovery` at 10% probability per craft. Discovery recipe refunds part of input `wood`, so failed rolls are less punishing without producing unrelated byproducts. Coffee is required for verbal approvals, gossip, protest mitigation support, and many midgame recipes.
+
+### 5. Early Paper Depends on Wood Availability
+`paper` is foundational. On low-tree starts, early paper and printer throughput are map sensitive until greenhouse wood is available.
+
+## Startup Settings
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `administratorio-enable-working-hours` | true | Enable/disable the working hours (night shutdown) system. Disable for planner mod compatibility. |

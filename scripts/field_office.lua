@@ -87,11 +87,18 @@ local function try_refresh_spawner_cache(state, office, office_id, tick)
 end
 
 -- Return the cached nearest spawner, falling back to an immediate search if the
--- cache is empty (e.g. first call after build / after a spawner was destroyed).
+-- cache is empty or stale (e.g. first call after build / after a spawner was destroyed).
 local function get_nearest_spawner(state, office, tick)
+  local ttl = C.FIELD_OFFICE_SPAWNER_CACHE_TTL
+  local is_stale = not state.spawner_cache_tick
+      or (tick - state.spawner_cache_tick) >= ttl
+
   if state.cached_spawner and state.cached_spawner.valid then
-    return state.cached_spawner
+    if not is_stale then
+      return state.cached_spawner
+    end
   end
+
   local spawner = find_nearest_spawner(office.surface, office.position, C.FIELD_OFFICE_SPAWNER_RANGE)
   state.cached_spawner = spawner
   state.spawner_cache_tick = tick
@@ -186,20 +193,48 @@ local function is_night_shutdown(office)
   return working_hours.is_night(office.surface)
 end
 
---- Check if the field office can craft (has recipe, ingredients, and output space).
---- Briefly activates the machine to read its status, then deactivates again.
-local function can_craft(office)
-  if not office or not office.valid then return false end
-  if not office.get_recipe() then return false end
+--- Check if the office's fluidbox has at least `amount` of `fluid_name`.
+local function fluidbox_has(office, fluid_name, amount)
+  local fluidbox = office.fluidbox
+  if not fluidbox then return false end
+  for i = 1, #fluidbox do
+    local fluid = fluidbox[i]
+    if fluid and fluid.name == fluid_name and fluid.amount >= amount then
+      return true
+    end
+  end
+  return false
+end
 
-  -- Briefly activate to let Factorio evaluate crafting readiness
-  office.active = true
-  local status = office.status
-  office.active = false
+--- Determine why the office can or can't craft. Returns "ready" when ready,
+--- otherwise one of: "no-recipe", "no-power", "no-ingredients", "full-output".
+--- Reads inventories directly: toggling `active` and reading `status` in the same
+--- tick returns the stale `disabled_by_script` value because the engine only
+--- recomputes status during the entity update.
+local function craft_readiness(office)
+  if not office or not office.valid then return "no-recipe" end
+  local recipe = office.get_recipe()
+  if not recipe then return "no-recipe" end
 
-  -- These statuses mean the machine is ready or already working
-  return status == defines.entity_status.working
-      or status == defines.entity_status.normal
+  if office.energy <= 0 then return "no-power" end
+
+  local input_inv = office.get_inventory(defines.inventory.assembling_machine_input)
+  for _, ingredient in pairs(recipe.ingredients) do
+    if ingredient.type == "item" then
+      if not input_inv or input_inv.get_item_count(ingredient.name) < ingredient.amount then
+        return "no-ingredients"
+      end
+    elseif ingredient.type == "fluid" then
+      if not fluidbox_has(office, ingredient.name, ingredient.amount) then
+        return "no-ingredients"
+      end
+    end
+  end
+
+  local output_inv = office.get_inventory(defines.inventory.assembling_machine_output)
+  if output_inv and output_inv.is_full() then return "full-output" end
+
+  return "ready"
 end
 
 function M.update(tick)
@@ -254,9 +289,14 @@ function M.update(tick)
         goto continue
       end
 
-      -- Only call for a biter if the building can actually craft
-      if not can_craft(office) then
-        office.custom_status = nil  -- let Factorio show native status
+      -- Only call for a biter if the building can actually craft. Surface a
+      -- specific reason instead of the misleading native "disabled by script".
+      local readiness = craft_readiness(office)
+      if readiness ~= "ready" then
+        office.custom_status = {
+          diode = defines.entity_status_diode.red,
+          label = {"gui.field-office-" .. readiness},
+        }
         goto continue
       end
 
