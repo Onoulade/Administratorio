@@ -6,7 +6,18 @@ Overhaul mod for Factorio 2.0 that replaces military conflict with corporate bur
 
 This is an **Alpha**. Still buggy, still evolving fast, some graphics and sounds are placeholders, the economy is still being tuned. Bug reports are welcomed with the solemn gratitude of a man whose backlog is larger than his will to live.
 
-## What Does This Mod Actually Do?
+## Full Documentation
+
+A comprehensive documentation system is available in the `docs/` directory:
+
+- **[docs/index.md](docs/index.md)** — Documentation index and quick links to all pages
+- **[docs/core-mechanics.md](docs/core-mechanics.md)** — Core loops, paperwork tiers, complaint system, frustration/protest mechanics, resolution chains
+- **[docs/biter-employment.md](docs/biter-employment.md)** — Hiring workers, Biter Employment Office, Biterport (walking-worker roboport), Field Office
+- **[docs/buildings-and-structures.md](docs/buildings-and-structures.md)** — All buildings, production facilities, administrative buildings, pneumatic tube network, support structures
+- **[docs/technology-tree.md](docs/technology-tree.md)** — Complete tech tree from discovery through Constitutional Law, specialization training, capacity upgrades
+- **[docs/advanced-topics.md](docs/advanced-topics.md)** — Hired Biter (field agents), working hours system, modules, funding chain, coffee economy, train transit, bottlenecks
+
+## Quick Overview
 
 ### Paperwork gates everything
 
@@ -28,8 +39,7 @@ From there, the workforce branches out:
 - **Biter Employment Office** — dispatches workers to nearby managed machines, one authorized craft per visit. Breakrooms, Union HQs, Propaganda Distilleries, oil refineries, centrifuges, and the industrial printer all run on biter visits. Which means the biters are now upstream of your own paperwork supply.
 - **Biterport** — a roboport, but staffed by walking biters instead of flying robots. Progress.
 - **Rideable Biter** — personal transport that runs on Taxpayer Money, available well before the vanilla car. Cannot be picked back up once placed, because the assignment is permanent by design. Run out of funding for 10 minutes and it reverts to a regular biter and files a complaint about you. Which is fair.
-
-Your former enemies are now literally building the bureaucracy that processed their grievances.
+- **Hired Biter (Field Agent)** — a controllable worker you deploy via capsule to evict enemy nests and follow waypoints.
 
 ### Labor relations
 
@@ -46,6 +56,10 @@ Office Desks, Corporate Breakrooms, and Union Headquarters clock out at night un
 ### A full tech tree built on red tape
 
 The entire research tree is reworked around bureaucratic milestones instead of military ones. New branches for paperwork throughput, renewable wood and coal, approvals, public finance, queue capacity, workforce management, logistics formations, and the late complaint families. The complaint endgame runs through **Constitutional Law** for biters and **Vagrancy Ordinances** for spitters. The rocket is still there, if you can justify it to finance.
+
+### Pneumatic Form Transport
+
+Forms travel through pneumatic tubes — Tube Intakes consume items into a per-network signal pool, and Tube Outtakes dispense them. Network capacity scales from 10 to 100 items via research. Tube Intakes use furnace-style intake validation with hidden per-paperwork recipes, so inserters feed only valid pneumatic paperwork items.
 
 ## Current State
 

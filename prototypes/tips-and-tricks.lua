@@ -12,6 +12,8 @@ data:extend({
     order = "z-a"
   },
 
+  -- ===== STARTING TIPS (unlocked from game start) =====
+
   -- Welcome (title, unlocked from start)
   {
     type = "tips-and-tricks-item",
@@ -32,6 +34,8 @@ data:extend({
     starting_status = "unlocked",
     indent = 1
   },
+
+  -- ===== DISCOVERY TIPS =====
 
   -- The Bullshit Economy (core resource chain — unlocks with first research)
   {
@@ -78,6 +82,8 @@ data:extend({
       }
     }
   },
+
+  -- ===== COMPLAINT & ADMIN TIPS =====
 
   -- Complaints & Admin Desks (unlocks when the first admin station is built)
   {
@@ -131,6 +137,8 @@ data:extend({
     }
   },
 
+  -- ===== LATE-GAME COMPLAINT & NEST TIPS =====
+
   -- Hush Money (unlocks with nest-pacification)
   {
     type = "tips-and-tricks-item",
@@ -156,6 +164,8 @@ data:extend({
       technology = "nest-expropriation"
     }
   },
+
+  -- ===== PRODUCTION & INFRASTRUCTURE TIPS =====
 
   -- The Propaganda Distillery (unlocks with industrial-propaganda)
   {
@@ -209,7 +219,9 @@ data:extend({
     }
   },
 
-  -- Biter Employment Program (unlocks with biter-employment technology)
+  -- ===== BITER EMPLOYMENT TIPS =====
+
+  -- Biter Employment Program (unlocks with biter-employment-office tech)
   {
     type = "tips-and-tricks-item",
     name = "administratorio-biter-employment",
@@ -218,7 +230,7 @@ data:extend({
     indent = 1,
     trigger = {
       type = "research",
-      technology = "biter-employment"
+      technology = "biter-employment-office"
     }
   },
 
@@ -299,6 +311,45 @@ data:extend({
       technology = "biterport-logistics"
     }
   },
+
+  -- Field Office (unlocks when the first field office is built)
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-field-office",
+    category = "administratorio",
+    order = "t2",
+    indent = 1,
+    trigger = {
+      type = "build-entity",
+      entity = "field-office"
+    }
+  },
+
+  -- Hired Biter (unlocks with hired-biter-fieldwork)
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-hired-biter",
+    category = "administratorio",
+    order = "t3",
+    indent = 1,
+    trigger = {
+      type = "research",
+      technology = "hired-biter-fieldwork"
+    }
+  },
+
+  -- Coffee Economy (unlocks with corporate-hospitality)
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-coffee-economy",
+    category = "administratorio",
+    order = "u",
+    indent = 1,
+    trigger = {
+      type = "research",
+      technology = "corporate-hospitality"
+    }
+  },
 })
 
 if working_hours_enabled then
@@ -308,7 +359,7 @@ if working_hours_enabled then
       type = "tips-and-tricks-item",
       name = "administratorio-working-hours",
       category = "administratorio",
-      order = "t",
+      order = "v",
       indent = 1,
       trigger = {
         type = "or",
