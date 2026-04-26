@@ -27,6 +27,21 @@ data:extend({
     indent = 0
   },
 
+  -- ===== RECIPE PAPERWORK PIPELINE =====
+
+  -- Work Orders & Operating Paperwork
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-work-orders",
+    category = "administratorio",
+    order = "ab",
+    indent = 1,
+    trigger = {
+      type = "research",
+      technology = "automation"
+    }
+  },
+
   -- ===== EARLY-GAME COMPLAINT LOOP (first admin station) =====
 
   -- Complaints, Office Desk & Taxpayer Money
@@ -54,6 +69,20 @@ data:extend({
       entity = "admin-station"
     }
   },
+  
+   -- ===== FIELD OFFICE (early biter labor) =====
+
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-field-office",
+    category = "administratorio",
+    order = "d",
+    indent = 1,
+    trigger = {
+      type = "build-entity",
+      entity = "field-office"
+    }
+  },
 
   -- ===== TERRITORY TOOLS =====
 
@@ -62,7 +91,7 @@ data:extend({
     type = "tips-and-tricks-item",
     name = "administratorio-hush-money",
     category = "administratorio",
-    order = "d",
+    order = "e",
     indent = 1,
     trigger = {
       type = "research",
@@ -75,25 +104,11 @@ data:extend({
     type = "tips-and-tricks-item",
     name = "administratorio-nest-expropriation",
     category = "administratorio",
-    order = "e",
+    order = "f",
     indent = 1,
     trigger = {
       type = "research",
       technology = "nest-expropriation"
-    }
-  },
-
-  -- ===== FIELD OFFICE (early biter labor) =====
-
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-field-office",
-    category = "administratorio",
-    order = "g",
-    indent = 1,
-    trigger = {
-      type = "build-entity",
-      entity = "field-office"
     }
   },
 
