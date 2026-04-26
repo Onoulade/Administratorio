@@ -1236,8 +1236,8 @@ add_tech_prerequisite("oil-processing", "environmental-compliance")
 add_tech_prerequisite("oil-processing", "chemical-operator-training")
 add_tech_prerequisite("oil-processing", "biter-employment-office")
 -- chemical-operator training needs liquid-coffee, so the breakroom/coffee
--- branch must already be in play before oil-processing exposes oil-refinery
--- and chemical-plant as machine-craftable.
+-- branch must already be in play before oil-processing exposes chemical
+-- plants as machine-craftable.
 add_tech_prerequisite("oil-processing", "corporate-hospitality")
 
 -- Biterports own chest-based logistics now. True robots stay as the late-game

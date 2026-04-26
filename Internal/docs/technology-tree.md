@@ -217,7 +217,7 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 | Technology | Prerequisites | Unlocks |
 | --- | --- | --- |
 | `union-delegate-training` | `biter-employment-office` | Union Delegate specialist |
-| `chemical-operator-training` | `environmental-compliance`, `biter-employment-office` | Chemical Operator specialist (required for oil processing) |
+| `chemical-operator-training` | `environmental-compliance`, `biter-employment-office` | Chemical Operator specialist (required for chemical plants) |
 | `nuclear-technician-training` | `executive-review`, `production-science-pack` | Nuclear Technician specialist (required for nuclear power) |
 | `biter-labor-efficiency-1` | `biter-employment-office` | 1 craft per visit, biter-worker speed upgrade |
 | `biter-labor-efficiency-2` | `biter-labor-efficiency-1`, `chemical-science-pack` | 2 crafts per visit |

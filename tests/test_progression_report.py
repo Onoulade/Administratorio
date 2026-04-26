@@ -238,13 +238,15 @@ class ProgressionAnalyzer:
                 if prerequisite in self.technologies:
                     self.tech_dependents[prerequisite].append(tech_name)
 
-        self.world_trigger_recipes = {
-            recipe_name
-            for tech_name, tech in self.technologies.items()
-            if self.tech_visible(tech_name)
-            and (tech.get("research_trigger") or {}).get("type") == "mine-entity"
-            for recipe_name in self.unlocks_by_tech.get(tech_name, [])
-        }
+        self.world_trigger_recipe_techs: Dict[str, List[str]] = defaultdict(list)
+        for tech_name, tech in self.technologies.items():
+            if (
+                self.tech_visible(tech_name)
+                and (tech.get("research_trigger") or {}).get("type") == "mine-entity"
+            ):
+                for recipe_name in self.unlocks_by_tech.get(tech_name, []):
+                    self.world_trigger_recipe_techs[recipe_name].append(tech_name)
+        self.world_trigger_recipes = set(self.world_trigger_recipe_techs)
         self.always_enabled_recipes = {
             name for name, recipe in self.recipes.items() if recipe_enabled_from_start(recipe)
         }
@@ -892,6 +894,11 @@ class ProgressionAnalyzer:
                 continue
             if self.recipe_machine_usable(recipe_name, start_key):
                 continue
+            if (
+                recipe_name in self.world_trigger_recipes
+                and self.find_world_trigger_recipe_machine_resolution(recipe_name)
+            ):
+                continue
             findings.append(
                 {
                     "recipe": recipe_name,
@@ -900,6 +907,13 @@ class ProgressionAnalyzer:
                 }
             )
         return findings
+
+    def find_world_trigger_recipe_machine_resolution(self, recipe_name: str) -> Optional[Dict[str, str]]:
+        for tech_name in sorted(self.world_trigger_recipe_techs.get(recipe_name, [])):
+            resolution = self.find_descendant_recipe_machine_resolution(tech_name, recipe_name)
+            if resolution is not None:
+                return resolution
+        return None
 
     def find_descendant_recipe_machine_resolution(
         self,
