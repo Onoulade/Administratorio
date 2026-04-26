@@ -311,6 +311,10 @@ end
 local function is_red_science_or_below(recipe_name)
   local recipe = data.raw["recipe"][recipe_name]
   if not recipe then return false end
+  -- Refineries are biter-station-managed industrial infrastructure. Keep their
+  -- canonical recipe on the regulated assembler path even if oil-processing is
+  -- represented as a trigger technology.
+  if recipe_name == "oil-refinery" then return false end
   -- Enabled by default = available from start (no tech needed)
   if recipe.enabled ~= false then return true end
   -- Unlocked by a red-science-only tech
@@ -1029,7 +1033,9 @@ end
 remove_ingredient_from_recipe("cliff-explosives", "grenade")
 remove_ingredient_from_recipe("cliff-explosives-regulated", "grenade")
 
--- Specialist workers for vanilla industrial buildings
+-- Specialist workers for vanilla industrial buildings. Oil refineries are
+-- intentionally absent: refinery construction and operation are gated by
+-- regulated assembler paperwork plus biter-station dispatch, not specialists.
 local specialist_buildings = {
   ["chemical-plant"] = {name = "chemical-operator", amount = 1},
   ["nuclear-reactor"] = {name = "nuclear-technician", amount = 2},

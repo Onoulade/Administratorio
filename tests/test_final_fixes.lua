@@ -111,6 +111,14 @@ data.raw.item["electric-furnace"] = {
   icon = "__base__/graphics/icons/electric-furnace.png",
   icon_size = 64,
 }
+data.raw.item["oil-refinery"] = {
+  type = "item",
+  name = "oil-refinery",
+  stack_size = 10,
+  place_result = "oil-refinery",
+  icon = "__base__/graphics/icons/oil-refinery.png",
+  icon_size = 64,
+}
 data.raw.item["nuclear-reactor"] = {
   type = "item",
   name = "nuclear-reactor",
@@ -299,6 +307,22 @@ recipes["electric-furnace"] = {
   },
   results = {
     { type = "item", name = "electric-furnace", amount = 1 },
+  },
+}
+
+recipes["oil-refinery"] = {
+  type = "recipe",
+  name = "oil-refinery",
+  category = "crafting",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 15 },
+    { type = "item", name = "iron-gear-wheel", amount = 10 },
+    { type = "item", name = "electronic-circuit", amount = 10 },
+    { type = "item", name = "pipe", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "oil-refinery", amount = 1 },
   },
 }
 
@@ -669,6 +693,23 @@ technologies["advanced-material-processing-2"] = {
   },
 }
 
+technologies["oil-processing"] = {
+  type = "technology",
+  name = "oil-processing",
+  effects = {
+    { type = "unlock-recipe", recipe = "oil-refinery" },
+  },
+  research_trigger = { type = "mine-entity", entity = "crude-oil" },
+  unit = {
+    count = 1,
+    ingredients = {
+      {"automation-science-pack", 1},
+      {"logistic-science-pack", 1},
+    },
+    time = 1,
+  },
+}
+
 technologies["automation"] = {
   type = "technology",
   name = "automation",
@@ -978,6 +1019,16 @@ test("electric furnace recipe upgrades to management verbal paperwork", function
   assert_true(not has_ingredient(r, "construction-work-order"), "electric-furnace should not use construction-work-order")
 end)
 
+test("oil refinery is assembler-craftable without specialist or operating paperwork", function()
+  local r = get_recipe("oil-refinery")
+  assert_true(r ~= nil, "oil-refinery missing")
+  assert_eq(r.category, "crafting-regulated", "oil-refinery category")
+  assert_true(has_ingredient(r, "construction-work-order"), "oil-refinery missing construction-work-order")
+  assert_true(not has_ingredient(r, "chemical-operator"), "oil-refinery should not require chemical-operator")
+  assert_true(not has_ingredient(r, "chemical-handling-work-order"), "oil-refinery should not require chemical-handling-work-order")
+  assert_true(get_recipe("oil-refinery-regulated") == nil, "oil-refinery should use its canonical recipe as the regulated assembler recipe")
+end)
+
 test("engine units use baseline paperwork plus carbon offsets", function()
   local r = get_recipe("engine-unit")
   assert_true(r ~= nil, "engine-unit missing")
@@ -1105,7 +1156,7 @@ end)
 test("operating-paperwork recipes batch refinery chemistry and centrifuging families", function()
   local oil = get_recipe("oil-processing")
   assert_true(oil ~= nil, "oil-processing missing")
-  assert_true(has_ingredient(oil, "petrochemical-operating-permit"), "oil-processing missing petrochemical-operating-permit")
+  assert_true(not has_ingredient(oil, "chemical-handling-work-order"), "oil-processing should not require chemical-handling-work-order")
   assert_eq(get_ingredient_amount(oil, "crude-oil"), 500, "oil-processing should batch crude oil at 5x")
   assert_eq(get_result_amount(oil, "heavy-oil"), 150, "oil-processing should batch heavy oil at 5x")
   assert_eq(get_result_amount(oil, "light-oil"), 150, "oil-processing should batch light oil at 5x")
@@ -1113,58 +1164,50 @@ test("operating-paperwork recipes batch refinery chemistry and centrifuging fami
 
   local advanced_oil = get_recipe("advanced-oil-processing")
   assert_true(advanced_oil ~= nil, "advanced-oil-processing missing")
-  assert_true(has_ingredient(advanced_oil, "chemical-handling-work-order"), "advanced-oil-processing missing chemical-handling-work-order")
-  assert_true(not has_ingredient(advanced_oil, "petrochemical-operating-permit"), "advanced-oil-processing should not use the basic petro permit")
+  assert_true(not has_ingredient(advanced_oil, "chemical-handling-work-order"), "advanced-oil-processing should not require chemical-handling-work-order")
   assert_eq(get_ingredient_amount(advanced_oil, "crude-oil"), 500, "advanced-oil-processing should batch crude oil at 5x")
   assert_eq(get_ingredient_amount(advanced_oil, "water"), 250, "advanced-oil-processing should batch water at 5x")
   assert_eq(get_result_amount(advanced_oil, "petroleum-gas"), 275, "advanced-oil-processing should batch petroleum gas at 5x")
 
   local coal_liq = get_recipe("coal-liquefaction")
   assert_true(coal_liq ~= nil, "coal-liquefaction missing")
-  assert_true(has_ingredient(coal_liq, "chemical-handling-work-order"), "coal-liquefaction missing chemical-handling-work-order")
-  assert_true(not has_ingredient(coal_liq, "petrochemical-operating-permit"), "coal-liquefaction should not use the basic petro permit")
+  assert_true(not has_ingredient(coal_liq, "chemical-handling-work-order"), "coal-liquefaction should not require chemical-handling-work-order")
   assert_eq(get_ingredient_amount(coal_liq, "coal"), 50, "coal-liquefaction should batch coal at 5x")
   assert_eq(get_ingredient_amount(coal_liq, "steam"), 250, "coal-liquefaction should batch steam at 5x")
   assert_eq(get_result_amount(coal_liq, "heavy-oil"), 450, "coal-liquefaction should batch heavy oil at 5x")
 
   local plastic = get_recipe("plastic-bar")
   assert_true(plastic ~= nil, "plastic-bar missing")
-  assert_true(has_ingredient(plastic, "petrochemical-operating-permit"), "plastic-bar missing petrochemical-operating-permit")
-  assert_true(not has_ingredient(plastic, "chemical-handling-work-order"), "plastic-bar should stay on the basic petro permit")
+  assert_true(has_ingredient(plastic, "chemical-handling-work-order"), "plastic-bar missing chemical-handling-work-order")
   assert_eq(get_ingredient_amount(plastic, "petroleum-gas"), 200, "plastic-bar should batch petroleum gas at 10x")
   assert_eq(get_result_amount(plastic, "plastic-bar"), 20, "plastic-bar should batch output at 10x")
 
   local sulfur = get_recipe("sulfur")
   assert_true(sulfur ~= nil, "sulfur missing")
-  assert_true(has_ingredient(sulfur, "petrochemical-operating-permit"), "sulfur missing petrochemical-operating-permit")
-  assert_true(not has_ingredient(sulfur, "chemical-handling-work-order"), "sulfur should stay on the basic petro permit")
+  assert_true(has_ingredient(sulfur, "chemical-handling-work-order"), "sulfur missing chemical-handling-work-order")
   assert_eq(get_ingredient_amount(sulfur, "petroleum-gas"), 300, "sulfur should batch petroleum gas at 10x")
   assert_eq(get_result_amount(sulfur, "sulfur"), 20, "sulfur should batch output at 10x")
 
   local sulfuric_acid = get_recipe("sulfuric-acid")
   assert_true(sulfuric_acid ~= nil, "sulfuric-acid missing")
-  assert_true(has_ingredient(sulfuric_acid, "petrochemical-operating-permit"), "sulfuric-acid missing petrochemical-operating-permit")
-  assert_true(not has_ingredient(sulfuric_acid, "chemical-handling-work-order"), "sulfuric-acid should stay on the basic petro permit")
+  assert_true(has_ingredient(sulfuric_acid, "chemical-handling-work-order"), "sulfuric-acid missing chemical-handling-work-order")
   assert_eq(get_ingredient_amount(sulfuric_acid, "water"), 500, "sulfuric-acid should batch water at 5x")
   assert_eq(get_result_amount(sulfuric_acid, "sulfuric-acid"), 250, "sulfuric-acid should batch output at 5x")
 
   local solid_fuel_light = get_recipe("solid-fuel-from-light-oil")
   assert_true(solid_fuel_light ~= nil, "solid-fuel-from-light-oil missing")
-  assert_true(has_ingredient(solid_fuel_light, "petrochemical-operating-permit"), "solid-fuel-from-light-oil missing petrochemical-operating-permit")
-  assert_true(not has_ingredient(solid_fuel_light, "chemical-handling-work-order"), "solid-fuel-from-light-oil should stay on the basic petro permit")
+  assert_true(has_ingredient(solid_fuel_light, "chemical-handling-work-order"), "solid-fuel-from-light-oil missing chemical-handling-work-order")
   assert_eq(get_ingredient_amount(solid_fuel_light, "light-oil"), 50, "solid-fuel-from-light-oil should batch light oil at 5x")
   assert_eq(get_result_amount(solid_fuel_light, "solid-fuel"), 5, "solid-fuel-from-light-oil should batch output at 5x")
 
   local solid_fuel_heavy = get_recipe("solid-fuel-from-heavy-oil")
   assert_true(solid_fuel_heavy ~= nil, "solid-fuel-from-heavy-oil missing")
-  assert_true(has_ingredient(solid_fuel_heavy, "petrochemical-operating-permit"), "solid-fuel-from-heavy-oil missing petrochemical-operating-permit")
-  assert_true(not has_ingredient(solid_fuel_heavy, "chemical-handling-work-order"), "solid-fuel-from-heavy-oil should stay on the basic petro permit")
+  assert_true(has_ingredient(solid_fuel_heavy, "chemical-handling-work-order"), "solid-fuel-from-heavy-oil missing chemical-handling-work-order")
   assert_eq(get_ingredient_amount(solid_fuel_heavy, "heavy-oil"), 100, "solid-fuel-from-heavy-oil should batch heavy oil at 5x")
 
   local solid_fuel_gas = get_recipe("solid-fuel-from-petroleum-gas")
   assert_true(solid_fuel_gas ~= nil, "solid-fuel-from-petroleum-gas missing")
-  assert_true(has_ingredient(solid_fuel_gas, "petrochemical-operating-permit"), "solid-fuel-from-petroleum-gas missing petrochemical-operating-permit")
-  assert_true(not has_ingredient(solid_fuel_gas, "chemical-handling-work-order"), "solid-fuel-from-petroleum-gas should stay on the basic petro permit")
+  assert_true(has_ingredient(solid_fuel_gas, "chemical-handling-work-order"), "solid-fuel-from-petroleum-gas missing chemical-handling-work-order")
   assert_eq(get_ingredient_amount(solid_fuel_gas, "petroleum-gas"), 100, "solid-fuel-from-petroleum-gas should batch petroleum gas at 5x")
 
   local uranium = get_recipe("uranium-processing")
