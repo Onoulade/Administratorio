@@ -122,8 +122,10 @@ M.BITER_STATION_SALARY = 1
 M.BITER_STATION_NIGHT_COFFEE_PER_DISPATCH = 5
 M.BITER_STATION_BITER_DESPAWN_TICKS = 5 * 60
 M.BITER_STATION_ARRIVAL_RADIUS = 2.5
+-- Buildings that idle without a biter dispatched from a biter-station.
+-- Note: union-headquarters is intentionally NOT here — it consumes a biter
+-- as a recipe ingredient, so it does not also need ongoing dispatch.
 M.BITER_STATION_MANAGED_BUILDINGS = {
-  "union-headquarters",
   "propaganda-distillery",
   "corporate-breakroom",
   "centrifuge",
