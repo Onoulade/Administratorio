@@ -19,7 +19,6 @@ data:extend({
   { type = "item", name = "management-approval-written",icon = item_icons .. "management-approval-written.png",icon_size = 64, subgroup = "forms-permits", order = "d-c", stack_size = 10 },
   { type = "item", name = "transit-authorization",      icon = item_icons .. "transit-authorization.png",      icon_size = 64, subgroup = "forms-permits", order = "f", stack_size = 50 },
   { type = "item", name = "research-grant-approval",    icon = item_icons .. "research-grant-approval.png",    icon_size = 64, subgroup = "forms-permits", order = "g", stack_size = 50 },
-  { type = "item", name = "petrochemical-operating-permit", icon = item_icons .. "petrochemical-operating-permit.png", icon_size = 64, subgroup = "forms-permits", order = "h", stack_size = 20 },
 
   -- Line 3: Work Orders & Machinery Forms
   { type = "item", name = "work-order",                       icon = item_icons .. "work-order.png",                       icon_size = 64, subgroup = "forms-work-orders", order = "a",  stack_size = 50 },

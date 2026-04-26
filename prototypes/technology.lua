@@ -249,7 +249,6 @@ data:extend({
     type = "technology", name = "environmental-compliance",
     icon = tech_icons .. "environmental-compliance.png", icon_size = 256,
     effects = {
-      { type = "unlock-recipe", recipe = "petrochemical-operating-permit-production" },
       { type = "unlock-recipe", recipe = "environmental-impact-report" },
       { type = "unlock-recipe", recipe = "chemical-handling-work-order-production" },
       { type = "unlock-recipe", recipe = "carbon-offset-certificate-verified" },
@@ -564,72 +563,6 @@ data:extend({
     prerequisites = {"formation-center", "steel-processing", "advanced-circuit"},
     unit = { count = 140, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 35 },
     order = "c-h2a"
-  },
-  -- BITER STATION CAPACITY (unlock more inventory slots per station)
-  {
-    type = "technology", name = "biter-station-capacity-1",
-    icon = "__administratorio__/graphics/icons/biter-station.png", icon_size = 64,
-    effects = {{ type = "nothing", effect_description = {"technology-effect.biter-station-capacity", "20"} }},
-    prerequisites = {"biter-employment-office"},
-    unit = { count = 100, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },
-    order = "c-h3"
-  },
-  {
-    type = "technology", name = "biter-station-capacity-2",
-    icon = "__administratorio__/graphics/icons/biter-station.png", icon_size = 64,
-    effects = {{ type = "nothing", effect_description = {"technology-effect.biter-station-capacity", "30"} }},
-    prerequisites = {"biter-station-capacity-1"},
-    unit = { count = 150, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
-    order = "c-h4"
-  },
-  {
-    type = "technology", name = "biter-station-capacity-3",
-    icon = "__administratorio__/graphics/icons/biter-station.png", icon_size = 64,
-    effects = {{ type = "nothing", effect_description = {"technology-effect.biter-station-capacity", "40"} }},
-    prerequisites = {"biter-station-capacity-2"},
-    unit = { count = 200, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 40 },
-    order = "c-h5"
-  },
-  {
-    type = "technology", name = "biter-station-capacity-4",
-    icon = "__administratorio__/graphics/icons/biter-station.png", icon_size = 64,
-    effects = {{ type = "nothing", effect_description = {"technology-effect.biter-station-capacity", "50"} }},
-    prerequisites = {"biter-station-capacity-3"},
-    unit = { count = 300, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 50 },
-    order = "c-h6"
-  },
-  -- BITERPORT CAPACITY (unlock more logistics formation slots per biterport)
-  {
-    type = "technology", name = "biterport-capacity-1",
-    icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64,
-    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-capacity", "8"} }},
-    prerequisites = {"biterport-logistics"},
-    unit = { count = 90, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },
-    order = "c-h7"
-  },
-  {
-    type = "technology", name = "biterport-capacity-2",
-    icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64,
-    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-capacity", "10"} }},
-    prerequisites = {"biterport-capacity-1"},
-    unit = { count = 140, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
-    order = "c-h8"
-  },
-  {
-    type = "technology", name = "biterport-capacity-3",
-    icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64,
-    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-capacity", "12"} }},
-    prerequisites = {"biterport-capacity-2", "chemical-science-pack"},
-    unit = { count = 220, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 40 },
-    order = "c-h9"
-  },
-  {
-    type = "technology", name = "biterport-capacity-4",
-    icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64,
-    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-capacity", "15"} }},
-    prerequisites = {"biterport-capacity-3"},
-    unit = { count = 300, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 50 },
-    order = "c-h9a"
   },
   -- BITERPORT TRANSPORT CAPACITY (increase items carried per logistics trip)
   {

@@ -60,12 +60,12 @@ data:extend({
   },
   {
     type = "item", name = "biter-logistics-formation",
-    icons = biter_role_icons("__base__/graphics/icons/small-biter.png", {r=0.45, g=0.85, b=0.55, a=1}, item_icons .. "form-27b-6.png"),
+    icons = biter_role_icons("__base__/graphics/icons/small-biter.png", {r=0.45, g=0.85, b=0.55, a=1}),
     subgroup = "admin-biter-buildings", order = "d1", stack_size = 1
   },
   {
     type = "item", name = "rideable-biter",
-    icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=0.55, g=0.75, b=1.0, a=1}, item_icons .. "transit-authorization.png"),
+    icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=0.55, g=0.75, b=1.0, a=1}),
     subgroup = "transport", order = "b[personal-transport]-a[rideable-biter]",
     place_result = "rideable-biter", stack_size = 1
   },
@@ -76,17 +76,17 @@ data:extend({
   },
   {
     type = "item", name = "union-delegate",
-    icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=0.45, g=0.55, b=1.0, a=1}, item_icons .. "credentials.png"),
+    icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=0.45, g=0.55, b=1.0, a=1}),
     subgroup = "admin-biter-buildings", order = "e1", stack_size = 10
   },
   {
     type = "item", name = "chemical-operator",
-    icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=1.0, g=0.75, b=0.25, a=1}, item_icons .. "credentials.png"),
+    icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=1.0, g=0.75, b=0.25, a=1}),
     subgroup = "admin-biter-buildings", order = "e2", stack_size = 10
   },
   {
     type = "item", name = "nuclear-technician",
-    icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=0.35, g=1.0, b=0.85, a=1}, item_icons .. "credentials.png"),
+    icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=0.35, g=1.0, b=0.85, a=1}),
     subgroup = "admin-biter-buildings", order = "e3", stack_size = 10
   },
 })

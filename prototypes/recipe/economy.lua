@@ -56,9 +56,9 @@ data:extend({
   { type = "recipe", name = "government-grant-production", category = "union-negotiation", enabled = false, ingredients = {{type="item", name="treasury-bond", amount=2},  {type="item", name="crappy-report", amount=1}, {type="item", name="management-approval-verbal", amount=1}},  results = {{type="item", name="government-grant", amount=1}}, energy_required = 15 },
   {
     type = "recipe", name = "tax-audit", category = "bureaucracy-policy", enabled = false,
-    ingredients = {{type="fluid", name="slush-fund", amount=80}, {type="item", name="taxpayer-money", amount=8}, {type="item", name="blank-form", amount=1}, {type="item", name="data", amount=1}, {type="fluid", name="liquid-coffee", amount=15}},
-    results = {{type="item", name="taxpayer-money", amount=22}},
-    energy_required = 10
+    ingredients = {{type="fluid", name="slush-fund", amount=200}, {type="item", name="blank-form", amount=1}, {type="item", name="data", amount=1}, {type="fluid", name="liquid-coffee", amount=15}},
+    results = {{type="item", name="taxpayer-money", amount=30}},
+    energy_required = 20
   },
   {
     type = "recipe", name = "slush-fund-production", category = "propaganda-distillery", enabled = false,
@@ -128,7 +128,7 @@ data:extend({
     type = "recipe", name = "osha-violation-recycling", category = "union-negotiation", enabled = false,
     icon = "__administratorio__/graphics/icons/osha-violation.png", icon_size = 64,
     subgroup = "admin-bs-economy", order = "m1",
-    ingredients = {{type="item", name="osha-violation", amount=5}},
+    ingredients = {{type="item", name="osha-violation", amount=5}, {type="fluid", name="liquid-coffee", amount=50}},
     results = {
       {type="item", name="blank-form", amount=1, probability=0.6},
       {type="item", name="blank-approval", amount=1, probability=0.3},

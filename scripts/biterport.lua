@@ -13,13 +13,6 @@ local COFFEE_FLUID_NAME = "liquid-coffee"
 local WORKER_ENTITY_NAME = C.BITERPORT_WORKER_ENTITY_NAME or "small-biter"
 local FALLBACK_WORKER_ENTITY_NAME = "small-biter"
 
-local SLOT_TIER_TECHS = {
-  {"biterport-capacity-1", 8},
-  {"biterport-capacity-2", 10},
-  {"biterport-capacity-3", 12},
-  {"biterport-capacity-4", 15},
-}
-
 local TRANSPORT_TIER_TECHS = {
   {"biterport-transport-capacity-1", 1},
   {"biterport-transport-capacity-2", 2},
@@ -174,15 +167,7 @@ local function force_has_researched(force, tech_name)
 end
 
 local function get_port_worker_slots_for_force(force)
-  local slots = C.BITERPORT_WORKER_SLOTS
-  for _, tier in ipairs(SLOT_TIER_TECHS) do
-    if force_has_researched(force, tier[1]) then
-      slots = tier[2]
-    else
-      break
-    end
-  end
-  return slots
+  return C.BITERPORT_WORKER_SLOTS
 end
 
 local function get_transport_capacity_for_force(force)
@@ -894,6 +879,84 @@ local function requester_filters(entity)
   return point.filters
 end
 
+local function logistic_filter_item_name(filter)
+  if not filter then return nil end
+  if filter.name then return filter.name end
+  local value = filter.value
+  if type(value) == "string" then return value end
+  if type(value) == "table" then return value.name end
+  return nil
+end
+
+local function logistic_filter_min_count(filter)
+  if not filter then return 0 end
+  return filter.count or filter.min or 0
+end
+
+local function copy_logistic_filter(filter)
+  if type(filter) ~= "table" then return filter end
+  local copied = {}
+  for key, value in pairs(filter) do
+    if type(value) == "table" then
+      local nested = {}
+      for nested_key, nested_value in pairs(value) do
+        nested[nested_key] = nested_value
+      end
+      copied[key] = nested
+    else
+      copied[key] = value
+    end
+  end
+  return copied
+end
+
+local function set_logistic_filter_min_count(filter, count)
+  local adjusted = copy_logistic_filter(filter) or {}
+  count = math.max(0, count or 0)
+  if adjusted.count ~= nil then
+    adjusted.count = count
+  else
+    adjusted.min = count
+  end
+  return adjusted
+end
+
+local function find_request_slot(entity, item_name)
+  if not entity or not entity.valid or not entity.get_requester_point then return nil end
+  local ok, point = pcall(entity.get_requester_point)
+  if not ok or not point or not point.valid then return nil end
+
+  local sections = point.sections
+  if sections then
+    for _, section in ipairs(sections) do
+      if section and section.valid ~= false and section.filters_count then
+        for slot_index = 1, section.filters_count do
+          local slot_ok, filter = pcall(section.get_slot, slot_index)
+          if slot_ok and logistic_filter_item_name(filter) == item_name then
+            return section, slot_index, filter
+          end
+        end
+      end
+    end
+  end
+
+  if point.sections_count and point.get_section then
+    for section_index = 1, point.sections_count do
+      local section_ok, section = pcall(point.get_section, section_index)
+      if section_ok and section and section.valid ~= false and section.filters_count then
+        for slot_index = 1, section.filters_count do
+          local slot_ok, filter = pcall(section.get_slot, slot_index)
+          if slot_ok and logistic_filter_item_name(filter) == item_name then
+            return section, slot_index, filter
+          end
+        end
+      end
+    end
+  end
+
+  return nil
+end
+
 local function get_player_character(player)
   local character = safe_entity_field(player, "character")
   if character and character.valid then return character end
@@ -934,9 +997,17 @@ end
 local function active_logistics_count(key_name, key_value, item_name)
   if not key_name or key_value == nil then return 0 end
   local count = 0
+  for _, reservation in pairs(storage.biterport_logistics_reservations or {}) do
+    if reservation
+       and reservation[key_name] == key_value
+       and reservation.item_name == item_name then
+      count = count + (reservation.count or 1)
+    end
+  end
   for _, active in pairs(storage.biterport_workers or {}) do
     local job = active.job
     if job and job.kind == "logistics"
+       and not job.reservation_id
        and job[key_name] == key_value
        and job.item_name == item_name then
       count = count + (job.count or 1)
@@ -957,8 +1028,8 @@ local function requested_missing_stack(entity, inv, tracking_key, counted_subjec
   local filters = requester_filters(entity)
   if not filters then return nil end
   for _, filter in ipairs(filters) do
-    local item_name = filter.name
-    local target = filter.count or 0
+    local item_name = logistic_filter_item_name(filter)
+    local target = logistic_filter_min_count(filter)
     if item_name and target > 0 then
       local current = counted_items(counted_subject or entity, inv, item_name)
       local in_flight = active_logistics_count(
@@ -972,6 +1043,55 @@ local function requested_missing_stack(entity, inv, tracking_key, counted_subjec
     end
   end
   return nil
+end
+
+local function restore_logistics_reservation(reservation)
+  if not reservation or not reservation.section or not reservation.slot_index or not reservation.original_filter then
+    return
+  end
+  local section = reservation.section
+  if section.valid == false or not section.set_slot then return end
+  pcall(section.set_slot, reservation.slot_index, copy_logistic_filter(reservation.original_filter))
+end
+
+local function release_logistics_reservation(job)
+  local reservation_id = job and job.reservation_id
+  if not reservation_id or not storage.biterport_logistics_reservations then return end
+  local reservation = storage.biterport_logistics_reservations[reservation_id]
+  restore_logistics_reservation(reservation)
+  storage.biterport_logistics_reservations[reservation_id] = nil
+  job.reservation_id = nil
+end
+
+local function create_logistics_reservation(job)
+  if not job or job.kind ~= "logistics" or job.reservation_id then return true end
+  storage.biterport_next_logistics_reservation_id = (storage.biterport_next_logistics_reservation_id or 0) + 1
+  local reservation_id = storage.biterport_next_logistics_reservation_id
+  local reservation = {
+    id = reservation_id,
+    item_name = job.item_name,
+    count = job.count or 1,
+    source_unit_number = job.source and job.source.unit_number,
+    source_tracking_key = job.source_tracking_key,
+    target_unit_number = job.target_unit_number,
+    target_tracking_key = job.target_tracking_key,
+  }
+
+  local section, slot_index, filter = find_request_slot(job.target, job.item_name)
+  if section and slot_index and filter and section.set_slot then
+    local original_target = logistic_filter_min_count(filter)
+    local adjusted = set_logistic_filter_min_count(filter, original_target - (job.count or 1))
+    local ok = pcall(section.set_slot, slot_index, adjusted)
+    if ok then
+      reservation.section = section
+      reservation.slot_index = slot_index
+      reservation.original_filter = copy_logistic_filter(filter)
+    end
+  end
+
+  storage.biterport_logistics_reservations[reservation_id] = reservation
+  job.reservation_id = reservation_id
+  return true
 end
 
 local function find_trash_target(network, item_name, position, tick)
