@@ -900,6 +900,30 @@ for name, recipe in pairs(data.raw["recipe"]) do
   ::continue::
 end
 
+-------------------------------------------------------------------------------
+-- OIL-PROCESSING BULKING
+-- Oil refineries are biter-station-managed — each dispatched worker only
+-- authorizes one craft cycle. Vanilla refinery recipe sizes would make
+-- refineries craft absurdly fast under that model, so we bulk every
+-- oil-processing recipe 5x (same multiplier as the regulated economy).
+-- No operating paperwork is added — biter-station dispatch is the gate.
+-------------------------------------------------------------------------------
+local OIL_REFINERY_BULK_MULTIPLIER = 5
+for name, recipe in pairs(data.raw["recipe"]) do
+  if REMOVED_VANILLA_RECIPES[name] then goto oil_continue end
+  if shared.is_admin_recipe(name) or shared.ADMIN_BUILDINGS[name]
+     or FORM_PRODUCTION_RECIPE_SET[name] then
+    goto oil_continue
+  end
+
+  local cat = recipe.category or "crafting"
+  if cat ~= "oil-processing" then goto oil_continue end
+
+  regulate_recipe(recipe, {}, OIL_REFINERY_BULK_MULTIPLIER)
+
+  ::oil_continue::
+end
+
 -- Register all regulated recipes
 local regulated_list = {}
 for _, regulated in pairs(regulated_recipes) do
@@ -1008,7 +1032,6 @@ remove_ingredient_from_recipe("cliff-explosives-regulated", "grenade")
 -- Specialist workers for vanilla industrial buildings
 local specialist_buildings = {
   ["chemical-plant"] = {name = "chemical-operator", amount = 1},
-  ["oil-refinery"] = {name = "chemical-operator", amount = 1},
   ["nuclear-reactor"] = {name = "nuclear-technician", amount = 2},
   ["centrifuge"] = {name = "nuclear-technician", amount = 1},
 }

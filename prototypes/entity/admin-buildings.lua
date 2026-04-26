@@ -190,7 +190,7 @@ biter_station.minable = {mining_time = 0.5, result = "biter-station"}
 biter_station.max_health = 450
 biter_station.collision_box = {{-1.8, -1.8}, {1.8, 1.8}}
 biter_station.selection_box = {{-2.0, -2.0}, {2.0, 2.0}}
-biter_station.inventory_size = 10
+biter_station.inventory_size = 20
 biter_station.inventory_type = "with_filters_and_bar"
 biter_station.collision_mask = {layers = {object = true, player = true, water_tile = true}}
 biter_station.circuit_wire_max_distance = 9
@@ -225,7 +225,7 @@ biterport.minable = {mining_time = 0.5, result = "biterport"}
 biterport.max_health = 450
 biterport.collision_box = {{-1.8, -1.8}, {1.8, 1.8}}
 biterport.selection_box = {{-2.0, -2.0}, {2.0, 2.0}}
-biterport.inventory_size = 6
+biterport.inventory_size = 9
 biterport.inventory_type = "with_filters_and_bar"
 biterport.collision_mask = {layers = {object = true, player = true, water_tile = true}}
 biterport.circuit_wire_max_distance = 9

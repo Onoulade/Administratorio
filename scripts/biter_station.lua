@@ -11,25 +11,8 @@ local MONEY_ITEM_NAME = "taxpayer-money"
 local COFFEE_FLUID_NAME = "liquid-coffee"
 local WORKER_ENTITY_NAME = "small-biter"
 
-local SLOT_TIER_TECHS = {
-  {"biter-station-capacity-1", 20},
-  {"biter-station-capacity-2", 30},
-  {"biter-station-capacity-3", 40},
-  {"biter-station-capacity-4", 50},
-}
-
 local function get_station_slots_for_force(force)
-  if not force or not force.valid then return C.BITER_STATION_BASE_SLOTS end
-  local slots = C.BITER_STATION_BASE_SLOTS
-  for _, tier in ipairs(SLOT_TIER_TECHS) do
-    local tech = force.technologies[tier[1]]
-    if tech and tech.researched then
-      slots = tier[2]
-    else
-      break
-    end
-  end
-  return slots
+  return C.BITER_STATION_BASE_SLOTS
 end
 
 local get_station_inventory

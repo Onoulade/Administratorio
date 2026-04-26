@@ -24,7 +24,7 @@ data:extend({
 
   -- Carbon Offset Certificates (reworked: desk recipe from blank-form + coal)
   { type = "recipe", name = "carbon-offset-certificate-basic",    category = "bureaucratic-bootstrap", enabled = true,  ingredients = {{type="item", name="blank-form", amount=2}, {type="item", name="coal", amount=1}}, results = {{type="item", name="carbon-offset-certificate-basic", amount=2}}, energy_required = 2 },
-  { type = "recipe", name = "carbon-offset-certificate-verified", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=4}, {type="item", name="dubious-data", amount=20}}, results = {{type="item", name="carbon-offset-certificate-verified", amount=1}}, energy_required = 15 },
+  { type = "recipe", name = "carbon-offset-certificate-verified", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="useless-documentation", amount=1}}, results = {{type="item", name="carbon-offset-certificate-verified", amount=1}}, energy_required = 15 },
 
   -- Form 27b-6
   { type = "recipe", name = "form-27b-6", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="blank-form", amount=1}, {type="item", name="useless-documentation", amount=1}}, results = {{type="item", name="form-27b-6", amount=1}}, energy_required = 3 },
@@ -44,7 +44,7 @@ data:extend({
   { type = "recipe", name = "construction-permit-printing", category = "printing",        enabled = false, ingredients = {{type="item", name="construction-permit-draft", amount=1}, {type="item", name="ink", amount=2}}, results = {{type="item", name="construction-permit", amount=1}}, energy_required = 4 },
 
   -- Environmental Impact Report
-  { type = "recipe", name = "environmental-impact-report", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="crappy-report", amount=1}, {type="item", name="form-27b-6", amount=1}, {type="item", name="carbon-offset-certificate-verified", amount=3}}, results = {{type="item", name="environmental-impact-report", amount=1}}, energy_required = 10 },
+  { type = "recipe", name = "environmental-impact-report", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="crappy-report", amount=1}, {type="item", name="form-27b-6", amount=1}, {type="item", name="carbon-offset-certificate-verified", amount=1}}, results = {{type="item", name="environmental-impact-report", amount=1}}, energy_required = 10 },
 
   -- Management Approval Verbal (Tier 3 — 2 printer passes: blank-directive + finalization)
   { type = "recipe", name = "management-verbal-draft",   category = "watercooler-gossip", enabled = false, ingredients = {{type="item", name="blank-directive", amount=1}, {type="item", name="basic-excuse", amount=1}, {type="fluid", name="liquid-coffee", amount=50}, {type="item", name="watercooler-gossip", amount=1}}, results = {{type="item", name="management-verbal-draft", amount=1}}, energy_required = 5 },
@@ -58,8 +58,7 @@ data:extend({
   { type = "recipe", name = "research-grant-approval-production", category = "bureaucratic-bootstrap", enabled = false, ingredients = {{type="item", name="blank-form", amount=1}, {type="item", name="redundant-rubble", amount=1}, {type="item", name="dubious-data", amount=1}}, results = {{type="item", name="research-grant-approval", amount=1}}, energy_required = 2 },
 
   -- Machine-family operating paperwork
-  { type = "recipe", name = "petrochemical-operating-permit-production", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="safety-waiver", amount=2}, {type="item", name="environmental-impact-report", amount=1}}, results = {{type="item", name="petrochemical-operating-permit", amount=2}}, energy_required = 6 },
-  { type = "recipe", name = "chemical-handling-work-order-production", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="petrochemical-operating-permit", amount=2}, {type="item", name="form-27b-6", amount=2}, {type="item", name="barrel", amount=1}, {type="item", name="pipe", amount=1}}, results = {{type="item", name="chemical-handling-work-order", amount=2}}, energy_required = 8 },
+  { type = "recipe", name = "chemical-handling-work-order-production", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="safety-waiver", amount=2}, {type="item", name="environmental-impact-report", amount=1}, {type="item", name="form-27b-6", amount=2}, {type="item", name="useless-documentation", amount=1}}, results = {{type="item", name="chemical-handling-work-order", amount=2}}, energy_required = 8 },
   { type = "recipe", name = "radiological-work-order-production", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="chemical-handling-work-order", amount=2}, {type="item", name="management-approval-written", amount=1}, {type="item", name="environmental-impact-report", amount=2}, {type="item", name="battery", amount=1}, {type="item", name="steel-plate", amount=2}}, results = {{type="item", name="radiological-work-order", amount=2}}, energy_required = 14 },
 
   -- Combined Forms (tier form + work-order, consumed by AM regulated recipes)
