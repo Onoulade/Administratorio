@@ -414,6 +414,40 @@ local function build_complaint_warning_caption(complaints)
   }
 end
 
+local function parse_version(version)
+  if type(version) ~= "string" then return nil end
+  local major, minor, patch = version:match("^(%d+)%.(%d+)%.(%d+)")
+  if not major then return nil end
+  return tonumber(major), tonumber(minor), tonumber(patch)
+end
+
+local function version_less_than(version, target)
+  local major, minor, patch = parse_version(version)
+  local target_major, target_minor, target_patch = parse_version(target)
+  if not major or not target_major then return false end
+  if major ~= target_major then return major < target_major end
+  if minor ~= target_minor then return minor < target_minor end
+  return patch < target_patch
+end
+
+local function version_at_least(version, target)
+  local major, minor, patch = parse_version(version)
+  local target_major, target_minor, target_patch = parse_version(target)
+  if not major or not target_major then return false end
+  if major ~= target_major then return major > target_major end
+  if minor ~= target_minor then return minor > target_minor end
+  return patch >= target_patch
+end
+
+local function warn_about_pre_040_save(event)
+  local mod_change = event and event.mod_changes and event.mod_changes["administratorio"]
+  if not mod_change or not mod_change.old_version then return end
+  local new_version = mod_change.new_version or (script.active_mods and script.active_mods["administratorio"])
+  if version_less_than(mod_change.old_version, "0.4.0") and version_at_least(new_version, "0.4.0") then
+    game.print({"message.pre-040-save-warning", mod_change.old_version})
+  end
+end
+
 local function warn_force_about_evolution_complaints(force)
   if not force or not force.valid or #force.connected_players == 0 then return end
   local enemy = game.forces["enemy"]
@@ -477,7 +511,8 @@ local function on_init()
   needs_unit_group_scan = true
 end
 
-local function on_configuration_changed()
+local function on_configuration_changed(event)
+  warn_about_pre_040_save(event)
   init_storage()
   rebuild_desk_cache()
   trains.init_all_stations()
