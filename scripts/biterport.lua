@@ -14,11 +14,10 @@ local WORKER_ENTITY_NAME = C.BITERPORT_WORKER_ENTITY_NAME or "small-biter"
 local FALLBACK_WORKER_ENTITY_NAME = "small-biter"
 
 local TRANSPORT_TIER_TECHS = {
-  {"biterport-transport-capacity-1", 1},
-  {"biterport-transport-capacity-2", 2},
-  {"biterport-transport-capacity-3", 5},
-  {"biterport-transport-capacity-4", 10},
-  {"biterport-transport-capacity-5", 25},
+  {"biterport-transport-capacity-1", 2},
+  {"biterport-transport-capacity-2", 5},
+  {"biterport-transport-capacity-3", 10},
+  {"biterport-transport-capacity-4", 25},
 }
 
 local SPEED_TIER_TECHS = {
@@ -678,6 +677,17 @@ local function build_all_networks()
   return networks
 end
 
+local function network_storage_key(network)
+  if not network or not network.surface or not network.force or not network.ports or not network.ports[1] then
+    return nil
+  end
+  return tostring(network.surface.index)
+    .. ":"
+    .. network.force.name
+    .. ":"
+    .. tostring(network.ports[1].unit_number or 0)
+end
+
 local function position_in_network_radius(network, position, radius)
   local radius_sq = radius * radius
   for _, port in ipairs(network.ports) do
@@ -710,6 +720,12 @@ local function port_scan_area(port, radius, subdivisions, tick, salt)
   }
 end
 
+local function logistic_chest_key(chest)
+  if not chest then return nil end
+  if chest.unit_number then return tostring(chest.unit_number) end
+  return chest.name .. "@" .. math.floor(chest.position.x) .. "," .. math.floor(chest.position.y)
+end
+
 local function for_each_logistic_chest(network, callback, options)
   options = options or {}
   local full_scan = options.full_scan == true
@@ -732,7 +748,7 @@ local function for_each_logistic_chest(network, callback, options)
       limit = C.BITERPORT_MAX_CHESTS_PER_PORT_SCAN,
     }
     for _, chest in ipairs(chests) do
-      local key = chest.unit_number or (chest.name .. "@" .. math.floor(chest.position.x) .. "," .. math.floor(chest.position.y))
+      local key = logistic_chest_key(chest)
       if chest.valid and is_logistic_chest(chest) and not seen[key] then
         seen[key] = true
         if callback(chest) then return true end
@@ -742,12 +758,45 @@ local function for_each_logistic_chest(network, callback, options)
   return false
 end
 
-local function find_source_for_item(network, item_name, position, excluded_unit_number, tick)
-  local best, best_inv, best_score = nil, nil, math.huge
+local function collect_logistic_chests(network, options)
+  local chests = {}
   for_each_logistic_chest(network, function(chest)
+    chests[#chests + 1] = chest
+    return false
+  end, options)
+  return chests
+end
+
+local function active_logistics_item_count(key_name, key_value, item_name)
+  if not key_name or key_value == nil then return 0 end
+  local count = 0
+  for _, reservation in pairs(storage.biterport_logistics_reservations or {}) do
+    if reservation
+       and reservation[key_name] == key_value
+       and reservation.item_name == item_name then
+      count = count + (reservation.count or 1)
+    end
+  end
+  for _, active in pairs(storage.biterport_workers or {}) do
+    local job = active.job
+    if job and job.kind == "logistics"
+       and not job.reservation_id
+       and job[key_name] == key_value
+       and job.item_name == item_name then
+      count = count + (job.count or 1)
+    end
+  end
+  return count
+end
+
+local function find_source_for_item_in_chests(chests, item_name, position, excluded_unit_number)
+  local best, best_inv, best_score = nil, nil, math.huge
+  for _, chest in ipairs(chests or {}) do
     if is_source_chest(chest) and chest.unit_number ~= excluded_unit_number then
       local inv = get_entity_inventory(chest)
-      if inv and inv.get_item_count and inv.get_item_count(item_name) > 0 then
+      local available = inv and inv.get_item_count and inv.get_item_count(item_name) or 0
+      available = available - active_logistics_item_count("source_unit_number", chest.unit_number, item_name)
+      if inv and inv.get_item_count and available > 0 then
         local score = position and distance_squared(chest.position, position) or 0
         if score < best_score then
           best = chest
@@ -756,9 +805,13 @@ local function find_source_for_item(network, item_name, position, excluded_unit_
         end
       end
     end
-    return false
-  end, {full_scan = true, tick = tick})
+  end
   return best, best_inv
+end
+
+local function find_source_for_item(network, item_name, position, excluded_unit_number, tick)
+  local chests = collect_logistic_chests(network, {full_scan = true, tick = tick})
+  return find_source_for_item_in_chests(chests, item_name, position, excluded_unit_number)
 end
 
 local function choose_worker_port(network, pickup_position, target_position, tick)
@@ -994,26 +1047,24 @@ local function make_player_tracking_key(player)
   return "player:" .. player.index
 end
 
-local function active_logistics_count(key_name, key_value, item_name)
-  if not key_name or key_value == nil then return 0 end
-  local count = 0
+local function has_active_logistics_job(key_name, key_value, item_name)
+  if not key_name or key_value == nil then return false end
   for _, reservation in pairs(storage.biterport_logistics_reservations or {}) do
     if reservation
        and reservation[key_name] == key_value
        and reservation.item_name == item_name then
-      count = count + (reservation.count or 1)
+      return true
     end
   end
   for _, active in pairs(storage.biterport_workers or {}) do
     local job = active.job
     if job and job.kind == "logistics"
-       and not job.reservation_id
        and job[key_name] == key_value
        and job.item_name == item_name then
-      count = count + (job.count or 1)
+      return true
     end
   end
-  return count
+  return false
 end
 
 local function counted_items(subject, inv, item_name)
@@ -1031,16 +1082,17 @@ local function requested_missing_stack(entity, inv, tracking_key, counted_subjec
     local item_name = logistic_filter_item_name(filter)
     local target = logistic_filter_min_count(filter)
     if item_name and target > 0 then
+      local in_flight_key = tracking_key and "target_tracking_key" or "target_unit_number"
+      local in_flight_value = tracking_key or entity.unit_number
+      if has_active_logistics_job(in_flight_key, in_flight_value, item_name) then
+        goto next_filter
+      end
       local current = counted_items(counted_subject or entity, inv, item_name)
-      local in_flight = active_logistics_count(
-        tracking_key and "target_tracking_key" or "target_unit_number",
-        tracking_key or entity.unit_number,
-        item_name
-      )
-      if current + in_flight < target then
-        return item_name, math.min(max_count or 1, target - current - in_flight)
+      if current < target then
+        return item_name, math.min(max_count or 1, target - current)
       end
     end
+    ::next_filter::
   end
   return nil
 end
@@ -1071,7 +1123,7 @@ local function create_logistics_reservation(job)
     id = reservation_id,
     item_name = job.item_name,
     count = job.count or 1,
-    source_unit_number = job.source and job.source.unit_number,
+    source_unit_number = safe_entity_field(job.source, "unit_number"),
     source_tracking_key = job.source_tracking_key,
     target_unit_number = job.target_unit_number,
     target_tracking_key = job.target_tracking_key,
@@ -1079,8 +1131,10 @@ local function create_logistics_reservation(job)
 
   local section, slot_index, filter = find_request_slot(job.target, job.item_name)
   if section and slot_index and filter and section.set_slot then
-    local original_target = logistic_filter_min_count(filter)
-    local adjusted = set_logistic_filter_min_count(filter, original_target - (job.count or 1))
+    local target_inv = job.target_tracking_key and get_player_main_inventory(job.target)
+      or get_entity_inventory(job.target)
+    local current_count = counted_items(job.target, target_inv, job.item_name)
+    local adjusted = set_logistic_filter_min_count(filter, current_count)
     local ok = pcall(section.set_slot, slot_index, adjusted)
     if ok then
       reservation.section = section
@@ -1129,9 +1183,8 @@ local function next_player_trash_stack(player, max_count)
     local stack = inv[i]
     if stack and stack.valid_for_read and stack.name and stack.count and stack.count > 0 then
       local total = inv.get_item_count and inv.get_item_count(stack.name) or stack.count
-      local in_flight = active_logistics_count("source_tracking_key", tracking_key, stack.name)
-      if total > in_flight then
-        return stack.name, math.min(max_count or 1, total - in_flight), inv
+      if not has_active_logistics_job("source_tracking_key", tracking_key, stack.name) then
+        return stack.name, math.min(max_count or 1, total), inv
       end
     end
   end
@@ -1139,32 +1192,68 @@ local function next_player_trash_stack(player, max_count)
 end
 
 local function find_logistics_job(network, tick)
-  local found_job, found_port
+  local candidates = {}
   local transport_capacity = get_transport_capacity_for_force(network.force)
-  for_each_logistic_chest(network, function(requester)
-    if found_job then return true end
-    if not is_requester_chest(requester) then return false end
-    local target_inv = get_entity_inventory(requester)
-    if not target_inv or not target_inv.insert then return false end
-    local item_name, count = requested_missing_stack(requester, target_inv, nil, nil, transport_capacity)
-    if not item_name then return false end
-    local source = find_source_for_item(network, item_name, requester.position, requester.unit_number, tick)
-    if not source or not source.valid then return false end
-    local worker_port = choose_worker_port(network, source.position, requester.position, tick)
-    if not worker_port then return false end
+  local chests = collect_logistic_chests(network, {full_scan = true, tick = tick})
+  for _, requester in ipairs(chests) do
+    if is_requester_chest(requester) then
+      local target_inv = get_entity_inventory(requester)
+      if target_inv and target_inv.insert then
+        local item_name, count = requested_missing_stack(requester, target_inv, nil, nil, transport_capacity)
+        if item_name then
+          local source = find_source_for_item_in_chests(chests, item_name, requester.position, requester.unit_number)
+          if source and source.valid then
+            local worker_port = choose_worker_port(network, source.position, requester.position, tick)
+            if worker_port then
+              candidates[#candidates + 1] = {
+                requester = requester,
+                key = logistic_chest_key(requester),
+                worker_port = worker_port,
+                job = {
+                  kind = "logistics",
+                  item_name = item_name,
+                  count = count or 1,
+                  source = source,
+                  target = requester,
+                  target_unit_number = requester.unit_number,
+                },
+              }
+            end
+          end
+        end
+      end
+    end
+  end
 
-    found_job = {
-      kind = "logistics",
-      item_name = item_name,
-      count = count or 1,
-      source = source,
-      target = requester,
-      target_unit_number = requester.unit_number,
-    }
-    found_port = worker_port
-    return true
-  end, {tick = tick})
-  return found_job, found_port
+  if #candidates <= 0 then return nil, nil end
+  table.sort(candidates, function(a, b)
+    local ar, br = a.requester, b.requester
+    local ax, bx = ar.position and ar.position.x or 0, br.position and br.position.x or 0
+    if ax ~= bx then return ax < bx end
+    local ay, by = ar.position and ar.position.y or 0, br.position and br.position.y or 0
+    if ay ~= by then return ay < by end
+    return (ar.unit_number or 0) < (br.unit_number or 0)
+  end)
+
+  local network_key = network_storage_key(network)
+  local cursor = network_key
+    and storage.biterport_logistics_request_cursors
+    and storage.biterport_logistics_request_cursors[network_key]
+    or nil
+  local selected_index = 1
+  if cursor then
+    for i, candidate in ipairs(candidates) do
+      if candidate.key == cursor then
+        selected_index = (i % #candidates) + 1
+        break
+      end
+    end
+  end
+
+  local selected = candidates[selected_index]
+  selected.job.network_key = network_key
+  selected.job.request_cursor_key = selected.key
+  return selected.job, selected.worker_port
 end
 
 local function find_player_delivery_job(network, tick)
@@ -1234,6 +1323,26 @@ local function find_player_trash_job(network, tick)
     end
   end
   return nil, nil
+end
+
+local function count_network_logistic_chests(network, tick)
+  local counts = {total = 0, providers = 0, requesters = 0, storages = 0}
+  if not network then return counts end
+  for_each_logistic_chest(network, function(chest)
+    counts.total = counts.total + 1
+    if is_source_chest(chest) then
+      counts.providers = counts.providers + 1
+    end
+    if is_requester_chest(chest) then
+      counts.requesters = counts.requesters + 1
+    end
+    if STORAGE_CHEST_NAMES[chest.name]
+       or (chest.prototype and chest.prototype.logistic_mode == "storage") then
+      counts.storages = counts.storages + 1
+    end
+    return false
+  end, {full_scan = true, tick = tick})
+  return counts
 end
 
 local function clamp(value, min_value, max_value)
@@ -1594,6 +1703,7 @@ local function fail_job_and_return(active, tick)
     destroy_render(job.overlay_id)
     job.overlay_id = nil
   end
+  release_logistics_reservation(job)
   return_carried_item(active, job and job.source)
   if not start_return(active, tick) then
     finish_worker(active, tick, true)
@@ -1685,6 +1795,7 @@ local function deliver_logistics_job(active, tick)
   local job = active.job
   local target = job and job.target
   if not target or (target.valid ~= nil and not target.valid) then
+    release_logistics_reservation(job)
     return_carried_item(active, job and job.source)
     if not start_return(active, tick) then finish_worker(active, tick, true) end
     return
@@ -1692,6 +1803,7 @@ local function deliver_logistics_job(active, tick)
   local stack = active.carried_stack
   local inserted = insert_stack_into_target(target, stack)
   if inserted <= 0 then
+    release_logistics_reservation(job)
     return_carried_item(active, job and job.source)
     if not start_return(active, tick) then finish_worker(active, tick, true) end
     return
@@ -1703,6 +1815,7 @@ local function deliver_logistics_job(active, tick)
   else
     active.carried_stack = nil
   end
+  release_logistics_reservation(job)
   if not start_return(active, tick) then
     finish_worker(active, tick, true)
   end
@@ -1726,6 +1839,7 @@ local function advance_active_workers(tick)
         destroy_render(active.job.overlay_id)
         active.job.overlay_id = nil
       end
+      release_logistics_reservation(active.job)
       return_carried_item(active, active.job and active.job.source)
       unmark_worker_unit(active.biter_unit_number)
       unregister_active_worker(active)
@@ -1806,8 +1920,13 @@ end
 
 local function dispatch_job(worker_port, job, tick)
   if not worker_port or not worker_port.valid or not job then return false end
+  if job.kind == "logistics" and not create_logistics_reservation(job) then
+    refresh_port_status(worker_port)
+    return false
+  end
   if not remove_dispatch_inputs(worker_port, tick) then
     if job.kind == "construction" then restore_construction_ghost(job) end
+    release_logistics_reservation(job)
     refresh_port_status(worker_port)
     return false
   end
@@ -1816,6 +1935,7 @@ local function dispatch_job(worker_port, job, tick)
   if not biter or not biter.valid then
     maybe_reinsert_worker(worker_port)
     if job.kind == "construction" then restore_construction_ghost(job) end
+    release_logistics_reservation(job)
     refresh_port_status(worker_port)
     return false
   end
@@ -1830,6 +1950,10 @@ local function dispatch_job(worker_port, job, tick)
   }
   register_active_worker(active)
   mark_worker_unit(biter.unit_number, worker_port.unit_number)
+  if job.kind == "logistics" and job.network_key and job.request_cursor_key then
+    storage.biterport_logistics_request_cursors = storage.biterport_logistics_request_cursors or {}
+    storage.biterport_logistics_request_cursors[job.network_key] = job.request_cursor_key
+  end
   begin_phase_move(active, "to_pickup", job.source_destination or job.source, C.BITERPORT_ARRIVAL_RADIUS, current_tick(tick))
   refresh_port_status(worker_port)
   return true
@@ -1890,6 +2014,9 @@ function M.ensure_storage()
   storage.biterport_active_by_port = storage.biterport_active_by_port or {}
   storage.biterport_worker_units = storage.biterport_worker_units or {}
   storage.biterport_worker_cooldowns = storage.biterport_worker_cooldowns or {}
+  storage.biterport_logistics_reservations = storage.biterport_logistics_reservations or {}
+  storage.biterport_next_logistics_reservation_id = storage.biterport_next_logistics_reservation_id or 0
+  storage.biterport_logistics_request_cursors = storage.biterport_logistics_request_cursors or {}
 end
 
 function M.is_port(entity_or_name)
@@ -2005,6 +2132,7 @@ function M.on_entity_died(event)
         destroy_render(active.job.overlay_id)
         active.job.overlay_id = nil
       end
+      release_logistics_reservation(active.job)
       return_carried_item(active, active.job and active.job.source)
       unmark_worker_unit(active.biter_unit_number)
       unregister_active_worker(active)
@@ -2056,6 +2184,7 @@ function M.rebuild_registry()
     if active.job and active.job.kind == "construction" and not active.job.built then
       restore_construction_ghost(active.job)
     end
+    release_logistics_reservation(active.job)
     if active.biter and active.biter.valid then
       active.biter.destroy()
     end
@@ -2077,6 +2206,9 @@ function M.rebuild_registry()
   storage.biterport_active_by_port = {}
   storage.biterport_worker_units = {}
   storage.biterport_worker_cooldowns = {}
+  storage.biterport_logistics_reservations = {}
+  storage.biterport_next_logistics_reservation_id = 0
+  storage.biterport_logistics_request_cursors = {}
 
   for _, surface in pairs(game.surfaces) do
     for _, port in ipairs(surface.find_entities_filtered{name = PORT_NAME}) do
@@ -2096,9 +2228,14 @@ function M.get_network_summary(port)
       for _, member in ipairs(network.ports) do
         workers = workers + port_worker_count(member)
       end
+      local chests = count_network_logistic_chests(network, game and game.tick or nil)
       return {
         ports = #network.ports,
         workers = workers,
+        logistic_chests = chests.total,
+        provider_chests = chests.providers,
+        requester_chests = chests.requesters,
+        storage_chests = chests.storages,
         network = network,
       }
     end

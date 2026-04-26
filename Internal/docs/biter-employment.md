@@ -105,10 +105,9 @@ How many items a single worker can carry:
 | --- | --- |
 | Base | 1 |
 | `biterport-transport-capacity-1` | 2 |
-| `biterport-transport-capacity-2` | 3 |
-| `biterport-transport-capacity-3` | 5 |
-| `biterport-transport-capacity-4` | 10 |
-| `biterport-transport-capacity-5` | 25 |
+| `biterport-transport-capacity-2` | 5 |
+| `biterport-transport-capacity-3` | 10 |
+| `biterport-transport-capacity-4` | 25 |
 
 #### Worker Speed
 

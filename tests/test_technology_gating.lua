@@ -392,6 +392,13 @@ test("biterport capacity, transport, and logistics speed upgrades are tiered and
   assert_true(technology_effect_locale["biterport-capacity"] ~= nil, "biterport capacity effect should be localized")
   assert_true(technology_effect_locale["biterport-transport-capacity"] ~= nil, "biterport transport effect should be localized")
   assert_true(technology_effect_locale["biterport-worker-speed"] ~= nil, "biterport worker speed effect should be localized")
+  assert_true(technology_name_locale["biter-labor-efficiency"] ~= nil, "biter labor efficiency base name should be localized")
+  assert_true(technology_description_locale["biter-labor-efficiency"] ~= nil, "biter labor efficiency base description should be localized")
+  assert_true(technology_effect_locale["biter-labor-efficiency"] ~= nil, "biter labor efficiency effect should be localized")
+  assert_true(technology_name_locale["biterport-transport-capacity"] ~= nil, "biterport transport base name should be localized")
+  assert_true(technology_description_locale["biterport-transport-capacity"] ~= nil, "biterport transport base description should be localized")
+  assert_true(technology_name_locale["biterport-worker-speed"] ~= nil, "biterport worker speed base name should be localized")
+  assert_true(technology_description_locale["biterport-worker-speed"] ~= nil, "biterport worker speed base description should be localized")
   assert_true(technologies["biterport-logistics"] ~= nil, "biterport-logistics should exist")
   assert_true(technology_name_locale["biterport-logistics"] ~= nil, "biterport-logistics name should be localized")
   assert_true(technology_description_locale["biterport-logistics"] ~= nil, "biterport-logistics description should be localized")
@@ -402,6 +409,18 @@ test("biterport capacity, transport, and logistics speed upgrades are tiered and
   assert_true(tech_unlocks_recipe("biterport-logistics", "biterport"), "biterport logistics should unlock biterports")
   assert_true(tech_unlocks_recipe("biterport-logistics", "biter-logistics-formation"), "biterport logistics should unlock dedicated logistics formations")
   assert_true(not tech_unlocks_recipe("biter-employment", "biterport"), "biter-employment should not unlock biterports directly")
+
+  local expected_labor_efficiency = {3, 5}
+  for level = 1, 2 do
+    local tech_name = "biter-labor-efficiency-" .. level
+    assert_true(technology_name_locale[tech_name] ~= nil, tech_name .. " name should be localized")
+    assert_true(technology_description_locale[tech_name] ~= nil, tech_name .. " description should be localized")
+    assert_true(tech_has_effect(tech_name, "nothing"), tech_name .. " should expose a scripted-effect marker")
+    assert_true(
+      technologies[tech_name].effects[1].effect_description[2] == tostring(expected_labor_efficiency[level]),
+      tech_name .. " should advertise " .. expected_labor_efficiency[level] .. " machine authorizations"
+    )
+  end
 
   for _, chest_recipe in ipairs({
     "active-provider-chest",
@@ -433,8 +452,8 @@ test("biterport capacity, transport, and logistics speed upgrades are tiered and
     end
   end
 
-  local expected_transport = {1, 2, 5, 10, 25}
-  for level = 1, 5 do
+  local expected_transport = {2, 5, 10, 25}
+  for level = 1, 4 do
     local tech_name = "biterport-transport-capacity-" .. level
     assert_true(technologies[tech_name] ~= nil, tech_name .. " should exist")
     assert_true(technology_name_locale[tech_name] ~= nil, tech_name .. " name should be localized")
@@ -470,7 +489,6 @@ test("biterport capacity, transport, and logistics speed upgrades are tiered and
   assert_true(not tech_uses_pack("biterport-transport-capacity-3", "chemical-science-pack"), "transport III should not use chemical science")
   assert_true(tech_uses_pack("biterport-transport-capacity-4", "chemical-science-pack"), "transport IV should use chemical science")
   assert_true(tech_has_prereq("biterport-transport-capacity-4", "chemical-science-pack"), "transport IV should depend on chemical science")
-  assert_true(not tech_uses_pack("biterport-transport-capacity-5", "production-science-pack"), "transport V should not use production science")
   assert_true(tech_uses_pack("biterport-worker-speed-2", "chemical-science-pack"), "speed II should use chemical science")
   assert_true(tech_has_prereq("biterport-worker-speed-2", "chemical-science-pack"), "speed II should depend on chemical science")
 end)
