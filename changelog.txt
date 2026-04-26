@@ -1,4 +1,29 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.0
+Date: 2026-04-26
+  Features:
+    - Added biter hiring: resolved complaint biters can now accept Job Offers and become Biter Workers, with larger biters producing larger worker groups.
+    - Added the Biter Employment Office, which stores hired workers and taxpayer funding, then dispatches biters to authorize nearby managed machines one craft cycle at a time.
+    - Added the Field Office, an early biter-workstation bridge that summons temporary labor from nearby enemy nests before a permanent hired workforce is available.
+    - Added the Formation Center, a dedicated training building for specialist biter roles, logistics formations, rideable assignments, and field-agent programs.
+    - Added Biterports: walking-biter construction and logistics networks that build ghosts and move requester-chest items inside connected coverage areas.
+    - Added Biterport logistics workers, transport-capacity upgrades, walking-speed upgrades, live hover status, placement preview coverage, and night-shift coffee requirements.
+    - Added Rideable Biters as early personal transport fueled by Taxpayer Money, with dedicated run animation assets, tiny cargo storage, permanent assignment behavior, and complaint fallback when unfunded.
+    - Added Hired Biter Field Agents, deployment orders, waypoint commands, concealed eviction-notice inventories, supply-cache restocking, and autonomous nest eviction patrols.
+    - Added worker-biter helmet overlays, refreshed biter worker icons, Biterport art, Formation Center art, Biter Employment Office art, and Rideable Biter technology art.
+  Changes:
+    - Reworked several advanced production buildings so industrial printers, corporate breakrooms, propaganda distilleries, centrifuges, and oil refineries can require biter worker dispatches to run.
+    - Added specialist construction requirements for late infrastructure, including Union Delegates, Chemical Operators, Nuclear Technicians, and logistics formations trained at the Formation Center.
+    - Split rideable biter assignment, biterport logistics, biterport capacity, biterport speed, and field-agent work into dedicated technologies with matching locale and effect text.
+    - Rebalanced paperwork, steel smelting, administrative science pack output, oil processing, and progression gates around the new biter workforce path.
+    - Removed the standalone refinery permit path and moved oil refineries onto regulated assembler construction plus biter-station operation.
+    - Updated Working Hours so biter dispatch infrastructure has its own night behavior: dispatch buildings can keep working at night by consuming Liquid Coffee.
+    - Added a warning for saves last used before 0.4.0 so older worlds get an explicit migration heads-up.
+  Docs:
+    - Added comprehensive internal documentation for biter employment, biter logistics, field offices, formation training, field agents, and the updated technology tree.
+    - Refreshed README, Tips & Tricks, and English locale to explain the new biter workforce loop, buildings, upgrades, and controls.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.3.1
 Date: 2026-04-18
   Features:
