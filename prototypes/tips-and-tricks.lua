@@ -1,5 +1,7 @@
 -- ADMINISTRATORIO: TIPS AND TRICKS
 -- In-game tutorial entries for the tips-and-tricks pane.
+-- Ordered by mod progression: each tip unlocks when the matching mechanic
+-- becomes available to the player.
 
 local feature_flags = require("feature_flags")
 local working_hours_enabled = feature_flags.working_hours_enabled()
@@ -12,7 +14,7 @@ data:extend({
     order = "z-a"
   },
 
-  -- ===== STARTING TIPS (unlocked from game start) =====
+  -- ===== TITLE =====
 
   -- Welcome (title, unlocked from start)
   {
@@ -25,72 +27,14 @@ data:extend({
     indent = 0
   },
 
-  -- Paperwork & Printing (unlocked from start)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-paperwork",
-    category = "administratorio",
-    order = "b",
-    starting_status = "unlocked",
-    indent = 1
-  },
+  -- ===== EARLY-GAME COMPLAINT LOOP (first admin station) =====
 
-  -- ===== DISCOVERY TIPS =====
-
-  -- The Bullshit Economy (core resource chain — unlocks with first research)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-bullshit-economy",
-    category = "administratorio",
-    order = "c",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "discovery-bullshit"
-    }
-  },
-
-  -- Regulation & Form Tiers (unlocks with automation)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-regulation",
-    category = "administratorio",
-    order = "d",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "automation"
-    }
-  },
-
-  -- Machine Operating Paperwork (unlocks when the player first builds a covered machine)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-operating-paperwork",
-    category = "administratorio",
-    order = "e",
-    indent = 1,
-    trigger = {
-      type = "or",
-      triggers = {
-        { type = "build-entity", entity = "stone-furnace" },
-        { type = "build-entity", entity = "steel-furnace" },
-        { type = "build-entity", entity = "electric-furnace" },
-        { type = "build-entity", entity = "oil-refinery" },
-        { type = "build-entity", entity = "chemical-plant" },
-        { type = "build-entity", entity = "centrifuge" },
-      }
-    }
-  },
-
-  -- ===== COMPLAINT & ADMIN TIPS =====
-
-  -- Complaints & Admin Desks (unlocks when the first admin station is built)
+  -- Complaints, Office Desk & Taxpayer Money
   {
     type = "tips-and-tricks-item",
     name = "administratorio-biter-complaints",
     category = "administratorio",
-    order = "f",
+    order = "b",
     indent = 1,
     trigger = {
       type = "build-entity",
@@ -98,12 +42,12 @@ data:extend({
     }
   },
 
-  -- Waiting, Frustration & Protest (unlocks when the first admin station is built)
+  -- Frustration, Protests & Bureaucratic Promise
   {
     type = "tips-and-tricks-item",
     name = "administratorio-frustration",
     category = "administratorio",
-    order = "g",
+    order = "c",
     indent = 1,
     trigger = {
       type = "build-entity",
@@ -111,40 +55,14 @@ data:extend({
     }
   },
 
-  -- Promises, Protests & Resolution (unlocks when the first admin station is built)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-protest-resolution",
-    category = "administratorio",
-    order = "h",
-    indent = 1,
-    trigger = {
-      type = "build-entity",
-      entity = "admin-station"
-    }
-  },
+  -- ===== TERRITORY TOOLS =====
 
-  -- Complaint Processing Chains (unlocks when the first admin station is built)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-complaint-chain",
-    category = "administratorio",
-    order = "i",
-    indent = 1,
-    trigger = {
-      type = "build-entity",
-      entity = "admin-station"
-    }
-  },
-
-  -- ===== LATE-GAME COMPLAINT & NEST TIPS =====
-
-  -- Hush Money (unlocks with nest-pacification)
+  -- Hush Money
   {
     type = "tips-and-tricks-item",
     name = "administratorio-hush-money",
     category = "administratorio",
-    order = "j",
+    order = "d",
     indent = 1,
     trigger = {
       type = "research",
@@ -152,12 +70,12 @@ data:extend({
     }
   },
 
-  -- Nest Expropriation (unlocks with nest-expropriation technology)
+  -- Eviction Notices
   {
     type = "tips-and-tricks-item",
     name = "administratorio-nest-expropriation",
     category = "administratorio",
-    order = "k",
+    order = "e",
     indent = 1,
     trigger = {
       type = "research",
@@ -165,159 +83,13 @@ data:extend({
     }
   },
 
-  -- ===== PRODUCTION & INFRASTRUCTURE TIPS =====
+  -- ===== FIELD OFFICE (early biter labor) =====
 
-  -- The Propaganda Distillery (unlocks with industrial-propaganda)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-propaganda-distillery",
-    category = "administratorio",
-    order = "l",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "industrial-propaganda"
-    }
-  },
-
-  -- Pneumatic Form Transport (unlocks with pneumatic-form-transport)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-pneumatic-transport",
-    category = "administratorio",
-    order = "m",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "pneumatic-form-transport"
-    }
-  },
-
-  -- Transit Authorization (unlocks with railway)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-transit-authorization",
-    category = "administratorio",
-    order = "n",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "railway"
-    }
-  },
-
-  -- Administrative Science (unlocks with administrative-science-research)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-admin-science",
-    category = "administratorio",
-    order = "o",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "administrative-science-research"
-    }
-  },
-
-  -- ===== BITER EMPLOYMENT TIPS =====
-
-  -- Biter Employment Program (unlocks with biter-employment-office tech)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-biter-employment",
-    category = "administratorio",
-    order = "p",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "biter-employment-office"
-    }
-  },
-
-  -- Biter Workers & Specialists (unlocks with biter-labor-efficiency-1)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-biter-workers",
-    category = "administratorio",
-    order = "q",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "biter-labor-efficiency-1"
-    }
-  },
-
-  -- Formation Center (unlocks when the first formation center is built)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-formation-center",
-    category = "administratorio",
-    order = "q2",
-    indent = 1,
-    trigger = {
-      type = "build-entity",
-      entity = "formation-center"
-    }
-  },
-
-  -- Rideable Biter (personal vehicle training)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-rideable-biter",
-    category = "administratorio",
-    order = "q1",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "rideable-biter"
-    }
-  },
-
-  -- Biter Employment Office (unlocks when the first biter station is built)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-biter-station",
-    category = "administratorio",
-    order = "r",
-    indent = 1,
-    trigger = {
-      type = "build-entity",
-      entity = "biter-station"
-    }
-  },
-
-  -- Labor Efficiency Upgrades (unlocks with biter-labor-efficiency-2)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-labor-efficiency",
-    category = "administratorio",
-    order = "s",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "biter-labor-efficiency-2"
-    }
-  },
-
-  -- Biterport (unlocks with biterport-logistics)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-biterport",
-    category = "administratorio",
-    order = "t1",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "biterport-logistics"
-    }
-  },
-
-  -- Field Office (unlocks when the first field office is built)
   {
     type = "tips-and-tricks-item",
     name = "administratorio-field-office",
     category = "administratorio",
-    order = "t2",
+    order = "g",
     indent = 1,
     trigger = {
       type = "build-entity",
@@ -325,41 +97,96 @@ data:extend({
     }
   },
 
-  -- Hired Biter (unlocks with hired-biter-fieldwork)
+  -- ===== BITER EMPLOYMENT =====
+
+  -- Biter Employment Program
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-biter-employment",
+    category = "administratorio",
+    order = "h",
+    indent = 1,
+    trigger = {
+      type = "research",
+      technology = "biter-employment-office"
+    }
+  },
+
+  -- Biter Workers & Specialists (covers Formation Center)
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-biter-workers",
+    category = "administratorio",
+    order = "i",
+    indent = 1,
+    trigger = {
+      type = "build-entity",
+      entity = "formation-center"
+    }
+  },
+
+  -- Biter Station (covers labor efficiency upgrades)
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-biter-station",
+    category = "administratorio",
+    order = "j",
+    indent = 1,
+    trigger = {
+      type = "build-entity",
+      entity = "biter-station"
+    }
+  },
+
+  -- Rideable Biter
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-rideable-biter",
+    category = "administratorio",
+    order = "k",
+    indent = 1,
+    trigger = {
+      type = "research",
+      technology = "rideable-biter"
+    }
+  },
+
+  -- Biterport
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-biterport",
+    category = "administratorio",
+    order = "l",
+    indent = 1,
+    trigger = {
+      type = "research",
+      technology = "biterport-logistics"
+    }
+  },
+
+  -- Field Agent Program (Hired Biter)
   {
     type = "tips-and-tricks-item",
     name = "administratorio-hired-biter",
     category = "administratorio",
-    order = "t3",
+    order = "m",
     indent = 1,
     trigger = {
       type = "research",
       technology = "hired-biter-fieldwork"
     }
   },
-
-  -- Coffee Economy (unlocks with corporate-hospitality)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-coffee-economy",
-    category = "administratorio",
-    order = "u",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "corporate-hospitality"
-    }
-  },
 })
+
+-- ===== NIGHT WORK (only if Working Hours feature is enabled) =====
 
 if working_hours_enabled then
   data:extend({
-    -- Working Hours & Night Shifts (unlocks when office infrastructure is built)
     {
       type = "tips-and-tricks-item",
       name = "administratorio-working-hours",
       category = "administratorio",
-      order = "v",
+      order = "f",
       indent = 1,
       trigger = {
         type = "or",
