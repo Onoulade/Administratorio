@@ -197,8 +197,39 @@ local function new_surface()
   return surface
 end
 
-local function new_chest(surface, unit_number, position, logistic_mode, items)
+local function new_chest(surface, unit_number, position, logistic_mode, items, request_filters)
   local inventory = new_inventory(8, items)
+  local section
+  if request_filters then
+    section = {
+      valid = true,
+      filters_count = #request_filters,
+      filters = {},
+    }
+    for i, filter in ipairs(request_filters) do
+      section.filters[i] = {
+        value = filter.value or filter.name,
+        min = filter.min or filter.count or 0,
+        max = filter.max,
+      }
+    end
+    function section.get_slot(slot_index)
+      local filter = section.filters[slot_index]
+      if not filter then return nil end
+      return {
+        value = filter.value,
+        min = filter.min,
+        max = filter.max,
+      }
+    end
+    function section.set_slot(slot_index, filter)
+      section.filters[slot_index] = {
+        value = filter.value or filter.name,
+        min = filter.min or filter.count or 0,
+        max = filter.max,
+      }
+    end
+  end
   local chest = {
     valid = true,
     unit_number = unit_number,
@@ -216,6 +247,22 @@ local function new_chest(surface, unit_number, position, logistic_mode, items)
   function chest.get_inventory(index)
     assert_eq(index, defines.inventory.chest, "logistic chest should use chest inventory")
     return inventory
+  end
+  if section then
+    function chest.get_requester_point()
+      return {
+        valid = true,
+        enabled = true,
+        filters = section.filters,
+        sections = {section},
+        sections_count = 1,
+        get_section = function(index)
+          if index == 1 then return section end
+          return nil
+        end,
+      }
+    end
+    chest.request_section = section
   end
   surface.chests[#surface.chests + 1] = chest
   chest.inventory = inventory
@@ -308,6 +355,14 @@ local function first_active_worker()
   return nil
 end
 
+local function active_worker_count()
+  local count = 0
+  for _ in pairs(storage.biterport_workers or {}) do
+    count = count + 1
+  end
+  return count
+end
+
 local function advance_worker_to(active, position, tick, biterport)
   active.biter.position = {x = position.x, y = position.y}
   biterport.on_ai_command_completed{unit_number = active.biter_unit_number, tick = tick}
@@ -358,6 +413,164 @@ test("biterport refills player personal logistics requests", function()
 
   assert_eq(player.main_inventory.get_item_count("iron-plate"), 1, "player should receive requested item")
   assert_eq(provider.inventory.get_item_count("iron-plate"), 2, "provider chest should lose delivered item")
+end)
+
+test("biterport reserves requester chest deliveries instead of dispatching every worker", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+
+  local surface = new_surface()
+  local force = {
+    name = "player",
+    technologies = {},
+    set_cease_fire = function() end,
+  }
+
+  game = {
+    tick = 0,
+    connected_players = {},
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 4, 4)
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {["iron-plate"] = 10})
+  provider.force = force
+  local requester = new_chest(surface, 31, {x = 4, y = 0}, "requester", {}, {
+    {name = "iron-plate", count = 100},
+  })
+  requester.force = force
+
+  biterport.ensure_storage()
+  biterport.track_port(port)
+  biterport.update(30)
+
+  assert_eq(active_worker_count(), 1, "one requester/item should reserve one biter, not every available worker")
+  assert_eq(requester.request_section.filters[1].min, 0, "reserved requester slot should be paused while the biter is en route")
+
+  local active = first_active_worker()
+  advance_worker_to(active, provider.position, 90, biterport)
+  active = first_active_worker()
+  advance_worker_to(active, requester.position, 91, biterport)
+
+  assert_eq(requester.inventory.get_item_count("iron-plate"), 1, "requester chest should receive the requested item")
+  assert_eq(requester.request_section.filters[1].min, 100, "requester slot should be restored after delivery")
+end)
+
+test("biterport does not overdispatch claimed source inventory", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+
+  local surface = new_surface()
+  local force = {
+    name = "player",
+    technologies = {},
+    set_cease_fire = function() end,
+  }
+
+  game = {
+    tick = 0,
+    connected_players = {},
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 4, 4)
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {["iron-plate"] = 1})
+  provider.force = force
+  local requester_a = new_chest(surface, 31, {x = 4, y = 0}, "requester", {}, {
+    {name = "iron-plate", count = 1},
+  })
+  requester_a.force = force
+  local requester_b = new_chest(surface, 32, {x = 6, y = 0}, "requester", {}, {
+    {name = "iron-plate", count = 1},
+  })
+  requester_b.force = force
+
+  biterport.ensure_storage()
+  biterport.track_port(port)
+  biterport.update(30)
+
+  assert_eq(active_worker_count(), 1, "one provider item should only be claimed by one biter job")
+end)
+
+test("biterport rotates identical requester chest jobs", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+
+  local surface = new_surface()
+  local force = {
+    name = "player",
+    technologies = {},
+    set_cease_fire = function() end,
+  }
+
+  game = {
+    tick = 0,
+    connected_players = {},
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 1, 4)
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {["iron-plate"] = 4})
+  provider.force = force
+  local requester_west = new_chest(surface, 31, {x = 4, y = 0}, "requester", {}, {
+    {name = "iron-plate", count = 2},
+  })
+  requester_west.force = force
+  local requester_east = new_chest(surface, 32, {x = 6, y = 0}, "requester", {}, {
+    {name = "iron-plate", count = 2},
+  })
+  requester_east.force = force
+
+  biterport.ensure_storage()
+  biterport.track_port(port)
+  biterport.update(30)
+
+  local active = first_active_worker()
+  assert_true(active ~= nil, "first identical requester should dispatch")
+  assert_eq(active.job.target_unit_number, requester_west.unit_number, "first dispatch should start from the west requester")
+  advance_worker_to(active, provider.position, 30, biterport)
+  active = first_active_worker()
+  advance_worker_to(active, requester_west.position, 31, biterport)
+  active = first_active_worker()
+  advance_worker_to(active, port.position, 32, biterport)
+
+  biterport.update(90)
+  active = first_active_worker()
+  assert_true(active ~= nil, "second identical requester should dispatch after return cooldown")
+  assert_eq(active.job.target_unit_number, requester_east.unit_number, "second dispatch should rotate to the east requester")
 end)
 
 test("biterport empties player trash into network storage", function()
@@ -495,9 +708,9 @@ test("transport capacity research increases items carried per trip", function()
 
   local biterport = require("scripts.biterport")
   local port = new_port(surface, force, 2, 2)
-  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {["iron-plate"] = 10})
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {["iron-plate"] = 20})
   provider.force = force
-  local player = new_player(surface, force, {{name = "iron-plate", count = 5}}, {}, {})
+  local player = new_player(surface, force, {{name = "iron-plate", count = 10}}, {}, {})
   game.connected_players = {player}
 
   biterport.ensure_storage()
@@ -506,13 +719,58 @@ test("transport capacity research increases items carried per trip", function()
 
   local active = first_active_worker()
   assert_true(active ~= nil, "transport request should dispatch a logistics worker")
-  assert_eq(active.job.count, 5, "capacity III should let a logistics biter carry five items")
+  assert_eq(active.job.count, 10, "capacity III should let a logistics biter carry ten items")
   advance_worker_to(active, provider.position, 30, biterport)
   active = first_active_worker()
   advance_worker_to(active, player.character.position, 31, biterport)
 
-  assert_eq(player.main_inventory.get_item_count("iron-plate"), 5, "player should receive the full transport-capacity batch")
-  assert_eq(provider.inventory.get_item_count("iron-plate"), 5, "provider chest should lose the full carried batch")
+  assert_eq(player.main_inventory.get_item_count("iron-plate"), 10, "player should receive the full transport-capacity batch")
+  assert_eq(provider.inventory.get_item_count("iron-plate"), 10, "provider chest should lose the full carried batch")
+end)
+
+test("transport capacity I carries two items per trip", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+
+  local surface = new_surface()
+  local force = {
+    name = "player",
+    technologies = {
+      ["biterport-transport-capacity-1"] = {researched = true},
+    },
+    set_cease_fire = function() end,
+  }
+
+  game = {
+    tick = 0,
+    connected_players = {},
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 2, 2)
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {["iron-plate"] = 5})
+  provider.force = force
+  local player = new_player(surface, force, {{name = "iron-plate", count = 2}}, {}, {})
+  game.connected_players = {player}
+
+  biterport.ensure_storage()
+  biterport.track_port(port)
+  biterport.update(30)
+
+  local active = first_active_worker()
+  assert_true(active ~= nil, "transport request should dispatch a logistics worker")
+  assert_eq(active.job.count, 2, "capacity I should let a logistics biter carry two items")
 end)
 
 test("biterport ignores players without a character body", function()
