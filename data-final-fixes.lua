@@ -147,6 +147,20 @@ for _, proto_type in ipairs({"gun", "ammo"}) do
 end
 
 -------------------------------------------------------------------------------
+-- 2a. BITER SETUP
+-------------------------------------------------------------------------------
+for _, biter in pairs(data.raw["unit"]) do
+    if biter.vision_distance then
+        biter.vision_distance = 0
+        biter.distraction_radius = 0
+    end
+end
+
+for _, spawner in pairs(data.raw["unit-spawner"]) do
+    spawner.call_for_help_radius = 0
+end
+
+-------------------------------------------------------------------------------
 -- 3. MACHINE CATEGORY SETUP
 -- All AMs use only regulated categories. No original crafting categories.
 -------------------------------------------------------------------------------

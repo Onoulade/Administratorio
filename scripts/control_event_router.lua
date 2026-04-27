@@ -14,6 +14,7 @@ function M.register(deps)
   script.on_event(defines.events.on_player_alt_selected_area, deps.on_player_selected_area)
   script.on_event(defines.events.on_player_reverse_selected_area, deps.on_player_reverse_selected_area)
   script.on_event(defines.events.on_player_alt_reverse_selected_area, deps.on_player_reverse_selected_area)
+  script.on_event(defines.events.on_pre_build, deps.on_pre_build)
 
   script.on_event(defines.events.on_built_entity, deps.on_entity_built)
   script.on_event(defines.events.on_robot_built_entity, deps.on_entity_built)
