@@ -79,6 +79,46 @@ local function freeze_admin_station_rotation(desk)
   desk.rotatable = false
 end
 
+local function find_nearby_enemy_spawner(surface, position)
+  if not surface or not position then return nil end
+  return surface.find_entities_filtered{
+    position = position,
+    radius = 32,
+    type = "unit-spawner",
+    limit = 1
+  }[1]
+end
+
+local function notify_player_build_denied(player, position)
+  if not player then return end
+  player.create_local_flying_text{
+    text = {"", "Too close to biter nest!"},
+    position = position,
+    color = {r = 1, g = 0, b = 0}
+  }
+  player.play_sound{path = "utility/cannot_build"}
+end
+
+local function remember_recent_prebuild_denial(player_index, position, tick)
+  if not player_index or not position then return end
+  storage.recent_prebuild_denials = storage.recent_prebuild_denials or {}
+  storage.recent_prebuild_denials[player_index] = {
+    tick = tick,
+    position = {x = position.x, y = position.y}
+  }
+end
+
+local function was_recent_prebuild_denial(player_index, position, tick)
+  if not player_index or not position or not tick then return false end
+  local recent_denials = storage.recent_prebuild_denials
+  local denial = recent_denials and recent_denials[player_index]
+  if not denial then return false end
+  if denial.tick ~= tick then return false end
+  return denial.position
+    and denial.position.x == position.x
+    and denial.position.y == position.y
+end
+
 local function connect_desk_combinator(desk, combinator)
   if not desk or not desk.valid or not combinator or not combinator.valid then return end
   local desk_red = desk.get_wire_connector(defines.wire_connector_id.circuit_red, true)
@@ -711,6 +751,45 @@ local function on_entity_built_inner(event)
   local entity = event.entity or event.created_entity
   if not entity or not entity.valid then return end
 
+  local surface = entity.surface
+  local player = event.player_index and game.players[event.player_index]
+
+  -- Find any spawners within the limit
+  local nearby_spawner = find_nearby_enemy_spawner(surface, entity.position)
+
+  if nearby_spawner then
+      -- 1. Notify the player
+      if player and not was_recent_prebuild_denial(event.player_index, entity.position, event.tick) then
+          notify_player_build_denied(player, entity.position)
+      end
+
+      -- 2. Refund the item to the player or bot
+      local item_to_return = entity.prototype and entity.prototype.items_to_place_this
+      local placeable_item = item_to_return and item_to_return[1]
+      if player then
+          if placeable_item then
+              player.insert{
+                  name = placeable_item.name,
+                  count = 1,
+                  quality = entity.quality and entity.quality.name or nil
+              }
+          end
+      elseif event.robot then
+          local cargo = event.robot.get_inventory(defines.inventory.robot_cargo)
+          if cargo and placeable_item then
+              cargo.insert{
+                  name = placeable_item.name,
+                  count = 1,
+                  quality = entity.quality and entity.quality.name or nil
+              }
+          end
+      end
+
+      -- 3. Remove the building immediately
+      entity.destroy()
+      return
+  end
+
   -- Swap the transient placement-preview roboport to the real biterport container.
   -- The preview entity is only used to drive Factorio's native zone/connection
   -- visualisation while the player holds the biterport item.
@@ -811,6 +890,16 @@ local function on_entity_built_inner(event)
       biter_station.track_managed_building(entity)
     end
     trains.on_built(entity) -- Passed directly to script
+  end
+end
+
+local function on_pre_build(event)
+  local player = event.player_index and game.get_player(event.player_index)
+  if not player or not player.valid then return end
+
+  if find_nearby_enemy_spawner(player.surface, event.position) then
+    notify_player_build_denied(player, event.position)
+    remember_recent_prebuild_denial(event.player_index, event.position, event.tick)
   end
 end
 
@@ -1670,6 +1759,7 @@ control_event_router.register({
   on_player_created = on_player_created,
   on_player_joined_game = on_player_joined_game,
   on_player_left_game = on_player_left_game,
+  on_pre_build = on_pre_build,
   on_player_respawned = on_player_respawned,
   on_player_reverse_selected_area = on_player_reverse_selected_area,
   on_research_finished = on_research_finished,
