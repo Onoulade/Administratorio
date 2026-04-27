@@ -10,7 +10,7 @@ local M = {}
 local BITER_FORCE_NAME = "administratorio-biters"
 local SPAWNER_TYPES = {"unit-spawner"}
 local ENTITY_NAME = "field-office"
-local CRAFTS_PER_BITER = 5
+local CRAFTS_PER_BITER = 2
 
 local function is_field_office(name)
   return name == ENTITY_NAME
