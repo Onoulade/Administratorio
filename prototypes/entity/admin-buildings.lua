@@ -14,6 +14,7 @@ local entity_graphics = "__administratorio__/graphics/entities/"
 local scrubber_graphics = entity_graphics .. "scrubber/"
 local sound_path = "__administratorio__/sound/buildings/"
 local biter_building_icons = "__administratorio__/graphics/icons/"
+local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
 local OFFICE_DESK_SPEED = working_hours_enabled and 1.0 or 0.75
 local BREAKROOM_SPEED = working_hours_enabled and 1.0 or 0.75
 local UNION_HQ_SPEED = working_hours_enabled and 1.0 or 0.75
@@ -188,11 +189,14 @@ biter_station.icons = nil
 biter_station.flags = {"placeable-neutral", "player-creation"}
 biter_station.minable = {mining_time = 0.5, result = "biter-station"}
 biter_station.max_health = 450
-biter_station.collision_box = {{-1.8, -1.8}, {1.8, 1.8}}
+biter_station.collision_box = {{-1.9, -1.9}, {1.9, 1.9}}
 biter_station.selection_box = {{-2.0, -2.0}, {2.0, 2.0}}
 biter_station.inventory_size = 20
 biter_station.inventory_type = "with_filters_and_bar"
-biter_station.collision_mask = {layers = {object = true, player = true, water_tile = true}}
+biter_station.collision_mask = {layers = {
+  [ADMIN_STATION_COLLISION_LAYER] = true,
+  water_tile = true,
+}}
 biter_station.circuit_wire_max_distance = 9
 biter_station.circuit_connector = circuit_connector_definitions.create_single(
   universal_connector_template,
@@ -201,7 +205,7 @@ biter_station.circuit_connector = circuit_connector_definitions.create_single(
 biter_station.picture = {
   layers = {
     {
-      filename = entity_graphics .. "work-station/work-station.png",
+      filename = entity_graphics .. "work-station/work-station-floor.png",
       width = 480,
       height = 472,
       scale = 0.27,
@@ -209,8 +213,18 @@ biter_station.picture = {
     },
   },
 }
-biter_station.stateless_visualisation = nil
-biter_station.draw_stateless_visualisations_in_ghost = nil
+biter_station.stateless_visualisation = {
+  render_layer = "higher-object-above",
+  animation = {
+    filename = entity_graphics .. "work-station/work-station-roof.png",
+    width = 480,
+    height = 472,
+    frame_count = 1,
+    scale = 0.27,
+    shift = util.by_pixel(0, 0),
+  },
+}
+biter_station.draw_stateless_visualisations_in_ghost = true
 biter_station.placeable_by = placeable_by_item("biter-station")
 
 local biterport = table.deepcopy(data.raw["container"]["steel-chest"])
@@ -223,11 +237,14 @@ biterport.icons = nil
 biterport.flags = {"placeable-neutral", "player-creation"}
 biterport.minable = {mining_time = 0.5, result = "biterport"}
 biterport.max_health = 450
-biterport.collision_box = {{-1.8, -1.8}, {1.8, 1.8}}
-biterport.selection_box = {{-2.0, -2.0}, {2.0, 2.0}}
+biterport.collision_box = {{-2.4, -2.4}, {2.4, 2.4}}
+biterport.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
 biterport.inventory_size = 9
 biterport.inventory_type = "with_filters_and_bar"
-biterport.collision_mask = {layers = {object = true, player = true, water_tile = true}}
+biterport.collision_mask = {layers = {
+  [ADMIN_STATION_COLLISION_LAYER] = true,
+  water_tile = true,
+}}
 biterport.circuit_wire_max_distance = 9
 biterport.circuit_connector = circuit_connector_definitions.create_single(
   universal_connector_template,
@@ -236,17 +253,50 @@ biterport.circuit_connector = circuit_connector_definitions.create_single(
 biterport.picture = {
   layers = {
     {
-      filename = entity_graphics .. "biterport/biterport.png",
-      width = 480,
-      height = 497,
-      scale = 0.3,
+      filename = entity_graphics .. "biterport/biterport-floor.png",
+      width = 479,
+      height = 496,
+      scale = 0.375,
       shift = util.by_pixel(0, -8),
     },
   },
 }
-biterport.stateless_visualisation = nil
-biterport.draw_stateless_visualisations_in_ghost = nil
+biterport.stateless_visualisation = {
+  render_layer = "higher-object-above",
+  animation = {
+    filename = entity_graphics .. "biterport/biterport-roof.png",
+    width = 479,
+    height = 496,
+    frame_count = 1,
+    scale = 0.375,
+    shift = util.by_pixel(0, -8),
+  },
+}
+biterport.draw_stateless_visualisations_in_ghost = true
 biterport.placeable_by = placeable_by_item("biterport")
+
+local function make_hidden_wall_blocker(name, icon)
+  return {
+    type = "simple-entity",
+    name = name,
+    icon = icon,
+    icon_size = 64,
+    flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "placeable-off-grid"},
+    max_health = 1,
+    collision_box = {{-0.5, -0.5}, {0.5, 0.5}},
+    collision_mask = {layers = {object = true, player = true, water_tile = true}},
+    selection_box = {{0, 0}, {0, 0}},
+    selectable_in_game = false,
+    picture = {
+      filename = "__core__/graphics/empty.png",
+      width = 1,
+      height = 1,
+    },
+  }
+end
+
+local biter_station_wall_blocker = make_hidden_wall_blocker("biter-station-wall-blocker", biter_building_icons .. "biter-station.png")
+local biterport_wall_blocker = make_hidden_wall_blocker("biterport-wall-blocker", biter_building_icons .. "biterport.png")
 
 local function make_hidden_coffee_input(name, localised_name, localised_description)
   local input = table.deepcopy(data.raw["pipe"]["pipe"])
@@ -358,7 +408,7 @@ if roboport_source then
   -- base must be a RotatedSprite (direction_count required).
   biterport_placement_preview.base = {
     filename = entity_graphics .. "biterport/biterport.png",
-    size = 480, scale = 0.3, shift = {0, -1},
+    width = 480, height = 497, scale = 0.375, shift = {0, -1},
     direction_count = 1,
   }
   -- Hide all roboport overlay animations; they won't play (entity is swapped immediately)
@@ -998,6 +1048,8 @@ add_entity(admin_station_combinator)
 add_entity(transit_permit_chest)
 add_entity(biter_station_coffee_input)
 add_entity(biterport_coffee_input)
+add_entity(biter_station_wall_blocker)
+add_entity(biterport_wall_blocker)
 add_entity(hidden_biterport_roboport)
 add_entity(biterport_placement_preview)
 add_entity(biter_worker_t2)

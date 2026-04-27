@@ -6,12 +6,23 @@ local M = {}
 local PORT_NAME = C.BITERPORT_NAME
 local HIDDEN_ROBOPORT_NAME = C.BITERPORT_HIDDEN_ROBOPORT_NAME
 local COFFEE_INPUT_NAME = "biterport-coffee-input"
+local WALL_BLOCKER_NAME = "biterport-wall-blocker"
 local WORKER_FORCE_NAME = "administratorio-biters"
 local WORKER_ITEM_NAME = "biter-logistics-formation"
 local MONEY_ITEM_NAME = "taxpayer-money"
 local COFFEE_FLUID_NAME = "liquid-coffee"
 local WORKER_ENTITY_NAME = C.BITERPORT_WORKER_ENTITY_NAME or "small-biter"
 local FALLBACK_WORKER_ENTITY_NAME = "small-biter"
+local PORT_WALL_OFFSETS = {
+  {x = -2, y = -2}, {x = -1, y = -2}, {x = 0, y = -2}, {x = 1, y = -2}, {x = 2, y = -2},
+  {x = -2, y = -1}, {x = 2, y = -1},
+  {x = -2, y = 0}, {x = 2, y = 0},
+  {x = -2, y = 1}, {x = 2, y = 1},
+  {x = -2, y = 2}, {x = 0, y = 2}, {x = 2, y = 2},
+}
+local PORT_DESPAWN_INTERIOR_OFFSET = {x = -1, y = 0}
+local PORT_SPAWN_INTERIOR_OFFSET = {x = 1, y = 0}
+local PORT_REAR_INPUT_OFFSET = {x = 0, y = -3}
 
 local TRANSPORT_TIER_TECHS = {
   {"biterport-transport-capacity-1", 2},
@@ -94,6 +105,24 @@ local function radius_box(pos, radius)
     left_top = {x = pos.x - radius, y = pos.y - radius},
     right_bottom = {x = pos.x + radius, y = pos.y + radius},
   }
+end
+
+local function rotate_local_offset(offset, direction)
+  direction = direction or defines.direction.north
+  if direction == defines.direction.east then
+    return {x = -offset.y, y = offset.x}
+  elseif direction == defines.direction.south then
+    return {x = -offset.x, y = -offset.y}
+  elseif direction == defines.direction.west then
+    return {x = offset.y, y = -offset.x}
+  end
+  return {x = offset.x, y = offset.y}
+end
+
+local function offset_position(entity, offset)
+  local position = entity and entity.position or {x = 0, y = 0}
+  local rotated = rotate_local_offset(offset, entity and entity.direction or defines.direction.north)
+  return {x = position.x + rotated.x, y = position.y + rotated.y}
 end
 
 local function current_tick(fallback_tick)
@@ -275,16 +304,52 @@ local function port_money_count(port)
 end
 
 local function rear_input_position(entity)
-  local direction = entity and entity.direction or defines.direction.north
-  local position = entity and entity.position or {x = 0, y = 0}
-  if direction == defines.direction.east then
-    return {x = position.x + 2, y = position.y}
-  elseif direction == defines.direction.south then
-    return {x = position.x, y = position.y + 2}
-  elseif direction == defines.direction.west then
-    return {x = position.x - 2, y = position.y}
+  return offset_position(entity, PORT_REAR_INPUT_OFFSET)
+end
+
+local function port_blocker_area(port)
+  local pos = port and port.position or {x = 0, y = 0}
+  return {
+    {x = pos.x - 2.5, y = pos.y - 2.5},
+    {x = pos.x + 2.5, y = pos.y + 2.5},
+  }
+end
+
+local function destroy_wall_blockers(port)
+  if not port or not port.valid then return end
+  local blockers = port.surface.find_entities_filtered{
+    name = WALL_BLOCKER_NAME,
+    area = port_blocker_area(port),
+  }
+  for _, blocker in ipairs(blockers) do
+    if blocker.valid then blocker.destroy() end
   end
-  return {x = position.x, y = position.y - 2}
+end
+
+local function create_wall_blockers(port)
+  if not port or not port.valid then return end
+  destroy_wall_blockers(port)
+  for _, offset in ipairs(PORT_WALL_OFFSETS) do
+    local blocker = port.surface.create_entity{
+      name = WALL_BLOCKER_NAME,
+      position = offset_position(port, offset),
+      force = port.force,
+      create_build_effect_smoke = false,
+    }
+    if blocker and blocker.valid then
+      blocker.destructible = false
+      blocker.minable = false
+      blocker.operable = false
+    end
+  end
+end
+
+local function port_spawn_position(port)
+  return offset_position(port, PORT_SPAWN_INTERIOR_OFFSET)
+end
+
+local function port_despawn_position(port)
+  return offset_position(port, PORT_DESPAWN_INTERIOR_OFFSET)
 end
 
 local function create_hidden_coffee_input(port)
@@ -1566,9 +1631,8 @@ end
 
 local function spawn_worker(port, job_kind)
   local worker_entity_name = get_worker_entity_name(port.force)
-  local offset_x = job_kind == "logistics" and -1.5 or 1.5
-  local spawn_origin = {x = port.position.x + offset_x, y = port.position.y + 2.5}
-  local spawn_pos = port.surface.find_non_colliding_position(worker_entity_name, spawn_origin, 8, 0.5)
+  local spawn_origin = port_spawn_position(port)
+  local spawn_pos = port.surface.find_non_colliding_position(worker_entity_name, spawn_origin, 1, 0.25)
   if not spawn_pos then return nil end
   return port.surface.create_entity{
     name = worker_entity_name,
@@ -1673,7 +1737,13 @@ local function start_return(active, tick)
   local port = nearest_valid_port(active)
   if not port or not port.valid then return false end
   active.return_port_id = port.unit_number
-  return begin_phase_move(active, "returning", port, C.BITERPORT_ARRIVAL_RADIUS, tick)
+  return begin_phase_move(
+    active,
+    "returning",
+    port_despawn_position(port),
+    C.BITERPORT_ARRIVAL_RADIUS,
+    tick
+  )
 end
 
 local function finish_worker(active, tick, return_worker)
@@ -1901,13 +1971,14 @@ local function advance_active_workers(tick)
         finish_worker(active, tick, false)
         goto continue
       end
-      local arrived = phase_is_arrived(active, biter, port, C.BITERPORT_ARRIVAL_RADIUS)
+      local return_destination = port_despawn_position(port)
+      local arrived = phase_is_arrived(active, biter, return_destination, C.BITERPORT_ARRIVAL_RADIUS)
         and (active.phase_arrived_tick or phase_has_departed(active, biter, tick))
       if arrived then
         finish_worker(active, tick, true)
-      elseif active.phase_target_unit_number ~= port.unit_number
+      elseif active.phase_target_unit_number ~= nil
           or (biter.commandable and not biter.commandable.has_command) then
-        begin_phase_move(active, "returning", port, C.BITERPORT_ARRIVAL_RADIUS, tick)
+        begin_phase_move(active, "returning", return_destination, C.BITERPORT_ARRIVAL_RADIUS, tick)
       end
 
     else
@@ -2048,6 +2119,7 @@ function M.track_port(entity)
   if not entity or not entity.valid or not entity.unit_number or not M.is_port(entity) then return end
   storage.biterports[entity.unit_number] = entity
   apply_port_inventory(entity)
+  create_wall_blockers(entity)
   create_hidden_roboport(entity)
   if working_hours.is_enabled() then
     create_hidden_coffee_input(entity)
@@ -2081,6 +2153,7 @@ function M.untrack_port(entity, tick)
   local port_id = entity.unit_number
   destroy_hidden_roboport(port_id)
   destroy_hidden_coffee_input(port_id)
+  destroy_wall_blockers(entity)
   storage.biterports[port_id] = nil
   if storage.biterport_worker_cooldowns then
     storage.biterport_worker_cooldowns[port_id] = nil
@@ -2191,6 +2264,9 @@ function M.rebuild_registry()
   end
 
   for _, surface in pairs(game.surfaces) do
+    for _, blocker in ipairs(surface.find_entities_filtered{name = WALL_BLOCKER_NAME}) do
+      if blocker.valid then blocker.destroy() end
+    end
     for _, hidden in ipairs(surface.find_entities_filtered{name = HIDDEN_ROBOPORT_NAME}) do
       if hidden.valid then hidden.destroy() end
     end
