@@ -6,10 +6,19 @@ local M = {}
 local WORKER_FORCE_NAME = "administratorio-biters"
 local STATION_NAME = "biter-station"
 local COFFEE_INPUT_NAME = "biter-station-coffee-input"
+local WALL_BLOCKER_NAME = "biter-station-wall-blocker"
 local WORKER_ITEM_NAME = "biter-worker"
 local MONEY_ITEM_NAME = "taxpayer-money"
 local COFFEE_FLUID_NAME = "liquid-coffee"
 local WORKER_ENTITY_NAME = "small-biter"
+local STATION_WALL_OFFSETS = {
+  {x = -1.5, y = -1.5}, {x = -0.5, y = -1.5}, {x = 0.5, y = -1.5}, {x = 1.5, y = -1.5},
+  {x = -1.5, y = -0.5}, {x = 1.5, y = -0.5},
+  {x = -1.5, y = 0.5}, {x = 1.5, y = 0.5},
+  {x = -1.5, y = 1.5}, {x = 0.5, y = 1.5}, {x = 1.5, y = 1.5},
+}
+local STATION_INTERIOR_SPAWN_OFFSET = {x = -0.5, y = 0.5}
+local STATION_REAR_INPUT_OFFSET = {x = 0, y = -2.5}
 
 local function get_station_slots_for_force(force)
   return C.BITER_STATION_BASE_SLOTS
@@ -156,17 +165,67 @@ get_station_inventory = function(station)
   return station.get_inventory(defines.inventory.chest)
 end
 
-local function rear_input_position(entity)
-  local direction = entity and entity.direction or defines.direction.north
-  local position = entity and entity.position or {x = 0, y = 0}
+local function rotate_local_offset(offset, direction)
+  direction = direction or defines.direction.north
   if direction == defines.direction.east then
-    return {x = position.x + 2, y = position.y}
+    return {x = -offset.y, y = offset.x}
   elseif direction == defines.direction.south then
-    return {x = position.x, y = position.y + 2}
+    return {x = -offset.x, y = -offset.y}
   elseif direction == defines.direction.west then
-    return {x = position.x - 2, y = position.y}
+    return {x = offset.y, y = -offset.x}
   end
-  return {x = position.x, y = position.y - 2}
+  return {x = offset.x, y = offset.y}
+end
+
+local function offset_position(entity, offset)
+  local position = entity and entity.position or {x = 0, y = 0}
+  local rotated = rotate_local_offset(offset, entity and entity.direction or defines.direction.north)
+  return {x = position.x + rotated.x, y = position.y + rotated.y}
+end
+
+local function rear_input_position(entity)
+  return offset_position(entity, STATION_REAR_INPUT_OFFSET)
+end
+
+local function station_interior_position(station)
+  return offset_position(station, STATION_INTERIOR_SPAWN_OFFSET)
+end
+
+local function station_blocker_area(station)
+  local pos = station and station.position or {x = 0, y = 0}
+  return {
+    {x = pos.x - 2.0, y = pos.y - 2.0},
+    {x = pos.x + 2.0, y = pos.y + 2.0},
+  }
+end
+
+local function destroy_wall_blockers(station)
+  if not station or not station.valid then return end
+  local blockers = station.surface.find_entities_filtered{
+    name = WALL_BLOCKER_NAME,
+    area = station_blocker_area(station),
+  }
+  for _, blocker in ipairs(blockers) do
+    if blocker.valid then blocker.destroy() end
+  end
+end
+
+local function create_wall_blockers(station)
+  if not station or not station.valid then return end
+  destroy_wall_blockers(station)
+  for _, offset in ipairs(STATION_WALL_OFFSETS) do
+    local blocker = station.surface.create_entity{
+      name = WALL_BLOCKER_NAME,
+      position = offset_position(station, offset),
+      force = station.force,
+      create_build_effect_smoke = false,
+    }
+    if blocker and blocker.valid then
+      blocker.destructible = false
+      blocker.minable = false
+      blocker.operable = false
+    end
+  end
 end
 
 local function create_hidden_coffee_input(station)
@@ -666,8 +725,9 @@ local function release_biter_for_despawn(biter, station, tick)
   if not biter or not biter.valid then return end
 
   if station and station.valid then
-    local despawn_pos = station.surface.find_non_colliding_position(biter.name, station.position, 8, 0.5)
-    issue_move_command(biter, despawn_pos or station.position, C.BITER_STATION_ARRIVAL_RADIUS)
+    local despawn_origin = station_interior_position(station)
+    local despawn_pos = station.surface.find_non_colliding_position(biter.name, despawn_origin, 1, 0.25)
+    issue_move_command(biter, despawn_pos or despawn_origin, C.BITER_STATION_ARRIVAL_RADIUS)
   end
 
   storage.biter_station_releasing[biter.unit_number] = {
@@ -802,8 +862,8 @@ local function spawn_station_biter(station)
   if not station or not station.valid then return nil end
 
   local actual_entity_name = get_worker_entity_name()
-  local spawn_origin = {x = station.position.x, y = station.position.y + 0.5}
-  local spawn_pos = station.surface.find_non_colliding_position(actual_entity_name, spawn_origin, 8, 0.5)
+  local spawn_origin = station_interior_position(station)
+  local spawn_pos = station.surface.find_non_colliding_position(actual_entity_name, spawn_origin, 1, 0.25)
   if not spawn_pos then
     return nil
   end
@@ -1144,25 +1204,26 @@ local function advance_active_biters(tick)
         ::continue_building_queue::
       end
 
-      begin_phase_move(active_state, biter, "to_station", station, C.BITER_STATION_ARRIVAL_RADIUS, tick)
+      begin_phase_move(active_state, biter, "to_station", station_interior_position(station), C.BITER_STATION_ARRIVAL_RADIUS, tick)
       set_station_status(station, "biter-station-calling")
 
     elseif active_state.phase == "to_station" then
+      local station_destination = station_interior_position(station)
       local arrived_station = phase_has_departed(active_state, biter, tick)
-        and phase_is_arrived(active_state, biter, station.position, C.BITER_STATION_ARRIVAL_RADIUS)
+        and phase_is_arrived(active_state, biter, station_destination, C.BITER_STATION_ARRIVAL_RADIUS)
       if arrived_station then
         finish_station_circuit(station_id, station, active_state)
         goto continue
       end
 
-      local needs_command = active_state.phase_target_unit_number ~= station.unit_number
+      local needs_command = active_state.phase_target_unit_number ~= nil
         or (biter.commandable and not biter.commandable.has_command)
       if needs_command then
-        begin_phase_move(active_state, biter, "to_station", station, C.BITER_STATION_ARRIVAL_RADIUS, tick)
+        begin_phase_move(active_state, biter, "to_station", station_destination, C.BITER_STATION_ARRIVAL_RADIUS, tick)
       end
       set_station_status(station, "biter-station-calling")
     else
-      begin_phase_move(active_state, biter, "to_station", station, C.BITER_STATION_ARRIVAL_RADIUS, tick)
+      begin_phase_move(active_state, biter, "to_station", station_interior_position(station), C.BITER_STATION_ARRIVAL_RADIUS, tick)
       set_station_status(station, "biter-station-calling")
     end
 
@@ -1261,6 +1322,7 @@ function M.track_station(entity)
 
   storage.biter_stations[entity.unit_number] = entity
   apply_station_inventory(entity)
+  create_wall_blockers(entity)
   if working_hours.is_enabled() then
     create_hidden_coffee_input(entity)
   end
@@ -1287,6 +1349,7 @@ function M.untrack_station(entity, tick)
   end
 
   destroy_hidden_coffee_input(station_id)
+  destroy_wall_blockers(entity)
   storage.biter_stations[station_id] = nil
 end
 
@@ -1492,6 +1555,9 @@ function M.rebuild_registry()
   end
 
   for _, surface in pairs(game.surfaces) do
+    for _, blocker in ipairs(surface.find_entities_filtered{name = WALL_BLOCKER_NAME}) do
+      if blocker.valid then blocker.destroy() end
+    end
     for _, input in ipairs(surface.find_entities_filtered{name = COFFEE_INPUT_NAME}) do
       if input.valid then input.destroy() end
     end
@@ -1509,7 +1575,7 @@ function M.rebuild_registry()
   for _, surface in pairs(game.surfaces) do
     for _, station in ipairs(surface.find_entities_filtered{name = STATION_NAME}) do
       if station.valid and station.unit_number then
-        storage.biter_stations[station.unit_number] = station
+        M.track_station(station)
       end
     end
 
