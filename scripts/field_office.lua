@@ -11,6 +11,7 @@ local BITER_FORCE_NAME = "administratorio-biters"
 local SPAWNER_TYPES = {"unit-spawner"}
 local ENTITY_NAME = "field-office"
 local CRAFTS_PER_BITER = 2
+local release_biter
 
 local function is_field_office(name)
   return name == ENTITY_NAME
@@ -40,13 +41,7 @@ function M.untrack_entity(entity)
   M.ensure_storage()
   local state = storage.field_office_state[entity.unit_number]
   if state then
-    if state.biter and state.biter.valid then
-      state.biter.destroy()
-    end
-    if state.overlay_id then
-      local obj = rendering.get_object_by_id(state.overlay_id)
-      if obj then obj.destroy() end
-    end
+    release_biter(state, game.tick)
   end
   storage.field_office_state[entity.unit_number] = nil
   storage.field_offices[entity.unit_number] = nil
@@ -158,7 +153,7 @@ local function destroy_overlay(state)
   end
 end
 
-local function release_biter(state, tick)
+release_biter = function(state, tick)
   if not state.biter or not state.biter.valid then
     state.biter = nil
     return
