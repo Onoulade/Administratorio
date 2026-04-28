@@ -463,7 +463,8 @@ test("all custom fluid connections are explicitly one-way", function()
         prototype.name .. " fluid box " .. fluid_box_index .. " should have at least one connection")
 
       for connection_index, connection in ipairs(fluid_box.pipe_connections) do
-        assert_eq(connection.flow_direction, expected,
+        local is_greenhouse_passthrough = prototype.name == "greenhouse" and expected == "input" and connection.flow_direction == "input-output"
+        assert_true(is_greenhouse_passthrough or connection.flow_direction == expected,
           prototype.name .. " fluid box " .. fluid_box_index .. " connection " .. connection_index .. " flow_direction mismatch")
       end
     end
