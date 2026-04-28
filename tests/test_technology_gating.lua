@@ -404,8 +404,8 @@ test("biterport capacity, transport, and logistics speed upgrades are tiered and
   assert_true(technology_description_locale["biterport-logistics"] ~= nil, "biterport-logistics description should be localized")
   assert_true(tech_depends_on("biterport-logistics", "biter-employment"), "biterport logistics should require biter employment via formation-center")
   assert_true(tech_has_prereq("biterport-logistics", "formation-center"), "biterport logistics should be gated behind formation-center")
-  assert_true(tech_has_prereq("biterport-logistics", "steel-processing"), "biterport logistics should require steel-processing for steel chests")
-  assert_true(tech_has_prereq("biterport-logistics", "advanced-circuit"), "biterport logistics should require advanced circuits for chest electronics")
+  assert_true(tech_has_prereq("biterport-logistics", "steel-processing"), "biterport logistics should require steel-processing for biterport infrastructure")
+  assert_true(tech_has_prereq("biterport-logistics", "advanced-circuit"), "biterport logistics should require advanced circuits for biterport infrastructure")
   assert_true(tech_unlocks_recipe("biterport-logistics", "biterport"), "biterport logistics should unlock biterports")
   assert_true(tech_unlocks_recipe("biterport-logistics", "biter-logistics-formation"), "biterport logistics should unlock dedicated logistics formations")
   assert_true(not tech_unlocks_recipe("biter-employment", "biterport"), "biter-employment should not unlock biterports directly")
@@ -423,15 +423,23 @@ test("biterport capacity, transport, and logistics speed upgrades are tiered and
   end
 
   for _, chest_recipe in ipairs({
+    "paperwork-provider-chest",
+    "paperwork-storage-chest",
+    "paperwork-requester-chest",
+  }) do
+    assert_true(tech_unlocks_recipe("biterport-logistics", chest_recipe), "biterport logistics should unlock " .. chest_recipe)
+    assert_true(not tech_unlocks_recipe("logistic-robotics", chest_recipe), "logistic robotics should not own " .. chest_recipe)
+  end
+
+  for _, chest_recipe in ipairs({
     "active-provider-chest",
     "passive-provider-chest",
     "storage-chest",
     "buffer-chest",
     "requester-chest",
   }) do
-    assert_true(tech_unlocks_recipe("biterport-logistics", chest_recipe), "biterport logistics should unlock " .. chest_recipe)
-    assert_true(not tech_unlocks_recipe("logistic-robotics", chest_recipe), "logistic robotics should not own " .. chest_recipe)
-    assert_true(not tech_unlocks_recipe("logistic-system", chest_recipe), "logistic system should not own " .. chest_recipe)
+    assert_true(not tech_unlocks_recipe("biterport-logistics", chest_recipe), "biterport logistics should not unlock real " .. chest_recipe)
+    assert_true(tech_unlocks_recipe("logistic-robotics", chest_recipe), "logistic robotics should unlock real " .. chest_recipe)
   end
 
   local expected_capacities = {8, 10, 12, 15}

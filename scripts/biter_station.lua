@@ -12,13 +12,14 @@ local MONEY_ITEM_NAME = "taxpayer-money"
 local COFFEE_FLUID_NAME = "liquid-coffee"
 local WORKER_ENTITY_NAME = "small-biter"
 local STATION_WALL_OFFSETS = {
-  {x = -1.5, y = -1.5}, {x = -0.5, y = -1.5}, {x = 0.5, y = -1.5}, {x = 1.5, y = -1.5},
-  {x = -1.5, y = -0.5}, {x = 1.5, y = -0.5},
-  {x = -1.5, y = 0.5}, {x = 1.5, y = 0.5},
-  {x = -1.5, y = 1.5}, {x = 0.5, y = 1.5}, {x = 1.5, y = 1.5},
+  {x = -2, y = -2}, {x = -1, y = -2}, {x = 0, y = -2}, {x = 1, y = -2}, {x = 2, y = -2},
+  {x = -2, y = -1}, {x = 2, y = -1},
+  {x = -2, y = 0}, {x = 2, y = 0},
+  {x = -2, y = 1}, {x = 2, y = 1},
+  {x = -2, y = 2}, {x = 0, y = 2}, {x = 1, y = 2}, {x = 2, y = 2},
 }
-local STATION_INTERIOR_SPAWN_OFFSET = {x = -0.5, y = 0.5}
-local STATION_REAR_INPUT_OFFSET = {x = 0, y = -2.5}
+local STATION_INTERIOR_SPAWN_OFFSET = {x = 0, y = 0}
+local STATION_REAR_INPUT_OFFSET = {x = 0, y = -3}
 
 local function get_station_slots_for_force(force)
   return C.BITER_STATION_BASE_SLOTS
@@ -194,8 +195,8 @@ end
 local function station_blocker_area(station)
   local pos = station and station.position or {x = 0, y = 0}
   return {
-    {x = pos.x - 2.0, y = pos.y - 2.0},
-    {x = pos.x + 2.0, y = pos.y + 2.0},
+    {x = pos.x - 2.5, y = pos.y - 2.5},
+    {x = pos.x + 2.5, y = pos.y + 2.5},
   }
 end
 

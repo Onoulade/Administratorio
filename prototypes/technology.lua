@@ -554,11 +554,9 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "biterport" },
       { type = "unlock-recipe", recipe = "biter-logistics-formation" },
-      { type = "unlock-recipe", recipe = "active-provider-chest" },
-      { type = "unlock-recipe", recipe = "passive-provider-chest" },
-      { type = "unlock-recipe", recipe = "storage-chest" },
-      { type = "unlock-recipe", recipe = "buffer-chest" },
-      { type = "unlock-recipe", recipe = "requester-chest" },
+      { type = "unlock-recipe", recipe = "paperwork-provider-chest" },
+      { type = "unlock-recipe", recipe = "paperwork-storage-chest" },
+      { type = "unlock-recipe", recipe = "paperwork-requester-chest" },
     },
     prerequisites = {"formation-center", "steel-processing", "advanced-circuit"},
     unit = { count = 140, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 35 },
@@ -1240,12 +1238,10 @@ add_tech_prerequisite("oil-processing", "biter-employment-office")
 -- plants as machine-craftable.
 add_tech_prerequisite("oil-processing", "corporate-hospitality")
 
--- Biterports own chest-based logistics now. True robots stay as the late-game
--- achievement branch, without holding requester chests hostage until utility
--- science.
+-- Biterports own a cheap one-slot chest family. True robot logistics keep the
+-- real logistic chests as their late-game reward.
 for _, tech_name in ipairs({
   "construction-robotics",
-  "logistic-robotics",
   "logistic-system",
 }) do
   for _, chest_recipe in ipairs({
@@ -1258,11 +1254,14 @@ for _, tech_name in ipairs({
     remove_tech_unlock(tech_name, chest_recipe)
   end
 end
-
--- logistic-system no longer serves a visible purpose; hide it from the tech tree.
-local logistic_system_tech = data.raw["technology"]["logistic-system"]
-if logistic_system_tech then
-  logistic_system_tech.hidden = true
+for _, chest_recipe in ipairs({
+  "active-provider-chest",
+  "passive-provider-chest",
+  "storage-chest",
+  "buffer-chest",
+  "requester-chest",
+}) do
+  add_tech_unlock("logistic-robotics", chest_recipe)
 end
 
 -- Buildings that require biter-workers or specialists need employment tech
