@@ -66,20 +66,26 @@ function M.new(deps)
       end
     end)
 
-    deps.warn_force_about_evolution_complaints(game.forces["player"])
+    runtime_debug.run_profiled_section(runtime_snapshot, "evolution_warnings", function()
+      deps.warn_force_about_evolution_complaints(game.forces["player"])
+    end)
 
-    if needs_loaded_working_hours_refresh then
-      if deps.working_hours.is_enabled() then
-        deps.working_hours.rebuild_registry()
+    runtime_debug.run_profiled_section(runtime_snapshot, "working_hours_refresh", function()
+      if needs_loaded_working_hours_refresh then
+        if deps.working_hours.is_enabled() then
+          deps.working_hours.rebuild_registry()
+        end
+        needs_loaded_working_hours_refresh = false
       end
-      needs_loaded_working_hours_refresh = false
-    end
+    end)
 
-    if storage.needs_protest_refresh or needs_loaded_protest_refresh then
-      deps.biters.refresh_protest_notifications()
-      storage.needs_protest_refresh = nil
-      needs_loaded_protest_refresh = false
-    end
+    runtime_debug.run_profiled_section(runtime_snapshot, "protest_refresh", function()
+      if storage.needs_protest_refresh or needs_loaded_protest_refresh then
+        deps.biters.refresh_protest_notifications()
+        storage.needs_protest_refresh = nil
+        needs_loaded_protest_refresh = false
+      end
+    end)
 
     if deps.working_hours.is_enabled() then
       runtime_debug.run_profiled_section(runtime_snapshot, "working_hours", function()
@@ -122,12 +128,6 @@ function M.new(deps)
     runtime_debug.run_profiled_section(runtime_snapshot, "circuit", function()
       deps.biters.update_circuit_signals(desks)
     end)
-
-    if deps.field_office then
-      runtime_debug.run_profiled_section(runtime_snapshot, "field_office", function()
-        deps.field_office.update(event.tick)
-      end)
-    end
 
     if runtime_snapshot and total_profiler then
       runtime_debug.run_profiled_section(runtime_snapshot, "debug_finalize", function()

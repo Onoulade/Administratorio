@@ -13,6 +13,36 @@ local ENTITY_NAME = "field-office"
 local CRAFTS_PER_BITER = 2
 local release_biter
 
+local function ensure_runtime_profile_section(runtime_profile, key)
+  if not runtime_profile then return nil end
+  local section = runtime_profile[key]
+  if not section then
+    section = game.create_profiler(true)
+    runtime_profile[key] = section
+  end
+  return section
+end
+
+local function record_runtime_profile(runtime_profile, key, profiler)
+  if not runtime_profile or not profiler then return end
+  profiler.stop()
+  local section = ensure_runtime_profile_section(runtime_profile, key)
+  if section then
+    section.add(profiler)
+  end
+end
+
+local function run_profiled(runtime_profile, key, fn)
+  if not runtime_profile then
+    return fn()
+  end
+
+  local profiler = game.create_profiler()
+  local result = fn()
+  record_runtime_profile(runtime_profile, key, profiler)
+  return result
+end
+
 local function is_field_office(name)
   return name == ENTITY_NAME
 end
@@ -54,7 +84,7 @@ local function distance_squared(pos1, pos2)
 end
 
 -- find_entities_filtered with limit=1 is not sorted by distance (engine scans chunks
--- northwest-first), so fetch all and sort by actual squared distance instead.
+-- northwest-first), so scan candidates and keep the closest valid one.
 local function find_nearest_spawner(surface, position, range)
   local spawners = surface.find_entities_filtered{
     type = SPAWNER_TYPES,
@@ -62,21 +92,26 @@ local function find_nearest_spawner(surface, position, range)
     radius = range,
     force = "enemy",
   }
-  if #spawners == 0 then return nil end
-  table.sort(spawners, function(a, b)
-    return distance_squared(a.position, position) < distance_squared(b.position, position)
-  end)
+
+  local nearest = nil
+  local nearest_distance = nil
   for _, s in ipairs(spawners) do
-    if s.valid then return s end
+    if s.valid then
+      local distance = distance_squared(s.position, position)
+      if not nearest_distance or distance < nearest_distance then
+        nearest = s
+        nearest_distance = distance
+      end
+    end
   end
-  return nil
+  return nearest
 end
 
 -- Refresh the cached nearest spawner for an office, staggered across offices so
 -- the work is spread over multiple ticks rather than happening all at once.
 local function try_refresh_spawner_cache(state, office, office_id, tick)
   local ttl = C.FIELD_OFFICE_SPAWNER_CACHE_TTL
-  if tick % ttl ~= office_id % ttl then return end
+  if state.spawner_cache_tick and (tick - state.spawner_cache_tick) < ttl then return end
   state.cached_spawner = find_nearest_spawner(office.surface, office.position, C.FIELD_OFFICE_SPAWNER_RANGE)
   state.spawner_cache_tick = tick
 end
@@ -84,14 +119,8 @@ end
 -- Return the cached nearest spawner, falling back to an immediate search if the
 -- cache is empty or stale (e.g. first call after build / after a spawner was destroyed).
 local function get_nearest_spawner(state, office, tick)
-  local ttl = C.FIELD_OFFICE_SPAWNER_CACHE_TTL
-  local is_stale = not state.spawner_cache_tick
-      or (tick - state.spawner_cache_tick) >= ttl
-
   if state.cached_spawner and state.cached_spawner.valid then
-    if not is_stale then
-      return state.cached_spawner
-    end
+    return state.cached_spawner
   end
 
   local spawner = find_nearest_spawner(office.surface, office.position, C.FIELD_OFFICE_SPAWNER_RANGE)
@@ -182,10 +211,21 @@ release_biter = function(state, tick)
 end
 
 --- Check if the field office is shut down for the night (working hours).
-local function is_night_shutdown(office)
-  if not working_hours.is_enabled() then return false end
+local function is_night_shutdown(office, working_hours_enabled, night_by_surface)
+  if not working_hours_enabled then return false end
   if working_hours.entity_has_overtime_exemption(office) then return false end
-  return working_hours.is_night(office.surface)
+  local surface_key = office.surface.index or office.surface.name
+  if night_by_surface[surface_key] == nil then
+    night_by_surface[surface_key] = working_hours.is_night(office.surface)
+  end
+  return night_by_surface[surface_key]
+end
+
+local function should_update_office(office_id, tick)
+  local update_ticks = C.FIELD_OFFICE_UPDATE_TICKS or 5
+  local shards = C.FIELD_OFFICE_UPDATE_SHARDS or 1
+  local shard = math.floor(tick / update_ticks) % shards
+  return office_id % shards == shard
 end
 
 --- Check if the office's fluidbox has at least `amount` of `fluid_name`.
@@ -232,21 +272,25 @@ local function craft_readiness(office)
   return "ready"
 end
 
-function M.update(tick)
+function M.update(tick, runtime_profile)
   M.ensure_storage()
 
   -- Process releasing biters (despawn after timeout)
-  for biter_id, info in pairs(storage.field_office_releasing) do
-    if not info.entity or not info.entity.valid then
-      storage.field_office_releasing[biter_id] = nil
-    elseif tick >= info.despawn_tick then
-      info.entity.destroy()
-      storage.field_office_releasing[biter_id] = nil
+  run_profiled(runtime_profile, "field_office_releasing", function()
+    for biter_id, info in pairs(storage.field_office_releasing) do
+      if not info.entity or not info.entity.valid then
+        storage.field_office_releasing[biter_id] = nil
+      elseif tick >= info.despawn_tick then
+        info.entity.destroy()
+        storage.field_office_releasing[biter_id] = nil
+      end
     end
-  end
+  end)
 
   if not next(storage.field_offices) then return end
-  if tick % C.FIELD_OFFICE_CHECK_TICKS ~= 0 then return end
+
+  local working_hours_enabled = working_hours.is_enabled()
+  local night_by_surface = {}
 
   for office_id, office in pairs(storage.field_offices) do
     if not office or not office.valid then
@@ -260,6 +304,10 @@ function M.update(tick)
       goto continue
     end
 
+    if not should_update_office(office_id, tick) then
+      goto continue
+    end
+
     local state = storage.field_office_state[office_id]
     if not state then
       state = { phase = "idle" }
@@ -267,9 +315,13 @@ function M.update(tick)
     end
 
     -- Background cache refresh: staggered per office so searches are spread across ticks.
-    try_refresh_spawner_cache(state, office, office_id, tick)
+    run_profiled(runtime_profile, "field_office_spawner_cache", function()
+      try_refresh_spawner_cache(state, office, office_id, tick)
+    end)
 
-    local night = is_night_shutdown(office)
+    local night = run_profiled(runtime_profile, "field_office_night_check", function()
+      return is_night_shutdown(office, working_hours_enabled, night_by_surface)
+    end)
 
     if state.phase == "idle" then
       -- Building is inactive while waiting
@@ -286,7 +338,9 @@ function M.update(tick)
 
       -- Only call for a biter if the building can actually craft. Surface a
       -- specific reason instead of the misleading native "disabled by script".
-      local readiness = craft_readiness(office)
+      local readiness = run_profiled(runtime_profile, "field_office_readiness", function()
+        return craft_readiness(office)
+      end)
       if readiness ~= "ready" then
         office.custom_status = {
           diode = defines.entity_status_diode.red,
@@ -296,9 +350,13 @@ function M.update(tick)
       end
 
       -- Summon a biter using cached nearest spawner (pre-computed in background)
-      local spawner = get_nearest_spawner(state, office, tick)
+      local spawner = run_profiled(runtime_profile, "field_office_spawner_lookup", function()
+        return get_nearest_spawner(state, office, tick)
+      end)
       if spawner then
-        local biter = spawn_worker_biter(office, spawner)
+        local biter = run_profiled(runtime_profile, "field_office_spawn_worker", function()
+          return spawn_worker_biter(office, spawner)
+        end)
         if biter then
           state.phase = "calling"
           state.biter = biter
@@ -321,6 +379,8 @@ function M.update(tick)
       end
 
     elseif state.phase == "calling" then
+      local phase_profiler = runtime_profile and game.create_profiler() or nil
+
       -- Building is inactive while biter is travelling
       office.active = false
 
@@ -336,6 +396,7 @@ function M.update(tick)
           diode = defines.entity_status_diode.red,
           label = {"gui.working-hours-night-status"},
         }
+        record_runtime_profile(runtime_profile, "field_office_calling", phase_profiler)
         goto continue
       end
 
@@ -343,6 +404,7 @@ function M.update(tick)
       if not state.biter or not state.biter.valid then
         state.biter = nil
         state.phase = "idle"
+        record_runtime_profile(runtime_profile, "field_office_calling", phase_profiler)
         goto continue
       end
 
@@ -373,7 +435,11 @@ function M.update(tick)
         }
       end
 
+      record_runtime_profile(runtime_profile, "field_office_calling", phase_profiler)
+
     elseif state.phase == "working" then
+      local phase_profiler = runtime_profile and game.create_profiler() or nil
+
       -- Check if biter died while working
       if not state.biter or not state.biter.valid then
         destroy_overlay(state)
@@ -384,6 +450,7 @@ function M.update(tick)
           diode = defines.entity_status_diode.red,
           label = {"gui.field-office-no-nest"},
         }
+        record_runtime_profile(runtime_profile, "field_office_working", phase_profiler)
         goto continue
       end
 
@@ -396,6 +463,7 @@ function M.update(tick)
           diode = defines.entity_status_diode.red,
           label = {"gui.working-hours-night-status"},
         }
+        record_runtime_profile(runtime_profile, "field_office_working", phase_profiler)
         goto continue
       end
 
@@ -407,6 +475,7 @@ function M.update(tick)
         state.phase = "idle"
         office.active = false
         office.custom_status = nil
+        record_runtime_profile(runtime_profile, "field_office_working", phase_profiler)
         goto continue
       end
 
@@ -414,35 +483,12 @@ function M.update(tick)
       if office.products_finished >= (state.products_at_arrival or 0) + CRAFTS_PER_BITER then
         -- Release the biter
         release_biter(state, tick)
+        state.phase = "idle"
         office.active = false
-
-        -- Summon next biter using cached nearest spawner (pre-computed in background)
-        local spawner = get_nearest_spawner(state, office, tick)
-        if spawner then
-          local biter = spawn_worker_biter(office, spawner)
-          if biter then
-            state.phase = "calling"
-            state.biter = biter
-            state.spawner = spawner
-            office.custom_status = {
-              diode = defines.entity_status_diode.yellow,
-              label = {"gui.field-office-calling"},
-            }
-          else
-            state.phase = "idle"
-            office.custom_status = {
-              diode = defines.entity_status_diode.red,
-              label = {"gui.field-office-no-nest"},
-            }
-          end
-        else
-          state.phase = "idle"
-          office.custom_status = {
-            diode = defines.entity_status_diode.red,
-            label = {"gui.field-office-no-nest"},
-          }
-        end
+        office.custom_status = nil
       end
+
+      record_runtime_profile(runtime_profile, "field_office_working", phase_profiler)
     end
 
     ::continue::

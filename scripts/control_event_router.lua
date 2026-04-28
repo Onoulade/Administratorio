@@ -52,6 +52,9 @@ function M.register(deps)
   if deps.on_biterport_tick then
     script.on_nth_tick(deps.biterport_check_ticks or 30, deps.on_biterport_tick)
   end
+  if deps.on_field_office_tick then
+    script.on_nth_tick(deps.field_office_update_ticks or 5, deps.on_field_office_tick)
+  end
   script.on_nth_tick(20, deps.on_protest_pacing_tick)
   script.on_nth_tick(deps.unit_group_debug_scan_interval, deps.on_unit_group_debug_tick)
   script.on_nth_tick(60, deps.on_main_tick)

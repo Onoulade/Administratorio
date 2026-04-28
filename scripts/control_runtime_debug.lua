@@ -6,28 +6,39 @@ local RUNTIME_DEBUG_EXPORT_NAME = "administratorio-runtime-debug-export"
 local RUNTIME_DEBUG_UPDATED_NAME = "administratorio-runtime-debug-updated"
 local RUNTIME_DEBUG_SUMMARY_NAME = "administratorio-runtime-debug-summary"
 local RUNTIME_DEBUG_REGISTRATION_NAME = "administratorio-runtime-debug-registration"
+local RUNTIME_DEBUG_FIELD_OFFICE_NAME = "administratorio-runtime-debug-field-office"
 local RUNTIME_DEBUG_COUNTS_NAME = "administratorio-runtime-debug-counts"
 local RUNTIME_DEBUG_HISTORY_LIMIT = 60
 
 local RUNTIME_DEBUG_ACCOUNTED_KEYS = {
   "unit_groups",
+  "group_redirects",
   "trains",
   "startup_cleanup",
+  "evolution_warnings",
+  "working_hours_refresh",
+  "protest_refresh",
   "working_hours",
   "desk_cache",
   "achievements",
   "registration",
   "resolutions",
   "frustration",
+  "calmed_spawners",
   "circuit",
+  "field_office",
   "debug_finalize",
 }
 
 local RUNTIME_DEBUG_TRANSLATED_KEYS = {
   "total",
   "unit_groups",
+  "group_redirects",
   "trains",
   "startup_cleanup",
+  "evolution_warnings",
+  "working_hours_refresh",
+  "protest_refresh",
   "working_hours",
   "desk_cache",
   "achievements",
@@ -36,22 +47,38 @@ local RUNTIME_DEBUG_TRANSLATED_KEYS = {
   "registration_arrivals",
   "resolutions",
   "frustration",
+  "calmed_spawners",
   "circuit",
+  "field_office",
+  "field_office_releasing",
+  "field_office_spawner_cache",
+  "field_office_night_check",
+  "field_office_readiness",
+  "field_office_spawner_lookup",
+  "field_office_spawn_worker",
+  "field_office_calling",
+  "field_office_working",
   "debug_finalize",
 }
 
 local RUNTIME_DEBUG_SUMMARY_ROWS = {
   {key = "total", label = {"gui.debug-total"}, export_label = "total", bold = true},
   {key = "unit_groups", label = {"gui.debug-unit-groups"}, export_label = "unit_groups"},
+  {key = "group_redirects", label = {"gui.debug-group-redirects"}, export_label = "group_redirects"},
   {key = "trains", label = {"gui.debug-trains"}, export_label = "trains"},
   {key = "startup_cleanup", label = {"gui.debug-startup-cleanup"}, export_label = "startup_cleanup"},
+  {key = "evolution_warnings", label = {"gui.debug-evolution-warnings"}, export_label = "evolution_warnings"},
+  {key = "working_hours_refresh", label = {"gui.debug-working-hours-refresh"}, export_label = "working_hours_refresh"},
+  {key = "protest_refresh", label = {"gui.debug-protest-refresh"}, export_label = "protest_refresh"},
   {key = "working_hours", label = {"gui.debug-working-hours"}, export_label = "working_hours"},
   {key = "desk_cache", label = {"gui.debug-desk-cache"}, export_label = "desk_cache"},
   {key = "achievements", label = {"gui.debug-achievements"}, export_label = "achievements"},
   {key = "registration", label = {"gui.debug-registration"}, export_label = "registration"},
   {key = "resolutions", label = {"gui.debug-resolutions"}, export_label = "resolutions"},
   {key = "frustration", label = {"gui.debug-frustration"}, export_label = "frustration"},
+  {key = "calmed_spawners", label = {"gui.debug-calmed-spawners"}, export_label = "calmed_spawners"},
   {key = "circuit", label = {"gui.debug-circuit"}, export_label = "circuit"},
+  {key = "field_office", label = {"gui.debug-field-office"}, export_label = "field_office"},
   {key = "debug_finalize", label = {"gui.debug-finalize"}, export_label = "debug_finalize"},
   {key = "other_overhead", label = {"gui.debug-other-overhead"}, export_label = "other_overhead", dim = true},
 }
@@ -62,16 +89,35 @@ local RUNTIME_DEBUG_REGISTRATION_ROWS = {
   {key = "registration_other", label = {"gui.debug-registration-other"}, export_label = "registration_other", dim = true},
 }
 
+local RUNTIME_DEBUG_FIELD_OFFICE_ROWS = {
+  {key = "field_office_releasing", label = {"gui.debug-field-office-releasing"}, export_label = "field_office_releasing"},
+  {key = "field_office_spawner_cache", label = {"gui.debug-field-office-spawner-cache"}, export_label = "field_office_spawner_cache"},
+  {key = "field_office_night_check", label = {"gui.debug-field-office-night-check"}, export_label = "field_office_night_check"},
+  {key = "field_office_readiness", label = {"gui.debug-field-office-readiness"}, export_label = "field_office_readiness"},
+  {key = "field_office_spawner_lookup", label = {"gui.debug-field-office-spawner-lookup"}, export_label = "field_office_spawner_lookup"},
+  {key = "field_office_spawn_worker", label = {"gui.debug-field-office-spawn-worker"}, export_label = "field_office_spawn_worker"},
+  {key = "field_office_calling", label = {"gui.debug-field-office-calling"}, export_label = "field_office_calling"},
+  {key = "field_office_working", label = {"gui.debug-field-office-working"}, export_label = "field_office_working"},
+}
+
 local RUNTIME_DEBUG_COUNT_ROWS = {
   {key = "desks", label = {"gui.debug-count-desks"}},
   {key = "working_hours_buildings", label = {"gui.debug-count-working-hours-buildings"}},
   {key = "stations", label = {"gui.debug-count-stations"}},
+  {key = "field_offices", label = {"gui.debug-count-field-offices"}},
+  {key = "field_office_idle", label = {"gui.debug-count-field-office-idle"}},
+  {key = "field_office_calling", label = {"gui.debug-count-field-office-calling"}},
+  {key = "field_office_working", label = {"gui.debug-count-field-office-working"}},
+  {key = "field_office_releasing", label = {"gui.debug-count-field-office-releasing"}},
   {key = "biters", label = {"gui.debug-count-biters"}},
   {key = "waiting", label = {"gui.debug-count-waiting"}},
   {key = "pathfinding", label = {"gui.debug-count-pathfinding"}},
   {key = "protesting", label = {"gui.debug-count-protesting"}},
   {key = "pacified", label = {"gui.debug-count-pacified"}},
   {key = "returning_home", label = {"gui.debug-count-returning"}},
+  {key = "pending_group_redirects", label = {"gui.debug-count-pending-group-redirects"}},
+  {key = "pending_path_requests", label = {"gui.debug-count-pending-path-requests"}},
+  {key = "calmed_spawners", label = {"gui.debug-count-calmed-spawners"}},
 }
 
 local last_runtime_debug_snapshot = nil
@@ -79,8 +125,20 @@ local runtime_debug_history = {}
 local runtime_debug_pending_samples = {}
 local runtime_debug_pending_requests = {}
 local runtime_debug_next_sample_id = 0
+local runtime_debug_external_sections = {}
+local runtime_debug_external_total = nil
 
 local update_runtime_debug_guis
+
+local function add_runtime_profiler_to_table(target, key, profiler)
+  if not target or not key or not profiler then return end
+  local section = target[key]
+  if not section then
+    section = game.create_profiler(true)
+    target[key] = section
+  end
+  section.add(profiler)
+end
 
 local function is_runtime_debug_enabled(player_index)
   return storage.runtime_debug_players and storage.runtime_debug_players[player_index] == true
@@ -306,6 +364,7 @@ local function ensure_runtime_debug_gui(player)
     if frame[RUNTIME_DEBUG_UPDATED_NAME]
       and frame[RUNTIME_DEBUG_SUMMARY_NAME]
       and frame[RUNTIME_DEBUG_REGISTRATION_NAME]
+      and frame[RUNTIME_DEBUG_FIELD_OFFICE_NAME]
       and frame[RUNTIME_DEBUG_COUNTS_NAME] then
       return frame
     end
@@ -358,6 +417,13 @@ local function ensure_runtime_debug_gui(player)
   registration_title.style.font = "default-semibold"
   registration_title.style.top_margin = 2
   add_runtime_metric_table(frame, RUNTIME_DEBUG_REGISTRATION_NAME, RUNTIME_DEBUG_REGISTRATION_ROWS)
+
+  frame.add{type = "line"}
+
+  local field_office_title = frame.add{type = "label", caption = {"gui.debug-field-office-title"}}
+  field_office_title.style.font = "default-semibold"
+  field_office_title.style.top_margin = 2
+  add_runtime_metric_table(frame, RUNTIME_DEBUG_FIELD_OFFICE_NAME, RUNTIME_DEBUG_FIELD_OFFICE_ROWS)
 
   frame.add{type = "line"}
 
@@ -426,6 +492,7 @@ local function update_runtime_debug_gui(player)
   local updated = frame[RUNTIME_DEBUG_UPDATED_NAME]
   local summary_table = frame[RUNTIME_DEBUG_SUMMARY_NAME]
   local registration_table = frame[RUNTIME_DEBUG_REGISTRATION_NAME]
+  local field_office_table = frame[RUNTIME_DEBUG_FIELD_OFFICE_NAME]
   local counts_table = frame[RUNTIME_DEBUG_COUNTS_NAME]
 
   if last_runtime_debug_snapshot then
@@ -436,6 +503,7 @@ local function update_runtime_debug_gui(player)
 
   update_runtime_metric_table(summary_table, RUNTIME_DEBUG_SUMMARY_ROWS)
   update_runtime_metric_table(registration_table, RUNTIME_DEBUG_REGISTRATION_ROWS)
+  update_runtime_metric_table(field_office_table, RUNTIME_DEBUG_FIELD_OFFICE_ROWS)
 
   for _, row in ipairs(RUNTIME_DEBUG_COUNT_ROWS) do
     local value = counts_table["value-" .. row.key]
@@ -473,6 +541,20 @@ local function build_runtime_debug_export_text()
   lines[#lines + 1] = "section\tlast_ms\tavg_ms\thigh_ms"
 
   for _, row in ipairs(RUNTIME_DEBUG_REGISTRATION_ROWS) do
+    local last, average, high = compute_runtime_metric_stats(row.key)
+    lines[#lines + 1] = table.concat({
+      row.export_label,
+      format_runtime_export_ms(last),
+      format_runtime_export_ms(average),
+      format_runtime_export_ms(high),
+    }, "\t")
+  end
+
+  lines[#lines + 1] = ""
+  lines[#lines + 1] = "field_office_detail_subset"
+  lines[#lines + 1] = "section\tlast_ms\tavg_ms\thigh_ms"
+
+  for _, row in ipairs(RUNTIME_DEBUG_FIELD_OFFICE_ROWS) do
     local last, average, high = compute_runtime_metric_stats(row.key)
     lines[#lines + 1] = table.concat({
       row.export_label,
@@ -545,15 +627,43 @@ function M.run_profiled_section(snapshot, key, fn)
   snapshot.sections[key] = profiler
 end
 
+function M.run_profiled_external_sections(root_key, fn)
+  if not M.has_active_viewers() then
+    fn(nil)
+    return
+  end
+
+  local sections = {}
+  local profiler = game.create_profiler()
+  fn(sections)
+  profiler.stop()
+
+  add_runtime_profiler_to_table(runtime_debug_external_sections, root_key, profiler)
+  if not runtime_debug_external_total then
+    runtime_debug_external_total = game.create_profiler(true)
+  end
+  runtime_debug_external_total.add(profiler)
+
+  for key, section in pairs(sections) do
+    add_runtime_profiler_to_table(runtime_debug_external_sections, key, section)
+  end
+end
+
 function M.begin_snapshot(tick)
   if not M.has_active_viewers() then
     return nil, nil
   end
 
+  local sections = runtime_debug_external_sections
+  local external_total = runtime_debug_external_total
+  runtime_debug_external_sections = {}
+  runtime_debug_external_total = nil
+
   return {
     tick = tick,
-    sections = {},
+    sections = sections,
     counts = {},
+    external_total = external_total,
   }, game.create_profiler()
 end
 
@@ -561,6 +671,10 @@ function M.complete_snapshot(snapshot, total_profiler)
   if not snapshot or not total_profiler then return end
 
   total_profiler.stop()
+  if snapshot.external_total then
+    total_profiler.add(snapshot.external_total)
+    snapshot.external_total = nil
+  end
   snapshot.total = total_profiler
   queue_runtime_debug_snapshot(snapshot)
 end
