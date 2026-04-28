@@ -44,7 +44,7 @@ local function rideable_biter_run_animation()
 
   return {
     layers = {
-      util.sprite_load("__administratorio__/graphics/entities/rideable-biter/biter-run", {
+      util.sprite_load("__base__/graphics/entity/biter/biter-run", {
         slice = 8,
         frame_count = 16,
         direction_count = 16,
@@ -55,7 +55,7 @@ local function rideable_biter_run_animation()
         surface = "nauvis",
         usage = "enemy",
       }),
-      util.sprite_load("__administratorio__/graphics/entities/rideable-biter/biter-run-mask1", {
+      util.sprite_load("__base__/graphics/entity/biter/biter-run-mask1", {
         slice = 8,
         frame_count = 16,
         direction_count = 16,
@@ -68,7 +68,7 @@ local function rideable_biter_run_animation()
         surface = "nauvis",
         usage = "enemy",
       }),
-      util.sprite_load("__administratorio__/graphics/entities/rideable-biter/biter-run-mask2", {
+      util.sprite_load("__base__/graphics/entity/biter/biter-run-mask2", {
         slice = 8,
         frame_count = 16,
         direction_count = 16,
@@ -82,7 +82,7 @@ local function rideable_biter_run_animation()
         surface = "nauvis",
         usage = "enemy",
       }),
-      util.sprite_load("__administratorio__/graphics/entities/rideable-biter/biter-run-shadow", {
+      util.sprite_load("__base__/graphics/entity/biter/biter-run-shadow", {
         slice = 8,
         frame_count = 16,
         direction_count = 16,
