@@ -286,7 +286,7 @@ local function get_cached_desks()
   local desks = {}
   for id, desk in pairs(storage.admin_desks or {}) do
     if desk.valid then
-      desks[#desks + 1] = refresh_cached_desk(desk)
+      desks[#desks + 1] = desk
     else
       storage.admin_desks[id] = nil
     end

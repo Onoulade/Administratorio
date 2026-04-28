@@ -213,19 +213,29 @@ end
 --- Check if the field office is shut down for the night (working hours).
 local function is_night_shutdown(office, working_hours_enabled, night_by_surface)
   if not working_hours_enabled then return false end
-  if working_hours.entity_has_overtime_exemption(office) then return false end
   local surface_key = office.surface.index or office.surface.name
   if night_by_surface[surface_key] == nil then
     night_by_surface[surface_key] = working_hours.is_night(office.surface)
   end
-  return night_by_surface[surface_key]
+  if not night_by_surface[surface_key] then return false end
+  return not working_hours.entity_has_overtime_exemption(office)
 end
 
-local function should_update_office(office_id, tick)
-  local update_ticks = C.FIELD_OFFICE_UPDATE_TICKS or 5
-  local shards = C.FIELD_OFFICE_UPDATE_SHARDS or 1
-  local shard = math.floor(tick / update_ticks) % shards
-  return office_id % shards == shard
+local function set_office_status(state, office, diode, label)
+  if state.status_diode == diode and state.status_label == label then return end
+  office.custom_status = {
+    diode = diode,
+    label = {label},
+  }
+  state.status_diode = diode
+  state.status_label = label
+end
+
+local function clear_office_status(state, office)
+  if state.status_diode == nil and state.status_label == nil then return end
+  office.custom_status = nil
+  state.status_diode = nil
+  state.status_label = nil
 end
 
 --- Check if the office's fluidbox has at least `amount` of `fluid_name`.
@@ -291,6 +301,9 @@ function M.update(tick, runtime_profile)
 
   local working_hours_enabled = working_hours.is_enabled()
   local night_by_surface = {}
+  local update_ticks = C.FIELD_OFFICE_UPDATE_TICKS or 5
+  local shards = C.FIELD_OFFICE_UPDATE_SHARDS or 1
+  local shard = math.floor(tick / update_ticks) % shards
 
   for office_id, office in pairs(storage.field_offices) do
     if not office or not office.valid then
@@ -304,7 +317,7 @@ function M.update(tick, runtime_profile)
       goto continue
     end
 
-    if not should_update_office(office_id, tick) then
+    if office_id % shards ~= shard then
       goto continue
     end
 
@@ -313,11 +326,6 @@ function M.update(tick, runtime_profile)
       state = { phase = "idle" }
       storage.field_office_state[office_id] = state
     end
-
-    -- Background cache refresh: staggered per office so searches are spread across ticks.
-    run_profiled(runtime_profile, "field_office_spawner_cache", function()
-      try_refresh_spawner_cache(state, office, office_id, tick)
-    end)
 
     local night = run_profiled(runtime_profile, "field_office_night_check", function()
       return is_night_shutdown(office, working_hours_enabled, night_by_surface)
@@ -329,10 +337,7 @@ function M.update(tick, runtime_profile)
 
       -- Don't summon biters at night
       if night then
-        office.custom_status = {
-          diode = defines.entity_status_diode.red,
-          label = {"gui.working-hours-night-status"},
-        }
+        set_office_status(state, office, defines.entity_status_diode.red, "gui.working-hours-night-status")
         goto continue
       end
 
@@ -342,14 +347,17 @@ function M.update(tick, runtime_profile)
         return craft_readiness(office)
       end)
       if readiness ~= "ready" then
-        office.custom_status = {
-          diode = defines.entity_status_diode.red,
-          label = {"gui.field-office-" .. readiness},
-        }
+        set_office_status(state, office, defines.entity_status_diode.red, "gui.field-office-" .. readiness)
         goto continue
       end
 
-      -- Summon a biter using cached nearest spawner (pre-computed in background)
+      -- Refresh only when the office is otherwise able to summon. This avoids
+      -- expensive nest searches for idle/no-recipe/no-ingredient buildings.
+      run_profiled(runtime_profile, "field_office_spawner_cache", function()
+        try_refresh_spawner_cache(state, office, office_id, tick)
+      end)
+
+      -- Summon a biter using the cached nearest spawner.
       local spawner = run_profiled(runtime_profile, "field_office_spawner_lookup", function()
         return get_nearest_spawner(state, office, tick)
       end)
@@ -361,21 +369,12 @@ function M.update(tick, runtime_profile)
           state.phase = "calling"
           state.biter = biter
           state.spawner = spawner
-          office.custom_status = {
-            diode = defines.entity_status_diode.yellow,
-            label = {"gui.field-office-calling"},
-          }
+          set_office_status(state, office, defines.entity_status_diode.yellow, "gui.field-office-calling")
         else
-          office.custom_status = {
-            diode = defines.entity_status_diode.red,
-            label = {"gui.field-office-no-nest"},
-          }
+          set_office_status(state, office, defines.entity_status_diode.red, "gui.field-office-no-nest")
         end
       else
-        office.custom_status = {
-          diode = defines.entity_status_diode.red,
-          label = {"gui.field-office-no-nest"},
-        }
+        set_office_status(state, office, defines.entity_status_diode.red, "gui.field-office-no-nest")
       end
 
     elseif state.phase == "calling" then
@@ -392,10 +391,7 @@ function M.update(tick, runtime_profile)
           state.biter = nil
         end
         state.phase = "idle"
-        office.custom_status = {
-          diode = defines.entity_status_diode.red,
-          label = {"gui.working-hours-night-status"},
-        }
+        set_office_status(state, office, defines.entity_status_diode.red, "gui.working-hours-night-status")
         record_runtime_profile(runtime_profile, "field_office_calling", phase_profiler)
         goto continue
       end
@@ -424,15 +420,9 @@ function M.update(tick, runtime_profile)
         state.products_at_arrival = office.products_finished
         state.phase = "working"
 
-        office.custom_status = {
-          diode = defines.entity_status_diode.green,
-          label = {"gui.field-office-working"},
-        }
+        set_office_status(state, office, defines.entity_status_diode.green, "gui.field-office-working")
       else
-        office.custom_status = {
-          diode = defines.entity_status_diode.yellow,
-          label = {"gui.field-office-calling"},
-        }
+        set_office_status(state, office, defines.entity_status_diode.yellow, "gui.field-office-calling")
       end
 
       record_runtime_profile(runtime_profile, "field_office_calling", phase_profiler)
@@ -446,10 +436,7 @@ function M.update(tick, runtime_profile)
         state.biter = nil
         state.phase = "idle"
         office.active = false
-        office.custom_status = {
-          diode = defines.entity_status_diode.red,
-          label = {"gui.field-office-no-nest"},
-        }
+        set_office_status(state, office, defines.entity_status_diode.red, "gui.field-office-no-nest")
         record_runtime_profile(runtime_profile, "field_office_working", phase_profiler)
         goto continue
       end
@@ -459,10 +446,7 @@ function M.update(tick, runtime_profile)
         release_biter(state, tick)
         state.phase = "idle"
         office.active = false
-        office.custom_status = {
-          diode = defines.entity_status_diode.red,
-          label = {"gui.working-hours-night-status"},
-        }
+        set_office_status(state, office, defines.entity_status_diode.red, "gui.working-hours-night-status")
         record_runtime_profile(runtime_profile, "field_office_working", phase_profiler)
         goto continue
       end
@@ -474,7 +458,7 @@ function M.update(tick, runtime_profile)
         release_biter(state, tick)
         state.phase = "idle"
         office.active = false
-        office.custom_status = nil
+        clear_office_status(state, office)
         record_runtime_profile(runtime_profile, "field_office_working", phase_profiler)
         goto continue
       end
@@ -485,7 +469,7 @@ function M.update(tick, runtime_profile)
         release_biter(state, tick)
         state.phase = "idle"
         office.active = false
-        office.custom_status = nil
+        clear_office_status(state, office)
       end
 
       record_runtime_profile(runtime_profile, "field_office_working", phase_profiler)
