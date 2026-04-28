@@ -95,7 +95,7 @@ local PROTEST_ALERT_SOUND_COOLDOWN_TICKS = 6 * 60
 local PROTEST_ALERT_SOUND_MAX_DISTANCE = 32
 local PROTEST_MAP_TAG_TEXT = "PROTEST"
 local WAITING_BITER_STATE_NAMES = {"waiting", "pathfinding", "protesting", "pacified", "returning_home"}
-local WAITING_PATHING_PROCESS_SHARD_COUNT = 4
+local WAITING_PATHING_PROCESS_SHARD_COUNT = C.FRUST_PROTEST_PROCESS_SHARDS or 4
 local BITER_FORCE_NAME = "administratorio-biters"
 
 local function get_biter_force()
@@ -810,40 +810,32 @@ function M.process_walk_in_registration(surface, desks, runtime_profile)
   for _, desk in ipairs(desks) do
     enforce_desk_capacity_limit(desk)
     local walkins_profiler = runtime_profile and game.create_profiler() or nil
-    if zones.get_available_slots(desk.unit_number) > 0 then
+    local remaining_slots = zones.get_available_slots(desk.unit_number)
+    if remaining_slots > 0 then
       local search_pos = desk.position
       local search_radius = 10
 
       for _, biter in ipairs(surface.find_entities_filtered{force = "enemy", type = "unit", position = search_pos, radius = search_radius}) do
         if biter.valid and biter.force.name == "enemy" and not storage.waiting_biters[biter.unit_number] then
-          if zones.get_available_slots(desk.unit_number) <= 0 then break end
-          local slot = zones.reserve_slot(desk.unit_number)
-          if not slot then break end
-          local reserved = zones.get_slot_position(desk.unit_number, slot)
-          local pos = reserved and (surface.find_non_colliding_position(biter.name, reserved, 1, 0.25) or reserved)
-            or zones.get_biter_placement_pos(surface, desk, biter.name)
-          if pos then
-            local complaints = C.generate_complaints(biter.name)
-            zones.release_slot_by_index(desk.unit_number, slot)
-            local info = {
-              entity = biter,
-              desk_id = nil,
-              complaints = complaints,
-              complaints_total = #complaints,
-              complaints_filed = false,
-              frustration = 0,
-              state = "pathfinding",
-            }
-            info.entity_name = biter.name
-            capture_home_spawner(info, biter, true)
-            track_waiting_biter(biter.unit_number, info)
-            if not route_biter_to_desk(info, biter, desk) then
-              untrack_waiting_biter(biter.unit_number, info)
-              M.trigger_immediate_protest(biter, surface, info)
-            end
+          if remaining_slots <= 0 then break end
+          local complaints = C.generate_complaints(biter.name)
+          local info = {
+            entity = biter,
+            desk_id = nil,
+            complaints = complaints,
+            complaints_total = #complaints,
+            complaints_filed = false,
+            frustration = 0,
+            state = "pathfinding",
+          }
+          info.entity_name = biter.name
+          capture_home_spawner(info, biter, true)
+          track_waiting_biter(biter.unit_number, info)
+          if route_biter_to_desk(info, biter, desk) then
+            remaining_slots = remaining_slots - 1
           else
-            -- log(LOG_PREFIX .. "Walk-in REJECTED at desk " .. desk.unit_number .. ": no valid placement position for " .. biter.name)
-            zones.release_slot_by_index(desk.unit_number, slot)
+            untrack_waiting_biter(biter.unit_number, info)
+            M.trigger_immediate_protest(biter, surface, info)
           end
           ::skip_walkin_biter::
         end
