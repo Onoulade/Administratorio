@@ -299,17 +299,45 @@ local function collect_runtime_debug_counts(desks)
     desks = #desks,
     working_hours_buildings = 0,
     stations = 0,
+    field_offices = 0,
+    field_office_idle = 0,
+    field_office_calling = 0,
+    field_office_working = 0,
+    field_office_releasing = 0,
     biters = 0,
     waiting = 0,
     pathfinding = 0,
     protesting = 0,
     pacified = 0,
     returning_home = 0,
+    pending_group_redirects = 0,
+    pending_path_requests = 0,
+    calmed_spawners = 0,
   }
 
   for _, station_data in pairs(storage.stations or {}) do
     if station_data and station_data.station and station_data.station.valid then
       counts.stations = counts.stations + 1
+    end
+  end
+
+  for office_id, office in pairs(storage.field_offices or {}) do
+    if office and office.valid then
+      counts.field_offices = counts.field_offices + 1
+      local state = storage.field_office_state and storage.field_office_state[office_id]
+      if state and state.phase == "calling" then
+        counts.field_office_calling = counts.field_office_calling + 1
+      elseif state and state.phase == "working" then
+        counts.field_office_working = counts.field_office_working + 1
+      else
+        counts.field_office_idle = counts.field_office_idle + 1
+      end
+    end
+  end
+
+  for _, info in pairs(storage.field_office_releasing or {}) do
+    if info and info.entity and info.entity.valid then
+      counts.field_office_releasing = counts.field_office_releasing + 1
     end
   end
 
@@ -335,6 +363,20 @@ local function collect_runtime_debug_counts(desks)
       counts.pacified = counts.pacified + 1
     elseif info.state == "returning_home" then
       counts.returning_home = counts.returning_home + 1
+    end
+  end
+
+  for _, _ in pairs(storage.pending_group_redirects or {}) do
+    counts.pending_group_redirects = counts.pending_group_redirects + 1
+  end
+
+  for _, _ in pairs(storage.path_requests or {}) do
+    counts.pending_path_requests = counts.pending_path_requests + 1
+  end
+
+  for _, spawner_data in pairs(storage.calmed_spawners or {}) do
+    if spawner_data then
+      counts.calmed_spawners = counts.calmed_spawners + 1
     end
   end
 
@@ -1727,6 +1769,12 @@ local function on_biterport_tick(event)
   biterport.update(event.tick)
 end
 
+local function on_field_office_tick(event)
+  runtime_debug.run_profiled_external_sections("field_office", function(runtime_profile)
+    field_office.update(event.tick, runtime_profile)
+  end)
+end
+
 resolution_processing = control_resolution_processing_factory.new({
   biters = biters,
   collect_runtime_debug_counts = collect_runtime_debug_counts,
@@ -1745,6 +1793,7 @@ control_event_router.register({
   on_ai_command_completed = on_ai_command_completed,
   on_biter_station_tick = on_biter_station_tick,
   on_biterport_tick = on_biterport_tick,
+  on_field_office_tick = on_field_office_tick,
   on_configuration_changed = on_configuration_changed,
   on_entity_built = on_entity_built,
   on_entity_died = on_entity_died,
@@ -1780,5 +1829,6 @@ control_event_router.register({
   on_unit_removed_from_group = on_unit_removed_from_group,
   biter_station_check_ticks = C.BITER_STATION_CHECK_TICKS,
   biterport_check_ticks = C.BITERPORT_CHECK_TICKS,
+  field_office_update_ticks = C.FIELD_OFFICE_UPDATE_TICKS,
   unit_group_debug_scan_interval = UNIT_GROUP_DEBUG_SCAN_INTERVAL,
 })
