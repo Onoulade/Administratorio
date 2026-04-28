@@ -37,39 +37,22 @@ local SPEED_TIER_TECHS = {
 }
 
 local SOURCE_CHEST_NAMES = {
-  ["active-provider-chest"] = true,
-  ["passive-provider-chest"] = true,
-  ["storage-chest"] = true,
-  ["buffer-chest"] = true,
-  ["logistic-chest-active-provider"] = true,
-  ["logistic-chest-passive-provider"] = true,
-  ["logistic-chest-storage"] = true,
-  ["logistic-chest-buffer"] = true,
+  [C.BITERPORT_CRAPPY_PASSIVE_PROVIDER_CHEST] = true,
+  [C.BITERPORT_CRAPPY_STORAGE_CHEST] = true,
 }
 
 local REQUESTER_CHEST_NAMES = {
-  ["requester-chest"] = true,
-  ["buffer-chest"] = true,
-  ["logistic-chest-requester"] = true,
-  ["logistic-chest-buffer"] = true,
+  [C.BITERPORT_CRAPPY_REQUESTER_CHEST] = true,
 }
 
 local STORAGE_CHEST_NAMES = {
-  ["storage-chest"] = true,
-  ["logistic-chest-storage"] = true,
+  [C.BITERPORT_CRAPPY_STORAGE_CHEST] = true,
 }
 
 local LOGISTIC_CHEST_NAMES = {
-  ["active-provider-chest"] = true,
-  ["passive-provider-chest"] = true,
-  ["storage-chest"] = true,
-  ["buffer-chest"] = true,
-  ["requester-chest"] = true,
-  ["logistic-chest-active-provider"] = true,
-  ["logistic-chest-passive-provider"] = true,
-  ["logistic-chest-storage"] = true,
-  ["logistic-chest-buffer"] = true,
-  ["logistic-chest-requester"] = true,
+  [C.BITERPORT_CRAPPY_PASSIVE_PROVIDER_CHEST] = true,
+  [C.BITERPORT_CRAPPY_STORAGE_CHEST] = true,
+  [C.BITERPORT_CRAPPY_REQUESTER_CHEST] = true,
 }
 
 local MIN_PHASE_TRAVEL_DISTANCE = 0.75
@@ -428,10 +411,23 @@ local function remove_dispatch_coffee(port)
 end
 
 local function port_can_dispatch(port, tick)
+  local now = current_tick(tick)
+  local next_tick = port and port.unit_number
+    and storage.biterport_next_dispatch_ticks
+    and storage.biterport_next_dispatch_ticks[port.unit_number]
+    or nil
   return port and port.valid
+    and (not next_tick or next_tick <= now)
     and port_available_worker_count(port, tick) > 0
     and port_money_count(port) >= C.BITERPORT_WORKER_SALARY
     and has_dispatch_coffee(port)
+end
+
+local function mark_port_dispatched(port, tick)
+  if not port or not port.valid or not port.unit_number then return end
+  storage.biterport_next_dispatch_ticks = storage.biterport_next_dispatch_ticks or {}
+  storage.biterport_next_dispatch_ticks[port.unit_number] =
+    current_tick(tick) + C.BITERPORT_DISPATCH_COOLDOWN_TICKS
 end
 
 local function station_has_active_workers(port_id)
@@ -552,6 +548,7 @@ end
 
 local JOB_TINT_COLORS = {
   construction = {r = 0.4, g = 1.0, b = 0.4},
+  deconstruction = {r = 1.0, g = 0.55, b = 0.25},
   logistics    = {r = 0.4, g = 0.6, b = 1.0},
 }
 
@@ -587,7 +584,9 @@ local function snapshot_ghost(ghost, item_name, source)
   local quality = quality_proto and quality_proto.name or nil
   return {
     kind = "construction",
+    construction_type = ghost.type == "tile-ghost" and "tile" or "entity",
     item_name = item_name,
+    count = 1,
     source = source,
     ghost = ghost,
     surface = ghost.surface,
@@ -600,6 +599,79 @@ local function snapshot_ghost(ghost, item_name, source)
     mirror = safe_entity_field(ghost, "mirror"),
     quality = quality,
     tags = safe_entity_field(ghost, "tags"),
+  }
+end
+
+local function snapshot_deconstruction(entity)
+  if not entity or not entity.valid then return nil end
+  return {
+    kind = "deconstruction",
+    deconstruction_type = "entity",
+    target = entity,
+    source = entity,
+    surface = entity.surface,
+    force_name = entity.force and entity.force.name or nil,
+    position = copy_position(entity.position),
+    bounding_box = copy_box(safe_entity_field(entity, "bounding_box")),
+  }
+end
+
+local function snapshot_tile_deconstruction(tile, force)
+  if not tile or not tile.valid then return nil end
+  local proto = tile.prototype
+  local item_name = nil
+  local items = proto and proto.items_to_place_this
+  if items and items[1] and items[1].name then
+    item_name = items[1].name
+  end
+  item_name = item_name or tile.name
+  local hidden_tile = tile.surface and tile.surface.get_hidden_tile and tile.surface.get_hidden_tile(tile.position)
+    or safe_entity_field(tile, "hidden_tile")
+  if type(hidden_tile) == "table" then
+    hidden_tile = hidden_tile.name
+  end
+  return {
+    kind = "deconstruction",
+    deconstruction_type = "tile",
+    target = tile,
+    source = tile,
+    surface = tile.surface,
+    force_name = force and force.name or nil,
+    position = copy_position(tile.position),
+    item_name = item_name,
+    replacement_tile = hidden_tile or "grass-1",
+  }
+end
+
+local function snapshot_tile_proxy_deconstruction(proxy, force)
+  if not proxy or not proxy.valid or not proxy.surface then return nil end
+  local tile = proxy.surface.get_tile and proxy.surface.get_tile(proxy.position)
+  local job = snapshot_tile_deconstruction(tile, force)
+  if not job then return nil end
+  job.target = proxy
+  job.tile_position = copy_position(tile.position)
+  local unit_number = safe_entity_field(proxy, "unit_number")
+  if unit_number then job.deconstruction_key = "entity:" .. tostring(unit_number) end
+  return job
+end
+
+local function snapshot_loose_item_deconstruction(item_entity)
+  if not item_entity or not item_entity.valid then return nil end
+  local stack = safe_entity_field(item_entity, "stack")
+  if not stack or not stack.valid_for_read or not stack.name then return nil end
+  if item_entity.order_deconstruction and not item_entity.to_be_deconstructed() then
+    pcall(function() item_entity.order_deconstruction(item_entity.force or game.forces.player) end)
+  end
+  return {
+    kind = "deconstruction",
+    deconstruction_type = "loose_item",
+    target = item_entity,
+    source = item_entity,
+    surface = item_entity.surface,
+    force_name = item_entity.force and item_entity.force.name or nil,
+    position = copy_position(item_entity.position),
+    item_name = stack.name,
+    count = stack.count or 1,
   }
 end
 
@@ -629,6 +701,53 @@ local function restore_construction_ghost(job)
   job.restored = true
 end
 
+local active_logistics_item_count
+local active_construction_item_count
+
+local function deconstruction_reservation_key(target)
+  if not target then return nil end
+  local unit_number = safe_entity_field(target, "unit_number")
+  if unit_number then return "entity:" .. tostring(unit_number) end
+  local position = safe_entity_field(target, "position")
+  local surface = safe_entity_field(target, "surface")
+  if position and surface then
+    return "tile:" .. tostring(surface.index or 0) .. ":" .. tostring(math.floor(position.x)) .. ":" .. tostring(math.floor(position.y))
+  end
+  return nil
+end
+
+local function job_deconstruction_key(job)
+  if not job then return nil end
+  return job.deconstruction_key or deconstruction_reservation_key(job.target)
+end
+
+local function is_deconstruction_reserved(target)
+  local key = deconstruction_reservation_key(target)
+  return key and storage.biterport_deconstruction_reservations and storage.biterport_deconstruction_reservations[key] ~= nil
+end
+
+local function reserve_deconstruction_job(job)
+  if not job or job.kind ~= "deconstruction" then return true end
+  local key = job_deconstruction_key(job)
+  if not key then return false end
+  storage.biterport_deconstruction_reservations = storage.biterport_deconstruction_reservations or {}
+  if storage.biterport_deconstruction_reservations[key] then return false end
+  job.deconstruction_key = key
+  storage.biterport_deconstruction_reservations[key] = {
+    tick = game and game.tick or 0,
+    type = job.deconstruction_type,
+  }
+  return true
+end
+
+local function release_deconstruction_reservation(job)
+  local key = job_deconstruction_key(job)
+  if key and storage.biterport_deconstruction_reservations then
+    storage.biterport_deconstruction_reservations[key] = nil
+  end
+  if job then job.deconstruction_key = nil end
+end
+
 local function get_ghost_item_name(ghost)
   if not ghost or not ghost.valid then return nil end
   local proto = ghost.ghost_prototype
@@ -639,25 +758,36 @@ local function get_ghost_item_name(ghost)
   return ghost.ghost_name
 end
 
+local function source_available_item_count(source, item_name)
+  local inv = get_entity_inventory(source)
+  if not inv or not inv.get_item_count then return 0 end
+  local available = inv.get_item_count(item_name) or 0
+  local unit_number = safe_entity_field(source, "unit_number")
+  if unit_number then
+    available = available - active_logistics_item_count("source_unit_number", unit_number, item_name)
+    if active_construction_item_count then
+      available = available - active_construction_item_count(unit_number, item_name)
+    end
+  end
+  return math.max(0, available)
+end
+
 local function is_logistic_chest(entity)
   if not entity or not entity.valid then return false end
   if LOGISTIC_CHEST_NAMES[entity.name] then return true end
-  if entity.type == "logistic-container" then return true end
   return false
 end
 
 local function is_source_chest(entity)
   if not entity or not entity.valid then return false end
   if SOURCE_CHEST_NAMES[entity.name] then return true end
-  local mode = entity.prototype and entity.prototype.logistic_mode
-  return entity.type == "logistic-container" and mode ~= "requester"
+  return false
 end
 
 local function is_requester_chest(entity)
   if not entity or not entity.valid then return false end
   if REQUESTER_CHEST_NAMES[entity.name] then return true end
-  local mode = entity.prototype and entity.prototype.logistic_mode
-  return entity.type == "logistic-container" and mode == "requester"
+  return false
 end
 
 local function collect_ports_for_surface_force(surface, force)
@@ -832,7 +962,7 @@ local function collect_logistic_chests(network, options)
   return chests
 end
 
-local function active_logistics_item_count(key_name, key_value, item_name)
+active_logistics_item_count = function(key_name, key_value, item_name)
   if not key_name or key_value == nil then return 0 end
   local count = 0
   for _, reservation in pairs(storage.biterport_logistics_reservations or {}) do
@@ -854,6 +984,21 @@ local function active_logistics_item_count(key_name, key_value, item_name)
   return count
 end
 
+active_construction_item_count = function(source_unit_number, item_name)
+  if not source_unit_number or not item_name then return 0 end
+  local count = 0
+  for _, active in pairs(storage.biterport_workers or {}) do
+    local job = active.job
+    local source = job and job.source
+    if job and job.kind == "construction"
+       and job.item_name == item_name
+       and source and safe_entity_field(source, "unit_number") == source_unit_number then
+      count = count + (job.count or 1)
+    end
+  end
+  return count
+end
+
 local function find_source_for_item_in_chests(chests, item_name, position, excluded_unit_number)
   local best, best_inv, best_score = nil, nil, math.huge
   for _, chest in ipairs(chests or {}) do
@@ -861,6 +1006,7 @@ local function find_source_for_item_in_chests(chests, item_name, position, exclu
       local inv = get_entity_inventory(chest)
       local available = inv and inv.get_item_count and inv.get_item_count(item_name) or 0
       available = available - active_logistics_item_count("source_unit_number", chest.unit_number, item_name)
+      available = available - active_construction_item_count(chest.unit_number, item_name)
       if inv and inv.get_item_count and available > 0 then
         local score = position and distance_squared(chest.position, position) or 0
         if score < best_score then
@@ -917,7 +1063,8 @@ local function claim_ghost(ghost, source)
   return job
 end
 
-local function find_construction_job(network, tick)
+local function find_construction_job(network, tick, ghost_type)
+  local transport_capacity = get_transport_capacity_for_force(network.force)
   for _, port in ipairs(network.ports) do
     local area = port_scan_area(
       port,
@@ -927,7 +1074,7 @@ local function find_construction_job(network, tick)
       13
     )
     local ghosts = network.surface.find_entities_filtered{
-      type = "entity-ghost",
+      type = ghost_type or "entity-ghost",
       area = area,
       force = network.force,
       limit = C.BITERPORT_MAX_GHOSTS_PER_PORT_SCAN,
@@ -946,6 +1093,7 @@ local function find_construction_job(network, tick)
             if worker_port then
               local job = claim_ghost(ghost, source)
               if job then
+                job.count = math.max(1, math.min(transport_capacity, source_available_item_count(source, item_name)))
                 return job, worker_port
               end
             end
@@ -987,7 +1135,50 @@ local function find_construction_job_for_ghost(network, ghost)
 
   local job = claim_ghost(ghost, source)
   if not job then return nil, nil end
+  job.count = math.max(1, math.min(get_transport_capacity_for_force(network.force), source_available_item_count(source, item_name)))
   return job, worker_port
+end
+
+local function find_next_carried_construction_job(active, tick)
+  local current = active and active.job
+  local stack = active and active.carried_stack
+  if not current or not stack or (stack.count or 0) <= 0 or not current.surface then return nil end
+  local network = find_network_for_position(
+    current.surface,
+    game and game.forces and current.force_name and game.forces[current.force_name] or active.force,
+    current.position or (active.biter and active.biter.valid and active.biter.position),
+    C.BITERPORT_CONSTRUCTION_RADIUS
+  )
+  if not network then return nil end
+  local target_type = current.construction_type == "tile" and "tile-ghost" or "entity-ghost"
+
+  for _, port in ipairs(network.ports) do
+    local area = port_scan_area(
+      port,
+      C.BITERPORT_CONSTRUCTION_RADIUS,
+      C.BITERPORT_CONSTRUCTION_SCAN_SUBDIVISIONS,
+      tick,
+      current.construction_type == "tile" and 29 or 17
+    )
+    local ghosts = network.surface.find_entities_filtered{
+      type = target_type,
+      area = area,
+      force = network.force,
+      limit = C.BITERPORT_MAX_GHOSTS_PER_PORT_SCAN,
+    }
+    table.sort(ghosts, function(a, b)
+      return distance_squared(a.position, active.biter.position) < distance_squared(b.position, active.biter.position)
+    end)
+    for _, ghost in ipairs(ghosts) do
+      if ghost.valid
+         and position_in_network_radius(network, ghost.position, C.BITERPORT_CONSTRUCTION_RADIUS)
+         and get_ghost_item_name(ghost) == stack.name then
+        local job = claim_ghost(ghost, current.source)
+        if job then return job end
+      end
+    end
+  end
+  return nil
 end
 
 local function requester_filters(entity)
@@ -1213,21 +1404,36 @@ local function create_logistics_reservation(job)
   return true
 end
 
-local function find_trash_target(network, item_name, position, tick)
+local function find_trash_target(network, item_name, position, tick, count)
+  local network_key = network_storage_key(network)
+  local cache = network_key
+    and storage.biterport_storage_target_cache
+    and storage.biterport_storage_target_cache[network_key]
+    or nil
+  local cached_unit = cache and cache[item_name] or nil
+  if cached_unit then
+    for _, chest in ipairs(collect_logistic_chests(network, {full_scan = false, tick = tick})) do
+      if chest.unit_number == cached_unit and STORAGE_CHEST_NAMES[chest.name] then
+        local inv = get_entity_inventory(chest)
+        if inv and inv.insert
+           and (not inv.can_insert or inv.can_insert({name = item_name, count = count or 1})) then
+          return chest
+        end
+        break
+      end
+    end
+  end
+
   local best, best_score = nil, math.huge
   for_each_logistic_chest(network, function(chest)
-    if not is_source_chest(chest) then return false end
+    if not STORAGE_CHEST_NAMES[chest.name] then return false end
     local inv = get_entity_inventory(chest)
     if not inv or not inv.insert then return false end
-    if inv.can_insert and not inv.can_insert({name = item_name, count = 1}) then
+    if inv.can_insert and not inv.can_insert({name = item_name, count = count or 1}) then
       return false
     end
 
     local score = position and distance_squared(chest.position, position) or 0
-    if STORAGE_CHEST_NAMES[chest.name]
-       or (chest.prototype and chest.prototype.logistic_mode == "storage") then
-      score = score - 1000
-    end
     if inv.get_item_count and inv.get_item_count(item_name) > 0 then
       score = score - 25
     end
@@ -1237,6 +1443,11 @@ local function find_trash_target(network, item_name, position, tick)
     end
     return false
   end, {full_scan = true, tick = tick})
+  if network_key and best and best.unit_number then
+    storage.biterport_storage_target_cache = storage.biterport_storage_target_cache or {}
+    storage.biterport_storage_target_cache[network_key] = storage.biterport_storage_target_cache[network_key] or {}
+    storage.biterport_storage_target_cache[network_key][item_name] = best.unit_number
+  end
   return best
 end
 
@@ -1368,7 +1579,7 @@ local function find_player_trash_job(network, tick)
        and position_in_network_radius(network, player.position, C.BITERPORT_LOGISTICS_RADIUS) then
       local item_name, count = next_player_trash_stack(player, transport_capacity)
       if item_name then
-        local target = find_trash_target(network, item_name, player.position, tick)
+        local target = find_trash_target(network, item_name, player.position, tick, count)
         if target and target.valid then
           local worker_port = choose_worker_port(network, player.position, target.position, tick)
           if worker_port then
@@ -1382,6 +1593,103 @@ local function find_player_trash_job(network, tick)
               target = target,
               target_unit_number = target.unit_number,
             }, worker_port
+          end
+        end
+      end
+    end
+  end
+  return nil, nil
+end
+
+local function find_deconstruction_job(network, tick)
+  for _, port in ipairs(network.ports) do
+    local area = port_scan_area(
+      port,
+      C.BITERPORT_CONSTRUCTION_RADIUS,
+      C.BITERPORT_CONSTRUCTION_SCAN_SUBDIVISIONS,
+      tick,
+      7
+    )
+    local entities = network.surface.find_entities_filtered{
+      area = area,
+      to_be_deconstructed = true,
+      limit = C.BITERPORT_MAX_DECONSTRUCTION_PER_PORT_SCAN,
+    }
+    table.sort(entities, function(a, b)
+      return distance_squared(a.position, port.position) < distance_squared(b.position, port.position)
+    end)
+    for _, entity in ipairs(entities) do
+      if entity.valid
+         and not is_deconstruction_reserved(entity)
+         and entity.type ~= "entity-ghost"
+         and entity.type ~= "tile-ghost"
+         and entity.type ~= "deconstructible-tile-proxy"
+         and position_in_network_radius(network, entity.position, C.BITERPORT_CONSTRUCTION_RADIUS) then
+        local worker_port = choose_worker_port(network, entity.position, entity.position, tick)
+        if worker_port then
+          return snapshot_deconstruction(entity), worker_port
+        end
+      end
+    end
+
+    local tile_proxies = network.surface.find_entities_filtered{
+      area = area,
+      name = "deconstructible-tile-proxy",
+      force = network.force,
+      limit = C.BITERPORT_MAX_DECONSTRUCTION_PER_PORT_SCAN,
+    }
+    table.sort(tile_proxies, function(a, b)
+      return distance_squared(a.position, port.position) < distance_squared(b.position, port.position)
+    end)
+    for _, proxy in ipairs(tile_proxies) do
+      if proxy.valid
+         and not is_deconstruction_reserved(proxy)
+         and position_in_network_radius(network, proxy.position, C.BITERPORT_CONSTRUCTION_RADIUS) then
+        local worker_port = choose_worker_port(network, proxy.position, proxy.position, tick)
+        if worker_port then
+          return snapshot_tile_proxy_deconstruction(proxy, network.force), worker_port
+        end
+      end
+    end
+
+    local loose_items = network.surface.find_entities_filtered{
+      area = area,
+      type = "item-entity",
+      limit = C.BITERPORT_MAX_DECONSTRUCTION_PER_PORT_SCAN,
+    }
+    table.sort(loose_items, function(a, b)
+      return distance_squared(a.position, port.position) < distance_squared(b.position, port.position)
+    end)
+    for _, item_entity in ipairs(loose_items) do
+      if item_entity.valid
+         and not is_deconstruction_reserved(item_entity)
+         and position_in_network_radius(network, item_entity.position, C.BITERPORT_CONSTRUCTION_RADIUS) then
+        local worker_port = choose_worker_port(network, item_entity.position, item_entity.position, tick)
+        if worker_port then
+          return snapshot_loose_item_deconstruction(item_entity), worker_port
+        end
+      end
+    end
+
+    if network.surface.find_tiles_filtered then
+      local tiles = network.surface.find_tiles_filtered{
+        area = area,
+        force = network.force,
+        to_be_deconstructed = true,
+        limit = C.BITERPORT_MAX_DECONSTRUCTION_PER_PORT_SCAN,
+      }
+      for _, tile in ipairs(tiles) do
+        local marked = false
+        if tile.valid and tile.to_be_deconstructed then
+          local ok, value = pcall(tile.to_be_deconstructed, network.force)
+          marked = ok and value or false
+        end
+        if marked
+           and not is_deconstruction_reserved(tile)
+           and position_in_network_radius(network, tile.position, C.BITERPORT_CONSTRUCTION_RADIUS) then
+          local worker_port = choose_worker_port(network, tile.position, tile.position, tick)
+          if worker_port then
+            return snapshot_tile_deconstruction(tile, network.force), worker_port
           end
         end
       end
@@ -1418,6 +1726,7 @@ end
 
 local function resolve_destination_position(destination)
   if not destination then return nil end
+  if destination.valid ~= nil and not destination.valid then return nil end
   if destination.valid and destination.position then return destination.position end
   if destination.position then return destination.position end
   if destination.x and destination.y then return destination end
@@ -1674,6 +1983,7 @@ local function remove_dispatch_inputs(port, tick)
     inv.insert({name = WORKER_ITEM_NAME, count = 1})
     return false
   end
+  mark_port_dispatched(port, tick)
   return true
 end
 
@@ -1774,6 +2084,7 @@ local function fail_job_and_return(active, tick)
     job.overlay_id = nil
   end
   release_logistics_reservation(job)
+  release_deconstruction_reservation(job)
   return_carried_item(active, job and job.source)
   if not start_return(active, tick) then
     finish_worker(active, tick, true)
@@ -1782,6 +2093,10 @@ end
 
 local function perform_pickup(active, tick)
   local job = active.job
+  if job and job.kind == "deconstruction" then
+    begin_phase_move(active, "to_target", job.target, C.BITERPORT_ARRIVAL_RADIUS, tick)
+    return
+  end
   local source = job and job.source
   local source_inv
   if source == nil or (source.valid ~= nil and not source.valid) then
@@ -1810,6 +2125,182 @@ local function perform_pickup(active, tick)
   begin_phase_move(active, "to_target", target, C.BITERPORT_ARRIVAL_RADIUS, tick)
 end
 
+local function deconstruction_products(entity)
+  local proto = entity and entity.prototype
+  local mineable = proto and proto.mineable_properties
+  local products = mineable and mineable.products
+  local result = {}
+  for _, product in ipairs(products or {}) do
+    local name = product.name or product[1]
+    local amount = product.amount or product.count or product.amount_min or product[2] or 1
+    if name and amount and amount > 0 then
+      result[#result + 1] = {
+        name = name,
+        count = math.max(1, math.floor(amount)),
+      }
+    end
+  end
+  return result
+end
+
+local function carried_stack_count(active)
+  local stack = active and active.carried_stack
+  return stack and stack.name and (stack.count or 0) or 0
+end
+
+local function add_carried_stack(active, name, count)
+  if not active or not name or not count or count <= 0 then return end
+  active.carried_stack = active.carried_stack or {name = name, count = 0}
+  if active.carried_stack.name == name then
+    active.carried_stack.count = active.carried_stack.count + count
+  end
+end
+
+local function product_name_set(products)
+  local set = {}
+  for _, product in ipairs(products or {}) do
+    if product.name then set[product.name] = true end
+  end
+  return set
+end
+
+local function collect_nearby_mined_items(active, surface, position, products)
+  if not active or not surface or not position or not surface.find_entities_filtered then return end
+  local wanted = product_name_set(products)
+  if not next(wanted) then return end
+  local items = surface.find_entities_filtered{
+    type = "item-entity",
+    area = {
+      {position.x - 1.0, position.y - 1.0},
+      {position.x + 1.0, position.y + 1.0},
+    },
+  }
+  for _, item_entity in ipairs(items) do
+    local stack = item_entity.valid and safe_entity_field(item_entity, "stack") or nil
+    if stack and stack.valid_for_read then
+      if wanted[stack.name] and (not active.carried_stack or active.carried_stack.name == stack.name) then
+        add_carried_stack(active, stack.name, stack.count or 1)
+        item_entity.destroy()
+      elseif wanted[stack.name] and item_entity.order_deconstruction then
+        pcall(function() item_entity.order_deconstruction(item_entity.force or game.forces.player) end)
+      end
+    end
+  end
+end
+
+local function dispose_carried_stack(active, tick)
+  local stack = active and active.carried_stack
+  if not stack or not stack.name or (stack.count or 0) <= 0 then
+    active.carried_stack = nil
+    if not start_return(active, tick) then finish_worker(active, tick, true) end
+    return
+  end
+  local network = find_network_for_position(active.biter.surface, active.force, active.biter.position, C.BITERPORT_LOGISTICS_RADIUS)
+  local target = network and find_trash_target(network, stack.name, active.biter.position, tick, stack.count) or nil
+  if target then
+    active.job.target = target
+    active.job.target_unit_number = target.unit_number
+    begin_phase_move(active, "dispose_items", target, C.BITERPORT_ARRIVAL_RADIUS, tick)
+  else
+    return_carried_item(active, nil)
+    if not start_return(active, tick) then finish_worker(active, tick, true) end
+  end
+end
+
+local function perform_deconstruction(active, tick)
+  local job = active and active.job
+  local target = job and job.target
+  if job and job.deconstruction_type == "loose_item" then
+    if target and target.valid then
+      local stack = safe_entity_field(target, "stack")
+      if stack and stack.valid_for_read then
+        active.carried_stack = {name = stack.name, count = stack.count or 1}
+      end
+      target.destroy()
+    end
+    release_deconstruction_reservation(job)
+    dispose_carried_stack(active, tick)
+    return
+  end
+
+  if job and job.deconstruction_type == "tile" then
+    local tile = job.surface and job.surface.get_tile and job.surface.get_tile(job.tile_position or job.position) or nil
+    local replacement_tile = job.replacement_tile or (tile and safe_entity_field(tile, "hidden_tile")) or "grass-1"
+    if target and target.valid and target.cancel_deconstruction then
+      pcall(function() target.cancel_deconstruction(active.force) end)
+    end
+    if job.surface and job.position and job.surface.set_tiles then
+      pcall(function()
+        job.surface.set_tiles({
+          {name = replacement_tile, position = job.tile_position or job.position}
+        }, true, true, true, true)
+      end)
+    end
+    if target and target.valid and target.destroy then
+      pcall(function() target.destroy{raise_destroy = true} end)
+    end
+    if job.item_name then
+      active.carried_stack = {name = job.item_name, count = 1}
+    end
+    release_deconstruction_reservation(job)
+    dispose_carried_stack(active, tick)
+    return
+  end
+
+  if not target or not target.valid then
+    release_deconstruction_reservation(job)
+    dispose_carried_stack(active, tick)
+    return
+  end
+
+  local products = deconstruction_products(target)
+  local inv = game and game.create_inventory and game.create_inventory(1) or nil
+  local before_count = carried_stack_count(active)
+  local target_surface = safe_entity_field(target, "surface")
+  local target_position = copy_position(safe_entity_field(target, "position"))
+  local mined = false
+  if target.mine then
+    local ok, result = pcall(function()
+      return target.mine{inventory = inv, force = false, raise_destroyed = true}
+    end)
+    mined = ok and result ~= false
+  end
+  if not mined and target.destroy then
+    mined = pcall(function() target.destroy{raise_destroy = true} end)
+    if mined and inv and inv.insert then
+      for _, product in ipairs(products) do
+        inv.insert({name = product.name, count = product.count})
+      end
+    end
+  end
+
+  if inv and inv.get_contents then
+    for name, count in pairs(inv.get_contents()) do
+      local content_name = name
+      local content_count = count
+      if type(count) == "table" then
+        content_name = count.name
+        content_count = count.count
+      end
+      if content_name and content_count and content_count > 0 then
+        add_carried_stack(active, content_name, content_count)
+      end
+    end
+    if inv.destroy then inv.destroy() end
+  end
+
+  if mined and carried_stack_count(active) == before_count then
+    for _, product in ipairs(products) do
+      add_carried_stack(active, product.name, product.count)
+      if active.carried_stack then break end
+    end
+  end
+  collect_nearby_mined_items(active, target_surface, target_position, products)
+
+  release_deconstruction_reservation(job)
+  dispose_carried_stack(active, tick)
+end
+
 local function build_construction_job(active, tick)
   local job = active.job
   if not job or not job.surface then
@@ -1823,12 +2314,16 @@ local function build_construction_job(active, tick)
   if job.ghost and job.ghost.valid then
     set_entity_force(job.ghost, job.force_name)
     if job.ghost.valid and job.ghost.silent_revive then
-      local ok, _, revived = pcall(job.ghost.silent_revive, {raise_revive = true})
-      if ok then built = revived end
+      local ok, first, revived = pcall(job.ghost.silent_revive, {raise_revive = true})
+      if ok then
+        built = job.construction_type == "tile" and (first or revived or not job.ghost.valid) or revived
+      end
     end
     if not built and job.ghost.valid and job.ghost.revive then
-      local ok, _, revived = pcall(job.ghost.revive, {raise_revive = true})
-      if ok then built = revived end
+      local ok, first, revived = pcall(job.ghost.revive, {raise_revive = true})
+      if ok then
+        built = job.construction_type == "tile" and (first or revived or not job.ghost.valid) or revived
+      end
     end
   else
     local params = {
@@ -1845,15 +2340,24 @@ local function build_construction_job(active, tick)
     built = job.surface.create_entity(params)
   end
 
-  if built and built.valid then
+  if built and (built == true or built.valid) then
     job.built = true
     job.ghost = nil
     if job.overlay_id then
       destroy_render(job.overlay_id)
       job.overlay_id = nil
     end
-    active.carried_stack = nil
-    if not start_return(active, tick) then
+    if active.carried_stack and active.carried_stack.count and active.carried_stack.count > 0 then
+      active.carried_stack.count = active.carried_stack.count - 1
+      if active.carried_stack.count <= 0 then
+        active.carried_stack = nil
+      end
+    end
+    local next_job = find_next_carried_construction_job(active, tick)
+    if next_job then
+      active.job = next_job
+      begin_phase_move(active, "to_target", construction_destination(next_job), C.BITERPORT_ARRIVAL_RADIUS, tick)
+    elseif not start_return(active, tick) then
       finish_worker(active, tick, true)
     end
   else
@@ -1910,6 +2414,7 @@ local function advance_active_workers(tick)
         active.job.overlay_id = nil
       end
       release_logistics_reservation(active.job)
+      release_deconstruction_reservation(active.job)
       return_carried_item(active, active.job and active.job.source)
       unmark_worker_unit(active.biter_unit_number)
       unregister_active_worker(active)
@@ -1952,6 +2457,8 @@ local function advance_active_workers(tick)
       if arrived then
         if job.kind == "construction" then
           build_construction_job(active, tick)
+        elseif job.kind == "deconstruction" then
+          perform_deconstruction(active, tick)
         else
           deliver_logistics_job(active, tick)
         end
@@ -1981,6 +2488,23 @@ local function advance_active_workers(tick)
         begin_phase_move(active, "returning", return_destination, C.BITERPORT_ARRIVAL_RADIUS, tick)
       end
 
+    elseif active.phase == "dispose_items" then
+      local job = active.job
+      local target = job and job.target
+      if not target or not target.valid then
+        fail_job_and_return(active, tick)
+        goto continue
+      end
+      local arrived = phase_is_arrived(active, biter, target, C.BITERPORT_ARRIVAL_RADIUS)
+        and (active.phase_arrived_tick or phase_has_departed(active, biter, tick))
+      if arrived then
+        deliver_logistics_job(active, tick)
+      elseif active.phase_target_unit_number ~= resolve_destination_unit_number(target)
+          or phase_target_shifted(active, target)
+          or (biter.commandable and not biter.commandable.has_command) then
+        begin_phase_move(active, "dispose_items", target, C.BITERPORT_ARRIVAL_RADIUS, tick)
+      end
+
     else
       fail_job_and_return(active, tick)
     end
@@ -1991,6 +2515,10 @@ end
 
 local function dispatch_job(worker_port, job, tick)
   if not worker_port or not worker_port.valid or not job then return false end
+  if job.kind == "deconstruction" and not reserve_deconstruction_job(job) then
+    refresh_port_status(worker_port)
+    return false
+  end
   if job.kind == "logistics" and not create_logistics_reservation(job) then
     refresh_port_status(worker_port)
     return false
@@ -1998,6 +2526,7 @@ local function dispatch_job(worker_port, job, tick)
   if not remove_dispatch_inputs(worker_port, tick) then
     if job.kind == "construction" then restore_construction_ghost(job) end
     release_logistics_reservation(job)
+    release_deconstruction_reservation(job)
     refresh_port_status(worker_port)
     return false
   end
@@ -2007,6 +2536,7 @@ local function dispatch_job(worker_port, job, tick)
     maybe_reinsert_worker(worker_port)
     if job.kind == "construction" then restore_construction_ghost(job) end
     release_logistics_reservation(job)
+    release_deconstruction_reservation(job)
     refresh_port_status(worker_port)
     return false
   end
@@ -2034,7 +2564,27 @@ local function dispatch_network_jobs(network, tick)
   local dispatched = 0
 
   while true do
-    local job, worker_port = find_construction_job(network, tick)
+    local job, worker_port = find_deconstruction_job(network, tick)
+    if not job or not worker_port then break end
+    if dispatch_job(worker_port, job, tick) then
+      dispatched = dispatched + 1
+    else
+      break
+    end
+  end
+
+  while true do
+    local job, worker_port = find_construction_job(network, tick, "tile-ghost")
+    if not job or not worker_port then break end
+    if dispatch_job(worker_port, job, tick) then
+      dispatched = dispatched + 1
+    else
+      break
+    end
+  end
+
+  while true do
+    local job, worker_port = find_construction_job(network, tick, "entity-ghost")
     if not job or not worker_port then break end
     if dispatch_job(worker_port, job, tick) then
       dispatched = dispatched + 1
@@ -2085,9 +2635,12 @@ function M.ensure_storage()
   storage.biterport_active_by_port = storage.biterport_active_by_port or {}
   storage.biterport_worker_units = storage.biterport_worker_units or {}
   storage.biterport_worker_cooldowns = storage.biterport_worker_cooldowns or {}
+  storage.biterport_next_dispatch_ticks = storage.biterport_next_dispatch_ticks or {}
   storage.biterport_logistics_reservations = storage.biterport_logistics_reservations or {}
   storage.biterport_next_logistics_reservation_id = storage.biterport_next_logistics_reservation_id or 0
   storage.biterport_logistics_request_cursors = storage.biterport_logistics_request_cursors or {}
+  storage.biterport_storage_target_cache = storage.biterport_storage_target_cache or {}
+  storage.biterport_deconstruction_reservations = storage.biterport_deconstruction_reservations or {}
 end
 
 function M.is_port(entity_or_name)
@@ -2158,6 +2711,9 @@ function M.untrack_port(entity, tick)
   if storage.biterport_worker_cooldowns then
     storage.biterport_worker_cooldowns[port_id] = nil
   end
+  if storage.biterport_next_dispatch_ticks then
+    storage.biterport_next_dispatch_ticks[port_id] = nil
+  end
 
   local active_set = storage.biterport_active_by_port[port_id]
   if active_set then
@@ -2206,6 +2762,7 @@ function M.on_entity_died(event)
         active.job.overlay_id = nil
       end
       release_logistics_reservation(active.job)
+      release_deconstruction_reservation(active.job)
       return_carried_item(active, active.job and active.job.source)
       unmark_worker_unit(active.biter_unit_number)
       unregister_active_worker(active)
@@ -2258,6 +2815,7 @@ function M.rebuild_registry()
       restore_construction_ghost(active.job)
     end
     release_logistics_reservation(active.job)
+    release_deconstruction_reservation(active.job)
     if active.biter and active.biter.valid then
       active.biter.destroy()
     end
@@ -2282,9 +2840,12 @@ function M.rebuild_registry()
   storage.biterport_active_by_port = {}
   storage.biterport_worker_units = {}
   storage.biterport_worker_cooldowns = {}
+  storage.biterport_next_dispatch_ticks = {}
   storage.biterport_logistics_reservations = {}
   storage.biterport_next_logistics_reservation_id = 0
   storage.biterport_logistics_request_cursors = {}
+  storage.biterport_storage_target_cache = {}
+  storage.biterport_deconstruction_reservations = {}
 
   for _, surface in pairs(game.surfaces) do
     for _, port in ipairs(surface.find_entities_filtered{name = PORT_NAME}) do
@@ -2334,6 +2895,9 @@ function M.update(tick)
       storage.biterports[port_id] = nil
       if storage.biterport_worker_cooldowns then
         storage.biterport_worker_cooldowns[port_id] = nil
+      end
+      if storage.biterport_next_dispatch_ticks then
+        storage.biterport_next_dispatch_ticks[port_id] = nil
       end
     else
       prune_worker_cooldowns(port_id, tick)

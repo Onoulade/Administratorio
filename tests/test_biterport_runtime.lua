@@ -230,10 +230,15 @@ local function new_chest(surface, unit_number, position, logistic_mode, items, r
       }
     end
   end
+  local names_by_mode = {
+    ["passive-provider"] = "paperwork-provider-chest",
+    storage = "paperwork-storage-chest",
+    requester = "paperwork-requester-chest",
+  }
   local chest = {
     valid = true,
     unit_number = unit_number,
-    name = "logistic-chest-" .. logistic_mode,
+    name = names_by_mode[logistic_mode] or ("logistic-chest-" .. logistic_mode),
     type = "logistic-container",
     position = position,
     surface = surface,

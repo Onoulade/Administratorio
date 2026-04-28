@@ -189,8 +189,8 @@ biter_station.icons = nil
 biter_station.flags = {"placeable-neutral", "player-creation"}
 biter_station.minable = {mining_time = 0.5, result = "biter-station"}
 biter_station.max_health = 450
-biter_station.collision_box = {{-1.9, -1.9}, {1.9, 1.9}}
-biter_station.selection_box = {{-2.0, -2.0}, {2.0, 2.0}}
+biter_station.collision_box = {{-2.4, -2.4}, {2.4, 2.4}}
+biter_station.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
 biter_station.inventory_size = 20
 biter_station.inventory_type = "with_filters_and_bar"
 biter_station.collision_mask = {layers = {
@@ -208,7 +208,7 @@ biter_station.picture = {
       filename = entity_graphics .. "work-station/work-station-floor.png",
       width = 480,
       height = 472,
-      scale = 0.27,
+      scale = 1 / 3,
       shift = util.by_pixel(0, 0),
     },
   },
@@ -220,7 +220,7 @@ biter_station.stateless_visualisation = {
     width = 480,
     height = 472,
     frame_count = 1,
-    scale = 0.27,
+    scale = 1 / 3,
     shift = util.by_pixel(0, 0),
   },
 }
@@ -962,6 +962,65 @@ hired_biter_supply_chest.picture = {
 }
 hired_biter_supply_chest.render_not_in_network_icon = false
 
+local function make_paperwork_logistic_chest(name, mode, tint)
+  local source = data.raw["logistic-container"] and (
+    data.raw["logistic-container"]["logistic-chest-" .. mode]
+    or data.raw["logistic-container"][mode .. "-chest"]
+    or data.raw["logistic-container"]["logistic-chest-passive-provider"]
+  )
+  local chest
+  if source then
+    chest = table.deepcopy(source)
+  else
+    chest = table.deepcopy(data.raw["container"]["wooden-chest"] or data.raw["container"]["steel-chest"])
+    chest.type = "logistic-container"
+  end
+  chest.name = name
+  chest.localised_name = {"entity-name." .. name}
+  chest.localised_description = {"entity-description." .. name}
+  chest.icon = nil
+  chest.icons = {
+    {icon = "__base__/graphics/icons/wooden-chest.png", icon_size = 64, tint = tint},
+    {icon = "__administratorio__/graphics/icons/paper.png", icon_size = 64, scale = 0.34, shift = {8, 8}},
+  }
+  chest.flags = {"placeable-neutral", "player-creation"}
+  chest.minable = {mining_time = 0.2, result = name}
+  chest.max_health = 100
+  chest.inventory_size = 1
+  chest.logistic_mode = mode
+  chest.render_not_in_network_icon = true
+  chest.placeable_by = placeable_by_item(name)
+  chest.next_upgrade = nil
+  chest.fast_replaceable_group = "paperwork-logistic-chest"
+  chest.collision_box = {{-0.35, -0.35}, {0.35, 0.35}}
+  chest.selection_box = {{-0.5, -0.5}, {0.5, 0.5}}
+  if chest.picture and chest.picture.layers then
+    tint_sprites(chest.picture, tint)
+  elseif chest.picture then
+    chest.picture.tint = tint
+  end
+  if mode == "requester" then
+    chest.max_logistic_slots = 1
+  end
+  return chest
+end
+
+local paperwork_provider_chest = make_paperwork_logistic_chest(
+  "paperwork-provider-chest",
+  "passive-provider",
+  {r = 1.0, g = 0.48, b = 0.42, a = 1.0}
+)
+local paperwork_storage_chest = make_paperwork_logistic_chest(
+  "paperwork-storage-chest",
+  "storage",
+  {r = 1.0, g = 0.86, b = 0.38, a = 1.0}
+)
+local paperwork_requester_chest = make_paperwork_logistic_chest(
+  "paperwork-requester-chest",
+  "requester",
+  {r = 0.38, g = 0.66, b = 1.0, a = 1.0}
+)
+
 local function make_worker_biter(name, source_name, localised_name, speed_multiplier)
   local unit_table = data.raw["unit"]
   if not unit_table or not unit_table[source_name] then return nil end
@@ -971,6 +1030,8 @@ local function make_worker_biter(name, source_name, localised_name, speed_multip
   biter.minable = nil
   biter.placeable_by = nil
   biter.hidden_in_factoriopedia = true
+  biter.collision_box = {{-0.18, -0.18}, {0.18, 0.18}}
+  biter.selection_box = {{-0.35, -0.45}, {0.35, 0.25}}
   add_worker_biter_helmet_overlay(biter)
   if speed_multiplier then
     if biter.movement_speed then
@@ -1059,5 +1120,8 @@ add_entity(biterport_worker_fast)
 add_entity(biterport_worker_express)
 add_entity(hired_biter_unit)
 add_entity(hired_biter_supply_chest)
+add_entity(paperwork_provider_chest)
+add_entity(paperwork_storage_chest)
+add_entity(paperwork_requester_chest)
 
 data:extend(entities)
