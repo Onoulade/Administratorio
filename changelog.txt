@@ -1,4 +1,20 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.1
+Date: 2026-04-29
+  Features:
+    - Added paperwork chests and expanded Biter Employment Office support so biter dispatch infrastructure can stage required paperwork more clearly.
+    - Added Field Office profiling and additional runtime debug details for biter dispatch and resolution processing.
+  Changes:
+    - Expanded Biterport and Biter Employment Office footprints, interiors, placement previews, and supporting art.
+    - Increased Field Office reach and reduced Field Office, desk routing, protest registration, and resolved-biter return overhead.
+    - Refreshed protest alerts with a cleaner rotating sound set.
+    - Removed duplicated rideable biter animation assets and updated the vehicle prototype to use the shared base game run animation.
+  Bugfixes:
+    - Warn players earlier when biter nest construction orders are blocked or invalid.
+    - Cached desk return exits for resolved biters so they can leave administration desks more reliably and with less repeated path search work.
+    - Allowed greenhouse fluid pass-through in the placeable-by prototype test.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.4.0
 Date: 2026-04-26
   Features:
