@@ -188,6 +188,10 @@ local function migrate_desk_storage(old_desk_id, new_desk)
     storage.desk_biters[new_desk_id] = storage.desk_biters[old_desk_id]
     storage.desk_biters[old_desk_id] = nil
   end
+  if storage.desk_return_positions and storage.desk_return_positions[old_desk_id] then
+    storage.desk_return_positions[new_desk_id] = storage.desk_return_positions[old_desk_id]
+    storage.desk_return_positions[old_desk_id] = nil
+  end
 
   for _, info in pairs(storage.waiting_biters or {}) do
     if info.desk_id == old_desk_id then
@@ -366,9 +370,9 @@ local function collect_runtime_debug_counts(desks)
     end
   end
 
-  for _, _ in pairs(storage.pending_group_redirects or {}) do
-    counts.pending_group_redirects = counts.pending_group_redirects + 1
-  end
+  local redirect_queue = storage.pending_group_redirects or {}
+  local redirect_head = storage.pending_group_redirect_head or 1
+  counts.pending_group_redirects = math.max(0, #redirect_queue - redirect_head + 1)
 
   for _, _ in pairs(storage.path_requests or {}) do
     counts.pending_path_requests = counts.pending_path_requests + 1
@@ -414,12 +418,16 @@ local function init_storage()
   storage.desk_combinators = storage.desk_combinators or {}
   storage.desk_reserved_slots = storage.desk_reserved_slots or {}
   storage.desk_grid_slots = storage.desk_grid_slots or {}
+  storage.desk_occupant_counts = storage.desk_occupant_counts or {}
+  storage.desk_return_positions = storage.desk_return_positions or {}
   storage.desk_circuit_dirty = storage.desk_circuit_dirty or {}
   storage.evolution_complaint_warnings = storage.evolution_complaint_warnings or {}
   storage.stations = storage.stations or {}
   storage.achievements = storage.achievements or {}
   storage.path_requests = storage.path_requests or {}
   storage.pending_group_redirects = storage.pending_group_redirects or {}
+  storage.pending_group_redirect_head = storage.pending_group_redirect_head or 1
+  storage.unit_group_redirect_watch = storage.unit_group_redirect_watch or {}
   storage.runtime_debug_players = storage.runtime_debug_players or {}
   storage.stats = storage.stats or {
     cases_resolved = 0,
@@ -1038,48 +1046,84 @@ local function ensure_unit_group_debug_storage()
   storage.unit_group_debug = storage.unit_group_debug or {}
 end
 
+local function unit_group_debug_enabled()
+  return runtime_debug.has_active_viewers()
+end
+
+local function ensure_unit_group_redirect_watch_storage()
+  storage.unit_group_redirect_watch = storage.unit_group_redirect_watch or {}
+end
+
 local function ensure_pending_group_redirect_storage()
   storage.pending_group_redirects = storage.pending_group_redirects or {}
+  storage.pending_group_redirect_head = storage.pending_group_redirect_head or 1
 end
 
 local function queue_pending_group_redirect(members, reason, tick)
   ensure_pending_group_redirect_storage()
   if not members or #members == 0 then return end
-  storage.pending_group_redirects[#storage.pending_group_redirects + 1] = {
-    members = members,
-    reason = reason,
-    queued_tick = tick or game.tick,
-  }
+  local queue = storage.pending_group_redirects
+  for _, member in ipairs(members) do
+    if member and member.valid then
+      queue[#queue + 1] = {
+        entity = member,
+        reason = reason,
+        queued_tick = tick or game.tick,
+      }
+    end
+  end
 end
 
 local function process_pending_group_redirects(tick)
   ensure_pending_group_redirect_storage()
   local queue = storage.pending_group_redirects
-  if #queue == 0 then return end
+  local head = storage.pending_group_redirect_head or 1
+  if head > #queue then
+    storage.pending_group_redirects = {}
+    storage.pending_group_redirect_head = 1
+    return
+  end
 
-  storage.pending_group_redirects = {}
-  for _, entry in ipairs(queue) do
-    local members = {}
-    for _, biter in ipairs(entry.members or {}) do
-      if biter
-         and biter.valid
-         and biter.type == "unit"
-         and biter.force
-         and biter.force.name == "enemy"
-         and not (storage.waiting_biters and storage.waiting_biters[biter.unit_number]) then
-        members[#members + 1] = biter
-      end
+  local targets = nil
+  local processed = 0
+  local budget = C.GROUP_REDIRECTS_PER_TICK or 8
+  while head <= #queue and processed < budget do
+    local entry = queue[head]
+    head = head + 1
+    if entry and entry.members then
+      queue_pending_group_redirect(entry.members, entry.reason, entry.queued_tick)
+      goto continue_redirect
     end
-
-    if #members > 0 then
-      local targets = get_cached_desks()
-      for _, biter in ipairs(members) do
-        if #targets > 0 then
-          biters.send_biter_to_station_with_targets(biter, targets)
-        else
-          biters.trigger_immediate_protest(biter, biter.surface)
-        end
+    local biter = entry and entry.entity
+    if biter
+       and biter.valid
+       and biter.type == "unit"
+       and biter.force
+       and biter.force.name == "enemy"
+       and not (storage.waiting_biters and storage.waiting_biters[biter.unit_number]) then
+      targets = targets or get_cached_desks()
+      if #targets > 0 then
+        biters.send_biter_to_station_with_targets(biter, targets)
+      else
+        biters.trigger_immediate_protest(biter, biter.surface)
       end
+      processed = processed + 1
+    end
+    ::continue_redirect::
+  end
+
+  if head > #queue then
+    storage.pending_group_redirects = {}
+    storage.pending_group_redirect_head = 1
+  else
+    storage.pending_group_redirect_head = head
+    if head > 64 then
+      local compacted = {}
+      for i = head, #queue do
+        compacted[#compacted + 1] = queue[i]
+      end
+      storage.pending_group_redirects = compacted
+      storage.pending_group_redirect_head = 1
     end
   end
 end
@@ -1269,6 +1313,7 @@ local function remember_unit_group_snapshot(snapshot, created_tick, first_seen_r
 end
 
 local function track_unit_group(group, tick, reason)
+  if not unit_group_debug_enabled() then return end
   local snapshot = snapshot_unit_group(group, tick)
   if not snapshot then return end
 
@@ -1340,6 +1385,7 @@ local function update_unit_group_debug_entry(group_id, info, tick)
 end
 
 local function scan_surface_unit_groups(surface, tick)
+  if not unit_group_debug_enabled() then return end
   if not surface then return end
   local discovered = {}
 
@@ -1358,6 +1404,7 @@ local function scan_surface_unit_groups(surface, tick)
 end
 
 local function refresh_unit_group_debug(tick)
+  if not unit_group_debug_enabled() then return end
   ensure_unit_group_debug_storage()
 
   for _, surface in pairs(game.surfaces) do
@@ -1369,17 +1416,37 @@ local function refresh_unit_group_debug(tick)
   end
 end
 
+local function watch_unit_group_for_redirect(group, tick)
+  if not group or not group.valid or not group.is_unit_group or group.force.name ~= "enemy" then return end
+  if group.is_script_driven then return end
+  ensure_unit_group_redirect_watch_storage()
+  local group_id = group.unique_id
+  local existing = storage.unit_group_redirect_watch[group_id]
+  storage.unit_group_redirect_watch[group_id] = {
+    group = group,
+    created_tick = existing and existing.created_tick or tick or game.tick,
+  }
+end
+
+local function update_unit_group_redirect_watch(tick)
+  ensure_unit_group_redirect_watch_storage()
+  for group_id, info in pairs(storage.unit_group_redirect_watch) do
+    local group = info and info.group
+    if not group or not group.valid then
+      storage.unit_group_redirect_watch[group_id] = nil
+    elseif group.is_script_driven or group.force.name ~= "enemy" then
+      storage.unit_group_redirect_watch[group_id] = nil
+    elseif group.state ~= defines.group_state.gathering then
+      storage.unit_group_redirect_watch[group_id] = nil
+    elseif (tick - (info.created_tick or tick)) >= UNIT_GROUP_GATHER_REDIRECT_TICKS and not group.has_command then
+      redirect_enemy_unit_group(group, tick, "gather_timeout")
+    end
+  end
+end
+
 redirect_enemy_unit_group = function(group, tick, reason)
   if not group or not group.valid or not group.is_unit_group or group.force.name ~= "enemy" then return false end
   if group.is_script_driven then return false end
-
-  local snapshot = snapshot_unit_group(group, tick)
-  if not snapshot or snapshot.member_count <= 0 then
-    if group.valid then
-      storage.unit_group_debug[group.unique_id] = nil
-    end
-    return false
-  end
 
   local members = {}
   for _, member in ipairs(group.members) do
@@ -1388,19 +1455,26 @@ redirect_enemy_unit_group = function(group, tick, reason)
     end
   end
   if #members == 0 then
-    storage.unit_group_debug[group.unique_id] = nil
+    if storage.unit_group_debug then storage.unit_group_debug[group.unique_id] = nil end
     return false
   end
 
-  local targets = get_cached_desks()
-  log_unit_group_snapshot("redirect_" .. reason, snapshot, "desks=" .. tostring(#targets))
-  storage.unit_group_debug[group.unique_id] = nil
+  if unit_group_debug_enabled() then
+    local snapshot = snapshot_unit_group(group, tick)
+    local targets = get_cached_desks()
+    log_unit_group_snapshot("redirect_" .. reason, snapshot, "desks=" .. tostring(#targets))
+  end
+  if storage.unit_group_debug then storage.unit_group_debug[group.unique_id] = nil end
+  if storage.unit_group_redirect_watch then
+    storage.unit_group_redirect_watch[group.unique_id] = nil
+  end
   group.destroy()
   queue_pending_group_redirect(members, reason, tick)
   return true
 end
 
 local function update_tracked_unit_group_debug(tick)
+  if not unit_group_debug_enabled() then return end
   ensure_unit_group_debug_storage()
   for group_id, info in pairs(storage.unit_group_debug) do
     update_unit_group_debug_entry(group_id, info, tick)
@@ -1409,6 +1483,7 @@ end
 
 -- Biter groups seeking grievances walk to desks instead of attacking.
 local function on_unit_group_created(event)
+  watch_unit_group_for_redirect(event.group, event.tick)
   track_unit_group(event.group, event.tick, "created")
 end
 
@@ -1426,6 +1501,9 @@ end
 local function on_unit_group_finished_gathering(event)
   local group = event.group
   if group and group.valid and group.force.name == "enemy" then
+    if storage.unit_group_redirect_watch and group.is_unit_group then
+      storage.unit_group_redirect_watch[group.unique_id] = nil
+    end
     track_unit_group(group, event.tick, "finished_gathering")
     local members = {}
     for _, member in ipairs(group.members) do
@@ -1434,17 +1512,21 @@ local function on_unit_group_finished_gathering(event)
       end
     end
     if #members == 0 then
-      local snapshot = snapshot_unit_group(group, event.tick)
-      log_unit_group_snapshot("finished_gathering_empty", snapshot)
-      if group.valid and group.is_unit_group then
+      if unit_group_debug_enabled() then
+        local snapshot = snapshot_unit_group(group, event.tick)
+        log_unit_group_snapshot("finished_gathering_empty", snapshot)
+      end
+      if group.valid and group.is_unit_group and storage.unit_group_debug then
         storage.unit_group_debug[group.unique_id] = nil
       end
       return
     end
-    local targets = get_cached_desks()
-    local snapshot = snapshot_unit_group(group, event.tick)
-    log_unit_group_snapshot("finished_gathering", snapshot, "desks=" .. tostring(#targets))
-    if group.valid and group.is_unit_group then
+    if unit_group_debug_enabled() then
+      local targets = get_cached_desks()
+      local snapshot = snapshot_unit_group(group, event.tick)
+      log_unit_group_snapshot("finished_gathering", snapshot, "desks=" .. tostring(#targets))
+    end
+    if group.valid and group.is_unit_group and storage.unit_group_debug then
       storage.unit_group_debug[group.unique_id] = nil
     end
     group.destroy()
@@ -1546,7 +1628,7 @@ local function on_field_agent_waypoint_input(event)
 end
 
 local function on_ai_command_completed(event)
-  local tracked_group = storage.unit_group_debug and storage.unit_group_debug[event.unit_number]
+  local tracked_group = unit_group_debug_enabled() and storage.unit_group_debug and storage.unit_group_debug[event.unit_number]
   if tracked_group then
     local snapshot = snapshot_unit_group(tracked_group.group, event.tick)
     local extra = "result=" .. tostring(event.result) .. " distracted=" .. tostring(event.was_distracted)
@@ -1742,7 +1824,8 @@ local function on_protest_pacing_tick(_event)
 end
 
 local function on_unit_group_debug_tick(event)
-  if needs_unit_group_scan then
+  update_unit_group_redirect_watch(event.tick)
+  if unit_group_debug_enabled() and (needs_unit_group_scan or not next(storage.unit_group_debug or {})) then
     needs_unit_group_scan = false
     refresh_unit_group_debug(event.tick)
   else

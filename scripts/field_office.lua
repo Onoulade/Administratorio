@@ -55,12 +55,44 @@ function M.ensure_storage()
   storage.field_offices = storage.field_offices or {}
   storage.field_office_state = storage.field_office_state or {}
   storage.field_office_releasing = storage.field_office_releasing or {}
+  storage.field_office_shards = storage.field_office_shards or {}
+end
+
+local function field_office_shard_for_id(office_id)
+  local shards = C.FIELD_OFFICE_UPDATE_SHARDS or 1
+  return office_id % shards
+end
+
+local function add_office_to_shard(office_id)
+  if not office_id then return end
+  storage.field_office_shards = storage.field_office_shards or {}
+  local shard = field_office_shard_for_id(office_id)
+  storage.field_office_shards[shard] = storage.field_office_shards[shard] or {}
+  storage.field_office_shards[shard][office_id] = true
+end
+
+local function remove_office_from_shard(office_id)
+  if not office_id or not storage.field_office_shards then return end
+  local shard = field_office_shard_for_id(office_id)
+  if storage.field_office_shards[shard] then
+    storage.field_office_shards[shard][office_id] = nil
+  end
+end
+
+local function rebuild_field_office_shards()
+  storage.field_office_shards = {}
+  for office_id, office in pairs(storage.field_offices or {}) do
+    if office and office.valid then
+      add_office_to_shard(office_id)
+    end
+  end
 end
 
 function M.track_entity(entity)
   if not entity or not entity.valid or not is_field_office(entity.name) then return end
   M.ensure_storage()
   storage.field_offices[entity.unit_number] = entity
+  add_office_to_shard(entity.unit_number)
   if not storage.field_office_state[entity.unit_number] then
     storage.field_office_state[entity.unit_number] = { phase = "idle" }
   end
@@ -73,6 +105,7 @@ function M.untrack_entity(entity)
   if state then
     release_biter(state, game.tick)
   end
+  remove_office_from_shard(entity.unit_number)
   storage.field_office_state[entity.unit_number] = nil
   storage.field_offices[entity.unit_number] = nil
 end
@@ -298,26 +331,29 @@ function M.update(tick, runtime_profile)
   end)
 
   if not next(storage.field_offices) then return end
+  if not next(storage.field_office_shards) then
+    rebuild_field_office_shards()
+  end
 
   local working_hours_enabled = working_hours.is_enabled()
   local night_by_surface = {}
   local update_ticks = C.FIELD_OFFICE_UPDATE_TICKS or 5
   local shards = C.FIELD_OFFICE_UPDATE_SHARDS or 1
   local shard = math.floor(tick / update_ticks) % shards
+  local office_shard = storage.field_office_shards[shard]
+  if not office_shard then return end
 
-  for office_id, office in pairs(storage.field_offices) do
+  for office_id in pairs(office_shard) do
+    local office = storage.field_offices[office_id]
     if not office or not office.valid then
       local state = storage.field_office_state[office_id]
       if state then
         if state.biter and state.biter.valid then state.biter.destroy() end
         destroy_overlay(state)
       end
+      remove_office_from_shard(office_id)
       storage.field_office_state[office_id] = nil
       storage.field_offices[office_id] = nil
-      goto continue
-    end
-
-    if office_id % shards ~= shard then
       goto continue
     end
 
@@ -494,12 +530,14 @@ function M.rebuild_registry()
   storage.field_offices = {}
   storage.field_office_state = {}
   storage.field_office_releasing = {}
+  storage.field_office_shards = {}
 
   for _, surface in pairs(game.surfaces) do
     for _, entity in ipairs(surface.find_entities_filtered{name = ENTITY_NAME}) do
       if entity.valid and entity.unit_number then
         storage.field_offices[entity.unit_number] = entity
         storage.field_office_state[entity.unit_number] = { phase = "idle" }
+        add_office_to_shard(entity.unit_number)
       end
     end
   end
