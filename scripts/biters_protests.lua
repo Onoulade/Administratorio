@@ -13,6 +13,10 @@ function M.new(deps)
     last_eviction_tick = 0,
   }
 
+  local function log_return_home(message)
+    debug_log(deps.log_prefix .. "RETURN-HOME " .. message)
+  end
+
   local protest_target_cache = nil  -- {tick=, surface_index=, targets={}}
 
   local function is_eligible_protest_target(target)
@@ -721,13 +725,38 @@ function M.new(deps)
   end
 
   local function collect_protest_target_candidates(surface, info, entity, avoid_target, avoid_target_snapshot)
-    local raw_candidates = {}
+    local top_candidates = {}
     local seen = {}
     local snapshot = get_protester_snapshot()
     local entity_pos = entity.position
+    local top_limit = C.PROTEST_TARGET_TOP_K or 10
+    local prefilter_limit = C.PROTEST_TARGET_PREFILTER_LIMIT or C.PROTEST_TARGET_CANDIDATE_LIMIT or 64
+    local eligible_seen = 0
 
-    -- First pass: Collect all valid targets and calculate a rough priority.
-    -- Pre-filtering in get_cached_protest_targets makes this loop much smaller.
+    local function raw_candidate_is_better(a, b)
+      if a.avoided ~= b.avoided then return not a.avoided end
+      if a.priority ~= b.priority then return a.priority < b.priority end
+      return a.dist < b.dist
+    end
+
+    local function insert_top_candidate(candidate)
+      local inserted = false
+      for index, existing in ipairs(top_candidates) do
+        if raw_candidate_is_better(candidate, existing) then
+          table.insert(top_candidates, index, candidate)
+          inserted = true
+          break
+        end
+      end
+      if not inserted and #top_candidates < top_limit then
+        top_candidates[#top_candidates + 1] = candidate
+      end
+      if #top_candidates > top_limit then
+        top_candidates[#top_candidates] = nil
+      end
+    end
+
+    -- Keep only the best rough candidates so large factories do not sort every target.
     for _, target in ipairs(get_cached_protest_targets(surface)) do
       local target_id = target.unit_number
       if target_id and not seen[target_id] then
@@ -741,32 +770,25 @@ function M.new(deps)
           local priority = claimed * claimed * C.PROTEST_TARGET_LOAD_PENALTY
             + dist
             + math.random() * C.PROTEST_TARGET_SELECTION_JITTER
-          
-          raw_candidates[#raw_candidates + 1] = {
+
+          insert_top_candidate({
             target = target,
             priority = priority,
             claimed = claimed,
             dist = dist,
             avoided = avoided,
-          }
+          })
+          eligible_seen = eligible_seen + 1
+          if eligible_seen >= prefilter_limit then break end
         end
       end
     end
 
-    -- Sort by rough priority.
-    table.sort(raw_candidates, function(a, b)
-      if a.avoided ~= b.avoided then return not a.avoided end
-      if a.priority ~= b.priority then return a.priority < b.priority end
-      return a.dist < b.dist
-    end)
-
-    -- Second pass: Only for the top candidates, try to find a valid wander position.
+    -- Only for the top candidates, try to find a valid wander position.
     -- We limit this severely because find_non_colliding_position is expensive.
     local candidates = {}
-    local limit = 10
-    local checked = 0
     
-    for _, raw in ipairs(raw_candidates) do
+    for _, raw in ipairs(top_candidates) do
       local target = raw.target
       local pos = pick_protest_wander_position(surface, entity, target, entity_pos, snapshot)
       if pos then
@@ -779,13 +801,11 @@ function M.new(deps)
           priority = raw.priority,
           avoided = raw.avoided,
         }
-        if #candidates >= limit then break end
+        if #candidates >= top_limit then break end
       end
-      checked = checked + 1
-      if checked >= limit * 2 then break end 
     end
 
-    log_protest_debug(entity, info, "collected " .. #candidates .. " protest candidates from " .. #raw_candidates .. " targets")
+    log_protest_debug(entity, info, "collected " .. #candidates .. " protest candidates from " .. tostring(eligible_seen) .. " eligible targets")
     return candidates
   end
 
@@ -1236,6 +1256,13 @@ function M.new(deps)
       end
       deps.normalize_case_progress(info)
       if not info.entity or not info.entity.valid then
+        if info.state == "returning_home" then
+          log_return_home("invalid entity unit=" .. tostring(b_id)
+            .. " last_pos=" .. deps.format_position(info.last_known_position)
+            .. " started=" .. tostring(info.return_started_tick)
+            .. " arrival_check=" .. tostring(info.return_arrival_check_tick)
+            .. " despawn_tick=" .. tostring(info.return_despawn_tick))
+        end
         local bypass_retry = false
         if info.state == "pacified" then
           local desk = find_available_desk_for_info(info)
@@ -1345,16 +1372,25 @@ function M.new(deps)
           end
         elseif info.state == "returning_home" then
           if info.return_despawn_tick and game.tick >= info.return_despawn_tick then
-            -- log(deps.log_prefix .. "Resolved " .. info.entity.name .. " (unit " .. b_id .. ") despawn timer expired")
+            log_return_home("destroy timer unit=" .. tostring(b_id)
+              .. " tick=" .. tostring(game.tick)
+              .. " pos=" .. deps.format_position(info.entity.position)
+              .. " dest=" .. deps.format_position(info.return_dest))
             info.entity.destroy()
             deps.untrack_waiting_biter(b_id, info)
           else
             local dest = info.return_dest
-            if dest then
+            if dest and game.tick >= (info.return_arrival_check_tick or 0) then
               local ddx = info.entity.position.x - dest.x
               local ddy = info.entity.position.y - dest.y
-              if ddx * ddx + ddy * ddy < 64 then
-                -- log(deps.log_prefix .. "Resolved " .. info.entity.name .. " (unit " .. b_id .. ") reached walk-away destination, despawning")
+              local arrival_distance = C.RETURN_ARRIVAL_DISTANCE or 2.5
+              if ddx * ddx + ddy * ddy <= arrival_distance * arrival_distance then
+                log_return_home("destroy arrived unit=" .. tostring(b_id)
+                  .. " tick=" .. tostring(game.tick)
+                  .. " pos=" .. deps.format_position(info.entity.position)
+                  .. " dest=" .. deps.format_position(dest)
+                  .. " dist_sq=" .. tostring(ddx * ddx + ddy * ddy)
+                  .. " arrival_distance=" .. tostring(arrival_distance))
                 info.entity.destroy()
                 deps.untrack_waiting_biter(b_id, info)
               end
@@ -1506,9 +1542,22 @@ function M.new(deps)
 
     if info.state == "returning_home" then
       if event.result == defines.behavior_result.fail then
-        -- log(deps.log_prefix .. "Return-home pathfinding FAILED for " .. entity.name .. " (unit " .. event.unit_number .. "), despawning")
-        entity.destroy()
-        deps.untrack_waiting_biter(event.unit_number, info)
+        local cached_desk_id = info.return_cached_desk_id
+        log_return_home("command failed unit=" .. tostring(event.unit_number)
+          .. " tick=" .. tostring(game.tick)
+          .. " pos=" .. deps.format_position(entity.position)
+          .. " dest=" .. deps.format_position(info.return_dest)
+          .. " target_kind=" .. tostring(info.return_target_kind)
+          .. " cached_desk=" .. tostring(cached_desk_id or "nil")
+          .. " result=" .. tostring(event.result))
+        if info.return_failed_once then return end
+        info.return_failed_once = true
+        if cached_desk_id and storage.desk_return_positions then
+          storage.desk_return_positions[cached_desk_id] = nil
+          log_return_home("invalidated cached desk exit desk=" .. tostring(cached_desk_id)
+            .. " unit=" .. tostring(event.unit_number))
+        end
+        deps.start_return_home(info, entity, {force_home_position = true})
       end
       return
     end
@@ -1800,7 +1849,12 @@ function M.new(deps)
         -- log(deps.log_prefix .. "Tracked biter died unresolved: " .. entity.name .. " (unit " .. entity.unit_number .. ") in state '" .. (info.state or "unknown") .. "', scheduling recovery")
         return
       end
-      -- log(deps.log_prefix .. "Biter died: " .. entity.name .. " (unit " .. entity.unit_number .. ") in state '" .. (info.state or "unknown") .. "' at desk " .. tostring(info.desk_id))
+      log_return_home("on_biter_died unit=" .. tostring(entity.unit_number)
+        .. " tick=" .. tostring(game.tick)
+        .. " pos=" .. deps.format_position(entity.position)
+        .. " force=" .. tostring(entity.force and entity.force.name)
+        .. " destructible=" .. tostring(entity.destructible)
+        .. " dest=" .. deps.format_position(info.return_dest))
       reset_protest_targeting(info, entity.unit_number)
       deps.unindex_biter_from_desk(info.desk_id, entity.unit_number)
       zones.release_slot(info.desk_id, entity.unit_number)

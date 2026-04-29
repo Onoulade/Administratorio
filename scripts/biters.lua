@@ -133,6 +133,10 @@ local function format_position(pos)
   return "[" .. math.floor(pos.x) .. "," .. math.floor(pos.y) .. "]"
 end
 
+local function log_return_home(message)
+  if log then log(LOG_PREFIX .. "RETURN-HOME " .. message) end
+end
+
 -- ============================================================
 -- DESK-INDEXED LOOKUP
 -- storage.desk_biters[desk_id] = { [unit_number] = true, ... }
@@ -204,6 +208,8 @@ local function get_waiting_biter_state_set(state)
   return index[state]
 end
 
+local unindex_biter_from_desk
+
 local function track_waiting_biter(unit_number, info)
   if not unit_number or not info then return end
 
@@ -228,6 +234,9 @@ local function untrack_waiting_biter(unit_number, info)
   if not unit_number then return end
 
   local tracked_info = info or storage.waiting_biters[unit_number]
+  if tracked_info and tracked_info.desk_id then
+    unindex_biter_from_desk(tracked_info.desk_id, unit_number)
+  end
   if tracked_info and tracked_info.state then
     local state_set = get_waiting_biter_state_set(tracked_info.state)
     state_set[unit_number] = nil
@@ -318,17 +327,23 @@ function M.mark_all_desk_circuit_dirty()
 end
 
 local function index_biter_to_desk(desk_id, unit_number)
-  if not desk_id then return end
+  if not desk_id or not unit_number then return end
   ensure_desk_biters()
   if not storage.desk_biters[desk_id] then storage.desk_biters[desk_id] = {} end
+  if not storage.desk_biters[desk_id][unit_number] then
+    zones.increment_desk_occupants(desk_id)
+  end
   storage.desk_biters[desk_id][unit_number] = true
   mark_desk_circuit_dirty(desk_id)
 end
 
-local function unindex_biter_from_desk(desk_id, unit_number)
-  if not desk_id then return end
+unindex_biter_from_desk = function(desk_id, unit_number)
+  if not desk_id or not unit_number then return end
   ensure_desk_biters()
   if storage.desk_biters[desk_id] then
+    if storage.desk_biters[desk_id][unit_number] then
+      zones.decrement_desk_occupants(desk_id)
+    end
     storage.desk_biters[desk_id][unit_number] = nil
   end
   mark_desk_circuit_dirty(desk_id)
@@ -343,6 +358,7 @@ function M.rebuild_desk_index()
       storage.desk_biters[info.desk_id][b_id] = true
     end
   end
+  zones.rebuild_desk_occupant_counts()
   mark_all_desk_circuit_dirty()
 end
 
@@ -352,7 +368,6 @@ local function get_cached_desks()
   for id, desk in pairs(storage.admin_desks or {}) do
     if desk.valid then
       storage.admin_desks[desk.unit_number] = desk
-      zones.ensure_desk_runtime_state(desk)
       desks[#desks + 1] = desk
     else
       storage.admin_desks[id] = nil
@@ -394,6 +409,15 @@ local function remember_home_spawner(info, spawner)
   if not info or not spawner or not spawner.valid or spawner.type ~= "unit-spawner" then return end
   info.home_spawner = spawner
   info.home_spawner_unit_number = spawner.unit_number
+  info.home_position = {x = spawner.position.x, y = spawner.position.y}
+  info.home_surface_index = spawner.surface and spawner.surface.index or nil
+end
+
+local function remember_home_position(info, entity)
+  if not info or not entity or not entity.valid then return end
+  if info.home_position then return end
+  info.home_position = {x = entity.position.x, y = entity.position.y}
+  info.home_surface_index = entity.surface and entity.surface.index or nil
 end
 
 local function copy_complaints(complaints)
@@ -572,29 +596,101 @@ local function finalize_pathfinding_biter_arrival(info, desk, source)
   return true
 end
 
-local function start_return_home(info, entity)
-  if not info or not entity or not entity.valid then return false end
+local function ensure_desk_return_positions()
+  storage.desk_return_positions = storage.desk_return_positions or {}
+  return storage.desk_return_positions
+end
 
-  local pos = entity.position
-  local dx = pos.x
-  local dy = pos.y
+local function get_return_direction(info, entity)
+  local origin = entity.position
+  local anchor = info.home_position
+  if not anchor and info.home_spawner and info.home_spawner.valid then
+    anchor = info.home_spawner.position
+  end
+
+  local dx = anchor and (anchor.x - origin.x) or origin.x
+  local dy = anchor and (anchor.y - origin.y) or origin.y
   local len = math.sqrt(dx * dx + dy * dy)
   if len < 1 then
     local angle = math.random() * 2 * math.pi
     dx = math.cos(angle)
     dy = math.sin(angle)
-  else
-    dx = dx / len
-    dy = dy / len
+    len = 1
+  end
+  return dx / len, dy / len
+end
+
+local function find_desk_return_position(info, entity)
+  if not entity.surface then return nil end
+  local surface = entity.surface
+  local origin = entity.position
+  local dx, dy = get_return_direction(info, entity)
+  local distances = {
+    C.RETURN_WALK_DISTANCE or 200,
+    150,
+    100,
+    60,
+    35,
+  }
+
+  for _, distance in ipairs(distances) do
+    local probe = {x = origin.x + dx * distance, y = origin.y + dy * distance}
+    local position = surface.find_non_colliding_position(
+      entity.name,
+      probe,
+      C.RETURN_EXIT_SEARCH_RADIUS or 24,
+      C.RETURN_EXIT_SEARCH_PRECISION or 2
+    )
+    if position then
+      return {x = position.x, y = position.y}, distance
+    end
+  end
+  return nil
+end
+
+local function get_cached_desk_return_position(info, entity, desk_id)
+  if not desk_id or not entity.surface then return nil, false end
+  local return_positions = ensure_desk_return_positions()
+  local cached = return_positions[desk_id]
+  local surface_index = entity.surface.index
+  if cached and cached.surface_index == surface_index and cached.position then
+    return {x = cached.position.x, y = cached.position.y}, true
   end
 
-  local jitter = (math.random() - 0.5) * 1.0
-  local cos_j = math.cos(jitter)
-  local sin_j = math.sin(jitter)
-  dx, dy = dx * cos_j - dy * sin_j, dx * sin_j + dy * cos_j
+  local position, distance = find_desk_return_position(info, entity)
+  if not position then return nil, false end
+  return_positions[desk_id] = {
+    position = {x = position.x, y = position.y},
+    surface_index = surface_index,
+    distance = distance,
+  }
+  log_return_home("cached desk exit desk=" .. tostring(desk_id)
+    .. " pos=" .. format_position(position)
+    .. " distance=" .. tostring(distance)
+    .. " surface=" .. tostring(surface_index))
+  return {x = position.x, y = position.y}, true
+end
 
-  local walk_dist = C.RETURN_WALK_DISTANCE
-  local dest = {x = pos.x + dx * walk_dist, y = pos.y + dy * walk_dist}
+local function start_return_home(info, entity, opts)
+  if not info or not entity or not entity.valid then return false end
+  opts = opts or {}
+
+  local desk_id = info.desk_id
+  local spawner = info.home_spawner
+  local home_position = info.home_position
+  local desk_exit, used_cached_exit = nil, false
+  if not opts.force_home_position then
+    desk_exit, used_cached_exit = get_cached_desk_return_position(info, entity, desk_id)
+  end
+  local spawner_dest = spawner and spawner.valid and {x = spawner.position.x, y = spawner.position.y} or nil
+  local home_dest = home_position and {x = home_position.x, y = home_position.y} or nil
+  local dest = nil
+  if opts.force_home_position then
+    dest = home_dest or spawner_dest
+  else
+    dest = desk_exit or spawner_dest or home_dest
+  end
+  if not dest then return false end
 
   set_waiting_biter_state(info, "returning_home")
   info.frustration = 0
@@ -603,20 +699,38 @@ local function start_return_home(info, entity)
   info.promise_retry_until_tick = nil
   info.desk_id = nil
   info.desk_dest = nil
-  info.return_spawner = nil
+  info.return_spawner = spawner and spawner.valid and spawner or nil
   info.return_dest = dest
+  info.return_cached_desk_id = used_cached_exit and desk_id or nil
+  info.return_target_kind = used_cached_exit and "desk_exit"
+    or (dest == spawner_dest and "spawner" or (dest == home_dest and "home_position" or "unknown"))
+  info.return_started_tick = game.tick
+  info.return_arrival_check_tick = game.tick + (C.RETURN_MIN_TRAVEL_TICKS or 0)
   info.return_despawn_tick = game.tick + C.RETURN_DESPAWN_TICKS
 
   entity.force = get_biter_force()
+  entity.destructible = false
   entity.active = true
   entity.commandable.set_command({
     type = defines.command.go_to_location,
     destination = dest,
-    radius = 6,
+    radius = C.RETURN_ARRIVAL_DISTANCE or 2.5,
     distraction = defines.distraction.none,
   })
 
-  -- log(LOG_PREFIX .. "Resolved " .. entity.name .. " (unit " .. entity.unit_number .. ") walking away to (" .. string.format("%.0f", dest.x) .. ", " .. string.format("%.0f", dest.y) .. ")")
+  log_return_home("start unit=" .. tostring(entity.unit_number)
+    .. " name=" .. tostring(entity.name)
+    .. " force=" .. tostring(entity.force and entity.force.name)
+    .. " active=" .. tostring(entity.active)
+    .. " destructible=" .. tostring(entity.destructible)
+    .. " dest=" .. format_position(dest)
+    .. " target_kind=" .. tostring(info.return_target_kind)
+    .. " cached_desk=" .. tostring(info.return_cached_desk_id or "nil")
+    .. " spawner=" .. tostring(spawner and spawner.valid and spawner.unit_number or "nil")
+    .. " home_position=" .. format_position(home_position)
+    .. " force_home_position=" .. tostring(opts.force_home_position == true)
+    .. " arrival_check_tick=" .. tostring(info.return_arrival_check_tick)
+    .. " despawn_tick=" .. tostring(info.return_despawn_tick))
   return true
 end
 
@@ -628,6 +742,7 @@ local function route_biter_to_desk(info, entity, desk, opts)
 
   info.desk_id = desk.unit_number
   set_waiting_biter_state(info, "pathfinding")
+  remember_home_position(info, entity)
   if opts.initial_frustration ~= nil then
     info.frustration = opts.initial_frustration
   else
@@ -637,6 +752,9 @@ local function route_biter_to_desk(info, entity, desk, opts)
   info.promise_retry_until_tick = nil
   info.return_spawner = nil
   info.return_dest = nil
+  info.return_cached_desk_id = nil
+  info.return_target_kind = nil
+  info.return_failed_once = nil
 
   index_biter_to_desk(desk.unit_number, entity.unit_number)
   local dest = get_desk_waiting_destination(entity, desk, entity.unit_number)
@@ -807,37 +925,43 @@ end
 
 function M.process_walk_in_registration(surface, desks, runtime_profile)
   ensure_achievements()
+  local walkin_scan_ticks = C.REGISTRATION_WALKIN_SCAN_TICKS or 1
+  local walkin_shard = math.floor(game.tick / 60) % walkin_scan_ticks
+
   for _, desk in ipairs(desks) do
     enforce_desk_capacity_limit(desk)
     local walkins_profiler = runtime_profile and game.create_profiler() or nil
-    local remaining_slots = zones.get_available_slots(desk.unit_number)
-    if remaining_slots > 0 then
+    local should_scan_walkins = walkin_scan_ticks <= 1 or (desk.unit_number % walkin_scan_ticks) == walkin_shard
+    if should_scan_walkins then
+      local remaining_slots = zones.get_available_slots(desk.unit_number)
       local search_pos = desk.position
       local search_radius = 10
 
-      for _, biter in ipairs(surface.find_entities_filtered{force = "enemy", type = "unit", position = search_pos, radius = search_radius}) do
-        if biter.valid and biter.force.name == "enemy" and not storage.waiting_biters[biter.unit_number] then
-          if remaining_slots <= 0 then break end
-          local complaints = C.generate_complaints(biter.name)
-          local info = {
-            entity = biter,
-            desk_id = nil,
-            complaints = complaints,
-            complaints_total = #complaints,
-            complaints_filed = false,
-            frustration = 0,
-            state = "pathfinding",
-          }
-          info.entity_name = biter.name
-          capture_home_spawner(info, biter, true)
-          track_waiting_biter(biter.unit_number, info)
-          if route_biter_to_desk(info, biter, desk) then
-            remaining_slots = remaining_slots - 1
-          else
-            untrack_waiting_biter(biter.unit_number, info)
-            M.trigger_immediate_protest(biter, surface, info)
+      if remaining_slots > 0 then
+        for _, biter in ipairs(surface.find_entities_filtered{force = "enemy", type = "unit", position = search_pos, radius = search_radius}) do
+          if biter.valid and biter.force.name == "enemy" and not storage.waiting_biters[biter.unit_number] then
+            if remaining_slots <= 0 then break end
+            local complaints = C.generate_complaints(biter.name)
+            local info = {
+              entity = biter,
+              desk_id = nil,
+              complaints = complaints,
+              complaints_total = #complaints,
+              complaints_filed = false,
+              frustration = 0,
+              state = "pathfinding",
+            }
+            info.entity_name = biter.name
+            capture_home_spawner(info, biter, true)
+            track_waiting_biter(biter.unit_number, info)
+            if route_biter_to_desk(info, biter, desk) then
+              remaining_slots = remaining_slots - 1
+            else
+              untrack_waiting_biter(biter.unit_number, info)
+              M.trigger_immediate_protest(biter, surface, info)
+            end
+            ::skip_walkin_biter::
           end
-          ::skip_walkin_biter::
         end
       end
     end

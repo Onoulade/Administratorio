@@ -138,6 +138,56 @@ local function ensure_grid(desk_id)
   if not storage.desk_grid_slots[desk_id] then storage.desk_grid_slots[desk_id] = {} end
 end
 
+local function ensure_occupant_counts()
+  storage.desk_occupant_counts = storage.desk_occupant_counts or {}
+end
+
+local function biter_counts_for_desk(info, desk_id)
+  return info
+    and info.desk_id == desk_id
+    and (info.state == "waiting" or info.state == "pathfinding")
+    and info.entity
+    and info.entity.valid
+end
+
+function M.rebuild_desk_occupant_counts()
+  storage.desk_occupant_counts = {}
+  for desk_id, desk in pairs(storage.admin_desks or {}) do
+    if desk and desk.valid then
+      storage.desk_occupant_counts[desk_id] = 0
+    end
+  end
+  for unit_number, info in pairs(storage.waiting_biters or {}) do
+    if info and info.desk_id and biter_counts_for_desk(info, info.desk_id) then
+      storage.desk_occupant_counts[info.desk_id] = (storage.desk_occupant_counts[info.desk_id] or 0) + 1
+    end
+  end
+  return storage.desk_occupant_counts
+end
+
+local function get_tracked_occupant_count(desk_id)
+  ensure_occupant_counts()
+  local count = storage.desk_occupant_counts[desk_id]
+  if count == nil then
+    M.rebuild_desk_occupant_counts()
+    count = storage.desk_occupant_counts[desk_id] or 0
+  end
+  return count
+end
+
+function M.increment_desk_occupants(desk_id)
+  if not desk_id then return end
+  ensure_occupant_counts()
+  storage.desk_occupant_counts[desk_id] = (storage.desk_occupant_counts[desk_id] or 0) + 1
+end
+
+function M.decrement_desk_occupants(desk_id)
+  if not desk_id then return end
+  ensure_occupant_counts()
+  local count = (storage.desk_occupant_counts[desk_id] or 0) - 1
+  storage.desk_occupant_counts[desk_id] = count > 0 and count or 0
+end
+
 local function try_repair_desk_runtime_state(desk_id)
   local desks = storage.admin_desks
   if not desks then return false end
@@ -179,6 +229,8 @@ function M.ensure_desk_runtime_state(desk)
   storage.desk_zones[desk_id] = {bounds = bounds, footprint = footprint}
   storage.desk_reserved_slots[desk_id] = storage.desk_reserved_slots[desk_id] or 0
   storage.desk_grid_slots[desk_id] = storage.desk_grid_slots[desk_id] or {}
+  ensure_occupant_counts()
+  storage.desk_occupant_counts[desk_id] = storage.desk_occupant_counts[desk_id] or 0
   return repaired
 end
 
@@ -194,40 +246,6 @@ local function cleanup_stale_slots(desk_id)
       end
     end
   end
-end
-
-local function count_tracked_desk_occupants(desk_id)
-  local waiting_biters = storage.waiting_biters
-  local desk_biters = storage.desk_biters and storage.desk_biters[desk_id]
-  if not waiting_biters then return 0 end
-
-  local occupied = 0
-  local seen = {}
-
-  if desk_biters then
-    for unit_number in pairs(desk_biters) do
-      local info = waiting_biters[unit_number]
-      if info and info.desk_id == desk_id and (info.state == "waiting" or info.state == "pathfinding")
-         and info.entity and info.entity.valid then
-        occupied = occupied + 1
-        seen[unit_number] = true
-      end
-    end
-  end
-
-  for unit_number, info in pairs(waiting_biters) do
-    if not seen[unit_number]
-       and info
-       and info.desk_id == desk_id
-       and (info.state == "waiting" or info.state == "pathfinding")
-       and info.entity
-       and info.entity.valid then
-      occupied = occupied + 1
-      seen[unit_number] = true
-    end
-  end
-
-  return occupied
 end
 
 local function get_desk_force(desk_id)
@@ -276,7 +294,7 @@ function M.get_available_slots(desk_id)
   for _ in pairs(storage.desk_grid_slots[desk_id]) do
     occupied_by_slots = occupied_by_slots + 1
   end
-  local occupied = math.max(occupied_by_slots, count_tracked_desk_occupants(desk_id))
+  local occupied = math.max(occupied_by_slots, get_tracked_occupant_count(desk_id))
   local capacity = M.get_zone_capacity(desk_id)
   return math.max(0, capacity - occupied)
 end
@@ -286,7 +304,7 @@ function M.reserve_slot(desk_id, unit_number)
   ensure_grid(desk_id)
   cleanup_stale_slots(desk_id)
   local capacity = M.get_zone_capacity(desk_id)
-  if count_tracked_desk_occupants(desk_id) >= capacity then
+  if get_tracked_occupant_count(desk_id) >= capacity then
     return nil
   end
   -- If no unit_number provided, use a placeholder (for pathfinding biters not yet placed)
@@ -401,6 +419,7 @@ function M.cleanup_desk_zone(desk_id)
   if not zone or not zone.bounds then
     storage.desk_zones[desk_id] = nil
     if storage.desk_grid_slots then storage.desk_grid_slots[desk_id] = nil end
+    if storage.desk_return_positions then storage.desk_return_positions[desk_id] = nil end
     return
   end
   for _, surface in pairs(game.surfaces) do
@@ -410,6 +429,8 @@ function M.cleanup_desk_zone(desk_id)
   end
   storage.desk_zones[desk_id] = nil
   if storage.desk_grid_slots then storage.desk_grid_slots[desk_id] = nil end
+  if storage.desk_occupant_counts then storage.desk_occupant_counts[desk_id] = nil end
+  if storage.desk_return_positions then storage.desk_return_positions[desk_id] = nil end
 end
 
 return M
