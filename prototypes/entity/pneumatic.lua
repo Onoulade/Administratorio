@@ -13,6 +13,7 @@
 -------------------------------------------------------------------------------
 
 local pneumatic_tint = {r=0.85, g=0.75, b=0.55, a=1} -- manila/tan
+local tube_max_network_radius = 120
 
 local function placeable_by_item(name)
   return {
@@ -63,7 +64,7 @@ for _, pcon in pairs(pneumatic_pipe.fluid_box.pipe_connections) do
     pcon.connection_category = "pneumatic-forms"
   end
 end
-pneumatic_pipe.fluid_box.max_pipeline_extent = 60
+pneumatic_pipe.fluid_box.max_pipeline_extent = tube_max_network_radius
 
 -- Pneumatic Underground Pipe (visible underground tube segment)
 local pneumatic_underground = table.deepcopy(data.raw["pipe-to-ground"]["pipe-to-ground"])
@@ -83,7 +84,7 @@ for _, pcon in pairs(pneumatic_underground.fluid_box.pipe_connections) do
     pcon.max_underground_distance = 16
   end
 end
-pneumatic_underground.fluid_box.max_pipeline_extent = 60
+pneumatic_underground.fluid_box.max_pipeline_extent = tube_max_network_radius
 
 -- Hidden network pipe: invisible pipe placed at intake/outtake positions
 -- for topology detection via fluidbox.get_connections() BFS.
@@ -103,7 +104,20 @@ for _, pcon in pairs(pneumatic_hidden_network_pipe.fluid_box.pipe_connections) d
     pcon.connection_category = "pneumatic-forms"
   end
 end
-pneumatic_hidden_network_pipe.fluid_box.max_pipeline_extent = 60
+pneumatic_hidden_network_pipe.fluid_box.max_pipeline_extent = tube_max_network_radius
+
+local function tube_sprite(filename)
+  return {
+    layers = {
+      {
+        filename = filename,
+        priority = "high",
+        width = 66,
+        height = 72,
+      },
+    },
+  }
+end
 
 -- Empty sheet for hidden inserter graphics
 local empty_sheet = {
@@ -150,14 +164,10 @@ local tube_intake = {
   ),
   graphics_set = {
     animation = {
-      layers = {
-        {
-          filename = "__administratorio__/graphics/entities/pneumatic-intake/intake-up.png",
-          priority = "high",
-          width = 66,
-          height = 72,
-        },
-      },
+      north = tube_sprite("__administratorio__/graphics/entities/pneumatic-intake/intake-up.png"),
+      east = tube_sprite("__administratorio__/graphics/entities/pneumatic-intake/intake-right.png"),
+      south = tube_sprite("__administratorio__/graphics/entities/pneumatic-intake/intake-down.png"),
+      west = tube_sprite("__administratorio__/graphics/entities/pneumatic-intake/intake-left.png"),
     },
   },
 }
@@ -184,14 +194,10 @@ local tube_outtake = {
     {variation = 26, main_offset = util.by_pixel(0, -8), shadow_offset = util.by_pixel(4, -4), show_shadow = true}
   ),
   picture = {
-    layers = {
-      {
-        filename = "__administratorio__/graphics/entities/pneumatic-outtake/outtake-up.png",
-        priority = "high",
-        width = 66,
-        height = 72,
-      },
-    },
+    north = tube_sprite("__administratorio__/graphics/entities/pneumatic-outtake/outtake-up.png"),
+    east = tube_sprite("__administratorio__/graphics/entities/pneumatic-outtake/outtake-right.png"),
+    south = tube_sprite("__administratorio__/graphics/entities/pneumatic-outtake/outtake-down.png"),
+    west = tube_sprite("__administratorio__/graphics/entities/pneumatic-outtake/outtake-left.png"),
   },
 }
 

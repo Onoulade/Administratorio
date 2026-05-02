@@ -40,7 +40,14 @@ local function deactivate_intake_machine(entity)
   end
 end
 
-local MAX_NETWORK_RADIUS = 60 -- tiles from the starting pipe
+local function enable_tube_rotation(entity)
+  if not entity or not entity.valid then return end
+  pcall(function()
+    entity.rotatable = true
+  end)
+end
+
+local MAX_NETWORK_RADIUS = C.TUBE_MAX_NETWORK_RADIUS or 120 -- tiles from the starting pipe
 
 --- BFS through fluidbox connections starting from a hidden network pipe.
 --- Returns network_id, over_extended.
@@ -142,6 +149,30 @@ function M.get_network_total(net_id)
   return total
 end
 
+function M.get_network_item_count(net_id, item_name)
+  local pool = storage.tube_signals[net_id]
+  if not pool then return 0 end
+  return pool[item_name] or 0
+end
+
+local function intake_circuit_allows(entity)
+  if not entity or not entity.valid or not entity.get_control_behavior then return true end
+
+  -- Factorio evaluates the visible circuit condition; this script just honors it.
+  local ok, disabled = pcall(function()
+    return entity.disabled_by_control_behavior
+  end)
+  if ok and disabled == true then return false end
+
+  ok, disabled = pcall(function()
+    local behavior = entity.get_control_behavior()
+    return behavior and behavior.disabled
+  end)
+  if ok and disabled == true then return false end
+
+  return true
+end
+
 -------------------------------------------------------------------------------
 -- COMBINATOR HELPERS
 -------------------------------------------------------------------------------
@@ -204,6 +235,7 @@ end
 
 function M.add_pneumatic_inserter(entity)
   if not is_tube_entity(entity) then return end
+  enable_tube_rotation(entity)
   deactivate_intake_machine(entity)
 
   -- Create the hidden inserter (only for entities that need one).
@@ -407,6 +439,7 @@ function M.on_pneumatic_tick()
     local net_id = storage.tube_network_cache[uid]
     if not net_id then goto next_intake end
     if storage.tube_network_disabled[net_id] then goto next_intake end
+    if not intake_circuit_allows(entity) then goto next_intake end
 
     local inv = get_intake_inventory(entity)
     if inv and not inv.is_empty() then
@@ -418,10 +451,11 @@ function M.on_pneumatic_tick()
           goto next_intake
         end
 
-        -- Check capacity before consuming.
+        -- Check per-item capacity before consuming. Different forms no longer
+        -- compete for the same slots and cannot starve each other out.
         local capacity = M.get_network_capacity(entity.force)
-        local total = M.get_network_total(net_id)
-        if total >= capacity then
+        local item_count = M.get_network_item_count(net_id, item_name)
+        if item_count >= capacity then
           goto next_intake
         end
 
@@ -573,10 +607,17 @@ function M.update_tube_info_gui(player, entity)
   -- Capacity.
   local capacity = M.get_network_capacity(entity.force)
   local total = M.get_network_total(net_id)
-  local pct = capacity > 0 and (total / capacity) or 0
+  local max_item_count = 0
+  local pool = storage.tube_signals[net_id]
+  if pool then
+    for _, count in pairs(pool) do
+      if count > max_item_count then max_item_count = count end
+    end
+  end
+  local pct = capacity > 0 and (max_item_count / capacity) or 0
   local cap_color = pct < 0.7 and {r=0.3, g=1, b=0.3} or pct < 0.9 and {r=1, g=1, b=0.3} or {r=1, g=0.2, b=0.2}
 
-  local cap_label = frame.add{type = "label", caption = "Capacity: " .. total .. " / " .. capacity}
+  local cap_label = frame.add{type = "label", caption = "Capacity: " .. capacity .. " per item (" .. total .. " total)"}
   cap_label.style.font_color = cap_color
 
   local bar = frame.add{type = "progressbar", value = math.min(1, pct)}
@@ -584,7 +625,6 @@ function M.update_tube_info_gui(player, entity)
   bar.style.color = cap_color
 
   -- Item breakdown.
-  local pool = storage.tube_signals[net_id]
   if pool and next(pool) then
     local items_label = frame.add{type = "label", caption = "Contents:"}
     items_label.style.top_margin = 4
@@ -643,6 +683,7 @@ function M.rebuild_all()
     for building_name, inserter_name in pairs(C.PNEUMATIC_BUILDINGS) do
       for _, entity in ipairs(surface.find_entities_filtered{name = building_name}) do
         if entity.valid then
+          enable_tube_rotation(entity)
           deactivate_intake_machine(entity)
 
           -- Find or create hidden inserter (only for entities that need one).

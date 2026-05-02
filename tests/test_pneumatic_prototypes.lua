@@ -138,6 +138,14 @@ test("tube-intake is a furnace-style intake with 1 source slot", function()
   assert_eq(intake.crafting_categories[1], "pneumatic-intake", "tube-intake should use pneumatic intake recipes")
 end)
 
+test("tube-intake has directional graphics for rotation", function()
+  local intake = data.raw.furnace["tube-intake"]
+  assert_true(intake.graphics_set.animation.north ~= nil, "tube-intake missing north graphic")
+  assert_true(intake.graphics_set.animation.east ~= nil, "tube-intake missing east graphic")
+  assert_true(intake.graphics_set.animation.south ~= nil, "tube-intake missing south graphic")
+  assert_true(intake.graphics_set.animation.west ~= nil, "tube-intake missing west graphic")
+end)
+
 test("tube-outtake is a container with 1 slot", function()
   local outtake = data.raw.container["tube-outtake"]
   assert_true(outtake ~= nil, "tube-outtake missing")
@@ -188,6 +196,15 @@ test("tube-intake and tube-outtake share fast-replaceable group", function()
   local outtake = data.raw.container["tube-outtake"]
   assert_eq(intake.fast_replaceable_group, "pneumatic-io", "intake should use pneumatic-io group")
   assert_eq(outtake.fast_replaceable_group, "pneumatic-io", "outtake should use pneumatic-io group")
+end)
+
+test("pneumatic pipes support the extended network radius", function()
+  assert_eq(data.raw.pipe["pneumatic-pipe"].fluid_box.max_pipeline_extent, 120,
+    "visible pneumatic pipe should support 120-tile networks")
+  assert_eq(data.raw["pipe-to-ground"]["pneumatic-pipe-to-ground"].fluid_box.max_pipeline_extent, 120,
+    "underground pneumatic pipe should support 120-tile networks")
+  assert_eq(data.raw.pipe["pneumatic-hidden-network-pipe"].fluid_box.max_pipeline_extent, 120,
+    "hidden network pipe should support 120-tile networks")
 end)
 
 -------------------------------------------------------------------------------

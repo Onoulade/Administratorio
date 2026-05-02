@@ -135,13 +135,13 @@ See [biter-employment.md](biter-employment.md)
 
 The pneumatic system was reworked from fluid-based transport to a script-managed signal chain:
 
-- **Tube Intake**: container with hidden intake inserter
+- **Tube Intake**: furnace-style intake with hidden intake inserter
 - **Tube Outtake**: container (player uses own inserter to extract)
 - Items consumed at intakes, tracked in per-network signal pool
 - Dispensed at outtakes
-- Network topology detected via BFS through hidden network pipes (max radius 60 tiles)
+- Network topology detected via BFS through hidden network pipes (max radius 120 tiles)
 - Underground pipe range: 16 tiles
-- Base capacity: 10 items, upgradeable to 100 via `pneumatic-capacity-1/2/3`
+- Base capacity: 10 items per item type, upgradeable to 100 per item type via `pneumatic-capacity-1/2/3`
 
 ### Transportable Items
 
