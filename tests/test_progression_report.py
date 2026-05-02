@@ -23,6 +23,9 @@ Strict mode:
     required by one of its prerequisite technologies.
   - `--strict` fails when a technology uses a science pack in its research
     ingredients but does not transitively depend on that pack's technology.
+  - always fails when a visible recipe-unlock technology has no unique recipe
+    unlocks after prototype hooks run, because researching a hollow node gives
+    the player nothing.
 """
 
 from __future__ import annotations
@@ -65,6 +68,11 @@ RESOURCE_ROOT_TYPES = (
 )
 SECONDARY_RECIPE_CATEGORIES = {"pneumatic-intake", "smelting"}
 STARTING_PROVIDER_ITEMS = ("mechanical-printer", "office-desk")
+STRUCTURAL_EMPTY_TECHS = {
+    # Vanilla parent node for the first module branches; it exists to organize
+    # prerequisites while speed/productivity/efficiency own the actual recipes.
+    "modules",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -226,11 +234,16 @@ class ProgressionAnalyzer:
             for result_name, _ in recipe_results(recipe):
                 self.producing_recipes[result_name].append(recipe_name)
 
+        self.all_recipe_unlocks_by_tech: Dict[str, List[str]] = defaultdict(list)
         self.unlocks_by_tech: Dict[str, List[str]] = defaultdict(list)
         for tech_name, tech in self.technologies.items():
             for effect in tech.get("effects", []) or []:
-                if effect.get("type") == "unlock-recipe" and effect["recipe"] in self.recipes:
-                    self.unlocks_by_tech[tech_name].append(effect["recipe"])
+                if effect.get("type") == "unlock-recipe":
+                    recipe_name = effect["recipe"]
+                    if recipe_name in data_raw["recipe"]:
+                        self.all_recipe_unlocks_by_tech[tech_name].append(recipe_name)
+                    if recipe_name in self.recipes:
+                        self.unlocks_by_tech[tech_name].append(recipe_name)
 
         self.tech_dependents: Dict[str, List[str]] = defaultdict(list)
         for tech_name, tech in self.technologies.items():
@@ -1074,6 +1087,46 @@ class ProgressionAnalyzer:
                 missing.append(item_name)
         return missing
 
+    def technologies_without_unique_recipe_unlocks(self) -> List[Dict]:
+        recipe_unlock_counts: Dict[str, int] = defaultdict(int)
+        for tech_name in self.technologies:
+            if not self.tech_visible(tech_name):
+                continue
+            for recipe_name in set(self.all_recipe_unlocks_by_tech.get(tech_name, [])):
+                recipe_unlock_counts[recipe_name] += 1
+
+        empty = []
+        for tech_name in sorted(self.technologies):
+            if not self.tech_visible(tech_name):
+                continue
+            if tech_name in STRUCTURAL_EMPTY_TECHS:
+                continue
+            tech = self.technologies[tech_name]
+            if tech.get("unit") is None:
+                continue
+            effects = tech.get("effects", []) or []
+            has_non_recipe_effect = any(
+                effect.get("type") != "unlock-recipe"
+                for effect in effects
+            )
+            if has_non_recipe_effect:
+                continue
+
+            recipe_unlocks = sorted(set(self.all_recipe_unlocks_by_tech.get(tech_name, [])))
+            unique_unlocks = [
+                recipe_name
+                for recipe_name in recipe_unlocks
+                if recipe_unlock_counts[recipe_name] == 1
+            ]
+            if not unique_unlocks:
+                empty.append(
+                    {
+                        "technology": tech_name,
+                        "recipe_unlocks": recipe_unlocks,
+                    }
+                )
+        return empty
+
     def pipeline_only_technologies(self) -> List[str]:
         techs = []
         for tech_name in sorted(self.technologies):
@@ -1155,6 +1208,7 @@ class ProgressionAnalyzer:
 def render_report(
     analyzer: ProgressionAnalyzer,
     missing_building_recipes: Sequence[str],
+    empty_recipe_unlock_techs: Sequence[Dict],
     direct_target_failures: Sequence[Dict],
     parent_pack_gaps: Sequence[Dict],
     pack_prereq_gaps: Sequence[Dict],
@@ -1207,6 +1261,21 @@ def render_report(
     if missing_building_recipes:
         for item_name in missing_building_recipes:
             lines.append(f"  - {item_name}")
+
+    lines.extend(
+        [
+            "",
+            "Visible recipe-unlock technologies with no unique recipe unlocks: "
+            f"{len(empty_recipe_unlock_techs)}",
+        ]
+    )
+    for finding in empty_recipe_unlock_techs:
+        if finding["recipe_unlocks"]:
+            lines.append(
+                f"  - {finding['technology']} (duplicates: {', '.join(finding['recipe_unlocks'])})"
+            )
+        else:
+            lines.append(f"  - {finding['technology']} (no recipe unlocks)")
 
     lines.extend(
         [
@@ -1375,6 +1444,7 @@ def main() -> int:
         analyzer = ProgressionAnalyzer(json.loads(dump_path.read_text()))
 
         missing_building_recipes = analyzer.buildings_without_recipes()
+        empty_recipe_unlock_techs = analyzer.technologies_without_unique_recipe_unlocks()
         direct_target_failures = analyzer.direct_target_findings()
         parent_pack_gaps = analyzer.parent_pack_gaps()
         pack_prereq_gaps = analyzer.pack_prereq_gaps()
@@ -1397,6 +1467,7 @@ def main() -> int:
         report_text = render_report(
             analyzer=analyzer,
             missing_building_recipes=missing_building_recipes,
+            empty_recipe_unlock_techs=empty_recipe_unlock_techs,
             direct_target_failures=direct_target_failures,
             parent_pack_gaps=parent_pack_gaps,
             pack_prereq_gaps=pack_prereq_gaps,
@@ -1415,6 +1486,8 @@ def main() -> int:
         print(f"Report written to {report_path}")
 
         if missing_building_recipes:
+            return 1
+        if empty_recipe_unlock_techs:
             return 1
         if args.strict and (
             hard_target_failures

@@ -325,7 +325,7 @@ test("local precedents and environmental compliance are split", function()
   assert_true(not tech_unlocks_recipe("local-precedents", "environmental-impact-report"), "local-precedents should not unlock environmental impact reports anymore")
   assert_true(not tech_unlocks_recipe("local-precedents", "chemical-handling-work-order-production"), "local-precedents should not unlock chemical handling work orders")
   assert_true(not tech_unlocks_recipe("local-precedents", "carbon-offset-certificate-verified"), "local-precedents should not unlock verified carbon certificates")
-  assert_true(tech_unlocks_recipe("environmental-compliance", "petrochemical-operating-permit-production"), "environmental-compliance should unlock petrochemical permits")
+  assert_true(not tech_unlocks_recipe("environmental-compliance", "petrochemical-operating-permit-production"), "environmental-compliance should not unlock removed petrochemical permits")
   assert_true(tech_unlocks_recipe("environmental-compliance", "environmental-impact-report"), "environmental-compliance should unlock environmental impact reports")
   assert_true(tech_unlocks_recipe("environmental-compliance", "chemical-handling-work-order-production"), "environmental-compliance should unlock chemical handling work orders")
   assert_true(tech_unlocks_recipe("environmental-compliance", "carbon-offset-certificate-verified"), "environmental-compliance should unlock verified carbon certificates")
@@ -389,7 +389,7 @@ test("pneumatic capacity upgrade chain has base upgrade locale", function()
 end)
 
 test("biterport capacity, transport, and logistics speed upgrades are tiered and localized", function()
-  assert_true(technology_effect_locale["biterport-capacity"] ~= nil, "biterport capacity effect should be localized")
+  assert_true(technology_effect_locale["biterport-capacity"] == nil, "removed biterport capacity effect should not be localized")
   assert_true(technology_effect_locale["biterport-transport-capacity"] ~= nil, "biterport transport effect should be localized")
   assert_true(technology_effect_locale["biterport-worker-speed"] ~= nil, "biterport worker speed effect should be localized")
   assert_true(technology_name_locale["biter-labor-efficiency"] ~= nil, "biter labor efficiency base name should be localized")
@@ -442,22 +442,11 @@ test("biterport capacity, transport, and logistics speed upgrades are tiered and
     assert_true(tech_unlocks_recipe("logistic-robotics", chest_recipe), "logistic robotics should unlock real " .. chest_recipe)
   end
 
-  local expected_capacities = {8, 10, 12, 15}
   for level = 1, 4 do
     local tech_name = "biterport-capacity-" .. level
-    assert_true(technologies[tech_name] ~= nil, tech_name .. " should exist")
-    assert_true(technology_name_locale[tech_name] ~= nil, tech_name .. " name should be localized")
-    assert_true(technology_description_locale[tech_name] ~= nil, tech_name .. " description should be localized")
-    assert_true(tech_has_effect(tech_name, "nothing"), tech_name .. " should expose a scripted-effect marker")
-    assert_true(
-      technologies[tech_name].effects[1].effect_description[2] == tostring(expected_capacities[level]),
-      tech_name .. " should advertise " .. expected_capacities[level] .. " formation slots"
-    )
-    if level == 1 then
-      assert_true(tech_has_prereq(tech_name, "biterport-logistics"), tech_name .. " should start from biterport logistics")
-    else
-      assert_true(tech_has_prereq(tech_name, "biterport-capacity-" .. (level - 1)), tech_name .. " should chain from prior level")
-    end
+    assert_true(technologies[tech_name] == nil, tech_name .. " should not exist")
+    assert_true(technology_name_locale[tech_name] == nil, tech_name .. " name should not be localized")
+    assert_true(technology_description_locale[tech_name] == nil, tech_name .. " description should not be localized")
   end
 
   local expected_transport = {2, 5, 10, 25}
@@ -491,9 +480,6 @@ test("biterport capacity, transport, and logistics speed upgrades are tiered and
     end
   end
 
-  assert_true(tech_uses_pack("biterport-capacity-3", "chemical-science-pack"), "capacity III should use chemical science")
-  assert_true(tech_has_prereq("biterport-capacity-3", "chemical-science-pack"), "capacity III should depend on chemical science")
-  assert_true(tech_uses_pack("biterport-capacity-4", "chemical-science-pack"), "capacity IV should use chemical science")
   assert_true(not tech_uses_pack("biterport-transport-capacity-3", "chemical-science-pack"), "transport III should not use chemical science")
   assert_true(tech_uses_pack("biterport-transport-capacity-4", "chemical-science-pack"), "transport IV should use chemical science")
   assert_true(tech_has_prereq("biterport-transport-capacity-4", "chemical-science-pack"), "transport IV should depend on chemical science")
@@ -524,8 +510,10 @@ test("bootstrap paperwork is gated behind both discovery chains", function()
   assert_true(tech_unlocks_recipe("biter-employment", "office-desk"), "biter-employment should unlock the office desk")
   assert_true(tech_unlocks_recipe("discovery-redundant-rubble", "promise-production"), "discovery-redundant-rubble should unlock promises")
   assert_true(tech_unlocks_recipe("discovery-redundant-rubble", "filing-landscape"), "discovery-redundant-rubble should unlock landscape filing")
-  assert_true(tech_unlocks_recipe("printing-technology", "admin-station"), "printing-technology should unlock the admin station")
-  assert_true(tech_unlocks_recipe("printing-technology", "resolution-office"), "printing-technology should unlock the resolution office")
+  assert_true(tech_unlocks_recipe("discovery-redundant-rubble", "admin-station"), "discovery-redundant-rubble should unlock the admin station")
+  assert_true(not tech_unlocks_recipe("printing-technology", "admin-station"), "printing-technology should not duplicate the admin station")
+  assert_true(tech_unlocks_recipe("biter-employment", "resolution-office"), "biter-employment should unlock the resolution office")
+  assert_true(not tech_unlocks_recipe("printing-technology", "resolution-office"), "printing-technology should not unlock the resolution office before biter workers exist")
   assert_true(tech_unlocks_recipe("discovery-bullshit", "landscape-final"), "discovery-bullshit should unlock landscape resolution")
   assert_true(tech_unlocks_recipe("discovery-bullshit", "safety-waiver-draft"), "discovery-bullshit should unlock safety waiver drafts")
   assert_true(tech_unlocks_recipe("discovery-bullshit", "construction-permit-draft"), "discovery-bullshit should unlock construction permit drafts")
@@ -571,7 +559,7 @@ test("charcoal production has its own late office technology", function()
   assert_true(tech_unlocks_recipe("charcoal-production", "charcoal-production"), "charcoal-production tech should unlock charcoal recipe")
   assert_true(tech_has_prereq("charcoal-production", "corporate-hospitality"), "charcoal-production should require the coffee branch")
   assert_true(tech_has_prereq("charcoal-production", "fluid-handling"), "charcoal-production should require fluid handling")
-  assert_true(tech_has_prereq("charcoal-production", "logistic-science-pack"), "charcoal-production should require logistic science")
+  assert_true(tech_has_prereq("charcoal-production", "chemical-science-pack"), "charcoal-production should require chemical science")
   assert_true(tech_uses_pack("charcoal-production", "automation-science-pack"), "charcoal-production should use automation science")
   assert_true(tech_uses_pack("charcoal-production", "logistic-science-pack"), "charcoal-production should use logistic science")
   assert_true(tech_uses_pack("charcoal-production", "administrative-science-pack"), "charcoal-production should use administrative science")
@@ -636,29 +624,30 @@ test("late administrative branches are split into finance meetings and nuclear p
   assert_true(tech_has_prereq("radiological-compliance", "battery"), "radiological-compliance should require battery")
 end)
 
-test("delegate training and delayed unlocks now appear only once they are usable", function()
+test("delegate training and vanilla relocation hooks keep each tech meaningful", function()
   assert_true(tech_has_prereq("union-delegate-training", "formation-center"), "union delegate training should require the formation center")
   assert_true(tech_has_prereq("union-delegate-training", "verbal-approvals"), "union delegate training should require verbal approvals")
   assert_true(tech_has_prereq("union-delegate-training", "local-precedents"), "union delegate training should require local precedents")
   assert_true(tech_has_prereq("union-delegate-training", "chemical-science-pack"), "union delegate training should require chemical science")
 
-  assert_true(not tech_unlocks_recipe("advanced-material-processing", "steel-furnace"), "advanced material processing should not unlock steel furnaces early")
-  assert_true(tech_unlocks_recipe("concrete", "steel-furnace"), "concrete should unlock steel furnaces")
+  assert_true(tech_unlocks_recipe("advanced-material-processing", "steel-furnace"), "advanced material processing should keep the steel furnace unlock")
+  assert_true(not tech_unlocks_recipe("concrete", "steel-furnace"), "concrete should not duplicate the steel furnace unlock")
   assert_true(not tech_unlocks_recipe("circuit-network", "arithmetic-combinator"), "circuit network should not unlock arithmetic combinators early")
   assert_true(tech_unlocks_recipe("advanced-combinators", "arithmetic-combinator"), "advanced combinators should unlock arithmetic combinators")
-  assert_true(not tech_unlocks_recipe("electric-energy-distribution-1", "medium-electric-pole"), "electric-energy-distribution-1 should not unlock medium poles early")
-  assert_true(tech_unlocks_recipe("electric-energy-distribution-2", "medium-electric-pole"), "electric-energy-distribution-2 should unlock medium poles")
-  assert_true(not tech_unlocks_recipe("logistics-2", "fast-transport-belt"), "logistics-2 should not unlock fast belts early")
-  assert_true(tech_unlocks_recipe("bulk-inserter", "fast-transport-belt"), "bulk-inserter should unlock fast belts")
+  assert_true(tech_unlocks_recipe("electric-energy-distribution-1", "medium-electric-pole"), "electric-energy-distribution-1 should keep the medium pole unlock")
+  assert_true(tech_unlocks_recipe("electric-energy-distribution-1", "big-electric-pole"), "electric-energy-distribution-1 should keep the big pole unlock")
+  assert_true(not tech_unlocks_recipe("electric-energy-distribution-2", "medium-electric-pole"), "electric-energy-distribution-2 should not duplicate the medium pole unlock")
+  assert_true(tech_unlocks_recipe("logistics-2", "fast-transport-belt"), "logistics-2 should keep fast belt unlocks")
+  assert_true(not tech_unlocks_recipe("bulk-inserter", "fast-transport-belt"), "bulk-inserter should not duplicate fast belt unlocks")
   assert_true(tech_has_prereq("logistics-3", "bulk-inserter"), "logistics-3 should require bulk inserter so express belts have fast belts available")
-  assert_true(not tech_unlocks_recipe("engine", "engine-unit"), "engine should not unlock engine units early")
-  assert_true(tech_unlocks_recipe("fluid-handling", "engine-unit"), "fluid-handling should unlock engine units")
-  assert_true(not tech_unlocks_recipe("productivity-module-3", "productivity-module-3"), "productivity module 3 tech should not unlock itself early")
-  assert_true(not tech_unlocks_recipe("speed-module-3", "speed-module-3"), "speed module 3 tech should not unlock itself early")
+  assert_true(tech_unlocks_recipe("engine", "engine-unit"), "engine should keep the engine-unit unlock")
+  assert_true(not tech_unlocks_recipe("fluid-handling", "engine-unit"), "fluid-handling should not duplicate the engine-unit unlock")
+  assert_true(tech_unlocks_recipe("productivity-module-3", "productivity-module-3"), "productivity module 3 tech should keep its own recipe unlock")
+  assert_true(tech_unlocks_recipe("speed-module-3", "speed-module-3"), "speed module 3 tech should keep its own recipe unlock")
   assert_true(not tech_unlocks_recipe("railway", "locomotive"), "railway should not unlock locomotives before the production-tier recipe is usable")
   assert_true(tech_unlocks_recipe("production-science-pack", "locomotive"), "production science should unlock locomotives once their full ingredient chain exists")
-  assert_true(tech_unlocks_recipe("rocket-silo", "productivity-module-3"), "rocket-silo should unlock productivity module 3")
-  assert_true(tech_unlocks_recipe("rocket-silo", "speed-module-3"), "rocket-silo should unlock speed module 3")
+  assert_true(not tech_unlocks_recipe("rocket-silo", "productivity-module-3"), "rocket-silo should not duplicate productivity module 3")
+  assert_true(not tech_unlocks_recipe("rocket-silo", "speed-module-3"), "rocket-silo should not duplicate speed module 3")
 end)
 
 test("late complaint tiers are split by family and science tier", function()
@@ -679,7 +668,7 @@ test("science tier heads and inherited pack requirements are enforced", function
   assert_true(tech_has_prereq("corporate-hospitality", "logistic-science-pack"), "corporate-hospitality should require logistic science")
   assert_true(tech_uses_pack("corporate-hospitality", "logistic-science-pack"), "corporate-hospitality should use logistic science")
   assert_true(tech_has_prereq("office-agriculture", "logistic-science-pack"), "office-agriculture should require logistic science")
-  assert_true(tech_has_prereq("charcoal-production", "logistic-science-pack"), "charcoal-production should require logistic science")
+  assert_true(tech_has_prereq("charcoal-production", "chemical-science-pack"), "charcoal-production should require chemical science")
   assert_true(tech_has_prereq("information-management", "advanced-circuit"), "information-management should require advanced-circuit")
   assert_true(tech_has_prereq("pneumatic-form-transport", "logistic-science-pack"), "pneumatic-form-transport should require logistic science")
   assert_true(tech_uses_pack("pneumatic-form-transport", "logistic-science-pack"), "pneumatic-form-transport should use logistic science")

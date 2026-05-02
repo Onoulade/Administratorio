@@ -111,7 +111,7 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 
 - **Prerequisites:** `local-precedents`, `fluid-handling`, `steel-processing`, `biter-employment-office`
 - **Science:** 95 auto + 95 logistic + 95 admin science-pack (30s)
-- **Unlocks:** `petrochemical-operating-permit-production`, `environmental-impact-report`, `chemical-handling-work-order-production`, `carbon-offset-certificate-verified`
+- **Unlocks:** `environmental-impact-report`, `chemical-handling-work-order-production`, `carbon-offset-certificate-verified`
 
 ### Smog Abatement (`smog-abatement`)
 
@@ -229,7 +229,6 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 | Technology | Effect |
 | --- | --- |
 | `biterport-logistics` | Unlocks the biterport building |
-| `biterport-capacity-1/2/3/4` | Increases worker slots from 5 to 15 |
 | `biterport-transport-capacity-1/2/3/4/5` | Increases items per worker from 1 to 25 |
 | `biterport-worker-speed-1` | Unlocks faster biterport workers |
 | `biterport-worker-speed-2` | Unlocks express biterport workers |

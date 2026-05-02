@@ -71,7 +71,7 @@ Derived from the code in `prototypes/`, `data-final-fixes.lua`, `overrides/vanil
 | Machine family | Operating document | Notes |
 | --- | --- | --- |
 | Furnaces | `carbon-offset-certificate-basic` / `carbon-offset-certificate-verified` | Smelting and rubble compression already run on certificates |
-| Oil processing | `petrochemical-operating-permit` | Reusable refinery permit built from safety, construction, EIR, and Form 27B-6 |
+| Oil processing | None | Refineries are gated by biter-station dispatch instead of operating paperwork |
 | Chemistry | `chemical-handling-work-order` | Chemical-plant operating document; no longer shares assembler `work-order` |
 | Centrifuging | `radiological-work-order` | Centrifuge operating document built from chemical paperwork and written approval |
 
