@@ -151,14 +151,14 @@ end
 -------------------------------------------------------------------------------
 -- 2a. BITER SETUP
 -------------------------------------------------------------------------------
-for _, biter in pairs(data.raw["unit"]) do
+for _, biter in pairs(data.raw["unit"] or {}) do
     if biter.vision_distance then
         biter.vision_distance = 0
         biter.distraction_radius = 0
     end
 end
 
-for _, spawner in pairs(data.raw["unit-spawner"]) do
+for _, spawner in pairs(data.raw["unit-spawner"] or {}) do
     spawner.call_for_help_radius = 0
 end
 

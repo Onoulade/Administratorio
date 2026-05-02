@@ -1001,15 +1001,16 @@ if working_hours_enabled then
       effects = {
         { type = "unlock-recipe", recipe = "overtime-exemption" }
       },
-      prerequisites = {"executive-review", "federal-regulation", "production-science-pack"},
+      prerequisites = {"executive-review", "federal-regulation", "production-science-pack", "utility-science-pack"},
       unit = {
         count = 175,
         ingredients = {
           {"automation-science-pack", 1},
           {"logistic-science-pack", 1},
-          {"chemical-science-pack", 1},
-          {"production-science-pack", 1},
-          {"administrative-science-pack", 1},
+	          {"chemical-science-pack", 1},
+	          {"production-science-pack", 1},
+	          {"utility-science-pack", 1},
+	          {"administrative-science-pack", 1},
         },
         time = 45
       },
@@ -1049,11 +1050,6 @@ add_tech_unlock("discovery-bullshit", "landscape-final")
 add_tech_prerequisite("printing-technology", "discovery-bullshit")
 add_tech_prerequisite("printing-technology", "discovery-redundant-rubble")
 
--- Delay unlocks until the first technology where their recipes are actually
--- machine-usable, so the tree only exposes craftable outcomes.
-remove_tech_unlock("advanced-material-processing", "steel-furnace")
-add_tech_unlock("concrete", "steel-furnace")
-
 for _, recipe_name in ipairs({
   "arithmetic-combinator",
   "decider-combinator",
@@ -1065,28 +1061,6 @@ for _, recipe_name in ipairs({
   remove_tech_unlock("circuit-network", recipe_name)
   add_tech_unlock("advanced-combinators", recipe_name)
 end
-
-remove_tech_unlock("electric-energy-distribution-1", "medium-electric-pole")
-remove_tech_unlock("electric-energy-distribution-1", "big-electric-pole")
-add_tech_unlock("electric-energy-distribution-2", "medium-electric-pole")
-add_tech_unlock("electric-energy-distribution-2", "big-electric-pole")
-
-for _, recipe_name in ipairs({
-  "fast-transport-belt",
-  "fast-underground-belt",
-  "fast-splitter",
-}) do
-  remove_tech_unlock("logistics-2", recipe_name)
-  add_tech_unlock("bulk-inserter", recipe_name)
-end
-
-remove_tech_unlock("engine", "engine-unit")
-add_tech_unlock("fluid-handling", "engine-unit")
-
-remove_tech_unlock("productivity-module-3", "productivity-module-3")
-remove_tech_unlock("speed-module-3", "speed-module-3")
-add_tech_unlock("rocket-silo", "productivity-module-3")
-add_tech_unlock("rocket-silo", "speed-module-3")
 
 remove_tech_unlock("railway", "locomotive")
 add_tech_unlock("production-science-pack", "locomotive")

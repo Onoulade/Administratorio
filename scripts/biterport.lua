@@ -177,10 +177,6 @@ local function force_has_researched(force, tech_name)
   return tech and tech.researched or false
 end
 
-local function get_port_worker_slots_for_force(force)
-  return C.BITERPORT_WORKER_SLOTS
-end
-
 local function get_transport_capacity_for_force(force)
   local capacity = 1
   for _, tier in ipairs(TRANSPORT_TIER_TECHS) do
@@ -222,7 +218,7 @@ end
 local function apply_port_inventory(port)
   local inv = get_station_inventory(port)
   if not inv then return end
-  local target = get_port_worker_slots_for_force(port.force) + 1
+  local target = C.BITERPORT_WORKER_SLOTS + 1
   if #inv < target and inv.resize then
     inv.resize(target)
   end
@@ -2791,17 +2787,13 @@ end
 
 function M.on_research_finished(research)
   if not research or not research.valid or not research.name then return end
-  if not research.name:find("^biterport%-capacity%-")
-     and not research.name:find("^biterport%-transport%-capacity%-") then
+  if not research.name:find("^biterport%-transport%-capacity%-") then
     return
   end
 
   M.ensure_storage()
   for _, port in pairs(storage.biterports or {}) do
     if port and port.valid and port.force == research.force then
-      if research.name:find("^biterport%-capacity%-") then
-        apply_port_inventory(port)
-      end
       refresh_port_status(port)
     end
   end

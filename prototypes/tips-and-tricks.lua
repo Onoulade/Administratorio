@@ -57,22 +57,59 @@ data:extend({
     }
   },
 
-  -- Frustration, Protests & Bureaucratic Promise
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-frustration",
+	  -- Frustration, Protests & Bureaucratic Promise
+	  {
+	    type = "tips-and-tricks-item",
+	    name = "administratorio-frustration",
     category = "administratorio",
     order = "c",
     indent = 1,
     trigger = {
       type = "build-entity",
-      entity = "admin-station"
-    }
-  },
-  
-   -- ===== FIELD OFFICE (early biter labor) =====
+	      entity = "admin-station"
+	    }
+	  },
+	  {
+	    type = "tips-and-tricks-item",
+	    name = "administratorio-protest-resolution",
+	    category = "administratorio",
+	    order = "ca",
+	    indent = 1,
+	    trigger = {
+	      type = "build-entity",
+	      entity = "admin-station"
+	    }
+	  },
+	  {
+	    type = "tips-and-tricks-item",
+	    name = "administratorio-complaint-chain",
+	    category = "administratorio",
+	    order = "cb",
+	    indent = 1,
+	    trigger = {
+	      type = "build-entity",
+	      entity = "admin-station"
+	    }
+	  },
+	  {
+	    type = "tips-and-tricks-item",
+	    name = "administratorio-operating-paperwork",
+	    category = "administratorio",
+	    order = "cc",
+	    indent = 1,
+	    trigger = {
+	      type = "or",
+	      triggers = {
+	        { type = "build-entity", entity = "stone-furnace" },
+	        { type = "build-entity", entity = "oil-refinery" },
+	        { type = "build-entity", entity = "centrifuge" },
+	      }
+	    }
+	  },
+	  
+	   -- ===== FIELD OFFICE (early biter labor) =====
 
-  {
+	  {
     type = "tips-and-tricks-item",
     name = "administratorio-field-office",
     category = "administratorio",
@@ -127,18 +164,29 @@ data:extend({
     }
   },
 
-  -- Biter Workers & Specialists (covers Formation Center)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-biter-workers",
+	  -- Biter Workers & Specialists (covers Formation Center)
+	  {
+	    type = "tips-and-tricks-item",
+	    name = "administratorio-biter-workers",
     category = "administratorio",
     order = "i",
     indent = 1,
     trigger = {
       type = "build-entity",
-      entity = "formation-center"
-    }
-  },
+	      entity = "formation-center"
+	    }
+	  },
+	  {
+	    type = "tips-and-tricks-item",
+	    name = "administratorio-formation-center",
+	    category = "administratorio",
+	    order = "ia",
+	    indent = 1,
+	    trigger = {
+	      type = "build-entity",
+	      entity = "formation-center"
+	    }
+	  },
 
   -- Biter Station (covers labor efficiency upgrades)
   {

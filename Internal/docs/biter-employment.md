@@ -87,15 +87,11 @@ The `biterport` provides logistic and construction support through a walking-wor
 
 #### Worker Slots
 
-Each biterport has a slot capacity that scales with research:
+Each biterport has a fixed worker-slot capacity:
 
 | Technology | Worker Slots |
 | --- | --- |
-| Base | 5 |
-| `biterport-capacity-1` | 8 |
-| `biterport-capacity-2` | 10 |
-| `biterport-capacity-3` | 12 |
-| `biterport-capacity-4` | 15 |
+| Base | 8 |
 
 #### Transport Capacity
 
