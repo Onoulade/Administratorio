@@ -175,12 +175,13 @@ M.BITERPORT_CRAPPY_PASSIVE_PROVIDER_CHEST = "paperwork-provider-chest"
 M.BITERPORT_CRAPPY_STORAGE_CHEST = "paperwork-storage-chest"
 M.BITERPORT_CRAPPY_REQUESTER_CHEST = "paperwork-requester-chest"
 
--- Pneumatic tube network capacity (items per item type, per network).
+-- Pneumatic tube network capacity (shared items per network).
 M.TUBE_BASE_CAPACITY = 10
 M.TUBE_CAPACITY_TECHS = {
-  ["pneumatic-capacity-1"] = 10,  -- 20 per item type
-  ["pneumatic-capacity-2"] = 30,  -- 50 per item type
-  ["pneumatic-capacity-3"] = 50,  -- 100 per item type
+  ["pneumatic-capacity-1"] = 15,   -- total 25
+  ["pneumatic-capacity-2"] = 25,   -- total 50
+  ["pneumatic-capacity-3"] = 50,   -- total 100
+  ["pneumatic-capacity-4"] = 100,  -- total 200
 }
 M.TUBE_MAX_NETWORK_RADIUS = 120
 

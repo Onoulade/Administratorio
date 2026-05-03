@@ -238,9 +238,10 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 | Technology | Total Network Capacity |
 | --- | --- |
 | Base | 10 |
-| `pneumatic-capacity-1` | 20 |
+| `pneumatic-capacity-1` | 25 |
 | `pneumatic-capacity-2` | 50 |
 | `pneumatic-capacity-3` | 100 |
+| `pneumatic-capacity-4` | 200 |
 
 ## Rideable Biter (`rideable-biter`)
 
