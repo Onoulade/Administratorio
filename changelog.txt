@@ -1,4 +1,34 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.2
+Date: 2026-05-03
+Date: ????
+  Features:
+    - Added a French locale for Administratorio and refined translated names, descriptions, tips, and GUI text across the mod.
+    - Added a fourth Pneumatic Capacity research tier, raising tube network capacity to 200 items with utility science.
+    - Added Tube Intake status messages for ready, intaking, disconnected, overextended, circuit-blocked, full, invalid-item, and missing-input states.
+  Changes:
+    - Moved Field Office unlock to Steam Power, then made the first crafted or built Field Office trigger Field Office Deployment, which unlocks provisional approvals, bureaucratic promises, and the Biter Administration Desk.
+    - Changed Field Office construction to require Dubious Data instead of a Provisional Approval so early field deployment can bootstrap the approval chain.
+    - Tightened Biterport progression and paperwork dependencies, including fixed worker slot handling and updated logistics/capacity guidance.
+    - Increased the pneumatic tube maximum network radius from 60 to 120 tiles.
+    - Rebalanced pneumatic capacity bonuses to 25, 50, 100, and 200 total network items across the four tiers.
+    - Made Provisional Approval use the bureaucracy-registration category, and increased verified carbon certificate and environmental impact report paperwork costs.
+    - Moved work-order gear overlays out of the stack badge area and regenerated the affected work-order icons.
+    - Refined English locale flavor text for cases, legacy briefs, modules, paperwork recipes, complaint chains, buildings, and pneumatic entities.
+  Bugfixes:
+    - Tube Intakes now honor circuit-control disabled state before consuming paperwork.
+    - Tube Intakes now use a dedicated hidden selectable network port instead of the regular tube network combinator, avoiding stale combinators on rebuild.
+    - Tube Intakes now expose directional sprites and are made rotatable during rebuild and placement handling.
+    - Tube Outtakes now tolerate old filtered inventories while new outtakes use a barred inventory.
+    - Overtime Exemption now correctly requires and consumes utility science alongside the late-game prerequisites.
+  Docs:
+    - Expanded Tips & Tricks for protest resolution, complaint chains, operating paperwork, Field Offices, and the Formation Center.
+    - Updated README and internal progression/building/technology documentation for the revised Field Office, Biterport, and pneumatic progression.
+  Internal:
+    - Added locale key verification tests for English and French locales, with stricter coverage of prototype, tips-and-tricks, shortcut, and GUI locale keys.
+    - Made the test runner tolerate environments without Factorio installed while still running non-Factorio checks.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.4.1
 Date: 2026-04-29
   Features:
