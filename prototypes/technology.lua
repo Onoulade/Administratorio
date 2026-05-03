@@ -688,12 +688,13 @@ local pneumatic_cap_packs = {
   {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}},
   {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}},
   {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}},
+  {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"utility-science-pack", 1}, {"administrative-science-pack", 1}},
 }
-local pneumatic_cap_counts = {60, 120, 200}
-local pneumatic_cap_times = {20, 30, 45}
-local pneumatic_cap_bonuses = {10, 30, 50}
+local pneumatic_cap_counts = {60, 120, 200, 320}
+local pneumatic_cap_times = {20, 30, 45, 60}
+local pneumatic_cap_bonuses = {15, 25, 50, 100}
 
-for level = 1, 3 do
+for level = 1, 4 do
   local name = "pneumatic-capacity-" .. level
   local prerequisites = {}
   if level == 1 then
@@ -705,6 +706,8 @@ for level = 1, 3 do
     prerequisites[#prerequisites + 1] = "chemical-science-pack"
   elseif level == 3 then
     prerequisites[#prerequisites + 1] = "production-science-pack"
+  elseif level == 4 then
+    prerequisites[#prerequisites + 1] = "utility-science-pack"
   end
 
   pneumatic_capacity_techs[#pneumatic_capacity_techs + 1] = {

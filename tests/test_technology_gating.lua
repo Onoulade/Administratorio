@@ -380,12 +380,15 @@ test("pneumatic capacity upgrade chain has base upgrade locale", function()
   assert_true(technology_name_locale["pneumatic-capacity"] ~= nil, "pneumatic capacity upgrade base name should be localized")
   assert_true(technology_description_locale["pneumatic-capacity"] ~= nil, "pneumatic capacity upgrade base description should be localized")
 
-  for level = 1, 3 do
+  for level = 1, 4 do
     local tech_name = "pneumatic-capacity-" .. level
     assert_true(technologies[tech_name] ~= nil, tech_name .. " should exist")
     assert_true(technology_name_locale[tech_name] ~= nil, tech_name .. " name should be localized")
     assert_true(technology_description_locale[tech_name] ~= nil, tech_name .. " description should be localized")
   end
+
+  assert_true(tech_has_prereq("pneumatic-capacity-4", "utility-science-pack"), "pneumatic capacity IV should require utility science")
+  assert_true(tech_uses_pack("pneumatic-capacity-4", "utility-science-pack"), "pneumatic capacity IV should consume utility science")
 end)
 
 test("biterport capacity, transport, and logistics speed upgrades are tiered and localized", function()

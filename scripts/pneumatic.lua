@@ -40,6 +40,30 @@ local function deactivate_intake_machine(entity)
   end
 end
 
+local function set_intake_status(entity, key, diode)
+  if not entity or not entity.valid or entity.name ~= "tube-intake" then return end
+  entity.custom_status = {
+    diode = diode,
+    label = {"gui.tube-intake-" .. key},
+  }
+end
+
+local function set_intake_status_ready(entity)
+  set_intake_status(entity, "ready", defines.entity_status_diode.green)
+end
+
+local function set_intake_status_intaking(entity)
+  set_intake_status(entity, "intaking", defines.entity_status_diode.green)
+end
+
+local function set_intake_status_waiting(entity, key)
+  set_intake_status(entity, key, defines.entity_status_diode.yellow)
+end
+
+local function set_intake_status_blocked(entity, key)
+  set_intake_status(entity, key, defines.entity_status_diode.red)
+end
+
 local function enable_tube_rotation(entity)
   if not entity or not entity.valid then return end
   pcall(function()
@@ -149,14 +173,8 @@ function M.get_network_total(net_id)
   return total
 end
 
-function M.get_network_item_count(net_id, item_name)
-  local pool = storage.tube_signals[net_id]
-  if not pool then return 0 end
-  return pool[item_name] or 0
-end
-
 local function intake_circuit_allows(entity)
-  if not entity or not entity.valid or not entity.get_control_behavior then return true end
+  if not entity or not entity.valid or entity.name == "tube-intake" or not entity.get_control_behavior then return true end
 
   -- Factorio evaluates the visible circuit condition; this script just honors it.
   local ok, disabled = pcall(function()
@@ -190,13 +208,15 @@ end
 local function create_tube_combinator(entity)
   if not entity or not entity.valid then return nil end
   local combinator = entity.surface.create_entity{
-    name = "tube-network-combinator",
+    name = entity.name == "tube-intake" and "tube-intake-network-port" or "tube-network-combinator",
     position = entity.position,
     force = entity.force,
   }
   if combinator then
     combinator.destructible = false
-    connect_tube_combinator(entity, combinator)
+    if entity.name ~= "tube-intake" then
+      connect_tube_combinator(entity, combinator)
+    end
   end
   return combinator
 end
@@ -326,7 +346,7 @@ function M.delete_pneumatic_inserters(entity, buffer)
 
   -- Remove hidden combinators.
   local combinators = entity.surface.find_entities_filtered{
-    name = "tube-network-combinator",
+    name = {"tube-network-combinator", "tube-intake-network-port"},
     position = entity.position,
     radius = 0.5
   }
@@ -437,25 +457,41 @@ function M.on_pneumatic_tick()
     end
 
     local net_id = storage.tube_network_cache[uid]
-    if not net_id then goto next_intake end
-    if storage.tube_network_disabled[net_id] then goto next_intake end
-    if not intake_circuit_allows(entity) then goto next_intake end
+    if not net_id then
+      set_intake_status_blocked(entity, "disconnected")
+      goto next_intake
+    end
+    if storage.tube_network_disabled[net_id] then
+      set_intake_status_blocked(entity, "overextended")
+      goto next_intake
+    end
+    if not intake_circuit_allows(entity) then
+      set_intake_status_waiting(entity, "circuit-blocked")
+      goto next_intake
+    end
+
+    local capacity = M.get_network_capacity(entity.force)
+    local total = M.get_network_total(net_id)
+    if total >= capacity then
+      set_intake_status_waiting(entity, "tube-full")
+      goto next_intake
+    end
 
     local inv = get_intake_inventory(entity)
-    if inv and not inv.is_empty() then
+    if not inv then
+      set_intake_status_blocked(entity, "no-input")
+      goto next_intake
+    end
+
+    if inv.is_empty() then
+      set_intake_status_ready(entity)
+    else
       local stack = inv[1]
       if stack and stack.valid_for_read then
         local item_name = stack.name
 
         if not PNEUMATIC_SET[item_name] then
-          goto next_intake
-        end
-
-        -- Check per-item capacity before consuming. Different forms no longer
-        -- compete for the same slots and cannot starve each other out.
-        local capacity = M.get_network_capacity(entity.force)
-        local item_count = M.get_network_item_count(net_id, item_name)
-        if item_count >= capacity then
+          set_intake_status_blocked(entity, "invalid-item")
           goto next_intake
         end
 
@@ -469,6 +505,9 @@ function M.on_pneumatic_tick()
         end
         pool[item_name] = (pool[item_name] or 0) + 1
         networks_changed[net_id] = true
+        set_intake_status_intaking(entity)
+      else
+        set_intake_status_ready(entity)
       end
     end
 
@@ -494,8 +533,13 @@ function M.on_pneumatic_tick()
     local pool = storage.tube_signals[net_id]
     if not pool then goto next_outtake end
 
-    -- Check if the player set a filter on slot 1.
-    local slot_filter = inv.get_filter(1)
+    -- Check if the player set a filter on slot 1. Older saves may still have
+    -- filtered inventories; new tube outtakes use a plain barred container.
+    local slot_filter = nil
+    if inv.get_filter then
+      local ok, filter = pcall(inv.get_filter, 1)
+      if ok then slot_filter = filter end
+    end
     local allowed_name = slot_filter and slot_filter.name or nil
 
     -- Pick item: if filtered, only that item; otherwise largest-count-first.
@@ -607,17 +651,11 @@ function M.update_tube_info_gui(player, entity)
   -- Capacity.
   local capacity = M.get_network_capacity(entity.force)
   local total = M.get_network_total(net_id)
-  local max_item_count = 0
   local pool = storage.tube_signals[net_id]
-  if pool then
-    for _, count in pairs(pool) do
-      if count > max_item_count then max_item_count = count end
-    end
-  end
-  local pct = capacity > 0 and (max_item_count / capacity) or 0
+  local pct = capacity > 0 and (total / capacity) or 0
   local cap_color = pct < 0.7 and {r=0.3, g=1, b=0.3} or pct < 0.9 and {r=1, g=1, b=0.3} or {r=1, g=0.2, b=0.2}
 
-  local cap_label = frame.add{type = "label", caption = "Capacity: " .. capacity .. " per item (" .. total .. " total)"}
+  local cap_label = frame.add{type = "label", caption = "Capacity: " .. total .. " / " .. capacity}
   cap_label.style.font_color = cap_color
 
   local bar = frame.add{type = "progressbar", value = math.min(1, pct)}
@@ -686,6 +724,16 @@ function M.rebuild_all()
           enable_tube_rotation(entity)
           deactivate_intake_machine(entity)
 
+          if entity.name == "tube-intake" then
+            for _, stale in ipairs(surface.find_entities_filtered{
+              name = "tube-network-combinator",
+              position = entity.position,
+              radius = 0.5,
+            }) do
+              stale.destroy()
+            end
+          end
+
           -- Find or create hidden inserter (only for entities that need one).
           local inserter = nil
           if inserter_name then
@@ -731,14 +779,14 @@ function M.rebuild_all()
 
           -- Find or create hidden combinator.
           local combinators = surface.find_entities_filtered{
-            name = "tube-network-combinator",
+            name = entity.name == "tube-intake" and "tube-intake-network-port" or "tube-network-combinator",
             position = entity.position,
             radius = 0.5,
           }
           local combinator = combinators[1]
           if not combinator then
             combinator = create_tube_combinator(entity)
-          else
+          elseif entity.name ~= "tube-intake" then
             connect_tube_combinator(entity, combinator)
           end
 

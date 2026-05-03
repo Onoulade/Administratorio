@@ -148,20 +148,12 @@ local tube_intake = {
   energy_source = {type = "void"},
   source_inventory_size = 1,
   result_inventory_size = 1,
+  trash_inventory_size = 0,
   module_slots = 0,
   allowed_effects = {},
   show_recipe_icon = false,
   show_recipe_icon_on_map = false,
-  circuit_wire_max_distance = 9,
-  circuit_connector = circuit_connector_definitions.create_vector(
-    universal_connector_template,
-    {
-      {variation = 26, main_offset = util.by_pixel(0, -8), shadow_offset = util.by_pixel(4, -4), show_shadow = true},
-      {variation = 26, main_offset = util.by_pixel(0, -8), shadow_offset = util.by_pixel(4, -4), show_shadow = true},
-      {variation = 26, main_offset = util.by_pixel(0, -8), shadow_offset = util.by_pixel(4, -4), show_shadow = true},
-      {variation = 26, main_offset = util.by_pixel(0, -8), shadow_offset = util.by_pixel(4, -4), show_shadow = true},
-    }
-  ),
+  enable_logistic_control_behavior = false,
   graphics_set = {
     animation = {
       north = tube_sprite("__administratorio__/graphics/entities/pneumatic-intake/intake-up.png"),
@@ -187,17 +179,21 @@ local tube_outtake = {
   collision_box = {{-0.3, -0.3}, {0.3, 0.3}},
   selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
   inventory_size = 1,
-  inventory_type = "with_filters_and_bar",
+  inventory_type = "with_bar",
   circuit_wire_max_distance = 9,
   circuit_connector = circuit_connector_definitions.create_single(
     universal_connector_template,
     {variation = 26, main_offset = util.by_pixel(0, -8), shadow_offset = util.by_pixel(4, -4), show_shadow = true}
   ),
   picture = {
-    north = tube_sprite("__administratorio__/graphics/entities/pneumatic-outtake/outtake-up.png"),
-    east = tube_sprite("__administratorio__/graphics/entities/pneumatic-outtake/outtake-right.png"),
-    south = tube_sprite("__administratorio__/graphics/entities/pneumatic-outtake/outtake-down.png"),
-    west = tube_sprite("__administratorio__/graphics/entities/pneumatic-outtake/outtake-left.png"),
+    layers = {
+      {
+        filename = "__administratorio__/graphics/entities/pneumatic-outtake/outtake-up.png",
+        priority = "high",
+        width = 66,
+        height = 72,
+      },
+    },
   },
 }
 
@@ -276,9 +272,21 @@ local tube_network_combinator = {
   circuit_wire_max_distance = 9,
 }
 
+local tube_intake_network_port = table.deepcopy(tube_network_combinator)
+tube_intake_network_port.name = "tube-intake-network-port"
+tube_intake_network_port.hidden = true
+tube_intake_network_port.selectable_in_game = true
+tube_intake_network_port.selection_box = {{-0.2, -0.55}, {0.2, -0.2}}
+tube_intake_network_port.circuit_wire_connection_points = {
+  { wire = {red = {0, -0.35}, green = {0, -0.35}}, shadow = {red = {0, -0.35}, green = {0, -0.35}} },
+  { wire = {red = {0, -0.35}, green = {0, -0.35}}, shadow = {red = {0, -0.35}, green = {0, -0.35}} },
+  { wire = {red = {0, -0.35}, green = {0, -0.35}}, shadow = {red = {0, -0.35}, green = {0, -0.35}} },
+  { wire = {red = {0, -0.35}, green = {0, -0.35}}, shadow = {red = {0, -0.35}, green = {0, -0.35}} },
+}
+
 data:extend({
   pneumatic_pipe, pneumatic_underground, pneumatic_hidden_network_pipe,
   tube_intake, tube_outtake,
   hidden_intake_inserter, hidden_outtake_inserter,
-  tube_network_combinator,
+  tube_network_combinator, tube_intake_network_port,
 })

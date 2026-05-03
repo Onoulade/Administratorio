@@ -136,6 +136,18 @@ test("tube-intake is a furnace-style intake with 1 source slot", function()
   assert_eq(intake.type, "furnace", "tube-intake should use furnace-style ingredient validation")
   assert_eq(intake.source_inventory_size, 1, "tube-intake should have 1 source slot")
   assert_eq(intake.crafting_categories[1], "pneumatic-intake", "tube-intake should use pneumatic intake recipes")
+  assert_eq(intake.trash_inventory_size, 0, "tube-intake should not show a logistics trash pane")
+  assert_eq(intake.enable_logistic_control_behavior, false, "tube-intake should not show logistic control behavior")
+  assert_eq(intake.circuit_wire_max_distance, nil, "tube-intake should not own the native circuit/logistic GUI")
+  assert_eq(intake.circuit_connector, nil, "tube-intake should not own the native circuit/logistic GUI")
+end)
+
+test("tube-intake has a wireable tube-content circuit port", function()
+  local port = data.raw["constant-combinator"]["tube-intake-network-port"]
+  assert_true(port ~= nil, "tube-intake-network-port missing")
+  assert_true(port.selectable_in_game, "tube-intake network port should be wireable")
+  assert_eq(port.circuit_wire_max_distance, 9, "tube-intake network port should support circuit wires")
+  assert_true(port.circuit_wire_connection_points ~= nil, "tube-intake network port should define wire points")
 end)
 
 test("tube-intake has directional graphics for rotation", function()
@@ -151,6 +163,14 @@ test("tube-outtake is a container with 1 slot", function()
   assert_true(outtake ~= nil, "tube-outtake missing")
   assert_eq(outtake.type, "container", "tube-outtake should be a container")
   assert_eq(outtake.inventory_size, 1, "tube-outtake should have 1 inventory slot")
+  assert_eq(outtake.inventory_type, "with_bar", "tube-outtake should not use filtered logistics-style inventory")
+end)
+
+test("tube-outtake uses a container-compatible picture sprite", function()
+  local outtake = data.raw.container["tube-outtake"]
+  assert_true(outtake.picture ~= nil, "tube-outtake should define a picture")
+  assert_true(outtake.picture.layers ~= nil, "tube-outtake picture should use sprite layers")
+  assert_true(outtake.picture.layers[1].filename ~= nil, "tube-outtake picture layer should have a filename")
 end)
 
 test("hidden outtake inserter drops at belt center for even lane distribution", function()

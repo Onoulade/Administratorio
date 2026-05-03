@@ -141,7 +141,7 @@ The pneumatic system was reworked from fluid-based transport to a script-managed
 - Dispensed at outtakes
 - Network topology detected via BFS through hidden network pipes (max radius 120 tiles)
 - Underground pipe range: 16 tiles
-- Base capacity: 10 items per item type, upgradeable to 100 per item type via `pneumatic-capacity-1/2/3`
+- Base capacity: 10 shared items, upgradeable through 25, 50, 100, and 200 shared items via `pneumatic-capacity-1/2/3/4`
 
 ### Transportable Items
 
