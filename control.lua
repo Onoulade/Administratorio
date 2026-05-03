@@ -29,6 +29,7 @@ local WORKING_HOURS_ENABLED = feature_flags.working_hours_enabled()
 local needs_unit_group_scan = false
 local resolution_processing
 local enable_regulated_variants_for_technology = regulated_unlocks.enable_regulated_variants_for_technology
+local FIELD_OFFICE_DEPLOYMENT_TECH = "field-office-deployment"
 
 local function get_entity_name(entity_or_name)
   if type(entity_or_name) == "string" then
@@ -691,6 +692,23 @@ local function on_research_finished(event)
   end
 end
 
+local function unlock_field_office_deployment(force)
+  if not force or not force.valid then return end
+  local technology = force.technologies and force.technologies[FIELD_OFFICE_DEPLOYMENT_TECH]
+  if technology and technology.valid and not technology.researched then
+    technology.researched = true
+  end
+end
+
+local function on_player_crafted_item(event)
+  local stack = event and event.item_stack
+  if not stack or not stack.valid_for_read or stack.name ~= "field-office" then return end
+  local player = event.player_index and game.get_player(event.player_index)
+  if player then
+    unlock_field_office_deployment(player.force)
+  end
+end
+
 local function on_load()
   resolution_processing.on_load()
   needs_unit_group_scan = true
@@ -922,6 +940,7 @@ local function on_entity_built_inner(event)
       working_hours.track_entity(entity)
     end
     if entity.name == "field-office" then
+      unlock_field_office_deployment(entity.force)
       field_office.track_entity(entity)
     end
     if entity.name == C.HIRED_BITER_UNIT_NAME then
@@ -1891,6 +1910,7 @@ control_event_router.register({
   on_player_created = on_player_created,
   on_player_joined_game = on_player_joined_game,
   on_player_left_game = on_player_left_game,
+  on_player_crafted_item = on_player_crafted_item,
   on_pre_build = on_pre_build,
   on_player_respawned = on_player_respawned,
   on_player_reverse_selected_area = on_player_reverse_selected_area,

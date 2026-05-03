@@ -48,11 +48,25 @@ data:extend({
     type = "technology", name = "discovery-redundant-rubble",
     icon = tech_icons .. "redundant-rubble.png", icon_size = 128,
     effects = {
-      { type = "unlock-recipe", recipe = "provisional-approval-production" },
       { type = "unlock-recipe", recipe = "burner-mining-drill" }
     },
     research_trigger = { type = "mine-entity", entity = "redundant-rubble" },
     order = "z-c"
+  },
+  -- FIELD OFFICE DEPLOYMENT (triggered when the first field office is crafted)
+  {
+    type = "technology", name = "field-office-deployment",
+    icons = {
+      { icon = "__administratorio__/graphics/icons/office-building.png", icon_size = 64, tint = {r = 0.75, g = 0.65, b = 0.45, a = 1} },
+      { icon = "__administratorio__/graphics/icons/provisional-approval.png", icon_size = 64, scale = 0.42, shift = {8, 8} },
+    },
+    effects = {
+      { type = "unlock-recipe", recipe = "provisional-approval-production" },
+      { type = "unlock-recipe", recipe = "promise-production" },
+      { type = "unlock-recipe", recipe = "admin-station" },
+    },
+    research_trigger = { type = "craft-item", item = "field-office", count = 1 },
+    order = "z-d"
   },
   -- ADMINISTRATIVE SCIENCE (T0 — unlocks admin science packs)
   {
@@ -1032,19 +1046,9 @@ add_tech_unlock("railway", "transit-authorization-production")
 add_tech_prerequisite("railway", "verbal-approvals")
 add_tech_prerequisite("railway", "local-precedents")
 
--- The field office is the early-game alternative to the office desk, unlocked
--- alongside the first rubble discovery.  The full office desk is gated behind
--- biter-employment.
-add_tech_unlock("discovery-redundant-rubble", "field-office")
-
--- Discovery-triggered bootstrap paperwork can appear early, but buildings that
--- still need the printer chain should wait until printing-technology.
-add_tech_unlock("discovery-redundant-rubble", "promise-production")
--- Admin-station is a red-tier building (no biter required), so it unlocks as
--- soon as rubble discovery provides the provisional-approval recipe.
--- Resolution-office needs a biter-worker, so it unlocks with biter-employment
--- (wired directly in that tech's effects above).
-add_tech_unlock("discovery-redundant-rubble", "admin-station")
+-- The field office is the early-game alternative to the office desk.  The full
+-- office desk is gated behind biter-employment.
+add_tech_unlock("electronics", "field-office")
 
 -- Early paperwork that consumes bootstrap resources should unlock only after
 -- the matching discovery chain is in play.
