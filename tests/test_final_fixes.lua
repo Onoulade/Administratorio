@@ -133,6 +133,20 @@ data.raw.item["splitter"] = {
   icon = "__base__/graphics/icons/splitter.png",
   icon_size = 64,
 }
+data.raw.item["boiler"] = {
+  type = "item",
+  name = "boiler",
+  stack_size = 50,
+  icon = "__base__/graphics/icons/boiler.png",
+  icon_size = 64,
+}
+data.raw.item["steam-engine"] = {
+  type = "item",
+  name = "steam-engine",
+  stack_size = 10,
+  icon = "__base__/graphics/icons/steam-engine.png",
+  icon_size = 64,
+}
 data.raw.item["transport-belt"] = {
   type = "item",
   name = "transport-belt",
@@ -336,6 +350,33 @@ recipes["splitter"] = {
   },
   results = {
     { type = "item", name = "splitter", amount = 1 },
+  },
+}
+
+recipes["boiler"] = {
+  type = "recipe",
+  name = "boiler",
+  enabled = true,
+  ingredients = {
+    { type = "item", name = "stone-furnace", amount = 1 },
+    { type = "item", name = "pipe", amount = 4 },
+  },
+  results = {
+    { type = "item", name = "boiler", amount = 1 },
+  },
+}
+
+recipes["steam-engine"] = {
+  type = "recipe",
+  name = "steam-engine",
+  enabled = true,
+  ingredients = {
+    { type = "item", name = "iron-gear-wheel", amount = 8 },
+    { type = "item", name = "pipe", amount = 5 },
+    { type = "item", name = "iron-plate", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "steam-engine", amount = 1 },
   },
 }
 
@@ -1081,6 +1122,28 @@ test("splitter uses safety waiver by hand and safety work order in regulated 5x 
   assert_true(not has_ingredient(regulated, "construction-work-order"), "splitter-regulated should not require construction-work-order")
   assert_eq(get_ingredient_amount(regulated, "electronic-circuit"), 5, "splitter-regulated should batch AM ingredients at 5x")
   assert_eq(get_result_amount(regulated, "splitter"), 5, "splitter-regulated should produce 5 splitters")
+end)
+
+test("boiler and steam-engine use safety paperwork in 2x batches", function()
+  local boiler = get_recipe("boiler")
+  local boiler_regulated = get_recipe("boiler-regulated")
+  local steam_engine = get_recipe("steam-engine")
+  local steam_engine_regulated = get_recipe("steam-engine-regulated")
+
+  assert_true(boiler ~= nil, "boiler missing")
+  assert_true(boiler_regulated ~= nil, "boiler-regulated missing")
+  assert_true(steam_engine ~= nil, "steam-engine missing")
+  assert_true(steam_engine_regulated ~= nil, "steam-engine-regulated missing")
+
+  assert_true(has_ingredient(boiler, "safety-waiver"), "boiler should require safety-waiver when handcrafted")
+  assert_true(has_ingredient(boiler_regulated, "safety-work-order"), "boiler-regulated should require safety-work-order")
+  assert_eq(get_result_amount(boiler, "boiler"), 2, "boiler should batch handcraft results at 2x")
+  assert_eq(get_result_amount(boiler_regulated, "boiler"), 2, "boiler-regulated should produce 2 boilers")
+
+  assert_true(has_ingredient(steam_engine, "safety-waiver"), "steam-engine should require safety-waiver when handcrafted")
+  assert_true(has_ingredient(steam_engine_regulated, "safety-work-order"), "steam-engine-regulated should require safety-work-order")
+  assert_eq(get_result_amount(steam_engine, "steam-engine"), 2, "steam-engine should batch handcraft results at 2x")
+  assert_eq(get_result_amount(steam_engine_regulated, "steam-engine"), 2, "steam-engine-regulated should produce 2 steam engines")
 end)
 
 test("elevated rail ramps and supports require construction paperwork even on research-trigger techs", function()
