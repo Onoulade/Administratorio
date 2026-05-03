@@ -4,16 +4,17 @@ set -eu
 
 usage() {
   cat <<'EOF'
-Usage: ./run-tests.sh --repo-root PATH --factorio-bin PATH [-- PYTHON_TEST_ARGS...]
+Usage: ./run-tests.sh --repo-root PATH [--factorio-bin PATH] [-- PYTHON_TEST_ARGS...]
 
 Required arguments:
   --repo-root PATH     Absolute or relative path to the repo root.
-  --factorio-bin PATH  Factorio binary passed to the progression report test.
 
 Optional arguments:
+  --factorio-bin PATH  Factorio binary passed to the progression report test.
   --help               Show this help text.
 
 Any arguments after -- are forwarded to Python tests.
+If --factorio-bin is omitted, tests/test_progression_report.py is skipped.
 EOF
 }
 
@@ -49,7 +50,6 @@ while [ "$#" -gt 0 ]; do
 done
 
 [ -n "$REPO_ROOT" ] || { echo "--repo-root is required" >&2; exit 1; }
-[ -n "$FACTORIO_BIN" ] || { echo "--factorio-bin is required" >&2; exit 1; }
 command -v lua >/dev/null 2>&1 || { echo "'lua' not found on PATH" >&2; exit 1; }
 
 # Prefer python3. Fall back to python only if it is Python 3.
@@ -88,7 +88,15 @@ run_python_tests() {
   while IFS= read -r test_file; do
     [ -n "$test_file" ] || continue
     printf '==> %s\n' "$(basename "$test_file")"
-    "$PYTHON_BIN" "$test_file" --factorio-bin "$FACTORIO_BIN" "$@"
+    if [ "$(basename "$test_file")" = "test_progression_report.py" ]; then
+      if [ -z "$FACTORIO_BIN" ]; then
+        printf 'Skipping %s; --factorio-bin was not provided.\n' "$(basename "$test_file")"
+        continue
+      fi
+      "$PYTHON_BIN" "$test_file" --factorio-bin "$FACTORIO_BIN" "$@"
+    else
+      "$PYTHON_BIN" "$test_file" "$@"
+    fi
   done
 }
 
