@@ -309,6 +309,11 @@ test("default batch multiplier is 5", function()
   assert_eq(shared.BATCH_MULTIPLIER_DEFAULT, 5)
 end)
 
+test("power bootstrap machines batch at 2x", function()
+  assert_eq(shared.BATCH_MULTIPLIERS["boiler"], 2)
+  assert_eq(shared.BATCH_MULTIPLIERS["steam-engine"], 2)
+end)
+
 test("splitter family batch multipliers are pinned at 5x", function()
   assert_eq(shared.BATCH_MULTIPLIERS["splitter"], 5)
   assert_eq(shared.BATCH_MULTIPLIERS["fast-splitter"], 5)
