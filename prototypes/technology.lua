@@ -1048,7 +1048,7 @@ add_tech_prerequisite("railway", "local-precedents")
 
 -- The field office is the early-game alternative to the office desk.  The full
 -- office desk is gated behind biter-employment.
-add_tech_unlock("electronics", "field-office")
+add_tech_unlock("steam-power", "field-office")
 
 -- Early paperwork that consumes bootstrap resources should unlock only after
 -- the matching discovery chain is in play.

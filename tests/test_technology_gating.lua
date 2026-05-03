@@ -67,6 +67,7 @@ local function vanilla_tech(name, prerequisites, effects, packs)
 end
 
 vanilla_tech("automation", nil, nil, {"automation-science-pack"})
+vanilla_tech("steam-power")
 vanilla_tech("automation-science-pack", nil, nil, {"automation-science-pack"})
 vanilla_tech("logistic-science-pack", nil, nil, {"automation-science-pack", "logistic-science-pack"})
 vanilla_tech("chemical-science-pack", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
@@ -511,7 +512,8 @@ test("bootstrap paperwork is gated behind both discovery chains", function()
   assert_true(technologies["discovery-redundant-rubble"].icon_size == 128,
     "geological inefficiency should use the 128px redundant rubble technology icon size")
   assert_true(tech_unlocks_recipe("biter-employment", "office-desk"), "biter-employment should unlock the office desk")
-  assert_true(tech_unlocks_recipe("electronics", "field-office"), "electronics should unlock the field office")
+  assert_true(tech_unlocks_recipe("steam-power", "field-office"), "steam-power should unlock the field office")
+  assert_true(not tech_unlocks_recipe("electronics", "field-office"), "electronics should not unlock the field office")
   assert_true(not tech_unlocks_recipe("discovery-redundant-rubble", "field-office"), "discovery-redundant-rubble should not unlock the field office")
   assert_true(not tech_unlocks_recipe("discovery-redundant-rubble", "provisional-approval-production"), "discovery-redundant-rubble should not unlock provisional approvals directly")
   assert_true(technologies["field-office-deployment"] ~= nil, "field-office-deployment technology should exist")
