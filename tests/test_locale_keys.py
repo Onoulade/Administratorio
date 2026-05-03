@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -12,6 +13,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 LOCALE_ROOT = REPO_ROOT / "locale"
 SOURCE_LOCALE = "en"
+PLACEHOLDER_PATTERN = re.compile(r"__\d+__")
 
 
 def parse_args() -> argparse.Namespace:
@@ -25,8 +27,9 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def parse_locale(path: Path) -> tuple[list[tuple[str, str]], list[str]]:
+def parse_locale(path: Path) -> tuple[list[tuple[str, str]], dict[tuple[str, str], str], list[str]]:
     entries: list[tuple[str, str]] = []
+    values: dict[tuple[str, str], str] = {}
     errors: list[str] = []
     seen_sections: set[str] = set()
     seen_keys_by_section: dict[str, set[str]] = defaultdict(set)
@@ -56,14 +59,16 @@ def parse_locale(path: Path) -> tuple[list[tuple[str, str]], list[str]]:
             continue
 
         key = raw_line.split("=", 1)[0].strip()
+        value = raw_line.split("=", 1)[1]
         if not key:
             errors.append(f"{path}:{line_number}: empty key")
         elif key in seen_keys_by_section[section]:
             errors.append(f"{path}:{line_number}: duplicate key {section}.{key}")
         seen_keys_by_section[section].add(key)
         entries.append((section, key))
+        values[(section, key)] = value
 
-    return entries, errors
+    return entries, values, errors
 
 
 def locale_path(locale: str) -> Path:
@@ -80,7 +85,8 @@ def available_locales() -> list[str]:
 
 def compare_locale(source_entries: list[tuple[str, str]], target: str) -> list[str]:
     target_path = locale_path(target)
-    target_entries, errors = parse_locale(target_path)
+    target_entries, target_values, errors = parse_locale(target_path)
+    _source_entries, source_values, _source_errors = parse_locale(locale_path(SOURCE_LOCALE))
     source_set = set(source_entries)
     target_set = set(target_entries)
 
@@ -97,13 +103,25 @@ def compare_locale(source_entries: list[tuple[str, str]], target: str) -> list[s
     if source_entries != target_entries and not errors:
         errors.append(f"{target_path}: keys match but ordering differs from English locale")
 
+    for entry in source_set & target_set:
+        if not entry[1]:
+            continue
+        source_placeholders = sorted(PLACEHOLDER_PATTERN.findall(source_values[entry]))
+        target_placeholders = sorted(PLACEHOLDER_PATTERN.findall(target_values[entry]))
+        if source_placeholders != target_placeholders:
+            section, key = entry
+            errors.append(
+                f"{target_path}: placeholder mismatch in {section}.{key}: "
+                f"expected {source_placeholders}, found {target_placeholders}"
+            )
+
     return errors
 
 
 def main() -> int:
     args = parse_args()
     source_path = locale_path(SOURCE_LOCALE)
-    source_entries, source_errors = parse_locale(source_path)
+    source_entries, _source_values, source_errors = parse_locale(source_path)
     if source_errors:
         for error in source_errors:
             print(error, file=sys.stderr)
