@@ -1180,6 +1180,27 @@ test("propaganda-distillery recipes define crafting machine tints", function()
   end
 end)
 
+test("union-headquarters recipes define crafting machine tints", function()
+  for recipe_name, recipe in pairs(recipes) do
+    if recipe.category == "union-negotiation" or recipe.category == "bureaucracy-policy" then
+      assert_true(recipe.crafting_machine_tint ~= nil, recipe_name .. " missing crafting_machine_tint")
+      assert_true(recipe.crafting_machine_tint.primary ~= nil, recipe_name .. " missing primary tint")
+    end
+  end
+end)
+
+test("overtime-exemption uses night-shift recipe tint", function()
+  local recipe = get_recipe("overtime-exemption")
+  assert_true(recipe ~= nil, "overtime-exemption recipe missing")
+  assert_true(recipe.crafting_machine_tint ~= nil, "overtime-exemption missing crafting_machine_tint")
+
+  local tint = recipe.crafting_machine_tint.primary
+  assert_eq(tint.r, 220 / 255, "overtime-exemption should use the shared pink accent red channel")
+  assert_eq(tint.g, 60 / 255, "overtime-exemption should use the shared pink accent green channel")
+  assert_eq(tint.b, 140 / 255, "overtime-exemption should use the shared pink accent blue channel")
+  assert_eq(tint.a, 1, "overtime-exemption crafting tint should be fully opaque")
+end)
+
 test("taxpayer money costs defined for late-game buildings", function()
   assert_eq(shared.TAXPAYER_MONEY_COSTS["roboport"], 25)
   assert_eq(shared.TAXPAYER_MONEY_COSTS["beacon"], 30)

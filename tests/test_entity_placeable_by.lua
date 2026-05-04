@@ -374,6 +374,59 @@ test("union-headquarters now supports both union negotiation and policy work", f
   assert_true(output_count >= 1, "union-headquarters should have at least one fluid output")
 end)
 
+test("union-headquarters mirrors doubled fluid ports on opposite sides", function()
+  local entity = data.raw["assembling-machine"]["union-headquarters"]
+  assert_true(entity ~= nil, "union-headquarters prototype missing")
+  assert_true(entity.fluid_boxes ~= nil, "union-headquarters fluid boxes missing")
+
+  local expected_boxes = {
+    {"input", defines.direction.north, {-2, -3}},
+    {"input", defines.direction.north, {2, -3}},
+    {"output", defines.direction.south, {-2, 3}},
+    {"output", defines.direction.south, {2, 3}},
+  }
+
+  for index, expected in ipairs(expected_boxes) do
+    local fluid_box = entity.fluid_boxes[index]
+    assert_true(fluid_box ~= nil, "missing union-headquarters fluid box " .. index)
+    assert_eq(fluid_box.production_type, expected[1], "unexpected union-headquarters fluid box type " .. index)
+    assert_true(fluid_box.pipe_connections ~= nil and fluid_box.pipe_connections[1] ~= nil,
+      "union-headquarters fluid box " .. index .. " should have a pipe connection")
+    assert_eq(fluid_box.pipe_connections[1].flow_direction, expected[1],
+      "union-headquarters fluid box " .. index .. " should be explicitly one-way")
+    assert_eq(fluid_box.pipe_connections[1].direction, expected[2],
+      "unexpected union-headquarters pipe side " .. index)
+    assert_eq(fluid_box.pipe_connections[1].position[1], expected[3][1],
+      "unexpected union-headquarters x position " .. index)
+    assert_eq(fluid_box.pipe_connections[1].position[2], expected[3][2],
+      "unexpected union-headquarters y position " .. index)
+  end
+end)
+
+test("union-headquarters uses new headquarters art without changing footprint", function()
+  local entity = data.raw["assembling-machine"]["union-headquarters"]
+  assert_true(entity ~= nil, "union-headquarters prototype missing")
+  assert_eq(entity.collision_box[1][1], -3.25, "union-headquarters collision footprint should remain 7x7")
+  assert_eq(entity.collision_box[2][2], 3.25, "union-headquarters collision footprint should remain 7x7")
+  assert_eq(entity.selection_box[1][1], -3.5, "union-headquarters selection footprint should remain 7x7")
+  assert_eq(entity.selection_box[2][2], 3.5, "union-headquarters selection footprint should remain 7x7")
+
+  local animation = entity.graphics_set and entity.graphics_set.animation
+  assert_true(animation ~= nil and animation.layers ~= nil, "union-headquarters should define layered art")
+  assert_eq(animation.layers[1].filename, "__administratorio__/graphics/entities/union-hq/union-hq.png",
+    "union-headquarters should use the new base art")
+  assert_eq(animation.layers[1].scale, 0.47,
+    "union-headquarters art should be scaled to the unchanged 7x7 footprint")
+  assert_eq(animation.layers[2].filename, "__administratorio__/graphics/entities/union-hq/shadow.png",
+    "union-headquarters should use the new shadow art")
+
+  local visualisations = entity.graphics_set.working_visualisations
+  assert_true(visualisations ~= nil and visualisations[1] ~= nil,
+    "union-headquarters should include its color mask visualisation")
+  assert_eq(visualisations[1].animation.filename, "__administratorio__/graphics/entities/union-hq/color.png",
+    "union-headquarters should use the new color mask art")
+end)
+
 test("formation-center is the only biter-training machine", function()
   local formation_center = data.raw["assembling-machine"]["formation-center"]
   assert_true(formation_center ~= nil, "formation-center prototype missing")

@@ -30,6 +30,7 @@ Parameters per icon (defined in ICON_DEFS below):
 import argparse
 import math
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -127,6 +128,25 @@ SC_GOLD = (180, 140, 10, 240)
 SC_BROWN = (100, 60, 20, 240)
 SC_PINK = (180, 30, 90, 240)
 SC_BLACK = (10, 10, 10, 250)
+
+
+def _load_lua_color_constants():
+    """Import shared RGBA color constants from the Lua prototype tint map."""
+    tint_path = Path(__file__).resolve().parents[1] / "prototypes" / "shared" / "icon_tints.lua"
+    if not tint_path.exists():
+        return
+
+    source = tint_path.read_text(encoding="utf-8")
+    colors_match = re.search(r"M\.colors\s*=\s*\{(?P<body>.*?)\n\}", source, re.S)
+    if not colors_match:
+        return
+
+    for name, values in re.findall(r"([A-Z][A-Z0-9_]*)\s*=\s*\{([^{}]+)\}", colors_match.group("body")):
+        channels = [int(value.strip()) for value in values.split(",")]
+        if len(channels) == 4:
+            globals()[name] = tuple(channels)
+
+_load_lua_color_constants()
 
 
 # ---------------------------------------------------------------------------
