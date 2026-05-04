@@ -22,25 +22,33 @@ local function placeable_by_item(name)
 end
 
 -- Helper: tint all sprite layers in a pipe pictures table
-local function tint_pipe_pictures(pictures, tint)
+local function tint_pipe_pictures(pictures, tint, render_layer)
   if not pictures then return end
   for key, pic in pairs(pictures) do
     if type(pic) == "table" then
       if pic.filename and not pic.draw_as_shadow then
         pic.tint = tint
+        if render_layer then pic.render_layer = render_layer end
       end
       if pic.sheets then
         for _, sheet in ipairs(pic.sheets) do
-          if not sheet.draw_as_shadow then sheet.tint = tint end
+          if not sheet.draw_as_shadow then
+            sheet.tint = tint
+            if render_layer then sheet.render_layer = render_layer end
+          end
         end
       end
       if pic.layers then
         for _, layer in ipairs(pic.layers) do
-          if not layer.draw_as_shadow then layer.tint = tint end
+          if not layer.draw_as_shadow then
+            layer.tint = tint
+            if render_layer then layer.render_layer = render_layer end
+          end
         end
       end
       if pic.sheet and not pic.sheet.draw_as_shadow then
         pic.sheet.tint = tint
+        if render_layer then pic.sheet.render_layer = render_layer end
       end
     end
   end
@@ -97,8 +105,14 @@ pneumatic_hidden_network_pipe.collision_box = {{-0.1, -0.1}, {0.1, 0.1}}
 pneumatic_hidden_network_pipe.selection_box = {{0, 0}, {0, 0}}
 pneumatic_hidden_network_pipe.flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "not-flammable"}
 pneumatic_hidden_network_pipe.minable = nil
-pneumatic_hidden_network_pipe.pictures = nil
-pneumatic_hidden_network_pipe.pipe_covers = nil
+pneumatic_hidden_network_pipe.pictures = table.deepcopy(pneumatic_pipe.pictures)
+tint_pipe_pictures(pneumatic_hidden_network_pipe.pictures, pneumatic_tint, "higher-object-above")
+if pneumatic_pipe.pipe_covers then
+  pneumatic_hidden_network_pipe.pipe_covers = table.deepcopy(pneumatic_pipe.pipe_covers)
+  tint_pipe_pictures(pneumatic_hidden_network_pipe.pipe_covers, pneumatic_tint, "higher-object-above")
+else
+  pneumatic_hidden_network_pipe.pipe_covers = nil
+end
 for _, pcon in pairs(pneumatic_hidden_network_pipe.fluid_box.pipe_connections) do
   if not pcon.connection_type or pcon.connection_type == "normal" then
     pcon.connection_category = "pneumatic-forms"
@@ -106,35 +120,40 @@ for _, pcon in pairs(pneumatic_hidden_network_pipe.fluid_box.pipe_connections) d
 end
 pneumatic_hidden_network_pipe.fluid_box.max_pipeline_extent = tube_max_network_radius
 
+local tube_sprite_scale = 0.5
+
 local function tube_sprite(filename)
   return {
     layers = {
       {
+        filename = "__administratorio__/graphics/entities/pneumatic/shadow.png",
+        priority = "high",
+        width = 70,
+        height = 60,
+        scale = tube_sprite_scale,
+        shift = util.by_pixel(2.0, 4.0),
+        draw_as_shadow = true,
+      },
+      {
         filename = filename,
         priority = "high",
-        width = 66,
-        height = 72,
+        width = 64,
+        height = 82,
+        scale = tube_sprite_scale,
+        shift = util.by_pixel(0.0, -4.0),
       },
     },
   }
 end
-
--- Empty sheet for hidden inserter graphics
-local empty_sheet = {
-  filename = "__core__/graphics/empty.png",
-  priority = "very-low",
-  width = 1, height = 1,
-  frame_count = 1,
-}
 
 -- Tube Intake: furnace-style receiver that lets inserters use recipe
 -- ingredient validation before items reach the signal chain.
 local tube_intake = {
   type = "furnace",
   name = "tube-intake",
-  icon = "__administratorio__/graphics/icons/pneumatic/intake.png",
-  icon_size = 32,
-  flags = {"placeable-neutral", "placeable-player", "player-creation"},
+  icon = "__administratorio__/graphics/entities/pneumatic/intake-icon.png",
+  icon_size = 64,
+  flags = {"placeable-neutral", "placeable-player", "player-creation", "not-rotatable"},
   minable = {mining_time = 0.2, result = "tube-intake"},
   placeable_by = placeable_by_item("tube-intake"),
   fast_replaceable_group = "pneumatic-io",
@@ -155,12 +174,7 @@ local tube_intake = {
   show_recipe_icon_on_map = false,
   enable_logistic_control_behavior = false,
   graphics_set = {
-    animation = {
-      north = tube_sprite("__administratorio__/graphics/entities/pneumatic-intake/intake-up.png"),
-      east = tube_sprite("__administratorio__/graphics/entities/pneumatic-intake/intake-right.png"),
-      south = tube_sprite("__administratorio__/graphics/entities/pneumatic-intake/intake-down.png"),
-      west = tube_sprite("__administratorio__/graphics/entities/pneumatic-intake/intake-left.png"),
-    },
+    animation = tube_sprite("__administratorio__/graphics/entities/pneumatic/intake.png"),
   },
 }
 
@@ -168,9 +182,9 @@ local tube_intake = {
 local tube_outtake = {
   type = "container",
   name = "tube-outtake",
-  icon = "__administratorio__/graphics/icons/pneumatic/outtake.png",
-  icon_size = 32,
-  flags = {"placeable-neutral", "placeable-player", "player-creation"},
+  icon = "__administratorio__/graphics/entities/pneumatic/outtake-icon.png",
+  icon_size = 64,
+  flags = {"placeable-neutral", "placeable-player", "player-creation", "not-rotatable"},
   minable = {mining_time = 0.2, result = "tube-outtake"},
   placeable_by = placeable_by_item("tube-outtake"),
   fast_replaceable_group = "pneumatic-io",
@@ -185,65 +199,16 @@ local tube_outtake = {
     universal_connector_template,
     {variation = 26, main_offset = util.by_pixel(0, -8), shadow_offset = util.by_pixel(4, -4), show_shadow = true}
   ),
-  picture = {
-    layers = {
-      {
-        filename = "__administratorio__/graphics/entities/pneumatic-outtake/outtake-up.png",
-        priority = "high",
-        width = 66,
-        height = 72,
-      },
-    },
-  },
-}
-
--- Hidden inserters for intake/outtake (move items in/out)
-local hidden_intake_inserter = {
-  type = "inserter",
-  hidden = true,
-  name = "pneumatic-hidden-intake",
-  energy_source = {type = "void"},
-  extension_speed = 1, rotation_speed = 1,
-  pickup_position = {0, 1}, insert_position = {0, -0.2},
-  stack = false, stack_size_bonus = 50,
-  draw_held_item = false, draw_inserter_arrow = false, chases_belt_items = false,
-  platform_picture = empty_sheet,
-  hand_base_picture = empty_sheet,
-  hand_open_picture = empty_sheet,
-  hand_closed_picture = empty_sheet,
-  collision_box = {{-0.1, -0.1}, {0.1, 0.1}},
-  collision_mask = {layers = {}},
-  selectable_in_game = false,
-  flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "not-flammable"},
-}
-
-local hidden_outtake_inserter = {
-  type = "inserter",
-  hidden = true,
-  name = "pneumatic-hidden-outtake",
-  energy_source = {type = "void"},
-  extension_speed = 1, rotation_speed = 1,
-  -- Center drop so Factorio distributes items across both belt lanes.
-  pickup_position = {0, -0.2}, insert_position = {0, 1},
-  stack = false, stack_size_bonus = 50,
-  draw_held_item = false, draw_inserter_arrow = false, chases_belt_items = false,
-  platform_picture = empty_sheet,
-  hand_base_picture = empty_sheet,
-  hand_open_picture = empty_sheet,
-  hand_closed_picture = empty_sheet,
-  collision_box = {{-0.1, -0.1}, {0.1, 0.1}},
-  collision_mask = {layers = {}},
-  selectable_in_game = false,
-  flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "not-flammable"},
+  picture = tube_sprite("__administratorio__/graphics/entities/pneumatic/outtake.png"),
 }
 
 -- Hidden Constant Combinator for tube network circuit signals
 local tube_network_combinator = {
   type = "constant-combinator",
   name = "tube-network-combinator",
-  icon = "__administratorio__/graphics/icons/pneumatic/intake.png",
-  icon_size = 32,
-  flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "placeable-off-grid"},
+  icon = "__administratorio__/graphics/entities/pneumatic/intake-icon.png",
+  icon_size = 64,
+  flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "placeable-off-grid", "not-rotatable"},
   collision_mask = {layers = {}},
   collision_box = {{0, 0}, {0, 0}},
   selection_box = {{0, 0}, {0, 0}},
@@ -287,6 +252,5 @@ tube_intake_network_port.circuit_wire_connection_points = {
 data:extend({
   pneumatic_pipe, pneumatic_underground, pneumatic_hidden_network_pipe,
   tube_intake, tube_outtake,
-  hidden_intake_inserter, hidden_outtake_inserter,
   tube_network_combinator, tube_intake_network_port,
 })

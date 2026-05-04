@@ -25,7 +25,9 @@ function M.register(deps)
   script.on_event(defines.events.on_player_mined_entity, deps.on_entity_removed)
   script.on_event(defines.events.on_robot_mined_entity, deps.on_entity_removed)
   script.on_event(defines.events.script_raised_destroy, deps.on_entity_removed)
-  script.on_event(defines.events.on_player_rotated_entity, deps.on_player_rotated_entity)
+  if deps.on_player_rotated_entity then
+    script.on_event(defines.events.on_player_rotated_entity, deps.on_player_rotated_entity)
+  end
 
   script.on_event("administratorio-toggle-runtime-debug", deps.on_toggle_runtime_debug)
   script.on_event("administratorio-field-agent-toggle-select", deps.on_field_agent_waypoint_input)

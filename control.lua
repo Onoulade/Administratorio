@@ -915,9 +915,9 @@ local function on_entity_built_inner(event)
     storage.desk_grid_slots[desk_id] = {}
     storage.admin_desks[desk_id] = entity
     biters.mark_desk_circuit_dirty(desk_id)
-  -- Handle Pneumatic Building placement (automatic hidden inserters)
+  -- Handle pneumatic endpoint support entities.
   elseif pneumatic.is_pneumatic_building(entity) then
-    pneumatic.add_pneumatic_inserter(entity)
+    pneumatic.add_pneumatic_supports(entity)
 
   -- Pipe placement changes tube network topology.
   elseif entity.name == "pneumatic-pipe" or entity.name == "pneumatic-pipe-to-ground" then
@@ -1021,16 +1021,10 @@ local function on_entity_removed(event)
     if storage.desk_grid_slots then storage.desk_grid_slots[desk_id] = nil end
     biters.clear_desk_circuit_tracking(desk_id)
   elseif pneumatic.is_pneumatic_building(entity) then
-    pneumatic.delete_pneumatic_inserters(entity, event.buffer)
+    pneumatic.delete_pneumatic_supports(entity)
   elseif entity.name == "pneumatic-pipe" or entity.name == "pneumatic-pipe-to-ground" then
     pneumatic.ensure_storage()
     storage.tube_network_dirty = true
-  end
-end
-
-local function on_player_rotated_entity(event)
-  if pneumatic.is_pneumatic_building(event.entity) then
-    pneumatic.update_pneumatic_inserter_direction(event.entity)
   end
 end
 
@@ -1602,7 +1596,7 @@ local function on_entity_died(event)
     biters.clear_desk_circuit_tracking(desk_id)
   end
   if pneumatic.is_pneumatic_building(entity) then
-    pneumatic.delete_pneumatic_inserters(entity)
+    pneumatic.delete_pneumatic_supports(entity)
   end
   trains.on_removed(entity)
 end
@@ -1927,7 +1921,6 @@ control_event_router.register({
   on_player_reverse_selected_area = on_player_reverse_selected_area,
   on_research_finished = on_research_finished,
   on_player_selected_area = on_player_selected_area,
-  on_player_rotated_entity = on_player_rotated_entity,
   on_protest_pacing_tick = on_protest_pacing_tick,
   on_rocket_launched = on_rocket_launched,
   on_script_path_request_finished = on_script_path_request_finished,

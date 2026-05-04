@@ -187,10 +187,10 @@ M.TUBE_CAPACITY_TECHS = {
 }
 M.TUBE_MAX_NETWORK_RADIUS = 120
 
--- Maps tube entity names to their hidden inserter (false = no hidden inserter).
+-- Tube endpoint entity names.
 M.PNEUMATIC_BUILDINGS = {
-  ["tube-intake"]  = "pneumatic-hidden-intake",
-  ["tube-outtake"] = false, -- no hidden inserter; player uses own inserter to extract
+  ["tube-intake"] = true,
+  ["tube-outtake"] = true,
 }
 
 -- All items eligible for pneumatic tube transport.
