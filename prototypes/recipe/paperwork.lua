@@ -1,3 +1,5 @@
+local icon_tints = require("prototypes.shared.icon_tints")
+
 data:extend({
   -- Paper & Ink (base materials)
   { type = "recipe", name = "paper-production",      enabled = true, ingredients = {{type="item", name="wood", amount=1}},  results = {{type="item", name="paper", amount=5}}, energy_required = 1 },
@@ -51,7 +53,7 @@ data:extend({
   { type = "recipe", name = "management-verbal-printing", category = "printing",          enabled = false, ingredients = {{type="item", name="management-verbal-draft", amount=1}, {type="item", name="ink", amount=1}, {type="item", name="paper", amount=1}}, results = {{type="item", name="management-approval-verbal", amount=1}}, energy_required = 5 },
 
   -- Management Approval Written (Tier 4 — proposal + heavy printer finalization)
-  { type = "recipe", name = "management-written-proposal",    category = "bureaucracy-policy", enabled = false, ingredients = {{type="item", name="blank-directive", amount=1}, {type="item", name="good-excuse", amount=1}, {type="item", name="narrative", amount=1}, {type="item", name="advanced-circuit", amount=2}, {type="fluid", name="liquid-coffee", amount=35}}, results = {{type="item", name="management-written-proposal", amount=1}}, energy_required = 12 },
+  { type = "recipe", name = "management-written-proposal",    category = "bureaucracy-policy", enabled = false, ingredients = {{type="item", name="blank-directive", amount=1}, {type="item", name="good-excuse", amount=1}, {type="item", name="narrative", amount=1}, {type="item", name="advanced-circuit", amount=2}, {type="fluid", name="liquid-coffee", amount=35}}, results = {{type="item", name="management-written-proposal", amount=1}}, energy_required = 12, crafting_machine_tint = icon_tints.recipe_tint("management-written-proposal") },
   { type = "recipe", name = "management-written-1st-printing", category = "printing",         enabled = false, ingredients = {{type="item", name="management-written-proposal", amount=1}, {type="item", name="ink", amount=3}, {type="item", name="form-27b-6", amount=1}, {type="item", name="paper", amount=1}}, results = {{type="item", name="management-approval-written", amount=1}}, energy_required = 10 },
 
   -- Research Grant Approval (science packs)

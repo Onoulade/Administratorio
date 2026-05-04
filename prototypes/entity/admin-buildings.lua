@@ -647,6 +647,7 @@ breakroom.working_sound = {
 }
 
 -- Union Headquarters: 7x7
+local union_hq_graphics = entity_graphics .. "union-hq/"
 local union_hq = table.deepcopy(data.raw["assembling-machine"]["centrifuge"])
 union_hq.name = "union-headquarters"
 union_hq.minable.result = "union-headquarters"
@@ -662,19 +663,54 @@ union_hq.localised_description = disabled_entity_description("union-headquarters
 union_hq.collision_box = {{-3.25, -3.25}, {3.25, 3.25}}
 union_hq.selection_box = {{-3.5, -3.5}, {3.5, 3.5}}
 union_hq.energy_usage = "1MW"
-union_hq.icon = "__administratorio__/graphics/icons/lufter-icon.png"
+union_hq.icon =  union_hq_graphics .. "icon.png"
 union_hq.icon_size = 64
+local union_hq_scale = 0.47
 union_hq.graphics_set = {
   animation = {
     layers = {
-      { filename = entity_graphics .. "union-hq/lufter.png", width = 473, height = 459, frame_count = 1, scale = 0.5, shift = {0.4, 0} },
+      {
+        filename = union_hq_graphics .. "union-hq.png",
+        priority = "high",
+        width = 480,
+        height = 495,
+        frame_count = 1,
+        scale = union_hq_scale,
+        shift = {0, 0.0},
+      },
+      {
+        filename = union_hq_graphics .. "shadow.png",
+        priority = "high",
+        width = 683,
+        height = 623,
+        frame_count = 1,
+        draw_as_shadow = true,
+        scale = 0.4,
+        shift = {1.2, 1.2},
+      },
     }
-  }
+  },
+  working_visualisations = {
+    {
+      always_draw = true,
+      apply_recipe_tint = "primary",
+      animation = {
+        filename = union_hq_graphics .. "color.png",
+        priority = "high",
+        width = 480,
+        height = 495,
+        frame_count = 1,
+        scale = union_hq_scale,
+        shift = {0, 0.0},
+      },
+    },
+  },
 }
 union_hq.fluid_boxes = {
-  { production_type = "input",  pipe_connections = {{ flow_direction = "input", direction = defines.direction.north, position = {0, -3} }}, volume = 100 },
-  { production_type = "input",  pipe_connections = {{ flow_direction = "input", direction = defines.direction.south, position = {0, 3} }}, volume = 100 },
-  { production_type = "output", pipe_connections = {{ flow_direction = "output", direction = defines.direction.east,  position = {3, 0} }}, volume = 100 },
+  { production_type = "input",  pipe_connections = {{ flow_direction = "input", direction = defines.direction.north, position = {-2, -3} }}, volume = 100 },
+  { production_type = "input",  pipe_connections = {{ flow_direction = "input", direction = defines.direction.north, position = {2, -3} }}, volume = 100 },
+  { production_type = "output", pipe_connections = {{ flow_direction = "output", direction = defines.direction.south, position = {-2, 3} }}, volume = 100 },
+  { production_type = "output", pipe_connections = {{ flow_direction = "output", direction = defines.direction.south, position = {2, 3} }}, volume = 100 },
 }
 union_hq.fluid_boxes_off_when_no_fluid_recipe = true
 union_hq.working_sound = {

@@ -1,3 +1,5 @@
+local icon_tints = require("prototypes.shared.icon_tints")
+
 data:extend({
   {
     type = "recipe",
@@ -5,6 +7,7 @@ data:extend({
     category = "union-negotiation",
     enabled = false,
     energy_required = 30,
+    crafting_machine_tint = icon_tints.recipe_tint("overtime-exemption"),
     ingredients = {
       {type = "item", name = "processing-unit", amount = 10},
       {type = "item", name = "advanced-circuit", amount = 20},

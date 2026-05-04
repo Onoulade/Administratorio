@@ -5,6 +5,8 @@ local function entity_recipe(name, recipe)
   return recipe
 end
 
+local icon_tints = require("prototypes.shared.icon_tints")
+
 local function rgba(r, g, b, a)
   return {r = r, g = g, b = b, a = a or 1}
 end
@@ -53,12 +55,13 @@ end
 data:extend({
   -- Taxpayer Money System
   { type = "recipe", name = "treasury-bond-production",    category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="taxpayer-money", amount=10}, {type="item", name="blank-form", amount=1}, {type="item", name="useless-documentation", amount=1}, {type="fluid", name="liquid-coffee", amount=10}}, results = {{type="item", name="treasury-bond", amount=1}},    energy_required = 5 },
-  { type = "recipe", name = "government-grant-production", category = "union-negotiation", enabled = false, ingredients = {{type="item", name="treasury-bond", amount=2},  {type="item", name="crappy-report", amount=1}, {type="item", name="management-approval-verbal", amount=1}},  results = {{type="item", name="government-grant", amount=1}}, energy_required = 15 },
+  { type = "recipe", name = "government-grant-production", category = "union-negotiation", enabled = false, ingredients = {{type="item", name="treasury-bond", amount=2},  {type="item", name="crappy-report", amount=1}, {type="item", name="management-approval-verbal", amount=1}},  results = {{type="item", name="government-grant", amount=1}}, energy_required = 15, crafting_machine_tint = icon_tints.recipe_tint("government-grant-production") },
   {
     type = "recipe", name = "tax-audit", category = "bureaucracy-policy", enabled = false,
     ingredients = {{type="fluid", name="slush-fund", amount=200}, {type="item", name="blank-form", amount=1}, {type="item", name="data", amount=1}, {type="fluid", name="liquid-coffee", amount=15}},
     results = {{type="item", name="taxpayer-money", amount=30}},
-    energy_required = 20
+    energy_required = 20,
+    crafting_machine_tint = icon_tints.recipe_tint("tax-audit")
   },
   {
     type = "recipe", name = "slush-fund-production", category = "propaganda-distillery", enabled = false,
@@ -96,10 +99,11 @@ data:extend({
     ingredients = {{type="item", name="justification", amount=1}, {type="item", name="good-excuse", amount=1}, {type="item", name="watercooler-gossip", amount=1}},
     results = {{type="item", name="narrative", amount=1}, {type="item", name="office-drama", amount=1, probability=0.3}},
     main_product = "narrative",
-    energy_required = 20 },
-  { type = "recipe", name = "white-paper-production",    category = "bureaucracy-policy",       enabled = false, ingredients = {{type="item", name="paper", amount=8}, {type="item", name="processing-unit", amount=1}, {type="item", name="treasury-bond", amount=1}, {type="fluid", name="lie", amount=35}, {type="fluid", name="liquid-coffee", amount=20}}, results = {{type="item", name="white-paper", amount=1}},      energy_required = 30 },
-  { type = "recipe", name = "policy-production",         category = "bureaucracy-policy", enabled = false, ingredients = {{type="item", name="white-paper", amount=1}, {type="fluid", name="misinformation", amount=80}, {type="item", name="government-grant", amount=1}, {type="item", name="processing-unit", amount=1}, {type="fluid", name="liquid-coffee", amount=30}}, results = {{type="item", name="policy", amount=1}},     energy_required = 45 },
-  { type = "recipe", name = "regulation-production",     category = "bureaucracy-policy", enabled = false, ingredients = {{type="item", name="policy", amount=1}, {type="item", name="government-grant", amount=2}, {type="item", name="processing-unit", amount=2}, {type="fluid", name="liquid-coffee", amount=35}}, results = {{type="item", name="regulation", amount=1}}, energy_required = 60 },
+    energy_required = 20,
+    crafting_machine_tint = icon_tints.recipe_tint("narrative-production") },
+  { type = "recipe", name = "white-paper-production",    category = "bureaucracy-policy",       enabled = false, ingredients = {{type="item", name="paper", amount=8}, {type="item", name="processing-unit", amount=1}, {type="item", name="treasury-bond", amount=1}, {type="fluid", name="lie", amount=35}, {type="fluid", name="liquid-coffee", amount=20}}, results = {{type="item", name="white-paper", amount=1}},      energy_required = 30, crafting_machine_tint = icon_tints.recipe_tint("white-paper-production") },
+  { type = "recipe", name = "policy-production",         category = "bureaucracy-policy", enabled = false, ingredients = {{type="item", name="white-paper", amount=1}, {type="fluid", name="misinformation", amount=80}, {type="item", name="government-grant", amount=1}, {type="item", name="processing-unit", amount=1}, {type="fluid", name="liquid-coffee", amount=30}}, results = {{type="item", name="policy", amount=1}},     energy_required = 45, crafting_machine_tint = icon_tints.recipe_tint("policy-production") },
+  { type = "recipe", name = "regulation-production",     category = "bureaucracy-policy", enabled = false, ingredients = {{type="item", name="policy", amount=1}, {type="item", name="government-grant", amount=2}, {type="item", name="processing-unit", amount=2}, {type="fluid", name="liquid-coffee", amount=35}}, results = {{type="item", name="regulation", amount=1}}, energy_required = 60, crafting_machine_tint = icon_tints.recipe_tint("regulation-production") },
 
   -- Promise, Hush Money & Eviction
   { type = "recipe", name = "hush-money-production",      category = "bureaucratic-bootstrap", enabled = false, ingredients = {{type="item", name="taxpayer-money", amount=50}, {type="item", name="form-27b-6", amount=1}, {type="item", name="useless-documentation", amount=1}}, results = {{type="item", name="hush-money", amount=1}}, energy_required = 10 },
@@ -123,7 +127,7 @@ data:extend({
   },
 
   -- OSHA Scrubbing
-  { type = "recipe", name = "osha-scrubbing", category = "union-negotiation", enabled = false, ingredients = {{type="item", name="osha-violation", amount=1}, {type="item", name="refined-nonsense", amount=2}, {type="fluid", name="union-approval", amount=50}}, results = {{type="item", name="justification", amount=1}}, energy_required = 10 },
+  { type = "recipe", name = "osha-scrubbing", category = "union-negotiation", enabled = false, ingredients = {{type="item", name="osha-violation", amount=1}, {type="item", name="refined-nonsense", amount=2}, {type="fluid", name="union-approval", amount=50}}, results = {{type="item", name="justification", amount=1}}, energy_required = 10, crafting_machine_tint = icon_tints.recipe_tint("osha-scrubbing") },
   {
     type = "recipe", name = "osha-violation-recycling", category = "union-negotiation", enabled = false,
     icon = "__administratorio__/graphics/icons/osha-violation.png", icon_size = 64,
@@ -137,7 +141,8 @@ data:extend({
       {type="item", name="work-order", amount=1, probability=0.4},
       {type="item", name="provisional-approval", amount=1, probability=0.2},
     },
-    energy_required = 8
+    energy_required = 8,
+    crafting_machine_tint = icon_tints.recipe_tint("osha-violation-recycling")
   },
 
   -- Refined Nonsense (T3 derivative — compacted rubble + misinformation)
@@ -159,7 +164,8 @@ data:extend({
       {type="item", name="taxpayer-money", amount=8}
     },
     results = {{type="fluid", name="union-approval", amount=150}},
-    energy_required = 10
+    energy_required = 10,
+    crafting_machine_tint = icon_tints.recipe_tint("union-approval-production")
   },
 
   -- Biter Employment
