@@ -751,6 +751,14 @@ local function on_player_joined_game(event)
   local player = game.get_player(event.player_index)
   if player then
     biters.refresh_protest_notifications(player)
+    field_office.update_placement_preview(player, game.tick, true)
+  end
+end
+
+local function on_player_cursor_stack_changed(event)
+  local player = event.player_index and game.get_player(event.player_index)
+  if player then
+    field_office.update_placement_preview(player, event.tick or game.tick, true)
   end
 end
 
@@ -790,6 +798,7 @@ end
 local function on_player_left_game(event)
   biter_station_hover.clear(event.player_index)
   biterport_hover.clear(event.player_index)
+  field_office.clear_placement_preview(event.player_index)
 end
 
 -- ============================================================
@@ -1875,6 +1884,7 @@ local function on_field_office_tick(event)
   runtime_debug.run_profiled_external_sections("field_office", function(runtime_profile)
     field_office.update(event.tick, runtime_profile)
   end)
+  field_office.update_all_placement_previews(event.tick)
 end
 
 resolution_processing = control_resolution_processing_factory.new({
@@ -1908,6 +1918,7 @@ control_event_router.register({
   on_main_tick = on_main_tick,
   on_pneumatic_tick = on_pneumatic_tick,
   on_player_created = on_player_created,
+  on_player_cursor_stack_changed = on_player_cursor_stack_changed,
   on_player_joined_game = on_player_joined_game,
   on_player_left_game = on_player_left_game,
   on_player_crafted_item = on_player_crafted_item,

@@ -1,5 +1,5 @@
 -- Field Office: early-game bureaucratic outpost.
--- Summons biters from nearby nests (100 tiles) as one-per-craft-cycle workers.
+-- Summons biters from nearby nests as one-per-craft-cycle workers.
 -- Only operates (1.0x, 0 pollution) while a biter is physically present and working.
 -- Completely inactive otherwise. Does not call biters at night (unless overtime-exemption).
 local C = require("scripts.constants")
@@ -11,6 +11,8 @@ local BITER_FORCE_NAME = "administratorio-biters"
 local SPAWNER_TYPES = {"unit-spawner"}
 local ENTITY_NAME = "field-office"
 local CRAFTS_PER_BITER = 2
+local PLACEMENT_RANGE_COLOR = {r = 0.25, g = 0.85, b = 0.35, a = 0.75}
+local PLACEMENT_NEST_COLOR = {r = 1.0, g = 0.45, b = 0.25, a = 0.9}
 local release_biter
 
 local function ensure_runtime_profile_section(runtime_profile, key)
@@ -56,6 +58,8 @@ function M.ensure_storage()
   storage.field_office_state = storage.field_office_state or {}
   storage.field_office_releasing = storage.field_office_releasing or {}
   storage.field_office_shards = storage.field_office_shards or {}
+  storage.field_office_placement_renders = storage.field_office_placement_renders or {}
+  storage.field_office_placement_preview_tick = storage.field_office_placement_preview_tick or {}
 end
 
 local function field_office_shard_for_id(office_id)
@@ -138,6 +142,92 @@ local function find_nearest_spawner(surface, position, range)
     end
   end
   return nearest
+end
+
+local function add_placement_render(player_index, obj)
+  if not obj then return end
+  local renders = storage.field_office_placement_renders[player_index] or {}
+  renders[#renders + 1] = obj.id
+  storage.field_office_placement_renders[player_index] = renders
+end
+
+local function clear_placement_renders(player_index)
+  local ids = storage.field_office_placement_renders[player_index]
+  if ids then
+    for _, id in ipairs(ids) do
+      local obj = rendering.get_object_by_id(id)
+      if obj then obj.destroy() end
+    end
+  end
+  storage.field_office_placement_renders[player_index] = nil
+end
+
+local function player_holds_field_office(player)
+  if not player or not player.valid then return false end
+  local stack = player.cursor_stack
+  return stack and stack.valid_for_read and stack.name == ENTITY_NAME
+end
+
+function M.clear_placement_preview(player_index)
+  M.ensure_storage()
+  clear_placement_renders(player_index)
+  storage.field_office_placement_preview_tick[player_index] = nil
+end
+
+function M.update_placement_preview(player, tick, force_refresh)
+  M.ensure_storage()
+  if not player or not player.valid then return end
+  if not player_holds_field_office(player) then
+    M.clear_placement_preview(player.index)
+    return
+  end
+
+  tick = tick or game.tick
+  local last_tick = storage.field_office_placement_preview_tick[player.index]
+  local refresh_ticks = C.FIELD_OFFICE_PLACEMENT_PREVIEW_TICKS or 30
+  if not force_refresh and last_tick and (tick - last_tick) < refresh_ticks then return end
+  storage.field_office_placement_preview_tick[player.index] = tick
+
+  clear_placement_renders(player.index)
+
+  local surface = player.surface
+  local spawners = surface.find_entities_filtered{
+    type = SPAWNER_TYPES,
+    position = player.position,
+    radius = C.FIELD_OFFICE_PLACEMENT_PREVIEW_SCAN_RADIUS or (C.FIELD_OFFICE_SPAWNER_RANGE + 100),
+    force = "enemy",
+  }
+
+  for _, spawner in ipairs(spawners) do
+    if spawner.valid then
+      add_placement_render(player.index, rendering.draw_circle{
+        color = PLACEMENT_RANGE_COLOR,
+        radius = C.FIELD_OFFICE_SPAWNER_RANGE,
+        width = 3,
+        target = spawner.position,
+        surface = surface,
+        players = {player},
+        draw_on_ground = true,
+      })
+
+      add_placement_render(player.index, rendering.draw_circle{
+        color = PLACEMENT_NEST_COLOR,
+        radius = 2.0,
+        width = 4,
+        target = spawner.position,
+        surface = surface,
+        players = {player},
+        draw_on_ground = true,
+      })
+    end
+  end
+end
+
+function M.update_all_placement_previews(tick)
+  M.ensure_storage()
+  for _, player in pairs(game.connected_players or {}) do
+    M.update_placement_preview(player, tick, false)
+  end
 end
 
 -- Refresh the cached nearest spawner for an office, staggered across offices so
@@ -499,7 +589,7 @@ function M.update(tick, runtime_profile)
         goto continue
       end
 
-      -- Check if the biter has completed its shift (5 crafts)
+      -- Check if the biter has completed its shift.
       if office.products_finished >= (state.products_at_arrival or 0) + CRAFTS_PER_BITER then
         -- Release the biter
         release_biter(state, tick)
