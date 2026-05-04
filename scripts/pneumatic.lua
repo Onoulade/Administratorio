@@ -64,13 +64,6 @@ local function set_intake_status_blocked(entity, key)
   set_intake_status(entity, key, defines.entity_status_diode.red)
 end
 
-local function enable_tube_rotation(entity)
-  if not entity or not entity.valid then return end
-  pcall(function()
-    entity.rotatable = true
-  end)
-end
-
 local MAX_NETWORK_RADIUS = C.TUBE_MAX_NETWORK_RADIUS or 120 -- tiles from the starting pipe
 
 --- BFS through fluidbox connections starting from a hidden network pipe.
@@ -253,27 +246,26 @@ function M.is_pneumatic_building(entity)
   return is_tube_entity(entity)
 end
 
-function M.add_pneumatic_inserter(entity)
-  if not is_tube_entity(entity) then return end
-  enable_tube_rotation(entity)
-  deactivate_intake_machine(entity)
-
-  -- Create the hidden inserter (only for entities that need one).
-  local inserter_name = C.PNEUMATIC_BUILDINGS[entity.name]
-  local inserter = nil
-  if inserter_name then
-    inserter = entity.surface.create_entity{
-      name = inserter_name,
-      type = "inserter",
-      position = entity.position,
-      direction = entity.direction,
-      force = entity.force,
-    }
-    if inserter then
-      inserter.destructible = false
-      inserter.inserter_stack_size_override = 1
+local function destroy_legacy_hidden_inserters(surface, position)
+  if not surface then return end
+  for _, name in ipairs({"pneumatic-hidden-intake", "pneumatic-hidden-outtake"}) do
+    if not prototypes or not prototypes.entity or prototypes.entity[name] then
+      local filters = {name = name}
+      if position then
+        filters.position = position
+        filters.radius = 0.5
+      end
+      for _, inserter in ipairs(surface.find_entities_filtered(filters)) do
+        inserter.destroy()
+      end
     end
   end
+end
+
+function M.add_pneumatic_supports(entity)
+  if not is_tube_entity(entity) then return end
+  deactivate_intake_machine(entity)
+  destroy_legacy_hidden_inserters(entity.surface, entity.position)
 
   -- Create the hidden network pipe for topology detection.
   local network_pipe = entity.surface.create_entity{
@@ -293,7 +285,6 @@ function M.add_pneumatic_inserter(entity)
   if entity.name == "tube-intake" then
     storage.tube_intakes[entity.unit_number] = {
       entity = entity,
-      inserter = inserter,
       network_pipe = network_pipe,
       combinator = combinator,
     }
@@ -307,32 +298,8 @@ function M.add_pneumatic_inserter(entity)
   storage.tube_network_dirty = true
 end
 
-function M.update_pneumatic_inserter_direction(entity)
-  local inserters = entity.surface.find_entities_filtered{
-    type = "inserter",
-    name = "pneumatic-hidden-intake",
-    position = entity.position,
-    radius = 0.5
-  }
-  for _, ins in ipairs(inserters) do
-    ins.direction = entity.direction
-  end
-end
-
-function M.delete_pneumatic_inserters(entity, buffer)
-  -- Remove hidden inserters.
-  local inserters = entity.surface.find_entities_filtered{
-    type = "inserter",
-    name = "pneumatic-hidden-intake",
-    position = entity.position,
-    radius = 0.5
-  }
-  for _, ins in ipairs(inserters) do
-    if buffer and ins.held_stack and ins.held_stack.valid_for_read then
-      buffer.insert(ins.held_stack)
-    end
-    ins.destroy()
-  end
+function M.delete_pneumatic_supports(entity)
+  destroy_legacy_hidden_inserters(entity.surface, entity.position)
 
   -- Remove hidden network pipes.
   local pipes = entity.surface.find_entities_filtered{
@@ -710,18 +677,15 @@ function M.rebuild_all()
   storage.tube_intakes = {}
   storage.tube_outtakes = {}
 
-  -- Destroy any stale hidden outtake inserters (no longer used).
+  -- Destroy legacy hidden inserters; tube endpoints now rely on their own inventories.
   for _, surface in pairs(game.surfaces) do
-    for _, ins in ipairs(surface.find_entities_filtered{name = "pneumatic-hidden-outtake"}) do
-      ins.destroy()
-    end
+    destroy_legacy_hidden_inserters(surface)
   end
 
   for _, surface in pairs(game.surfaces) do
-    for building_name, inserter_name in pairs(C.PNEUMATIC_BUILDINGS) do
+    for building_name in pairs(C.PNEUMATIC_BUILDINGS) do
       for _, entity in ipairs(surface.find_entities_filtered{name = building_name}) do
         if entity.valid then
-          enable_tube_rotation(entity)
           deactivate_intake_machine(entity)
 
           if entity.name == "tube-intake" then
@@ -731,31 +695,6 @@ function M.rebuild_all()
               radius = 0.5,
             }) do
               stale.destroy()
-            end
-          end
-
-          -- Find or create hidden inserter (only for entities that need one).
-          local inserter = nil
-          if inserter_name then
-            local inserters = surface.find_entities_filtered{
-              type = "inserter",
-              name = inserter_name,
-              position = entity.position,
-              radius = 0.5,
-            }
-            inserter = inserters[1]
-            if not inserter then
-              inserter = surface.create_entity{
-                name = inserter_name,
-                type = "inserter",
-                position = entity.position,
-                direction = entity.direction,
-                force = entity.force,
-              }
-              if inserter then
-                inserter.destructible = false
-                inserter.inserter_stack_size_override = 1
-              end
             end
           end
 
@@ -793,7 +732,6 @@ function M.rebuild_all()
           if entity.name == "tube-intake" then
             storage.tube_intakes[entity.unit_number] = {
               entity = entity,
-              inserter = inserter,
               network_pipe = network_pipe,
               combinator = combinator,
             }

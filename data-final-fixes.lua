@@ -40,8 +40,6 @@ local ADMIN_STATION_NON_BLOCKING_NAMES = {
   ["biter-station-wall-blocker"] = true,
   ["biterport-wall-blocker"] = true,
   ["transit-permit-chest"] = true,
-  ["pneumatic-hidden-intake"] = true,
-  ["pneumatic-hidden-outtake"] = true,
   ["pneumatic-hidden-network-pipe"] = true,
 }
 

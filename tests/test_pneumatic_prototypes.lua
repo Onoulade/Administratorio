@@ -30,6 +30,13 @@ local function assert_true(value, msg)
   if not value then error(msg or "assertion failed", 2) end
 end
 
+local function has_flag(prototype, flag)
+  for _, value in ipairs(prototype.flags or {}) do
+    if value == flag then return true end
+  end
+  return false
+end
+
 -------------------------------------------------------------------------------
 -- 1. MOCK FACTORIO DATA STAGE
 -------------------------------------------------------------------------------
@@ -40,7 +47,13 @@ data = {
         type = "pipe",
         name = "pipe",
         minable = {result = "pipe"},
-        pictures = {},
+        pictures = {
+          straight_vertical_single = {
+            filename = "__base__/graphics/entity/pipe/pipe-straight-vertical-single.png",
+            width = 80,
+            height = 80,
+          },
+        },
         fluid_box = {
           pipe_connections = {
             {direction = 0, connection_type = "normal"},
@@ -150,12 +163,47 @@ test("tube-intake has a wireable tube-content circuit port", function()
   assert_true(port.circuit_wire_connection_points ~= nil, "tube-intake network port should define wire points")
 end)
 
-test("tube-intake has directional graphics for rotation", function()
+test("tube-intake has static graphics", function()
   local intake = data.raw.furnace["tube-intake"]
-  assert_true(intake.graphics_set.animation.north ~= nil, "tube-intake missing north graphic")
-  assert_true(intake.graphics_set.animation.east ~= nil, "tube-intake missing east graphic")
-  assert_true(intake.graphics_set.animation.south ~= nil, "tube-intake missing south graphic")
-  assert_true(intake.graphics_set.animation.west ~= nil, "tube-intake missing west graphic")
+  assert_true(intake.graphics_set.animation.layers ~= nil, "tube-intake should use one static sprite")
+end)
+
+test("tube endpoints and hidden combinators are not rotatable", function()
+  assert_true(has_flag(data.raw.furnace["tube-intake"], "not-rotatable"),
+    "tube-intake should not rotate")
+  assert_true(has_flag(data.raw.container["tube-outtake"], "not-rotatable"),
+    "tube-outtake should not rotate")
+  assert_true(has_flag(data.raw["constant-combinator"]["tube-network-combinator"], "not-rotatable"),
+    "tube-network-combinator should not rotate")
+  assert_true(has_flag(data.raw["constant-combinator"]["tube-intake-network-port"], "not-rotatable"),
+    "tube-intake-network-port should not rotate")
+end)
+
+test("tube-intake uses the shared new pneumatic intake sprite", function()
+  local intake = data.raw.furnace["tube-intake"]
+  local layer = intake.graphics_set.animation.layers[2]
+  assert_eq(layer.filename, "__administratorio__/graphics/entities/pneumatic/intake.png",
+    "tube-intake should use the new intake asset")
+  assert_eq(layer.width, 64, "tube-intake sprite width should match the new asset")
+  assert_eq(layer.height, 82, "tube-intake sprite height should match the new asset")
+  assert_eq(layer.scale, 0.5, "tube-intake should render one tile wide")
+  assert_eq(layer.shift[1], 0, "tube-intake should stay horizontally centered")
+  assert_eq(layer.shift[2], (16 - (82 * 0.5 / 2)) / 32,
+    "tube-intake bottom should align to the tile bottom")
+end)
+
+test("tube endpoints use the shared pneumatic shadow", function()
+  local intake = data.raw.furnace["tube-intake"]
+  local shadow = intake.graphics_set.animation.layers[1]
+  assert_eq(shadow.filename, "__administratorio__/graphics/entities/pneumatic/shadow.png",
+    "tube endpoint should use the shared shadow asset")
+  assert_eq(shadow.width, 70, "tube shadow width should match the asset")
+  assert_eq(shadow.height, 85, "tube shadow height should match the asset")
+  assert_eq(shadow.scale, 0.5, "tube shadow should scale with endpoint sprites")
+  assert_eq(shadow.shift[1], 1.0 / 32, "tube shadow should use the configured horizontal offset")
+  assert_eq(shadow.shift[2], (16 - (82 * 0.5 / 2)) / 32,
+    "tube shadow bottom should align to the tile bottom")
+  assert_true(shadow.draw_as_shadow, "tube shadow should render as a shadow")
 end)
 
 test("tube-outtake is a container with 1 slot", function()
@@ -170,21 +218,9 @@ test("tube-outtake uses a container-compatible picture sprite", function()
   local outtake = data.raw.container["tube-outtake"]
   assert_true(outtake.picture ~= nil, "tube-outtake should define a picture")
   assert_true(outtake.picture.layers ~= nil, "tube-outtake picture should use sprite layers")
-  assert_true(outtake.picture.layers[1].filename ~= nil, "tube-outtake picture layer should have a filename")
-end)
-
-test("hidden outtake inserter drops at belt center for even lane distribution", function()
-  local outtake = data.raw.inserter["pneumatic-hidden-outtake"]
-  assert_true(outtake ~= nil, "pneumatic-hidden-outtake missing")
-  assert_eq(outtake.insert_position[1], 0, "outtake insert x should be centered for dual-lane distribution")
-  assert_eq(outtake.insert_position[2], 1, "outtake should still target the adjacent tile")
-end)
-
-test("hidden intake inserter has no filters (validation is script-side)", function()
-  local intake = data.raw.inserter["pneumatic-hidden-intake"]
-  assert_true(intake ~= nil, "pneumatic-hidden-intake missing")
-  assert_true(not intake.filter_count or intake.filter_count == 0,
-    "intake inserter should not have prototype-level filters (Factorio caps at 5)")
+  assert_true(outtake.picture.layers[2].filename ~= nil, "tube-outtake picture layer should have a filename")
+  assert_eq(outtake.picture.layers[2].filename, "__administratorio__/graphics/entities/pneumatic/outtake.png",
+    "tube-outtake should use the new outtake asset")
 end)
 
 test("pneumatic-hidden-network-pipe connects to pneumatic-forms category", function()
@@ -209,6 +245,16 @@ test("pneumatic-hidden-network-pipe has no collision layers", function()
   assert_eq(next(pipe.collision_mask.layers), nil, "network pipe collision layers should be empty")
   -- Box must be non-zero so pipe connection positions fit inside it.
   assert_true(pipe.collision_box[1][1] < 0, "collision_box should have nonzero extent")
+end)
+
+test("pneumatic-hidden-network-pipe renders tinted pipe connections above tube endpoints", function()
+  local pipe = data.raw.pipe["pneumatic-hidden-network-pipe"]
+  assert_true(pipe.pictures ~= nil, "network pipe should keep pictures for visible endpoint connections")
+  local picture = pipe.pictures.straight_vertical_single
+  assert_true(picture ~= nil, "network pipe should inherit vanilla pipe pictures")
+  assert_true(picture.tint ~= nil, "network pipe endpoint connection should be tinted")
+  assert_eq(picture.render_layer, "higher-object-above",
+    "network pipe endpoint connection should render above intake/outtake sprites")
 end)
 
 test("tube-intake and tube-outtake share fast-replaceable group", function()
