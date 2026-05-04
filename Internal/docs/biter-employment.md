@@ -175,10 +175,10 @@ Early-game bureaucratic outpost that summons biters from nearby nests as one-per
 ### How It Works
 
 1. Build a `field-office`.
-2. It scans for nearby biter nests within 100 tiles.
+2. It scans for nearby biter nests within 200 tiles.
 3. When a recipe is queued, it summons a biter worker from the nearest spawner.
 4. The biter walks to the office, stands on it, and the office produces at 1.0x speed with 0 pollution.
-5. Each biter works for 5 crafts, then walks back to the spawner and is replaced.
+5. Each biter works for 2 crafts, then walks back to the spawner and is replaced.
 6. At night, biters are released (unless overtime-exemption is installed).
 
 ### Behavior

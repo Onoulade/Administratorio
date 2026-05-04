@@ -53,7 +53,7 @@ Derived from the code in `prototypes/`, `data-final-fixes.lua`, `overrides/vanil
 | `biter-station` | biter dispatch | Dispatches workers to managed buildings within 30-tile radius |
 | `biterport` | biter-logistics | Walking-worker construction/logistics network |
 | `formation-center` | specialist-training | Trains Union Delegates, Chemical Operators, Nuclear Technicians |
-| `field-office` | early-worker | Summons biters from nearby nests (100 tiles) as one-per-craft-cycle workers |
+| `field-office` | early-worker | Summons biters from nearby nests (200 tiles) as one-per-craft-cycle workers |
 
 ## Assembler Form Tiers
 
