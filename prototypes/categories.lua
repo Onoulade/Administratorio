@@ -5,7 +5,8 @@
 --
 -- Category                    | Used by
 -- ----------------------------|----------------------------------------
--- bureaucracy-registration    | Office Desk (all desk work: filing, permits, work-orders, modules)
+-- bureaucracy-registration    | Office Desk + Field Office (filing, permits, work-orders)
+-- bureaucracy-modules         | Office Desk (subpoena/audit/embezzlement module drafting)
 -- bureaucratic-bootstrap     | Player character + Office Desk (starter paperwork bridge)
 -- bureaucracy-resolution      | Resolution Office (all complaint processing: filing, case, brief, final)
 -- resolution-handcraft        | Player character + Resolution Office (landscape complaint only)
@@ -26,6 +27,7 @@ local working_hours_enabled = feature_flags.working_hours_enabled()
 
 local categories = {
   {type = "recipe-category", name = "bureaucracy-registration"},
+  {type = "recipe-category", name = "bureaucracy-modules"},
   {type = "recipe-category", name = "bureaucratic-bootstrap"},
   {type = "recipe-category", name = "bureaucracy-resolution"},
   {type = "recipe-category", name = "resolution-handcraft"},

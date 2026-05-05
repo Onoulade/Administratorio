@@ -462,6 +462,27 @@ test("resolution-office supports bootstrap and resolution categories", function(
   assert_true(not categories["bureaucratic-bootstrap"], "resolution-office should NOT craft bureaucratic-bootstrap recipes (complaints only)")
 end)
 
+test("field-office cannot craft module recipes", function()
+  local field_office = data.raw["assembling-machine"]["field-office"]
+  local office_desk = data.raw["assembling-machine"]["office-desk"]
+  assert_true(field_office ~= nil, "field-office prototype missing")
+  assert_true(office_desk ~= nil, "office-desk prototype missing")
+
+  local field_categories = {}
+  for _, category in ipairs(field_office.crafting_categories or {}) do
+    field_categories[category] = true
+  end
+
+  local desk_categories = {}
+  for _, category in ipairs(office_desk.crafting_categories or {}) do
+    desk_categories[category] = true
+  end
+
+  assert_true(field_categories["bureaucracy-registration"], "field-office should keep regular registration work")
+  assert_true(not field_categories["bureaucracy-modules"], "field-office should not craft module recipes")
+  assert_true(desk_categories["bureaucracy-modules"], "office-desk should craft module recipes")
+end)
+
 test("resolution-office can craft all complaint paper recipes", function()
   local entity = data.raw["assembling-machine"]["resolution-office"]
   assert_true(entity ~= nil, "resolution-office prototype missing")

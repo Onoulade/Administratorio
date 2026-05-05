@@ -63,6 +63,15 @@ data = {
     armor = {},
     recipe = {
       ["logistic-science-pack"] = {name = "logistic-science-pack"},
+      ["speed-module"] = {name = "speed-module"},
+      ["speed-module-2"] = {name = "speed-module-2"},
+      ["speed-module-3"] = {name = "speed-module-3"},
+      ["productivity-module"] = {name = "productivity-module"},
+      ["productivity-module-2"] = {name = "productivity-module-2"},
+      ["productivity-module-3"] = {name = "productivity-module-3"},
+      ["efficiency-module"] = {name = "efficiency-module"},
+      ["efficiency-module-2"] = {name = "efficiency-module-2"},
+      ["efficiency-module-3"] = {name = "efficiency-module-3"},
     },
     capsule = {},
     technology = technologies,
@@ -132,6 +141,18 @@ end)
 test("steel processing unlocks batch steel smelting", function()
   local tech = technologies["steel-processing"]
   assert_true(tech_unlocks_recipe(tech, "steel-plate-batch"), "steel-processing should unlock steel-plate-batch")
+end)
+
+test("vanilla module recipes use the dedicated admin module category", function()
+  for _, name in ipairs({
+    "speed-module", "speed-module-2", "speed-module-3",
+    "productivity-module", "productivity-module-2", "productivity-module-3",
+    "efficiency-module", "efficiency-module-2", "efficiency-module-3",
+  }) do
+    local recipe = data.raw.recipe[name]
+    assert_true(recipe ~= nil, name .. " recipe missing")
+    assert_true(recipe.category == "bureaucracy-modules", name .. " should use bureaucracy-modules")
+  end
 end)
 
 if failed > 0 then

@@ -273,7 +273,7 @@ local module_recipe_overrides = {
 for name, ingredients in pairs(module_recipe_overrides) do
   local recipe = data.raw["recipe"][name]
   if recipe then
-    recipe.category = "bureaucracy-registration"
+    recipe.category = "bureaucracy-modules"
     recipe.ingredients = ingredients
   end
 end
