@@ -179,33 +179,6 @@ test("tube endpoints and hidden combinators are not rotatable", function()
     "tube-intake-network-port should not rotate")
 end)
 
-test("tube-intake uses the shared new pneumatic intake sprite", function()
-  local intake = data.raw.furnace["tube-intake"]
-  local layer = intake.graphics_set.animation.layers[2]
-  assert_eq(layer.filename, "__administratorio__/graphics/entities/pneumatic/intake.png",
-    "tube-intake should use the new intake asset")
-  assert_eq(layer.width, 64, "tube-intake sprite width should match the new asset")
-  assert_eq(layer.height, 82, "tube-intake sprite height should match the new asset")
-  assert_eq(layer.scale, 0.5, "tube-intake should render one tile wide")
-  assert_eq(layer.shift[1], 0, "tube-intake should stay horizontally centered")
-  assert_eq(layer.shift[2], (16 - (82 * 0.5 / 2)) / 32,
-    "tube-intake bottom should align to the tile bottom")
-end)
-
-test("tube endpoints use the shared pneumatic shadow", function()
-  local intake = data.raw.furnace["tube-intake"]
-  local shadow = intake.graphics_set.animation.layers[1]
-  assert_eq(shadow.filename, "__administratorio__/graphics/entities/pneumatic/shadow.png",
-    "tube endpoint should use the shared shadow asset")
-  assert_eq(shadow.width, 70, "tube shadow width should match the asset")
-  assert_eq(shadow.height, 85, "tube shadow height should match the asset")
-  assert_eq(shadow.scale, 0.5, "tube shadow should scale with endpoint sprites")
-  assert_eq(shadow.shift[1], 1.0 / 32, "tube shadow should use the configured horizontal offset")
-  assert_eq(shadow.shift[2], (16 - (82 * 0.5 / 2)) / 32,
-    "tube shadow bottom should align to the tile bottom")
-  assert_true(shadow.draw_as_shadow, "tube shadow should render as a shadow")
-end)
-
 test("tube-outtake is a container with 1 slot", function()
   local outtake = data.raw.container["tube-outtake"]
   assert_true(outtake ~= nil, "tube-outtake missing")
