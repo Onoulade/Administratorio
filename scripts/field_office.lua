@@ -13,7 +13,12 @@ local ENTITY_NAME = "field-office"
 local CRAFTS_PER_BITER = 2
 local PLACEMENT_RANGE_COLOR = {r = 0.25, g = 0.85, b = 0.35, a = 0.75}
 local PLACEMENT_NEST_COLOR = {r = 1.0, g = 0.45, b = 0.25, a = 0.9}
+local UNREACHABLE_RETRY_TICKS = 10 * 60
+local CALLING_PROGRESS_DISTANCE_SQUARED = 0.04
+local CALLING_STUCK_TICKS = 5 * 60
+local CALLING_TIMEOUT_TICKS = 45 * 60
 local release_biter
+local set_office_status
 
 local function ensure_runtime_profile_section(runtime_profile, key)
   if not runtime_profile then return nil end
@@ -60,6 +65,8 @@ function M.ensure_storage()
   storage.field_office_shards = storage.field_office_shards or {}
   storage.field_office_placement_renders = storage.field_office_placement_renders or {}
   storage.field_office_placement_preview_tick = storage.field_office_placement_preview_tick or {}
+  storage.field_office_worker_to_office = storage.field_office_worker_to_office or {}
+  storage.field_office_path_requests = storage.field_office_path_requests or {}
 end
 
 local function field_office_shard_for_id(office_id)
@@ -98,7 +105,9 @@ function M.track_entity(entity)
   storage.field_offices[entity.unit_number] = entity
   add_office_to_shard(entity.unit_number)
   if not storage.field_office_state[entity.unit_number] then
-    storage.field_office_state[entity.unit_number] = { phase = "idle" }
+    storage.field_office_state[entity.unit_number] = { phase = "idle", office_id = entity.unit_number }
+  else
+    storage.field_office_state[entity.unit_number].office_id = entity.unit_number
   end
 end
 
@@ -191,25 +200,25 @@ function M.update_placement_preview(player, tick, force_refresh)
   clear_placement_renders(player.index)
 
   local surface = player.surface
+  add_placement_render(player.index, rendering.draw_circle{
+    color = PLACEMENT_RANGE_COLOR,
+    radius = C.FIELD_OFFICE_SPAWNER_RANGE,
+    width = 3,
+    target = player.position,
+    surface = surface,
+    players = {player},
+    draw_on_ground = true,
+  })
+
   local spawners = surface.find_entities_filtered{
     type = SPAWNER_TYPES,
     position = player.position,
-    radius = C.FIELD_OFFICE_PLACEMENT_PREVIEW_SCAN_RADIUS or (C.FIELD_OFFICE_SPAWNER_RANGE + 100),
+    radius = C.FIELD_OFFICE_SPAWNER_RANGE,
     force = "enemy",
   }
 
   for _, spawner in ipairs(spawners) do
     if spawner.valid then
-      add_placement_render(player.index, rendering.draw_circle{
-        color = PLACEMENT_RANGE_COLOR,
-        radius = C.FIELD_OFFICE_SPAWNER_RANGE,
-        width = 3,
-        target = spawner.position,
-        surface = surface,
-        players = {player},
-        draw_on_ground = true,
-      })
-
       add_placement_render(player.index, rendering.draw_circle{
         color = PLACEMENT_NEST_COLOR,
         radius = 2.0,
@@ -282,6 +291,74 @@ local function biter_has_arrived(biter, office)
   return distance_squared(biter.position, office.position) < threshold * threshold
 end
 
+local function clear_pending_path_request(state)
+  if not state or not state.path_request_id then return end
+  if storage.field_office_path_requests then
+    storage.field_office_path_requests[state.path_request_id] = nil
+  end
+  state.path_request_id = nil
+end
+
+local function request_worker_path_check(state, office, biter)
+  if not state or not office or not office.valid or not biter or not biter.valid then return end
+  if not office.surface or not office.surface.request_path then return end
+
+  clear_pending_path_request(state)
+  local request_id = office.surface.request_path{
+    bounding_box = biter.prototype and biter.prototype.collision_box,
+    collision_mask = biter.prototype and biter.prototype.collision_mask,
+    start = biter.position,
+    goal = office.position,
+    force = biter.force and biter.force.name or BITER_FORCE_NAME,
+    radius = C.FIELD_OFFICE_ARRIVAL_RADIUS,
+    can_open_gates = true,
+    entity_to_ignore = biter,
+    pathfind_flags = {
+      cache = false,
+      low_priority = true,
+    },
+  }
+
+  if request_id then
+    state.path_request_id = request_id
+    storage.field_office_path_requests[request_id] = {
+      office_id = state.office_id,
+      biter_unit_number = biter.unit_number,
+    }
+  end
+end
+
+local function reset_calling_progress(state, biter, tick)
+  if not state or not biter or not biter.valid then return end
+  state.calling_started_tick = tick
+  state.calling_last_progress_tick = tick
+  state.calling_last_position = {x = biter.position.x, y = biter.position.y}
+end
+
+local function clear_calling_progress(state)
+  if not state then return end
+  state.calling_started_tick = nil
+  state.calling_last_progress_tick = nil
+  state.calling_last_position = nil
+end
+
+local function calling_worker_is_stuck(state, biter, tick)
+  if not state or not biter or not biter.valid then return false end
+  if not state.calling_started_tick or not state.calling_last_position then
+    reset_calling_progress(state, biter, tick)
+    return false
+  end
+
+  if distance_squared(biter.position, state.calling_last_position) >= CALLING_PROGRESS_DISTANCE_SQUARED then
+    state.calling_last_position = {x = biter.position.x, y = biter.position.y}
+    state.calling_last_progress_tick = tick
+    return false
+  end
+
+  if tick - state.calling_started_tick >= CALLING_TIMEOUT_TICKS then return true end
+  return tick - (state.calling_last_progress_tick or state.calling_started_tick) >= CALLING_STUCK_TICKS
+end
+
 local function create_working_overlay(biter)
   if not biter or not biter.valid then return nil end
   local render_obj = rendering.draw_text{
@@ -307,9 +384,18 @@ end
 
 release_biter = function(state, tick)
   if not state.biter or not state.biter.valid then
+    if state.biter_unit_number then
+      storage.field_office_worker_to_office[state.biter_unit_number] = nil
+      state.biter_unit_number = nil
+    end
+    clear_pending_path_request(state)
     state.biter = nil
     return
   end
+
+  storage.field_office_worker_to_office[state.biter.unit_number] = nil
+  state.biter_unit_number = nil
+  clear_pending_path_request(state)
 
   -- Command biter to walk back to spawner (or wander if spawner gone)
   if state.spawner and state.spawner.valid then
@@ -329,8 +415,31 @@ release_biter = function(state, tick)
   }
 
   destroy_overlay(state)
+  clear_calling_progress(state)
   state.biter = nil
   state.spawner = nil
+end
+
+local function mark_worker_unreachable(state, office, tick)
+  if not state then return end
+  clear_pending_path_request(state)
+  if state.biter and state.biter.valid then
+    storage.field_office_worker_to_office[state.biter.unit_number] = nil
+    state.biter.destroy()
+  elseif state.biter_unit_number then
+    storage.field_office_worker_to_office[state.biter_unit_number] = nil
+  end
+  destroy_overlay(state)
+  clear_calling_progress(state)
+  state.biter = nil
+  state.biter_unit_number = nil
+  state.spawner = nil
+  state.phase = "idle"
+  state.unreachable_until = (tick or game.tick) + UNREACHABLE_RETRY_TICKS
+  if office and office.valid then
+    office.active = false
+    set_office_status(state, office, defines.entity_status_diode.red, "gui.field-office-no-workers-reachable")
+  end
 end
 
 --- Check if the field office is shut down for the night (working hours).
@@ -344,7 +453,7 @@ local function is_night_shutdown(office, working_hours_enabled, night_by_surface
   return not working_hours.entity_has_overtime_exemption(office)
 end
 
-local function set_office_status(state, office, diode, label)
+set_office_status = function(state, office, diode, label)
   if state.status_diode == diode and state.status_label == label then return end
   office.custom_status = {
     diode = diode,
@@ -438,7 +547,13 @@ function M.update(tick, runtime_profile)
     if not office or not office.valid then
       local state = storage.field_office_state[office_id]
       if state then
-        if state.biter and state.biter.valid then state.biter.destroy() end
+        clear_pending_path_request(state)
+        if state.biter and state.biter.valid then
+          storage.field_office_worker_to_office[state.biter.unit_number] = nil
+          state.biter.destroy()
+        elseif state.biter_unit_number then
+          storage.field_office_worker_to_office[state.biter_unit_number] = nil
+        end
         destroy_overlay(state)
       end
       remove_office_from_shard(office_id)
@@ -449,8 +564,10 @@ function M.update(tick, runtime_profile)
 
     local state = storage.field_office_state[office_id]
     if not state then
-      state = { phase = "idle" }
+      state = { phase = "idle", office_id = office_id }
       storage.field_office_state[office_id] = state
+    else
+      state.office_id = office_id
     end
 
     local night = run_profiled(runtime_profile, "field_office_night_check", function()
@@ -458,11 +575,9 @@ function M.update(tick, runtime_profile)
     end)
 
     if state.phase == "idle" then
-      -- Building is inactive while waiting
-      office.active = false
-
       -- Don't summon biters at night
       if night then
+        office.active = false
         set_office_status(state, office, defines.entity_status_diode.red, "gui.working-hours-night-status")
         goto continue
       end
@@ -473,9 +588,20 @@ function M.update(tick, runtime_profile)
         return craft_readiness(office)
       end)
       if readiness ~= "ready" then
+        -- Leave unpowered offices active so Factorio can show the native
+        -- missing-electricity alert instead of suppressing it as script-disabled.
+        office.active = (readiness == "no-power")
         set_office_status(state, office, defines.entity_status_diode.red, "gui.field-office-" .. readiness)
         goto continue
       end
+
+      office.active = false
+
+      if state.unreachable_until and tick < state.unreachable_until then
+        set_office_status(state, office, defines.entity_status_diode.red, "gui.field-office-no-workers-reachable")
+        goto continue
+      end
+      state.unreachable_until = nil
 
       -- Refresh only when the office is otherwise able to summon. This avoids
       -- expensive nest searches for idle/no-recipe/no-ingredient buildings.
@@ -494,10 +620,14 @@ function M.update(tick, runtime_profile)
         if biter then
           state.phase = "calling"
           state.biter = biter
+          state.biter_unit_number = biter.unit_number
           state.spawner = spawner
+          reset_calling_progress(state, biter, tick)
+          storage.field_office_worker_to_office[biter.unit_number] = office_id
+          request_worker_path_check(state, office, biter)
           set_office_status(state, office, defines.entity_status_diode.yellow, "gui.field-office-calling")
         else
-          set_office_status(state, office, defines.entity_status_diode.red, "gui.field-office-no-nest")
+          mark_worker_unreachable(state, office, tick)
         end
       else
         set_office_status(state, office, defines.entity_status_diode.red, "gui.field-office-no-nest")
@@ -517,6 +647,7 @@ function M.update(tick, runtime_profile)
           state.biter = nil
         end
         state.phase = "idle"
+        clear_calling_progress(state)
         set_office_status(state, office, defines.entity_status_diode.red, "gui.working-hours-night-status")
         record_runtime_profile(runtime_profile, "field_office_calling", phase_profiler)
         goto continue
@@ -524,14 +655,28 @@ function M.update(tick, runtime_profile)
 
       -- Check if biter is still alive
       if not state.biter or not state.biter.valid then
+        if state.biter_unit_number then
+          storage.field_office_worker_to_office[state.biter_unit_number] = nil
+          state.biter_unit_number = nil
+        end
         state.biter = nil
         state.phase = "idle"
+        clear_calling_progress(state)
+        record_runtime_profile(runtime_profile, "field_office_calling", phase_profiler)
+        goto continue
+      end
+
+      if calling_worker_is_stuck(state, state.biter, tick) then
+        mark_worker_unreachable(state, office, tick)
         record_runtime_profile(runtime_profile, "field_office_calling", phase_profiler)
         goto continue
       end
 
       -- Check if biter has arrived
       if biter_has_arrived(state.biter, office) then
+        storage.field_office_worker_to_office[state.biter.unit_number] = nil
+        state.biter_unit_number = nil
+
         -- Stop biter movement
         state.biter.commandable.set_command({
           type = defines.command.stop,
@@ -545,6 +690,7 @@ function M.update(tick, runtime_profile)
         office.active = true
         state.products_at_arrival = office.products_finished
         state.phase = "working"
+        clear_calling_progress(state)
 
         set_office_status(state, office, defines.entity_status_diode.green, "gui.field-office-working")
       else
@@ -559,6 +705,10 @@ function M.update(tick, runtime_profile)
       -- Check if biter died while working
       if not state.biter or not state.biter.valid then
         destroy_overlay(state)
+        if state.biter_unit_number then
+          storage.field_office_worker_to_office[state.biter_unit_number] = nil
+          state.biter_unit_number = nil
+        end
         state.biter = nil
         state.phase = "idle"
         office.active = false
@@ -605,11 +755,54 @@ function M.update(tick, runtime_profile)
   end
 end
 
+function M.on_ai_command_completed(event)
+  M.ensure_storage()
+  local unit_number = event and event.unit_number
+  local office_id = unit_number and storage.field_office_worker_to_office[unit_number]
+  if not office_id then return false end
+
+  local state = storage.field_office_state and storage.field_office_state[office_id]
+  if not state or state.phase ~= "calling" then return true end
+  if defines.behavior_result and event.result ~= defines.behavior_result.fail then return true end
+
+  local office = storage.field_offices and storage.field_offices[office_id]
+  mark_worker_unreachable(state, office, event.tick or game.tick)
+  return true
+end
+
+function M.on_script_path_request_finished(event)
+  M.ensure_storage()
+  local request = event and event.id and storage.field_office_path_requests[event.id]
+  if not request then return false end
+  storage.field_office_path_requests[event.id] = nil
+
+  local office_id = request.office_id
+  local state = storage.field_office_state and storage.field_office_state[office_id]
+  if not state or state.path_request_id ~= event.id then return true end
+  state.path_request_id = nil
+  if state.phase ~= "calling" then return true end
+
+  if event.try_again_later then
+    local office = storage.field_offices and storage.field_offices[office_id]
+    if office and office.valid and state.biter and state.biter.valid then
+      request_worker_path_check(state, office, state.biter)
+    end
+    return true
+  end
+
+  if not event.path or #event.path == 0 then
+    local office = storage.field_offices and storage.field_offices[office_id]
+    mark_worker_unreachable(state, office, event.tick or game.tick)
+  end
+  return true
+end
+
 function M.rebuild_registry()
   M.ensure_storage()
 
   -- Destroy existing worker biters and overlays before rebuild
-  for _, state in pairs(storage.field_office_state) do
+  for office_id, state in pairs(storage.field_office_state) do
+    clear_pending_path_request(state)
     if state.biter and state.biter.valid then state.biter.destroy() end
     destroy_overlay(state)
   end
@@ -621,12 +814,14 @@ function M.rebuild_registry()
   storage.field_office_state = {}
   storage.field_office_releasing = {}
   storage.field_office_shards = {}
+  storage.field_office_worker_to_office = {}
+  storage.field_office_path_requests = {}
 
   for _, surface in pairs(game.surfaces) do
     for _, entity in ipairs(surface.find_entities_filtered{name = ENTITY_NAME}) do
       if entity.valid and entity.unit_number then
         storage.field_offices[entity.unit_number] = entity
-        storage.field_office_state[entity.unit_number] = { phase = "idle" }
+        storage.field_office_state[entity.unit_number] = { phase = "idle", office_id = entity.unit_number }
         add_office_to_shard(entity.unit_number)
       end
     end

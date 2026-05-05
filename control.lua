@@ -1664,6 +1664,9 @@ local function on_ai_command_completed(event)
   if biter_station.is_station_worker_unit(event.unit_number) then
     return
   end
+  if field_office.on_ai_command_completed(event) then
+    return
+  end
   if biterport.on_ai_command_completed(event) then
     return
   end
@@ -1674,6 +1677,9 @@ local function on_ai_command_completed(event)
 end
 
 local function on_script_path_request_finished(event)
+  if field_office.on_script_path_request_finished(event) then
+    return
+  end
   biters.on_script_path_request_finished(event)
 end
 
