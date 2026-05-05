@@ -14,6 +14,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 LOCALE_ROOT = REPO_ROOT / "locale"
 SOURCE_LOCALE = "en"
 PLACEHOLDER_PATTERN = re.compile(r"__\d+__")
+MIN_EXACT_COPY_LENGTH = 10
 
 
 def parse_args() -> argparse.Namespace:
@@ -106,6 +107,8 @@ def compare_locale(source_entries: list[tuple[str, str]], target: str) -> list[s
     for entry in source_set & target_set:
         if not entry[1]:
             continue
+        source_value = source_values[entry]
+        target_value = target_values[entry]
         source_placeholders = sorted(PLACEHOLDER_PATTERN.findall(source_values[entry]))
         target_placeholders = sorted(PLACEHOLDER_PATTERN.findall(target_values[entry]))
         if source_placeholders != target_placeholders:
@@ -113,6 +116,15 @@ def compare_locale(source_entries: list[tuple[str, str]], target: str) -> list[s
             errors.append(
                 f"{target_path}: placeholder mismatch in {section}.{key}: "
                 f"expected {source_placeholders}, found {target_placeholders}"
+            )
+        if (
+            len(source_value) > MIN_EXACT_COPY_LENGTH
+            and source_value == target_value
+            and any(char.isalpha() for char in source_value)
+        ):
+            section, key = entry
+            errors.append(
+                f"{target_path}: untranslated exact copy in {section}.{key}"
             )
 
     return errors

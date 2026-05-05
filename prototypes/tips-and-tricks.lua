@@ -71,17 +71,6 @@ data:extend({
 	  },
 	  {
 	    type = "tips-and-tricks-item",
-	    name = "administratorio-protest-resolution",
-	    category = "administratorio",
-	    order = "ca",
-	    indent = 1,
-	    trigger = {
-	      type = "build-entity",
-	      entity = "admin-station"
-	    }
-	  },
-	  {
-	    type = "tips-and-tricks-item",
 	    name = "administratorio-complaint-chain",
 	    category = "administratorio",
 	    order = "cb",
@@ -89,21 +78,6 @@ data:extend({
 	    trigger = {
 	      type = "build-entity",
 	      entity = "admin-station"
-	    }
-	  },
-	  {
-	    type = "tips-and-tricks-item",
-	    name = "administratorio-operating-paperwork",
-	    category = "administratorio",
-	    order = "cc",
-	    indent = 1,
-	    trigger = {
-	      type = "or",
-	      triggers = {
-	        { type = "build-entity", entity = "stone-furnace" },
-	        { type = "build-entity", entity = "oil-refinery" },
-	        { type = "build-entity", entity = "centrifuge" },
-	      }
 	    }
 	  },
 	  
@@ -173,17 +147,6 @@ data:extend({
     indent = 1,
     trigger = {
       type = "build-entity",
-	      entity = "formation-center"
-	    }
-	  },
-	  {
-	    type = "tips-and-tricks-item",
-	    name = "administratorio-formation-center",
-	    category = "administratorio",
-	    order = "ia",
-	    indent = 1,
-	    trigger = {
-	      type = "build-entity",
 	      entity = "formation-center"
 	    }
 	  },
