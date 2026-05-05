@@ -95,6 +95,16 @@ data = {
       },
     },
     ["container"] = {
+      ["wooden-chest"] = {
+        type = "container",
+        name = "wooden-chest",
+        inventory_size = 16,
+        picture = {
+          filename = "__base__/graphics/entity/wooden-chest/wooden-chest.png",
+          width = 32,
+          height = 32,
+        },
+      },
       ["steel-chest"] = {
         type = "container",
         name = "steel-chest",
@@ -107,6 +117,11 @@ data = {
         name = "logistic-chest-requester",
         logistic_mode = "requester",
         inventory_size = 48,
+        picture = {
+          filename = "__base__/graphics/entity/logistic-chest/requester.png",
+          width = 32,
+          height = 32,
+        },
       },
     },
     ["roboport"] = {
@@ -708,6 +723,25 @@ test("paperwork logistic chests are one-slot robot-compatible biter chests", fun
   assert_eq(provider.placeable_by[1].item, "paperwork-provider-chest")
   assert_eq(storage.placeable_by[1].item, "paperwork-storage-chest")
   assert_eq(requester.placeable_by[1].item, "paperwork-requester-chest")
+end)
+
+test("paperwork logistic chest entities use tinted wooden chest sprites", function()
+  local expected = {
+    ["paperwork-provider-chest"] = {r = 1.0, g = 0.48, b = 0.42, a = 1.0},
+    ["paperwork-storage-chest"] = {r = 1.0, g = 0.86, b = 0.38, a = 1.0},
+    ["paperwork-requester-chest"] = {r = 0.38, g = 0.66, b = 1.0, a = 1.0},
+  }
+
+  for chest_name, tint in pairs(expected) do
+    local chest = data.raw["logistic-container"][chest_name]
+    assert_true(chest ~= nil, chest_name .. " missing")
+    assert_true(chest.picture ~= nil, chest_name .. " should have a visible sprite")
+    assert_eq(chest.picture.filename, "__base__/graphics/entity/wooden-chest/wooden-chest.png", chest_name .. " should use wooden chest entity art")
+    assert_eq(chest.picture.tint.r, tint.r, chest_name .. " red tint should match the icon")
+    assert_eq(chest.picture.tint.g, tint.g, chest_name .. " green tint should match the icon")
+    assert_eq(chest.picture.tint.b, tint.b, chest_name .. " blue tint should match the icon")
+    assert_eq(chest.picture.tint.a, tint.a, chest_name .. " alpha tint should match the icon")
+  end
 end)
 
 test("hired biter field agent is a real biter unit with a custom remote", function()

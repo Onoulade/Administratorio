@@ -41,6 +41,14 @@ local function tint_sprites(t, tint)
   for _, v in pairs(t) do tint_sprites(v, tint) end
 end
 
+local function tinted_wooden_chest_picture(tint)
+  local wooden_chest = data.raw["container"] and data.raw["container"]["wooden-chest"]
+  if not wooden_chest or not wooden_chest.picture then return nil end
+  local picture = table.deepcopy(wooden_chest.picture)
+  tint_sprites(picture, tint)
+  return picture
+end
+
 local function worker_biter_helmet_layer(run_animation)
   if type(run_animation) ~= "table" then return nil end
   local source_layer = run_animation.layers and run_animation.layers[1] or run_animation
@@ -1030,7 +1038,10 @@ local function make_paperwork_logistic_chest(name, mode, tint)
   chest.fast_replaceable_group = "paperwork-logistic-chest"
   chest.collision_box = {{-0.35, -0.35}, {0.35, 0.35}}
   chest.selection_box = {{-0.5, -0.5}, {0.5, 0.5}}
-  if chest.picture and chest.picture.layers then
+  local wooden_picture = tinted_wooden_chest_picture(tint)
+  if wooden_picture then
+    chest.picture = wooden_picture
+  elseif chest.picture and chest.picture.layers then
     tint_sprites(chest.picture, tint)
   elseif chest.picture then
     chest.picture.tint = tint
