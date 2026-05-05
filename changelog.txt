@@ -26,7 +26,6 @@ Date: ????
     - Expanded Tips & Tricks for protest resolution, complaint chains, operating paperwork, Field Offices, and the Formation Center.
     - Updated README and internal progression/building/technology documentation for the revised Field Office, Biterport, and pneumatic progression.
   Internal:
-    - Added locale key verification tests for English and French locales, with stricter coverage of prototype, tips-and-tricks, shortcut, and GUI locale keys.
     - Made the test runner tolerate environments without Factorio installed while still running non-Factorio checks.
 
 ---------------------------------------------------------------------------------------------------
