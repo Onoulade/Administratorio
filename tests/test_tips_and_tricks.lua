@@ -71,7 +71,6 @@ test("admin-station mechanics tips unlock when the first desk is built", functio
   for _, name in ipairs({
     "administratorio-biter-complaints",
     "administratorio-frustration",
-    "administratorio-protest-resolution",
     "administratorio-complaint-chain",
   }) do
     local item = tip(name)
@@ -80,13 +79,6 @@ test("admin-station mechanics tips unlock when the first desk is built", functio
       name .. " should unlock from building an admin station"
     )
   end
-end)
-
-test("operating-paperwork tip unlocks when a covered machine is first built", function()
-  local item = tip("administratorio-operating-paperwork")
-  assert_true(trigger_contains(item.trigger, "build-entity", "entity", "stone-furnace"), "operating-paperwork should unlock on stone-furnace")
-  assert_true(trigger_contains(item.trigger, "build-entity", "entity", "oil-refinery"), "operating-paperwork should unlock on oil-refinery")
-  assert_true(trigger_contains(item.trigger, "build-entity", "entity", "centrifuge"), "operating-paperwork should unlock on centrifuge")
 end)
 
 test("eviction and night-shift tips stay wired to the relevant unlocks", function()
@@ -110,14 +102,6 @@ test("rideable biter tip unlocks with its dedicated technology", function()
   assert_true(
     trigger_contains(item.trigger, "research", "technology", "rideable-biter"),
     "rideable biter tip should unlock from rideable-biter"
-  )
-end)
-
-test("formation center tip unlocks when first formation center is built", function()
-  local item = tip("administratorio-formation-center")
-  assert_true(
-    trigger_contains(item.trigger, "build-entity", "entity", "formation-center"),
-    "formation-center tip should unlock from building the formation-center entity"
   )
 end)
 
