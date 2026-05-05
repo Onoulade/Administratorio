@@ -167,7 +167,7 @@ function M.get_network_total(net_id)
 end
 
 local function intake_circuit_allows(entity)
-  if not entity or not entity.valid or entity.name == "tube-intake" or not entity.get_control_behavior then return true end
+  if not entity or not entity.valid or not entity.get_control_behavior then return true end
 
   -- Factorio evaluates the visible circuit condition; this script just honors it.
   local ok, disabled = pcall(function()
@@ -201,15 +201,13 @@ end
 local function create_tube_combinator(entity)
   if not entity or not entity.valid then return nil end
   local combinator = entity.surface.create_entity{
-    name = entity.name == "tube-intake" and "tube-intake-network-port" or "tube-network-combinator",
+    name = "tube-network-combinator",
     position = entity.position,
     force = entity.force,
   }
   if combinator then
     combinator.destructible = false
-    if entity.name ~= "tube-intake" then
-      connect_tube_combinator(entity, combinator)
-    end
+    connect_tube_combinator(entity, combinator)
   end
   return combinator
 end
@@ -717,15 +715,26 @@ function M.rebuild_all()
           end
 
           -- Find or create hidden combinator.
+          if entity.name == "tube-intake" then
+            local legacy_ports = surface.find_entities_filtered{
+              name = "tube-intake-network-port",
+              position = entity.position,
+              radius = 0.5,
+            }
+            for _, port in ipairs(legacy_ports) do
+              port.destroy()
+            end
+          end
+
           local combinators = surface.find_entities_filtered{
-            name = entity.name == "tube-intake" and "tube-intake-network-port" or "tube-network-combinator",
+            name = "tube-network-combinator",
             position = entity.position,
             radius = 0.5,
           }
           local combinator = combinators[1]
           if not combinator then
             combinator = create_tube_combinator(entity)
-          elseif entity.name ~= "tube-intake" then
+          else
             connect_tube_combinator(entity, combinator)
           end
 
