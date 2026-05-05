@@ -120,30 +120,51 @@ for _, pcon in pairs(pneumatic_hidden_network_pipe.fluid_box.pipe_connections) d
 end
 pneumatic_hidden_network_pipe.fluid_box.max_pipeline_extent = tube_max_network_radius
 
-local tube_sprite_scale = 0.5
+local tube_sprite_scale = 0.43
 
 local function tube_sprite(filename)
   return {
     layers = {
       {
-        filename = "__administratorio__/graphics/entities/pneumatic/shadow.png",
-        priority = "high",
-        width = 70,
-        height = 60,
-        scale = tube_sprite_scale,
-        shift = util.by_pixel(2.0, 4.0),
-        draw_as_shadow = true,
-      },
-      {
         filename = filename,
         priority = "high",
-        width = 64,
-        height = 82,
+        width = 110,
+        height = 128,
         scale = tube_sprite_scale,
-        shift = util.by_pixel(0.0, -4.0),
+        shift = util.by_pixel(2.0, 1.0),
       },
     },
   }
+end
+
+local empty_connector_sprite = {
+  filename = "__core__/graphics/empty.png",
+  width = 1,
+  height = 1,
+}
+
+local function hide_connector_body(connector)
+  if connector.sprites then
+    connector.sprites.connector_main = nil
+    connector.sprites.connector_shadow = nil
+    connector.sprites.led_blue = empty_connector_sprite
+    connector.sprites.led_blue_off = empty_connector_sprite
+    connector.sprites.led_green = empty_connector_sprite
+    connector.sprites.led_red = empty_connector_sprite
+  end
+  return connector
+end
+
+local function universal_wire_connector(definition)
+  return hide_connector_body(circuit_connector_definitions.create_single(universal_connector_template, definition))
+end
+
+local function universal_wire_connectors(definitions)
+  local connectors = circuit_connector_definitions.create_vector(universal_connector_template, definitions)
+  for _, connector in ipairs(connectors) do
+    hide_connector_body(connector)
+  end
+  return connectors
 end
 
 -- Tube Intake: furnace-style receiver that lets inserters use recipe
@@ -173,6 +194,13 @@ local tube_intake = {
   show_recipe_icon = false,
   show_recipe_icon_on_map = false,
   enable_logistic_control_behavior = false,
+  circuit_wire_max_distance = 9,
+  circuit_connector = universal_wire_connectors({
+    {variation = 25, main_offset = util.by_pixel(10, -5), shadow_offset = util.by_pixel(0, 0), show_shadow = false},
+    {variation = 25, main_offset = util.by_pixel(10, -5), shadow_offset = util.by_pixel(0, 0), show_shadow = false},
+    {variation = 25, main_offset = util.by_pixel(10, -5), shadow_offset = util.by_pixel(0, 0), show_shadow = false},
+    {variation = 25, main_offset = util.by_pixel(10, -5), shadow_offset = util.by_pixel(0, 0), show_shadow = false},
+  }),
   graphics_set = {
     animation = tube_sprite("__administratorio__/graphics/entities/pneumatic/intake.png"),
   },
@@ -195,9 +223,8 @@ local tube_outtake = {
   inventory_size = 1,
   inventory_type = "with_bar",
   circuit_wire_max_distance = 9,
-  circuit_connector = circuit_connector_definitions.create_single(
-    universal_connector_template,
-    {variation = 26, main_offset = util.by_pixel(0, -8), shadow_offset = util.by_pixel(4, -4), show_shadow = true}
+  circuit_connector = universal_wire_connector(
+    {variation = 25, main_offset = util.by_pixel(10, -5), shadow_offset = util.by_pixel(0, 0), show_shadow = false}
   ),
   picture = tube_sprite("__administratorio__/graphics/entities/pneumatic/outtake.png"),
 }
@@ -229,14 +256,15 @@ local tube_network_combinator = {
   },
   activity_led_light_offsets = {{0, 0}, {0, 0}, {0, 0}, {0, 0}},
   circuit_wire_connection_points = {
-    { wire = {red = {0, 0}, green = {0, 0}}, shadow = {red = {0, 0}, green = {0, 0}} },
-    { wire = {red = {0, 0}, green = {0, 0}}, shadow = {red = {0, 0}, green = {0, 0}} },
-    { wire = {red = {0, 0}, green = {0, 0}}, shadow = {red = {0, 0}, green = {0, 0}} },
-    { wire = {red = {0, 0}, green = {0, 0}}, shadow = {red = {0, 0}, green = {0, 0}} },
+    { wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}} },
+    { wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}} },
+    { wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}} },
+    { wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}} },
   },
   circuit_wire_max_distance = 9,
 }
 
+-- Legacy wireable port kept so existing saves can clean it up after migration.
 local tube_intake_network_port = table.deepcopy(tube_network_combinator)
 tube_intake_network_port.name = "tube-intake-network-port"
 tube_intake_network_port.hidden = true

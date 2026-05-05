@@ -108,10 +108,40 @@ if not table.deepcopy then
 end
 
 circuit_connector_definitions = {
-  create_single = function(_, definition) return definition end,
-  create_vector = function(_, definitions) return definitions end,
+  create_single = function(template, definition)
+    return {
+      sprites = {
+        led_red = template.led_red,
+        led_green = template.led_green,
+        led_blue = template.led_blue,
+        led_blue_off = template.led_blue_off,
+        led_light = {},
+        wire_pins = template.wire_pins,
+        wire_pins_shadow = definition.show_shadow and template.wire_pins_shadow or nil,
+        connector_main = template.connector_main,
+        connector_shadow = definition.show_shadow and template.connector_shadow or nil,
+      },
+      points = {},
+    }
+  end,
+  create_vector = function(template, definitions)
+    local result = {}
+    for _, definition in ipairs(definitions) do
+      result[#result + 1] = circuit_connector_definitions.create_single(template, definition)
+    end
+    return result
+  end,
 }
-universal_connector_template = {}
+universal_connector_template = {
+  connector_main = {filename = "connector-main.png", width = 1, height = 1},
+  connector_shadow = {filename = "connector-shadow.png", width = 1, height = 1},
+  led_red = {filename = "led-red.png", width = 1, height = 1},
+  led_green = {filename = "led-green.png", width = 1, height = 1},
+  led_blue = {filename = "led-blue.png", width = 1, height = 1},
+  led_blue_off = {filename = "led-blue-off.png", width = 1, height = 1},
+  wire_pins = {filename = "wire-pins.png", width = 1, height = 1},
+  wire_pins_shadow = {filename = "wire-pins-shadow.png", width = 1, height = 1},
+}
 
 defines = {
   direction = {
@@ -151,21 +181,17 @@ test("tube-intake is a furnace-style intake with 1 source slot", function()
   assert_eq(intake.crafting_categories[1], "pneumatic-intake", "tube-intake should use pneumatic intake recipes")
   assert_eq(intake.trash_inventory_size, 0, "tube-intake should not show a logistics trash pane")
   assert_eq(intake.enable_logistic_control_behavior, false, "tube-intake should not show logistic control behavior")
-  assert_eq(intake.circuit_wire_max_distance, nil, "tube-intake should not own the native circuit/logistic GUI")
-  assert_eq(intake.circuit_connector, nil, "tube-intake should not own the native circuit/logistic GUI")
+  assert_eq(intake.circuit_wire_max_distance, 9, "tube-intake should expose a native circuit connector")
+  assert_true(intake.circuit_connector ~= nil, "tube-intake should expose native circuit connectors")
+  assert_eq(#intake.circuit_connector, 4, "tube-intake furnace connector should use a four-direction list")
 end)
 
-test("tube-intake has a wireable tube-content circuit port", function()
+test("tube-intake keeps the legacy tube-content circuit port prototype for cleanup", function()
   local port = data.raw["constant-combinator"]["tube-intake-network-port"]
   assert_true(port ~= nil, "tube-intake-network-port missing")
   assert_true(port.selectable_in_game, "tube-intake network port should be wireable")
   assert_eq(port.circuit_wire_max_distance, 9, "tube-intake network port should support circuit wires")
   assert_true(port.circuit_wire_connection_points ~= nil, "tube-intake network port should define wire points")
-end)
-
-test("tube-intake has static graphics", function()
-  local intake = data.raw.furnace["tube-intake"]
-  assert_true(intake.graphics_set.animation.layers ~= nil, "tube-intake should use one static sprite")
 end)
 
 test("tube endpoints and hidden combinators are not rotatable", function()
@@ -187,13 +213,17 @@ test("tube-outtake is a container with 1 slot", function()
   assert_eq(outtake.inventory_type, "with_bar", "tube-outtake should not use filtered logistics-style inventory")
 end)
 
-test("tube-outtake uses a container-compatible picture sprite", function()
-  local outtake = data.raw.container["tube-outtake"]
-  assert_true(outtake.picture ~= nil, "tube-outtake should define a picture")
-  assert_true(outtake.picture.layers ~= nil, "tube-outtake picture should use sprite layers")
-  assert_true(outtake.picture.layers[2].filename ~= nil, "tube-outtake picture layer should have a filename")
-  assert_eq(outtake.picture.layers[2].filename, "__administratorio__/graphics/entities/pneumatic/outtake.png",
-    "tube-outtake should use the new outtake asset")
+test("tube endpoint circuit connectors keep required sprite fields", function()
+  for _, connector in ipairs({
+    data.raw.furnace["tube-intake"].circuit_connector[1],
+    data.raw.container["tube-outtake"].circuit_connector,
+  }) do
+    assert_true(connector.sprites.led_red ~= nil, "circuit connector should define red LED sprite")
+    assert_true(connector.sprites.led_green ~= nil, "circuit connector should define green LED sprite")
+    assert_true(connector.sprites.led_blue ~= nil, "circuit connector should define blue LED sprite")
+    assert_true(connector.sprites.led_light ~= nil, "circuit connector should define LED light")
+    assert_true(connector.sprites.wire_pins ~= nil, "circuit connector should define wire pin sprite")
+  end
 end)
 
 test("pneumatic-hidden-network-pipe connects to pneumatic-forms category", function()
