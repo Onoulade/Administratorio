@@ -119,7 +119,7 @@ data:extend({
   -- T2: INDUSTRIAL PRINTING (industrial printer + bulk copy infrastructure)
   {
     type = "technology", name = "industrial-printing",
-    icon = "__administratorio__/graphics/icons/steel-forge-icon.png", icon_size = 64,
+    icon = "__administratorio__/graphics/icons/printer-t2-icon.png", icon_size = 64,
     effects = {
       { type = "unlock-recipe", recipe = "printer-t2" },
       { type = "unlock-recipe", recipe = "copy-blank-form" },
