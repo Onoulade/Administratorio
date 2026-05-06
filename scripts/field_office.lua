@@ -261,6 +261,11 @@ local function get_nearest_spawner(state, office, tick)
   return spawner
 end
 
+local function find_worker_destination(surface, worker_name, office)
+  return surface.find_non_colliding_position(worker_name, office.position, C.FIELD_OFFICE_ARRIVAL_RADIUS, 0.25)
+    or office.position
+end
+
 local function spawn_worker_biter(office, spawner)
   if not office or not office.valid or not spawner or not spawner.valid then return nil end
 
@@ -275,14 +280,15 @@ local function spawn_worker_biter(office, spawner)
   }
   if not biter or not biter.valid then return nil end
 
+  local destination = find_worker_destination(surface, biter.name, office)
   biter.commandable.set_command({
     type = defines.command.go_to_location,
-    destination = office.position,
-    radius = C.FIELD_OFFICE_ARRIVAL_RADIUS,
+    destination = destination,
+    radius = 0.5,
     distraction = defines.distraction.none,
   })
 
-  return biter
+  return biter, destination
 end
 
 local function biter_has_arrived(biter, office)
@@ -299,18 +305,19 @@ local function clear_pending_path_request(state)
   state.path_request_id = nil
 end
 
-local function request_worker_path_check(state, office, biter)
+local function request_worker_path_check(state, office, biter, destination)
   if not state or not office or not office.valid or not biter or not biter.valid then return end
   if not office.surface or not office.surface.request_path then return end
 
   clear_pending_path_request(state)
+  destination = destination or office.position
   local request_id = office.surface.request_path{
     bounding_box = biter.prototype and biter.prototype.collision_box,
     collision_mask = biter.prototype and biter.prototype.collision_mask,
     start = biter.position,
-    goal = office.position,
+    goal = destination,
     force = biter.force and biter.force.name or BITER_FORCE_NAME,
-    radius = C.FIELD_OFFICE_ARRIVAL_RADIUS,
+    radius = 0.5,
     can_open_gates = true,
     entity_to_ignore = biter,
     pathfind_flags = {
@@ -614,8 +621,11 @@ function M.update(tick, runtime_profile)
         return get_nearest_spawner(state, office, tick)
       end)
       if spawner then
+        local destination = nil
         local biter = run_profiled(runtime_profile, "field_office_spawn_worker", function()
-          return spawn_worker_biter(office, spawner)
+          local spawned_biter, spawned_destination = spawn_worker_biter(office, spawner)
+          destination = spawned_destination
+          return spawned_biter
         end)
         if biter then
           state.phase = "calling"
@@ -624,7 +634,7 @@ function M.update(tick, runtime_profile)
           state.spawner = spawner
           reset_calling_progress(state, biter, tick)
           storage.field_office_worker_to_office[biter.unit_number] = office_id
-          request_worker_path_check(state, office, biter)
+          request_worker_path_check(state, office, biter, destination)
           set_office_status(state, office, defines.entity_status_diode.yellow, "gui.field-office-calling")
         else
           mark_worker_unreachable(state, office, tick)
