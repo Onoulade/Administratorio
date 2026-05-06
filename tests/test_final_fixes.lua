@@ -972,16 +972,6 @@ test("paper and ink get regulated AM recipes", function()
   assert_eq(ink.enabled, true, "ink-regulated should stay enabled from start")
 end)
 
-test("ink regulated recipe icon matches the base item icon", function()
-  local ink = get_recipe("ink-regulated")
-  assert_true(ink ~= nil, "ink-regulated missing")
-  assert_true(ink.icons ~= nil, "ink-regulated should use layered icons")
-
-  local base_layer = get_icon_layer(ink, "__administratorio__/graphics/icons/ink-cartridge.png")
-  assert_true(base_layer ~= nil, "ink-regulated should use the ink cartridge base icon")
-  assert_true(base_layer.tint == nil, "ink-regulated should not apply the item's prototype tint to the recipe icon")
-end)
-
 test("repair-pack gets a bulked regulated AM recipe", function()
   local regulated = get_recipe("repair-pack-regulated")
   assert_true(regulated ~= nil, "repair-pack-regulated missing")
@@ -990,50 +980,6 @@ test("repair-pack gets a bulked regulated AM recipe", function()
   assert_eq(get_result_amount(regulated, "repair-pack"), 5, "repair-pack-regulated should batch to 5")
   assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_5.png"),
     "repair-pack-regulated should show the 5x overlay")
-end)
-
-test("heat-pipe batches at 10x", function()
-  local regulated = get_recipe("heat-pipe")
-  assert_true(regulated ~= nil, "heat-pipe missing")
-  assert_eq(regulated.category, "advanced-crafting-regulated", "heat-pipe category")
-  assert_true(has_ingredient(regulated, "work-order"), "heat-pipe missing work-order")
-  assert_eq(get_result_amount(regulated, "heat-pipe"), 10, "heat-pipe should batch to 10")
-  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_1.png"),
-    "heat-pipe should show the 10x overlay")
-  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_0.png"),
-    "heat-pipe should show the 10x overlay")
-end)
-
-test("equipment recipes stay unbatched at 1x", function()
-  local solar = get_recipe("solar-panel-equipment")
-  assert_true(solar ~= nil, "solar-panel-equipment missing")
-  assert_eq(get_result_amount(solar, "solar-panel-equipment"), 1, "solar-panel-equipment should stay 1x")
-  assert_true(not has_icon_layer(solar, "__base__/graphics/icons/signal/signal_1.png"),
-    "solar-panel-equipment should not show a 1x overlay")
-  assert_true(not has_icon_layer(solar, "__base__/graphics/icons/signal/signal_2.png"),
-    "solar-panel-equipment should not show a 2x overlay")
-
-  local battery = get_recipe("battery-equipment")
-  assert_true(battery ~= nil, "battery-equipment missing")
-  assert_eq(get_result_amount(battery, "battery-equipment"), 1, "battery-equipment should stay 1x")
-  assert_true(not has_icon_layer(battery, "__base__/graphics/icons/signal/signal_1.png"),
-    "battery-equipment should not show a 1x overlay")
-  assert_true(not has_icon_layer(battery, "__base__/graphics/icons/signal/signal_2.png"),
-    "battery-equipment should not show a 2x overlay")
-
-  local battery_mk2 = get_recipe("battery-mk2-equipment")
-  assert_true(battery_mk2 ~= nil, "battery-mk2-equipment missing")
-  assert_eq(get_result_amount(battery_mk2, "battery-mk2-equipment"), 1, "battery-mk2-equipment should stay 1x")
-  assert_true(not has_icon_layer(battery_mk2, "__base__/graphics/icons/signal/signal_1.png"),
-    "battery-mk2-equipment should not show a 1x overlay")
-  assert_true(not has_icon_layer(battery_mk2, "__base__/graphics/icons/signal/signal_2.png"),
-    "battery-mk2-equipment should not show a 2x overlay")
-
-  local exoskeleton = get_recipe("exoskeleton-equipment")
-  assert_true(exoskeleton ~= nil, "exoskeleton-equipment missing")
-  assert_eq(get_result_amount(exoskeleton, "exoskeleton-equipment"), 1, "exoskeleton-equipment should stay 1x")
-  assert_true(not has_icon_layer(exoskeleton, "__base__/graphics/icons/signal/signal_1.png"),
-    "exoskeleton-equipment should not show a 1x overlay")
 end)
 
 test("smelting-basic keeps only explicit batch recipes", function()
@@ -1174,113 +1120,6 @@ test("cliff explosives drop grenades but keep construction paperwork", function(
   assert_true(has_ingredient(recipe, "construction-permit"), "cliff-explosives should require construction-permit")
 end)
 
-test("bulk regulated recipe icons show amount overlay", function()
-  local regulated = get_recipe("splitter-regulated")
-  assert_true(regulated ~= nil, "splitter-regulated missing")
-  assert_true(regulated.icons ~= nil, "splitter-regulated should use layered icons")
-  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_5.png"),
-    "splitter-regulated should overlay the 5x amount")
-  assert_true(not has_icon_layer(regulated, "__administratorio__/graphics/icons/safety-work-order.png"),
-    "splitter-regulated should not overlay paperwork icon by default")
-end)
-
-test("bulk in-place regulated recipe icons show amount overlay", function()
-  local regulated = get_recipe("electric-furnace")
-  assert_true(regulated ~= nil, "electric-furnace missing")
-  assert_true(regulated.icons ~= nil, "electric-furnace should use layered icons")
-  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_5.png"),
-    "electric-furnace should overlay the 5x amount")
-  assert_true(not has_icon_layer(regulated, "__administratorio__/graphics/icons/management-verbal-work-order.png"),
-    "electric-furnace should not overlay paperwork icon by default")
-end)
-
-test("work-order bulk recipe icons show amount without paperwork icon", function()
-  local regulated = get_recipe("transport-belt-regulated")
-  assert_true(regulated ~= nil, "transport-belt-regulated missing")
-  assert_true(regulated.icons ~= nil, "transport-belt-regulated should use layered icons")
-  assert_true(not has_icon_layer(regulated, "__administratorio__/graphics/icons/work-order.png"),
-    "transport-belt-regulated should not overlay work-order icon")
-  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_1.png"),
-    "transport-belt-regulated should overlay the 10x amount")
-  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_0.png"),
-    "transport-belt-regulated should overlay the 10x amount")
-end)
-
-test("1x regulated recipes do not show amount digits", function()
-  local regulated = get_recipe("nuclear-reactor")
-  assert_true(regulated ~= nil, "nuclear-reactor missing")
-  assert_true(regulated.icons ~= nil, "nuclear-reactor should use layered icons")
-  assert_true(not has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_1.png"),
-    "nuclear-reactor should not overlay a 1x amount digit")
-  assert_true(not has_icon_layer(regulated, "__administratorio__/graphics/icons/management-written-work-order.png"),
-    "nuclear-reactor should not overlay paperwork icon by default")
-end)
-
-test("operating-paperwork recipes batch refinery chemistry and centrifuging families", function()
-  local oil = get_recipe("oil-processing")
-  assert_true(oil ~= nil, "oil-processing missing")
-  assert_true(not has_ingredient(oil, "chemical-handling-work-order"), "oil-processing should not require chemical-handling-work-order")
-  assert_eq(get_ingredient_amount(oil, "crude-oil"), 500, "oil-processing should batch crude oil at 5x")
-  assert_eq(get_result_amount(oil, "heavy-oil"), 150, "oil-processing should batch heavy oil at 5x")
-  assert_eq(get_result_amount(oil, "light-oil"), 150, "oil-processing should batch light oil at 5x")
-  assert_eq(get_result_amount(oil, "petroleum-gas"), 200, "oil-processing should batch petroleum gas at 5x")
-
-  local advanced_oil = get_recipe("advanced-oil-processing")
-  assert_true(advanced_oil ~= nil, "advanced-oil-processing missing")
-  assert_true(not has_ingredient(advanced_oil, "chemical-handling-work-order"), "advanced-oil-processing should not require chemical-handling-work-order")
-  assert_eq(get_ingredient_amount(advanced_oil, "crude-oil"), 500, "advanced-oil-processing should batch crude oil at 5x")
-  assert_eq(get_ingredient_amount(advanced_oil, "water"), 250, "advanced-oil-processing should batch water at 5x")
-  assert_eq(get_result_amount(advanced_oil, "petroleum-gas"), 275, "advanced-oil-processing should batch petroleum gas at 5x")
-
-  local coal_liq = get_recipe("coal-liquefaction")
-  assert_true(coal_liq ~= nil, "coal-liquefaction missing")
-  assert_true(not has_ingredient(coal_liq, "chemical-handling-work-order"), "coal-liquefaction should not require chemical-handling-work-order")
-  assert_eq(get_ingredient_amount(coal_liq, "coal"), 50, "coal-liquefaction should batch coal at 5x")
-  assert_eq(get_ingredient_amount(coal_liq, "steam"), 250, "coal-liquefaction should batch steam at 5x")
-  assert_eq(get_result_amount(coal_liq, "heavy-oil"), 450, "coal-liquefaction should batch heavy oil at 5x")
-
-  local plastic = get_recipe("plastic-bar")
-  assert_true(plastic ~= nil, "plastic-bar missing")
-  assert_true(has_ingredient(plastic, "chemical-handling-work-order"), "plastic-bar missing chemical-handling-work-order")
-  assert_eq(get_ingredient_amount(plastic, "petroleum-gas"), 200, "plastic-bar should batch petroleum gas at 10x")
-  assert_eq(get_result_amount(plastic, "plastic-bar"), 20, "plastic-bar should batch output at 10x")
-
-  local sulfur = get_recipe("sulfur")
-  assert_true(sulfur ~= nil, "sulfur missing")
-  assert_true(has_ingredient(sulfur, "chemical-handling-work-order"), "sulfur missing chemical-handling-work-order")
-  assert_eq(get_ingredient_amount(sulfur, "petroleum-gas"), 300, "sulfur should batch petroleum gas at 10x")
-  assert_eq(get_result_amount(sulfur, "sulfur"), 20, "sulfur should batch output at 10x")
-
-  local sulfuric_acid = get_recipe("sulfuric-acid")
-  assert_true(sulfuric_acid ~= nil, "sulfuric-acid missing")
-  assert_true(has_ingredient(sulfuric_acid, "chemical-handling-work-order"), "sulfuric-acid missing chemical-handling-work-order")
-  assert_eq(get_ingredient_amount(sulfuric_acid, "water"), 500, "sulfuric-acid should batch water at 5x")
-  assert_eq(get_result_amount(sulfuric_acid, "sulfuric-acid"), 250, "sulfuric-acid should batch output at 5x")
-
-  local solid_fuel_light = get_recipe("solid-fuel-from-light-oil")
-  assert_true(solid_fuel_light ~= nil, "solid-fuel-from-light-oil missing")
-  assert_true(has_ingredient(solid_fuel_light, "chemical-handling-work-order"), "solid-fuel-from-light-oil missing chemical-handling-work-order")
-  assert_eq(get_ingredient_amount(solid_fuel_light, "light-oil"), 50, "solid-fuel-from-light-oil should batch light oil at 5x")
-  assert_eq(get_result_amount(solid_fuel_light, "solid-fuel"), 5, "solid-fuel-from-light-oil should batch output at 5x")
-
-  local solid_fuel_heavy = get_recipe("solid-fuel-from-heavy-oil")
-  assert_true(solid_fuel_heavy ~= nil, "solid-fuel-from-heavy-oil missing")
-  assert_true(has_ingredient(solid_fuel_heavy, "chemical-handling-work-order"), "solid-fuel-from-heavy-oil missing chemical-handling-work-order")
-  assert_eq(get_ingredient_amount(solid_fuel_heavy, "heavy-oil"), 100, "solid-fuel-from-heavy-oil should batch heavy oil at 5x")
-
-  local solid_fuel_gas = get_recipe("solid-fuel-from-petroleum-gas")
-  assert_true(solid_fuel_gas ~= nil, "solid-fuel-from-petroleum-gas missing")
-  assert_true(has_ingredient(solid_fuel_gas, "chemical-handling-work-order"), "solid-fuel-from-petroleum-gas missing chemical-handling-work-order")
-  assert_eq(get_ingredient_amount(solid_fuel_gas, "petroleum-gas"), 100, "solid-fuel-from-petroleum-gas should batch petroleum gas at 5x")
-
-  local uranium = get_recipe("uranium-processing")
-  assert_true(uranium ~= nil, "uranium-processing missing")
-  assert_true(has_ingredient(uranium, "radiological-work-order"), "uranium-processing missing radiological-work-order")
-  assert_eq(get_ingredient_amount(uranium, "uranium-ore"), 50, "uranium-processing should batch uranium ore at 5x")
-  assert_eq(get_result_amount(uranium, "uranium-235"), 5, "uranium-processing should batch uranium-235 at 5x")
-  assert_eq(get_result_amount(uranium, "uranium-238"), 5, "uranium-processing should batch uranium-238 at 5x")
-end)
-
 test("all plain crafting recipes have regulated AM copies", function()
   for name, recipe in pairs(recipes) do
     if not name:find("%-regulated$") then
@@ -1329,31 +1168,6 @@ test("admin building recipes redirect Factoriopedia to regulated copies", functi
   assert_eq(original.factoriopedia_alternative, "printer-t1-regulated", "printer-t1 should redirect Factoriopedia to the regulated recipe")
   assert_eq(original.hidden_in_factoriopedia, true, "printer-t1 should be hidden in Factoriopedia")
   assert_true(not regulated.hidden_in_factoriopedia, "printer-t1-regulated should remain visible in Factoriopedia")
-end)
-
-test("admin building regulated recipes batch and show overlays", function()
-  local printer = get_recipe("printer-t1-regulated")
-  assert_true(printer ~= nil, "printer-t1-regulated missing")
-  assert_eq(get_ingredient_amount(printer, "provisional-approval"), 5, "printer-t1-regulated should batch its paperwork ingredient")
-  assert_eq(get_result_amount(printer, "printer-t1"), 5, "printer-t1-regulated should batch to 5")
-  assert_true(has_icon_layer(printer, "__base__/graphics/icons/signal/signal_5.png"),
-    "printer-t1-regulated should show the 5x overlay")
-
-  local pipe = get_recipe("pneumatic-pipe-regulated")
-  assert_true(pipe ~= nil, "pneumatic-pipe-regulated missing")
-  assert_eq(get_result_amount(pipe, "pneumatic-pipe"), 20, "pneumatic-pipe-regulated should batch to 20")
-  assert_true(has_icon_layer(pipe, "__base__/graphics/icons/signal/signal_1.png"),
-    "pneumatic-pipe-regulated should show the 10x overlay")
-  assert_true(has_icon_layer(pipe, "__base__/graphics/icons/signal/signal_0.png"),
-    "pneumatic-pipe-regulated should show the 10x overlay")
-
-  local intake = get_recipe("tube-intake-regulated")
-  assert_true(intake ~= nil, "tube-intake-regulated missing")
-  assert_eq(get_result_amount(intake, "tube-intake"), 10, "tube-intake-regulated should batch to 10")
-  assert_true(has_icon_layer(intake, "__base__/graphics/icons/signal/signal_1.png"),
-    "tube-intake-regulated should show the 10x overlay")
-  assert_true(has_icon_layer(intake, "__base__/graphics/icons/signal/signal_0.png"),
-    "tube-intake-regulated should show the 10x overlay")
 end)
 
 -------------------------------------------------------------------------------

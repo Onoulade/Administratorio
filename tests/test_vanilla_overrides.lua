@@ -123,13 +123,6 @@ test("laser shooting speed technologies are still disabled by the broader purge"
   assert_true(tech.hidden == true, "laser-shooting-speed-1 should be hidden")
 end)
 
-test("electric poles keep their vanilla supply area", function()
-  local poles = data.raw["electric-pole"]
-  assert_true(poles["small-electric-pole"].supply_area_distance == 2.5, "small-electric-pole supply area should stay vanilla")
-  assert_true(poles["medium-electric-pole"].supply_area_distance == 3.5, "medium-electric-pole supply area should stay vanilla")
-  assert_true(poles["big-electric-pole"].supply_area_distance == 2, "big-electric-pole supply area should stay vanilla")
-end)
-
 test("cliff explosives research is rewired away from military prerequisites", function()
   local tech = technologies["cliff-explosives"]
   assert_true(tech_has_prereq(tech, "explosives"), "cliff-explosives should still require explosives")

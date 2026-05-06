@@ -36,7 +36,6 @@ function M.register(deps)
 
   script.on_event(defines.events.on_unit_group_created, deps.on_unit_group_created)
   script.on_event(defines.events.on_unit_added_to_group, deps.on_unit_added_to_group)
-  script.on_event(defines.events.on_unit_removed_from_group, deps.on_unit_removed_from_group)
   script.on_event(defines.events.on_unit_group_finished_gathering, deps.on_unit_group_finished_gathering)
   script.on_event(defines.events.on_entity_died, deps.on_entity_died, deps.on_entity_died_filters)
   script.on_event(defines.events.on_script_trigger_effect, deps.on_script_trigger_effect)
