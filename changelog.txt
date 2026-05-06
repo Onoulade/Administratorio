@@ -1,7 +1,30 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.3
+Date: 2026-05-06
+Date: ????
+  Features:
+    - Added a Russian locale for Administratorio.
+    - Added Field Office placement previews that show the working range and nearby enemy nests while placing the building.
+  Changes:
+    - Reduced boiler and steam-engine regulated batch sizes from 5x to 2x.
+    - Refreshed pneumatic intake and outtake art, icons, connector placement, and hidden support cleanup so tube endpoints use static shared sprites and direct circuit wiring.
+    - Refreshed Union Headquarters art and fluid-port layout, printer icons, assembling-machine overlays, and paperwork chest tinting.
+    - Split module crafting into its own dedicated bureaucracy category.
+    - Refined French locale coverage and English/translated status text for Field Offices, pneumatic endpoints, and related tips.
+  Bugfixes:
+    - Field Offices now detect unreachable worker paths, surface a clear status, and retry later instead of leaving summoned biters stuck indefinitely.
+    - Field Offices now keep native missing-power alerts visible instead of masking them with script-disabled status.
+    - Pneumatic endpoint rebuilds now clean up legacy hidden inserters and stale Tube Intake network ports.
+    - Union Headquarters fluid ports now mirror correctly.
+  Docs:
+    - Updated internal biter employment and progression notes for the revised Field Office and worker dispatch behavior.
+  Internal:
+    - Removed locale key verification tests after replacing them with simpler locale copy checks.
+    - Cleaned up train script logic and adjusted runtime tests for Field Office reachability and current prototype coverage.
+
+---------------------------------------------------------------------------------------------------
 Version: 0.4.2
 Date: 2026-05-03
-Date: ????
   Features:
     - Added a French locale for Administratorio and refined translated names, descriptions, tips, and GUI text across the mod.
     - Added a fourth Pneumatic Capacity research tier, raising tube network capacity to 200 items with utility science.
@@ -12,7 +35,6 @@ Date: ????
     - Tightened Biterport progression and paperwork dependencies, including fixed worker slot handling and updated logistics/capacity guidance.
     - Increased the pneumatic tube maximum network radius from 60 to 120 tiles.
     - Rebalanced pneumatic capacity bonuses to 25, 50, 100, and 200 total network items across the four tiers.
-    - Reduced boiler and steam-engine regulated batch sizes from 5x to 2x.
     - Made Provisional Approval use the bureaucracy-registration category, and increased verified carbon certificate and environmental impact report paperwork costs.
     - Moved work-order gear overlays out of the stack badge area and regenerated the affected work-order icons.
     - Refined English locale flavor text for cases, legacy briefs, modules, paperwork recipes, complaint chains, buildings, and pneumatic entities.
@@ -26,6 +48,7 @@ Date: ????
     - Expanded Tips & Tricks for protest resolution, complaint chains, operating paperwork, Field Offices, and the Formation Center.
     - Updated README and internal progression/building/technology documentation for the revised Field Office, Biterport, and pneumatic progression.
   Internal:
+    - Added locale key verification tests for English and French locales, with stricter coverage of prototype, tips-and-tricks, shortcut, and GUI locale keys.
     - Made the test runner tolerate environments without Factorio installed while still running non-Factorio checks.
 
 ---------------------------------------------------------------------------------------------------
