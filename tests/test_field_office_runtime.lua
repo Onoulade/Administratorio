@@ -24,6 +24,12 @@ local function assert_true(value, message)
   if not value then error(message or "assertion failed", 2) end
 end
 
+local function assert_near(actual, expected, message)
+  if math.abs(actual - expected) > 0.0001 then
+    error((message or "assertion failed") .. ": expected " .. tostring(expected) .. ", got " .. tostring(actual), 2)
+  end
+end
+
 local mod_root = debug.getinfo(1, "S").source:match("@(.*/)")
 if mod_root then
   mod_root = mod_root:gsub("Internal/tests/$", ""):gsub("tests/$", "")
@@ -255,7 +261,8 @@ test("field office reports unreachable workers after pathing failure", function(
   local biter = surface.created_entities[1]
   assert_true(biter ~= nil, "ready office should summon a worker")
   assert_eq(office.custom_status.label[1], "gui.field-office-calling", "office should enter calling status")
-  assert_eq(surface.path_requests[1].goal, office.position, "office should request a path check before trusting the worker")
+  assert_near(surface.path_requests[1].goal.x, office.position.x + 1, "path check should target a reachable standing position beside the office")
+  assert_near(surface.path_requests[1].goal.y, office.position.y, "path check should target a reachable standing position beside the office")
 
   field_office.on_ai_command_completed{unit_number = biter.unit_number, result = defines.behavior_result.fail, tick = 10}
 
@@ -285,6 +292,45 @@ test("field office reports unreachable workers after path check failure", functi
 
   assert_true(biter.destroyed, "path-failed worker should be cleaned up")
   assert_eq(office.custom_status.label[1], "gui.field-office-no-workers-reachable", "path failure should mark office unreachable")
+end)
+
+test("field office path check does not target the occupied office center", function()
+  reset()
+  local spawner = {valid = true, position = {x = 40, y = 50}}
+  local surface = new_surface({spawner})
+  local office = new_office(surface, 24, 100)
+  field_office.track_entity(office)
+
+  field_office.update(0)
+
+  local request = surface.path_requests[1]
+  assert_true(request ~= nil, "ready office should request a worker path check")
+  assert_near(request.goal.x, office.position.x + 1, "path check should use the worker destination")
+  assert_near(request.goal.y, office.position.y, "path check should use the worker destination")
+  assert_near(surface.created_entities[1].commands[1].destination.x, request.goal.x, "worker command and path check should use the same goal")
+  assert_near(surface.created_entities[1].commands[1].destination.y, request.goal.y, "worker command and path check should use the same goal")
+end)
+
+test("multiple ready field offices each summon a worker across update shards", function()
+  reset()
+  local spawner = {valid = true, position = {x = 40, y = 50}}
+  local surface = new_surface({spawner})
+  local offices = {}
+  for i = 1, 10 do
+    local office = new_office(surface, 30 + i, 100)
+    office.position = {x = i * 4, y = 20}
+    offices[#offices + 1] = office
+    field_office.track_entity(office)
+  end
+
+  for tick = 0, 55, 5 do
+    field_office.update(tick)
+  end
+
+  assert_eq(#surface.created_entities, 10, "each ready office should get its own worker")
+  for _, office in ipairs(offices) do
+    assert_eq(office.custom_status.label[1], "gui.field-office-calling", "each ready office should be calling")
+  end
 end)
 
 test("field office reports unreachable workers when caller gets stuck", function()
