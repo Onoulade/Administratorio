@@ -6,10 +6,68 @@
 -------------------------------------------------------------------------------
 local entity_graphics = "__administratorio__/graphics/entities/"
 local sound_path = "__administratorio__/sound/buildings/"
+local printer_color_mask = entity_graphics .. "printers/assembling-machine-base-mask.png"
+local printer_highlights = entity_graphics .. "printers/assembling-machine-base-highlights.png"
+local printer_t1_icon = "__administratorio__/graphics/icons/printer-t1-icon.png"
+local printer_t2_icon = "__administratorio__/graphics/icons/printer-t2-icon.png"
+local electric_printer_tint = {r = 0.86, g = 0.86, b = 0.80, a = 1}
+local copier_printer_tint = {r = 0.18, g = 0.19, b = 0.20, a = 1}
 
 local function placeable_by_item(name)
   return {
     {item = name, count = 1},
+  }
+end
+
+local function set_animation_scale(animation, scale)
+  if not animation then
+    return
+  end
+
+  if animation.layers then
+    for _, layer in ipairs(animation.layers) do
+      set_animation_scale(layer, scale)
+    end
+    return
+  end
+
+  animation.scale = scale
+end
+
+local function add_printer_color_layers(machine, tint, scale)
+  local animation = machine.graphics_set and machine.graphics_set.animation
+  if not animation then
+    return
+  end
+
+  if not animation.layers then
+    animation.layers = {table.deepcopy(animation)}
+    for key in pairs(animation) do
+      if key ~= "layers" then
+        animation[key] = nil
+      end
+    end
+  end
+
+  animation.layers[#animation.layers + 1] = {
+    filename = printer_color_mask,
+    priority = "high",
+    width = 214,
+    height = 237,
+    frame_count = 1,
+    repeat_count = 32,
+    tint = tint,
+    scale = scale or 0.5,
+  }
+
+  animation.layers[#animation.layers + 1] = {
+    filename = printer_highlights,
+    priority = "high",
+    width = 214,
+    height = 237,
+    frame_count = 1,
+    repeat_count = 32,
+    scale = scale or 0.5,
   }
 end
 
@@ -55,52 +113,45 @@ mechanical_printer.working_sound = {
 }
 
 -- Printer T1: electric, printing
-local printer_t1 = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
+local printer_t1 = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
 printer_t1.name = "printer-t1"
 printer_t1.placeable_by = placeable_by_item("printer-t1")
-printer_t1.icon = "__administratorio__/graphics/icons/mini-assembler-icon.png"
+printer_t1.icon = printer_t1_icon
 printer_t1.icon_size = 64
+printer_t1.icons = nil
 printer_t1.minable.result = "printer-t1"
 printer_t1.next_upgrade = nil
 printer_t1.crafting_categories = {"printing", "printing-workorder"}
 printer_t1.crafting_speed = 1
 printer_t1.energy_usage = "50kW"
 printer_t1.energy_source = { type = "electric", usage_priority = "secondary-input" }
+printer_t1.fluid_boxes = nil
 printer_t1.collision_box = {{-0.7, -0.7}, {0.7, 0.7}}
 printer_t1.selection_box = {{-1, -1}, {1, 1}}
-printer_t1.graphics_set = {
-  animation = {
-    layers = {
-      { filename = entity_graphics .. "printer-t1/mini-assembler.png", width = 227, height = 255, frame_count = 1, scale = 0.28, shift = {0, -0.1} },
-    }
-  }
-}
+set_animation_scale(printer_t1.graphics_set and printer_t1.graphics_set.animation, 0.36)
+add_printer_color_layers(printer_t1, electric_printer_tint, 0.36)
 printer_t1.working_sound = {
   sound = { filename = sound_path .. "personal-printer-loop.ogg", volume = 0.5 },
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
 
 -- Printer T2: electric, printing + printing-advanced
-local printer_t2 = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
+local printer_t2 = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
 printer_t2.name = "printer-t2"
 printer_t2.placeable_by = placeable_by_item("printer-t2")
-printer_t2.icon = "__administratorio__/graphics/icons/steel-forge-icon.png"
+printer_t2.icon = printer_t2_icon
 printer_t2.icon_size = 64
+printer_t2.icons = nil
 printer_t2.minable.result = "printer-t2"
 printer_t2.next_upgrade = nil
 printer_t2.crafting_categories = {"printing", "printing-advanced", "printing-workorder"}
 printer_t2.crafting_speed = 2
 printer_t2.energy_usage = "200kW"
 printer_t2.energy_source = { type = "electric", usage_priority = "secondary-input" }
+printer_t2.fluid_boxes = nil
 printer_t2.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
 printer_t2.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
-printer_t2.graphics_set = {
-  animation = {
-    layers = {
-      { filename = entity_graphics .. "printer-t2/steel-forge.png", width = 256, height = 301, frame_count = 1, scale = 0.38, shift = {0, -0.15} },
-    }
-  }
-}
+add_printer_color_layers(printer_t2, copier_printer_tint, 0.5)
 printer_t2.working_sound = {
   sound = { filename = sound_path .. "industrial-press-loop.ogg", volume = 0.58 },
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
