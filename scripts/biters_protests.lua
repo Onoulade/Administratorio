@@ -104,13 +104,6 @@ function M.new(deps)
     info.pending_protest_reserved_position = nil
   end
 
-  local function log_protest_debug(entity, info, message)
-    -- Disabled: too much output
-    -- local unit = entity and entity.valid and entity.unit_number or "nil"
-    -- local name = entity and entity.valid and entity.name or (info and info.entity_name) or "unknown"
-    -- log(deps.log_prefix .. "Protest DEBUG: " .. name .. " (unit " .. tostring(unit) .. ") " .. message)
-  end
-
   local function clear_pending_path_request(info)
     if not info then return end
     if info.pending_path_request_id and storage.path_requests then
@@ -159,7 +152,6 @@ function M.new(deps)
     info.arrived_at_building = nil
     info.target_building = nil
     info.next_protest_wander_tick = nil
-    info.next_protest_status_log_tick = nil
     info.protest_anchor_position = nil
     info.protest_last_command_tick = nil
     info.protest_arrival_tick = nil
@@ -605,11 +597,6 @@ function M.new(deps)
     if not info.next_protest_wander_tick or info.next_protest_wander_tick <= game.tick then
       schedule_next_protest_step(info)
     end
-    if was_wandering then
-      log_protest_debug(entity, info, "parked at " .. deps.format_position(entity.position)
-        .. " target=" .. (info.target_building and info.target_building.name or "nil")
-        .. " next_step_tick=" .. tostring(info.next_protest_wander_tick))
-    end
   end
 
   local function issue_protest_wander_command(info, entity, opts)
@@ -628,10 +615,6 @@ function M.new(deps)
     info.protest_step_deadline_tick = game.tick + C.PROTEST_STEP_ACTIVE_TICKS
     info.protest_parked = nil
     entity.force = deps.get_biter_force()
-
-    log_protest_debug(entity, info, "step command to " .. deps.format_position(pos)
-      .. " around " .. (target and target.name or "nil")
-      .. " target_pos=" .. deps.format_position(target and target.position or nil))
 
     entity.commandable.set_command({
       type = defines.command.go_to_location,
@@ -655,8 +638,8 @@ function M.new(deps)
     if not info.protest_parked
        and (anchor_dist <= 0.5 * 0.5 or game.tick >= (info.protest_step_deadline_tick or 0)) then
       if game.tick >= (info.protest_step_deadline_tick or 0) then
-        log_protest_debug(entity, info, "parking protester after active-step deadline at "
-          .. deps.format_position(entity.position))
+        debug_log(deps.log_prefix .. "PROTEST-PARK deadline unit=" .. tostring(entity.unit_number)
+          .. " pos=" .. deps.format_position(entity.position))
       end
       park_protester(info, entity)
     elseif info.protest_parked
@@ -674,18 +657,6 @@ function M.new(deps)
       })
     end
 
-    if game.tick >= (info.next_protest_status_log_tick or 0) then
-      log_protest_debug(entity, info, "holding protest at " .. info.target_building.name
-        .. " current=" .. deps.format_position(entity.position)
-        .. " anchor=" .. deps.format_position(info.protest_anchor_position)
-        .. " target_pos=" .. deps.format_position(info.target_building.position)
-        .. " dist_to_anchor=" .. math.floor(math.sqrt(anchor_dist))
-        .. " dist_to_target=" .. math.floor(math.sqrt(target_dist))
-        .. " active=" .. tostring(entity.active)
-        .. " deadline=" .. tostring(info.protest_step_deadline_tick)
-        .. " next_step_tick=" .. tostring(info.next_protest_wander_tick))
-      info.next_protest_status_log_tick = game.tick + deps.protest_debug_status_ticks
-    end
   end
 
   local function mark_protester_arrived(info, entity)
@@ -695,10 +666,6 @@ function M.new(deps)
     info.arrived_at_building = true
     info.protest_arrival_tick = game.tick
     disable_protest_target(info.target_building, entity.unit_number)
-    log_protest_debug(entity, info, "arrived at protest target " .. info.target_building.name
-      .. " target_pos=" .. deps.format_position(info.target_building.position)
-      .. " arrival_pos=" .. deps.format_position(get_protest_arrival_position(info) or info.target_building.position)
-      .. " current=" .. deps.format_position(entity.position))
     park_protester(info, entity)
     render.ensure_protest_rendering(info)
     render.notify_players_of_protest(info)
@@ -805,7 +772,6 @@ function M.new(deps)
       end
     end
 
-    log_protest_debug(entity, info, "collected " .. #candidates .. " protest candidates from " .. tostring(eligible_seen) .. " eligible targets")
     return candidates
   end
 
@@ -825,13 +791,6 @@ function M.new(deps)
           and (snapshot.claimed_counts[target_id] or 0)
           or 0
         if claimed >= C.PROTEST_TARGET_MAX_PROTESTERS then
-          goto continue_candidate
-        end
-        if claimed >= C.PROTEST_TARGET_MAX_PROTESTERS then
-          log_protest_debug(entity, info, "skipping overloaded protest candidate " .. candidate.target.name
-            .. " target_pos=" .. deps.format_position(candidate.target.position)
-            .. " claimed=" .. tostring(claimed)
-            .. " cap=" .. tostring(C.PROTEST_TARGET_MAX_PROTESTERS))
           goto continue_candidate
         end
 
@@ -865,7 +824,6 @@ function M.new(deps)
 
     info.pending_protest_candidates = nil
     info.next_protest_target_retry_tick = game.tick + C.PROTEST_TARGET_RETRY_TICKS
-    -- log(deps.log_prefix .. "Protest WARNING: no reachable or available player building found for " .. entity.name .. ", retry scheduled")
     return false
   end
 
@@ -883,14 +841,11 @@ function M.new(deps)
 
     local candidates = collect_protest_target_candidates(surface, info, entity, previous_target, avoided_target_snapshot)
     if #candidates == 0 then
-      -- log(deps.log_prefix .. "Protest WARNING: no available player buildings found for " .. entity.name .. " to protest")
       info.next_protest_target_retry_tick = game.tick + C.PROTEST_TARGET_RETRY_TICKS
       return false
     end
 
     info.pending_protest_candidates = candidates
-    log_protest_debug(entity, info, "requesting protest target path from " .. deps.format_position(entity.position)
-      .. " with " .. #candidates .. " candidates")
     return request_next_protest_target_path(info, entity, 1)
   end
 
@@ -1061,7 +1016,6 @@ function M.new(deps)
       end
     end
 
-    -- log(deps.log_prefix .. "Recovered invalidated " .. info.entity_name .. " as unit " .. replacement.unit_number .. " in state '" .. tostring(info.state) .. "'")
     return true
   end
 
@@ -1152,7 +1106,6 @@ function M.new(deps)
 
     if #biters_to_reroute == 0 then return end
 
-    -- log(deps.log_prefix .. "Desk " .. desk_id .. " removed, rerouting " .. #biters_to_reroute .. " biters")
     local other_desks = deps.get_cached_desks()
 
     for _, entry in ipairs(biters_to_reroute) do
@@ -1173,7 +1126,6 @@ function M.new(deps)
       end
 
       if not reassigned then
-        -- log(deps.log_prefix .. "Reroute FAILED for biter " .. entry.b_id .. " - no desk with capacity, forcing protest")
         info.desk_id = nil
         info.desk_dest = nil
         info.frustration = C.PROTEST_THRESHOLD
@@ -1187,7 +1139,6 @@ function M.new(deps)
   end
 
   function controller.trigger_immediate_protest(entity, surface, previous_info)
-    -- log(deps.log_prefix .. "Immediate protest triggered for " .. entity.name .. " (unit " .. entity.unit_number .. ") at [" .. math.floor(entity.position.x) .. "," .. math.floor(entity.position.y) .. "] - no desk with capacity")
     deps.normalize_case_progress(previous_info)
     local complaints = C.generate_complaints(entity.name)
     if previous_info and (previous_info.complaints_filed or (previous_info.complaints and #previous_info.complaints > 0)) then
@@ -1336,7 +1287,6 @@ function M.new(deps)
           accumulate_biter_frustration(info)
 
           if info.frustration >= C.PROTEST_THRESHOLD then
-            -- log(deps.log_prefix .. "Frustration threshold reached for " .. info.entity.name .. " (unit " .. b_id .. ") at desk " .. tostring(info.desk_id) .. ", frustration=" .. info.frustration .. ", starting protest")
             deps.set_waiting_biter_state(info, "protesting")
             info.entity.active = true
             info.entity.force = deps.get_biter_force()
@@ -1345,9 +1295,7 @@ function M.new(deps)
             info.desk_id = nil
             info.desk_dest = nil
             info.promise_retry_until_tick = nil
-            log_protest_debug(info.entity, info, "entered protesting state from waiting; target pending")
             if assign_protest_target(surface, info, info.entity) then
-              -- log(deps.log_prefix .. "Protest: " .. info.entity.name .. " is seeking a reachable protest target")
             end
           end
         elseif info.state == "pacified" then
@@ -1356,16 +1304,13 @@ function M.new(deps)
             initial_frustration = info.frustration or get_pacified_frustration(),
           }) then
             clear_pacified_runtime(info)
-            -- log(deps.log_prefix .. "Promise: re-queued " .. info.entity.name .. " at desk " .. desk.unit_number)
           elseif game.tick >= (info.promise_retry_until_tick or 0) then
-            -- log(deps.log_prefix .. "Promise expired for " .. info.entity.name .. " (unit " .. b_id .. "), resuming protest")
             clear_pacified_runtime(info)
             deps.set_waiting_biter_state(info, "protesting")
             info.frustration = C.PROTEST_THRESHOLD
             info.promise_retry_until_tick = nil
             info.entity.active = true
             info.entity.force = deps.get_biter_force()
-            log_protest_debug(info.entity, info, "entered protesting state from pacified; target pending")
             assign_protest_target(surface, info, info.entity)
           else
             maintain_pacified_entity(info, info.entity)
@@ -1424,17 +1369,6 @@ function M.new(deps)
             local dist = distance_sq(info.entity.position, arrival_pos)
             if dist <= C.PROTEST_ARRIVAL_DISTANCE * C.PROTEST_ARRIVAL_DISTANCE then
               mark_protester_arrived(info, info.entity)
-            end
-            if not info.arrived_at_building and game.tick >= (info.next_protest_status_log_tick or 0) then
-              local target_dist = distance_sq(info.entity.position, info.target_building.position)
-              log_protest_debug(info.entity, info, "en route to " .. info.target_building.name
-                .. " current=" .. deps.format_position(info.entity.position)
-                .. " arrival_pos=" .. deps.format_position(arrival_pos)
-                .. " target_pos=" .. deps.format_position(info.target_building.position)
-                .. " dist_to_arrival=" .. math.floor(math.sqrt(dist))
-                .. " dist_to_target=" .. math.floor(math.sqrt(target_dist))
-                .. " active=" .. tostring(info.entity.active))
-              info.next_protest_status_log_tick = game.tick + deps.protest_debug_status_ticks
             end
             if not info.arrived_at_building and not info.entity.active and not info.pending_path_request_id then
               if not resume_en_route_protest(info, info.entity) then
@@ -1525,7 +1459,6 @@ function M.new(deps)
     if not entity or not entity.valid then return end
 
     if info.state == "pathfinding" and event.result == defines.behavior_result.fail then
-      -- log(deps.log_prefix .. "Pathfinding FAILED for " .. entity.name .. " (unit " .. event.unit_number .. ") heading to desk " .. tostring(info.desk_id) .. ", retrying")
       if info.desk_id and info.desk_dest then
         deps.issue_desk_route_command(entity, info.desk_dest)
       end
@@ -1579,9 +1512,6 @@ function M.new(deps)
     if info.pending_path_request_id then return end
 
     if info.arrived_at_building and info.target_building and info.target_building.valid then
-      log_protest_debug(entity, info, "arrived-step ai completion; result=" .. tostring(event.result)
-        .. " current=" .. deps.format_position(entity.position)
-        .. " anchor=" .. deps.format_position(info.protest_anchor_position))
       if event.result == defines.behavior_result.fail then
         info.protest_step_deadline_tick = game.tick
       end
@@ -1596,10 +1526,8 @@ function M.new(deps)
       return
     end
 
-    -- log(deps.log_prefix .. "Protest pathfinding FAILED for " .. entity.name .. " (unit " .. event.unit_number .. "), reassigning protest target")
     if assign_protest_target(entity.surface, info, entity) then
       if info.target_building and info.target_building.valid then
-        -- log(deps.log_prefix .. "Protest fallback: " .. entity.name .. " now targeting " .. info.target_building.name .. " at [" .. math.floor(info.target_building.position.x) .. "," .. math.floor(info.target_building.position.y) .. "]")
       end
     end
   end
@@ -1634,10 +1562,6 @@ function M.new(deps)
       info.arrived_at_building = nil
       info.next_protest_target_retry_tick = nil
       info.pending_protest_candidates = nil
-      log_protest_debug(entity, info, "assigned protest target " .. candidate.target.name
-        .. " target_pos=" .. deps.format_position(candidate.target.position)
-        .. " approach=" .. deps.format_position(candidate.pos)
-        .. " path_nodes=" .. tostring(#event.path))
       if issue_protest_wander_command(info, entity, {
         destination = candidate.pos,
         origin = entity.position,
@@ -1647,11 +1571,6 @@ function M.new(deps)
       end
     end
 
-    if candidate and candidate.target and candidate.target.valid then
-      log_protest_debug(entity, info, "rejected protest candidate " .. candidate.target.name
-        .. " approach=" .. deps.format_position(candidate.pos)
-        .. " path_nodes=" .. tostring(event.path and #event.path or 0))
-    end
     request_next_protest_target_path(info, entity, request.candidate_index + 1)
   end
 
@@ -1706,7 +1625,6 @@ function M.new(deps)
     if #biters_to_redirect == 0 then return end
 
     local desks = deps.get_cached_desks()
-    -- log(deps.log_prefix .. "Eviction displacement: redirecting " .. #biters_to_redirect .. " nearby biters with base frustration " .. EVICTION_BASE_FRUSTRATION)
 
     if #desks == 0 then
       for _, unit in ipairs(biters_to_redirect) do
@@ -1733,7 +1651,6 @@ function M.new(deps)
 
       local target = find_best_eviction_target(surface, center, 5)
       if target and target.valid then
-        -- log(deps.log_prefix .. "Eviction served: destroyed " .. target.name .. " at [" .. math.floor(target.position.x) .. "," .. math.floor(target.position.y) .. "]")
         local displaced_biters, displaced_surface = collect_evicted_biters(target)
         target.destroy()
         if storage.stats then storage.stats.nests_evicted = (storage.stats.nests_evicted or 0) + 1 end
@@ -1846,7 +1763,6 @@ function M.new(deps)
         info.next_revival_retry_tick = game.tick
         info.revival_failures = info.revival_failures or 0
         deps.mark_desk_circuit_dirty(info.desk_id)
-        -- log(deps.log_prefix .. "Tracked biter died unresolved: " .. entity.name .. " (unit " .. entity.unit_number .. ") in state '" .. (info.state or "unknown") .. "', scheduling recovery")
         return
       end
       log_return_home("on_biter_died unit=" .. tostring(entity.unit_number)

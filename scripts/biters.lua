@@ -89,7 +89,6 @@ local PROTEST_STOP_TEXT_TINT = {r = 1, g = 0.95, b = 0.95}
 local PACIFIED_WAIT_TINT = {r = 1, g = 0.76, b = 0.18}
 local PACIFIED_WAIT_TEXT_TINT = {r = 1, g = 0.98, b = 0.85}
 local PACIFIED_WAIT_LABEL = "No available desk"
-local PROTEST_DEBUG_STATUS_TICKS = 10 * 60
 local PROTEST_ALERT_SOUND_PATH = "administratorio-protest-alert"
 local PROTEST_ALERT_SOUND_COOLDOWN_TICKS = 6 * 60
 local PROTEST_ALERT_SOUND_MAX_DISTANCE = 32
@@ -549,7 +548,6 @@ local function finalize_pathfinding_biter_arrival(info, desk, source)
   end
 
   if not chest_ok then
-    -- log(LOG_PREFIX .. "Pathfinding arrival REJECTED at desk " .. desk.unit_number .. ": chest full for " .. entity.name .. ", triggering protest")
     zones.release_slot(desk.unit_number, b_id)
     unindex_biter_from_desk(desk.unit_number, b_id)
     untrack_waiting_biter(b_id, info)
@@ -558,7 +556,6 @@ local function finalize_pathfinding_biter_arrival(info, desk, source)
   end
 
   if complaints_filed then
-    -- log(LOG_PREFIX .. "Re-queued existing case for " .. entity.name .. " at desk " .. desk.unit_number
     --   .. ": " .. tostring(#complaints) .. " unresolved of " .. tostring(complaints_total)
     --   .. " total complaints still tracked in memory")
   end
@@ -574,7 +571,6 @@ local function finalize_pathfinding_biter_arrival(info, desk, source)
   mark_desk_circuit_dirty(desk.unit_number)
 
   if source then
-    -- log(LOG_PREFIX .. "Desk arrival (" .. source .. "): parked " .. entity.name .. " (unit " .. b_id
     --   .. ") at " .. format_position(entity.position) .. " for desk " .. desk.unit_number)
   end
 
@@ -807,7 +803,6 @@ protest_system = biters_protests_factory.new({
   log_prefix = LOG_PREFIX,
   mark_desk_circuit_dirty = mark_desk_circuit_dirty,
   normalize_case_progress = normalize_case_progress,
-  protest_debug_status_ticks = PROTEST_DEBUG_STATUS_TICKS,
   protest_protected_names = PROTEST_PROTECTED_NAMES,
   protest_target_names = PROTEST_TARGET_NAMES,
   protest_target_types = PROTEST_TARGET_TYPES,
@@ -847,7 +842,6 @@ end
 function M.send_biter_to_station_with_targets(entity, targets, opts)
   if not entity.valid or entity.type ~= "unit" or entity.force.name ~= "enemy" then return end
   if #targets == 0 then
-    -- log(LOG_PREFIX .. "Route FAILED for " .. entity.name .. " - no admin desks exist on map")
     return
   end
   opts = opts or {}
@@ -866,7 +860,6 @@ function M.send_biter_to_station_with_targets(entity, targets, opts)
   end
 
   if best then
-    -- log(LOG_PREFIX .. "Routing " .. entity.name .. " (unit " .. entity.unit_number .. ") to desk " .. best.unit_number
     --   .. " at [" .. math.floor(best.position.x) .. "," .. math.floor(best.position.y) .. "], dist=" .. math.floor(math.sqrt(min_dist)))
     local info = {
       entity = entity,
@@ -885,11 +878,9 @@ function M.send_biter_to_station_with_targets(entity, targets, opts)
     track_waiting_biter(entity.unit_number, info)
     if not route_biter_to_desk(info, entity, best, {initial_frustration = initial_frustration}) then
       untrack_waiting_biter(entity.unit_number, info)
-      -- log(LOG_PREFIX .. "Route FAILED for " .. entity.name .. " - desk reservation lost before assignment, triggering immediate protest")
       M.trigger_immediate_protest(entity, entity.surface, info)
     end
   else
-    -- log(LOG_PREFIX .. "Route FAILED for " .. entity.name .. " - all " .. #targets .. " desks at capacity, triggering immediate protest")
     M.trigger_immediate_protest(entity, entity.surface)
   end
 end
@@ -960,7 +951,6 @@ function M.process_walk_in_registration(surface, desks, runtime_profile)
               untrack_waiting_biter(biter.unit_number, info)
               M.trigger_immediate_protest(biter, surface, info)
             end
-            ::skip_walkin_biter::
           end
         end
       end

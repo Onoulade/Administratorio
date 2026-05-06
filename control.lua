@@ -31,18 +31,8 @@ local resolution_processing
 local enable_regulated_variants_for_technology = regulated_unlocks.enable_regulated_variants_for_technology
 local FIELD_OFFICE_DEPLOYMENT_TECH = "field-office-deployment"
 
-local function get_entity_name(entity_or_name)
-  if type(entity_or_name) == "string" then
-    return entity_or_name
-  end
-  if entity_or_name and entity_or_name.name then
-    return entity_or_name.name
-  end
-  return nil
-end
-
 local function is_admin_station(entity_or_name)
-  local name = get_entity_name(entity_or_name)
+  local name = type(entity_or_name) == "string" and entity_or_name or (entity_or_name and entity_or_name.name)
   return name == ADMIN_STATION_NAMES
 end
 
@@ -590,7 +580,7 @@ local function on_init()
     biter_station.sync_research(force)
   end
   set_biter_ceasefire()
-  trains.init_all_stations()
+  trains.on_init()
   for _, player in pairs(game.players) do
     normalize_player_admin_station_items(player)
     normalize_player_admin_station_quickbar(player)
@@ -606,7 +596,7 @@ local function on_configuration_changed(event)
   warn_about_pre_040_save(event)
   init_storage()
   rebuild_desk_cache()
-  trains.init_all_stations()
+  trains.on_init()
   set_biter_ceasefire()
   
   -- Clean up legacy storage from older versions (dead references)
@@ -1278,7 +1268,6 @@ local function log_unit_group_snapshot(reason, snapshot, extra)
   if extra and extra ~= "" then
     line = line .. " " .. extra
   end
-  -- log(line)
 end
 
 local function summarize_member_statuses_for_debug(member_refs)
@@ -1355,19 +1344,6 @@ local function update_unit_group_debug_entry(group_id, info, tick)
   if not group or not group.valid then
     local tracked_ticks = info and info.tracked_since_tick and (tick - info.tracked_since_tick) or "unknown"
     local member_statuses = summarize_member_statuses_for_debug(info and info.last_sample_member_refs)
-    -- log(LOG_PREFIX
-    --   .. "Unit group DEBUG [disbanded]"
-    --   .. " id=" .. tostring(group_id)
-    --   .. " tracked_ticks=" .. tostring(tracked_ticks)
-    --   .. " first_seen=" .. tostring(info and info.first_seen_reason or "unknown")
-    --   .. " last_state=" .. group_state_name(info and info.last_state)
-    --   .. " last_members=" .. tostring(info and info.last_member_count or 0)
-    --   .. " last_spread=" .. string.format("%.1f", info and info.last_farthest_member_distance or 0)
-    --   .. " last_pos=" .. format_debug_position(info and info.last_position)
-    --   .. " last_command=" .. trim_debug_text(info and info.last_command_summary or "none", 220)
-    --   .. " spawner=" .. tostring(info and info.spawner_summary or "nil")
-    --   .. (info and info.last_sample_members and info.last_sample_members ~= "" and (" sample_members=" .. info.last_sample_members) or "")
-    --   .. (member_statuses and (" sample_status=" .. member_statuses) or ""))
     storage.unit_group_debug[group_id] = nil
     return
   end
@@ -1517,9 +1493,6 @@ local function on_unit_added_to_group(event)
   -- safely by on_unit_group_finished_gathering once the group is fully formed.
 end
 
-local function on_unit_removed_from_group(event)
-end
-
 local function on_unit_group_finished_gathering(event)
   local group = event.group
   if group and group.valid and group.force.name == "enemy" then
@@ -1656,8 +1629,6 @@ local function on_ai_command_completed(event)
     local extra = "result=" .. tostring(event.result) .. " distracted=" .. tostring(event.was_distracted)
     if snapshot then
       log_unit_group_snapshot("ai_command_completed", snapshot, extra)
-    else
-      -- log(LOG_PREFIX .. "Unit group DEBUG [ai_command_completed] id=" .. tostring(event.unit_number) .. " " .. extra)
     end
   end
   biter_station.on_ai_command_completed(event)
@@ -1692,7 +1663,7 @@ end
 -- ============================================================
 
 local function on_train_changed_state(event)
-  trains.handle_state_change(event)
+  trains.on_train_changed_state(event)
 end
 
 -- ============================================================
@@ -1939,7 +1910,6 @@ control_event_router.register({
   on_unit_group_created = on_unit_group_created,
   on_unit_group_debug_tick = on_unit_group_debug_tick,
   on_unit_group_finished_gathering = on_unit_group_finished_gathering,
-  on_unit_removed_from_group = on_unit_removed_from_group,
   biter_station_check_ticks = C.BITER_STATION_CHECK_TICKS,
   biterport_check_ticks = C.BITERPORT_CHECK_TICKS,
   field_office_update_ticks = C.FIELD_OFFICE_UPDATE_TICKS,

@@ -62,9 +62,7 @@ function M.new(deps)
     return ticket, info.protest_message, deps.protest_tints[ticket] or {r = 1, g = 0.4, b = 0.3}
   end
 
-  local function get_protest_alert_icon(info)
-    return {type = "virtual", name = "signal-protest-alert"}
-  end
+  local PROTEST_ALERT_ICON = {type = "virtual", name = "signal-protest-alert"}
 
   local function get_protest_alert_caption(info)
     local ticket, message = ensure_protest_theme(info)
@@ -101,12 +99,11 @@ function M.new(deps)
     local entity = info.entity
     local anchor = (target and target.valid and target) or (entity and entity.valid and entity) or nil
     if not anchor then
-      -- log(deps.log_prefix .. "Protest DEBUG UI: chart tag skipped, no valid anchor entity or target")
       controller.destroy_protest_chart_tag(info)
       return
     end
 
-    local icon = get_protest_alert_icon(info)
+    local icon = PROTEST_ALERT_ICON
     info.protest_chart_tags_by_force = info.protest_chart_tags_by_force or {}
     local players = player_override and {player_override} or game.connected_players
     local applied_forces = {}
@@ -120,19 +117,12 @@ function M.new(deps)
             chart_tag.icon = icon
             chart_tag.position = anchor.position
             chart_tag.text = deps.protest_map_tag_text
-            -- log(deps.log_prefix .. "Protest DEBUG UI: chart tag updated at " .. deps.format_position(anchor.position)
-            --   .. " anchor=" .. anchor.name .. " force=" .. force.name
-            --   .. " state=" .. tostring(info.state)
-            --   .. " arrived=" .. tostring(info.arrived_at_building))
           else
             info.protest_chart_tags_by_force[force.name] = force.add_chart_tag(anchor.surface, {
               position = anchor.position,
               icon = icon,
               text = deps.protest_map_tag_text,
             })
-            -- log(deps.log_prefix .. "Protest DEBUG UI: chart tag created at " .. deps.format_position(anchor.position)
-            --   .. " anchor=" .. anchor.name .. " force=" .. force.name
-            --   .. " arrived=" .. tostring(info.arrived_at_building))
           end
           applied_forces[force.name] = true
         end
@@ -142,7 +132,6 @@ function M.new(deps)
     if not next(applied_forces) then
       local force = (target and target.valid and target.force) or game.forces.player
       if not force then
-        -- log(deps.log_prefix .. "Protest DEBUG UI: chart tag skipped, no force for anchor " .. anchor.name)
         return
       end
 
@@ -151,16 +140,12 @@ function M.new(deps)
         chart_tag.icon = icon
         chart_tag.position = anchor.position
         chart_tag.text = deps.protest_map_tag_text
-        -- log(deps.log_prefix .. "Protest DEBUG UI: legacy chart tag updated at " .. deps.format_position(anchor.position)
-        --   .. " anchor=" .. anchor.name .. " force=" .. force.name)
       else
         info.protest_chart_tag = force.add_chart_tag(anchor.surface, {
           position = anchor.position,
           icon = icon,
           text = deps.protest_map_tag_text,
         })
-        -- log(deps.log_prefix .. "Protest DEBUG UI: legacy chart tag created at " .. deps.format_position(anchor.position)
-        --   .. " anchor=" .. anchor.name .. " force=" .. force.name)
       end
     end
   end
@@ -336,7 +321,6 @@ function M.new(deps)
     end
 
     if not alert_entity then
-      -- log(deps.log_prefix .. "Protest DEBUG UI: alert skipped, no valid alert entity")
       controller.destroy_protest_chart_tag(info)
       return
     end
@@ -346,7 +330,7 @@ function M.new(deps)
     info.protest_alerted_players = info.protest_alerted_players or {}
     storage.protest_alert_sound_tick_by_player = storage.protest_alert_sound_tick_by_player or {}
 
-    local icon = get_protest_alert_icon(info)
+    local icon = PROTEST_ALERT_ICON
     local caption = get_protest_alert_caption(info)
     local gps = "[gps=" .. math.floor(alert_entity.position.x) .. "," .. math.floor(alert_entity.position.y) .. "]"
     local alerted_count = 0
@@ -382,13 +366,6 @@ function M.new(deps)
         alerted_count = alerted_count + 1
       end
     end
-
-    -- log(deps.log_prefix .. "Protest DEBUG UI: notify attempt anchor=" .. alert_entity.name
-    --   .. " pos=" .. deps.format_position(alert_entity.position)
-    --   .. " target=" .. tostring(target and target.valid and target.name or nil)
-    --   .. " arrived=" .. tostring(info.arrived_at_building)
-    --   .. " alerted_players=" .. tostring(alerted_count)
-    --   .. " connected_players=" .. tostring(#players))
   end
 
   return controller

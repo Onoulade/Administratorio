@@ -9,168 +9,168 @@ local CHEST_NAME = "transit-permit-chest"
 local FORM_NAME = "transit-authorization"
 local CHEST_DEFAULT_OFFSET = {x = -0.5, y = 1.5}
 local CHEST_OFFSET_BY_DIRECTION = {
-    -- Train stops are 2x2. Put the chest on the rail-adjacent tile of the edge
-    -- the train reaches first, so it sits before the stop in travel direction.
-    [defines.direction.north] = {x = -0.5, y = 1.5},
-    [defines.direction.east] = {x = -1.5, y = -0.5},
-    [defines.direction.south] = {x = 0.5, y = -1.5},
-    [defines.direction.west] = {x = 1.5, y = 0.5},
+  -- Train stops are 2x2. Put the chest on the rail-adjacent tile of the edge
+  -- the train reaches first, so it sits before the stop in travel direction.
+  [defines.direction.north] = {x = -0.5, y = 1.5},
+  [defines.direction.east] = {x = -1.5, y = -0.5},
+  [defines.direction.south] = {x = 0.5, y = -1.5},
+  [defines.direction.west] = {x = 1.5, y = 0.5},
 }
 
 local LEGACY_CHEST_OFFSET_BY_DIRECTION = {
-    -- 0.2.7 briefly moved the chest to the center of the rail-facing edge.
-    [defines.direction.north] = {x = -1, y = 0},
-    [defines.direction.east] = {x = 0, y = -1},
-    [defines.direction.south] = {x = 1, y = 0},
-    [defines.direction.west] = {x = 0, y = 1},
+  -- 0.2.7 briefly moved the chest to the center of the rail-facing edge.
+  [defines.direction.north] = {x = -1, y = 0},
+  [defines.direction.east] = {x = 0, y = -1},
+  [defines.direction.south] = {x = 1, y = 0},
+  [defines.direction.west] = {x = 0, y = 1},
 }
 
 local function offset_position(position, offset)
-    return {
-        x = position.x + offset.x,
-        y = position.y + offset.y,
-    }
+  return {
+    x = position.x + offset.x,
+    y = position.y + offset.y,
+  }
 end
 
 local function get_chest_position(station)
-    local offset = CHEST_OFFSET_BY_DIRECTION[station.direction] or CHEST_DEFAULT_OFFSET
-    return offset_position(station.position, offset)
+  local offset = CHEST_OFFSET_BY_DIRECTION[station.direction] or CHEST_DEFAULT_OFFSET
+  return offset_position(station.position, offset)
 end
 
 local function get_legacy_chest_position(station)
-    local offset = LEGACY_CHEST_OFFSET_BY_DIRECTION[station.direction]
-    if not offset then
-        return nil
-    end
-    return offset_position(station.position, offset)
+  local offset = LEGACY_CHEST_OFFSET_BY_DIRECTION[station.direction]
+  if not offset then
+    return nil
+  end
+  return offset_position(station.position, offset)
 end
 
 local function positions_match(a, b)
-    if not a or not b then return false end
-    return math.abs(a.x - b.x) < 0.001 and math.abs(a.y - b.y) < 0.001
+  if not a or not b then return false end
+  return math.abs(a.x - b.x) < 0.001 and math.abs(a.y - b.y) < 0.001
 end
 
 local function find_chest_at_position(surface, position)
-    if not position then
-        return nil
-    end
+  if not position then
+    return nil
+  end
 
-    return surface.find_entities_filtered{
-        name = CHEST_NAME,
-        position = position,
-        radius = 0.2
-    }[1]
+  return surface.find_entities_filtered{
+    name = CHEST_NAME,
+    position = position,
+    radius = 0.2
+  }[1]
 end
 
 local function find_existing_chest(station, target_position)
-    local known_station_data = storage.stations and storage.stations[station.unit_number]
-    if known_station_data and known_station_data.chest and known_station_data.chest.valid then
-        return known_station_data.chest
-    end
+  local known_station_data = storage.stations and storage.stations[station.unit_number]
+  if known_station_data and known_station_data.chest and known_station_data.chest.valid then
+    return known_station_data.chest
+  end
 
-    local chest = find_chest_at_position(station.surface, target_position)
-    if chest then
-        return chest
-    end
+  local chest = find_chest_at_position(station.surface, target_position)
+  if chest then
+    return chest
+  end
 
-    chest = find_chest_at_position(station.surface, get_legacy_chest_position(station))
-    if chest then
-        return chest
-    end
+  chest = find_chest_at_position(station.surface, get_legacy_chest_position(station))
+  if chest then
+    return chest
+  end
 
-    -- Legacy saves placed the chest directly on top of the stop.
-    return find_chest_at_position(station.surface, station.position)
+  -- Legacy saves placed the chest directly on top of the stop.
+  return find_chest_at_position(station.surface, station.position)
 end
 
 local function move_chest_to_target(chest, target_position)
-    if not chest or not chest.valid or positions_match(chest.position, target_position) then
-        return chest
-    end
-
-    if chest.teleport then
-        local teleported = chest.teleport(target_position)
-        if teleported == false then
-            return nil
-        end
-    else
-        chest.position = {x = target_position.x, y = target_position.y}
-    end
-
+  if not chest or not chest.valid or positions_match(chest.position, target_position) then
     return chest
+  end
+
+  if chest.teleport then
+    local teleported = chest.teleport(target_position)
+    if teleported == false then
+      return nil
+    end
+  else
+    chest.position = {x = target_position.x, y = target_position.y}
+  end
+
+  return chest
 end
 
 -- Syncs a single station's train limit with its chest contents
 local function sync_station(station_data)
-    local station = station_data.station
-    local chest = station_data.chest
+  local station = station_data.station
+  local chest = station_data.chest
 
-    if not station.valid or not chest.valid then return false end
+  if not station.valid or not chest.valid then return false end
 
-    -- ALWAYS lock the circuit network so signals cannot override the limit
-    -- Using get_control_behavior() instead of get_or_create prevents performance lag
-    local behavior = station.get_control_behavior()
-    if behavior then
-        behavior.circuit_enable_disable = false
-        behavior.set_trains_limit = false
-    end
+  -- ALWAYS lock the circuit network so signals cannot override the limit
+  -- Using get_control_behavior() instead of get_or_create prevents performance lag
+  local behavior = station.get_control_behavior()
+  if behavior then
+    behavior.circuit_enable_disable = false
+    behavior.set_trains_limit = false
+  end
 
-    -- We leave station.operable untouched (true) so the player can rename it and change colors.
-    -- If they try to manually slide the train limit bar or tick the circuit network boxes, 
-    -- this script will stubbornly overwrite their changes on the very next second.
+  -- We leave station.operable untouched (true) so the player can rename it and change colors.
+  -- If they try to manually slide the train limit bar or tick the circuit network boxes, 
+  -- this script will stubbornly overwrite their changes on the very next second.
 
-    local inv = chest.get_inventory(defines.inventory.chest)
-    local form_count = inv and inv.get_item_count(FORM_NAME) or 0
+  local inv = chest.get_inventory(defines.inventory.chest)
+  local form_count = inv and inv.get_item_count(FORM_NAME) or 0
 
-    if form_count > 0 then
-        -- Open the station and set limit to how many forms it has
-        station.trains_limit = form_count
-    else
-        -- Close the station
-        station.trains_limit = 0
-    end
-    return true
+  if form_count > 0 then
+    -- Open the station and set limit to how many forms it has
+    station.trains_limit = form_count
+  else
+    -- Close the station
+    station.trains_limit = 0
+  end
+  return true
 end
 
 -- Create the chest and register it to storage
 local function setup_station(station)
-    if not station or not station.valid then return end
+  if not station or not station.valid then return end
 
-    storage.stations = storage.stations or {}
-    local chest_position = get_chest_position(station)
+  storage.stations = storage.stations or {}
+  local chest_position = get_chest_position(station)
 
-    -- Reuse an existing chest when possible so migrating old stations preserves contents.
-    local chest = find_existing_chest(station, chest_position)
+  -- Reuse an existing chest when possible so migrating old stations preserves contents.
+  local chest = find_existing_chest(station, chest_position)
 
-    if not chest then
-        chest = station.surface.create_entity{
-            name = CHEST_NAME,
-            position = chest_position,
-            direction = station.direction,
-            force = station.force,
-        }
+  if not chest then
+    chest = station.surface.create_entity{
+      name = CHEST_NAME,
+      position = chest_position,
+      direction = station.direction,
+      force = station.force,
+    }
+  end
+
+  chest = move_chest_to_target(chest, chest_position)
+
+  if chest then
+    chest.destructible = false
+    chest.minable = false -- Prevent players from manually picking up the chest
+
+    -- Optional: Filter the chest so it only accepts the form
+    local inv = chest.get_inventory(defines.inventory.chest)
+    if inv and inv.supports_filters() then
+      for i = 1, #inv do
+        inv.set_filter(i, FORM_NAME)
+      end
     end
 
-    chest = move_chest_to_target(chest, chest_position)
-
-    if chest then
-        chest.destructible = false
-        chest.minable = false -- Prevent players from manually picking up the chest
-
-        -- Optional: Filter the chest so it only accepts the form
-        local inv = chest.get_inventory(defines.inventory.chest)
-        if inv and inv.supports_filters() then
-            for i = 1, #inv do
-                inv.set_filter(i, FORM_NAME)
-            end
-        end
-
-        local station_data = {
-            station = station,
-            chest = chest
-        }
-        storage.stations[station.unit_number] = station_data
-        sync_station(station_data)
-    end
+    local station_data = {
+      station = station,
+      chest = chest
+    }
+    storage.stations[station.unit_number] = station_data
+    sync_station(station_data)
+  end
 end
 
 -- --------------------------------------------------------
@@ -178,103 +178,99 @@ end
 -- --------------------------------------------------------
 
 function M.on_built(entity)
-    -- control.lua is passing the entity directly, not the event table
-    if entity and entity.valid and entity.type == "train-stop" then
-        setup_station(entity)
-    end
+  -- control.lua is passing the entity directly, not the event table
+  if entity and entity.valid and entity.type == "train-stop" then
+    setup_station(entity)
+  end
 end
 
 function M.on_removed(entity)
-    -- control.lua is passing the entity directly, not the event table
-    if entity and entity.valid and entity.type == "train-stop" then
-        storage.stations = storage.stations or {}
-        local station_data = storage.stations[entity.unit_number]
+  -- control.lua is passing the entity directly, not the event table
+  if entity and entity.valid and entity.type == "train-stop" then
+    storage.stations = storage.stations or {}
+    local station_data = storage.stations[entity.unit_number]
 
-        if station_data and station_data.chest and station_data.chest.valid then
-            -- Spill forms on the ground before destroying the chest
-            local inv = station_data.chest.get_inventory(defines.inventory.chest)
-            if inv then
-                for i = 1, #inv do
-                    local stack = inv[i]
-                    if stack and stack.valid_for_read then
-                        entity.surface.spill_item_stack{
-                            position = station_data.chest.position,
-                            stack = stack,
-                            enable_looted = true,
-                            force = entity.force
-                        }
-                    end
-                end
-            end
-            station_data.chest.destroy()
+    if station_data and station_data.chest and station_data.chest.valid then
+      -- Spill forms on the ground before destroying the chest
+      local inv = station_data.chest.get_inventory(defines.inventory.chest)
+      if inv then
+        for i = 1, #inv do
+          local stack = inv[i]
+          if stack and stack.valid_for_read then
+            entity.surface.spill_item_stack{
+              position = station_data.chest.position,
+              stack = stack,
+              enable_looted = true,
+              force = entity.force
+            }
+          end
         end
-        storage.stations[entity.unit_number] = nil
+      end
+      station_data.chest.destroy()
     end
+    storage.stations[entity.unit_number] = nil
+  end
 end
 
 -- Replaces on_tick. Run this via script.on_nth_tick(60, trains.on_nth_tick)
 -- This runs once per second instead of 60 times a second. Huge performance boost!
 function M.on_tick(event)
-    storage.stations = storage.stations or {}
-    for unit_number, station_data in pairs(storage.stations) do
-        local is_valid = sync_station(station_data)
-        if not is_valid then
-            storage.stations[unit_number] = nil -- Cleanup if station was destroyed via script
-        end
+  storage.stations = storage.stations or {}
+  for unit_number, station_data in pairs(storage.stations) do
+    local is_valid = sync_station(station_data)
+    if not is_valid then
+      storage.stations[unit_number] = nil -- Cleanup if station was destroyed via script
     end
+  end
 end
 
 -- Consume permit when the train ARRIVES
 function M.on_train_changed_state(event)
-    local train = event.train
-    
-    -- When the train physically arrives at the station and starts waiting
-    if train.state == defines.train_state.wait_station then
-        local station = train.station
-        if station and station.valid then
-            storage.stations = storage.stations or {}
-            local station_data = storage.stations[station.unit_number]
+  local train = event.train
+  
+  -- When the train physically arrives at the station and starts waiting
+  if train.state == defines.train_state.wait_station then
+    local station = train.station
+    if station and station.valid then
+      storage.stations = storage.stations or {}
+      local station_data = storage.stations[station.unit_number]
 
-            if station_data and station_data.chest and station_data.chest.valid then
-                local inv = station_data.chest.get_inventory(defines.inventory.chest)
-                
-                if inv and inv.get_item_count(FORM_NAME) > 0 then
-                    -- Consume 1 permit!
-                    inv.remove({name = FORM_NAME, count = 1})
+      if station_data and station_data.chest and station_data.chest.valid then
+        local inv = station_data.chest.get_inventory(defines.inventory.chest)
+        
+        if inv and inv.get_item_count(FORM_NAME) > 0 then
+          -- Consume 1 permit!
+          inv.remove({name = FORM_NAME, count = 1})
 
-                    -- Check if it just ran out of permits
-                    if inv.get_item_count(FORM_NAME) == 0 then
-                        for _, player in pairs(game.connected_players) do
-                            player.create_local_flying_text{
-                                text = {"", "[color=red]", station.backer_name or "Station", ": Out of transit authorizations![/color]"},
-                                position = station.position,
-                                color = {r = 1, g = 0.2, b = 0.2},
-                                time_to_live = 120,
-                            }
-                        end
-                    end
-
-                    -- Immediately sync the station so another train doesn't path to it 
-                    -- if the limit just dropped to 0
-                    sync_station(station_data)
-                end
+          -- Check if it just ran out of permits
+          if inv.get_item_count(FORM_NAME) == 0 then
+            for _, player in pairs(game.connected_players) do
+              player.create_local_flying_text{
+                text = {"", "[color=red]", station.backer_name or "Station", ": Out of transit authorizations![/color]"},
+                position = station.position,
+                color = {r = 1, g = 0.2, b = 0.2},
+                time_to_live = 120,
+              }
             end
+          end
+
+          -- Immediately sync the station so another train doesn't path to it 
+          -- if the limit just dropped to 0
+          sync_station(station_data)
         end
+      end
     end
+  end
 end
 
 function M.on_init()
-    storage.stations = {}
-    for _, surface in pairs(game.surfaces) do
-        local stations = surface.find_entities_filtered{type = "train-stop"}
-        for _, station in ipairs(stations) do
-            setup_station(station)
-        end
+  storage.stations = {}
+  for _, surface in pairs(game.surfaces) do
+    local stations = surface.find_entities_filtered{type = "train-stop"}
+    for _, station in ipairs(stations) do
+      setup_station(station)
     end
+  end
 end
-
--- Add aliases so existing calls in control.lua don't crash
-M.init_all_stations = M.on_init
-M.handle_state_change = M.on_train_changed_state
 
 return M
