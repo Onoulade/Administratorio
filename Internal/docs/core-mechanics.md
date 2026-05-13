@@ -159,6 +159,7 @@ From there, the workforce branches out to the Formation Center, Biter Employment
 
 ## Current State
 
+- **Status:** Beta. The main progression path and runtime systems are ready for broader playtesting, while balance, compatibility, translations, and late-game polish remain active work.
 - **Incompatible with:** Space Age and Quality.
 - **Requires:** Factorio 2.0.
 - **Compatibility on the radar:** Space Age and Quality are pending approval.

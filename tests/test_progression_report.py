@@ -388,6 +388,63 @@ class ProgressionAnalyzer:
         return tuple(sorted(seen))
 
     @lru_cache(maxsize=None)
+    def reachable_trigger_key(
+        self,
+        tech_key: Tuple[str, ...],
+        excluded_techs: Tuple[str, ...] = (),
+    ) -> Tuple[str, ...]:
+        reachable = set(tech_key)
+        excluded = set(excluded_techs)
+
+        changed = True
+        while changed:
+            changed = False
+            current_key = tuple(sorted(reachable))
+            for tech_name, tech in sorted(self.technologies.items()):
+                if tech_name in reachable or tech_name in excluded:
+                    continue
+                if not self.tech_visible(tech_name):
+                    continue
+
+                prerequisites = set(tech.get("prerequisites", []) or [])
+                if not prerequisites.issubset(reachable):
+                    continue
+
+                trigger = tech.get("research_trigger") or {}
+                trigger_type = trigger.get("type")
+                if trigger_type == "mine-entity":
+                    reachable.add(tech_name)
+                    changed = True
+                elif trigger_type == "craft-item":
+                    item_name = trigger.get("item")
+                    if item_name and self.craftable(item_name, current_key):
+                        reachable.add(tech_name)
+                        changed = True
+
+        return tuple(sorted(reachable))
+
+    @lru_cache(maxsize=None)
+    def tech_eval_key(self, tech_name: str, include_self: bool = True) -> Tuple[str, ...]:
+        base = set(self.prereq_closure(tech_name))
+        excluded: Tuple[str, ...] = ()
+        if include_self:
+            base.add(tech_name)
+        else:
+            excluded = (tech_name,)
+        return self.reachable_trigger_key(tuple(sorted(base)), excluded)
+
+    @lru_cache(maxsize=None)
+    def combined_eval_key(
+        self,
+        base_key: Tuple[str, ...],
+        tech_name: str,
+    ) -> Tuple[str, ...]:
+        combined = set(base_key)
+        combined.update(self.prereq_closure(tech_name))
+        combined.add(tech_name)
+        return self.reachable_trigger_key(tuple(sorted(combined)))
+
+    @lru_cache(maxsize=None)
     def available_recipes(self, tech_key: Tuple[str, ...]) -> Set[str]:
         available = set(self.start_enabled_recipes)
         for tech_name in tech_key:
@@ -589,8 +646,8 @@ class ProgressionAnalyzer:
             if not self.tech_visible(tech_name):
                 continue
 
-            before_key = self.prereq_closure(tech_name)
-            after_key = tuple(sorted(set(before_key) | {tech_name}))
+            before_key = self.tech_eval_key(tech_name, include_self=False)
+            after_key = self.tech_eval_key(tech_name, include_self=True)
             for recipe_name in self.unlocks_by_tech.get(tech_name, []):
                 output_targets = [
                     result_name
@@ -616,9 +673,13 @@ class ProgressionAnalyzer:
                 delayed_resolution = None
                 finding_type = "already_accessible_before_unlock" if before_targets else "blocked_after_unlock"
                 if not before_targets:
-                    delayed_resolution = self.find_descendant_resolution(tech_name, output_targets)
+                    delayed_resolution = self.find_reachable_resolution(
+                        after_key,
+                        tech_name,
+                        output_targets,
+                    )
                     if delayed_resolution is not None:
-                        finding_type = "delayed_until_descendant"
+                        finding_type = "delayed_until_reachable_tech"
                 findings.append(
                     {
                         "type": finding_type,
@@ -637,19 +698,22 @@ class ProgressionAnalyzer:
                 )
         return findings
 
-    def find_descendant_resolution(
-        self, tech_name: str, targets: Sequence[str]
+    def find_reachable_resolution(
+        self,
+        base_key: Tuple[str, ...],
+        source_tech_name: str,
+        targets: Sequence[str],
     ) -> Optional[Dict[str, Sequence[str]]]:
-        for descendant in self.descendants(tech_name):
-            if not self.tech_visible(descendant):
+        for candidate in sorted(self.technologies):
+            if candidate == source_tech_name or not self.tech_visible(candidate):
                 continue
-            descendant_after = tuple(sorted(set(self.prereq_closure(descendant)) | {descendant}))
+            candidate_after = self.combined_eval_key(base_key, candidate)
             craftable_targets = sorted(
-                target for target in targets if self.craftable(target, descendant_after)
+                target for target in targets if self.craftable(target, candidate_after)
             )
             if craftable_targets:
                 return {
-                    "technology": descendant,
+                    "technology": candidate,
                     "targets": craftable_targets,
                 }
         return None
@@ -936,7 +1000,7 @@ class ProgressionAnalyzer:
         for descendant in self.descendants(tech_name):
             if not self.tech_visible(descendant):
                 continue
-            descendant_after = tuple(sorted(set(self.prereq_closure(descendant)) | {descendant}))
+            descendant_after = self.tech_eval_key(descendant, include_self=True)
             if self.recipe_machine_usable(recipe_name, descendant_after):
                 return {"technology": descendant}
         return None
@@ -947,7 +1011,7 @@ class ProgressionAnalyzer:
             if not self.tech_visible(tech_name):
                 continue
 
-            after_key = tuple(sorted(set(self.prereq_closure(tech_name)) | {tech_name}))
+            after_key = self.tech_eval_key(tech_name, include_self=True)
             for recipe_name in sorted(self.unlocks_by_tech.get(tech_name, [])):
                 recipe = self.recipes[recipe_name]
                 if recipe.get("hidden"):
@@ -1011,7 +1075,7 @@ class ProgressionAnalyzer:
         for descendant in self.descendants(tech_name):
             if not self.tech_visible(descendant):
                 continue
-            descendant_after = tuple(sorted(set(self.prereq_closure(descendant)) | {descendant}))
+            descendant_after = self.tech_eval_key(descendant, include_self=True)
             if self.machine_craftable(
                 ingredient_name,
                 descendant_after,
@@ -1026,7 +1090,7 @@ class ProgressionAnalyzer:
             if not self.tech_visible(tech_name):
                 continue
 
-            after_key = tuple(sorted(set(self.prereq_closure(tech_name)) | {tech_name}))
+            after_key = self.tech_eval_key(tech_name, include_self=True)
             for recipe_name in self.unlocks_by_tech.get(tech_name, []):
                 recipe = self.recipes[recipe_name]
                 output_buildings = [
@@ -1041,11 +1105,7 @@ class ProgressionAnalyzer:
                     for ingredient_name, ingredient_type in recipe_ingredients(recipe):
                         if ingredient_type != "item" or not self.is_mod_item(ingredient_name):
                             continue
-                        if self.machine_craftable(
-                            ingredient_name,
-                            after_key,
-                            (building_name,),
-                        ):
+                        if self.craftable(ingredient_name, after_key):
                             continue
 
                         if self.machine_craftable(ingredient_name, after_key):
@@ -1228,7 +1288,7 @@ def render_report(
     delayed_failures = [
         finding
         for finding in direct_target_failures
-        if finding["type"] == "delayed_until_descendant"
+        if finding["type"].startswith("delayed_until_")
     ]
     premature_failures = [
         finding
@@ -1385,7 +1445,7 @@ def render_report(
     lines.extend(
         [
             "",
-            f"Direct target unlocks still blocked through all dependent techs: {len(unresolved_failures)}",
+            f"Direct target unlocks still blocked through reachable progression: {len(unresolved_failures)}",
         ]
     )
     for finding in unresolved_failures:
@@ -1398,7 +1458,7 @@ def render_report(
     lines.extend(
         [
             "",
-            f"Direct target unlocks blocked at unlock but resolved by a dependent tech: {len(delayed_failures)}",
+            f"Direct target unlocks blocked at unlock but resolved by reachable progression: {len(delayed_failures)}",
         ]
     )
     for finding in delayed_failures:
@@ -1407,7 +1467,7 @@ def render_report(
             f"  - {finding['technology']} -> {finding['recipe']} ({', '.join(finding['targets'])})"
         )
         lines.append(
-            f"    First resolved by dependent tech: {resolution['technology']} ({', '.join(resolution['targets'])})"
+            f"    First resolved by reachable tech: {resolution['technology']} ({', '.join(resolution['targets'])})"
         )
 
     lines.extend(

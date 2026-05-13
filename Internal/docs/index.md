@@ -17,9 +17,11 @@ An overhaul mod for Factorio 2.0 that replaces military conflict with corporate 
 ## Current State
 
 - **Requires:** Factorio 2.0
-- **Status:** Alpha — still buggy, still evolving fast
+- **Status:** Beta — full progression is playable, with ongoing balance, compatibility, translation, and polish work
 - **Incompatible with:** Space Age, Quality
 - **Settings:** Working Hours can be disabled for planner mod compatibility
+
+Beta is the public playtesting phase. Treat the core loops as implemented, but keep reporting late-game stalls, migration issues, awkward balance spikes, missing locale coverage, and places where the paperwork stops being funny and starts being merely paperwork.
 
 ## Credits
 

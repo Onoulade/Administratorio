@@ -1,8 +1,12 @@
 # Administratorio Progression Ledger
 
-> **Note:** This file tracks the actual progression model implemented by the code. For player-facing documentation, see the `docs/` directory.
+> **Note:** This file tracks the actual progression model implemented by the code. For broader documentation, see the `Internal/docs/` directory.
 
 Derived from the code in `prototypes/`, `data-final-fixes.lua`, `overrides/vanilla.lua`, and the runtime scripts.
+
+## Release Status
+
+Administratorio is in beta: the full progression arc is expected to be playable, and this ledger should be treated as the reference for checking late-game balance, migration behavior, and remaining polish issues before stable release.
 
 ## Core Loops
 
