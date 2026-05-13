@@ -67,6 +67,10 @@ Incompatible with Space Age and Quality. Requires Factorio 2.0. Space Age and Qu
 
 One caveat: the Working Hours shutdown is runtime logic, so planner mods like Factory Planner will mis-model those buildings unless you account for it manually. If you prefer planner accuracy over the day/night subplot, disable Working Hours in startup settings.
 
+## Development
+
+This repo uses the Factorio mod GitHub release template with semantic-release automation. See [CONTRIBUTING.md](CONTRIBUTING.md) for the commit structure, release types, and changelog behavior expected by the GitHub Actions release workflow.
+
 ## Credits
 
 The **Resolution Office** scrubber art and **Propaganda Distillery** art are by **Hurricane** ([Hurricane046](https://mods.factorio.com/user/Hurricane046)).
