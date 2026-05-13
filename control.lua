@@ -420,13 +420,14 @@ local function init_storage()
   storage.pending_group_redirect_head = storage.pending_group_redirect_head or 1
   storage.unit_group_redirect_watch = storage.unit_group_redirect_watch or {}
   storage.runtime_debug_players = storage.runtime_debug_players or {}
-  storage.stats = storage.stats or {
-    cases_resolved = 0,
-    money_earned = 0,
-    protests_suppressed = 0,
-    nests_evicted = 0,
-    nests_calmed = 0,
-  }
+  storage.stats = storage.stats or {}
+  storage.stats.cases_resolved = storage.stats.cases_resolved or 0
+  storage.stats.money_earned = storage.stats.money_earned or 0
+  storage.stats.protests_suppressed = storage.stats.protests_suppressed or 0
+  storage.stats.nests_evicted = storage.stats.nests_evicted or 0
+  storage.stats.nests_calmed = storage.stats.nests_calmed or 0
+  storage.stats.biters_hired = storage.stats.biters_hired or 0
+  storage.stats.rockets_launched = storage.stats.rockets_launched or 0
   storage.calmed_spawners = storage.calmed_spawners or {}
   if WORKING_HOURS_ENABLED then
     working_hours.ensure_storage()
@@ -1739,11 +1740,14 @@ local function build_win_gui(player)
   stat_table.style.vertical_spacing = 8
 
   local rows = {
-    {{"gui.stat-cases-resolved"},   stats.cases_resolved or 0},
-    {{"gui.stat-money-earned"},     stats.money_earned or 0},
-    {{"gui.stat-forms-crafted"},    forms_crafted},
+    {{"gui.stat-rockets-launched"},    stats.rockets_launched or 1},
+    {{"gui.stat-cases-resolved"},      stats.cases_resolved or 0},
+    {{"gui.stat-money-earned"},        stats.money_earned or 0},
+    {{"gui.stat-forms-crafted"},       forms_crafted},
+    {{"gui.stat-workers-hired"},       stats.biters_hired or 0},
     {{"gui.stat-protests-suppressed"}, stats.protests_suppressed or 0},
-    {{"gui.stat-nests-evicted"},    stats.nests_evicted or 0},
+    {{"gui.stat-nests-evicted"},       stats.nests_evicted or 0},
+    {{"gui.stat-nests-calmed"},        stats.nests_calmed or 0},
   }
 
   for _, row in ipairs(rows) do
@@ -1780,6 +1784,10 @@ local function build_win_gui(player)
 end
 
 local function on_rocket_launched(event)
+  if storage.stats then
+    storage.stats.rockets_launched = (storage.stats.rockets_launched or 0) + 1
+  end
+
   -- Show GUI to the player who launched, or all connected players
   local silo = event.rocket_silo
   local players_to_notify = {}
