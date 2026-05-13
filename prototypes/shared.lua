@@ -241,7 +241,6 @@ shared.FORM_PRODUCTION_RECIPES = {
   ["management-approval-written"] = "management-written-1st-printing",
   ["provisional-approval"] = "provisional-approval-production",
   ["research-grant-approval"] = "research-grant-approval-production",
-  ["petrochemical-operating-permit"] = "petrochemical-operating-permit-approval",
   ["blank-form"] = "blank-form-production",
   ["blank-approval"] = "blank-approval-production",
   ["blank-directive"] = "blank-directive-production",
