@@ -718,22 +718,16 @@ local function get_nauvis_enrollment_offer_chance(info)
   return 0
 end
 
+-- Slot release, desk unindex, and cases_resolved are owned by process_resolutions.
 local function finalize_enrolled_biter_conversion(desk_id, info, inv)
   if not desk_id or not info or not inv then return false end
   local entity = info.entity
   if not entity or not entity.valid then return false end
   if inv.insert({name = "enrolled-biter", count = 1}) <= 0 then return false end
 
-  local biter_unit = entity.unit_number
-  zones.release_slot(desk_id, biter_unit)
-  unindex_biter_from_desk(desk_id, biter_unit)
-  untrack_waiting_biter(biter_unit, info)
+  untrack_waiting_biter(entity.unit_number, info)
   entity.destroy()
   mark_desk_circuit_dirty(desk_id)
-
-  if storage.stats then
-    storage.stats.cases_resolved = (storage.stats.cases_resolved or 0) + 1
-  end
 
   return true
 end
@@ -1500,22 +1494,10 @@ function M.process_resolutions(desks)
                       zones.release_slot(desk_id, biter_unit)
                       unindex_biter_from_desk(desk_id, b_id)
 
-                      -- Try to hire the biter if a job-offer is in the desk
-                      local worker_yield = C.BITER_WORKER_YIELD[biter_name]
-                      local hired = false
-                      if worker_yield and inv.get_item_count("job-offer") > 0
-                         and inv.can_insert({name = "biter-worker", count = worker_yield}) then
-                        inv.remove({name = "job-offer", count = 1})
-                        inv.insert({name = "biter-worker", count = worker_yield})
-                        if info.entity and info.entity.valid then
-                          info.entity.destroy()
-                        end
-                        untrack_waiting_biter(b_id, info)
-                        hired = true
+                      local hired = maybe_attempt_nauvis_enrollment_offer(desk_id, info, inv)
+                      if hired then
                         if storage.stats then storage.stats.biters_hired = (storage.stats.biters_hired or 0) + 1 end
-                      end
-
-                      if not hired then
+                      else
                         start_return_home(info, info.entity)
                         local amount = C.BITER_PAYOUT[biter_name]
                         if amount and inv.can_insert({name = "taxpayer-money", count = amount}) then

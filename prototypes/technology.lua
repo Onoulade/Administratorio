@@ -95,13 +95,19 @@ data:extend({
   {
     type = "technology", name = "government-liaison",
     icon = "__administratorio__/graphics/icons/admin-desk.png", icon_size = 64,
-    effects = {
-      { type = "unlock-recipe", recipe = "petition-counter" },
-      { type = "unlock-recipe", recipe = "safety-waiver-approval" },
-      { type = "unlock-recipe", recipe = "construction-permit-approval" },
-      { type = "unlock-recipe", recipe = "petrochemical-operating-permit-approval" },
-      { type = "unlock-recipe", recipe = "radiological-work-order-approval" },
-    },
+    effects = (function()
+      local effects = {
+        { type = "unlock-recipe", recipe = "petition-counter" },
+        { type = "unlock-recipe", recipe = "safety-waiver-approval" },
+        { type = "unlock-recipe", recipe = "construction-permit-approval" },
+        { type = "unlock-recipe", recipe = "radiological-work-order-approval" },
+      }
+      if space_age_enabled then
+        effects[#effects + 1] = { type = "unlock-recipe", recipe = "petrochemical-operating-permit-approval" }
+        effects[#effects + 1] = { type = "unlock-recipe", recipe = "petrochemical-operating-permit-production" }
+      end
+      return effects
+    end)(),
     prerequisites = {"printing-technology"},
     unit = { count = 25, ingredients = {{"automation-science-pack", 1}, {"administrative-science-pack", 1}}, time = 15 },
     order = "a-l0"

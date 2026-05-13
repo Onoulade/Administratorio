@@ -60,6 +60,7 @@ local function load_biters_module()
     ensure_desk_runtime_state = noop,
     get_available_slots = function() return 0 end,
     release_slot = function() end,
+    decrement_desk_occupants = noop,
   }
   package.loaded["scripts.working_hours"] = {}
   package.loaded["scripts.biters_rendering"] = {
@@ -197,7 +198,10 @@ local function new_context(opts)
     force = {name = "neutral"},
     active = false,
   }
-  local surface = {index = 1}
+  local surface = {
+    index = 1,
+    find_non_colliding_position = function(_, pos) return pos end,
+  }
   entity.surface = surface
   entity.commandable = {
     set_command = function(command)
