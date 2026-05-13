@@ -71,7 +71,7 @@ One caveat: the Working Hours shutdown is runtime logic, so planner mods like Fa
 
 ## Development
 
-This repo uses the Factorio mod GitHub release template with semantic-release automation. See [CONTRIBUTING.md](CONTRIBUTING.md) for the commit structure, release types, and changelog behavior expected by the GitHub Actions release workflow.
+This repo uses a manual GitHub Actions release workflow for Factorio mod releases. See [CONTRIBUTING.md](CONTRIBUTING.md) for the version input, commit structure, and changelog behavior expected by the workflow.
 
 ## Credits
 

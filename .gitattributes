@@ -14,7 +14,6 @@ CONTRIBUTING.md export-ignore
 .github/** export-ignore
 .gitignore export-ignore
 .gitattributes export-ignore
-.releaserc export-ignore
 Internal export-ignore
 Internal/** export-ignore
 tests export-ignore
