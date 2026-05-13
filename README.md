@@ -4,18 +4,18 @@
 
 Overhaul mod for Factorio 2.0 that replaces military conflict with corporate bureaucracy. No guns. No turrets. No military science. Every machine you build, every inserter you place, and every furnace you fire up requires the proper paperwork — and the biters you used to shoot now have HR representation and a grievance process.
 
-This is an **Alpha**. Still buggy, still evolving fast, some graphics and sounds are placeholders, the economy is still being tuned. Bug reports are welcomed with the solemn gratitude of a man whose backlog is larger than his will to live.
+This is a **Beta**. The full progression arc is playable and the core systems are in place, but balance, compatibility, translations, and late-game polish are still being tuned. Bug reports and save-breaking edge cases are welcomed with the solemn gratitude of a man whose backlog is larger than his will to live.
 
 ## Full Documentation
 
-A comprehensive documentation system is available in the `docs/` directory:
+A comprehensive internal documentation system is available in the `Internal/docs/` directory:
 
-- **[docs/index.md](docs/index.md)** — Documentation index and quick links to all pages
-- **[docs/core-mechanics.md](docs/core-mechanics.md)** — Core loops, paperwork tiers, complaint system, frustration/protest mechanics, resolution chains
-- **[docs/biter-employment.md](docs/biter-employment.md)** — Hiring workers, Biter Employment Office, Biterport (walking-worker roboport), Field Office
-- **[docs/buildings-and-structures.md](docs/buildings-and-structures.md)** — All buildings, production facilities, administrative buildings, pneumatic tube network, support structures
-- **[docs/technology-tree.md](docs/technology-tree.md)** — Complete tech tree from discovery through Constitutional Law, specialization training, capacity upgrades
-- **[docs/advanced-topics.md](docs/advanced-topics.md)** — Hired Biter (field agents), working hours system, modules, funding chain, coffee economy, train transit, bottlenecks
+- **[Internal/docs/index.md](Internal/docs/index.md)** — Documentation index and quick links to all pages
+- **[Internal/docs/core-mechanics.md](Internal/docs/core-mechanics.md)** — Core loops, paperwork tiers, complaint system, frustration/protest mechanics, resolution chains
+- **[Internal/docs/biter-employment.md](Internal/docs/biter-employment.md)** — Hiring workers, Biter Employment Office, Biterport (walking-worker roboport), Field Office
+- **[Internal/docs/buildings-and-structures.md](Internal/docs/buildings-and-structures.md)** — All buildings, production facilities, administrative buildings, pneumatic tube network, support structures
+- **[Internal/docs/technology-tree.md](Internal/docs/technology-tree.md)** — Complete tech tree from discovery through Constitutional Law, specialization training, capacity upgrades
+- **[Internal/docs/advanced-topics.md](Internal/docs/advanced-topics.md)** — Hired Biter (field agents), working hours system, modules, funding chain, coffee economy, train transit, bottlenecks
 
 ## Quick Overview
 
@@ -62,6 +62,8 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 Forms travel through pneumatic tubes — Tube Intakes consume items into a per-network signal pool, and Tube Outtakes dispense them. Network capacity scales from 10 to 25, 50, 100, and 200 shared items via research. Tube Intakes use furnace-style intake validation with hidden per-paperwork recipes, so inserters feed only valid pneumatic paperwork items.
 
 ## Current State
+
+Beta status means the mod is ready for broader playtesting, not that the paperwork has achieved enlightenment. Expect balance changes, UI/locale cleanup, and the occasional migration wart as the late-game systems get more miles on them.
 
 Incompatible with Space Age and Quality. Requires Factorio 2.0. Space Age and Quality compatibility is on the radar, pending approval.
 

@@ -2,7 +2,8 @@
 
 ## Release Automation
 
-Releases are handled by GitHub Actions on pushes to `main`. The workflow installs
+Releases are handled by the manually dispatched GitHub Actions release workflow on
+`main`. The workflow installs
 `semantic-release`, `semantic-release-factorio`, and the conventional changelog
 tools, then uses `.releaserc` to:
 
@@ -14,6 +15,14 @@ tools, then uses `.releaserc` to:
 
 Do not edit release versions by hand for normal releases. Let the release workflow
 advance the version and changelog from the commit history.
+
+## Beta Release Posture
+
+Administratorio is currently in beta. Contributions should assume the full
+progression arc is playable, but balance, compatibility, translation coverage,
+runtime migrations, and late-game polish are still fair game for iteration.
+Player-facing changes should be described clearly in conventional commit subjects
+because they feed the Factorio changelog.
 
 ## Commit Structure
 
