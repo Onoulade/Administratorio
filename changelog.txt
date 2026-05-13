@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.0
+Date: 2026-05-13
+  Features:
+    - Add more stats to the win panel
+    - add ru locale
+---------------------------------------------------------------------------------------------------
 Version: 0.4.3
 Date: 2026-05-06
 Date: ????
@@ -21,7 +27,6 @@ Date: ????
   Internal:
     - Removed locale key verification tests after replacing them with simpler locale copy checks.
     - Cleaned up train script logic and adjusted runtime tests for Field Office reachability and current prototype coverage.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.2
 Date: 2026-05-03
@@ -50,7 +55,6 @@ Date: 2026-05-03
   Internal:
     - Added locale key verification tests for English and French locales, with stricter coverage of prototype, tips-and-tricks, shortcut, and GUI locale keys.
     - Made the test runner tolerate environments without Factorio installed while still running non-Factorio checks.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.1
 Date: 2026-04-29
@@ -66,7 +70,6 @@ Date: 2026-04-29
     - Warn players earlier when biter nest construction orders are blocked or invalid.
     - Cached desk return exits for resolved biters so they can leave administration desks more reliably and with less repeated path search work.
     - Allowed greenhouse fluid pass-through in the placeable-by prototype test.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.4.0
 Date: 2026-04-26
@@ -91,7 +94,6 @@ Date: 2026-04-26
   Docs:
     - Added comprehensive internal documentation for biter employment, biter logistics, field offices, formation training, field agents, and the updated technology tree.
     - Refreshed README, Tips & Tricks, and English locale to explain the new biter workforce loop, buildings, upgrades, and controls.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.1
 Date: 2026-04-18
@@ -106,7 +108,6 @@ Date: 2026-04-18
     - Synchronized hidden pneumatic intake recipe unlocks on init, configuration change, and Pneumatic Form Transport research completion so existing and newly researched forces can use Tube Intakes correctly.
   Docs:
     - Updated README and English locale for biter hover guidance, pneumatic intake validation, 16-tile underground pneumatic pipes, Wood Production, and the dedicated Charcoal Production branch.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.0
 Date: 2026-04-16
@@ -130,7 +131,6 @@ Date: 2026-04-16
   Bugfixes:
     - Fixed English locale for pneumatic form transport technology description, tube outtake item/entity descriptions, crappy report recipe description, and pneumatic tips-and-tricks entry to match the reworked tube system.
     - Added missing locale entry for the admin-biter-buildings item subgroup.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.16
 Date: 2026-04-14
@@ -143,7 +143,6 @@ Date: 2026-04-14
    - Have proper recipe separation for the resolution office.
    - Fix Corporate hospitality tech gating.
    - Fix admin-station-capacity locale.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.15
 Date: 2026-04-13
@@ -153,13 +152,11 @@ Date: 2026-04-13
     - Reduced taxpayer-money stack size from 500 to 200.
     - Landscape resolution recipes now use a dedicated handcraft category so they remain player-craftable but can no longer be crafted in the office desk.
     - Changed greenhouse fluid connections to input-output.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.14
 Date: 2026-04-11
   Bugfixes:
     - Fixed protesting and pacified biters flickering in and out of existence due to the engine cleaning up entities on the neutral force. Tracked biters now use a dedicated force with ceasefire against all sides, and parked state is tracked with flags and stop commands instead of entity deactivation.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.13
 Date: 2026-04-10
@@ -172,7 +169,6 @@ Date: 2026-04-10
     - Removed the office desk from the startup crash-site inventory cleanup path.
   Docs:
     - Refreshed the README, English locale, and internal progression notes to match the office-desk environmental-compliance chain and the current regulated AM2/AM3 fluid-crafting behavior.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.12
 Date: 2026-04-09
@@ -182,13 +178,11 @@ Date: 2026-04-09
   Bugfixes:
     - Tightened the strict progression report so it now fails when a building ingredient is only machine-reachable from that same building or from a later provider in its branch, catching bootstrap deadlocks like the old Union HQ grant loop.
     - Refreshed English locale and README copy to match the new Union HQ bootstrap and the current role of `government-grant`s in late policy and complaint workflows.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.11
 Date: 2026-04-08
   Bugfixes:
     - Restored full complaint-paper processing at the `resolution-office` by letting it craft the shared bootstrap filing recipes alongside the rest of the resolution chain, so all complaint families can be completed there again.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.10
 Date: 2026-04-08
@@ -201,7 +195,6 @@ Date: 2026-04-08
     - Equipment-grid armor recipes now stay unbatched at 1x even if surrounding recipe tiers batch normally.
   Bugfixes:
     - Fixed English locale, Tips & Tricks, and README copy to match the electric greenhouse, merged environmental branch, expanded admin-station capacity research, and the current late-game complaint/workflow structure.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.9
 Date: 2026-04-07
@@ -217,13 +210,11 @@ Date: 2026-04-07
     - Fixed the Meeting Room-era refinery operating workflow so the two-fluid `resolution-office` and shared late-game HQ recipes fit current machine port limits.
     - Fixed English locale and recipe text to match the consolidated Union Headquarters workflow, legacy brief/review compatibility recipes, and the updated late complaint chain.
     - Fixed the local test runner to prefer `python3` while still accepting `python` when it already points to Python 3.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.8
 Date: 2026-04-06
   Bugfixes:
     - Fixed the rocket-launch win screen crash on Factorio 2.0 by reading paperwork production statistics through the per-surface `LuaForce.get_item_production_statistics(surface)` API.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.7
 Date: 2026-04-06
@@ -239,7 +230,6 @@ Date: 2026-04-06
     - Fixed robot, blueprint, and paste placement metadata across custom buildings and pneumatic entities so construction robots consistently use the canonical item/entity pairings.
     - Fixed admin station and office desk circuit connector alignment, and now lock the admin station's runtime rotation so its footprint and wiring stay consistent.
     - Fixed `smelting-basic` furnace UI duplication by keeping that category limited to the explicit batch-smelting recipes instead of cloning vanilla single-output smelting recipes into it.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.6
 Date: 2026-03-30
@@ -248,7 +238,6 @@ Date: 2026-03-30
   Bugfixes:
     - Fixed the hidden `form-solidifier` outtake inserter so it drops onto a stable belt lane instead of flipping lanes when rotated.
     - Removed the stale electric-pole supply-area bonus so small, medium, and big power poles keep their vanilla reach.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.5
 Date: 2026-03-30
@@ -264,7 +253,6 @@ Date: 2026-03-30
     - Fixed regulated recipe localization and Factoriopedia mapping for repair tools, equipment, place-result items, and other item-like prototypes so regulated and bulk-copy recipes inherit the correct names and descriptions.
     - Fixed protesting biters losing complaint text before arrival, stalling after interrupted movement, or reviving back into broken desk/protest states after pathing recovery.
     - Fixed promise pacification when no desk is free: promised biters now stay visible with a `No available desk` marker, roam between desks instead of freezing, keep 50% frustration while pacified, and cleanly resume queueing or protesting when the promise expires.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.4
 Date: 2026-03-29
@@ -278,25 +266,21 @@ Date: 2026-03-29
     - Fixed promised protesters with no open admin-station slot so pacified biters stay visible in place, show an explicit `WAITING FOR DESK` marker, and no longer flicker in and out while waiting for capacity. Recovered desk-bound biters now also restore their reserved desk slot before resuming, preventing invalidated `pathfinding` protesters from repeatedly respawning near the desk center instead of settling into a stable waiting position.
     - Fixed protesting biters losing their overhead message while moving or idling away from their target, and reworked promise pacification so it only drops frustration to 50%, restores full protest urgency when the promise expires, removes the yellow ground circle, and keeps pacified biters roaming between desks instead of freezing in place while they wait for capacity.
     - Fixed Tips & Tricks and related technology copy that mislabeled the biter complaint branch as human complaints.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.3
 Date: 2026-03-28
   Bugfixes:
     - Fixed a crash on the first bug complaint dispatch by deferring gathered unit-group reroutes until the next main tick instead of converting and rerouting group members inside the unit-group event callback.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.2
 Date: 2026-03-28
   Bugfixes:
     - Fixed remaining plain `crafting` and `advanced-crafting` recipes so they always get regulated assembling-machine copies instead of being left handcraft-only. This restores AM crafting for `paper` and `ink` and adds regression coverage for the broader invariant.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.1
 Date: 2026-03-28
   Changes:
     - Moved the first landscape complaint chain off science-pack research: `filing-landscape` now unlocks from `discovery-redundant-rubble` and `landscape-final` from `discovery-bullshit`, while `administrative-bureaucracy` keeps only the separate greenhouse and wood bootstrap.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.2.0
 Date: 2026-03-28
@@ -335,13 +319,11 @@ Date: 2026-03-28
     - Optimized protest target selection Pass 1 to avoid all table allocations and engine calls for invalid targets.
     - Added per-tick caching for the protester snapshot used in spacing and load calculations.
     - Suppressed excessive debug logging in the protest, rendering, and unit-group systems to reduce log file size and minor I/O overhead.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.9
 Date: 2026-03-26
   Bugfixes:
     - Fixed handcrafting category of basic excuse production to be handcraftable
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.8
 Date: 2026-03-26
@@ -350,19 +332,16 @@ Date: 2026-03-26
     - Fixed all buildings losing their default collision mask (water, object, player, item layers) when they had no explicit collision_mask, allowing placement on water and overlapping other buildings.
     - Fixed "invalid key to 'next'" runtime error in `process_frustration_and_protests` caused by modifying `storage.waiting_biters` during `pairs()` iteration.
     - Excluded natural map features (trees, rocks, cliffs, fish), enemy structures (nests, worms), and vehicles from the admin station collision footprint layer to prevent unintended placement conflicts.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.7
 Date: 2026-03-26
   Changes:
     - Replaced the one-off `bureaucratic-handcrafting` split with a shared `bureaucratic-bootstrap` category used by both the player and the office desk for starter paperwork and promises.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.6
 Date: 2026-03-26
   Bugfixes:
     - Restored early-game paperwork handcrafting so `carbon-offset-certificate-basic`, `safety-waiver-draft`, `construction-permit-draft`, `research-grant-approval`, `provisional-approval`, `work-order`, and `promise` are available through the shared bootstrap path again, preventing early deadlocks.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.5
 Date: 2026-03-26
@@ -377,7 +356,6 @@ Date: 2026-03-26
     - Fixed loaded or newly discovered vanilla gathering groups breaking up before they ever reached the desk redirect handoff.
     - Fixed a `redirect_enemy_unit_group` runtime error caused by Lua helper initialization order in the unit-group debug path.
     - Fixed admin-station placement and migration edge cases by normalizing old directional desk items/entities, clearing obsolete waiting-zone markers, and enforcing the new footprint with corner blockers.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.4
 Date: 2026-03-25
@@ -395,7 +373,6 @@ Date: 2026-03-25
   Optimizations:
     - Resolved biters now walk roughly 200 tiles away before despawning, with a 30-second fallback timeout, instead of triggering a map-wide spawner search during the resolution tick.
     - Removed a redundant every-tick admin desk surface scan that used to run when no desks existed.
-
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.3
 Date: 2026-03-24
