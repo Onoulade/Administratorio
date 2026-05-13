@@ -2,8 +2,22 @@ local base_rules = require("prototypes.shared.non_space_age_rules")
 
 local rules = {}
 
-rules.OPERATING_FORM_BY_CATEGORY = base_rules.OPERATING_FORM_BY_CATEGORY
-rules.OPERATING_FORM_BY_RECIPE = base_rules.OPERATING_FORM_BY_RECIPE
+rules.OPERATING_FORM_BY_CATEGORY = {
+  ["oil-processing"] = "petrochemical-operating-permit",
+  ["chemistry"] = "chemical-handling-work-order",
+  ["centrifuging"] = "radiological-work-order",
+}
+
+rules.OPERATING_FORM_BY_RECIPE = {
+  ["plastic-bar"] = "petrochemical-operating-permit",
+  ["sulfur"] = "petrochemical-operating-permit",
+  ["sulfuric-acid"] = "petrochemical-operating-permit",
+  ["solid-fuel-from-heavy-oil"] = "petrochemical-operating-permit",
+  ["solid-fuel-from-light-oil"] = "petrochemical-operating-permit",
+  ["solid-fuel-from-petroleum-gas"] = "petrochemical-operating-permit",
+  ["advanced-oil-processing"] = "chemical-handling-work-order",
+  ["coal-liquefaction"] = "chemical-handling-work-order",
+}
 rules.OPERATING_FORM_EXEMPT_BY_CATEGORY = {
   ["metallurgy"] = true,
   ["organic"] = true,

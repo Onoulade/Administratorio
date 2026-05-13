@@ -435,7 +435,6 @@ test("petition approvals convert unapproved permits into approved permits", func
   local approvals = {
     {"safety-waiver-approval", "unapproved-safety-waiver", "safety-waiver", 1, 4},
     {"construction-permit-approval", "unapproved-construction-permit", "construction-permit", 1, 6},
-    {"petrochemical-operating-permit-approval", "unapproved-petrochemical-operating-permit", "petrochemical-operating-permit", 1, 8},
     {"radiological-work-order-approval", "unapproved-radiological-work-order", "radiological-work-order", 1, 10},
   }
 
@@ -739,10 +738,10 @@ end)
 -- MACHINE OPERATION PAPERWORK
 -- =========================================================================
 
-test("refinery recipes do not require operating paperwork", function()
+test("refinery recipes: basic oil-processing is exempt, advanced ops require chemical paperwork", function()
   assert_eq(shared.get_operating_form({name = "oil-processing", category = "oil-processing"}), nil)
-  assert_eq(shared.get_operating_form({name = "advanced-oil-processing", category = "oil-processing"}), nil)
-  assert_eq(shared.get_operating_form({name = "coal-liquefaction", category = "oil-processing"}), nil)
+  assert_eq(shared.get_operating_form({name = "advanced-oil-processing", category = "oil-processing"}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "coal-liquefaction", category = "oil-processing"}), "chemical-handling-work-order")
 end)
 
 test("chemistry recipes use chemical-handling-work-order", function()
@@ -767,17 +766,6 @@ test("operating paperwork chain: chemical < radiological", function()
   assert_eq(eir.category, "bureaucracy-registration")
   assert_true(has_ingredient(eir, "carbon-offset-certificate-verified"), "EIR should require verified carbon certificates")
   assert_true(not has_ingredient(eir, "barrel"), "EIR should no longer require barrels")
-
-  local petro = get_recipe("petrochemical-operating-permit-production")
-  assert_eq(petro.category, "bureaucracy-registration")
-  assert_true(has_ingredient(petro, "safety-waiver"))
-  assert_true(has_ingredient(petro, "environmental-impact-report"))
-  assert_true(not has_ingredient(petro, "construction-permit"))
-  assert_true(not has_ingredient(petro, "barrel"))
-  assert_true(not has_ingredient(petro, "pipe"))
-  assert_true(not has_ingredient(petro, "form-27b-6"))
-  assert_true(not has_ingredient(petro, "ink"))
-  assert_eq(get_result_amount(petro, "unapproved-petrochemical-operating-permit"), 2)
 
   local chem = get_recipe("chemical-handling-work-order-production")
   assert_eq(chem.category, "bureaucracy-registration")
