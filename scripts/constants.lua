@@ -262,7 +262,7 @@ M.PNEUMATIC_ITEMS = {
   "management-approval-verbal", "management-verbal-draft",
   "management-approval-written", "management-written-proposal",
   "carbon-offset-certificate-basic", "carbon-offset-certificate-verified",
-  "environmental-impact-report", "petrochemical-operating-permit", "unapproved-petrochemical-operating-permit",
+  "environmental-impact-report", "petrochemical-operating-permit",
   "blank-form", "blank-approval", "blank-directive",
   "treasury-bond", "government-grant",
   "safety-work-order", "construction-work-order",

@@ -102,10 +102,6 @@ data:extend({
         { type = "unlock-recipe", recipe = "construction-permit-approval" },
         { type = "unlock-recipe", recipe = "radiological-work-order-approval" },
       }
-      if space_age_enabled then
-        effects[#effects + 1] = { type = "unlock-recipe", recipe = "petrochemical-operating-permit-approval" }
-        effects[#effects + 1] = { type = "unlock-recipe", recipe = "petrochemical-operating-permit-production" }
-      end
       return effects
     end)(),
     prerequisites = {"printing-technology"},

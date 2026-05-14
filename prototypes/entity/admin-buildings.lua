@@ -151,17 +151,6 @@ local ADMIN_STATION_PLACEABLE_BY = {
   {item = "admin-station", count = 1},
 }
 
-local ADMIN_STATION_NAMES = {
-  "admin-station",
-  "admin-station-north",
-  "admin-station-east",
-  "admin-station-west",
-}
-
-if space_age_enabled then
-  ADMIN_STATION_NAMES[#ADMIN_STATION_NAMES + 1] = "capture-bureau"
-end
-
 -- Admin Station: storage-only biter interface (no crafting).
 -- The station is intentionally walk-through for players and biters. A dedicated footprint collision
 -- layer handles placement feedback against other structures without blocking units in the 5x5 center.
@@ -223,9 +212,6 @@ local function make_admin_station(name)
 end
 
 local admin_station = make_admin_station("admin-station")
-local admin_station_north = make_admin_station("admin-station-north")
-local admin_station_east = make_admin_station("admin-station-east")
-local admin_station_west = make_admin_station("admin-station-west")
 local capture_bureau = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
 capture_bureau.name = "capture-bureau"
 capture_bureau.icon = "__administratorio__/graphics/icons/admin-desk.png"
@@ -1329,9 +1315,6 @@ add_entity(paperwork_requester_chest)
 if space_age_enabled then
   for _, entity in ipairs({
     admin_station,
-    admin_station_north,
-    admin_station_east,
-    admin_station_west,
     capture_bureau,
     resolution_office,
     office_desk,
