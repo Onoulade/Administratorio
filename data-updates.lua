@@ -27,3 +27,13 @@ if vulcanus then
   end
   vulcanus.map_gen_settings.autoplace_settings.entity.settings["verdigris-crust"] = {}
 end
+
+-- Inject static-charge deposits into Fulgora's map generation
+local fulgora = data.raw.planet["fulgora"]
+if fulgora then
+  fulgora.map_gen_settings.autoplace_controls["fulgora_static-charge-deposit"] = {}
+  if not fulgora.map_gen_settings.autoplace_settings.entity then
+    fulgora.map_gen_settings.autoplace_settings.entity = { settings = {} }
+  end
+  fulgora.map_gen_settings.autoplace_settings.entity.settings["static-charge-deposit"] = {}
+end

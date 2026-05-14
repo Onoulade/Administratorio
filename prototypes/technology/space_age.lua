@@ -225,6 +225,7 @@ data:extend({
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "cyan-magenta-form-production"},
+      {type = "unlock-recipe", recipe = "hardened-data-vault-production"},
     },
     prerequisites = {"vulcanus-certification", "fulgora-digital-services", "metallurgic-science-pack", "electromagnetic-science-pack"},
     unit = {
@@ -274,6 +275,7 @@ data:extend({
       {type = "unlock-recipe", recipe = "trichromatic-permit-production"},
       {type = "unlock-recipe", recipe = "unified-operations-charter-production"},
       {type = "unlock-recipe", recipe = "cryogenic-operations-license-production"},
+      {type = "unlock-recipe", recipe = "promethium-research-charter-production"},
     },
     prerequisites = {"cyan-yellow-bureaucracy", "cyan-magenta-bureaucracy", "yellow-magenta-bureaucracy", "cryogenic-science-pack"},
     unit = {

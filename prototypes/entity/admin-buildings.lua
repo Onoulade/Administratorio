@@ -193,7 +193,7 @@ local admin_station_base = {
 }
 
 if space_age_enabled then
-  admin_station_base.surface_conditions = planets.surface_conditions_for_planet("nauvis")
+  planets.require_non_vacuum_surface(admin_station_base)
 end
 
 local function make_admin_station(name)

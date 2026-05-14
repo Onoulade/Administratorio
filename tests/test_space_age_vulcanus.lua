@@ -205,6 +205,7 @@ test("notary office is the dedicated certification machine", function()
   local categories = entity.crafting_categories or {}
   assert_eq(#categories, 1, "notary-office should only expose one crafting category")
   assert_eq(categories[1], "bureaucracy-certification", "notary-office should only craft certification recipes")
+  assert_eq(entity.base_productivity, 0.5, "notary-office should have the planet building productivity bonus")
   assert_eq(#(entity.fluid_boxes or {}), 3, "notary-office should expose two inputs and one output")
   assert_eq(entity.fluid_boxes[3].production_type, "output", "notary-office should vent fluid outputs")
 end)
@@ -216,6 +217,7 @@ test("conciliation desk is the dedicated gleba certification machine", function(
   local categories = entity.crafting_categories or {}
   assert_eq(#categories, 1, "conciliation-desk should only expose one crafting category")
   assert_eq(categories[1], "bureaucracy-conciliation", "conciliation-desk should only craft conciliation recipes")
+  assert_eq(entity.base_productivity, 0.5, "conciliation-desk should have the planet building productivity bonus")
   assert_eq(#(entity.fluid_boxes or {}), 3, "conciliation-desk should expose two inputs and one output")
   assert_eq(entity.fluid_boxes[3].production_type, "output", "conciliation-desk should vent fluid outputs")
 end)
@@ -230,6 +232,7 @@ test("digital services bureau is a staffed fulgora office upgrade", function()
   assert_eq(categories[1], "bureaucracy-registration", "digital-services-bureau should handle registration work")
   assert_eq(categories[2], "bureaucratic-bootstrap", "digital-services-bureau should handle bootstrap work")
   assert_eq(entity.crafting_speed, 3, "digital-services-bureau should be significantly faster than an office desk")
+  assert_eq(entity.base_productivity, 0.5, "digital-services-bureau should have the planet building productivity bonus")
   assert_eq(#(entity.fluid_boxes or {}), 2, "digital-services-bureau should expose one input and one output")
   assert_eq(entity.fluid_boxes[1].production_type, "input", "digital-services-bureau should take fluid inputs")
   assert_eq(entity.fluid_boxes[2].production_type, "output", "digital-services-bureau should vent outputs")
@@ -262,6 +265,7 @@ test("aquilo printer and exchange are specialized endgame bureaucracy machines",
   assert_true(laser_categories["printing-multicolor"], "laser-printer should expose multicolor printing")
   assert_true(laser_categories["fax-reconstruction"], "laser-printer should expose fax reconstruction")
   assert_eq(laser.crafting_speed, 5, "laser-printer should be the fastest printer")
+  assert_eq(laser.base_productivity, 0.5, "laser-printer should have the planet building productivity bonus")
   assert_eq(#(laser.fluid_boxes or {}), 0, "laser-printer should use solid transfer media instead of fluid ports")
 
   local emitter = data.raw.container["fax-emitter"]
@@ -275,7 +279,7 @@ test("aquilo printer and exchange are specialized endgame bureaucracy machines",
     "interplanetary-fax-exchange should build from the fax exchange item")
   assert_true(exchange.fluid_boxes ~= nil and #exchange.fluid_boxes == 4,
     "interplanetary-fax-exchange should expose four ink inputs")
-  assert_eq(exchange.ingredient_count, 5, "interplanetary-fax-exchange should take paper plus four inks")
+  assert_eq(exchange.ingredient_count, 5, "interplanetary-fax-exchange should take transfer sheets plus four inks")
 end)
 
 test("non-orbital space age admin machines stay out of vacuum", function()
@@ -557,6 +561,10 @@ test("aquilo fax and multicolor paperwork stay on Aquilo", function()
     "composite-chroma-ribbon should be laser-printer multicolor work")
   assert_eq(data.raw.recipe["cryogenic-operations-license-production"].category, "printing-multicolor",
     "cryogenic-operations-license should be multicolor printed")
+  assert_eq(data.raw.recipe["promethium-research-charter-production"].category, "orbital-bureaucracy",
+    "promethium research charter should be orbital paperwork")
+  assert_eq(data.raw.recipe["promethium-research-charter-production"].surface_conditions[1].max, 0,
+    "promethium research charter should be issued in vacuum")
   assert_true(has_ingredient(data.raw.recipe["laser-printer"], "cryoprint-technician"),
     "laser-printer should require cryoprint-technician")
   assert_true(has_ingredient(data.raw.recipe["fax-emitter"], "cryoprint-technician"),

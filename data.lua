@@ -69,6 +69,17 @@ if feature_flags.space_age_enabled() then
       order = "c-a",
       category = "resource"
     },
+    {
+      type = "autoplace-control",
+      name = "fulgora_static-charge-deposit",
+      planet = "fulgora",
+      localised_name = {"", "[entity=static-charge-deposit] ", {"entity-name.static-charge-deposit"}},
+      icon = "__administratorio__/graphics/icons/ink-cartridge.png",
+      icon_size = 64,
+      richness = true,
+      order = "e-a",
+      category = "resource"
+    },
   })
 end
 
