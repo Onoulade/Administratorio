@@ -10,11 +10,11 @@ It records the shared principles that all planet passes should follow, the curre
 - The current branch is a broad first-pass implementation, not a completed compatibility pass. The detailed completion backlog and 2026-04-18 assessment live in [space-age-implementation-steps.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-implementation-steps.md).
 - Vulcanus has a working first-pass implementation and the latest Space Age route analyzer run reports no aggregate imports or aggregate deadlocks for selected escape targets.
 - Gleba has a working first-pass implementation (yellow ink, conciliation paperwork, spoilage, and bootstrap variants).
-- Fulgora has a working first-pass implementation (Digital Services Bureau, salvage-backed magenta paperwork, and holmium gating).
-- Aquilo has a working first-pass implementation (Laser Printer, Interplanetary Fax Exchange runtime, frozen-ink restrictions, and multicolor paperwork).
-- Current automated validation status: all Lua tests pass, base-only strict progression passes, and Space Age route analysis passes on Factorio 2.0.76.
-- Current known blockers are design/completion issues rather than load-test failures: remaining planet-identity surface-rule cleanup, the bicolor-form versus Aquilo transfer-media decision, fax reconstruction economy decisions, faxability policy, and manual balance review of analyzer routes.
-- Latest validation note: Space Age remains optional; `amber-sap-seep`, `verdigris-crust`, and `capture-bureau` are now gated so base-only `--dump-data` no longer receives Space Age-only resources/entities.
+- Fulgora has a working first-pass implementation (static charge deposits, Digital Services Bureau, salvage-backed magenta paperwork, and holmium gating).
+- Aquilo has a working first-pass implementation (Laser Printer, Interplanetary Fax Exchange runtime, frozen-ink restrictions, transfer-sheet reconstruction, and multicolor paperwork).
+- Current automated validation status: all local Lua/Python tests pass without a Factorio binary; dump-data route analysis still needs to be rerun with a local Factorio executable after the latest balance changes.
+- Current known blockers are design/completion issues rather than load-test failures: manual route-balance review, exported paperwork pressure tuning, and whether the new Fulgora toner deposit density is right in real maps.
+- Latest validation note: Space Age remains optional; `amber-sap-seep`, `verdigris-crust`, `static-charge-deposit`, and `capture-bureau` are gated so base-only `--dump-data` no longer receives Space Age-only resources/entities.
 - The shared rules below should be treated as the baseline for future planet work unless a later implementation proves they need revision.
 
 ## Shared Principles
@@ -137,7 +137,7 @@ The gating rule is:
 - **Carbon fiber** (Gleba): any recipe using carbon fiber requires a yellow form
 - **Holmium plate** (Fulgora): any recipe using holmium requires a magenta form
 
-This is the primary mechanism that makes the colored ink system essential rather than optional. Even on Nauvis, if you want to build turrets that use tungsten, you must import cyan forms from Vulcanus. This drives real interplanetary trade in paperwork and ensures every planet's ink production has lasting value.
+This is the primary mechanism that makes the colored ink system essential rather than optional. Even on Nauvis, if you want to build late infrastructure that uses tungsten, you must import cyan forms from Vulcanus. Asteroid and hostile-space problems remain paperwork-managed rather than weapon-managed, but first platform essentials such as asteroid collectors and cargo bays must remain available before planet discovery. Later paperwork gates should support trajectory compliance, research, custody, and logistics rather than conventional combat. This drives real interplanetary trade in paperwork and ensures every planet's ink production has lasting value.
 
 On the home planet, the forms are cheap and locally produced. Off-world, they must be shipped or (later) faxed, creating natural export pressure.
 
@@ -204,7 +204,7 @@ This makes Aquilo the natural capstone where the separate planetary paperwork sy
 | --- | --- | --- | --- | --- | --- | --- |
 | Vulcanus | `lie` | `Notary Office` | Chromatic Printer (cyan) | industrial and metallurgical certification | cyan | Implemented first pass |
 | Gleba | `bullshit-ore` via `amber-sap`; easy `dubious-data` | `Capture Bureau` + `Conciliation Desk` | Chromatic Printer (yellow) | biosafety, pacification, hostile-intake, workforce paperwork | yellow | Implemented first pass |
-| Fulgora | `redundant-rubble` via salvage; easy `useless-documentation` | `Digital Services Bureau` | Chromatic Printer (magenta) | fast computerized processing, archive recovery, electromagnetic permits | magenta | Implemented first pass |
+| Fulgora | `charged-toner` via static charge deposits; `redundant-rubble` via salvage; easy `useless-documentation` | `Digital Services Bureau` | Chromatic Printer (magenta) | fast computerized processing, archive recovery, electromagnetic permits | magenta | Implemented first pass |
 | Aquilo | none; multi-planet convergence | `Interplanetary Fax Exchange` | Laser Printer only (ink freezes) | multicolor composite forms, fax routing, transfer media | none (uses imported CMY) | Implemented first pass |
 
 ## Implemented Vulcanus Principles

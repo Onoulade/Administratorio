@@ -734,6 +734,7 @@ test("aquilo fax network unlocks the printer, exchange, and multicolor paperwork
     "trichromatic-permit-production",
     "unified-operations-charter-production",
     "cryogenic-operations-license-production",
+    "promethium-research-charter-production",
   }) do
     assert_true(tech_unlocks_recipe(aquilo, recipe_name), "aquilo-fax-network should unlock " .. recipe_name)
   end
@@ -755,8 +756,10 @@ test("fax reconstruction recipes use exact inks and split unlocks between basic 
 
     assert_true(recipe.hidden == true, recipe_name .. " should stay hidden")
     assert_true(recipe.enabled == false, recipe_name .. " should be tech-gated")
+    assert_eq(fax_shared.RECONSTRUCTION_PAPER_ITEM, "thermal-transfer-sheet",
+      "fax reconstruction should use Aquilo transfer media")
     assert_true(has_ingredient(recipe, fax_shared.RECONSTRUCTION_PAPER_ITEM),
-      recipe_name .. " should require paper")
+      recipe_name .. " should require thermal transfer media")
 
     for _, fluid in ipairs(fax_shared.get_document_ink_requirements(item_name)) do
       required_fluids[fluid.name] = true
@@ -806,6 +809,7 @@ test("bicolored paperwork technologies require the matching planet sciences", fu
   assert_true(cyan_magenta_prereqs["metallurgic-science-pack"], "cyan-magenta-bureaucracy should depend on metallurgic-science-pack")
   assert_true(cyan_magenta_prereqs["electromagnetic-science-pack"], "cyan-magenta-bureaucracy should depend on electromagnetic-science-pack")
   assert_true(tech_unlocks_recipe(cyan_magenta, "cyan-magenta-form-production"), "cyan-magenta-bureaucracy should unlock cyan-magenta-form-production")
+  assert_true(tech_unlocks_recipe(cyan_magenta, "hardened-data-vault-production"), "cyan-magenta-bureaucracy should unlock hardened-data-vault-production")
 
   local yellow_magenta_prereqs = prerequisite_set(yellow_magenta)
   assert_true(yellow_magenta_prereqs["gleba-conciliation"], "yellow-magenta-bureaucracy should depend on gleba-conciliation")
@@ -823,9 +827,11 @@ test("aquilo transfer media and multicolor forms define the expected convergence
   assert_true(items["cyan-yellow-form"] ~= nil, "cyan-yellow-form missing")
   assert_true(items["cyan-magenta-form"] ~= nil, "cyan-magenta-form missing")
   assert_true(items["yellow-magenta-form"] ~= nil, "yellow-magenta-form missing")
+  assert_true(items["hardened-data-vault"] ~= nil, "hardened-data-vault missing")
   assert_true(items["trichromatic-permit"] ~= nil, "trichromatic-permit missing")
   assert_true(items["unified-operations-charter"] ~= nil, "unified-operations-charter missing")
   assert_true(items["cryogenic-operations-license"] ~= nil, "cryogenic-operations-license missing")
+  assert_true(items["promethium-research-charter"] ~= nil, "promethium-research-charter missing")
   assert_true(items["laser-printer"] ~= nil, "laser-printer missing")
   assert_true(items["fax-emitter"] ~= nil, "fax-emitter missing")
   assert_true(items["interplanetary-fax-exchange"] ~= nil, "interplanetary-fax-exchange missing")
@@ -858,12 +864,26 @@ test("aquilo transfer media and multicolor forms define the expected convergence
     "yellow-magenta-form should require yellow-ink")
   assert_true(has_fluid_ingredient(recipes["yellow-magenta-form-production"], "magenta-ink"),
     "yellow-magenta-form should require magenta-ink")
+  assert_true(has_ingredient(recipes["hardened-data-vault-production"], "cyan-magenta-form"),
+    "hardened-data-vault should require cyan-magenta-form")
+  assert_true(has_ingredient(recipes["hardened-data-vault-production"], "industrial-charter"),
+    "hardened-data-vault should require Vulcanus industrial-charter")
+  assert_true(has_ingredient(recipes["hardened-data-vault-production"], "data-recovery-order"),
+    "hardened-data-vault should require Fulgora data-recovery-order")
   assert_true(has_ingredient(recipes["trichromatic-permit-production"], "composite-chroma-ribbon"),
     "trichromatic-permit should require composite-chroma-ribbon")
   assert_true(has_ingredient(recipes["unified-operations-charter-production"], "electromagnetic-operating-license"),
     "unified-operations-charter should require electromagnetic-operating-license")
   assert_true(has_ingredient(recipes["cryogenic-operations-license-production"], "lithium-plate"),
     "cryogenic-operations-license should require lithium-plate")
+  assert_true(has_ingredient(recipes["promethium-research-charter-production"], "unified-operations-charter"),
+    "promethium-research-charter should require unified-operations-charter")
+  assert_true(has_ingredient(recipes["promethium-research-charter-production"], "hardened-data-vault"),
+    "promethium-research-charter should require Vulcanus-Fulgora hardened-data-vault")
+  assert_true(has_ingredient(recipes["promethium-research-charter-production"], "asteroid-processing-docket"),
+    "promethium-research-charter should require asteroid-processing-docket")
+  assert_true(has_ingredient(recipes["promethium-research-charter-production"], "orbital-deviation-order"),
+    "promethium-research-charter should require orbital-deviation-order")
   assert_true(not has_ingredient(recipes["transfer-emulsion-production"], "taxpayer-money"),
     "transfer-emulsion should not require taxpayer-money")
 end)

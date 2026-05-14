@@ -522,7 +522,7 @@ local function receiver_missing_supplies_text(snapshot)
   if not snapshot then return nil end
   local missing = {}
   if snapshot.paper_required and not snapshot.paper then
-    missing[#missing + 1] = "paper"
+    missing[#missing + 1] = "thermal transfer sheet"
   end
   for _, fluid_label in ipairs(snapshot.missing_fluids or {}) do
     missing[#missing + 1] = fluid_label
@@ -1542,9 +1542,9 @@ local function populate_receiver_supplies(frame, state)
   local snapshot = get_receiver_supply_snapshot(state, current_entry)
   add_icon_text_row(
     content,
-    "[img=item.paper]",
+    "[img=item.thermal-transfer-sheet]",
     current_entry and ("Active requirements: %s"):format(shared.format_required_inks(current_entry.name)) or "Active requirements: none",
-    current_entry and "Paper plus only the inks listed below are needed." or "No queued form is currently being evaluated.")
+    current_entry and "Transfer sheets plus only the inks listed below are needed." or "No queued form is currently being evaluated.")
 
   local table_element = content.add{
     type = "table",
@@ -1552,7 +1552,7 @@ local function populate_receiver_supplies(frame, state)
   }
   add_gui_table_row(table_element, {"Supply", "Available", "State"})
   add_gui_table_row(table_element, {
-    "Paper",
+    "Transfer sheet",
     tostring(snapshot.paper_count or 0),
     current_entry and (snapshot.paper and "Ready" or "Missing") or "Idle",
   })

@@ -189,5 +189,39 @@ if space_age_enabled then
       },
       map_color = {r=0.1, g=0.8, b=0.7}
     }, "vulcanus"),
+    planets.apply_planet_surface_conditions({
+      type = "resource", name = "static-charge-deposit",
+      icons = {
+        {icon = "__administratorio__/graphics/icons/ink-cartridge.png", icon_size = 64, tint = {r = 0.95, g = 0.35, b = 0.8, a = 1}},
+      },
+      flags = {"placeable-neutral"}, order = "a-b-e",
+      tree_removal_probability = 0.1, tree_removal_max_distance = 32 * 32,
+      minable = {mining_particle = "stone-particle", mining_time = 1.0, result = "charged-toner"},
+      collision_box = {{-0.1, -0.1}, {0.1, 0.1}},
+      selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
+      autoplace = resource_autoplace.resource_autoplace_settings{
+        name = "static-charge-deposit",
+        autoplace_control_name = "fulgora_static-charge-deposit",
+        order = "b-e",
+        base_density = 4.5,
+        base_spots_per_km2 = 1.8,
+        has_starting_area_placement = true,
+        regular_rq_factor_multiplier = 0.9,
+        starting_rq_factor_multiplier = 1.2,
+        candidate_spot_count = 12,
+      },
+      stage_counts = {9000, 4500, 1400, 500, 220, 90, 45, 10},
+      stages = {
+        sheet = {
+          filename = "__base__/graphics/entity/stone/stone.png",
+          priority = "extra-high",
+          width = 128, height = 128,
+          frame_count = 8, variation_count = 8,
+          scale = 0.5,
+          tint = {r = 0.95, g = 0.35, b = 0.8, a = 1},
+        }
+      },
+      map_color = {r = 0.95, g = 0.25, b = 0.7}
+    }, "fulgora"),
   })
 end

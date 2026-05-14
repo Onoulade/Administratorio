@@ -819,7 +819,7 @@ test("queue capacity upgrades raise the exported free slot count to twenty", fun
   assert_eq(free_slots, 20, "fully upgraded fax networks should export twenty free queue slots")
 end)
 
-test("faxed documents consume paper and ink and preserve quality when printed", function()
+test("faxed documents consume transfer media and ink and preserve quality when printed", function()
   local ctx = new_context()
   local receiver = new_fax_entity(ctx.surfaces.vulcanus, ctx.force, shared.RECEIVER_NAME, 0, 0, 20)
   local emitter = new_fax_entity(ctx.surfaces.nauvis, ctx.force, shared.EMITTER_NAME, 0, 0, 12)
@@ -834,7 +834,8 @@ test("faxed documents consume paper and ink and preserve quality when printed", 
   fax.on_tick({tick = 120})
   fax.on_tick({tick = 240})
 
-  assert_eq(receiver.input_inventory.get_item_count("paper"), 0, "printing should consume one paper")
+  assert_eq(receiver.input_inventory.get_item_count(shared.RECONSTRUCTION_PAPER_ITEM), 0,
+    "printing should consume one thermal transfer sheet")
   assert_eq(get_fluid_amount(receiver, "liquid-black-ink"), 0, "black paperwork should consume black ink")
   assert_eq(get_fluid_amount(receiver, "cyan-ink"), 0, "black paperwork should not need cyan ink")
   assert_eq(get_fluid_amount(receiver, "yellow-ink"), 0, "black paperwork should not need yellow ink")
@@ -905,7 +906,7 @@ test("missing supplies and blocked output stall printing without losing the queu
 
   fax.on_tick({tick = 60})
   assert_eq(#storage.fax_receivers[receiver.unit_number].queue, 1, "queue should remain unchanged when supplies are missing")
-  assert_true(storage.fax_receivers[receiver.unit_number].active_print == nil, "no print job should start without paper and ink")
+  assert_true(storage.fax_receivers[receiver.unit_number].active_print == nil, "no print job should start without transfer media and ink")
 
   charge_receiver(receiver, 1)
   fax.on_tick({tick = 120})

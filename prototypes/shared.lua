@@ -297,6 +297,7 @@ if space_age_enabled then
   shared.PAPERWORK_ITEMS["digital-processing-certificate"] = true
   shared.PAPERWORK_ITEMS["electromagnetic-operating-license"] = true
   shared.PAPERWORK_ITEMS["data-recovery-order"] = true
+  shared.PAPERWORK_ITEMS["hardened-data-vault"] = true
   shared.PAPERWORK_ITEMS["asteroid-processing-docket"] = true
   shared.PAPERWORK_ITEMS["cyan-yellow-form"] = true
   shared.PAPERWORK_ITEMS["cyan-magenta-form"] = true
@@ -304,6 +305,7 @@ if space_age_enabled then
   shared.PAPERWORK_ITEMS["trichromatic-permit"] = true
   shared.PAPERWORK_ITEMS["unified-operations-charter"] = true
   shared.PAPERWORK_ITEMS["cryogenic-operations-license"] = true
+  shared.PAPERWORK_ITEMS["promethium-research-charter"] = true
 
   shared.FORM_PRODUCTION_RECIPES["heatproof-form-stock"] = "heatproof-form-stock"
   shared.FORM_PRODUCTION_RECIPES["blank-cyan-form"] = "blank-cyan-form-production"
@@ -326,12 +328,14 @@ if space_age_enabled then
   shared.FORM_PRODUCTION_RECIPES["digital-processing-certificate"] = "digital-processing-certificate"
   shared.FORM_PRODUCTION_RECIPES["electromagnetic-operating-license"] = "electromagnetic-operating-license"
   shared.FORM_PRODUCTION_RECIPES["data-recovery-order"] = "data-recovery-order"
+  shared.FORM_PRODUCTION_RECIPES["hardened-data-vault"] = "hardened-data-vault-production"
   shared.FORM_PRODUCTION_RECIPES["cyan-yellow-form"] = "cyan-yellow-form-production"
   shared.FORM_PRODUCTION_RECIPES["cyan-magenta-form"] = "cyan-magenta-form-production"
   shared.FORM_PRODUCTION_RECIPES["yellow-magenta-form"] = "yellow-magenta-form-production"
   shared.FORM_PRODUCTION_RECIPES["trichromatic-permit"] = "trichromatic-permit-production"
   shared.FORM_PRODUCTION_RECIPES["unified-operations-charter"] = "unified-operations-charter-production"
   shared.FORM_PRODUCTION_RECIPES["cryogenic-operations-license"] = "cryogenic-operations-license-production"
+  shared.FORM_PRODUCTION_RECIPES["promethium-research-charter"] = "promethium-research-charter-production"
 end
 
 -------------------------------------------------------------------------------
