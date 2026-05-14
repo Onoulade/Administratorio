@@ -2065,8 +2065,3 @@ end
 data:extend(tourism_recipes)
 data:extend(make_fax_reconstruction_recipes())
 
--- Petrochemical operating permit (SA-only intermediate tier for refinery/simple chemistry)
-data:extend({
-  { type = "recipe", name = "petrochemical-operating-permit-production", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="safety-waiver", amount=2}, {type="item", name="environmental-impact-report", amount=1}}, results = {{type="item", name="unapproved-petrochemical-operating-permit", amount=2}}, energy_required = 6 },
-  { type = "recipe", name = "petrochemical-operating-permit-approval", category = "petition-stamping", enabled = false, ingredients = {{type="item", name="unapproved-petrochemical-operating-permit", amount=1}}, results = {{type="item", name="petrochemical-operating-permit", amount=1}}, energy_required = 8 },
-})

@@ -29,33 +29,14 @@ local spawner_population = require("scripts.spawner_population")
 biter_station.set_biters_module(biters)
 biterport.set_biters_module(biters)
 
-local ADMIN_STATION_NAMES = {
-  "admin-station",
-  "admin-station-north",
-  "admin-station-east",
-  "admin-station-west",
-}
 local ADMIN_DESK_NAMES = {
   "admin-station",
-  "admin-station-north",
-  "admin-station-east",
-  "admin-station-west",
   "capture-bureau",
-}
-local LEGACY_ADMIN_STATION_ITEM_NAMES = {
-  "admin-station-north",
-  "admin-station-east",
-  "admin-station-west",
 }
 
 local ADMIN_DESK_NAME_SET = {}
 for _, name in ipairs(ADMIN_DESK_NAMES) do
   ADMIN_DESK_NAME_SET[name] = true
-end
-
-local LEGACY_ADMIN_STATION_ITEM_SET = {}
-for _, name in ipairs(LEGACY_ADMIN_STATION_ITEM_NAMES) do
-  LEGACY_ADMIN_STATION_ITEM_SET[name] = true
 end
 
 local UNIT_GROUP_DEBUG_SCAN_INTERVAL = 180
@@ -86,7 +67,7 @@ local function normalize_admin_station_inventory(inventory)
   if not inventory then return end
   for i = 1, #inventory do
     local stack = inventory[i]
-    if stack and stack.valid_for_read and LEGACY_ADMIN_STATION_ITEM_SET[stack.name] == true then
+    if stack and stack.valid_for_read and is_admin_station(stack.name) and stack.name ~= "admin-station" then
       local count = stack.count
       local quality = stack.quality
       stack.set_stack{name = "admin-station", count = count, quality = quality and quality.name or nil}
@@ -105,7 +86,7 @@ local function normalize_player_admin_station_quickbar(player)
   if not player or not player.valid then return end
   for slot = 1, 100 do
     local filter = player.get_quick_bar_slot(slot)
-    if filter and filter.name and LEGACY_ADMIN_STATION_ITEM_SET[filter.name] == true then
+    if filter and filter.name and is_admin_station(filter.name) and filter.name ~= "admin-station" then
       player.set_quick_bar_slot(slot, {name = "admin-station", quality = filter.quality})
     end
   end
@@ -1820,9 +1801,6 @@ local ON_ENTITY_DIED_FILTERS = {
   {filter = "type", type = "mining-drill"},
   {filter = "type", type = "train-stop"},
   {filter = "name", name = "admin-station"},
-  {filter = "name", name = "admin-station-north"},
-  {filter = "name", name = "admin-station-east"},
-  {filter = "name", name = "admin-station-west"},
   {filter = "name", name = "capture-bureau"},
   {filter = "name", name = "biter-station"},
   {filter = "name", name = "biterport"},
