@@ -120,7 +120,6 @@ local black_only_documents = {
   "management-approval-written",
   "transit-authorization",
   "research-grant-approval",
-  "petrochemical-operating-permit",
   "work-order",
   "form-27b-6",
   "safety-work-order",
