@@ -30,7 +30,7 @@ M.PRINT_TICKS = 120
 M.BASE_FAX_TECH = "aquilo-fax-network"
 M.COLOR_FAX_TECH = "color-faxing"
 M.RECONSTRUCTION_RECIPE_PREFIX = "faxed-document-reconstruction-"
-M.RECONSTRUCTION_PAPER_ITEM = "paper"
+M.RECONSTRUCTION_PAPER_ITEM = "thermal-transfer-sheet"
 M.INK_DEFINITIONS = {
   black = {
     id = "black",
@@ -176,9 +176,9 @@ add_documents(M.FAX_DOCUMENTS, {"blank-cyan-form"}, {"cyan"})
 add_documents(M.FAX_DOCUMENTS, {"blank-yellow-form"}, {"yellow"})
 add_documents(M.FAX_DOCUMENTS, {"blank-magenta-form"}, {"magenta"})
 add_documents(M.FAX_DOCUMENTS, {"cyan-yellow-form", "cryogenic-operations-license"}, {"cyan", "yellow"})
-add_documents(M.FAX_DOCUMENTS, {"cyan-magenta-form"}, {"cyan", "magenta"})
+add_documents(M.FAX_DOCUMENTS, {"cyan-magenta-form", "hardened-data-vault"}, {"cyan", "magenta"})
 add_documents(M.FAX_DOCUMENTS, {"yellow-magenta-form"}, {"yellow", "magenta"})
-add_documents(M.FAX_DOCUMENTS, {"trichromatic-permit", "unified-operations-charter"}, {"cyan", "yellow", "magenta"})
+add_documents(M.FAX_DOCUMENTS, {"trichromatic-permit", "unified-operations-charter", "promethium-research-charter"}, {"cyan", "yellow", "magenta"})
 
 M.FAXABLE_PAPERWORK = {}
 for item_name in pairs(M.FAX_DOCUMENTS) do

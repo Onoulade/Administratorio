@@ -445,6 +445,18 @@ data:extend({
   },
   {
     type = "item",
+    name = "hardened-data-vault",
+    icons = {
+      {icon = item_icons .. "management-approval-written.png", icon_size = 64},
+      {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.28, shift = {-8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
+      {icon = item_icons .. "data.png", icon_size = 64, scale = 0.32, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
+    },
+    subgroup = "forms-work-orders",
+    order = "cie",
+    stack_size = 100
+  },
+  {
+    type = "item",
     name = "trichromatic-permit",
     icons = {
       {icon = item_icons .. "construction-permit.png", icon_size = 64},
@@ -490,6 +502,17 @@ data:extend({
     },
     subgroup = "forms-permits",
     order = "dig",
+    stack_size = 100
+  },
+  {
+    type = "item",
+    name = "promethium-research-charter",
+    icons = {
+      {icon = item_icons .. "management-approval-written.png", icon_size = 64, tint = {r = 0.92, g = 0.88, b = 1, a = 1}},
+      {icon = item_icons .. "administrative-science-pack.png", icon_size = 64, scale = 0.32, shift = {8, 8}, tint = {r = 0.72, g = 0.55, b = 1, a = 1}},
+    },
+    subgroup = "forms-permits",
+    order = "dih",
     stack_size = 100
   },
   {

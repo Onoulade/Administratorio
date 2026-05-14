@@ -86,7 +86,7 @@ run_python_tests() {
   for test_file in "$TEST_DIR"/test_*.py; do
     [ -f "$test_file" ] || continue
     printf '==> %s\n' "$(basename "$test_file")"
-    if [ "$(basename "$test_file")" = "test_progression_report.py" ]; then
+    if [ "$(basename "$test_file")" = "test_progression_report.py" ] || [ "$(basename "$test_file")" = "test_planet_escape.py" ]; then
       if [ -z "$FACTORIO_BIN" ]; then
         printf 'Skipping %s; --factorio-bin was not provided.\n' "$(basename "$test_file")"
         continue

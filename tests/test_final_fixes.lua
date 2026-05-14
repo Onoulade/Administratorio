@@ -318,12 +318,53 @@ data.raw.item["cargo-bay"] = {
   icon = "__space-age__/graphics/icons/cargo-bay.png",
   icon_size = 64,
 }
+data.raw.item["asteroid-collector"] = {
+  type = "item",
+  name = "asteroid-collector",
+  stack_size = 10,
+  subgroup = "space-platform",
+  place_result = "asteroid-collector",
+  icon = "__space-age__/graphics/icons/asteroid-collector.png",
+  icon_size = 64,
+}
 data.raw.item["space-platform-foundation"] = {
   type = "item",
   name = "space-platform-foundation",
   stack_size = 100,
   subgroup = "space-platform",
   icon = "__space-age__/graphics/icons/space-platform-foundation.png",
+  icon_size = 64,
+}
+data.raw.item["fusion-reactor"] = {
+  type = "item",
+  name = "fusion-reactor",
+  stack_size = 10,
+  subgroup = "energy",
+  place_result = "fusion-reactor",
+  icon = "__space-age__/graphics/icons/fusion-reactor.png",
+  icon_size = 64,
+}
+data.raw.item["fusion-generator"] = {
+  type = "item",
+  name = "fusion-generator",
+  stack_size = 10,
+  subgroup = "energy",
+  place_result = "fusion-generator",
+  icon = "__space-age__/graphics/icons/fusion-generator.png",
+  icon_size = 64,
+}
+data.raw.armor["mech-armor"] = {
+  type = "armor",
+  name = "mech-armor",
+  stack_size = 1,
+  icon = "__space-age__/graphics/icons/mech-armor.png",
+  icon_size = 64,
+}
+data.raw.tool["promethium-science-pack"] = {
+  type = "tool",
+  name = "promethium-science-pack",
+  stack_size = 200,
+  icon = "__space-age__/graphics/icons/promethium-science-pack.png",
   icon_size = 64,
 }
 data.raw.item["heating-tower"] = {
@@ -706,6 +747,20 @@ recipes["cargo-bay"] = {
   },
 }
 
+recipes["asteroid-collector"] = {
+  type = "recipe",
+  name = "asteroid-collector",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "low-density-structure", amount = 20 },
+    { type = "item", name = "processing-unit", amount = 8 },
+    { type = "item", name = "electric-engine-unit", amount = 8 },
+  },
+  results = {
+    { type = "item", name = "asteroid-collector", amount = 1 },
+  },
+}
+
 recipes["space-platform-starter-pack"] = {
   type = "recipe",
   name = "space-platform-starter-pack",
@@ -717,6 +772,165 @@ recipes["space-platform-starter-pack"] = {
   },
   results = {
     { type = "item", name = "space-platform-starter-pack", amount = 1 },
+  },
+}
+
+recipes["space-platform-foundation"] = {
+  type = "recipe",
+  name = "space-platform-foundation",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 20 },
+    { type = "item", name = "copper-cable", amount = 20 },
+  },
+  results = {
+    { type = "item", name = "space-platform-foundation", amount = 1 },
+  },
+}
+
+recipes["crusher"] = {
+  type = "recipe",
+  name = "crusher",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 10 },
+    { type = "item", name = "electronic-circuit", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "crusher", amount = 1 },
+  },
+}
+
+recipes["thruster"] = {
+  type = "recipe",
+  name = "thruster",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 10 },
+    { type = "item", name = "pipe", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "thruster", amount = 1 },
+  },
+}
+
+recipes["metallic-asteroid-crushing"] = {
+  type = "recipe",
+  name = "metallic-asteroid-crushing",
+  category = "crushing",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "metallic-asteroid-chunk", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "iron-ore", amount = 10 },
+  },
+}
+
+recipes["carbonic-asteroid-crushing"] = {
+  type = "recipe",
+  name = "carbonic-asteroid-crushing",
+  category = "crushing",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "carbonic-asteroid-chunk", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "carbon", amount = 10 },
+  },
+}
+
+recipes["oxide-asteroid-crushing"] = {
+  type = "recipe",
+  name = "oxide-asteroid-crushing",
+  category = "crushing",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "oxide-asteroid-chunk", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "ice", amount = 10 },
+  },
+}
+
+recipes["advanced-metallic-asteroid-crushing"] = {
+  type = "recipe",
+  name = "advanced-metallic-asteroid-crushing",
+  category = "crushing",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "metallic-asteroid-chunk", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "iron-ore", amount = 20 },
+  },
+}
+
+recipes["metallic-asteroid-reprocessing"] = {
+  type = "recipe",
+  name = "metallic-asteroid-reprocessing",
+  category = "crushing",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "metallic-asteroid-chunk", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "carbonic-asteroid-chunk", amount = 1 },
+  },
+}
+
+recipes["fusion-reactor"] = {
+  type = "recipe",
+  name = "fusion-reactor",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "tungsten-plate", amount = 20 },
+    { type = "item", name = "carbon-fiber", amount = 20 },
+    { type = "item", name = "holmium-plate", amount = 20 },
+  },
+  results = {
+    { type = "item", name = "fusion-reactor", amount = 1 },
+  },
+}
+
+recipes["fusion-generator"] = {
+  type = "recipe",
+  name = "fusion-generator",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "tungsten-plate", amount = 10 },
+    { type = "item", name = "carbon-fiber", amount = 10 },
+    { type = "item", name = "holmium-plate", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "fusion-generator", amount = 1 },
+  },
+}
+
+recipes["mech-armor"] = {
+  type = "recipe",
+  name = "mech-armor",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "tungsten-plate", amount = 10 },
+    { type = "item", name = "carbon-fiber", amount = 10 },
+    { type = "item", name = "holmium-plate", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "mech-armor", amount = 1 },
+  },
+}
+
+recipes["promethium-science-pack"] = {
+  type = "recipe",
+  name = "promethium-science-pack",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "promethium-asteroid-chunk", amount = 1 },
+    { type = "item", name = "quantum-processor", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "promethium-science-pack", amount = 10 },
   },
 }
 
@@ -1171,6 +1385,27 @@ local function count_ingredient(recipe, item_name)
     end
   end
   return count
+end
+
+local planet_specific_paperwork = {
+  "blank-cyan-form",
+  "blank-yellow-form",
+  "blank-magenta-form",
+  "cyan-yellow-form",
+  "cyan-magenta-form",
+  "yellow-magenta-form",
+  "trichromatic-permit",
+  "unified-operations-charter",
+  "cryogenic-operations-license",
+  "promethium-research-charter",
+  "hardened-data-vault",
+}
+
+local function assert_no_planet_specific_paperwork(recipe, label)
+  for _, paperwork_name in ipairs(planet_specific_paperwork) do
+    assert_true(not has_ingredient(recipe, paperwork_name),
+      label .. " should not require " .. paperwork_name .. " before first planet discovery")
+  end
 end
 
 local function get_result_amount(recipe, item_name)
@@ -1729,6 +1964,16 @@ test("space age intermediate recipes gain the expected chromatic and aquilo gate
   assert_true(has_ingredient(electromagnetic, "blank-magenta-form"),
     "electromagnetic-plant should gain blank-magenta-form for holmium use")
 
+  local asteroid_collector = get_recipe("asteroid-collector")
+  assert_true(asteroid_collector ~= nil, "asteroid-collector missing")
+  assert_true(not has_ingredient(asteroid_collector, "cyan-magenta-form"),
+    "asteroid collectors should stay available before any planet-specific paperwork")
+
+  local cargo_bay = get_recipe("cargo-bay")
+  assert_true(cargo_bay ~= nil, "cargo-bay missing")
+  assert_true(not has_ingredient(cargo_bay, "cyan-magenta-form"),
+    "cargo bays should stay available before any planet-specific paperwork")
+
   local dual = get_recipe("dual-planet-widget")
   assert_true(dual ~= nil, "dual-planet-widget missing")
   assert_true(has_ingredient(dual, "cyan-yellow-form"),
@@ -1749,6 +1994,24 @@ test("space age intermediate recipes gain the expected chromatic and aquilo gate
   assert_true(not has_ingredient(quantum, "blank-magenta-form"),
     "quantum-processor should not keep separate blank-magenta-form once unified multicolor paperwork is used")
 
+  for _, recipe_name in ipairs({"fusion-reactor", "fusion-generator", "mech-armor"}) do
+    local recipe = get_recipe(recipe_name)
+    assert_true(recipe ~= nil, recipe_name .. " missing")
+    assert_true(has_ingredient(recipe, "trichromatic-permit"),
+      recipe_name .. " should require trichromatic-permit as a three-planet convergence gate")
+    assert_true(not has_ingredient(recipe, "blank-cyan-form"),
+      recipe_name .. " should not keep separate blank-cyan-form once trichromatic paperwork is used")
+    assert_true(not has_ingredient(recipe, "blank-yellow-form"),
+      recipe_name .. " should not keep separate blank-yellow-form once trichromatic paperwork is used")
+    assert_true(not has_ingredient(recipe, "blank-magenta-form"),
+      recipe_name .. " should not keep separate blank-magenta-form once trichromatic paperwork is used")
+  end
+
+  local promethium = get_recipe("promethium-science-pack")
+  assert_true(promethium ~= nil, "promethium-science-pack missing")
+  assert_true(has_ingredient(promethium, "promethium-research-charter"),
+    "promethium science should require a shattered-planet research charter")
+
   local lithium = get_recipe("lithium")
   assert_true(has_ingredient(lithium, "cyan-yellow-form"),
     "lithium should require cyan-yellow-form as the first Aquilo convergence gate")
@@ -1764,6 +2027,36 @@ test("space age intermediate recipes gain the expected chromatic and aquilo gate
   local cryogenic = get_recipe("cryogenic-plant")
   assert_true(has_ingredient(cryogenic, "cryogenic-operations-license"),
     "cryogenic-plant should require cryogenic-operations-license")
+end)
+
+test("first platform infrastructure and basic asteroid crushing stay pre-planet", function()
+  for _, recipe_name in ipairs({
+    "space-platform-foundation",
+    "space-platform-starter-pack",
+    "cargo-bay",
+    "asteroid-collector",
+    "crusher",
+    "thruster",
+    "metallic-asteroid-crushing",
+    "carbonic-asteroid-crushing",
+    "oxide-asteroid-crushing",
+  }) do
+    local recipe = get_recipe(recipe_name)
+    assert_true(recipe ~= nil, recipe_name .. " missing")
+    assert_no_planet_specific_paperwork(recipe, recipe_name)
+    assert_true(not has_ingredient(recipe, "asteroid-processing-docket"),
+      recipe_name .. " should not require post-space-science asteroid paperwork")
+  end
+
+  local advanced_crushing = get_recipe("advanced-metallic-asteroid-crushing")
+  assert_true(advanced_crushing ~= nil, "advanced-metallic-asteroid-crushing missing")
+  assert_true(has_ingredient(advanced_crushing, "asteroid-processing-docket"),
+    "advanced asteroid crushing should require asteroid-processing-docket")
+
+  local reprocessing = get_recipe("metallic-asteroid-reprocessing")
+  assert_true(reprocessing ~= nil, "metallic-asteroid-reprocessing missing")
+  assert_true(has_ingredient(reprocessing, "asteroid-processing-docket"),
+    "asteroid reprocessing should require asteroid-processing-docket")
 end)
 
 -------------------------------------------------------------------------------
