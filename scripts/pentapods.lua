@@ -30,6 +30,20 @@ local HATCHED_PENTAPOD_UNITS = {
   ["medium-pentapod-premature"] = true,
   ["big-pentapod-premature"] = true,
 }
+local PENTAPOD_BAIT_EGG_SCALE = {
+  ["small-wriggler-pentapod"] = 1,
+  ["small-strafer-pentapod"] = 1,
+  ["small-stomper-pentapod"] = 1,
+  ["small-pentapod-premature"] = 1,
+  ["medium-wriggler-pentapod"] = 2,
+  ["medium-strafer-pentapod"] = 2,
+  ["medium-stomper-pentapod"] = 2,
+  ["medium-pentapod-premature"] = 2,
+  ["big-wriggler-pentapod"] = 4,
+  ["big-strafer-pentapod"] = 4,
+  ["big-stomper-pentapod"] = 4,
+  ["big-pentapod-premature"] = 4,
+}
 
 function M.is_pentapod(entity_name)
   return entity_name ~= nil and M.PENTAPOD_EGG_YIELDS[entity_name] ~= nil
@@ -49,18 +63,21 @@ local function get_hatched_pentapod_force()
 end
 
 local function spill_pentapod_eggs(surface, position, count, force)
-  if surface.spill_item_stack then
+  local created = nil
+  if surface.create_entity then
+    local ok, entity = pcall(surface.create_entity, {
+      name = "item-on-ground",
+      position = position,
+      stack = {name = "pentapod-egg", count = count},
+    })
+    if ok then created = entity end
+  end
+  if not created and surface.spill_item_stack then
     surface.spill_item_stack{
       position = position,
       stack = {name = "pentapod-egg", count = count},
       enable_looted = true,
       force = force,
-    }
-  else
-    surface.create_entity{
-      name = "item-on-ground",
-      position = position,
-      stack = {name = "pentapod-egg", count = count},
     }
   end
 
@@ -89,7 +106,20 @@ local function consume_ground_money(item)
   return count
 end
 
-local function roll_pentapod_bait_eggs(money_count)
+local function consume_nearby_ground_money(surface, position)
+  local total = 0
+  local money_items = surface.find_entities_filtered{
+    name = "item-on-ground",
+    position = position,
+    radius = PENTAPOD_MONEY_BAIT_PICKUP_RADIUS,
+  }
+  for _, money in ipairs(money_items) do
+    total = total + (consume_ground_money(money) or 0)
+  end
+  return total
+end
+
+local function roll_pentapod_bait_eggs(money_count, pentapod_name)
   local eggs = 0
   local remaining = money_count or 0
   while remaining >= PENTAPOD_MONEY_BAIT_MIN_MONEY_PER_EGG do
@@ -103,7 +133,7 @@ local function roll_pentapod_bait_eggs(money_count)
     eggs = eggs + 1
     remaining = remaining - cost
   end
-  return eggs
+  return eggs * (PENTAPOD_BAIT_EGG_SCALE[pentapod_name] or 1)
 end
 
 local function command_pentapod_to_money(unit, money)
@@ -151,8 +181,9 @@ function M.process_money_baits(tick)
           if closest then
             if closest_dist <= PENTAPOD_MONEY_BAIT_PICKUP_RADIUS * PENTAPOD_MONEY_BAIT_PICKUP_RADIUS then
               local pentapod_force = closest.valid and closest.force or nil
-              local money_count = consume_ground_money(money)
-              local egg_count = roll_pentapod_bait_eggs(money_count)
+              local pentapod_name = closest.valid and closest.name or nil
+              local money_count = consume_nearby_ground_money(surface, money_position)
+              local egg_count = roll_pentapod_bait_eggs(money_count, pentapod_name)
               if pentapod_force and egg_count > 0 then
                 spill_pentapod_eggs(surface, money_position, egg_count, pentapod_force)
               end
