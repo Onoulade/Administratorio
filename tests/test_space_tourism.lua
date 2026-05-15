@@ -140,6 +140,7 @@ defines = {
 }
 
 local biters = load_biters_module()
+local pentapods = require("scripts.pentapods")
 
 local function new_inventory(opts)
   opts = opts or {}
@@ -528,14 +529,14 @@ test("dropped taxpayer money lures pentapods and can buy eggs", function()
     money_count = 25,
   })
 
-  biters.process_pentapod_money_baits(60)
+  pentapods.process_money_baits(60)
 
   assert_eq(ctx.last_command().type, defines.command.go_to_location,
     "pentapod should be lured toward dropped taxpayer money")
   assert_eq(ctx.last_command().destination.x, 0, "pentapod should path to money x")
 
   ctx.nearby_enemies[1].position = {x = 0.5, y = 0}
-  biters.process_pentapod_money_baits(120)
+  pentapods.process_money_baits(120)
 
   assert_true(ctx.ground_items[1].valid == false, "pentapod should consume the whole taxpayer money stack")
   assert_eq(ctx.spilled_items[1].stack.name, "pentapod-egg", "pentapod should sometimes drop an egg")
@@ -556,7 +557,7 @@ test("dropped taxpayer money always pays at least one egg at the minimum thresho
     money_count = 10,
   })
 
-  biters.process_pentapod_money_baits(60)
+  pentapods.process_money_baits(60)
 
   assert_true(ctx.ground_items[1].valid == false, "pentapod should consume the whole taxpayer money stack")
   assert_eq(ctx.spilled_items[1].stack.name, "pentapod-egg", "minimum money threshold should still drop an egg")
