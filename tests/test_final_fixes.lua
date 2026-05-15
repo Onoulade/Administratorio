@@ -353,6 +353,21 @@ data.raw.item["fusion-generator"] = {
   icon = "__space-age__/graphics/icons/fusion-generator.png",
   icon_size = 64,
 }
+data.raw.item["pentapod-egg"] = {
+  type = "item",
+  name = "pentapod-egg",
+  spoil_to_trigger_result = {
+    trigger = {
+      type = "direct",
+      action_delivery = {
+        type = "instant",
+        source_effects = {
+          {type = "create-entity", entity_name = "small-pentapod-premature"},
+        },
+      },
+    },
+  },
+}
 data.raw.armor["mech-armor"] = {
   type = "armor",
   name = "mech-armor",
@@ -2057,6 +2072,18 @@ test("first platform infrastructure and basic asteroid crushing stay pre-planet"
   assert_true(reprocessing ~= nil, "metallic-asteroid-reprocessing missing")
   assert_true(has_ingredient(reprocessing, "asteroid-processing-docket"),
     "asteroid reprocessing should require asteroid-processing-docket")
+end)
+
+test("pentapod egg spoil trigger notifies runtime to unpacify hatchlings", function()
+  local effects = data.raw.item["pentapod-egg"].spoil_to_trigger_result.trigger.action_delivery.source_effects
+  local found = false
+  for _, effect in ipairs(effects) do
+    if effect.type == "script" and effect.effect_id == "administratorio-pentapod-egg-hatch" then
+      found = true
+      break
+    end
+  end
+  assert_true(found, "pentapod egg spoil trigger should include the hatchling runtime script effect")
 end)
 
 -------------------------------------------------------------------------------
