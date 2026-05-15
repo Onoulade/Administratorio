@@ -62,6 +62,12 @@ local function load_biters_module()
     CAPTURE_BUREAU_SPORE_UPKEEP_AMOUNT = 1,
     CAPTURE_BUREAU_SPORE_VISUAL_TICKS = 60,
     HATCHED_PENTAPOD_FORCE_NAME = "administratorio-hatched-pentapods",
+    PENTAPOD_MONEY_BAIT_INTERVAL_TICKS = 60,
+    PENTAPOD_MONEY_BAIT_SCAN_LIMIT = 24,
+    PENTAPOD_MONEY_BAIT_LURE_RADIUS = 24,
+    PENTAPOD_MONEY_BAIT_PICKUP_RADIUS = 1.75,
+    PENTAPOD_MONEY_BAIT_MIN_MONEY_PER_EGG = 10,
+    PENTAPOD_MONEY_BAIT_MAX_MONEY_PER_EGG = 10,
     ENROLLMENT_OFFER_LOW_FRUSTRATION_RATIO = 0.25,
     ENROLLMENT_OFFER_MEDIUM_FRUSTRATION_RATIO = 0.50,
     ENROLLMENT_OFFER_LOW_CHANCE = 0.05,
@@ -214,6 +220,8 @@ local function new_context(opts)
   local last_command = {value = nil}
   local next_unit_number = 200
   local nearby_enemies = {}
+  local ground_items = {}
+  local spilled_items = {}
   local surfaces_by_index = {}
 
   local surface = {
@@ -227,6 +235,9 @@ local function new_context(opts)
   end
 
   function surface.find_entities_filtered(filters)
+    if filters and filters.name == "item-on-ground" then
+      return ground_items
+    end
     if filters and filters.force == "enemy" and filters.type == "unit" then
       return nearby_enemies
     end
@@ -234,6 +245,24 @@ local function new_context(opts)
   end
 
   function surface.create_entity(spec)
+    if spec.name == "item-on-ground" then
+      local entity = {
+        valid = true,
+        name = "item-on-ground",
+        position = spec.position,
+        surface = surface,
+        stack = {
+          valid_for_read = true,
+          name = spec.stack.name,
+          count = spec.stack.count,
+        },
+      }
+      entity.destroy = function()
+        entity.valid = false
+      end
+      ground_items[#ground_items + 1] = entity
+      return entity
+    end
     next_unit_number = next_unit_number + 1
     return new_entity(surface, {
       name = spec.name,
@@ -242,6 +271,10 @@ local function new_context(opts)
       position = spec.position,
       force = spec.force,
     }, created_entities, last_command)
+  end
+
+  function surface.spill_item_stack(spec)
+    spilled_items[#spilled_items + 1] = spec
   end
 
   local output_inventory = new_inventory(opts)
@@ -287,6 +320,14 @@ local function new_context(opts)
       position = opts.enemy_position or {x = 1, y = 1},
       force = "enemy",
     }, created_entities, last_command)
+  end
+
+  if opts.money_position then
+    surface.create_entity{
+      name = "item-on-ground",
+      position = opts.money_position,
+      stack = {name = "taxpayer-money", count = opts.money_count or 1},
+    }
   end
 
   local function new_force(name)
@@ -351,6 +392,8 @@ local function new_context(opts)
     inventory = output_inventory,
     nearby_enemies = nearby_enemies,
     created_entities = created_entities,
+    ground_items = ground_items,
+    spilled_items = spilled_items,
     last_command = function()
       return last_command.value
     end,
@@ -471,6 +514,51 @@ test("spoiled pentapod eggs hatch into hostile attackers instead of bureaucracy 
     "hatched pentapod should receive an attack command")
   assert_true(next(storage.waiting_biters) == nil,
     "hatched pentapod should not be redirected into the admin desk queue")
+end)
+
+test("dropped taxpayer money lures pentapods and can buy eggs", function()
+  local ctx = new_context({
+    desk_name = "admin-station",
+    surface_name = "gleba",
+    enemy_name = "small-wriggler-pentapod",
+    enemy_position = {x = 5, y = 0},
+    money_position = {x = 0, y = 0},
+    money_count = 25,
+  })
+
+  biters.process_pentapod_money_baits(60)
+
+  assert_eq(ctx.last_command().type, defines.command.go_to_location,
+    "pentapod should be lured toward dropped taxpayer money")
+  assert_eq(ctx.last_command().destination.x, 0, "pentapod should path to money x")
+
+  ctx.nearby_enemies[1].position = {x = 0.5, y = 0}
+  biters.process_pentapod_money_baits(120)
+
+  assert_true(ctx.ground_items[1].valid == false, "pentapod should consume the whole taxpayer money stack")
+  assert_eq(ctx.spilled_items[1].stack.name, "pentapod-egg", "pentapod should sometimes drop an egg")
+  assert_eq(ctx.spilled_items[1].stack.count, 2, "egg payout should scale around one egg per 10-20 money")
+  assert_eq(ctx.spilled_items[1].position.x, 0, "eggs should drop where the money was")
+  assert_eq(ctx.spilled_items[1].position.y, 0, "eggs should drop where the money was")
+  assert_true(next(storage.waiting_biters) == nil,
+    "money-baited pentapod should not enter the admin desk queue")
+end)
+
+test("dropped taxpayer money always pays at least one egg at the minimum threshold", function()
+  local ctx = new_context({
+    desk_name = "admin-station",
+    surface_name = "gleba",
+    enemy_name = "small-wriggler-pentapod",
+    enemy_position = {x = 0.5, y = 0},
+    money_position = {x = 0, y = 0},
+    money_count = 10,
+  })
+
+  biters.process_pentapod_money_baits(60)
+
+  assert_true(ctx.ground_items[1].valid == false, "pentapod should consume the whole taxpayer money stack")
+  assert_eq(ctx.spilled_items[1].stack.name, "pentapod-egg", "minimum money threshold should still drop an egg")
+  assert_eq(ctx.spilled_items[1].stack.count, 1, "10 money should buy one bootstrap egg")
 end)
 
 if failed > 0 then

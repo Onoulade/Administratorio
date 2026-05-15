@@ -530,6 +530,10 @@ test("gleba conciliation unlocks the yellow chain and gleba specialist buildings
   }) do
     assert_true(tech_unlocks_recipe(gleba, recipe_name), "gleba-conciliation should unlock " .. recipe_name)
   end
+  for _, prerequisite in ipairs(gleba.prerequisites or {}) do
+    assert_true(prerequisite ~= "agricultural-science-pack",
+      "gleba-conciliation must bootstrap before agricultural science needs eggs")
+  end
 end)
 
 test("gleba conciliation also unlocks orbital spitter tourism", function()
@@ -617,12 +621,22 @@ test("capture bureau mode recipes split by surface and role", function()
   assert_eq(exact_surface_planet(tourism), "nauvis", "tourism mode should stay on Nauvis")
   assert_eq(exact_surface_planet(pentapods), "gleba", "pentapod mode should stay on Gleba")
   assert_eq(exact_surface_planet(spore_base), "gleba", "spore culture base should stay on Gleba")
+  assert_eq(spore_base.category, "organic", "spore culture should be Biochamber-only")
+  assert_eq(workforce_spores.category, "organic", "workforce lure spores should be Biochamber-only")
+  assert_eq(tourism_spores.category, "organic", "tourism lure spores should be Biochamber-only")
+  assert_eq(egg_spores.category, "organic", "egg lure spores should be Biochamber-only")
   assert_true(has_fluid_ingredient(workforce_spores, "hostile-spore-culture"),
     "workforce lure spores should consume Gleba spore culture")
   assert_true(has_fluid_ingredient(tourism_spores, "hostile-spore-culture"),
     "tourism lure spores should consume Gleba spore culture")
   assert_true(has_fluid_ingredient(egg_spores, "hostile-spore-culture"),
     "egg lure spores should consume Gleba spore culture")
+  assert_true(not has_ingredient(egg_spores, "agricultural-science-pack"),
+    "egg lure spores should not require the agricultural science that needs eggs")
+  assert_true(recipes["manual-pentapod-egg-foraging"] == nil,
+    "eggs should not be craftable from ingredients; bootstrap comes from bribing wild pentapods with dropped money")
+  assert_true(recipes["pentapod-egg-bounty"] == nil,
+    "egg bootstrap should use loose taxpayer-money, not a dedicated crafted capsule")
 
   assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "capture-bureau-workforce"),
     "workforce-formation should unlock capture-bureau-workforce")
