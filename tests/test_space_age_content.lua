@@ -65,6 +65,7 @@ local technologies = {
   ["after-hours-operations"] = {type = "technology", name = "after-hours-operations", effects = {}},
   ["discovery-redundant-rubble"] = {type = "technology", name = "discovery-redundant-rubble", effects = {}},
   ["nest-expropriation"] = {type = "technology", name = "nest-expropriation", effects = {}},
+  ["hired-biter-fieldwork"] = {type = "technology", name = "hired-biter-fieldwork", effects = {}},
 }
 
 mods = {
@@ -248,11 +249,9 @@ test("workforce surface policy keeps seed roles Nauvis-bound and specialists por
   for _, recipe_name in ipairs({
     "clerical-trainee-formation",
     "astronaut-formation",
-    "night-shift-supervisor-formation",
     "conciliation-officer-formation",
     "relay-clerk-formation",
     "cryoprint-technician-formation",
-    "field-negotiator-formation",
     "middle-management-managing-manager-formation",
   }) do
     assert_true(recipes[recipe_name] ~= nil, recipe_name .. " missing")
@@ -472,18 +471,18 @@ test("workforce tech owns the workforce progression unlocks", function()
   assert_eq(workforce.prerequisites[1], "space-science-pack", "workforce-formation should unlock after space science")
 end)
 
-test("night shift and negotiator roles feed their intended recipes", function()
-  assert_true(recipes["overtime-exemption-staffed"] ~= nil, "staffed overtime recipe missing")
-  assert_true(has_ingredient(recipes["overtime-exemption-staffed"], "night-shift-supervisor"), "staffed overtime should require night-shift-supervisor")
-  assert_true(tech_unlocks_recipe(technologies["after-hours-operations"], "overtime-exemption-staffed"), "after-hours-operations should unlock staffed overtime")
+test("field agent recipes reuse the base hired biter instead of duplicate Space Age roles", function()
+  assert_true(recipes["overtime-exemption-staffed"] == nil, "staffed overtime recipe should be removed")
+  assert_true(recipes["night-shift-supervisor-formation"] == nil, "night-shift supervisor should be removed")
+  assert_true(recipes["field-negotiator-formation"] == nil, "field negotiator should be removed")
 
   assert_true(recipes["promise-production-negotiated"] ~= nil, "negotiated promise recipe missing")
-  assert_true(has_ingredient(recipes["promise-production-negotiated"], "field-negotiator"), "negotiated promise should require field-negotiator")
-  assert_true(tech_unlocks_recipe(technologies["discovery-redundant-rubble"], "promise-production-negotiated"), "discovery-redundant-rubble should unlock negotiated promise")
+  assert_true(has_ingredient(recipes["promise-production-negotiated"], "hired-biter-capsule"), "negotiated promise should require hired-biter-capsule")
+  assert_true(tech_unlocks_recipe(technologies["hired-biter-fieldwork"], "promise-production-negotiated"), "hired-biter-fieldwork should unlock negotiated promise")
 
   assert_true(recipes["eviction-notice-production-negotiated"] ~= nil, "negotiated eviction recipe missing")
-  assert_true(has_ingredient(recipes["eviction-notice-production-negotiated"], "field-negotiator"), "negotiated eviction should require field-negotiator")
-  assert_true(tech_unlocks_recipe(technologies["nest-expropriation"], "eviction-notice-production-negotiated"), "nest-expropriation should unlock negotiated eviction")
+  assert_true(has_ingredient(recipes["eviction-notice-production-negotiated"], "hired-biter-capsule"), "negotiated eviction should require hired-biter-capsule")
+  assert_true(tech_unlocks_recipe(technologies["hired-biter-fieldwork"], "eviction-notice-production-negotiated"), "hired-biter-fieldwork should unlock negotiated eviction")
 end)
 
 test("MMMM is converted into trajectory-compliance ammo and sink hardware", function()
@@ -594,24 +593,53 @@ test("capture bureau mode recipes split by surface and role", function()
   local workforce = assert(recipes["capture-bureau-workforce"], "capture-bureau-workforce missing")
   local tourism = assert(recipes["capture-bureau-tourism"], "capture-bureau-tourism missing")
   local pentapods = assert(recipes["capture-bureau-pentapod-eggs"], "capture-bureau-pentapod-eggs missing")
+  local spore_base = assert(recipes["hostile-spore-culture-production"], "hostile-spore-culture-production missing")
+  local workforce_spores = assert(recipes["workforce-lure-spores-production"], "workforce-lure-spores-production missing")
+  local tourism_spores = assert(recipes["tourism-lure-spores-production"], "tourism-lure-spores-production missing")
+  local egg_spores = assert(recipes["oviposition-lure-spores-production"], "oviposition-lure-spores-production missing")
   local cyan_yellow = technologies["cyan-yellow-bureaucracy"]
 
   assert_eq(workforce.category, "hostile-acquisition", "workforce mode should use hostile-acquisition")
   assert_eq(tourism.category, "hostile-acquisition", "tourism mode should use hostile-acquisition")
   assert_eq(pentapods.category, "hostile-acquisition", "pentapod mode should use hostile-acquisition")
+  assert_true(fluids["hostile-spore-culture"] ~= nil, "hostile-spore-culture missing")
+  assert_true(fluids["workforce-lure-spores"] ~= nil, "workforce-lure-spores missing")
+  assert_true(fluids["tourism-lure-spores"] ~= nil, "tourism-lure-spores missing")
+  assert_true(fluids["oviposition-lure-spores"] ~= nil, "oviposition-lure-spores missing")
+  assert_eq(fluids["workforce-lure-spores"].auto_barrel, false,
+    "workforce lure spores should not be barrelable")
+  assert_eq(fluids["tourism-lure-spores"].auto_barrel, false,
+    "tourism lure spores should not be barrelable")
+  assert_eq(fluids["oviposition-lure-spores"].auto_barrel, false,
+    "egg lure spores should not be barrelable")
 
   assert_eq(exact_surface_planet(workforce), "nauvis", "workforce mode should stay on Nauvis")
   assert_eq(exact_surface_planet(tourism), "nauvis", "tourism mode should stay on Nauvis")
   assert_eq(exact_surface_planet(pentapods), "gleba", "pentapod mode should stay on Gleba")
+  assert_eq(exact_surface_planet(spore_base), "gleba", "spore culture base should stay on Gleba")
+  assert_true(has_fluid_ingredient(workforce_spores, "hostile-spore-culture"),
+    "workforce lure spores should consume Gleba spore culture")
+  assert_true(has_fluid_ingredient(tourism_spores, "hostile-spore-culture"),
+    "tourism lure spores should consume Gleba spore culture")
+  assert_true(has_fluid_ingredient(egg_spores, "hostile-spore-culture"),
+    "egg lure spores should consume Gleba spore culture")
 
   assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "capture-bureau-workforce"),
     "workforce-formation should unlock capture-bureau-workforce")
+  assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "workforce-lure-spores-production"),
+    "workforce-formation should unlock workforce lure spores")
   assert_true(has_ingredient(tourism, "cyan-yellow-form"),
     "tourism mode should consume cyan-yellow-form")
   assert_true(tech_unlocks_recipe(cyan_yellow, "capture-bureau-tourism"),
     "cyan-yellow-bureaucracy should unlock capture-bureau-tourism")
+  assert_true(tech_unlocks_recipe(cyan_yellow, "tourism-lure-spores-production"),
+    "cyan-yellow-bureaucracy should unlock tourism lure spores")
   assert_true(tech_unlocks_recipe(technologies["gleba-conciliation"], "capture-bureau-pentapod-eggs"),
     "gleba-conciliation should unlock capture-bureau-pentapod-eggs")
+  assert_true(tech_unlocks_recipe(technologies["gleba-conciliation"], "hostile-spore-culture-production"),
+    "gleba-conciliation should unlock spore culture")
+  assert_true(tech_unlocks_recipe(technologies["gleba-conciliation"], "oviposition-lure-spores-production"),
+    "gleba-conciliation should unlock egg lure spores")
 end)
 
 test("gleba chromatic chain defines amber sap and printer-fed yellow forms", function()

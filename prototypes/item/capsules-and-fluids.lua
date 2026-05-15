@@ -259,5 +259,35 @@ if feature_flags.space_age_enabled() then
     { type = "fluid", name = "magenta-ink",      icon = item_icons .. "ink-cartridge.png", icon_size = 64, subgroup = "admin-fluids", order = "k", default_temperature = 25, base_color = {r=0.75, g=0.05, b=0.55}, flow_color = {r=1.0, g=0.2, b=0.8} },
     { type = "fluid", name = "liquid-stimulant", icon = item_icons .. "coffee.png", icon_size = 64, subgroup = "admin-fluids", order = "l", default_temperature = 110, base_color = {r=0.05, g=0.8, b=0.85}, flow_color = {r=0.2, g=1.0, b=1.0} },
     { type = "fluid", name = "molten-promises",  icon = item_icons .. "lie.png", icon_size = 64, subgroup = "admin-fluids", order = "m", default_temperature = 250, base_color = {r=0.6, g=0.35, b=0.05}, flow_color = {r=1.0, g=0.6, b=0.15} },
+    { type = "fluid", name = "hostile-spore-culture", icon = item_icons .. "coffee.png", icon_size = 64, subgroup = "admin-fluids", order = "n", default_temperature = 30, base_color = {r=0.28, g=0.42, b=0.16}, flow_color = {r=0.55, g=0.85, b=0.28} },
+    { type = "fluid", name = "workforce-lure-spores", icon = item_icons .. "credentials.png", icon_size = 64, subgroup = "admin-fluids", order = "n1", default_temperature = 30, base_color = {r=0.26, g=0.56, b=0.24}, flow_color = {r=0.52, g=1.0, b=0.42}, auto_barrel = false },
+    { type = "fluid", name = "tourism-lure-spores", icon = item_icons .. "transit-authorization.png", icon_size = 64, subgroup = "admin-fluids", order = "n2", default_temperature = 30, base_color = {r=0.16, g=0.48, b=0.58}, flow_color = {r=0.35, g=0.9, b=1.0}, auto_barrel = false },
+    { type = "fluid", name = "oviposition-lure-spores", icon = "__space-age__/graphics/icons/pentapod-egg.png", icon_size = 64, subgroup = "admin-fluids", order = "n3", default_temperature = 30, base_color = {r=0.44, g=0.46, b=0.14}, flow_color = {r=0.9, g=0.95, b=0.28}, auto_barrel = false },
+  })
+
+  data:extend({
+    {
+      type = "smoke-with-trigger",
+      name = "capture-bureau-spore-cloud",
+      flags = {"not-on-map"},
+      hidden = true,
+      show_when_smoke_off = true,
+      particle_count = 14,
+      particle_spread = {2.5, 1.5},
+      particle_distance_scale_factor = 0.65,
+      particle_scale_factor = {1.2, 0.8},
+      particle_duration_variation = 60 * 3,
+      wave_speed = {0.5 / 80, 0.5 / 60},
+      wave_distance = {0.8, 0.5},
+      spread_duration_variation = 80,
+      render_layer = "object",
+      affected_by_wind = false,
+      cyclic = true,
+      duration = 60 * 4,
+      fade_away_duration = 60,
+      spread_duration = 90,
+      color = {0.42, 0.85, 0.22, 0.34},
+      animation = smoke_animation,
+    },
   })
 end
