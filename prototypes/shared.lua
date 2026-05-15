@@ -67,10 +67,8 @@ shared.PAPERWORK_ITEMS = {
   ["research-grant-approval"] = true,
   ["provisional-approval"] = true,
   ["safety-waiver"] = true,
-  ["unapproved-safety-waiver"] = true,
   ["safety-waiver-draft"] = true,
   ["construction-permit"] = true,
-  ["unapproved-construction-permit"] = true,
   ["construction-permit-draft"] = true,
   ["transit-authorization"] = true,
   ["management-approval-verbal"] = true,
@@ -94,7 +92,6 @@ shared.PAPERWORK_ITEMS = {
   ["research-grant-work-order"] = true,
   ["chemical-handling-work-order"] = true,
   ["radiological-work-order"] = true,
-  ["unapproved-radiological-work-order"] = true,
 }
 
 -------------------------------------------------------------------------------
@@ -223,7 +220,6 @@ shared.ADMIN_BUILDINGS = {
   ["office-desk"] = true,
   ["formation-center"] = true,
   ["field-office"] = true,
-  ["petition-counter"] = true,
   ["greenhouse"] = true,
   ["corporate-breakroom"] = true,
   ["printer-t1"] = true,
@@ -259,9 +255,9 @@ end
 -------------------------------------------------------------------------------
 shared.FORM_PRODUCTION_RECIPES = {
   ["work-order"] = "work-order-production",
-  ["safety-waiver"] = "safety-waiver-approval",
+  ["safety-waiver"] = "safety-waiver-printing",
   ["form-27b-6"] = "form-27b-6",
-  ["construction-permit"] = "construction-permit-approval",
+  ["construction-permit"] = "construction-permit-printing",
   ["management-approval-verbal"] = "management-verbal-printing",
   ["management-approval-written"] = "management-written-1st-printing",
   ["provisional-approval"] = "provisional-approval-production",
@@ -270,7 +266,7 @@ shared.FORM_PRODUCTION_RECIPES = {
   ["blank-approval"] = "blank-approval-production",
   ["blank-directive"] = "blank-directive-production",
   ["chemical-handling-work-order"] = "chemical-handling-work-order-production",
-  ["radiological-work-order"] = "radiological-work-order-approval",
+  ["radiological-work-order"] = "radiological-work-order-production",
 }
 
 if space_age_enabled then
@@ -444,13 +440,10 @@ shared.UNBATCHED_RESULT_NAMES = {
   ["biochamber"] = true,
   ["biolab"] = true,
   ["captive-biter-spawner"] = true,
-  ["rocket-turret"] = true,
   ["lightning-rod"] = true,
   ["lightning-collector"] = true,
   ["heating-tower"] = true,
   ["electromagnetic-plant"] = true,
-  ["tesla-turret"] = true,
-  ["railgun-turret"] = true,
   ["fusion-reactor"] = true,
   ["fusion-generator"] = true,
   ["cryogenic-plant"] = true,

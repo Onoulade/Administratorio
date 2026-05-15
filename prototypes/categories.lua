@@ -19,7 +19,6 @@
 -- printing                    | Printer T1 (ink-based documents)
 -- printing-advanced           | Printer T2 (document duplication/copying)
 -- printing-workorder          | Printer T1/T2 (direct draft-to-work-order printing)
--- petition-stamping           | Petition Counter (biter-government permit approvals)
 -- propaganda-distillery        | Propaganda Distillery (admin fluid processing)
 -- pneumatic-intake            | Tube Intake (hidden no-output intake validation)
 -------------------------------------------------------------------------------
@@ -42,7 +41,6 @@ local categories = {
   {type = "recipe-category", name = "printing"},
   {type = "recipe-category", name = "printing-advanced"},
   {type = "recipe-category", name = "printing-workorder"},
-  {type = "recipe-category", name = "petition-stamping"},
   {type = "recipe-category", name = "propaganda-distillery"},
   {type = "recipe-category", name = "pneumatic-intake"},
 }
@@ -54,6 +52,7 @@ if space_age_enabled then
   categories[#categories + 1] = {type = "recipe-category", name = "bureaucracy-certification"}
   categories[#categories + 1] = {type = "recipe-category", name = "bureaucracy-conciliation"}
   categories[#categories + 1] = {type = "recipe-category", name = "hostile-acquisition"}
+  categories[#categories + 1] = {type = "recipe-category", name = "capture-bureau-runtime"}
   categories[#categories + 1] = {type = "recipe-category", name = "territorial-arbitration"}
   categories[#categories + 1] = {type = "recipe-category", name = "workforce-formation"}
   categories[#categories + 1] = {type = "recipe-category", name = "orbital-bureaucracy"}

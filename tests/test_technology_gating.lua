@@ -345,6 +345,11 @@ test("local precedents and environmental compliance are split", function()
   assert_true(not tech_unlocks_recipe("environmental-compliance", "copy-environmental-impact-report"), "environmental-compliance should not unlock impact-report copying")
 end)
 
+test("old government liaison petition chain is removed", function()
+  assert_true(technologies["government-liaison"] == nil, "government-liaison technology should be removed")
+  assert_true(not tech_unlocks_recipe("printing-technology", "petition-counter"), "printing should not unlock petition-counter")
+end)
+
 test("administrative bureaucracy owns only the early greenhouse wood bootstrap", function()
   assert_true(technologies["administrative-bureaucracy"].icon == "__administratorio__/graphics/technology/greenhouse.png",
     "administrative-bureaucracy should use the greenhouse technology icon")

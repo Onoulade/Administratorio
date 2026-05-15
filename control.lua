@@ -445,6 +445,7 @@ local function init_storage()
   storage.desk_occupant_counts = storage.desk_occupant_counts or {}
   storage.desk_return_positions = storage.desk_return_positions or {}
   storage.desk_circuit_dirty = storage.desk_circuit_dirty or {}
+  storage.capture_bureau_ports = storage.capture_bureau_ports or {}
   storage.evolution_complaint_warnings = storage.evolution_complaint_warnings or {}
   storage.stations = storage.stations or {}
   storage.achievements = storage.achievements or {}
@@ -628,6 +629,7 @@ local function on_init()
   fax.rebuild_registry()
   territorial_arbitration.rebuild_registry()
   biters.rebuild_desk_index()
+  biters.rebuild_capture_bureau_ports()
   biters.mark_all_desk_circuit_dirty()
   if WORKING_HOURS_ENABLED then
     working_hours.rebuild_registry()
@@ -677,6 +679,7 @@ local function on_configuration_changed(event)
   storage.pneumatic_liquifiers = nil -- superseded by tube signal chain
 
   pneumatic.rebuild_all()
+  biters.rebuild_capture_bureau_ports()
 
   -- Destroy old waiting markers and normalize desks to the single centered station.
   for _, surface in pairs(game.surfaces) do
@@ -691,7 +694,11 @@ local function on_configuration_changed(event)
         footprint = zones.get_desk_footprint_bounds(desk.position)
       }
       zones.create_corner_blockers(surface, storage.desk_zones[desk_id].footprint, desk.force)
-      ensure_desk_combinator(desk)
+      if desk.name == "capture-bureau" then
+        biters.ensure_capture_bureau_ports(desk)
+      else
+        ensure_desk_combinator(desk)
+      end
       biters.mark_desk_circuit_dirty(desk_id)
       storage.desk_reserved_slots[desk_id] = storage.desk_reserved_slots[desk_id] or 0
       storage.desk_grid_slots[desk_id] = storage.desk_grid_slots[desk_id] or {}
@@ -1020,7 +1027,11 @@ local function on_entity_built_inner(event)
 
     storage.desk_zones[desk_id] = {bounds = bounds, footprint = footprint}
     zones.create_corner_blockers(surface, footprint, entity.force)
-    ensure_desk_combinator(entity)
+    if entity.name == "capture-bureau" then
+      biters.ensure_capture_bureau_ports(entity)
+    else
+      ensure_desk_combinator(entity)
+    end
     storage.desk_reserved_slots[desk_id] = 0
     storage.desk_grid_slots[desk_id] = {}
     storage.admin_desks[desk_id] = entity
@@ -1144,6 +1155,9 @@ local function on_entity_removed(event)
   if is_admin_desk(entity) then
     local desk_id = entity.unit_number
     local surface = entity.surface
+    if entity.name == "capture-bureau" then
+      biters.delete_capture_bureau_ports(entity)
+    end
     storage.admin_desks[desk_id] = nil
     biters.reroute_desk_biters(desk_id, surface)
     zones.cleanup_desk_zone(desk_id)
@@ -1775,6 +1789,9 @@ local function on_entity_died(event)
   if is_admin_desk(entity) then
     local desk_id = entity.unit_number
     local surface = entity.surface
+    if entity.name == "capture-bureau" then
+      biters.delete_capture_bureau_ports(entity)
+    end
     storage.admin_desks[desk_id] = nil
     biters.reroute_desk_biters(desk_id, surface)
     zones.cleanup_desk_zone(desk_id)

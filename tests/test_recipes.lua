@@ -418,6 +418,7 @@ test("safety-waiver requires 2-step printing pipeline", function()
   assert_eq(print_step.category, "printing")
   assert_true(has_ingredient(print_step, "safety-waiver-draft"))
   assert_true(has_ingredient(print_step, "ink"))
+  assert_eq(get_result_amount(print_step, "safety-waiver"), 2)
 end)
 
 test("construction-permit requires 2-step printing pipeline", function()
@@ -431,6 +432,13 @@ test("construction-permit requires 2-step printing pipeline", function()
   assert_eq(print_step.category, "printing")
   assert_true(has_ingredient(print_step, "construction-permit-draft"))
   assert_true(has_ingredient(print_step, "ink"))
+  assert_eq(get_result_amount(print_step, "construction-permit"), 2)
+end)
+
+test("old petition approval recipes are removed", function()
+  assert_true(get_recipe("safety-waiver-approval") == nil, "safety approval should be removed")
+  assert_true(get_recipe("construction-permit-approval") == nil, "construction approval should be removed")
+  assert_true(get_recipe("radiological-work-order-approval") == nil, "radiological approval should be removed")
 end)
 
 test("management-approval-verbal requires 2-step pipeline (gossip + printing)", function()
@@ -1675,11 +1683,10 @@ local function check_pre_electricity_chain(item_name, visited, path)
   return nil
 end
 
-test("boiler bootstrap: safety-waiver chain requires no electricity", function()
-  -- safety-waiver is the form required to handcraft a boiler or steam-engine
+test("safety-waiver remains pre-electricity craftable through direct printing", function()
   local visited = {}
   local err = check_pre_electricity_chain("safety-waiver", visited, "safety-waiver")
-  assert_true(err == nil, "DEADLOCK: " .. (err or ""))
+  assert_true(err == nil, "safety-waiver should stay pre-electricity craftable")
 end)
 
 test("boiler bootstrap: carbon-offset-certificate-basic chain requires no electricity", function()

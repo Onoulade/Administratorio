@@ -242,19 +242,6 @@ data:extend({
     results = {{type = "item", name = "astronaut", amount = 1}},
     energy_required = 25
   },
-  {
-    type = "recipe",
-    name = "night-shift-supervisor-formation",
-    category = "workforce-formation",
-    enabled = false,
-    ingredients = {
-      {type = "item", name = "clerical-trainee", amount = 1},
-      {type = "item", name = "regulation", amount = 1},
-      {type = "item", name = "productivity-module", amount = 1},
-    },
-    results = {{type = "item", name = "night-shift-supervisor", amount = 1}},
-    energy_required = 20
-  },
   surface_limited({
     type = "recipe",
     name = "licensed-notary-formation",
@@ -305,19 +292,6 @@ data:extend({
       {type = "item", name = "management-approval-written", amount = 1},
     },
     results = {{type = "item", name = "cryoprint-technician", amount = 1}},
-    energy_required = 25
-  },
-  {
-    type = "recipe",
-    name = "field-negotiator-formation",
-    category = "workforce-formation",
-    enabled = false,
-    ingredients = {
-      {type = "item", name = "management-trainee", amount = 1},
-      {type = "item", name = "eviction-notice", amount = 1},
-      {type = "item", name = "management-approval-written", amount = 1},
-    },
-    results = {{type = "item", name = "field-negotiator", amount = 1}},
     energy_required = 25
   },
   {
@@ -438,6 +412,27 @@ data:extend({
     hide_from_player_crafting = true,
     energy_required = 1,
   }, "nauvis"),
+  {
+    type = "recipe",
+    name = "capture-bureau-spore-diffusion",
+    category = "capture-bureau-runtime",
+    enabled = true,
+    hidden = true,
+    hidden_in_factoriopedia = true,
+    hide_from_player_crafting = true,
+    allow_as_intermediate = false,
+    allow_decomposition = false,
+    ingredients = {
+      {type = "item", name = "capture-bureau-processing-token", amount = 1},
+      {type = "fluid", name = "workforce-lure-spores", amount = 1},
+      {type = "fluid", name = "tourism-lure-spores", amount = 1},
+      {type = "fluid", name = "oviposition-lure-spores", amount = 1},
+    },
+    results = {
+      {type = "item", name = "capture-bureau-processing-token", amount = 1},
+    },
+    energy_required = 60,
+  },
   surface_limited({
     type = "recipe",
     name = "capture-bureau-tourism",
@@ -591,7 +586,7 @@ data:extend({
     results = {
       {type = "item", name = "calcite-reagent-waiver", amount = 1},
     },
-    energy_required = 5,
+    energy_required = 2,
     surface_conditions = {
       {
         property = "pressure",
@@ -672,32 +667,12 @@ data:extend({
   },
   {
     type = "recipe",
-    name = "overtime-exemption-staffed",
-    category = "union-negotiation",
-    enabled = false,
-    localised_name = {"recipe-name.overtime-exemption"},
-    ingredients = {
-      {type = "item", name = "night-shift-supervisor", amount = 1},
-      {type = "item", name = "productivity-module", amount = 1},
-      {type = "item", name = "processing-unit", amount = 6},
-      {type = "item", name = "government-grant", amount = 2},
-      {type = "item", name = "regulation", amount = 2},
-      {type = "item", name = "management-approval-written", amount = 1},
-      {type = "fluid", name = "liquid-coffee", amount = 60},
-    },
-    results = {
-      {type = "item", name = "overtime-exemption", amount = 1},
-    },
-    energy_required = 20,
-  },
-  {
-    type = "recipe",
     name = "promise-production-negotiated",
     category = "union-negotiation",
     enabled = false,
     localised_name = {"recipe-name.promise-production"},
     ingredients = {
-      {type = "item", name = "field-negotiator", amount = 1},
+      {type = "item", name = "hired-biter-capsule", amount = 1},
       {type = "item", name = "blank-form", amount = 4},
       {type = "item", name = "good-excuse", amount = 1},
       {type = "item", name = "management-approval-verbal", amount = 1},
@@ -715,7 +690,7 @@ data:extend({
     enabled = false,
     localised_name = {"recipe-name.eviction-notice-production"},
     ingredients = {
-      {type = "item", name = "field-negotiator", amount = 1},
+      {type = "item", name = "hired-biter-capsule", amount = 1},
       {type = "item", name = "good-excuse", amount = 1},
       {type = "item", name = "credentials", amount = 1},
       {type = "item", name = "management-approval-written", amount = 1},
@@ -753,7 +728,7 @@ data:extend({
     results = {
       {type = "item", name = "bullshit-ore", amount = 4},
     },
-    energy_required = 4,
+    energy_required = 1,
   }, "gleba"),
   surface_limited({
     type = "recipe",
@@ -817,7 +792,7 @@ data:extend({
     results = {
       {type = "item", name = "printer-t1", amount = 1},
     },
-    energy_required = 5,
+    energy_required = 2,
   }, "gleba"),
   surface_limited({
     type = "recipe",
@@ -853,7 +828,7 @@ data:extend({
     results = {
       {type = "item", name = "administrative-science-pack", amount = 1},
     },
-    energy_required = 5,
+    energy_required = 2,
   }, "gleba"),
   surface_limited({
     type = "recipe",
@@ -868,8 +843,72 @@ data:extend({
     results = {
       {type = "fluid", name = "yellow-ink", amount = 40},
     },
-    energy_required = 4,
+    energy_required = 1,
   }, "gleba"),
+  surface_limited({
+    type = "recipe",
+    name = "hostile-spore-culture-production",
+    category = "bureaucracy-registration",
+    enabled = false,
+    localised_name = {"fluid-name.hostile-spore-culture"},
+    ingredients = {
+      {type = "fluid", name = "amber-sap", amount = 40},
+      {type = "item", name = "nutrients", amount = 4},
+      {type = "item", name = "spoilage", amount = 10},
+    },
+    results = {
+      {type = "fluid", name = "hostile-spore-culture", amount = 80},
+    },
+    energy_required = 2,
+  }, "gleba"),
+  {
+    type = "recipe",
+    name = "workforce-lure-spores-production",
+    category = "bureaucracy-registration",
+    enabled = false,
+    localised_name = {"fluid-name.workforce-lure-spores"},
+    ingredients = {
+      {type = "fluid", name = "hostile-spore-culture", amount = 20},
+      {type = "item", name = "job-offer", amount = 1},
+      {type = "item", name = "credentials", amount = 1},
+    },
+    results = {
+      {type = "fluid", name = "workforce-lure-spores", amount = 40},
+    },
+    energy_required = 1,
+  },
+  {
+    type = "recipe",
+    name = "tourism-lure-spores-production",
+    category = "bureaucracy-registration",
+    enabled = false,
+    localised_name = {"fluid-name.tourism-lure-spores"},
+    ingredients = {
+      {type = "fluid", name = "hostile-spore-culture", amount = 20},
+      {type = "item", name = "cyan-yellow-form", amount = 1},
+      {type = "item", name = "transit-authorization", amount = 1},
+    },
+    results = {
+      {type = "fluid", name = "tourism-lure-spores", amount = 40},
+    },
+    energy_required = 1,
+  },
+  {
+    type = "recipe",
+    name = "oviposition-lure-spores-production",
+    category = "bureaucracy-registration",
+    enabled = false,
+    localised_name = {"fluid-name.oviposition-lure-spores"},
+    ingredients = {
+      {type = "fluid", name = "hostile-spore-culture", amount = 20},
+      {type = "item", name = "agricultural-science-pack", amount = 1},
+      {type = "item", name = "symbiosis-record", amount = 1},
+    },
+    results = {
+      {type = "fluid", name = "oviposition-lure-spores", amount = 40},
+    },
+    energy_required = 1,
+  },
   surface_limited({
     type = "recipe",
     name = "mycelial-form-stock",

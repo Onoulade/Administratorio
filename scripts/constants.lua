@@ -105,6 +105,10 @@ M.DESK_SLOT_ARRIVAL_DISTANCE = 1.0
 M.EVOLUTION_COMPLAINT_WARNING_OFFSET = 0.05
 M.GROUP_REDIRECTS_PER_TICK = 8
 M.REGISTRATION_WALKIN_SCAN_TICKS = 5
+M.CAPTURE_BUREAU_LURE_RADIUS = 24
+M.CAPTURE_BUREAU_SPORE_UPKEEP_TICKS = 10 * 60
+M.CAPTURE_BUREAU_SPORE_UPKEEP_AMOUNT = 1
+M.CAPTURE_BUREAU_SPORE_VISUAL_TICKS = 60
 
 -- Biter complaint tiers (landscape/smog/noise/unemployment)
 M.COMPLAINT_TIERS = {
@@ -253,7 +257,8 @@ M.PNEUMATIC_BUILDINGS = {
 M.PNEUMATIC_ITEMS = {
   -- PAPERWORK_ITEMS
   "work-order", "form-27b-6", "research-grant-approval", "provisional-approval",
-  "safety-waiver", "safety-waiver-draft", "construction-permit", "construction-permit-draft",
+  "safety-waiver", "safety-waiver-draft",
+  "construction-permit", "construction-permit-draft",
   "transit-authorization",
   "management-approval-verbal", "management-verbal-draft",
   "management-approval-written", "management-written-proposal",
@@ -263,7 +268,8 @@ M.PNEUMATIC_ITEMS = {
   "treasury-bond", "government-grant",
   "safety-work-order", "construction-work-order",
   "management-verbal-work-order", "management-written-work-order",
-  "research-grant-work-order", "chemical-handling-work-order", "radiological-work-order",
+  "research-grant-work-order", "chemical-handling-work-order",
+  "radiological-work-order",
   -- Extra pneumatic items
   "paper", "ink",
   "ticket-landscape", "ticket-smog", "ticket-noise", "ticket-unemployment",

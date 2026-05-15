@@ -57,6 +57,10 @@ local function load_biters_module()
       ["small-spitter"] = 5,
     },
     PROTEST_THRESHOLD = 600,
+    CAPTURE_BUREAU_LURE_RADIUS = 24,
+    CAPTURE_BUREAU_SPORE_UPKEEP_TICKS = 10 * 60,
+    CAPTURE_BUREAU_SPORE_UPKEEP_AMOUNT = 1,
+    CAPTURE_BUREAU_SPORE_VISUAL_TICKS = 60,
     ENROLLMENT_OFFER_LOW_FRUSTRATION_RATIO = 0.25,
     ENROLLMENT_OFFER_MEDIUM_FRUSTRATION_RATIO = 0.50,
     ENROLLMENT_OFFER_LOW_CHANCE = 0.05,
@@ -238,6 +242,9 @@ local function new_context(opts)
   end
 
   local output_inventory = new_inventory(opts)
+  local fluidbox = opts.lure_fluid and {
+    {name = opts.lure_fluid, amount = opts.lure_amount or 100},
+  } or {}
   local desk = {
     valid = true,
     name = opts.desk_name or "capture-bureau",
@@ -253,13 +260,28 @@ local function new_context(opts)
       end
       return nil
     end,
+    fluidbox = fluidbox,
   }
+  function desk.remove_fluid(spec)
+    local removed = 0
+    for index, fluid in pairs(fluidbox) do
+      if fluid and fluid.name == spec.name and removed < spec.amount then
+        local take = math.min(fluid.amount, spec.amount - removed)
+        removed = removed + take
+        fluid.amount = fluid.amount - take
+        if fluid.amount <= 0 then
+          fluidbox[index] = nil
+        end
+      end
+    end
+    return removed
+  end
 
   if opts.enemy_name then
     nearby_enemies[1] = new_entity(surface, {
       name = opts.enemy_name,
       unit_number = 11,
-      position = {x = 1, y = 1},
+      position = opts.enemy_position or {x = 1, y = 1},
       force = "enemy",
     }, created_entities, last_command)
   end
@@ -293,6 +315,7 @@ local function new_context(opts)
       [desk.unit_number] = desk,
     },
     desk_circuit_dirty = {},
+    capture_bureau_lure_upkeep = {},
     achievements = {},
     stats = {
       cases_resolved = 0,
@@ -315,7 +338,9 @@ test("capture bureau tourism mode itemizes nearby spitters", function()
   local ctx = new_context({
     desk_name = "capture-bureau",
     recipe_name = "capture-bureau-tourism",
+    lure_fluid = "tourism-lure-spores",
     enemy_name = "small-spitter",
+    enemy_position = {x = 0, y = 2},
   })
 
   biters.process_walk_in_registration(ctx.desk.surface, {ctx.desk})
@@ -330,7 +355,9 @@ test("capture bureau workforce mode converts nearby biters into workers", functi
   local ctx = new_context({
     desk_name = "capture-bureau",
     recipe_name = "capture-bureau-workforce",
+    lure_fluid = "workforce-lure-spores",
     enemy_name = "small-biter",
+    enemy_position = {x = 0, y = 2},
   })
 
   biters.process_walk_in_registration(ctx.desk.surface, {ctx.desk})
@@ -339,11 +366,27 @@ test("capture bureau workforce mode converts nearby biters into workers", functi
   assert_true(ctx.nearby_enemies[1].valid == false, "captured biter should be removed from the world")
 end)
 
+test("capture bureau without lure spores does not attract enemies", function()
+  local ctx = new_context({
+    desk_name = "capture-bureau",
+    recipe_name = "capture-bureau-workforce",
+    enemy_name = "small-biter",
+    enemy_position = {x = 0, y = 2},
+  })
+
+  biters.process_walk_in_registration(ctx.desk.surface, {ctx.desk})
+
+  assert_true(ctx.inventory._added["worker-biter"] == nil, "bureau should not capture without lure fluid")
+  assert_true(ctx.nearby_enemies[1].valid == true, "unlured biter should remain in the world")
+end)
+
 test("capture bureau pentapod mode converts gleba wildlife into eggs", function()
   local ctx = new_context({
     desk_name = "capture-bureau",
     recipe_name = "capture-bureau-pentapod-eggs",
+    lure_fluid = "oviposition-lure-spores",
     enemy_name = "small-wriggler-pentapod",
+    enemy_position = {x = 0, y = 2},
     surface_name = "gleba",
   })
 
