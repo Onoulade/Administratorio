@@ -57,6 +57,11 @@ local HATCHED_PENTAPOD_UNITS = {
   ["medium-pentapod-premature"] = true,
   ["big-pentapod-premature"] = true,
 }
+local HATCHED_PENTAPOD_UNITS = {
+  ["small-pentapod-premature"] = true,
+  ["medium-pentapod-premature"] = true,
+  ["big-pentapod-premature"] = true,
+}
 
 local function sync_scrap_recycler_output_slots()
   local recipe = data.raw.recipe and data.raw.recipe["scrap-recycling"]
