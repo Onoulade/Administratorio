@@ -237,7 +237,21 @@ local function new_context(opts)
 
   function surface.find_entities_filtered(filters)
     if filters and filters.name == "item-on-ground" then
-      return ground_items
+      if not filters.position or not filters.radius then
+        return ground_items
+      end
+      local result = {}
+      local radius_sq = filters.radius * filters.radius
+      for _, item in ipairs(ground_items) do
+        if item.valid then
+          local dx = item.position.x - filters.position.x
+          local dy = item.position.y - filters.position.y
+          if dx * dx + dy * dy <= radius_sq then
+            result[#result + 1] = item
+          end
+        end
+      end
+      return result
     end
     if filters and filters.force == "enemy" and filters.type == "unit" then
       return nearby_enemies
@@ -537,10 +551,10 @@ test("dropped taxpayer money lures pentapods and can buy eggs", function()
   pentapods.process_money_baits(120)
 
   assert_true(ctx.ground_items[1].valid == false, "pentapod should consume the whole taxpayer money stack")
-  assert_eq(ctx.spilled_items[1].stack.name, "pentapod-egg", "pentapod should sometimes drop an egg")
-  assert_eq(ctx.spilled_items[1].stack.count, 2, "egg payout should scale around one egg per 10-20 money")
-  assert_eq(ctx.spilled_items[1].position.x, 0, "eggs should drop where the money was")
-  assert_eq(ctx.spilled_items[1].position.y, 0, "eggs should drop where the money was")
+  assert_eq(ctx.ground_items[2].stack.name, "pentapod-egg", "pentapod should sometimes drop an egg")
+  assert_eq(ctx.ground_items[2].stack.count, 2, "egg payout should scale around one egg per 10-20 money")
+  assert_eq(ctx.ground_items[2].position.x, 0, "eggs should drop where the money was")
+  assert_eq(ctx.ground_items[2].position.y, 0, "eggs should drop where the money was")
   assert_true(next(storage.waiting_biters) == nil,
     "money-baited pentapod should not enter the admin desk queue")
 end)
@@ -558,8 +572,62 @@ test("dropped taxpayer money always pays at least one egg at the minimum thresho
   pentapods.process_money_baits(60)
 
   assert_true(ctx.ground_items[1].valid == false, "pentapod should consume the whole taxpayer money stack")
-  assert_eq(ctx.spilled_items[1].stack.name, "pentapod-egg", "minimum money threshold should still drop an egg")
-  assert_eq(ctx.spilled_items[1].stack.count, 1, "10 money should buy one bootstrap egg")
+  assert_eq(ctx.ground_items[2].stack.name, "pentapod-egg", "minimum money threshold should still drop an egg")
+  assert_eq(ctx.ground_items[2].stack.count, 1, "10 money should buy one bootstrap egg")
+end)
+
+test("nearby split taxpayer money piles combine into one pentapod egg payment", function()
+  local ctx = new_context({
+    desk_name = "admin-station",
+    surface_name = "gleba",
+    enemy_name = "small-wriggler-pentapod",
+    enemy_position = {x = 0.5, y = 0},
+    money_position = {x = 0, y = 0},
+    money_count = 5,
+  })
+  ctx.desk.surface.create_entity{
+    name = "item-on-ground",
+    position = {x = 0.3, y = 0},
+    stack = {name = "taxpayer-money", count = 5},
+  }
+
+  pentapods.process_money_baits(60)
+
+  assert_true(ctx.ground_items[1].valid == false, "first money pile should be consumed")
+  assert_true(ctx.ground_items[2].valid == false, "nearby money pile should be consumed with it")
+  assert_eq(ctx.ground_items[3].stack.name, "pentapod-egg", "combined nearby money should produce an egg")
+  assert_eq(ctx.ground_items[3].stack.count, 1, "combined 10 money should buy one egg")
+  assert_eq(ctx.ground_items[3].position.x, 0, "eggs should drop at the bait position")
+end)
+
+test("larger pentapods multiply loose-money egg payouts", function()
+  local medium = new_context({
+    desk_name = "admin-station",
+    surface_name = "gleba",
+    enemy_name = "medium-wriggler-pentapod",
+    enemy_position = {x = 0.5, y = 0},
+    money_position = {x = 0, y = 0},
+    money_count = 10,
+  })
+
+  pentapods.process_money_baits(60)
+
+  assert_eq(medium.ground_items[2].stack.name, "pentapod-egg", "medium pentapod should drop eggs")
+  assert_eq(medium.ground_items[2].stack.count, 2, "medium pentapod should double the small payout")
+
+  local big = new_context({
+    desk_name = "admin-station",
+    surface_name = "gleba",
+    enemy_name = "big-wriggler-pentapod",
+    enemy_position = {x = 0.5, y = 0},
+    money_position = {x = 0, y = 0},
+    money_count = 10,
+  })
+
+  pentapods.process_money_baits(60)
+
+  assert_eq(big.ground_items[2].stack.name, "pentapod-egg", "big pentapod should drop eggs")
+  assert_eq(big.ground_items[2].stack.count, 4, "big pentapod should quadruple the small payout")
 end)
 
 if failed > 0 then
