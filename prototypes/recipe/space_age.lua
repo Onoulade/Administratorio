@@ -848,7 +848,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "hostile-spore-culture-production",
-    category = "bureaucracy-registration",
+    category = "organic",
     enabled = false,
     localised_name = {"fluid-name.hostile-spore-culture"},
     ingredients = {
@@ -864,7 +864,7 @@ data:extend({
   {
     type = "recipe",
     name = "workforce-lure-spores-production",
-    category = "bureaucracy-registration",
+    category = "organic",
     enabled = false,
     localised_name = {"fluid-name.workforce-lure-spores"},
     ingredients = {
@@ -880,7 +880,7 @@ data:extend({
   {
     type = "recipe",
     name = "tourism-lure-spores-production",
-    category = "bureaucracy-registration",
+    category = "organic",
     enabled = false,
     localised_name = {"fluid-name.tourism-lure-spores"},
     ingredients = {
@@ -896,12 +896,12 @@ data:extend({
   {
     type = "recipe",
     name = "oviposition-lure-spores-production",
-    category = "bureaucracy-registration",
+    category = "organic",
     enabled = false,
     localised_name = {"fluid-name.oviposition-lure-spores"},
     ingredients = {
       {type = "fluid", name = "hostile-spore-culture", amount = 20},
-      {type = "item", name = "agricultural-science-pack", amount = 1},
+      {type = "item", name = "nutrients", amount = 8},
       {type = "item", name = "symbiosis-record", amount = 1},
     },
     results = {
