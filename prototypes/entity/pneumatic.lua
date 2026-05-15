@@ -221,7 +221,7 @@ local tube_outtake = {
   collision_box = {{-0.3, -0.3}, {0.3, 0.3}},
   selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
   inventory_size = 1,
-  inventory_type = "with_bar",
+  inventory_type = "with_filters_and_bar",
   circuit_wire_max_distance = 9,
   circuit_connector = universal_wire_connector(
     {variation = 25, main_offset = util.by_pixel(10, -5), shadow_offset = util.by_pixel(0, 0), show_shadow = false}

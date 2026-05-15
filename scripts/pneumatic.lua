@@ -184,6 +184,12 @@ local function intake_circuit_allows(entity)
   return true
 end
 
+local function inventory_filter_name(filter)
+  if type(filter) == "string" then return filter end
+  if type(filter) ~= "table" then return nil end
+  return filter.name or filter.value
+end
+
 -------------------------------------------------------------------------------
 -- COMBINATOR HELPERS
 -------------------------------------------------------------------------------
@@ -498,14 +504,13 @@ function M.on_pneumatic_tick()
     local pool = storage.tube_signals[net_id]
     if not pool then goto next_outtake end
 
-    -- Check if the player set a filter on slot 1. Older saves may still have
-    -- filtered inventories; new tube outtakes use a plain barred container.
+    -- Check if the player set a filter on slot 1.
     local slot_filter = nil
     if inv.get_filter then
       local ok, filter = pcall(inv.get_filter, 1)
       if ok then slot_filter = filter end
     end
-    local allowed_name = slot_filter and slot_filter.name or nil
+    local allowed_name = inventory_filter_name(slot_filter)
 
     -- Pick item: if filtered, only that item; otherwise largest-count-first.
     local best_name, best_count = nil, 0
