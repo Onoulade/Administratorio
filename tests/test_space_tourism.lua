@@ -61,6 +61,7 @@ local function load_biters_module()
     CAPTURE_BUREAU_SPORE_UPKEEP_TICKS = 10 * 60,
     CAPTURE_BUREAU_SPORE_UPKEEP_AMOUNT = 1,
     CAPTURE_BUREAU_SPORE_VISUAL_TICKS = 60,
+    HATCHED_PENTAPOD_FORCE_NAME = "administratorio-hatched-pentapods",
     ENROLLMENT_OFFER_LOW_FRUSTRATION_RATIO = 0.25,
     ENROLLMENT_OFFER_MEDIUM_FRUSTRATION_RATIO = 0.50,
     ENROLLMENT_OFFER_LOW_CHANCE = 0.05,
@@ -122,9 +123,11 @@ defines = {
   command = {
     stop = 1,
     go_to_location = 2,
+    attack_area = 3,
   },
   distraction = {
     none = 1,
+    by_enemy = 2,
   },
 }
 
@@ -286,6 +289,19 @@ local function new_context(opts)
     }, created_entities, last_command)
   end
 
+  local function new_force(name)
+    local force = {
+      name = name,
+      cease_fire = {},
+    }
+    force.set_cease_fire = function(other, value)
+      force.cease_fire[other.name] = value
+    end
+    return force
+  end
+  local player_force = new_force("player")
+  local hatched_force = new_force("administratorio-hatched-pentapods")
+
   game = {
     tick = 0,
     connected_players = {},
@@ -294,8 +310,15 @@ local function new_context(opts)
       return surfaces_by_index[index]
     end,
     forces = {
-      neutral = {name = "neutral"},
+      neutral = new_force("neutral"),
+      player = player_force,
+      ["administratorio-hatched-pentapods"] = hatched_force,
     },
+    create_force = function(name)
+      local force = new_force(name)
+      game.forces[name] = force
+      return force
+    end,
   }
 
   storage = {
@@ -424,6 +447,30 @@ test("spoiled tourism packages hatch back into max-frustration spitters", functi
   assert_true(tracked ~= nil, "hatched spitter should be routed into the bureaucracy system when desks exist")
   assert_eq(tracked.entity_name, "small-spitter", "hatched entity should be a spitter")
   assert_eq(tracked.frustration, 600, "hatched spitter should start at 100% frustration")
+end)
+
+test("spoiled pentapod eggs hatch into hostile attackers instead of bureaucracy clients", function()
+  local ctx = new_context({
+    desk_name = "admin-station",
+    surface_name = "gleba",
+    enemy_name = "small-pentapod-premature",
+    enemy_position = {x = 0, y = 0},
+  })
+
+  biters.on_script_trigger_effect({
+    effect_id = "administratorio-pentapod-egg-hatch",
+    surface_index = ctx.desk.surface.index,
+    source_position = {x = 0, y = 0},
+  })
+
+  assert_eq(ctx.nearby_enemies[1].force.name, "administratorio-hatched-pentapods",
+    "hatched pentapod should move to the hostile hatchling force")
+  assert_true(game.forces.player.cease_fire["administratorio-hatched-pentapods"] == false,
+    "players should not be at ceasefire with hatched pentapods")
+  assert_eq(ctx.last_command().type, defines.command.attack_area,
+    "hatched pentapod should receive an attack command")
+  assert_true(next(storage.waiting_biters) == nil,
+    "hatched pentapod should not be redirected into the admin desk queue")
 end)
 
 if failed > 0 then

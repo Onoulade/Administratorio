@@ -142,6 +142,12 @@ end
 -------------------------------------------------------------------------------
 -- PACIFY BITERS & SPAWNERS
 -------------------------------------------------------------------------------
+local hatched_pentapod_units = {
+  ["small-pentapod-premature"] = true,
+  ["medium-pentapod-premature"] = true,
+  ["big-pentapod-premature"] = true,
+}
+
 for _, entity_type in ipairs({"unit", "unit-spawner"}) do
   for _, entity in pairs(data.raw[entity_type]) do
     if entity.subgroup == "enemies" or entity.name:find("biter")
@@ -157,7 +163,7 @@ for _, entity_type in ipairs({"unit", "unit-spawner"}) do
         {type = "impact", percent = 100},
         {type = "bureaucratic-logic", percent = -50}
       }
-      if entity.attack_parameters and entity.attack_parameters.ammo_type then
+      if not hatched_pentapod_units[entity.name] and entity.attack_parameters and entity.attack_parameters.ammo_type then
         local ammo = entity.attack_parameters.ammo_type
         if ammo.action then
           for _, action in pairs(ammo.action) do

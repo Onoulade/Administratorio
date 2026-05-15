@@ -214,6 +214,13 @@ local SPOILED_SPITTER_HATCH_EFFECTS = {
   ["administratorio-big-spitter-tourism-hatch"] = "big-spitter",
   ["administratorio-behemoth-spitter-tourism-hatch"] = "behemoth-spitter",
 }
+local HATCHED_PENTAPOD_SCRIPT_EFFECT = "administratorio-pentapod-egg-hatch"
+local HATCHED_PENTAPOD_FORCE_NAME = C.HATCHED_PENTAPOD_FORCE_NAME or "administratorio-hatched-pentapods"
+local HATCHED_PENTAPOD_UNITS = {
+  ["small-pentapod-premature"] = true,
+  ["medium-pentapod-premature"] = true,
+  ["big-pentapod-premature"] = true,
+}
 local SPACE_TOURIST_RELEASE_ITEMS = {
   ["small-space-tourist"] = "small-spitter",
   ["medium-space-tourist"] = "medium-spitter",
@@ -1789,7 +1796,55 @@ local function hatch_spoiled_tourism_package(event)
   return true
 end
 
+local function get_hatched_pentapod_force()
+  local force = game.forces[HATCHED_PENTAPOD_FORCE_NAME]
+  if not force and game.create_force then
+    force = game.create_force(HATCHED_PENTAPOD_FORCE_NAME)
+  end
+  local player = game.forces.player
+  if force and player then
+    force.set_cease_fire(player, false)
+    player.set_cease_fire(force, false)
+  end
+  return force
+end
+
+local function release_hatched_pentapods(event)
+  if not event or event.effect_id ~= HATCHED_PENTAPOD_SCRIPT_EFFECT then return false end
+
+  local source_entity = event.source_entity
+  local surface = (source_entity and source_entity.valid and source_entity.surface)
+    or (event.surface_index and game.get_surface(event.surface_index))
+    or game.surfaces[1]
+  if not surface then return true end
+
+  local anchor = (source_entity and source_entity.valid and source_entity.position)
+    or event.source_position
+    or event.target_position
+    or {x = 0, y = 0}
+  local force = get_hatched_pentapod_force()
+  if not force then return true end
+
+  for _, unit in ipairs(surface.find_entities_filtered{force = "enemy", type = "unit", position = anchor, radius = 12}) do
+    if unit.valid and HATCHED_PENTAPOD_UNITS[unit.name] then
+      unit.force = force
+      if unit.commandable and defines.command.attack_area then
+        unit.commandable.set_command{
+          type = defines.command.attack_area,
+          destination = anchor,
+          radius = 48,
+          distraction = defines.distraction.by_enemy or defines.distraction.none,
+        }
+      end
+    end
+  end
+  return true
+end
+
 function M.on_script_trigger_effect(event)
+  if release_hatched_pentapods(event) then
+    return
+  end
   if hatch_spoiled_tourism_package(event) then
     return
   end

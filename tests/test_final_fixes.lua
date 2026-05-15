@@ -326,6 +326,53 @@ data.raw.item["space-platform-foundation"] = {
   icon = "__space-age__/graphics/icons/space-platform-foundation.png",
   icon_size = 64,
 }
+data.raw.item["fusion-reactor"] = {
+  type = "item",
+  name = "fusion-reactor",
+  stack_size = 10,
+  subgroup = "energy",
+  place_result = "fusion-reactor",
+  icon = "__space-age__/graphics/icons/fusion-reactor.png",
+  icon_size = 64,
+}
+data.raw.item["fusion-generator"] = {
+  type = "item",
+  name = "fusion-generator",
+  stack_size = 10,
+  subgroup = "energy",
+  place_result = "fusion-generator",
+  icon = "__space-age__/graphics/icons/fusion-generator.png",
+  icon_size = 64,
+}
+data.raw.item["pentapod-egg"] = {
+  type = "item",
+  name = "pentapod-egg",
+  spoil_to_trigger_result = {
+    trigger = {
+      type = "direct",
+      action_delivery = {
+        type = "instant",
+        source_effects = {
+          {type = "create-entity", entity_name = "small-pentapod-premature"},
+        },
+      },
+    },
+  },
+}
+data.raw.armor["mech-armor"] = {
+  type = "armor",
+  name = "mech-armor",
+  stack_size = 1,
+  icon = "__space-age__/graphics/icons/mech-armor.png",
+  icon_size = 64,
+}
+data.raw.tool["promethium-science-pack"] = {
+  type = "tool",
+  name = "promethium-science-pack",
+  stack_size = 200,
+  icon = "__space-age__/graphics/icons/promethium-science-pack.png",
+  icon_size = 64,
+}
 data.raw.item["heating-tower"] = {
   type = "item",
   name = "heating-tower",
@@ -1782,6 +1829,48 @@ test("space age intermediate recipes gain the expected chromatic and aquilo gate
   local cryogenic = get_recipe("cryogenic-plant")
   assert_true(has_ingredient(cryogenic, "cryogenic-operations-license"),
     "cryogenic-plant should require cryogenic-operations-license")
+end)
+
+test("first platform infrastructure and basic asteroid crushing stay pre-planet", function()
+  for _, recipe_name in ipairs({
+    "space-platform-foundation",
+    "space-platform-starter-pack",
+    "cargo-bay",
+    "asteroid-collector",
+    "crusher",
+    "thruster",
+    "metallic-asteroid-crushing",
+    "carbonic-asteroid-crushing",
+    "oxide-asteroid-crushing",
+  }) do
+    local recipe = get_recipe(recipe_name)
+    assert_true(recipe ~= nil, recipe_name .. " missing")
+    assert_no_planet_specific_paperwork(recipe, recipe_name)
+    assert_true(not has_ingredient(recipe, "asteroid-processing-docket"),
+      recipe_name .. " should not require post-space-science asteroid paperwork")
+  end
+
+  local advanced_crushing = get_recipe("advanced-metallic-asteroid-crushing")
+  assert_true(advanced_crushing ~= nil, "advanced-metallic-asteroid-crushing missing")
+  assert_true(has_ingredient(advanced_crushing, "asteroid-processing-docket"),
+    "advanced asteroid crushing should require asteroid-processing-docket")
+
+  local reprocessing = get_recipe("metallic-asteroid-reprocessing")
+  assert_true(reprocessing ~= nil, "metallic-asteroid-reprocessing missing")
+  assert_true(has_ingredient(reprocessing, "asteroid-processing-docket"),
+    "asteroid reprocessing should require asteroid-processing-docket")
+end)
+
+test("pentapod egg spoil trigger notifies runtime to unpacify hatchlings", function()
+  local effects = data.raw.item["pentapod-egg"].spoil_to_trigger_result.trigger.action_delivery.source_effects
+  local found = false
+  for _, effect in ipairs(effects) do
+    if effect.type == "script" and effect.effect_id == "administratorio-pentapod-egg-hatch" then
+      found = true
+      break
+    end
+  end
+  assert_true(found, "pentapod egg spoil trigger should include the hatchling runtime script effect")
 end)
 
 -------------------------------------------------------------------------------
