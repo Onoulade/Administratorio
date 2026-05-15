@@ -1,27 +1,11 @@
+local demolishers = require("scripts.demolishers")
+
 local M = {}
 
 local POST_NAME = "territorial-arbitration-post"
 local ORDER_ITEM = "territorial-resettlement-order"
 local COFFEE_FLUID = "liquid-coffee"
 local PROCESS_INTERVAL = 60
-
-local SIZE_ORDER_COST = {
-  small = 1,
-  medium = 2,
-  big = 3,
-}
-
-local SIZE_COFFEE_COST = {
-  small = 25,
-  medium = 50,
-  big = 75,
-}
-
-local SIZE_DECAY = {
-  small = 2,
-  medium = 3,
-  big = 4,
-}
 
 local function ensure_storage()
   storage.territorial_arbitration = storage.territorial_arbitration or {}
@@ -104,28 +88,6 @@ local function get_territory_chunk_positions(territory)
   return positions
 end
 
-local function get_demolisher_name(territory)
-  for _, segmented_unit in ipairs((territory and territory.get_segmented_units and territory.get_segmented_units()) or {}) do
-    if segmented_unit and segmented_unit.valid and segmented_unit.prototype then
-      return segmented_unit.prototype.name
-    end
-  end
-  return nil
-end
-
-local function infer_demolisher_size(name)
-  if type(name) ~= "string" then
-    return "small"
-  end
-  if name:find("big%-demolisher", 1, false) then
-    return "big"
-  end
-  if name:find("medium%-demolisher", 1, false) then
-    return "medium"
-  end
-  return "small"
-end
-
 local function create_territory_state(runtime, territory, anchor_position)
   local chunks = get_territory_chunk_positions(territory)
   if #chunks == 0 then return nil end
@@ -167,7 +129,7 @@ local function create_territory_state(runtime, territory, anchor_position)
     posts = {},
     progress = 0,
     applied_steps = 0,
-    demolisher_name = get_demolisher_name(territory),
+    demolisher_name = demolishers.get_demolisher_name(territory),
     surface = territory.surface,
   }
 
@@ -315,8 +277,8 @@ local function entity_is_powered(entity)
 end
 
 local function get_upkeep_for_state(territory_state)
-  local size = infer_demolisher_size(territory_state.demolisher_name)
-  return size, SIZE_ORDER_COST[size], SIZE_COFFEE_COST[size], SIZE_DECAY[size]
+  local size = demolishers.infer_demolisher_size(territory_state.demolisher_name)
+  return size, demolishers.SIZE_ORDER_COST[size], demolishers.SIZE_COFFEE_COST[size], demolishers.SIZE_DECAY[size]
 end
 
 local function attempt_upkeep(post_state, territory_state)
@@ -689,20 +651,20 @@ function M.on_tick(event)
   for territory_id in pairs(touched_territories) do
     local territory_state = runtime.territories[territory_id]
     if territory_state then
-      local size = infer_demolisher_size(territory_state.demolisher_name)
+      local size = demolishers.infer_demolisher_size(territory_state.demolisher_name)
       local successes = success_counts[territory_id] or 0
       if successes > 0 then
         deltas[territory_id] = successes
       else
-        deltas[territory_id] = -(SIZE_DECAY[size] or 2)
+        deltas[territory_id] = -(demolishers.SIZE_DECAY[size] or 2)
       end
     end
   end
 
   for territory_id, territory_state in pairs(runtime.territories) do
     if not touched_territories[territory_id] then
-      local size = infer_demolisher_size(territory_state.demolisher_name)
-      deltas[territory_id] = (deltas[territory_id] or 0) - (SIZE_DECAY[size] or 2)
+      local size = demolishers.infer_demolisher_size(territory_state.demolisher_name)
+      deltas[territory_id] = (deltas[territory_id] or 0) - (demolishers.SIZE_DECAY[size] or 2)
     end
   end
 
