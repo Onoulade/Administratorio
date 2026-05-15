@@ -160,7 +160,7 @@ data:extend({
       {type = "unlock-recipe", recipe = "conciliation-order"},
       {type = "unlock-recipe", recipe = "biochamber-operating-waiver"},
     },
-    prerequisites = {"executive-review", "agricultural-science-pack"},
+    prerequisites = {"executive-review"},
     unit = {
       count = 320,
       ingredients = {
