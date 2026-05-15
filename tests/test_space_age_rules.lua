@@ -84,7 +84,7 @@ test("space age admin and convergence categories stay free of recurring operatin
 end)
 
 test("existing vanilla operating-paperwork mappings remain intact under Space Age", function()
-  assert_eq(shared.get_operating_form({name = "oil-processing", category = "oil-processing"}), "petrochemical-operating-permit")
+  assert_eq(shared.get_operating_form({name = "oil-processing", category = "oil-processing"}), "chemical-handling-work-order")
   assert_eq(shared.get_operating_form({name = "advanced-oil-processing", category = "oil-processing"}), "chemical-handling-work-order")
   assert_eq(shared.get_operating_form({name = "uranium-processing", category = "centrifuging"}), "radiological-work-order")
 end)

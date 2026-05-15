@@ -36,14 +36,14 @@ data:extend({
 
   -- Safety Waiver (Tier 1 — 2 printer passes: blank-approval + finalization)
   { type = "recipe", name = "safety-waiver-draft",    category = "bureaucratic-bootstrap", enabled = false, ingredients = {{type="item", name="blank-approval", amount=1}, {type="item", name="basic-excuse", amount=1}}, results = {{type="item", name="safety-waiver-draft", amount=2}}, energy_required = 2 },
-  { type = "recipe", name = "safety-waiver-printing", category = "printing",        enabled = false, ingredients = {{type="item", name="safety-waiver-draft", amount=1}, {type="item", name="ink", amount=1}}, results = {{type="item", name="unapproved-safety-waiver", amount=2}}, energy_required = 3 },
+  { type = "recipe", name = "safety-waiver-printing", category = "printing",        enabled = false, ingredients = {{type="item", name="safety-waiver-draft", amount=1}, {type="item", name="ink", amount=1}}, results = {{type="item", name="safety-waiver", amount=2}}, energy_required = 3 },
 
   -- Transit Authorization (swap blank-form → blank-approval)
   { type = "recipe", name = "transit-authorization-production", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="blank-approval", amount=1}, {type="item", name="form-27b-6", amount=1}}, results = {{type="item", name="transit-authorization", amount=1}}, energy_required = 5 },
 
   -- Construction Permit (Tier 2 — 2 printer passes: blank-approval + finalization)
   { type = "recipe", name = "construction-permit-draft",    category = "bureaucratic-bootstrap", enabled = false, ingredients = {{type="item", name="blank-approval", amount=1}, {type="item", name="dubious-data", amount=3}, {type="item", name="paper", amount=3}}, results = {{type="item", name="construction-permit-draft", amount=2}}, energy_required = 3 },
-  { type = "recipe", name = "construction-permit-printing", category = "printing",        enabled = false, ingredients = {{type="item", name="construction-permit-draft", amount=1}, {type="item", name="ink", amount=2}}, results = {{type="item", name="unapproved-construction-permit", amount=2}}, energy_required = 4 },
+  { type = "recipe", name = "construction-permit-printing", category = "printing",        enabled = false, ingredients = {{type="item", name="construction-permit-draft", amount=1}, {type="item", name="ink", amount=2}}, results = {{type="item", name="construction-permit", amount=2}}, energy_required = 4 },
 
   -- Environmental Impact Report
   { type = "recipe", name = "environmental-impact-report", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="crappy-report", amount=1}, {type="item", name="form-27b-6", amount=1}, {type="item", name="carbon-offset-certificate-verified", amount=3}}, results = {{type="item", name="environmental-impact-report", amount=1}}, energy_required = 10 },
@@ -61,7 +61,7 @@ data:extend({
 
   -- Machine-family operating paperwork
   { type = "recipe", name = "chemical-handling-work-order-production", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="safety-waiver", amount=2}, {type="item", name="environmental-impact-report", amount=1}, {type="item", name="form-27b-6", amount=2}, {type="item", name="useless-documentation", amount=1}}, results = {{type="item", name="chemical-handling-work-order", amount=2}}, energy_required = 8 },
-  { type = "recipe", name = "radiological-work-order-production", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="chemical-handling-work-order", amount=2}, {type="item", name="management-approval-written", amount=1}, {type="item", name="environmental-impact-report", amount=2}, {type="item", name="battery", amount=1}, {type="item", name="steel-plate", amount=2}}, results = {{type="item", name="unapproved-radiological-work-order", amount=2}}, energy_required = 14 },
+  { type = "recipe", name = "radiological-work-order-production", category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="chemical-handling-work-order", amount=2}, {type="item", name="management-approval-written", amount=1}, {type="item", name="environmental-impact-report", amount=2}, {type="item", name="battery", amount=1}, {type="item", name="steel-plate", amount=2}}, results = {{type="item", name="radiological-work-order", amount=2}}, energy_required = 14 },
 
   -- Combined Forms (tier form + work-order, consumed by AM regulated recipes)
   { type = "recipe", name = "provisional-work-order-production",            category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="provisional-approval", amount=1},        {type="item", name="work-order", amount=2}}, results = {{type="item", name="provisional-work-order", amount=1}},        energy_required = 2 },
@@ -74,11 +74,6 @@ data:extend({
   -- Direct draft-to-work-order printing (draft-backed forms only)
   { type = "recipe", name = "safety-work-order-printing",        category = "printing-workorder", enabled = false, ingredients = {{type="item", name="safety-waiver", amount=1},       {type="item", name="work-order", amount=1}, {type="item", name="ink", amount=1}}, results = {{type="item", name="safety-work-order", amount=2}},       energy_required = 4 },
   { type = "recipe", name = "construction-work-order-printing",  category = "printing-workorder", enabled = false, ingredients = {{type="item", name="construction-permit", amount=1}, {type="item", name="work-order", amount=1}, {type="item", name="ink", amount=1}}, results = {{type="item", name="construction-work-order", amount=2}}, energy_required = 6 },
-
-  -- Petition Counter approvals (biter-government sign-off)
-  { type = "recipe", name = "safety-waiver-approval", category = "petition-stamping", enabled = false, ingredients = {{type="item", name="unapproved-safety-waiver", amount=1}}, results = {{type="item", name="safety-waiver", amount=1}}, energy_required = 4 },
-  { type = "recipe", name = "construction-permit-approval", category = "petition-stamping", enabled = false, ingredients = {{type="item", name="unapproved-construction-permit", amount=1}}, results = {{type="item", name="construction-permit", amount=1}}, energy_required = 6 },
-  { type = "recipe", name = "radiological-work-order-approval", category = "petition-stamping", enabled = false, ingredients = {{type="item", name="unapproved-radiological-work-order", amount=1}}, results = {{type="item", name="radiological-work-order", amount=1}}, energy_required = 10 },
 
   -- Administrative Science Pack
   { type = "recipe", name = "administrative-science-pack-production", category = "bureaucracy-registration", enabled = false, hide_from_player_crafting = false, ingredients = {{type="item", name="provisional-approval", amount=5}, {type="item", name="basic-excuse", amount=5}, {type="item", name="research-grant-approval", amount=1}}, results = {{type="item", name="administrative-science-pack", amount=5}}, energy_required = 25 },

@@ -150,10 +150,26 @@ if data.raw["character"]["character"] then
   char.guns_inventory_size = 1
 end
 
--- Hide all guns and ammo (final pass catches anything other mods may add)
-for _, proto_type in ipairs({"gun", "ammo"}) do
+-- Hide all guns, ammo, and player turrets (final pass catches Space Age too).
+for _, proto_type in ipairs({"gun", "ammo", "ammo-turret", "electric-turret", "fluid-turret"}) do
   for _, proto in pairs(data.raw[proto_type] or {}) do
     proto.hidden = true
+  end
+end
+
+for _, name in ipairs({
+  "railgun", "railgun-ammo", "railgun-turret",
+  "teslagun", "tesla-gun", "tesla-ammo", "tesla-turret",
+}) do
+  for _, proto_type in ipairs({"item", "gun", "ammo", "recipe", "ammo-turret", "electric-turret", "fluid-turret"}) do
+    if data.raw[proto_type] and data.raw[proto_type][name] then
+      data.raw[proto_type][name].hidden = true
+      data.raw[proto_type][name].enabled = false
+    end
+  end
+  if data.raw.technology and data.raw.technology[name] then
+    data.raw.technology[name].hidden = true
+    data.raw.technology[name].enabled = false
   end
 end
 

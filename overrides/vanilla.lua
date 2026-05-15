@@ -15,15 +15,16 @@
 -------------------------------------------------------------------------------
 local items_to_hide = {
   "pistol", "submachine-gun", "shotgun", "rocket-launcher", "combat-shotgun",
-  "flamethrower", "railgun",
+  "flamethrower", "railgun", "teslagun", "tesla-gun",
   "firearm-magazine", "piercing-rounds-magazine", "uranium-rounds-magazine",
   "shotgun-shell", "piercing-shotgun-shell", "rocket", "explosive-rocket",
   "atomic-bomb", "flamethrower-ammo", "cannon-shell", "explosive-cannon-shell",
   "uranium-cannon-shell", "explosive-uranium-cannon-shell", "artillery-shell",
-  "artillery-targeting-remote", "land-mine",
+  "artillery-targeting-remote", "land-mine", "railgun-ammo", "tesla-ammo",
   "grenade", "cluster-grenade", "poison-capsule", "slowdown-capsule",
   "defender-capsule", "distractor-capsule", "destroyer-capsule",
   "gun-turret", "laser-turret", "flamethrower-turret", "artillery-turret",
+  "tesla-turret", "railgun-turret",
   "artillery-wagon", "tank", "spidertron",
   "energy-shield-equipment", "energy-shield-mk2-equipment",
   "military-science-pack"
@@ -44,6 +45,9 @@ for _, name in ipairs(items_to_hide) do
   hide_prototype("armor", name)
   hide_prototype("recipe", name)
   hide_prototype("capsule", name)
+  hide_prototype("electric-turret", name)
+  hide_prototype("ammo-turret", name)
+  hide_prototype("fluid-turret", name)
 end
 
 -------------------------------------------------------------------------------
@@ -55,6 +59,7 @@ local techs_to_disable = {
   "atomic-bomb", "uranium-ammo", "flamethrower", "flammables",
   "personal-laser-defense-equipment", "discharge-defense-equipment",
   "artillery", "tank", "spidertron", "land-mine", "rocketry", "explosive-rocketry",
+  "railgun", "tesla-weapons", "tesla-turret", "railgun-turret",
   "laser", "laser-turret", "gun-turret", "flamethrower-turret",
   "defender", "distractor", "destroyer",
   "energy-shield-equipment", "energy-shield-mk2-equipment"

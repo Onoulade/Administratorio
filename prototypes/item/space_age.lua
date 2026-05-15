@@ -6,7 +6,7 @@ data:extend({
     name = "job-offer",
     icon = "__administratorio__/graphics/icons/management-written-proposal.png",
     icon_size = 64,
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-biter-buildings",
     order = "j-0",
     stack_size = 20
   },
@@ -15,7 +15,7 @@ data:extend({
     name = "enrolled-biter",
     icon = "__base__/graphics/icons/small-biter.png",
     icon_size = 64,
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-biter-buildings",
     order = "j-a",
     stack_size = 20
   },
@@ -24,7 +24,7 @@ data:extend({
     name = "worker-biter",
     icon = "__base__/graphics/icons/small-biter.png",
     icon_size = 64,
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-biter-buildings",
     order = "j-a2",
     stack_size = 20
   },
@@ -33,7 +33,7 @@ data:extend({
     name = "clerical-trainee",
     icon = "__base__/graphics/icons/medium-biter.png",
     icon_size = 64,
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-biter-buildings",
     order = "j-b",
     stack_size = 20
   },
@@ -42,7 +42,7 @@ data:extend({
     name = "management-trainee",
     icon = "__base__/graphics/icons/big-biter.png",
     icon_size = 64,
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-biter-buildings",
     order = "j-c",
     stack_size = 20
   },
@@ -53,19 +53,8 @@ data:extend({
       {icon = "__base__/graphics/icons/big-biter.png", icon_size = 64},
       {icon = item_icons .. "transit-authorization.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
     },
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-biter-buildings",
     order = "j-c1",
-    stack_size = 20
-  },
-  {
-    type = "item",
-    name = "night-shift-supervisor",
-    icons = {
-      {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64},
-      {icon = item_icons .. "overtime-module.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
-    },
-    subgroup = "admin-bs-economy",
-    order = "j-d",
     stack_size = 20
   },
   {
@@ -75,7 +64,7 @@ data:extend({
       {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64},
       {icon = item_icons .. "construction-permit.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
     },
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-biter-buildings",
     order = "j-e",
     stack_size = 20
   },
@@ -86,7 +75,7 @@ data:extend({
       {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64},
       {icon = item_icons .. "promise.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
     },
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-biter-buildings",
     order = "j-f",
     stack_size = 20
   },
@@ -97,7 +86,7 @@ data:extend({
       {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64},
       {icon = item_icons .. "data.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
     },
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-biter-buildings",
     order = "j-g",
     stack_size = 20
   },
@@ -108,19 +97,8 @@ data:extend({
       {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64},
       {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
     },
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-biter-buildings",
     order = "j-h",
-    stack_size = 20
-  },
-  {
-    type = "item",
-    name = "field-negotiator",
-    icons = {
-      {icon = "__base__/graphics/icons/big-biter.png", icon_size = 64},
-      {icon = item_icons .. "eviction-notice.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
-    },
-    subgroup = "admin-bs-economy",
-    order = "j-i",
     stack_size = 20
   },
   {
@@ -145,7 +123,7 @@ data:extend({
       },
     },
     magazine_size = 1,
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-biter-buildings",
     order = "j-j",
     stack_size = 20
   },
@@ -164,7 +142,7 @@ data:extend({
     name = "formation-center",
     icon = "__base__/graphics/icons/biter-spawner.png",
     icon_size = 64,
-    subgroup = "admin-buildings",
+    subgroup = "admin-biter-buildings",
     order = "h",
     place_result = "formation-center",
     stack_size = 20
@@ -636,7 +614,7 @@ data:extend({
       {icon = item_icons .. "admin-desk.png", icon_size = 64},
       {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
     },
-    subgroup = "admin-buildings",
+    subgroup = "admin-biter-buildings",
     order = "j",
     place_result = "capture-bureau",
     stack_size = 20
@@ -646,7 +624,7 @@ data:extend({
     name = "conciliation-desk",
     icon = "__administratorio__/graphics/icons/promise.png",
     icon_size = 64,
-    subgroup = "admin-buildings",
+    subgroup = "admin-biter-buildings",
     order = "k",
     place_result = "conciliation-desk",
     stack_size = 20

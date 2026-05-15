@@ -220,11 +220,17 @@ local SPACE_TOURIST_RELEASE_ITEMS = {
   ["big-space-tourist"] = "big-spitter",
   ["behemoth-space-tourist"] = "behemoth-spitter",
 }
-local CAPTURE_BUREAU_RECIPES = {
-  ["capture-bureau-workforce"] = "workforce",
-  ["capture-bureau-tourism"] = "tourism",
-  ["capture-bureau-pentapod-eggs"] = "pentapod-eggs",
+local CAPTURE_BUREAU_LURE_FLUIDS = {
+  {name = "workforce-lure-spores", mode = "workforce"},
+  {name = "tourism-lure-spores", mode = "tourism"},
+  {name = "oviposition-lure-spores", mode = "pentapod-eggs"},
 }
+local CAPTURE_BUREAU_LURE_RADIUS = C.CAPTURE_BUREAU_LURE_RADIUS or 48
+local CAPTURE_BUREAU_SPORE_UPKEEP_TICKS = C.CAPTURE_BUREAU_SPORE_UPKEEP_TICKS or 60
+local CAPTURE_BUREAU_SPORE_UPKEEP_AMOUNT = C.CAPTURE_BUREAU_SPORE_UPKEEP_AMOUNT or 1
+local CAPTURE_BUREAU_SPORE_VISUAL_TICKS = C.CAPTURE_BUREAU_SPORE_VISUAL_TICKS or 60
+local CAPTURE_BUREAU_SMOKE_NAME = "capture-bureau-spore-cloud"
+local LEGACY_CAPTURE_BUREAU_SPORE_PORT_NAME = "capture-bureau-spore-port"
 
 local function get_entity_name(entity_or_name)
   if type(entity_or_name) == "string" then
@@ -238,6 +244,31 @@ end
 
 local function is_capture_bureau(entity_or_name)
   return get_entity_name(entity_or_name) == "capture-bureau"
+end
+
+function M.delete_capture_bureau_ports(desk)
+  storage.capture_bureau_ports = storage.capture_bureau_ports or {}
+  storage.capture_bureau_ports[desk and desk.unit_number or 0] = nil
+end
+
+function M.ensure_capture_bureau_ports(desk)
+  return {}
+end
+
+function M.rebuild_capture_bureau_ports()
+  storage.capture_bureau_ports = {}
+  local prototypes_by_name = (prototypes and prototypes.entity) or game.entity_prototypes or {}
+  if not prototypes_by_name[LEGACY_CAPTURE_BUREAU_SPORE_PORT_NAME] then
+    return
+  end
+  for _, surface in pairs(game.surfaces or {}) do
+    local ok, ports = pcall(surface.find_entities_filtered, {name = LEGACY_CAPTURE_BUREAU_SPORE_PORT_NAME})
+    if ok then
+      for _, port in ipairs(ports) do
+        port.destroy()
+      end
+    end
+  end
 end
 
 local function ensure_runtime_profile_section(runtime_profile, key)
@@ -553,11 +584,112 @@ local function get_entity_output_inventory(entity)
   return nil
 end
 
+local function get_fluid_amount(entity, fluid_name)
+  if not entity or not fluid_name then return 0 end
+
+  local function amount_in_fluidbox(fluidbox)
+    local amount = 0
+    if not fluidbox then return amount end
+    for i = 1, #fluidbox do
+      local fluid = fluidbox[i]
+      if fluid and fluid.name == fluid_name then
+        amount = amount + (fluid.amount or 0)
+      end
+    end
+    return amount
+  end
+
+  local amount = amount_in_fluidbox(entity.fluidbox)
+  return amount
+end
+
+local function remove_fluid_amount(entity, fluid_name, amount)
+  if not entity or not fluid_name or amount <= 0 then return 0 end
+
+  local function remove_from(target, remaining)
+    if remaining <= 0 or not target then return 0 end
+    if target.remove_fluid then
+      local ok, removed = pcall(target.remove_fluid, {name = fluid_name, amount = remaining})
+      if ok and removed then return removed end
+    end
+
+    local fluidbox = target.fluidbox
+    if not fluidbox then return 0 end
+    local removed = 0
+    for i = 1, #fluidbox do
+      local fluid = fluidbox[i]
+      if fluid and fluid.name == fluid_name and removed < remaining then
+        local take = math.min(fluid.amount or 0, remaining - removed)
+        removed = removed + take
+        local left = (fluid.amount or 0) - take
+        if left > 0 then
+          fluidbox[i] = {name = fluid.name, amount = left, temperature = fluid.temperature}
+        else
+          fluidbox[i] = nil
+        end
+      end
+    end
+    return removed
+  end
+
+  local removed_total = remove_from(entity, amount)
+  return removed_total
+end
+
+local function get_capture_bureau_lure(desk)
+  if not desk or not desk.valid or not is_capture_bureau(desk) then return nil end
+  for _, lure in ipairs(CAPTURE_BUREAU_LURE_FLUIDS) do
+    local amount = get_fluid_amount(desk, lure.name)
+    if amount > 0 then
+      return lure.mode, lure.name, amount
+    end
+  end
+  return nil
+end
+
 local function get_capture_bureau_mode(desk)
-  if not desk or not desk.valid or not is_capture_bureau(desk) or not desk.get_recipe then return nil end
-  local recipe = desk.get_recipe()
-  local recipe_name = recipe and recipe.name or nil
-  return CAPTURE_BUREAU_RECIPES[recipe_name]
+  if not desk or not desk.valid or not is_capture_bureau(desk) then return nil end
+  return get_capture_bureau_lure(desk)
+end
+
+local function emit_capture_bureau_spore_cloud(desk)
+  if not desk or not desk.valid or not desk.surface or not desk.surface.create_entity then return end
+  for _ = 1, 20 do
+    local angle = math.random() * math.pi * 2
+    local radius = math.sqrt(math.random()) * CAPTURE_BUREAU_LURE_RADIUS
+    local position = {
+      x = desk.position.x + math.cos(angle) * radius,
+      y = desk.position.y + math.sin(angle) * radius,
+    }
+    pcall(desk.surface.create_entity, {
+      name = CAPTURE_BUREAU_SMOKE_NAME,
+      position = position,
+      force = desk.force,
+    })
+  end
+end
+
+local function update_capture_bureau_lure_upkeep(desk)
+  if not desk or not desk.valid or not is_capture_bureau(desk) then return nil end
+  local mode, fluid_name = get_capture_bureau_lure(desk)
+  if not mode then return nil end
+
+  storage.capture_bureau_lure_upkeep = storage.capture_bureau_lure_upkeep or {}
+  storage.capture_bureau_lure_visuals = storage.capture_bureau_lure_visuals or {}
+  local tick = game and game.tick or 0
+  local next_visual_tick = storage.capture_bureau_lure_visuals[desk.unit_number] or 0
+  if tick >= next_visual_tick then
+    emit_capture_bureau_spore_cloud(desk)
+    storage.capture_bureau_lure_visuals[desk.unit_number] = tick + CAPTURE_BUREAU_SPORE_VISUAL_TICKS
+  end
+
+  local next_tick = storage.capture_bureau_lure_upkeep[desk.unit_number] or 0
+  if tick >= next_tick then
+    remove_fluid_amount(desk, fluid_name, CAPTURE_BUREAU_SPORE_UPKEEP_AMOUNT)
+    storage.capture_bureau_lure_upkeep[desk.unit_number] = tick + CAPTURE_BUREAU_SPORE_UPKEEP_TICKS
+  end
+
+  return get_capture_bureau_lure(desk)
 end
 
 local function is_pentapod(entity_name)
@@ -763,17 +895,6 @@ local function finalize_capture_bureau_conversion(desk, desk_id, info)
     storage.stats.cases_resolved = (storage.stats.cases_resolved or 0) + 1
   end
 
-  return true
-end
-
-local function convert_walkin_to_capture_bureau(desk, enemy_entity)
-  if not desk or not enemy_entity or not enemy_entity.valid then return false end
-  if not deliver_capture_bureau_products(desk, enemy_entity.name) then return false end
-  enemy_entity.destroy()
-  mark_desk_circuit_dirty(desk.unit_number)
-  if storage.stats then
-    storage.stats.cases_resolved = (storage.stats.cases_resolved or 0) + 1
-  end
   return true
 end
 
@@ -1336,11 +1457,12 @@ function M.process_walk_in_registration(surface, desks, runtime_profile)
   for _, desk in ipairs(desks) do
     enforce_desk_capacity_limit(desk)
     local walkins_profiler = runtime_profile and game.create_profiler() or nil
+    local lure_mode = update_capture_bureau_lure_upkeep(desk)
     local should_scan_walkins = walkin_scan_ticks <= 1 or (desk.unit_number % walkin_scan_ticks) == walkin_shard
     if should_scan_walkins then
       local remaining_slots = zones.get_available_slots(desk.unit_number)
       local search_pos = desk.position
-      local search_radius = 10
+      local search_radius = lure_mode and CAPTURE_BUREAU_LURE_RADIUS or 10
 
       for _, biter in ipairs(surface.find_entities_filtered{force = "enemy", type = "unit", position = search_pos, radius = search_radius}) do
         if biter.valid and biter.force.name == "enemy" and not storage.waiting_biters[biter.unit_number] then
@@ -1356,8 +1478,29 @@ function M.process_walk_in_registration(surface, desks, runtime_profile)
             end
             local slot = zones.reserve_slot(desk.unit_number)
             if not slot then break end
-            if convert_walkin_to_capture_bureau(desk, biter) then
-              zones.release_slot_by_index(desk.unit_number, slot)
+            local reserved = zones.get_slot_position and zones.get_slot_position(desk.unit_number, slot)
+            local pos = reserved and (surface.find_non_colliding_position(biter.name, reserved, 1, 0.25) or reserved)
+              or zones.get_biter_placement_pos and zones.get_biter_placement_pos(surface, desk, biter.name)
+              or desk.position
+            if pos then
+              local info = {
+                entity = biter,
+                desk_id = nil,
+                complaints = {},
+                complaints_total = 0,
+                complaints_filed = true,
+                frustration = 0,
+                state = "pathfinding",
+              }
+              info.entity_name = biter.name
+              capture_home_spawner(info, biter, true)
+              track_waiting_biter(biter.unit_number, info)
+              if route_biter_to_desk(info, biter, desk) then
+                remaining_slots = remaining_slots - 1
+              else
+                zones.release_slot_by_index(desk.unit_number, slot)
+                untrack_waiting_biter(biter.unit_number, info)
+              end
             else
               zones.release_slot_by_index(desk.unit_number, slot)
             end
