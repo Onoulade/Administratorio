@@ -79,7 +79,46 @@ data = {
     ["autoplace-control"] = {
       ["enemy-base"] = {hidden = true},
     },
-    unit = {},
+    unit = {
+      ["small-biter"] = {
+        name = "small-biter",
+        subgroup = "enemies",
+        attack_parameters = {
+          ammo_type = {
+            action = {
+              {
+                action_delivery = {
+                  {
+                    target_effects = {
+                      {type = "damage", damage = {amount = 10}},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      ["small-pentapod-premature"] = {
+        name = "small-pentapod-premature",
+        subgroup = "enemies",
+        attack_parameters = {
+          ammo_type = {
+            action = {
+              {
+                action_delivery = {
+                  {
+                    target_effects = {
+                      {type = "damage", damage = {amount = 10}},
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
     ["unit-spawner"] = {},
     lab = {},
     furnace = {},
@@ -146,6 +185,16 @@ test("vanilla module recipes use the dedicated admin module category", function(
     assert_true(recipe ~= nil, name .. " recipe missing")
     assert_true(recipe.category == "bureaucracy-modules", name .. " should use bureaucracy-modules")
   end
+end)
+
+test("premature pentapods keep attack damage when eggs hatch", function()
+  local biter_damage = data.raw.unit["small-biter"].attack_parameters.ammo_type.action[1]
+    .action_delivery[1].target_effects[1].damage.amount
+  local pentapod_damage = data.raw.unit["small-pentapod-premature"].attack_parameters.ammo_type.action[1]
+    .action_delivery[1].target_effects[1].damage.amount
+
+  assert_true(biter_damage == 0, "regular biters should still be pacified")
+  assert_true(pentapod_damage > 0, "hatched premature pentapods should be able to damage buildings")
 end)
 
 if failed > 0 then

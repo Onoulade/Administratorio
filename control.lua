@@ -95,11 +95,18 @@ local function freeze_admin_station_rotation(desk)
   desk.rotatable = false
 end
 
-local function find_nearby_enemy_spawner(surface, position)
+local function get_nest_exclusion_radius(entity_name)
+  if entity_name == "capture-bureau" then
+    return C.CAPTURE_BUREAU_NEST_EXCLUSION_RADIUS or 32
+  end
+  return C.ADMIN_STATION_NEST_EXCLUSION_RADIUS or 32
+end
+
+local function find_nearby_enemy_spawner(surface, position, entity_name)
   if not surface or not position then return nil end
   return surface.find_entities_filtered{
     position = position,
-    radius = 32,
+    radius = get_nest_exclusion_radius(entity_name),
     type = "unit-spawner",
     limit = 1
   }[1]
@@ -502,14 +509,26 @@ local function set_biter_ceasefire()
   if not biter_force then
     biter_force = game.create_force("administratorio-biters")
   end
+  local hatched_pentapod_force = game.forces[C.HATCHED_PENTAPOD_FORCE_NAME]
+  if not hatched_pentapod_force then
+    hatched_pentapod_force = game.create_force(C.HATCHED_PENTAPOD_FORCE_NAME)
+  end
   biter_force.set_cease_fire(player, true)
   player.set_cease_fire(biter_force, true)
   biter_force.set_cease_fire(enemy, true)
   enemy.set_cease_fire(biter_force, true)
+  hatched_pentapod_force.set_cease_fire(player, false)
+  player.set_cease_fire(hatched_pentapod_force, false)
+  hatched_pentapod_force.set_cease_fire(enemy, true)
+  enemy.set_cease_fire(hatched_pentapod_force, true)
+  hatched_pentapod_force.set_cease_fire(biter_force, true)
+  biter_force.set_cease_fire(hatched_pentapod_force, true)
   local neutral = game.forces["neutral"]
   if neutral then
     biter_force.set_cease_fire(neutral, true)
     neutral.set_cease_fire(biter_force, true)
+    hatched_pentapod_force.set_cease_fire(neutral, true)
+    neutral.set_cease_fire(hatched_pentapod_force, true)
   end
 
   local hard_mode_force_name = C.HARD_MODE_ATTACK_FORCE_NAME or "administratorio-hard-mode-biters"
@@ -915,8 +934,7 @@ local function on_entity_built_inner(event)
   local surface = entity.surface
   local player = event.player_index and game.players[event.player_index]
 
-  -- Only the admin desk is restricted from being placed near nests
-  local nearby_spawner = is_admin_station(entity) and find_nearby_enemy_spawner(surface, entity.position)
+  local nearby_spawner = find_nearby_enemy_spawner(surface, entity.position)
 
   if nearby_spawner then
       -- 1. Notify the player

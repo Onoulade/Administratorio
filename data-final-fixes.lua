@@ -44,6 +44,11 @@ local NIGHT_WORK_BUILDINGS = {
   ["corporate-breakroom"] = true,
   ["union-headquarters"] = true,
 }
+local HATCHED_PENTAPOD_UNITS = {
+  ["small-pentapod-premature"] = true,
+  ["medium-pentapod-premature"] = true,
+  ["big-pentapod-premature"] = true,
+}
 
 local ADMIN_STATION_NON_BLOCKING_NAMES = {
   ["admin-station-combinator"] = true,
@@ -177,6 +182,7 @@ end
 -- 2a. BITER SETUP
 -------------------------------------------------------------------------------
 for _, biter in pairs(data.raw["unit"] or {}) do
+  if not HATCHED_PENTAPOD_UNITS[biter.name] then
     if biter.vision_distance then
         biter.vision_distance = 0
         biter.distraction_radius = 0
@@ -184,10 +190,36 @@ for _, biter in pairs(data.raw["unit"] or {}) do
     -- Biters queuing inside admin station waiting zones must be clickable over
     -- the station (51) and over resources (50).
     biter.selection_priority = 52
+  end
 end
 
 for _, spawner in pairs(data.raw["unit-spawner"] or {}) do
     spawner.call_for_help_radius = 0
+end
+
+local function append_source_effect(action_delivery, effect)
+  if not action_delivery then return false end
+  if action_delivery[1] then
+    local appended = false
+    for _, delivery in ipairs(action_delivery) do
+      appended = append_source_effect(delivery, effect) or appended
+    end
+    return appended
+  end
+  action_delivery.source_effects = action_delivery.source_effects or {}
+  action_delivery.source_effects[#action_delivery.source_effects + 1] = effect
+  return true
+end
+
+local pentapod_egg = data.raw.item and data.raw.item["pentapod-egg"]
+local egg_spoil_trigger = pentapod_egg
+  and pentapod_egg.spoil_to_trigger_result
+  and pentapod_egg.spoil_to_trigger_result.trigger
+if egg_spoil_trigger and egg_spoil_trigger.action_delivery then
+  append_source_effect(egg_spoil_trigger.action_delivery, {
+    type = "script",
+    effect_id = "administratorio-pentapod-egg-hatch",
+  })
 end
 
 -------------------------------------------------------------------------------
