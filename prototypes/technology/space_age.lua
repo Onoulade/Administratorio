@@ -61,8 +61,6 @@ data:extend({
       {type = "unlock-recipe", recipe = "clerical-trainee-formation"},
       {type = "unlock-recipe", recipe = "management-trainee-formation"},
       {type = "unlock-recipe", recipe = "astronaut-formation"},
-      {type = "unlock-recipe", recipe = "night-shift-supervisor-formation"},
-      {type = "unlock-recipe", recipe = "field-negotiator-formation"},
       {type = "unlock-recipe", recipe = "middle-management-managing-manager-formation"},
       {type = "unlock-recipe", recipe = "administrative-space-station"},
       {type = "unlock-recipe", recipe = "thermal-process-license-orbital"},
@@ -154,6 +152,8 @@ data:extend({
       {type = "unlock-recipe", recipe = "capture-bureau-pentapod-eggs"},
       {type = "unlock-recipe", recipe = "conciliation-desk"},
       {type = "unlock-recipe", recipe = "yellow-ink-production"},
+      {type = "unlock-recipe", recipe = "hostile-spore-culture-production"},
+      {type = "unlock-recipe", recipe = "oviposition-lure-spores-production"},
       {type = "unlock-recipe", recipe = "mycelial-form-stock"},
       {type = "unlock-recipe", recipe = "blank-yellow-form-production"},
       {type = "unlock-recipe", recipe = "symbiosis-record"},
@@ -426,10 +426,10 @@ add_tech_unlock("agricultural-science-pack", "conciliation-officer-formation")
 add_tech_unlock("corporate-hospitality", "corporate-breakroom-gleba")
 add_tech_unlock("electromagnetic-science-pack", "relay-clerk-formation")
 add_tech_unlock("cryogenic-science-pack", "cryoprint-technician-formation")
-add_tech_unlock("after-hours-operations", "overtime-exemption-staffed")
-add_tech_unlock("discovery-redundant-rubble", "promise-production-negotiated")
-add_tech_unlock("nest-expropriation", "eviction-notice-production-negotiated")
+add_tech_unlock("hired-biter-fieldwork", "promise-production-negotiated")
+add_tech_unlock("hired-biter-fieldwork", "eviction-notice-production-negotiated")
 add_tech_unlock("workforce-formation", "capture-bureau-workforce")
+add_tech_unlock("workforce-formation", "workforce-lure-spores-production")
 add_tech_unlock("cyan-yellow-bureaucracy", "small-spitter-space-tourism")
 add_tech_unlock("cyan-yellow-bureaucracy", "medium-spitter-space-tourism")
 add_tech_unlock("cyan-yellow-bureaucracy", "big-spitter-space-tourism")
@@ -438,6 +438,7 @@ add_tech_unlock("cyan-yellow-bureaucracy", "small-space-tourist-jettison")
 add_tech_unlock("cyan-yellow-bureaucracy", "medium-space-tourist-jettison")
 add_tech_unlock("cyan-yellow-bureaucracy", "big-space-tourist-jettison")
 add_tech_unlock("cyan-yellow-bureaucracy", "behemoth-space-tourist-jettison")
+add_tech_unlock("cyan-yellow-bureaucracy", "tourism-lure-spores-production")
 
 for item_name in pairs(fax_shared.FAX_DOCUMENTS) do
   add_tech_unlock(

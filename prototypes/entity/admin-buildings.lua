@@ -200,7 +200,7 @@ local function make_admin_station(name)
 end
 
 local admin_station = make_admin_station("admin-station")
-local capture_bureau = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
+local capture_bureau = table.deepcopy(data.raw["furnace"]["electric-furnace"] or data.raw["assembling-machine"]["assembling-machine-2"])
 capture_bureau.name = "capture-bureau"
 capture_bureau.icon = "__administratorio__/graphics/icons/admin-desk.png"
 capture_bureau.icon_size = 64
@@ -209,11 +209,12 @@ capture_bureau.placeable_by = placeable_by_item("capture-bureau")
 capture_bureau.localised_name = {"entity-name.capture-bureau"}
 capture_bureau.localised_description = {"entity-description.capture-bureau"}
 capture_bureau.next_upgrade = nil
-capture_bureau.crafting_categories = {"hostile-acquisition"}
+capture_bureau.crafting_categories = {"capture-bureau-runtime"}
 capture_bureau.crafting_speed = 1
 capture_bureau.energy_usage = "300kW"
 capture_bureau.energy_source = {type = "electric", usage_priority = "secondary-input"}
-capture_bureau.ingredient_count = 2
+capture_bureau.source_inventory_size = 1
+capture_bureau.result_inventory_size = 20
 capture_bureau.module_slots = 0
 capture_bureau.allowed_effects = {}
 capture_bureau.flags = {"placeable-neutral", "player-creation"}
@@ -224,16 +225,8 @@ capture_bureau.collision_box = {{-4.4, -4.4}, {4.4, 4.4}}
 capture_bureau.selection_box = {{-4.5, -4.5}, {4.5, 4.5}}
 capture_bureau.selection_priority = 1
 capture_bureau.fast_replaceable_group = "admin-station"
-capture_bureau.circuit_wire_max_distance = 9
-capture_bureau.circuit_connector = circuit_connector_definitions.create_vector(
-  universal_connector_template,
-  {
-    {variation = 26, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(100, 36), show_shadow = true},
-    {variation = 26, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(100, 36), show_shadow = true},
-    {variation = 26, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(100, 36), show_shadow = true},
-    {variation = 26, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(100, 36), show_shadow = true},
-  }
-)
+capture_bureau.circuit_wire_max_distance = nil
+capture_bureau.circuit_connector = nil
 capture_bureau.graphics_set = {
   animation = {
     layers = {
@@ -243,8 +236,23 @@ capture_bureau.graphics_set = {
 }
 capture_bureau.stateless_visualisation = table.deepcopy(admin_station_base.stateless_visualisation)
 capture_bureau.draw_stateless_visualisations_in_ghost = true
-capture_bureau.fluid_boxes = {}
-capture_bureau.fluid_boxes_off_when_no_fluid_recipe = true
+capture_bureau.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_connections = {
+      { flow_direction = "input", direction = defines.direction.north, position = {-2, -4} },
+      { flow_direction = "input", direction = defines.direction.north, position = {2, -4} },
+      { flow_direction = "input", direction = defines.direction.east, position = {4, -2} },
+      { flow_direction = "input", direction = defines.direction.east, position = {4, 2} },
+      { flow_direction = "input", direction = defines.direction.south, position = {-2, 4} },
+      { flow_direction = "input", direction = defines.direction.south, position = {2, 4} },
+      { flow_direction = "input", direction = defines.direction.west, position = {-4, -2} },
+      { flow_direction = "input", direction = defines.direction.west, position = {-4, 2} },
+    },
+    volume = 800,
+  },
+}
+capture_bureau.fluid_boxes_off_when_no_fluid_recipe = false
 capture_bureau.working_sound = {
   sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.32},
   idle_sound = {filename = "__base__/sound/idle1.ogg"},
@@ -650,29 +658,6 @@ formation_center.working_sound = {
       { filename = sound_path .. "stamp.ogg", volume = 0.28 },
     },
   },
-  idle_sound = { filename = "__base__/sound/idle1.ogg" }
-}
-
--- Petition Counter: biter-government permit approval station (3x3)
-local petition_counter = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
-petition_counter.name = "petition-counter"
-petition_counter.minable.result = "petition-counter"
-petition_counter.placeable_by = placeable_by_item("petition-counter")
-petition_counter.next_upgrade = nil
-petition_counter.icon = "__administratorio__/graphics/icons/office-building.png"
-petition_counter.icon_size = 64
-petition_counter.icons = nil
-petition_counter.crafting_categories = {"petition-stamping"}
-petition_counter.crafting_speed = 0.5
-petition_counter.energy_usage = "50kW"
-petition_counter.energy_source = {type = "electric", usage_priority = "secondary-input"}
-petition_counter.ingredient_count = 1
-petition_counter.module_slots = 0
-petition_counter.allowed_effects = {}
-petition_counter.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
-petition_counter.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
-petition_counter.working_sound = {
-  sound = { filename = sound_path .. "stamp.ogg", volume = 0.55 },
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
 
@@ -1298,7 +1283,6 @@ if space_age_enabled then
     capture_bureau,
     resolution_office,
     office_desk,
-    petition_counter,
     breakroom,
     union_hq,
     propaganda_distillery,
@@ -1306,8 +1290,6 @@ if space_age_enabled then
     require_non_vacuum(entity)
   end
 end
-
-add_entity(petition_counter)
 
 if space_age_enabled then
   add_entity(capture_bureau)

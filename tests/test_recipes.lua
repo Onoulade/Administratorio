@@ -414,7 +414,7 @@ test("safety-waiver requires 2-step printing pipeline", function()
   assert_eq(print_step.category, "printing")
   assert_true(has_ingredient(print_step, "safety-waiver-draft"))
   assert_true(has_ingredient(print_step, "ink"))
-  assert_eq(get_result_amount(print_step, "unapproved-safety-waiver"), 2)
+  assert_eq(get_result_amount(print_step, "safety-waiver"), 2)
 end)
 
 test("construction-permit requires 2-step printing pipeline", function()
@@ -428,29 +428,13 @@ test("construction-permit requires 2-step printing pipeline", function()
   assert_eq(print_step.category, "printing")
   assert_true(has_ingredient(print_step, "construction-permit-draft"))
   assert_true(has_ingredient(print_step, "ink"))
-  assert_eq(get_result_amount(print_step, "unapproved-construction-permit"), 2)
+  assert_eq(get_result_amount(print_step, "construction-permit"), 2)
 end)
 
-test("petition approvals convert unapproved permits into approved permits", function()
-  local approvals = {
-    {"safety-waiver-approval", "unapproved-safety-waiver", "safety-waiver", 1, 4},
-    {"construction-permit-approval", "unapproved-construction-permit", "construction-permit", 1, 6},
-    {"radiological-work-order-approval", "unapproved-radiological-work-order", "radiological-work-order", 1, 10},
-  }
-
-  for _, approval in ipairs(approvals) do
-    local recipe_name = approval[1]
-    local input_name = approval[2]
-    local output_name = approval[3]
-    local output_count = approval[4]
-    local craft_time = approval[5]
-    local recipe = get_recipe(recipe_name)
-    assert_true(recipe ~= nil, recipe_name .. " missing")
-    assert_eq(recipe.category, "petition-stamping", recipe_name .. " wrong category")
-    assert_true(has_ingredient(recipe, input_name), recipe_name .. " missing input " .. input_name)
-    assert_eq(get_result_amount(recipe, output_name), output_count, recipe_name .. " wrong output count")
-    assert_eq(recipe.energy_required, craft_time, recipe_name .. " wrong craft time")
-  end
+test("old petition approval recipes are removed", function()
+  assert_true(get_recipe("safety-waiver-approval") == nil, "safety approval should be removed")
+  assert_true(get_recipe("construction-permit-approval") == nil, "construction approval should be removed")
+  assert_true(get_recipe("radiological-work-order-approval") == nil, "radiological approval should be removed")
 end)
 
 test("management-approval-verbal requires 2-step pipeline (gossip + printing)", function()
@@ -565,7 +549,6 @@ test("form production recipes use admin-only categories", function()
     ["printing"] = true,
     ["printing-advanced"] = true,
     ["printing-workorder"] = true,
-    ["petition-stamping"] = true,
     ["bureaucracy-resolution"] = true,
     ["bureaucracy-policy"] = true,
     ["watercooler-gossip"] = true,
@@ -788,7 +771,7 @@ test("operating paperwork chain: chemical < radiological", function()
   assert_true(has_ingredient(radio, "battery"))
   assert_true(has_ingredient(radio, "steel-plate"))
   assert_true(not has_ingredient(radio, "ink"))
-  assert_eq(get_result_amount(radio, "unapproved-radiological-work-order"), 2)
+  assert_eq(get_result_amount(radio, "radiological-work-order"), 2)
 end)
 
 -- =========================================================================
@@ -1403,7 +1386,7 @@ test("all custom recipe categories are defined", function()
     "bureaucracy-registration", "bureaucratic-bootstrap", "bureaucracy-resolution",
     "bureaucracy-policy", "admin-greenhouse", "watercooler-gossip",
     "union-negotiation", "smelting-basic", "printing", "printing-advanced",
-    "printing-workorder", "petition-stamping", "propaganda-distillery", "pneumatic-intake",
+    "printing-workorder", "propaganda-distillery", "pneumatic-intake",
   }
   for _, name in ipairs(expected) do
     assert_true(data.raw["recipe-category"][name] ~= nil, "missing category: " .. name)
@@ -1608,17 +1591,10 @@ local function check_pre_electricity_chain(item_name, visited, path)
   return nil
 end
 
-test("safety-waiver now requires petition-stamping approval", function()
+test("safety-waiver remains pre-electricity craftable through direct printing", function()
   local visited = {}
   local err = check_pre_electricity_chain("safety-waiver", visited, "safety-waiver")
-  assert_true(err ~= nil and err:find("petition%-stamping", 1, false) ~= nil,
-    "safety-waiver should require petition-stamping approval")
-end)
-
-test("unapproved safety-waiver chain remains pre-electricity craftable", function()
-  local visited = {}
-  local err = check_pre_electricity_chain("unapproved-safety-waiver", visited, "unapproved-safety-waiver")
-  assert_true(err == nil, "unapproved safety-waiver should stay pre-electricity craftable")
+  assert_true(err == nil, "safety-waiver should stay pre-electricity craftable")
 end)
 
 test("boiler bootstrap: carbon-offset-certificate-basic chain requires no electricity", function()
@@ -1729,7 +1705,7 @@ test("only bootstrap-safe admin buildings start enabled", function()
 end)
 
 test("bootstrap structures that consume gated paperwork are tech-gated", function()
-  local gated_buildings = {"office-desk", "admin-station", "petition-counter", "resolution-office"}
+  local gated_buildings = {"office-desk", "admin-station", "resolution-office"}
   for _, name in ipairs(gated_buildings) do
     local r = get_recipe(name)
     assert_true(r ~= nil, name .. " recipe missing")
@@ -1766,7 +1742,7 @@ end)
 
 test("ADMIN_BUILDINGS includes all expected building names", function()
   local expected = {
-    "office-desk", "admin-station", "petition-counter", "resolution-office", "greenhouse",
+    "office-desk", "admin-station", "resolution-office", "greenhouse",
     "corporate-breakroom", "printer-t1", "printer-t2",
     "mechanical-printer", "union-headquarters",
     "tube-intake", "tube-outtake", "pneumatic-pipe", "pneumatic-pipe-to-ground",
