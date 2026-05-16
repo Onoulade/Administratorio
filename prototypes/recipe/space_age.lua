@@ -45,6 +45,57 @@ local function surface_limited(recipe, planet_name)
   return planets.apply_planet_surface_conditions(recipe, planet_name)
 end
 
+local function add_scrap_recycling_result(item_name, amount, probability)
+  local recipe = data.raw.recipe and data.raw.recipe["scrap-recycling"]
+  if not recipe then return end
+
+  local function apply_to_variant(target)
+    if not target then return end
+    target.results = target.results or {}
+    for _, result in ipairs(target.results) do
+      if (result.name or result[1]) == item_name then
+        return
+      end
+    end
+    table.insert(target.results, {
+      type = "item",
+      name = item_name,
+      amount = amount,
+      probability = probability,
+    })
+  end
+
+  apply_to_variant(recipe)
+  apply_to_variant(recipe.normal)
+  apply_to_variant(recipe.expensive)
+end
+
+local function sync_scrap_recycler_output_slots()
+  local recipe = data.raw.recipe and data.raw.recipe["scrap-recycling"]
+  local recycler = data.raw.furnace and data.raw.furnace["recycler"]
+  if not recipe or not recycler then return end
+
+  local required_slots = 0
+  local function count_item_results(target)
+    if not target or not target.results then return end
+    local slots = 0
+    for _, result in ipairs(target.results) do
+      if (result.type or "item") == "item" then
+        slots = slots + 1
+      end
+    end
+    required_slots = math.max(required_slots, slots)
+  end
+
+  count_item_results(recipe)
+  count_item_results(recipe.normal)
+  count_item_results(recipe.expensive)
+
+  if required_slots > 0 then
+    recycler.result_inventory_size = math.max(recycler.result_inventory_size or 0, required_slots)
+  end
+end
+
 local function not_on_planet(recipe, planet_name)
   local properties = planets.BASIC_PLANET_PROPERTIES[planet_name]
   if not recipe or not properties then return recipe end
@@ -65,6 +116,17 @@ local function not_on_planet(recipe, planet_name)
   end
   return recipe
 end
+
+add_scrap_recycling_result("charged-toner", 1, 0.18)
+add_scrap_recycling_result("redundant-rubble", 2, 0.35)
+add_scrap_recycling_result("useless-documentation", 1, 0.16)
+add_scrap_recycling_result("signal-form-stock", 1, 0.08)
+add_scrap_recycling_result("blank-magenta-form", 1, 0.05)
+add_scrap_recycling_result("archive-recovery-permit", 1, 0.025)
+add_scrap_recycling_result("digital-processing-certificate", 1, 0.02)
+add_scrap_recycling_result("electromagnetic-operating-license", 1, 0.015)
+add_scrap_recycling_result("data-recovery-order", 1, 0.015)
+sync_scrap_recycler_output_slots()
 
 local function make_fax_reconstruction_recipes()
   local recipes = {}
