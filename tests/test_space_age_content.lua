@@ -46,6 +46,7 @@ local recipes = {
   biochamber = {type = "recipe", name = "biochamber", ingredients = {{type = "item", name = "iron-plate", amount = 20}}},
   ["electromagnetic-plant"] = {type = "recipe", name = "electromagnetic-plant", ingredients = {{type = "item", name = "holmium-plate", amount = 150}}},
   ["cryogenic-plant"] = {type = "recipe", name = "cryogenic-plant", ingredients = {{type = "item", name = "lithium-plate", amount = 20}}},
+  ["scrap-recycling"] = {type = "recipe", name = "scrap-recycling", results = {{type = "item", name = "iron-gear-wheel", amount = 1, probability = 0.2}}},
 }
 
 local items = {}
@@ -79,6 +80,9 @@ data = {
     ammo = ammos,
     fluid = fluids,
     ["virtual-signal"] = signals,
+    furnace = {
+      recycler = {type = "furnace", name = "recycler", result_inventory_size = 12},
+    },
     technology = technologies,
   },
 }
@@ -145,6 +149,27 @@ local function get_result_amount(recipe, item_name)
   for _, result in ipairs(recipe.results) do
     if (result.name or result[1]) == item_name then
       return result.amount or result[2]
+    end
+  end
+  return nil
+end
+
+local function item_result_count(recipe)
+  local count = 0
+  if not recipe or not recipe.results then return count end
+  for _, result in ipairs(recipe.results) do
+    if (result.type or "item") == "item" then
+      count = count + 1
+    end
+  end
+  return count
+end
+
+local function get_result_probability(recipe, item_name)
+  if not recipe or not recipe.results then return nil end
+  for _, result in ipairs(recipe.results) do
+    if (result.name or result[1]) == item_name then
+      return result.probability or 1
     end
   end
   return nil
@@ -761,6 +786,25 @@ test("fulgora magenta chain defines the expected forms and staffed bureau", func
     "data-recovery-order should require archive-recovery-permit")
   assert_true(not has_ingredient(recipes["magenta-ink-production"], "taxpayer-money"),
     "magenta-ink-production should not require taxpayer-money")
+
+  for _, result_name in ipairs({
+    "charged-toner",
+    "redundant-rubble",
+    "useless-documentation",
+    "signal-form-stock",
+    "blank-magenta-form",
+    "archive-recovery-permit",
+    "digital-processing-certificate",
+    "electromagnetic-operating-license",
+    "data-recovery-order",
+  }) do
+    assert_true(has_result(recipes["scrap-recycling"], result_name),
+      "scrap-recycling should randomly recover " .. result_name)
+    assert_true(get_result_probability(recipes["scrap-recycling"], result_name) < 1,
+      result_name .. " should be a probabilistic Fulgora salvage output")
+  end
+  assert_true(data.raw.furnace["recycler"].result_inventory_size >= item_result_count(recipes["scrap-recycling"]),
+    "recycler output inventory must fit the expanded scrap-recycling result table")
 end)
 
 test("aquilo fax network unlocks the printer, exchange, and multicolor paperwork", function()
