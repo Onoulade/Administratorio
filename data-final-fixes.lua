@@ -50,6 +50,34 @@ local HATCHED_PENTAPOD_UNITS = {
   ["big-pentapod-premature"] = true,
 }
 
+local function sync_scrap_recycler_output_slots()
+  local recipe = data.raw.recipe and data.raw.recipe["scrap-recycling"]
+  local recycler = data.raw.furnace and data.raw.furnace["recycler"]
+  if not recipe or not recycler then return end
+
+  local required_slots = 0
+  local function count_item_results(target)
+    if not target or not target.results then return end
+    local slots = 0
+    for _, result in ipairs(target.results) do
+      if (result.type or "item") == "item" then
+        slots = slots + 1
+      end
+    end
+    required_slots = math.max(required_slots, slots)
+  end
+
+  count_item_results(recipe)
+  count_item_results(recipe.normal)
+  count_item_results(recipe.expensive)
+
+  if required_slots > 0 then
+    recycler.result_inventory_size = math.max(recycler.result_inventory_size or 0, required_slots)
+  end
+end
+
+sync_scrap_recycler_output_slots()
+
 local ADMIN_STATION_NON_BLOCKING_NAMES = {
   ["admin-station-combinator"] = true,
   ["biterport-hidden-roboport"] = true,

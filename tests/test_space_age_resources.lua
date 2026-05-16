@@ -86,7 +86,7 @@ local function exact_surface_planet(resource)
   return nil
 end
 
-test("core Space Age planets each define a local administratorio raw shortcut", function()
+test("core Space Age planets use raw shortcuts only where they are not Fulgora salvage", function()
   assert_eq(exact_surface_planet(data.raw.resource["verdigris-crust"]), "vulcanus",
     "verdigris-crust should be Vulcanus-local")
   assert_eq(data.raw.resource["verdigris-crust"].minable.result, "verdigris-crust",
@@ -97,19 +97,8 @@ test("core Space Age planets each define a local administratorio raw shortcut", 
   assert_eq(data.raw.resource["amber-sap-seep"].minable.results[1].name, "amber-sap",
     "amber-sap-seep should pump amber sap")
 
-  assert_eq(exact_surface_planet(data.raw.resource["static-charge-deposit"]), "fulgora",
-    "static-charge-deposit should be Fulgora-local")
-  assert_eq(data.raw.resource["static-charge-deposit"].minable.result, "charged-toner",
-    "static-charge-deposit should mine charged toner directly")
-end)
-
-test("Fulgora toner deposit has its own autoplace control", function()
-  local resource = assert(data.raw.resource["static-charge-deposit"], "static-charge-deposit missing")
-  assert_true(resource.autoplace ~= nil, "static-charge-deposit should define autoplace")
-  assert_eq(resource.autoplace.autoplace_control_name, "fulgora_static-charge-deposit",
-    "static-charge-deposit should use its Fulgora autoplace control")
-  assert_true(resource.autoplace.has_starting_area_placement == true,
-    "static-charge-deposit should support first-landing bootstrap")
+  assert_true(data.raw.resource["static-charge-deposit"] == nil,
+    "Fulgora should recover charged toner from scrap instead of a new resource patch")
 end)
 
 if failed > 0 then
