@@ -477,6 +477,17 @@ test("biterport coffee input keeps visible pipe connectors", function()
   assert_true(not helper:find("position%s*=%s*{%s*%-2,%s*%-3%s*}"), "coffee input sockets should not be one tile outside the building")
 end)
 
+test("biter station sprite metrics match updated assets", function()
+  local path = mod_root .. "prototypes/entity/admin-buildings.lua"
+  local file = assert(io.open(path, "r"))
+  local source = file:read("*a")
+  file:close()
+  local station_block = source:match("biter_station%.picture.-biter_station%.draw_stateless_visualisations_in_ghost")
+  assert_true(station_block ~= nil, "biter station graphics block should exist")
+  assert_true(station_block:find("work%-station%-floor%.png.-width%s*=%s*480.-height%s*=%s*419"), "floor sprite metrics should match 480x419 asset")
+  assert_true(station_block:find("work%-station%-roof%.png.-width%s*=%s*480.-height%s*=%s*419"), "roof sprite metrics should match 480x419 asset")
+end)
+
 test("biterport refills player personal logistics requests", function()
   storage = {}
   local surface = new_surface()
