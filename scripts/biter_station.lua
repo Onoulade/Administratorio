@@ -181,7 +181,7 @@ local function offset_position(entity, offset)
   return {x = position.x + offset.x, y = position.y + offset.y}
 end
 
-local function rear_input_position(entity)
+local function hidden_coffee_input_position(entity)
   return entity and entity.position or {x = 0, y = 0}
 end
 
@@ -236,7 +236,7 @@ local function create_hidden_coffee_input(station)
 
   local created = station.surface.create_entity{
     name = COFFEE_INPUT_NAME,
-    position = rear_input_position(station),
+    position = hidden_coffee_input_position(station),
     direction = defines.direction.north,
     force = station.force,
     create_build_effect_smoke = false,

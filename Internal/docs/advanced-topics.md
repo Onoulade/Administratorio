@@ -50,7 +50,7 @@ Night is defined as 30% of the day cycle, centered on midnight (daytime 0.35 to 
 Install the `overtime-exemption` module in any building's module inventory to keep it running 24/7. This module acts as a perpetual overtime permit for that specific building.
 
 ### Impact on Other Systems
-- **Biter Employment Office** and **Biterport** keep working past sunset, but their night dispatches require `liquid-coffee` (5 per dispatch).
+- **Biter Employment Office** and **Biterport** keep working past sunset, but their night dispatches require `liquid-coffee` (5 per dispatch) piped into any side entrance.
 - **Field Office** releases its biter worker at night (unless overtime-exempted).
 - Night status is shown as a red diode and "Closed for the night" label on buildings, with a floating text overlay.
 
@@ -83,7 +83,7 @@ These modules only apply when working hours is enabled, reinforcing the theme.
 1. `greenhouse-discovery` gives the first `coffee-bean` at 10% probability while returning some input `wood`.
 2. `coffee-plantation` bootstraps bean multiplication.
 3. `coffee-refining` turns `coffee-bean` + `water` + `work-order` into `liquid-coffee`.
-4. Liquid coffee is piped into buildings for night-shift operation.
+4. Liquid coffee is piped into buildings for night-shift operation. Biter Employment Offices and Biterports accept it from any of their four side entrances.
 5. Coffee is required for verbal approvals, gossip, protest mitigation support, and many midgame recipes.
 
 ## The Bullshit Economy

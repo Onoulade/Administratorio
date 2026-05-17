@@ -279,7 +279,7 @@ local function port_money_count(port)
   return inv and inv.get_item_count and inv.get_item_count(MONEY_ITEM_NAME) or 0
 end
 
-local function rear_input_position(entity)
+local function hidden_coffee_input_position(entity)
   return entity and entity.position or {x = 0, y = 0}
 end
 
@@ -338,7 +338,7 @@ local function create_hidden_coffee_input(port)
 
   local created = port.surface.create_entity{
     name = COFFEE_INPUT_NAME,
-    position = rear_input_position(port),
+    position = hidden_coffee_input_position(port),
     direction = defines.direction.north,
     force = port.force,
     create_build_effect_smoke = false,

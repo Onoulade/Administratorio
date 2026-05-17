@@ -94,11 +94,13 @@
 
 ### Biter Employment Office (`biter-station`)
 
-See [biter-employment.md](biter-employment.md)
+- Dispatch building with four directional coffee pipe entrances for night-shift operation
+- See [biter-employment.md](biter-employment.md)
 
 ### Biterport
 
-See [biter-employment.md](biter-employment.md)
+- Walking-worker logistics building with four directional coffee pipe entrances for night-shift operation
+- See [biter-employment.md](biter-employment.md)
 
 ### Field Office (`field-office`)
 

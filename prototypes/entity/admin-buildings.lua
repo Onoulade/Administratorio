@@ -334,6 +334,8 @@ local function make_hidden_coffee_input(name, localised_name, localised_descript
   input.fluid_box = {
     filter = "liquid-coffee",
     volume = 100,
+    -- One hidden pipe entity gives biter stations and biterports four
+    -- directional coffee entrances while keeping the visible building static.
     pipe_connections = {
       { direction = defines.direction.north, position = {-2, -2} },
       { direction = defines.direction.west, position = {-2, -2} },
