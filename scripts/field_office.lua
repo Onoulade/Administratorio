@@ -381,6 +381,57 @@ local function create_working_overlay(biter)
   return render_obj and render_obj.id or nil
 end
 
+local function refresh_worker_snapshot(state, biter)
+  if not state or not biter or not biter.valid then return end
+  state.worker_entity_name = biter.name
+  state.worker_surface_index = biter.surface and biter.surface.index or nil
+  state.worker_last_position = {x = biter.position.x, y = biter.position.y}
+end
+
+local function rekey_worker_state(state, old_unit_number, new_unit_number)
+  if not state or not old_unit_number or not new_unit_number then return end
+  if storage.field_office_worker_to_office then
+    local office_id = storage.field_office_worker_to_office[old_unit_number] or state.office_id
+    storage.field_office_worker_to_office[old_unit_number] = nil
+    storage.field_office_worker_to_office[new_unit_number] = office_id
+  end
+  for _, request in pairs(storage.field_office_path_requests or {}) do
+    if request and request.biter_unit_number == old_unit_number then
+      request.biter_unit_number = new_unit_number
+    end
+  end
+end
+
+local function recreate_missing_worker(state, office, tick)
+  if not state then return nil end
+  local surface = game and game.surfaces and state.worker_surface_index and game.surfaces[state.worker_surface_index] or nil
+  surface = surface or (office and office.valid and office.surface) or nil
+  if not surface then return nil end
+
+  local position = state.worker_last_position
+    or (office and office.valid and office.position)
+    or nil
+  if not position then return nil end
+
+  local entity_name = state.worker_entity_name or "small-biter"
+  local spawn_pos = surface.find_non_colliding_position(entity_name, position, 2, 0.25) or position
+  local biter = surface.create_entity{
+    name = entity_name,
+    position = spawn_pos,
+    force = get_biter_force(),
+    create_build_effect_smoke = false,
+  }
+  if not biter or not biter.valid then return nil end
+
+  local old_unit_number = state.biter_unit_number
+  state.biter = biter
+  state.biter_unit_number = biter.unit_number
+  rekey_worker_state(state, old_unit_number, biter.unit_number)
+  refresh_worker_snapshot(state, biter)
+  reset_calling_progress(state, biter, tick or game.tick)
+  return biter
+end
+
 local function destroy_overlay(state)
   if state.overlay_id then
     local obj = rendering.get_object_by_id(state.overlay_id)
@@ -632,6 +683,7 @@ function M.update(tick, runtime_profile)
           state.biter = biter
           state.biter_unit_number = biter.unit_number
           state.spawner = spawner
+          refresh_worker_snapshot(state, biter)
           reset_calling_progress(state, biter, tick)
           storage.field_office_worker_to_office[biter.unit_number] = office_id
           request_worker_path_check(state, office, biter, destination)
@@ -665,6 +717,20 @@ function M.update(tick, runtime_profile)
 
       -- Check if biter is still alive
       if not state.biter or not state.biter.valid then
+        local biter = recreate_missing_worker(state, office, tick)
+        if biter and biter.valid then
+          local destination = find_worker_destination(office.surface, biter.name, office)
+          biter.commandable.set_command({
+            type = defines.command.go_to_location,
+            destination = destination,
+            radius = 0.5,
+            distraction = defines.distraction.none,
+          })
+          request_worker_path_check(state, office, biter, destination)
+          set_office_status(state, office, defines.entity_status_diode.yellow, "gui.field-office-calling")
+          record_runtime_profile(runtime_profile, "field_office_calling", phase_profiler)
+          goto continue
+        end
         if state.biter_unit_number then
           storage.field_office_worker_to_office[state.biter_unit_number] = nil
           state.biter_unit_number = nil
@@ -675,6 +741,7 @@ function M.update(tick, runtime_profile)
         record_runtime_profile(runtime_profile, "field_office_calling", phase_profiler)
         goto continue
       end
+      refresh_worker_snapshot(state, state.biter)
 
       if calling_worker_is_stuck(state, state.biter, tick) then
         mark_worker_unreachable(state, office, tick)
@@ -714,18 +781,30 @@ function M.update(tick, runtime_profile)
 
       -- Check if biter died while working
       if not state.biter or not state.biter.valid then
-        destroy_overlay(state)
-        if state.biter_unit_number then
-          storage.field_office_worker_to_office[state.biter_unit_number] = nil
-          state.biter_unit_number = nil
+        local biter = recreate_missing_worker(state, office, tick)
+        if biter and biter.valid then
+          destroy_overlay(state)
+          biter.commandable.set_command({
+            type = defines.command.stop,
+            distraction = defines.distraction.none,
+          })
+          state.overlay_id = create_working_overlay(biter)
+          office.active = true
+        else
+          destroy_overlay(state)
+          if state.biter_unit_number then
+            storage.field_office_worker_to_office[state.biter_unit_number] = nil
+            state.biter_unit_number = nil
+          end
+          state.biter = nil
+          state.phase = "idle"
+          office.active = false
+          set_office_status(state, office, defines.entity_status_diode.red, "gui.field-office-no-nest")
+          record_runtime_profile(runtime_profile, "field_office_working", phase_profiler)
+          goto continue
         end
-        state.biter = nil
-        state.phase = "idle"
-        office.active = false
-        set_office_status(state, office, defines.entity_status_diode.red, "gui.field-office-no-nest")
-        record_runtime_profile(runtime_profile, "field_office_working", phase_profiler)
-        goto continue
       end
+      refresh_worker_snapshot(state, state.biter)
 
       -- If night falls, release biter and shut down
       if night then

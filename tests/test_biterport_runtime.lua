@@ -766,6 +766,64 @@ test("returned logistics workers wait 30 ticks before redeploying", function()
   assert_true(first_active_worker() ~= nil, "worker should be dispatchable again after the 30 tick cooldown")
 end)
 
+test("biterport restores an active logistics worker if its entity is invalid after load", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+
+  local surface = new_surface()
+  local force = {
+    name = "player",
+    technologies = {},
+    set_cease_fire = function() end,
+  }
+
+  game = {
+    tick = 0,
+    connected_players = {},
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 1, 1)
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {["iron-plate"] = 1})
+  provider.force = force
+  local player = new_player(surface, force, {{name = "iron-plate", count = 1}}, {}, {})
+  game.connected_players = {player}
+
+  biterport.ensure_storage()
+  biterport.track_port(port)
+  biterport.update(30)
+
+  local active = first_active_worker()
+  assert_true(active ~= nil, "request should dispatch a worker before the simulated load")
+  local old_unit_number = active.biter_unit_number
+  active.biter.valid = false
+
+  biterport.update(31)
+  active = first_active_worker()
+  assert_true(active ~= nil, "active worker record should survive invalid entity recovery")
+  assert_true(active.biter.valid, "worker entity should be recreated")
+  assert_true(active.biter_unit_number ~= old_unit_number, "worker should be rekeyed to the recreated unit")
+  assert_true(storage.biterport_workers[old_unit_number] == nil, "old unit key should be removed")
+
+  advance_worker_to(active, provider.position, 31, biterport)
+  active = first_active_worker()
+  advance_worker_to(active, player.character.position, 32, biterport)
+
+  assert_eq(player.main_inventory.get_item_count("iron-plate"), 1, "recreated worker should finish the delivery")
+  assert_eq(provider.inventory.get_item_count("iron-plate"), 0, "provider item should only be consumed once")
+end)
+
 test("transport capacity research increases items carried per trip", function()
   storage = {}
   package.loaded["scripts.biterport"] = nil

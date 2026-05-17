@@ -1943,6 +1943,72 @@ local function spawn_worker(port, job_kind)
   }
 end
 
+local function refresh_active_worker_snapshot(active, biter)
+  if not active or not biter or not biter.valid then return end
+  active.worker_entity_name = biter.name
+  active.worker_surface_index = biter.surface and biter.surface.index or nil
+  active.worker_last_position = copy_position(biter.position)
+end
+
+local function rekey_active_worker(active, old_unit_number, new_unit_number)
+  if not active or not old_unit_number or not new_unit_number then return end
+  if storage.biterport_workers then
+    storage.biterport_workers[old_unit_number] = nil
+    storage.biterport_workers[new_unit_number] = active
+  end
+  if storage.biterport_worker_units then
+    local port_marker = storage.biterport_worker_units[old_unit_number]
+    storage.biterport_worker_units[old_unit_number] = nil
+    storage.biterport_worker_units[new_unit_number] = port_marker or active.home_port_id or true
+  end
+  local port_id = active.home_port_id
+  local active_set = port_id and storage.biterport_active_by_port and storage.biterport_active_by_port[port_id]
+  if active_set then
+    active_set[old_unit_number] = nil
+    active_set[new_unit_number] = true
+  end
+end
+
+local function recreate_missing_worker(active, tick)
+  if not active or not game or not game.surfaces then return nil end
+  local surface = active.worker_surface_index and game.surfaces[active.worker_surface_index] or nil
+  local port = active.home_port_id and storage.biterports and storage.biterports[active.home_port_id] or nil
+  surface = surface or (port and port.valid and port.surface) or nil
+  if not surface then return nil end
+
+  local position = active.worker_last_position
+    or (port and port.valid and port_spawn_position(port))
+    or nil
+  if not position then return nil end
+
+  local entity_name = active.worker_entity_name
+    or (port and port.valid and get_worker_entity_name(port.force))
+    or WORKER_ENTITY_NAME
+  local spawn_pos = surface.find_non_colliding_position(entity_name, position, 2, 0.25) or position
+  local force = get_worker_force()
+  local biter = surface.create_entity{
+    name = entity_name,
+    position = spawn_pos,
+    force = force,
+    create_build_effect_smoke = false,
+  }
+  if not biter or not biter.valid then return nil end
+
+  apply_job_tint(biter, active.job and active.job.kind)
+  local old_unit_number = active.biter_unit_number
+  active.biter = biter
+  active.biter_unit_number = biter.unit_number
+  rekey_active_worker(active, old_unit_number, biter.unit_number)
+  refresh_active_worker_snapshot(active, biter)
+  if active.phase and active.phase_destination then
+    issue_move_command(biter, active.phase_destination, active.phase_command_radius)
+    active.phase_started_tick = tick or game.tick
+    active.phase_origin = copy_position(biter.position)
+    active.phase_arrived_tick = nil
+  end
+  return biter
+end
+
 local function maybe_reinsert_worker(port)
   local inv = get_station_inventory(port)
   if not inv then return false end
@@ -2400,21 +2466,28 @@ local function advance_active_workers(tick)
     end
     local biter = active.biter
     if not biter or not biter.valid then
-      if active.job and active.job.kind == "construction" and not active.job.built then
-        restore_construction_ghost(active.job)
-      elseif active.job and active.job.overlay_id then
-        destroy_render(active.job.overlay_id)
-        active.job.overlay_id = nil
+      biter = recreate_missing_worker(active, tick)
+      if not biter or not biter.valid then
+        if active.job and active.job.kind == "construction" and not active.job.built then
+          restore_construction_ghost(active.job)
+        elseif active.job and active.job.overlay_id then
+          destroy_render(active.job.overlay_id)
+          active.job.overlay_id = nil
+        end
+        release_logistics_reservation(active.job)
+        release_deconstruction_reservation(active.job)
+        return_carried_item(active, active.job and active.job.source)
+        local port = active.home_port_id and storage.biterports[active.home_port_id]
+        if port and port.valid then
+          maybe_reinsert_worker(port)
+          refresh_port_status(port)
+        end
+        unmark_worker_unit(active.biter_unit_number)
+        unregister_active_worker(active)
+        goto continue
       end
-      release_logistics_reservation(active.job)
-      release_deconstruction_reservation(active.job)
-      return_carried_item(active, active.job and active.job.source)
-      unmark_worker_unit(active.biter_unit_number)
-      unregister_active_worker(active)
-      local port = active.home_port_id and storage.biterports[active.home_port_id]
-      if port and port.valid then refresh_port_status(port) end
-      goto continue
     end
+    refresh_active_worker_snapshot(active, biter)
 
     if active.phase == "to_pickup" then
       local job = active.job
@@ -2542,6 +2615,7 @@ local function dispatch_job(worker_port, job, tick)
     force = worker_port.force,
     job = job,
   }
+  refresh_active_worker_snapshot(active, biter)
   register_active_worker(active)
   mark_worker_unit(biter.unit_number, worker_port.unit_number)
   if job.kind == "logistics" and job.network_key and job.request_cursor_key then
