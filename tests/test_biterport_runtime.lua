@@ -460,6 +460,23 @@ test("biterport uses symmetric entrances and central all-sided coffee input", fu
   package.loaded["scripts.biterport"] = nil
 end)
 
+test("biterport coffee input keeps visible pipe connectors", function()
+  local path = mod_root .. "prototypes/entity/admin-buildings.lua"
+  local file = assert(io.open(path, "r"))
+  local source = file:read("*a")
+  file:close()
+  local helper = source:match("local function make_hidden_coffee_input.-local biter_station_coffee_input")
+  assert_true(helper ~= nil, "coffee input helper should exist")
+
+  assert_true(not helper:find("input%.pictures%s*=%s*nil"), "coffee input should not hide pipe connector pictures")
+  assert_true(not helper:find("input%.pipe_covers%s*=%s*nil"), "coffee input should not hide pipe covers")
+  assert_true(not helper:find("flow_direction"), "pipe prototypes should not use directional flow connections")
+  assert_true(helper:find("direction%s*=%s*defines%.direction%.north"), "pipe prototypes should keep required connection directions")
+  assert_true(helper:find("position%s*=%s*{%s*%-2,%s*%-2%s*}"), "coffee input should expose corner pipe sockets")
+  assert_true(not helper:find("position%s*=%s*{%s*%-1,%s*%-2%s*}"), "coffee input sockets should not sit one tile off center")
+  assert_true(not helper:find("position%s*=%s*{%s*%-2,%s*%-3%s*}"), "coffee input sockets should not be one tile outside the building")
+end)
+
 test("biterport refills player personal logistics requests", function()
   storage = {}
   local surface = new_surface()

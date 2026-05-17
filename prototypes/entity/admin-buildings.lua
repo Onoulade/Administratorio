@@ -323,20 +323,26 @@ local function make_hidden_coffee_input(name, localised_name, localised_descript
   input.collision_box = {{-3.1, -3.1}, {3.1, 3.1}}
   input.selection_box = {{0, 0}, {0, 0}}
   input.damaged_trigger_effect = nil
-  input.pictures = nil
-  input.pipe_covers = nil
+  input.picture = nil
+  if input.pictures then
+    for _, picture in pairs(input.pictures) do
+      if type(picture) == "table" then
+        picture.render_layer = "object"
+      end
+    end
+  end
   input.fluid_box = {
     filter = "liquid-coffee",
     volume = 100,
     pipe_connections = {
-      { direction = defines.direction.north, position = {-2, -3} },
-      { direction = defines.direction.north, position = {2, -3} },
-      { direction = defines.direction.east, position = {3, -2} },
-      { direction = defines.direction.east, position = {3, 2} },
-      { direction = defines.direction.south, position = {-2, 3} },
-      { direction = defines.direction.south, position = {2, 3} },
-      { direction = defines.direction.west, position = {-3, -2} },
-      { direction = defines.direction.west, position = {-3, 2} },
+      { direction = defines.direction.north, position = {-2, -2} },
+      { direction = defines.direction.west, position = {-2, -2} },
+      { direction = defines.direction.north, position = {2, -2} },
+      { direction = defines.direction.east, position = {2, -2} },
+      { direction = defines.direction.south, position = {2, 2} },
+      { direction = defines.direction.east, position = {2, 2} },
+      { direction = defines.direction.south, position = {-2, 2} },
+      { direction = defines.direction.west, position = {-2, 2} },
     },
     max_pipeline_extent = 60,
   }
