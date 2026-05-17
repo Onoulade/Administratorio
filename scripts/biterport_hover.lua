@@ -13,52 +13,39 @@ local function add_render(player_index, obj)
   storage.biterport_hover_renders[player_index] = renders
 end
 
-local function rear_input_position(entity)
-  local direction = entity and entity.direction or defines.direction.north
+local function coffee_input_positions(entity)
   local position = entity and entity.position or {x = 0, y = 0}
-  if direction == defines.direction.east then
-    return {x = position.x + 2.5, y = position.y}
-  elseif direction == defines.direction.south then
-    return {x = position.x + 0.5, y = position.y + 2}
-  elseif direction == defines.direction.west then
-    return {x = position.x - 1.5, y = position.y}
-  end
-  return {x = position.x + 0.5, y = position.y - 2}
+  return {
+    {x = position.x - 2, y = position.y - 2},
+    {x = position.x + 2, y = position.y - 2},
+    {x = position.x + 2, y = position.y + 2},
+    {x = position.x - 2, y = position.y + 2},
+  }
 end
 
 local function draw_coffee_input_marker(player, port)
   if not working_hours.is_enabled() or not port or not port.valid then return end
   local surface = port.surface
-  local input_position = rear_input_position(port)
+  for _, input_position in ipairs(coffee_input_positions(port)) do
+    add_render(player.index, rendering.draw_circle{
+      color = COFFEE_INPUT_COLOR,
+      radius = 0.35,
+      width = 4,
+      target = input_position,
+      surface = surface,
+      players = {player},
+      draw_on_ground = true,
+    })
 
-  add_render(player.index, rendering.draw_line{
-    color = COFFEE_INPUT_COLOR,
-    width = 3,
-    from = port.position,
-    to = input_position,
-    surface = surface,
-    players = {player},
-    draw_on_ground = true,
-  })
-
-  add_render(player.index, rendering.draw_circle{
-    color = COFFEE_INPUT_COLOR,
-    radius = 0.45,
-    width = 4,
-    target = input_position,
-    surface = surface,
-    players = {player},
-    draw_on_ground = true,
-  })
-
-  add_render(player.index, rendering.draw_sprite{
-    sprite = "fluid/liquid-coffee",
-    target = input_position,
-    surface = surface,
-    x_scale = 0.45,
-    y_scale = 0.45,
-    players = {player},
-  })
+    add_render(player.index, rendering.draw_sprite{
+      sprite = "fluid/liquid-coffee",
+      target = input_position,
+      surface = surface,
+      x_scale = 0.32,
+      y_scale = 0.32,
+      players = {player},
+    })
+  end
 end
 
 local function clear_renders(player_index)
