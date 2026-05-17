@@ -192,6 +192,7 @@ local function new_office(surface, unit_number, energy)
     position = {x = 10, y = 20},
     energy = energy == nil and 100 or energy,
     active = nil,
+    status = defines.entity_status.working,
     products_finished = 0,
   }
   function office.get_recipe()
@@ -349,6 +350,55 @@ test("field office reports unreachable workers when caller gets stuck", function
 
   assert_true(biter.destroyed, "stuck worker should be cleaned up")
   assert_eq(office.custom_status.label[1], "gui.field-office-no-workers-reachable", "stuck worker should mark office unreachable")
+end)
+
+test("field office restores a calling worker if its entity is invalid after load", function()
+  reset()
+  local spawner = {valid = true, position = {x = 40, y = 50}}
+  local surface = new_surface({spawner})
+  local office = new_office(surface, 6, 100)
+  field_office.track_entity(office)
+
+  field_office.update(0)
+
+  local old_biter = surface.created_entities[1]
+  assert_true(old_biter ~= nil, "ready office should summon a worker")
+  old_biter.valid = false
+
+  field_office.update(30)
+
+  local state = storage.field_office_state[office.unit_number]
+  assert_true(state ~= nil, "field office state should remain tracked")
+  assert_eq(state.phase, "calling", "office should keep waiting for the restored worker")
+  assert_true(state.biter ~= nil and state.biter.valid, "calling worker should be recreated")
+  assert_true(state.biter.unit_number ~= old_biter.unit_number, "restored worker should receive a fresh unit number")
+  assert_eq(storage.field_office_worker_to_office[old_biter.unit_number], nil, "old worker mapping should be removed")
+  assert_eq(storage.field_office_worker_to_office[state.biter.unit_number], office.unit_number, "new worker should be mapped to the office")
+end)
+
+test("field office restores a working worker if its entity is invalid after load", function()
+  reset()
+  local spawner = {valid = true, position = {x = 40, y = 50}}
+  local surface = new_surface({spawner})
+  local office = new_office(surface, 6, 100)
+  field_office.track_entity(office)
+
+  field_office.update(0)
+  local old_biter = surface.created_entities[1]
+  old_biter.position = {x = office.position.x, y = office.position.y}
+  field_office.update(30)
+
+  local state = storage.field_office_state[office.unit_number]
+  assert_eq(state.phase, "working", "arrived worker should put the office to work")
+  old_biter.valid = false
+
+  field_office.update(60)
+
+  state = storage.field_office_state[office.unit_number]
+  assert_eq(state.phase, "working", "office should keep working after worker restoration")
+  assert_true(state.biter ~= nil and state.biter.valid, "working worker should be recreated")
+  assert_true(state.biter.unit_number ~= old_biter.unit_number, "restored working worker should receive a fresh unit number")
+  assert_eq(office.active, true, "office should remain active with the restored worker")
 end)
 
 if failed > 0 then

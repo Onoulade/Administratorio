@@ -888,6 +888,83 @@ local function spawn_station_biter(station)
   return biter
 end
 
+local function refresh_active_biter_snapshot(active_state, biter)
+  if not active_state or not biter or not biter.valid then return end
+  active_state.worker_entity_name = biter.name
+  active_state.worker_surface_index = biter.surface and biter.surface.index or nil
+  active_state.worker_last_position = {x = biter.position.x, y = biter.position.y}
+end
+
+local function rekey_active_biter_state(active_state, old_unit_number, new_unit_number)
+  if not active_state or not old_unit_number or not new_unit_number then return end
+  if storage.biter_station_biter then
+    storage.biter_station_biter[old_unit_number] = nil
+    storage.biter_station_biter[new_unit_number] = active_state
+  end
+  if storage.biter_station_worker_units then
+    local station_marker = storage.biter_station_worker_units[old_unit_number]
+    storage.biter_station_worker_units[old_unit_number] = nil
+    storage.biter_station_worker_units[new_unit_number] = station_marker or active_state.station_id or true
+  end
+  local station_id = active_state.station_id
+  local station_map = station_id and storage.biter_station_active_by_station and storage.biter_station_active_by_station[station_id]
+  if station_map then
+    station_map[old_unit_number] = nil
+    station_map[new_unit_number] = true
+  end
+  for _, building in ipairs(active_state.building_queue or {}) do
+    local run_state = building and building.unit_number and storage.managed_building_run[building.unit_number]
+    if run_state and run_state.claimed_by == old_unit_number then
+      run_state.claimed_by = new_unit_number
+    end
+  end
+end
+
+local function recreate_missing_active_biter(active_state, station, tick)
+  if not active_state or not game or not game.surfaces then return nil end
+  station = station or (active_state.station_id and storage.biter_stations and storage.biter_stations[active_state.station_id])
+  local surface = active_state.worker_surface_index and game.surfaces[active_state.worker_surface_index] or nil
+  surface = surface or (station and station.valid and station.surface) or nil
+  if not surface then return nil end
+
+  local position = active_state.worker_last_position
+    or (station and station.valid and station_interior_position(station))
+    or nil
+  if not position then return nil end
+
+  local entity_name = active_state.worker_entity_name or get_worker_entity_name()
+  local spawn_pos = surface.find_non_colliding_position(entity_name, position, 2, 0.25) or position
+  local force = get_biter_force()
+  if (not force or not force.valid or force.name == "enemy") and station and station.valid then
+    force = station.force or game.forces["player"] or game.forces["neutral"]
+  end
+  local biter = surface.create_entity{
+    name = entity_name,
+    position = spawn_pos,
+    force = force,
+    create_build_effect_smoke = false,
+  }
+  if not biter or not biter.valid then return nil end
+
+  apply_machine_tint(biter)
+  destroy_overlay(active_state)
+  active_state.overlay_id = create_worker_overlay(biter)
+  local old_unit_number = active_state.biter_unit_number
+  active_state.biter = biter
+  active_state.biter_unit_number = biter.unit_number
+  rekey_active_biter_state(active_state, old_unit_number, biter.unit_number)
+  refresh_active_biter_snapshot(active_state, biter)
+  if active_state.phase_destination then
+    issue_move_command(biter, active_state.phase_destination, active_state.phase_command_radius)
+    active_state.phase_started_tick = tick or game.tick
+    active_state.phase_origin = {x = biter.position.x, y = biter.position.y}
+    active_state.phase_arrived_tick = nil
+    active_state.last_progress_tick = tick or game.tick
+    active_state.last_progress_position = {x = biter.position.x, y = biter.position.y}
+  end
+  return biter
+end
+
 local function claim_queue_for_biter(queue, biter_unit_number)
   for _, building in ipairs(queue) do
     if building and building.valid and building.unit_number then
@@ -980,10 +1057,12 @@ local function dispatch_single_station_biter(station, queue)
     overlay_id = create_worker_overlay(biter),
     phase = "to_building",
   }
+  refresh_active_biter_snapshot(active_state, biter)
   register_active_biter_state(active_state)
   mark_station_worker_unit(biter.unit_number, station.unit_number)
   detach_station_worker_from_waiting_system(biter.unit_number)
   begin_phase_move(active_state, biter, "to_building", queue[1], C.BITER_STATION_ARRIVAL_RADIUS, game.tick)
+  refresh_active_biter_snapshot(active_state, biter)
 
   set_station_status(station, "biter-station-calling")
   return true
@@ -1155,10 +1234,14 @@ local function advance_active_biters(tick)
 
     local biter = active_state.biter
     if not biter or not biter.valid then
-      cleanup_active_biter(active_state, tick, false, "biter-invalid")
-      refresh_station_status(station)
-      goto continue
+      biter = recreate_missing_active_biter(active_state, station, tick)
+      if not biter or not biter.valid then
+        cleanup_active_biter(active_state, tick, false, "biter-invalid")
+        refresh_station_status(station)
+        goto continue
+      end
     end
+    refresh_active_biter_snapshot(active_state, biter)
 
     if check_and_update_progress(active_state, biter, tick) then
       cleanup_active_biter(active_state, tick, false, "stuck")
