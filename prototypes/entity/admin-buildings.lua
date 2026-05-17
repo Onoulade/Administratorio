@@ -216,9 +216,9 @@ biter_station.picture = {
     {
       filename = entity_graphics .. "work-station/work-station-floor.png",
       width = 480,
-      height = 472,
-      scale = 1 / 3,
-      shift = util.by_pixel(0, 0),
+      height = 419,
+      scale = 0.42,
+      shift = util.by_pixel(0, -5),
     },
   },
 }
@@ -227,10 +227,10 @@ biter_station.stateless_visualisation = {
   animation = {
     filename = entity_graphics .. "work-station/work-station-roof.png",
     width = 480,
-    height = 472,
+    height = 419,
     frame_count = 1,
-    scale = 1 / 3,
-    shift = util.by_pixel(0, 0),
+    scale = 0.42,
+    shift = util.by_pixel(0, -5),
   },
 }
 biter_station.draw_stateless_visualisations_in_ghost = true
