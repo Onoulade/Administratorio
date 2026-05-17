@@ -201,6 +201,7 @@ biter_station.collision_box = {{-2.4, -2.4}, {2.4, 2.4}}
 biter_station.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
 biter_station.inventory_size = 20
 biter_station.inventory_type = "with_filters_and_bar"
+biter_station.rotatable = false
 biter_station.collision_mask = {layers = {
   [ADMIN_STATION_COLLISION_LAYER] = true,
   water_tile = true,
@@ -249,6 +250,7 @@ biterport.collision_box = {{-2.4, -2.4}, {2.4, 2.4}}
 biterport.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
 biterport.inventory_size = 9
 biterport.inventory_type = "with_filters_and_bar"
+biterport.rotatable = false
 biterport.collision_mask = {layers = {
   [ADMIN_STATION_COLLISION_LAYER] = true,
   water_tile = true,
@@ -262,10 +264,10 @@ biterport.picture = {
   layers = {
     {
       filename = entity_graphics .. "biterport/biterport-floor.png",
-      width = 479,
-      height = 496,
-      scale = 0.375,
-      shift = util.by_pixel(0, -8),
+      width = 480,
+      height = 454,
+      scale = 0.4,
+      shift = util.by_pixel(0, -5),
     },
   },
 }
@@ -273,11 +275,11 @@ biterport.stateless_visualisation = {
   render_layer = "higher-object-above",
   animation = {
     filename = entity_graphics .. "biterport/biterport-roof.png",
-    width = 479,
-    height = 496,
+    width = 480,
+    height = 454,
     frame_count = 1,
-    scale = 0.375,
-    shift = util.by_pixel(0, -8),
+    scale = 0.4,
+    shift = util.by_pixel(0, -5),
   },
 }
 biterport.draw_stateless_visualisations_in_ghost = true
@@ -318,7 +320,7 @@ local function make_hidden_coffee_input(name, localised_name, localised_descript
   input.minable = nil
   input.placeable_by = nil
   input.collision_mask = {layers = {}}
-  input.collision_box = {{-0.1, -0.1}, {0.1, 0.1}}
+  input.collision_box = {{-3.1, -3.1}, {3.1, 3.1}}
   input.selection_box = {{0, 0}, {0, 0}}
   input.damaged_trigger_effect = nil
   input.pictures = nil
@@ -327,7 +329,14 @@ local function make_hidden_coffee_input(name, localised_name, localised_descript
     filter = "liquid-coffee",
     volume = 100,
     pipe_connections = {
-      { direction = defines.direction.north, position = {0, 0} },
+      { direction = defines.direction.north, position = {-2, -3} },
+      { direction = defines.direction.north, position = {2, -3} },
+      { direction = defines.direction.east, position = {3, -2} },
+      { direction = defines.direction.east, position = {3, 2} },
+      { direction = defines.direction.south, position = {-2, 3} },
+      { direction = defines.direction.south, position = {2, 3} },
+      { direction = defines.direction.west, position = {-3, -2} },
+      { direction = defines.direction.west, position = {-3, 2} },
     },
     max_pipeline_extent = 60,
   }
@@ -403,6 +412,7 @@ if roboport_source then
   biterport_placement_preview.placeable_by = placeable_by_item("biterport")
   biterport_placement_preview.hidden_in_factoriopedia = true
   biterport_placement_preview.selectable_in_game = false
+  biterport_placement_preview.rotatable = false
   biterport_placement_preview.collision_box = biterport.collision_box
   biterport_placement_preview.selection_box = biterport.selection_box
   biterport_placement_preview.collision_mask = biterport.collision_mask
@@ -416,7 +426,7 @@ if roboport_source then
   -- base must be a RotatedSprite (direction_count required).
   biterport_placement_preview.base = {
     filename = entity_graphics .. "biterport/biterport.png",
-    width = 480, height = 497, scale = 0.375, shift = {0, -1},
+    width = 340, height = 322, scale = 0.5, shift = {0, 0},
     direction_count = 1,
   }
   -- Hide all roboport overlay animations; they won't play (entity is swapped immediately)

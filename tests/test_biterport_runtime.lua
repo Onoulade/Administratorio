@@ -49,11 +49,27 @@ defines = {
 }
 
 package.loaded["scripts.working_hours"] = nil
-package.preload["scripts.working_hours"] = function()
+local function disabled_working_hours()
   return {
     is_enabled = function() return false end,
     is_night = function() return false end,
   }
+end
+package.preload["scripts.working_hours"] = disabled_working_hours
+
+local function set_working_hours(enabled, night)
+  package.loaded["scripts.working_hours"] = nil
+  package.preload["scripts.working_hours"] = function()
+    return {
+      is_enabled = function() return enabled end,
+      is_night = function() return night end,
+    }
+  end
+end
+
+local function reset_working_hours()
+  package.loaded["scripts.working_hours"] = nil
+  package.preload["scripts.working_hours"] = disabled_working_hours
 end
 
 local function new_inventory(size, initial_items)
@@ -133,6 +149,7 @@ local function new_surface()
     index = 1,
     chests = {},
     hidden = {},
+    created = {},
   }
 
   function surface.find_non_colliding_position(_, position)
@@ -153,7 +170,22 @@ local function new_surface()
       return {}
     end
     if params.name == "biterport-coffee-input" then
-      return {}
+      local entities = {}
+      for _, entity in ipairs(surface.created) do
+        if entity.valid and entity.name == params.name then
+          entities[#entities + 1] = entity
+        end
+      end
+      return entities
+    end
+    if params.name == "biterport-wall-blocker" then
+      local entities = {}
+      for _, entity in ipairs(surface.created) do
+        if entity.valid and entity.name == params.name then
+          entities[#entities + 1] = entity
+        end
+      end
+      return entities
     end
     return {}
   end
@@ -167,10 +199,12 @@ local function new_surface()
       surface = surface,
       force = params.force,
       unit_number = next_unit_number,
+      direction = params.direction,
       bounding_box = {
         left_top = {x = params.position.x - 0.4, y = params.position.y - 0.4},
         right_bottom = {x = params.position.x + 0.4, y = params.position.y + 0.4},
       },
+      fluidbox = {},
       commandable = {
         has_command = false,
       },
@@ -183,12 +217,17 @@ local function new_surface()
       entity.valid = false
       entity.commandable.has_command = false
     end
+    function entity.insert_fluid(fluid)
+      entity.fluidbox[1] = {name = fluid.name, amount = fluid.amount}
+      return fluid.amount
+    end
     if params.name == "biterport-hidden-roboport" or params.name == "biterport-coffee-input" then
       entity.destructible = false
       entity.minable = false
       entity.operable = false
       surface.hidden[#surface.hidden + 1] = entity
     end
+    surface.created[#surface.created + 1] = entity
     return entity
   end
 
@@ -373,6 +412,53 @@ local function advance_worker_to(active, position, tick, biterport)
   biterport.on_ai_command_completed{unit_number = active.biter_unit_number, tick = tick}
   biterport.update(tick + 1)
 end
+
+test("biterport uses symmetric entrances and central all-sided coffee input", function()
+  storage = {}
+  set_working_hours(true, true)
+  package.loaded["scripts.biterport"] = nil
+  local surface = new_surface()
+  local force = {
+    name = "player",
+    technologies = {},
+    set_cease_fire = function() end,
+  }
+  game = {
+    tick = 0,
+    forces = {player = force, neutral = force},
+    create_force = function() return force end,
+  }
+
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 1, 1)
+  port.position = {x = 0.5, y = 0.5}
+  biterport.track_port(port)
+
+  local blockers = {}
+  for _, entity in ipairs(surface.created) do
+    if entity.valid and entity.name == "biterport-wall-blocker" then
+      blockers[entity.position.x .. "," .. entity.position.y] = true
+    end
+  end
+
+  assert_true(not blockers["0.5,-1.5"], "north center entrance should stay open")
+  assert_true(not blockers["2.5,0.5"], "east center entrance should stay open")
+  assert_true(not blockers["0.5,2.5"], "south center entrance should stay open")
+  assert_true(not blockers["-1.5,0.5"], "west center entrance should stay open")
+  assert_true(blockers["-1.5,-1.5"], "northwest wall segment should be blocked")
+  assert_true(blockers["2.5,-1.5"], "northeast wall segment should be blocked")
+  assert_true(blockers["-1.5,2.5"], "southwest wall segment should be blocked")
+  assert_true(blockers["2.5,2.5"], "southeast wall segment should be blocked")
+
+  local input = storage.biterport_coffee_inputs[port.unit_number]
+  assert_true(input ~= nil and input.valid, "track_port should create the hidden coffee input")
+  assert_eq(input.name, "biterport-coffee-input", "coffee input should be one all-sided hidden fluid box")
+  assert_eq(input.position.x, port.position.x, "coffee input should be centered on the building")
+  assert_eq(input.position.y, port.position.y, "coffee input should be centered on the building")
+
+  reset_working_hours()
+  package.loaded["scripts.biterport"] = nil
+end)
 
 test("biterport refills player personal logistics requests", function()
   storage = {}
