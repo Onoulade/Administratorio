@@ -1,4 +1,16 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.5
+Date: 2026-05-17
+  Bugfixes:
+    - align coffee markers and pipe sockets
+    - restore managed workers after save load
+    - preserve tube outtake filters
+  Graphics:
+    - align four-entrance sprite metrics
+    - add four-entrance sprite layout
+  Docs:
+    - document four coffee entrances
+---------------------------------------------------------------------------------------------------
 Version: 0.4.4
 Date: 2026-05-13
   Changes:
