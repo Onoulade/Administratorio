@@ -47,7 +47,7 @@ Because the workforce is real, the paperwork is too. Your Union Headquarters neg
 
 ### Office hours
 
-Office Desks, Corporate Breakrooms, and Union Headquarters clock out at night unless you install an **Overtime Exemption**. Biter Employment Offices and Biterports keep working past sunset, but their night dispatches require Liquid Coffee piped into the back. The biters, it turns out, also get tired. If you'd rather skip the whole circadian subplot, there's a startup setting to keep the factory on 24/7.
+Office Desks, Corporate Breakrooms, and Union Headquarters clock out at night unless you install an **Overtime Exemption**. Biter Employment Offices and Biterports keep working past sunset, but their night dispatches require Liquid Coffee piped into any of the four side entrances. The biters, it turns out, also get tired. If you'd rather skip the whole circadian subplot, there's a startup setting to keep the factory on 24/7.
 
 ### New resources, new fluids, new red tape
 

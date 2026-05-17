@@ -15,6 +15,7 @@ end
 
 local function coffee_input_positions(entity)
   local position = entity and entity.position or {x = 0, y = 0}
+  -- Match the hidden coffee pipe prototype: one entrance on each side.
   return {
     {x = position.x - 2, y = position.y - 2},
     {x = position.x + 2, y = position.y - 2},

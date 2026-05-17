@@ -58,7 +58,7 @@ The biter station has a crafts-per-visit upgrade that affects both worker entity
 
 ### Night Shift
 
-During night (30% of the day cycle, centered on midnight), the biter station requires liquid coffee to dispatch workers. Each night dispatch costs 5 liquid-coffee. A hidden coffee input entity handles this automatically when working hours is enabled.
+During night (30% of the day cycle, centered on midnight), the biter station requires liquid coffee to dispatch workers. Each night dispatch costs 5 liquid-coffee. The coffee input accepts pipes from all four sides, so you can feed the station from north, south, east, or west when working hours is enabled.
 
 ### Status Messages
 
@@ -139,7 +139,7 @@ The biterport connects to:
 
 #### Night Shift
 
-Like the biter station, biterports require liquid coffee during night hours. Each night dispatch costs 5 liquid-coffee.
+Like the biter station, biterports require liquid coffee during night hours. Each night dispatch costs 5 liquid-coffee, and the coffee input accepts pipes from all four sides.
 
 ### How to Use
 

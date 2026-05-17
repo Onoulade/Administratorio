@@ -54,8 +54,8 @@ Administratorio is in beta: the full progression arc is expected to be playable,
 | `propaganda-distillery` | `propaganda-distillery` | Lie, misinformation, slush fund, justification chain |
 | `union-headquarters` | `union-negotiation`, `bureaucracy-policy` | Union approval, grants, narrative, written approvals, policy work, tax audits |
 | `admin-station` | storage + complaint desk | Holds tickets, resolved items, and payouts. inventory_size = 20 |
-| `biter-station` | biter dispatch | Dispatches workers to managed buildings within 30-tile radius |
-| `biterport` | biter-logistics | Walking-worker construction/logistics network |
+| `biter-station` | biter dispatch | Dispatches workers to managed buildings within 30-tile radius; four side coffee entrances for night work |
+| `biterport` | biter-logistics | Walking-worker construction/logistics network; four side coffee entrances for night work |
 | `formation-center` | specialist-training | Trains Union Delegates, Chemical Operators, Nuclear Technicians |
 | `field-office` | early-worker | Summons biters from nearby nests (200 tiles) as one-per-craft-cycle workers |
 
