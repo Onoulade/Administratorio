@@ -14,15 +14,13 @@ local COFFEE_FLUID_NAME = "liquid-coffee"
 local WORKER_ENTITY_NAME = C.BITERPORT_WORKER_ENTITY_NAME or "small-biter"
 local FALLBACK_WORKER_ENTITY_NAME = "small-biter"
 local PORT_WALL_OFFSETS = {
-  {x = -2, y = -2}, {x = -1, y = -2}, {x = 0, y = -2}, {x = 1, y = -2}, {x = 2, y = -2},
+  {x = -2, y = -2}, {x = -1, y = -2}, {x = 1, y = -2}, {x = 2, y = -2},
   {x = -2, y = -1}, {x = 2, y = -1},
-  {x = -2, y = 0}, {x = 2, y = 0},
   {x = -2, y = 1}, {x = 2, y = 1},
-  {x = -2, y = 2}, {x = 0, y = 2}, {x = 2, y = 2},
+  {x = -2, y = 2}, {x = -1, y = 2}, {x = 1, y = 2}, {x = 2, y = 2},
 }
-local PORT_DESPAWN_INTERIOR_OFFSET = {x = -1, y = 0}
-local PORT_SPAWN_INTERIOR_OFFSET = {x = 1, y = 0}
-local PORT_REAR_INPUT_OFFSET = {x = 0, y = -3}
+local PORT_DESPAWN_INTERIOR_OFFSET = {x = 0, y = 0}
+local PORT_SPAWN_INTERIOR_OFFSET = {x = 0, y = 0}
 
 local TRANSPORT_TIER_TECHS = {
   {"biterport-transport-capacity-1", 2},
@@ -104,8 +102,7 @@ end
 
 local function offset_position(entity, offset)
   local position = entity and entity.position or {x = 0, y = 0}
-  local rotated = rotate_local_offset(offset, entity and entity.direction or defines.direction.north)
-  return {x = position.x + rotated.x, y = position.y + rotated.y}
+  return {x = position.x + offset.x, y = position.y + offset.y}
 end
 
 local function current_tick(fallback_tick)
@@ -283,7 +280,7 @@ local function port_money_count(port)
 end
 
 local function rear_input_position(entity)
-  return offset_position(entity, PORT_REAR_INPUT_OFFSET)
+  return entity and entity.position or {x = 0, y = 0}
 end
 
 local function port_blocker_area(port)
@@ -342,7 +339,7 @@ local function create_hidden_coffee_input(port)
   local created = port.surface.create_entity{
     name = COFFEE_INPUT_NAME,
     position = rear_input_position(port),
-    direction = port.direction or defines.direction.north,
+    direction = defines.direction.north,
     force = port.force,
     create_build_effect_smoke = false,
   }
@@ -2710,7 +2707,6 @@ function M.untrack_port(entity, tick)
   if storage.biterport_next_dispatch_ticks then
     storage.biterport_next_dispatch_ticks[port_id] = nil
   end
-
   local active_set = storage.biterport_active_by_port[port_id]
   if active_set then
     local units = {}

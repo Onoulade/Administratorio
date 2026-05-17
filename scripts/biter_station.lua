@@ -12,14 +12,12 @@ local MONEY_ITEM_NAME = "taxpayer-money"
 local COFFEE_FLUID_NAME = "liquid-coffee"
 local WORKER_ENTITY_NAME = "small-biter"
 local STATION_WALL_OFFSETS = {
-  {x = -2, y = -2}, {x = -1, y = -2}, {x = 0, y = -2}, {x = 1, y = -2}, {x = 2, y = -2},
+  {x = -2, y = -2}, {x = -1, y = -2}, {x = 1, y = -2}, {x = 2, y = -2},
   {x = -2, y = -1}, {x = 2, y = -1},
-  {x = -2, y = 0}, {x = 2, y = 0},
   {x = -2, y = 1}, {x = 2, y = 1},
-  {x = -2, y = 2}, {x = 0, y = 2}, {x = 1, y = 2}, {x = 2, y = 2},
+  {x = -2, y = 2}, {x = -1, y = 2}, {x = 1, y = 2}, {x = 2, y = 2},
 }
 local STATION_INTERIOR_SPAWN_OFFSET = {x = 0, y = 0}
-local STATION_REAR_INPUT_OFFSET = {x = 0, y = -3}
 
 local function get_station_slots_for_force(force)
   return C.BITER_STATION_BASE_SLOTS
@@ -180,12 +178,11 @@ end
 
 local function offset_position(entity, offset)
   local position = entity and entity.position or {x = 0, y = 0}
-  local rotated = rotate_local_offset(offset, entity and entity.direction or defines.direction.north)
-  return {x = position.x + rotated.x, y = position.y + rotated.y}
+  return {x = position.x + offset.x, y = position.y + offset.y}
 end
 
 local function rear_input_position(entity)
-  return offset_position(entity, STATION_REAR_INPUT_OFFSET)
+  return entity and entity.position or {x = 0, y = 0}
 end
 
 local function station_interior_position(station)
@@ -240,7 +237,7 @@ local function create_hidden_coffee_input(station)
   local created = station.surface.create_entity{
     name = COFFEE_INPUT_NAME,
     position = rear_input_position(station),
-    direction = station.direction or defines.direction.north,
+    direction = defines.direction.north,
     force = station.force,
     create_build_effect_smoke = false,
   }
