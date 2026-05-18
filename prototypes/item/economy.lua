@@ -23,7 +23,7 @@ data:extend({
   -- Core administrative supplies
   { type = "item", name = "paper",            icon = item_icons .. "paper.png",         icon_size = 64, subgroup = "admin-paper-supplies", order = "a", stack_size = 200 },
   { type = "item", name = "ink",              icon = item_icons .. "ink-cartridge.png",  icon_size = 64, subgroup = "admin-paper-supplies", order = "b", stack_size = 100, tint = {r=0.2, g=0.2, b=0.3} },
-  { type = "item", name = "coffee-bean",      icon = item_icons .. "coffee-bean.png",   icon_size = 32, subgroup = "admin-paper-supplies", order = "c", stack_size = 500 },
+  { type = "item", name = "coffee-bean",      icon = item_icons .. "coffee-bean.png",   icon_size = 32, subgroup = "admin-paper-supplies", order = "c", stack_size = 50 },
   -- BS Economy Intermediaries
   { type = "item", name = "dubious-data",       icon = item_icons .. "dubious-data.png",       icon_size = 64, subgroup = "admin-bs-economy", order = "a", stack_size = 100 },
   { type = "item", name = "basic-excuse",       icon = item_icons .. "basic-excuse.png",       icon_size = 64, subgroup = "admin-bs-economy", order = "b", stack_size = 100 },

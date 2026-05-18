@@ -19,7 +19,7 @@ data:extend({
     main_product = "coffee-bean",
     energy_required = 10
   },
-  { type = "recipe", name = "coffee-plantation",      category = "admin-greenhouse",   enabled = false, ingredients = {{type="item", name="coffee-bean", amount=1}, {type="fluid", name="water", amount=100}}, results = {{type="item", name="coffee-bean", amount=3}},  energy_required = 45 },
+  { type = "recipe", name = "coffee-plantation",      category = "admin-greenhouse",   enabled = false, ingredients = {{type="item", name="coffee-bean", amount=1}, {type="fluid", name="water", amount=100}}, results = {{type="item", name="coffee-bean", amount=5}},  energy_required = 30 },
   { type = "recipe", name = "coffee-refining",        category = "watercooler-gossip",    enabled = false, subgroup = "admin-raw", order = "c1", ingredients = {{type="item", name="coffee-bean", amount=1}, {type="fluid", name="water", amount=50}}, results = {{type="fluid", name="liquid-coffee", amount=50}}, energy_required = 3 },
 
   -- Batch Smelting (Stone Furnace - requires carbon offset certificate)

@@ -68,6 +68,7 @@ data = {
     },
     ["recipe-category"] = {},
     ["module-category"] = {},
+    ["fuel-category"] = {},
     technology = {},
     fluid = {},
     item = {},
@@ -79,6 +80,9 @@ data = {
 
 function data:extend(prototypes)
   for _, proto in ipairs(prototypes) do
+    if proto.type and data.raw[proto.type] then
+      data.raw[proto.type][proto.name] = proto
+    end
     if proto.type == "recipe" then
       recipes[proto.name] = proto
     elseif proto.type == "recipe-category" then
@@ -145,6 +149,9 @@ local recipe_name_locale = load_locale_section("recipe-name")
 
 -- Load categories first (defines recipe-categories + sets up character)
 dofile(mod_root .. "prototypes/categories.lua")
+
+-- Load core item prototypes used by recipe assertions.
+dofile(mod_root .. "prototypes/item/economy.lua")
 
 -- Load all recipe files
 dofile(mod_root .. "prototypes/recipe/paperwork.lua")
@@ -965,6 +972,14 @@ test("coffee-plantation grows beans without fertilizer", function()
   assert_true(has_ingredient(r, "coffee-bean"), "coffee plantation needs coffee-bean")
   assert_true(has_ingredient(r, "water"), "coffee plantation needs water")
   assert_true(not has_ingredient(r, "fertilizer"), "coffee plantation should not need fertilizer")
+  assert_eq(get_result_amount(r, "coffee-bean"), 5)
+  assert_eq(r.energy_required, 30)
+end)
+
+test("coffee beans stack to 50", function()
+  local bean = data.raw.item["coffee-bean"]
+  assert_true(bean ~= nil, "coffee-bean item missing")
+  assert_eq(bean.stack_size, 50)
 end)
 
 test("coffee-refining does not require work-order", function()
