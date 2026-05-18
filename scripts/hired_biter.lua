@@ -63,11 +63,12 @@ end
 local function show_notice_feedback(entry, added, player)
   if not entry or not entry.entity or not entry.entity.valid then return end
   local count = get_notice_count(entry)
+  local capacity = notice_capacity()
   local text
   if added and added > 0 then
-    text = "+" .. tostring(added) .. " eviction notices (" .. tostring(count) .. "/" .. tostring(notice_capacity()) .. ")"
+    text = {"message.hired-biter-eviction-added", added, count, capacity}
   else
-    text = "Eviction notices: " .. tostring(count) .. "/" .. tostring(notice_capacity())
+    text = {"message.hired-biter-eviction-count", count, capacity}
   end
 
   if player and player.valid and player.create_local_flying_text then

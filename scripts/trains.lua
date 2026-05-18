@@ -246,7 +246,10 @@ function M.on_train_changed_state(event)
           if inv.get_item_count(FORM_NAME) == 0 then
             for _, player in pairs(game.connected_players) do
               player.create_local_flying_text{
-                text = {"", "[color=red]", station.backer_name or "Station", ": Out of transit authorizations![/color]"},
+                text = {
+                  "message.transit-out-of-authorizations",
+                  station.backer_name or {"message.transit-station-fallback"},
+                },
                 position = station.position,
                 color = {r = 1, g = 0.2, b = 0.2},
                 time_to_live = 120,
