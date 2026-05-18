@@ -215,6 +215,7 @@ function M.update_placement_preview(player, tick, force_refresh)
     position = player.position,
     radius = C.FIELD_OFFICE_SPAWNER_RANGE,
     force = "enemy",
+    limit = C.FIELD_OFFICE_PLACEMENT_PREVIEW_NEST_LIMIT or 32,
   }
 
   for _, spawner in ipairs(spawners) do
