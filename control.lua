@@ -40,6 +40,29 @@ for _, name in ipairs(ADMIN_DESK_NAMES) do
   ADMIN_DESK_NAME_SET[name] = true
 end
 
+local function entity_prototype_exists(name)
+  if prototypes and prototypes.entity then
+    return prototypes.entity[name] ~= nil
+  end
+  return true
+end
+
+local function existing_entity_names(names)
+  local filtered = {}
+  for _, name in ipairs(names) do
+    if entity_prototype_exists(name) then
+      filtered[#filtered + 1] = name
+    end
+  end
+  return filtered
+end
+
+local function find_entities_with_existing_names(surface, names)
+  local filtered_names = existing_entity_names(names)
+  if #filtered_names == 0 then return {} end
+  return surface.find_entities_filtered{name = filtered_names}
+end
+
 local UNIT_GROUP_DEBUG_SCAN_INTERVAL = 180
 local UNIT_GROUP_GATHER_REDIRECT_TICKS = 300
 local WORKING_HOURS_ENABLED = feature_flags.working_hours_enabled()
@@ -289,7 +312,7 @@ end
 local function rebuild_desk_cache()
   storage.admin_desks = {}
   for _, surface in pairs(game.surfaces) do
-    for _, desk in ipairs(surface.find_entities_filtered{name = ADMIN_DESK_NAMES}) do
+    for _, desk in ipairs(find_entities_with_existing_names(surface, ADMIN_DESK_NAMES)) do
       if desk.valid then
         refresh_cached_desk(desk)
       end
@@ -447,6 +470,7 @@ local function init_storage()
     storage.waiting_biter_state_index_built = false
   end
   storage.desk_zones = storage.desk_zones or {}
+  storage.admin_desks = storage.admin_desks or {}
   storage.desk_combinators = storage.desk_combinators or {}
   storage.desk_reserved_slots = storage.desk_reserved_slots or {}
   storage.desk_grid_slots = storage.desk_grid_slots or {}
@@ -677,6 +701,23 @@ local function on_init()
   needs_unit_group_scan = true
 end
 
+local function cleanup_orphan_admin_desk_storage()
+  for desk_id in pairs(storage.desk_zones or {}) do
+    local desk = storage.admin_desks and storage.admin_desks[desk_id] or nil
+    if not (desk and desk.valid) then
+      zones.cleanup_desk_zone(desk_id)
+      if storage.desk_combinators[desk_id] and storage.desk_combinators[desk_id].valid then
+        storage.desk_combinators[desk_id].destroy()
+      end
+      storage.desk_combinators[desk_id] = nil
+      storage.desk_reserved_slots[desk_id] = nil
+      if storage.desk_grid_slots then storage.desk_grid_slots[desk_id] = nil end
+      if storage.capture_bureau_ports then storage.capture_bureau_ports[desk_id] = nil end
+      biters.clear_desk_circuit_tracking(desk_id)
+    end
+  end
+end
+
 local function on_configuration_changed(event)
   warn_about_pre_040_save(event)
   init_storage()
@@ -706,7 +747,7 @@ local function on_configuration_changed(event)
     local old_corner_blockers = surface.find_entities_filtered{name = "admin-station-corner-blocker"}
     for _, blocker in ipairs(old_corner_blockers) do blocker.destroy() end
 
-    for _, desk in ipairs(surface.find_entities_filtered{name = ADMIN_DESK_NAMES}) do
+    for _, desk in ipairs(find_entities_with_existing_names(surface, ADMIN_DESK_NAMES)) do
       desk = normalize_admin_station_entity(desk, nil) or desk
       local desk_id = desk.unit_number
       storage.desk_zones[desk_id] = {
@@ -730,6 +771,7 @@ local function on_configuration_changed(event)
     end
   end
   if storage.desk_power then storage.desk_power = nil end
+  cleanup_orphan_admin_desk_storage()
   rebuild_desk_cache()
   biters.rebuild_desk_index()
   biters.mark_all_desk_circuit_dirty()
@@ -1141,6 +1183,39 @@ local function on_entity_built(event)
   on_entity_built_inner(event)
 end
 
+local function cleanup_admin_desk_storage(desk_id, surface)
+  if not desk_id then return end
+  storage.admin_desks = storage.admin_desks or {}
+  storage.desk_zones = storage.desk_zones or {}
+  storage.desk_combinators = storage.desk_combinators or {}
+  storage.desk_reserved_slots = storage.desk_reserved_slots or {}
+  local was_tracked = (storage.admin_desks and storage.admin_desks[desk_id])
+    or (storage.desk_zones and storage.desk_zones[desk_id])
+  storage.admin_desks[desk_id] = nil
+  if was_tracked then
+    biters.reroute_desk_biters(desk_id, surface)
+  end
+  zones.cleanup_desk_zone(desk_id)
+  if storage.desk_combinators[desk_id] and storage.desk_combinators[desk_id].valid then
+    storage.desk_combinators[desk_id].destroy()
+  end
+  storage.desk_combinators[desk_id] = nil
+  storage.desk_reserved_slots[desk_id] = nil
+  if storage.desk_grid_slots then storage.desk_grid_slots[desk_id] = nil end
+  if storage.capture_bureau_ports then storage.capture_bureau_ports[desk_id] = nil end
+  biters.clear_desk_circuit_tracking(desk_id)
+end
+
+local function cleanup_removed_admin_desk(entity)
+  if not entity or not entity.valid or not is_admin_desk(entity) then return false end
+  local desk_id = entity.unit_number
+  if entity.name == "capture-bureau" then
+    biters.delete_capture_bureau_ports(entity)
+  end
+  cleanup_admin_desk_storage(desk_id, entity.surface)
+  return true
+end
+
 local function on_entity_removed(event)
   local entity = event.entity
   if not entity or not entity.valid then return end
@@ -1171,28 +1246,18 @@ local function on_entity_removed(event)
 
   trains.on_removed(entity)
 
-  if is_admin_desk(entity) then
-    local desk_id = entity.unit_number
-    local surface = entity.surface
-    if entity.name == "capture-bureau" then
-      biters.delete_capture_bureau_ports(entity)
-    end
-    storage.admin_desks[desk_id] = nil
-    biters.reroute_desk_biters(desk_id, surface)
-    zones.cleanup_desk_zone(desk_id)
-    if storage.desk_combinators[desk_id] and storage.desk_combinators[desk_id].valid then
-      storage.desk_combinators[desk_id].destroy()
-    end
-    storage.desk_combinators[desk_id] = nil
-    storage.desk_reserved_slots[desk_id] = nil
-    if storage.desk_grid_slots then storage.desk_grid_slots[desk_id] = nil end
-    biters.clear_desk_circuit_tracking(desk_id)
+  if cleanup_removed_admin_desk(entity) then
+    return
   elseif pneumatic.is_pneumatic_building(entity) then
     pneumatic.delete_pneumatic_supports(entity)
   elseif entity.name == "pneumatic-pipe" or entity.name == "pneumatic-pipe-to-ground" then
     pneumatic.ensure_storage()
     storage.tube_network_dirty = true
   end
+end
+
+local function on_pre_entity_removed(event)
+  cleanup_removed_admin_desk(event.entity)
 end
 
 local function on_toggle_runtime_debug(event)
@@ -1805,23 +1870,7 @@ local function on_entity_died(event)
   end
   biter_station.untrack_entity(entity, event.tick)
   territorial_arbitration.on_entity_removed(entity)
-  if is_admin_desk(entity) then
-    local desk_id = entity.unit_number
-    local surface = entity.surface
-    if entity.name == "capture-bureau" then
-      biters.delete_capture_bureau_ports(entity)
-    end
-    storage.admin_desks[desk_id] = nil
-    biters.reroute_desk_biters(desk_id, surface)
-    zones.cleanup_desk_zone(desk_id)
-    if storage.desk_combinators[desk_id] and storage.desk_combinators[desk_id].valid then
-      storage.desk_combinators[desk_id].destroy()
-    end
-    storage.desk_combinators[desk_id] = nil
-    storage.desk_reserved_slots[desk_id] = nil
-    if storage.desk_grid_slots then storage.desk_grid_slots[desk_id] = nil end
-    biters.clear_desk_circuit_tracking(desk_id)
-  end
+  cleanup_removed_admin_desk(entity)
   if pneumatic.is_pneumatic_building(entity) then
     pneumatic.delete_pneumatic_supports(entity)
   end
@@ -2215,6 +2264,7 @@ control_event_router.register({
   on_player_left_game = on_player_left_game,
   on_player_crafted_item = on_player_crafted_item,
   on_pre_build = on_pre_build,
+  on_pre_entity_removed = on_pre_entity_removed,
   on_player_respawned = on_player_respawned,
   on_player_reverse_selected_area = on_player_reverse_selected_area,
   on_research_finished = on_research_finished,
