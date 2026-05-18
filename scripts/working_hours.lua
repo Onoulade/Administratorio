@@ -13,6 +13,16 @@ for _, name in ipairs(MANAGED_BUILDINGS) do
   MANAGED_BUILDING_SET[name] = true
 end
 
+-- These buildings are night-gated by biter-station dispatch coffee instead of
+-- their own overtime exemption module.
+local WORKER_STATION_MANAGED_BUILDINGS = {
+  ["propaganda-distillery"] = true,
+  ["corporate-breakroom"] = true,
+  ["centrifuge"] = true,
+  ["oil-refinery"] = true,
+  ["printer-t2"] = true,
+}
+
 local NIGHT_OVERLAY_COLOR = {r = 1, g = 0.92, b = 0.65}
 
 local function get_render_object(render_ref)
@@ -66,6 +76,18 @@ local function has_overtime_exemption(entity)
   end
   local inventory = entity.get_module_inventory()
   return inventory and inventory.valid and inventory.get_item_count("overtime-exemption") > 0 or false
+end
+
+local function is_worker_station_managed(entity)
+  local name = entity
+  if type(entity) ~= "string" then
+    name = entity and entity.name
+  end
+  return name and WORKER_STATION_MANAGED_BUILDINGS[name] == true or false
+end
+
+local function requires_overtime_exemption(entity)
+  return not is_worker_station_managed(entity)
 end
 
 local function protest_claims_for(unit_number)
@@ -219,7 +241,9 @@ function M.refresh_entity(entity)
   local reason = nil
   if entity_is_protested(entity) then
     reason = "protest"
-  elseif is_surface_night(entity.surface) and not has_overtime_exemption(entity) then
+  elseif requires_overtime_exemption(entity)
+     and is_surface_night(entity.surface)
+     and not has_overtime_exemption(entity) then
     reason = "night"
   end
 
@@ -401,7 +425,9 @@ function M.update_managed_buildings()
       local reason = nil
       if entity_is_protested(entity) then
         reason = "protest"
-      elseif surface_is_night and not has_overtime_exemption(entity) then
+      elseif requires_overtime_exemption(entity)
+         and surface_is_night
+         and not has_overtime_exemption(entity) then
         reason = "night"
       end
 
