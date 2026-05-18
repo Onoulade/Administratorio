@@ -168,6 +168,7 @@ local function new_managed_building(surface, force)
     force = force,
     active = false,
     products_finished = 0,
+    crafting_progress = 0,
     bounding_box = {
       left_top = {x = 1.5, y = -0.5},
       right_bottom = {x = 2.5, y = 0.5},
@@ -229,6 +230,50 @@ test("biter station restores active worker if its entity is invalid after load",
   assert_true(storage.biter_station_biter[old_unit_number] == nil, "old active worker key should be removed")
   assert_eq(storage.biter_station_worker_units[old_unit_number], nil, "old worker unit marker should be removed")
   assert_eq(storage.managed_building_run[building.unit_number].claimed_by, active.biter_unit_number, "building claim should be moved to the restored worker")
+end)
+
+test("biter station keeps a triggered machine active until recipe progress wraps", function()
+  storage = {}
+  package.loaded["scripts.biter_station"] = nil
+  local surface = new_surface()
+  local force = {name = "player", valid = true, set_cease_fire = function() end, technologies = {}}
+  game = {
+    tick = 0,
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", valid = true, set_cease_fire = function() end},
+      neutral = {name = "neutral", valid = true, set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, valid = true, set_cease_fire = function() end, technologies = {}}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biter_station = require("scripts.biter_station")
+  local station = new_station(surface, force)
+  local building = new_managed_building(surface, force)
+  biter_station.track_station(station)
+  biter_station.track_managed_building(building)
+
+  biter_station.update(10)
+  local active = active_worker()
+  assert_true(active ~= nil, "managed building should dispatch a station worker")
+  active.biter.position = {x = building.position.x, y = building.position.y}
+
+  biter_station.update(20)
+  assert_true(building.active, "arrival should activate the managed building")
+
+  building.crafting_progress = 0.65
+  biter_station.update(30)
+  assert_true(building.active, "machine should stay active while the same recipe is still in progress")
+
+  building.crafting_progress = 0.05
+  biter_station.update(40)
+  assert_eq(building.active, false, "machine should stop after the recipe progress wraps")
+  assert_eq(storage.managed_building_run[building.unit_number], nil, "completed recipe authorization should clear runtime state")
 end)
 
 print(("Biter station runtime tests: %d passed, %d failed"):format(passed, failed))

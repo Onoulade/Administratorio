@@ -785,11 +785,24 @@ local function building_has_recipe(building)
   return building.get_recipe() ~= nil
 end
 
+local function get_recipe_name(recipe)
+  return recipe and recipe.name or nil
+end
+
+local function get_entity_crafting_progress(entity)
+  local progress = entity and entity.crafting_progress
+  if type(progress) == "number" then
+    return progress
+  end
+  return nil
+end
+
 local function activate_building_for_visit(building, biter_unit_number)
   if not building or not building.valid or not building.unit_number then
     return false
   end
-  if not building_has_recipe(building) then
+  local recipe = building.get_recipe and building.get_recipe() or nil
+  if not recipe then
     return false
   end
 
@@ -816,6 +829,8 @@ local function activate_building_for_visit(building, biter_unit_number)
   building.active = true
   run_state.crafts_remaining = 1
   run_state.products_at_last_check = building.products_finished or 0
+  run_state.recipe_name = get_recipe_name(recipe)
+  run_state.crafting_progress_at_last_check = get_entity_crafting_progress(building)
   run_state.claimed_by = nil
   return true
 end
@@ -1182,9 +1197,20 @@ local function advance_running_buildings()
     else
       local crafts_remaining = run_state.crafts_remaining or 0
       if crafts_remaining > 0 then
-        if not building_has_recipe(entity) then
+        local recipe = entity.get_recipe and entity.get_recipe() or nil
+        if not recipe then
           entity.active = false
           run_state.crafts_remaining = 0
+          run_state.recipe_name = nil
+          run_state.crafting_progress_at_last_check = nil
+          clear_run_state_if_idle(unit_number, run_state)
+          goto continue
+        end
+        if run_state.recipe_name and get_recipe_name(recipe) ~= run_state.recipe_name then
+          entity.active = false
+          run_state.crafts_remaining = 0
+          run_state.recipe_name = nil
+          run_state.crafting_progress_at_last_check = nil
           clear_run_state_if_idle(unit_number, run_state)
           goto continue
         end
@@ -1200,9 +1226,22 @@ local function advance_running_buildings()
           run_state.products_at_last_check = current_products
         end
 
+        local current_progress = get_entity_crafting_progress(entity)
+        local previous_progress = run_state.crafting_progress_at_last_check
+        if (run_state.crafts_remaining or 0) > 0 and current_progress and previous_progress then
+          if current_progress < previous_progress then
+            run_state.crafts_remaining = math.max(0, (run_state.crafts_remaining or 0) - 1)
+          end
+          run_state.crafting_progress_at_last_check = current_progress
+        elseif current_progress then
+          run_state.crafting_progress_at_last_check = current_progress
+        end
+
         if (run_state.crafts_remaining or 0) <= 0 then
           entity.active = false
           run_state.crafts_remaining = 0
+          run_state.recipe_name = nil
+          run_state.crafting_progress_at_last_check = nil
           clear_run_state_if_idle(unit_number, run_state)
         end
       else
@@ -1449,6 +1488,8 @@ function M.track_managed_building(entity)
     run_state.claimed_by = nil
     run_state.crafts_remaining = nil
     run_state.products_at_last_check = nil
+    run_state.recipe_name = nil
+    run_state.crafting_progress_at_last_check = nil
     clear_run_state_if_idle(entity.unit_number, run_state)
   end
 end
@@ -1464,6 +1505,8 @@ function M.untrack_managed_building(entity)
   if run_state then
     run_state.claimed_by = nil
     run_state.crafts_remaining = nil
+    run_state.recipe_name = nil
+    run_state.crafting_progress_at_last_check = nil
     clear_run_state_if_idle(unit_number, run_state)
   end
 end
