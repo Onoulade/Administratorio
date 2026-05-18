@@ -139,13 +139,14 @@ local function new_surface()
   return surface
 end
 
-local function new_station(surface, force)
-  local inventory = new_inventory({["biter-worker"] = 1, ["taxpayer-money"] = 1})
+local function new_station(surface, force, opts)
+  opts = opts or {}
+  local inventory = new_inventory(opts.inventory or {["biter-worker"] = 1, ["taxpayer-money"] = 1})
   local station = {
     valid = true,
     name = "biter-station",
-    unit_number = 10,
-    position = {x = 0, y = 0},
+    unit_number = opts.unit_number or 10,
+    position = opts.position or {x = 0, y = 0},
     surface = surface,
     force = force,
     minable = true,
@@ -158,12 +159,13 @@ local function new_station(surface, force)
   return station
 end
 
-local function new_managed_building(surface, force)
+local function new_managed_building(surface, force, opts)
+  opts = opts or {}
   local building = {
     valid = true,
     name = "printer-t2",
-    unit_number = 20,
-    position = {x = 2, y = 0},
+    unit_number = opts.unit_number or 20,
+    position = opts.position or {x = 2, y = 0},
     surface = surface,
     force = force,
     active = false,
@@ -274,6 +276,46 @@ test("biter station keeps a triggered machine active until recipe progress wraps
   biter_station.update(40)
   assert_eq(building.active, false, "machine should stop after the recipe progress wraps")
   assert_eq(storage.managed_building_run[building.unit_number], nil, "completed recipe authorization should clear runtime state")
+end)
+
+test("managed building is claimed by the nearest station in overlapping coverage", function()
+  storage = {}
+  package.loaded["scripts.biter_station"] = nil
+  local surface = new_surface()
+  local force = {name = "player", valid = true, set_cease_fire = function() end, technologies = {}}
+  game = {
+    tick = 0,
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", valid = true, set_cease_fire = function() end},
+      neutral = {name = "neutral", valid = true, set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, valid = true, set_cease_fire = function() end, technologies = {}}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biter_station = require("scripts.biter_station")
+  local farther_station = new_station(surface, force, {unit_number = 10, position = {x = 0, y = 0}})
+  local closer_station = new_station(surface, force, {unit_number = 11, position = {x = 18, y = 0}})
+  local building = new_managed_building(surface, force, {position = {x = 20, y = 0}})
+  biter_station.track_station(farther_station)
+  biter_station.track_station(closer_station)
+  biter_station.track_managed_building(building)
+
+  biter_station.update(10)
+
+  local closer_workers = storage.biter_station_active_by_station[closer_station.unit_number]
+  local farther_workers = storage.biter_station_active_by_station[farther_station.unit_number]
+  assert_true(closer_workers ~= nil and next(closer_workers) ~= nil, "closer station should dispatch the worker")
+  assert_true(farther_workers == nil or next(farther_workers) == nil, "farther station should not claim the overlapping building")
+
+  local active = active_worker()
+  assert_eq(active.station_id, closer_station.unit_number, "active worker should belong to the closest station")
+  assert_eq(storage.managed_building_run[building.unit_number].claimed_by, active.biter_unit_number, "building should be claimed by the closest station worker")
 end)
 
 print(("Biter station runtime tests: %d passed, %d failed"):format(passed, failed))

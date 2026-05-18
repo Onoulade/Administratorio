@@ -835,6 +835,33 @@ local function activate_building_for_visit(building, biter_unit_number)
   return true
 end
 
+local function is_station_in_range_of_building(station, building)
+  if not station or not station.valid or not building or not building.valid then
+    return false
+  end
+  if station.surface ~= building.surface or station.force ~= building.force then
+    return false
+  end
+  return distance_squared(station.position, building.position) <= (C.BITER_STATION_RANGE * C.BITER_STATION_RANGE)
+end
+
+local function station_is_preferred_for_building(station, building)
+  if not station or not station.valid or not station.unit_number then return false end
+  if not is_station_in_range_of_building(station, building) then return false end
+
+  local station_distance = distance_squared(station.position, building.position)
+  for other_id, other_station in pairs(storage.biter_stations or {}) do
+    if other_id ~= station.unit_number and is_station_in_range_of_building(other_station, building) then
+      local other_distance = distance_squared(other_station.position, building.position)
+      if other_distance < station_distance
+         or (other_distance == station_distance and other_station.unit_number < station.unit_number) then
+        return false
+      end
+    end
+  end
+  return true
+end
+
 local function build_building_queue(station)
   if not station or not station.valid then return {} end
 
@@ -857,8 +884,9 @@ local function build_building_queue(station)
       local is_claimed = run_state and run_state.claimed_by ~= nil
       local is_blocked = is_building_blocked_by_working_hours(building)
       local has_recipe = building_has_recipe(building)
+      local is_preferred_station = station_is_preferred_for_building(station, building)
 
-      if has_recipe and not is_running and not is_claimed and not is_blocked then
+      if has_recipe and not is_running and not is_claimed and not is_blocked and is_preferred_station then
         filtered[#filtered + 1] = building
       end
     end
