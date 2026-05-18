@@ -697,12 +697,13 @@ function M.new(deps)
     local snapshot = get_protester_snapshot()
     local entity_pos = entity.position
     local top_limit = C.PROTEST_TARGET_TOP_K or 10
-    local prefilter_limit = C.PROTEST_TARGET_PREFILTER_LIMIT or C.PROTEST_TARGET_CANDIDATE_LIMIT or 64
-    local eligible_seen = 0
 
     local function raw_candidate_is_better(a, b)
       if a.avoided ~= b.avoided then return not a.avoided end
-      if a.priority ~= b.priority then return a.priority < b.priority end
+      -- Prefer buildings not already being protested; fall back to protested ones if needed.
+      local a_protested = a.claimed > 0
+      local b_protested = b.claimed > 0
+      if a_protested ~= b_protested then return not a_protested end
       return a.dist < b.dist
     end
 
@@ -723,7 +724,6 @@ function M.new(deps)
       end
     end
 
-    -- Keep only the best rough candidates so large factories do not sort every target.
     for _, target in ipairs(get_cached_protest_targets(surface)) do
       local target_id = target.unit_number
       if target_id and not seen[target_id] then
@@ -734,19 +734,12 @@ function M.new(deps)
           local dist = distance_sq(target.position, entity_pos)
           local avoided = (avoid_target and same_protest_target(target, avoid_target) or false)
             or same_protest_target_snapshot(target, avoid_target_snapshot)
-          local priority = claimed * claimed * C.PROTEST_TARGET_LOAD_PENALTY
-            + dist
-            + math.random() * C.PROTEST_TARGET_SELECTION_JITTER
-
           insert_top_candidate({
             target = target,
-            priority = priority,
             claimed = claimed,
             dist = dist,
             avoided = avoided,
           })
-          eligible_seen = eligible_seen + 1
-          if eligible_seen >= prefilter_limit then break end
         end
       end
     end
@@ -765,7 +758,6 @@ function M.new(deps)
           load = snapshot.protester_counts[raw.target.unit_number] or 0,
           claimed = raw.claimed,
           dist = raw.dist,
-          priority = raw.priority,
           avoided = raw.avoided,
         }
         if #candidates >= top_limit then break end
