@@ -228,6 +228,23 @@ local function is_capture_bureau(entity_or_name)
   return get_entity_name(entity_or_name) == "capture-bureau"
 end
 
+local function entity_prototype_exists(name)
+  if prototypes and prototypes.entity then
+    return prototypes.entity[name] ~= nil
+  end
+  return true
+end
+
+local function existing_entity_names(names)
+  local filtered = {}
+  for _, name in ipairs(names) do
+    if entity_prototype_exists(name) then
+      filtered[#filtered + 1] = name
+    end
+  end
+  return filtered
+end
+
 function M.delete_capture_bureau_ports(desk)
   storage.capture_bureau_ports = storage.capture_bureau_ports or {}
   storage.capture_bureau_ports[desk and desk.unit_number or 0] = nil
@@ -239,8 +256,7 @@ end
 
 function M.rebuild_capture_bureau_ports()
   storage.capture_bureau_ports = {}
-  local prototypes_by_name = (prototypes and prototypes.entity) or game.entity_prototypes or {}
-  if not prototypes_by_name[LEGACY_CAPTURE_BUREAU_SPORE_PORT_NAME] then
+  if prototypes and prototypes.entity and not prototypes.entity[LEGACY_CAPTURE_BUREAU_SPORE_PORT_NAME] then
     return
   end
   for _, surface in pairs(game.surfaces or {}) do
@@ -523,9 +539,11 @@ local function get_cached_desks()
     end
   end
   if #desks == 0 and game and game.surfaces then
+    local desk_names = existing_entity_names({"admin-station", "capture-bureau"})
+    if #desk_names == 0 then return desks end
     for _, surface in pairs(game.surfaces) do
       for _, desk in ipairs(surface.find_entities_filtered{
-        name = {"admin-station", "capture-bureau"},
+        name = desk_names,
       }) do
         if desk.valid then
           storage.admin_desks[desk.unit_number] = desk
