@@ -2,6 +2,7 @@
 -- Thematic achievements rewarding progression milestones and bureaucratic absurdity.
 
 local icons = "__administratorio__/graphics/icons/"
+local icon_layers = require("prototypes.shared.icon_layers")
 
 data:extend({
   -------------------------------------------------------------------------------
@@ -216,7 +217,7 @@ data:extend({
   {
     type = "achievement",
     name = "case-closed",
-    icon = icons .. "resolved-landscape.png",
+    icons = icon_layers.resolved_complaint_icons(icon_layers.ticket_icon("ticket-landscape")),
     icon_size = 64,
     order = "f[scripted]-b",
     allowed_without_fight = true,
