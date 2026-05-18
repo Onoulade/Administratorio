@@ -27,6 +27,14 @@ function M.register(deps)
   script.on_event(defines.events.on_player_mined_entity, deps.on_entity_removed)
   script.on_event(defines.events.on_robot_mined_entity, deps.on_entity_removed)
   script.on_event(defines.events.script_raised_destroy, deps.on_entity_removed)
+  if deps.on_pre_entity_removed then
+    if defines.events.on_pre_player_mined_item then
+      script.on_event(defines.events.on_pre_player_mined_item, deps.on_pre_entity_removed)
+    end
+    if defines.events.on_robot_pre_mined then
+      script.on_event(defines.events.on_robot_pre_mined, deps.on_pre_entity_removed)
+    end
+  end
   if deps.on_player_rotated_entity then
     script.on_event(defines.events.on_player_rotated_entity, deps.on_player_rotated_entity)
   end
