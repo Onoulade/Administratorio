@@ -77,11 +77,15 @@ function M.new(deps)
     return best_ticket or "ticket-landscape"
   end
 
-  local PROTEST_SLOGAN_FALLBACK = {"gui.protest-slogan-fallback"}
+  local PROTEST_SLOGAN_FALLBACKS = {
+    {"gui.protest-slogan-fallback"},
+    {"gui.protest-slogan-fallback-2"},
+    {"gui.protest-slogan-fallback-3"},
+  }
 
   local function ensure_protest_theme(info)
     if not info then
-      return "ticket-landscape", PROTEST_SLOGAN_FALLBACK, deps.protest_tints["ticket-landscape"]
+      return "ticket-landscape", PROTEST_SLOGAN_FALLBACKS[1], deps.protest_tints["ticket-landscape"]
     end
 
     local ticket = info.protest_primary_ticket or pick_primary_complaint(info)
@@ -93,7 +97,7 @@ function M.new(deps)
     end
 
     if not info.protest_message then
-      local slogans = deps.protest_slogans[ticket] or {PROTEST_SLOGAN_FALLBACK}
+      local slogans = deps.protest_slogans[ticket] or PROTEST_SLOGAN_FALLBACKS
       info.protest_message = slogans[math.random(1, #slogans)]
     end
 
