@@ -1,4 +1,16 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.6
+Date: 2026-05-18
+  Bugfixes:
+    - prioritize unprotested protest targets
+    - prefer nearest station for managed building dispatch
+    - exempt worker-station buildings from overtime shutdowns
+    - handle full recipe progress for biter station visits
+  Balancing:
+    - adjust coffee plantation yield and bean stack size
+  Optimizations:
+    - fix unit-group scan hot loop and expand section instrumentation
+---------------------------------------------------------------------------------------------------
 Version: 0.4.5
 Date: 2026-05-17
   Bugfixes:
