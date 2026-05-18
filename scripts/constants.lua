@@ -118,6 +118,7 @@ M.HUSH_MONEY_CALM_TICKS = 3 * 60 * 60 -- 3 minutes of suppressed spawning
 -- Field office: proximity check for nearby biter spawners
 M.FIELD_OFFICE_SPAWNER_RANGE = 200    -- tiles: max distance to a biter spawner
 M.FIELD_OFFICE_PLACEMENT_PREVIEW_TICKS = 30 -- refresh held-item range overlays every 0.5 seconds
+M.FIELD_OFFICE_PLACEMENT_PREVIEW_NEST_LIMIT = 32 -- max nest markers to draw while holding a field office
 M.FIELD_OFFICE_CHECK_TICKS = 30       -- how often to check state (arrival, craft completion)
 M.FIELD_OFFICE_UPDATE_TICKS = 5       -- scheduler cadence for sharded field-office checks
 M.FIELD_OFFICE_BITER_DESPAWN_TICKS = 5 * 60 -- despawn worker biter after release

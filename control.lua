@@ -1827,43 +1827,61 @@ end
 -- ============================================================
 
 local function on_protest_pacing_tick(_event)
-  biters.process_protest_pacing(game.surfaces[1])
+  runtime_debug.run_profiled_external_sections("protest_pacing", function()
+    biters.process_protest_pacing(game.surfaces[1])
+  end)
 end
 
 local function on_unit_group_debug_tick(event)
-  update_unit_group_redirect_watch(event.tick)
-  if unit_group_debug_enabled() and (needs_unit_group_scan or not next(storage.unit_group_debug or {})) then
-    needs_unit_group_scan = false
-    refresh_unit_group_debug(event.tick)
-  else
-    update_tracked_unit_group_debug(event.tick)
-  end
+  runtime_debug.run_profiled_external_sections("unit_group_debug_tick", function()
+    update_unit_group_redirect_watch(event.tick)
+    if unit_group_debug_enabled() and needs_unit_group_scan then
+      needs_unit_group_scan = false
+      refresh_unit_group_debug(event.tick)
+    else
+      update_tracked_unit_group_debug(event.tick)
+    end
+  end)
 end
 
 local function on_main_tick(event)
-  biter_station.sanitize_external_links()
+  runtime_debug.run_profiled_external_sections("biter_station_sanitize", function()
+    biter_station.sanitize_external_links()
+  end)
   resolution_processing.on_tick(event)
-  hired_biter.update(event.tick)
-  rideable_biter.update(event.tick)
+  runtime_debug.run_profiled_external_sections("hired_biter", function()
+    hired_biter.update(event.tick)
+  end)
+  runtime_debug.run_profiled_external_sections("rideable_biter", function()
+    rideable_biter.update(event.tick)
+  end)
 end
 
 local function on_pneumatic_tick(_event)
-  pneumatic.on_pneumatic_tick()
+  runtime_debug.run_profiled_external_sections("pneumatic", function()
+    pneumatic.on_pneumatic_tick()
+  end)
 end
 
 local function on_biter_station_tick(event)
-  biter_station.update(event.tick)
+  runtime_debug.run_profiled_external_sections("biter_station", function()
+    biter_station.update(event.tick)
+  end)
 end
 
 local function on_biterport_tick(event)
-  biterport.update(event.tick)
+  runtime_debug.run_profiled_external_sections("biterport", function()
+    biterport.update(event.tick)
+  end)
 end
 
 local function on_field_office_tick(event)
   runtime_debug.run_profiled_external_sections("field_office", function(runtime_profile)
     field_office.update(event.tick, runtime_profile)
   end)
-  field_office.update_all_placement_previews(event.tick)
+  runtime_debug.run_profiled_external_sections("field_office_placement_preview", function()
+    field_office.update_all_placement_previews(event.tick)
+  end)
 end
 
 resolution_processing = control_resolution_processing_factory.new({
