@@ -1730,6 +1730,7 @@ function M.new(deps)
 
       if calmed_count > 0 then
         if storage.stats then storage.stats.nests_calmed = (storage.stats.nests_calmed or 0) + calmed_count end
+        game.print({"message.hush-money-served"})
       end
     end
   end
