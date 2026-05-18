@@ -26,7 +26,13 @@ local feature_flags = require("feature_flags")
 
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
 local REGULATED_AM_FACTORIOPEDIA_NOTE = {"administratorio-factoriopedia.regulated-assembling-note"}
-local PNEUMATIC_TRANSPORT_NOTE = {"administratorio-factoriopedia.pneumatic-transport-note"}
+local PNEUMATIC_TRANSPORT_NOTE = {
+  "",
+  {"administratorio-factoriopedia.pneumatic-transport-note-prefix"},
+  " ",
+  {"item-name.tube-intake"},
+  " ([item=tube-intake]).",
+}
 local WORKING_HOURS_ENABLED = feature_flags.working_hours_enabled()
 local DEBUG_SHOW_PAPERWORK_ICON_OVERLAYS = false
 local NIGHT_WORK_BUILDINGS = {
