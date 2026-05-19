@@ -974,7 +974,7 @@ data:extend(regulated_list)
 --   - Regular material ingredients are multiplied by the batch multiplier.
 -------------------------------------------------------------------------------
 
-local function regulate_admin_building(recipe, multiplier)
+local function regulate_admin_building(recipe, multiplier, recipe_name)
   local function process_level(target)
     if not target then return end
 
@@ -1003,6 +1003,17 @@ local function regulate_admin_building(recipe, multiplier)
             new_ing[2] = new_ing[2] * multiplier
           end
           table.insert(new_ingredients, new_ing)
+        end
+      end
+
+      -- If no paperwork was found in the base recipe, fall back to the
+      -- tier-based form so recipes with no explicit forms (office-desk,
+      -- field-office, greenhouse, …) still receive a work-order.
+      if not next(paperwork_accum) then
+        local required_form = shared.get_required_form(recipe_name)
+        local reqs = shared.get_paperwork_requirements(required_form, true)
+        for _, req in ipairs(reqs) do
+          paperwork_accum[req.name] = (paperwork_accum[req.name] or 0) + req.amount
         end
       end
 
@@ -1073,7 +1084,7 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
   regulated.category = (cat == "advanced-crafting") and "advanced-crafting-regulated" or "crafting-regulated"
 
   local multiplier = get_recipe_batch_multiplier(recipe_name, recipe)
-  regulate_admin_building(regulated, multiplier)
+  regulate_admin_building(regulated, multiplier, recipe_name)
   local regulated_form = get_admin_building_icon_form(regulated)
   apply_bulk_recipe_icon_overlay(regulated, multiplier, regulated_form)
 
