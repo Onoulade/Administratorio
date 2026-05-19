@@ -161,6 +161,9 @@ for _, biter in pairs(data.raw["unit"] or {}) do
         biter.vision_distance = 0
         biter.distraction_radius = 0
     end
+    -- Biters queuing inside admin station waiting zones must be clickable over
+    -- the station (51) and over resources (50).
+    biter.selection_priority = 52
 end
 
 for _, spawner in pairs(data.raw["unit-spawner"] or {}) do
