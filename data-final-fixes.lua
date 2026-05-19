@@ -1140,8 +1140,8 @@ for _, recipe_name in ipairs({
 end
 
 -- Top-tier recipes get explicit environmental compliance on top of their
--- stacked management paperwork. Beacon and rocket-silo are excluded: they
--- already hit the AM3 ingredient cap, so they get a thematic money item instead.
+-- stacked management paperwork. Beacon and rocket-silo are excluded because
+-- they already push ingredient counts close to the AM3 limit.
 local env_report_exceptions = { ["beacon"] = true, ["rocket-silo"] = true }
 for recipe_name, recipe in pairs(data.raw["recipe"] or {}) do
   if not shared.is_admin_recipe(recipe_name) and recipe then
@@ -1153,7 +1153,6 @@ for recipe_name, recipe in pairs(data.raw["recipe"] or {}) do
   end
 end
 add_special_paperwork("beacon", "treasury-bond", 1)
-add_special_paperwork("rocket-silo", "government-grant", 1)
 
 -- Cliff charges should stay civilian; remove the hidden military grenade
 -- dependency after any recipe cloning/regulation has happened.
