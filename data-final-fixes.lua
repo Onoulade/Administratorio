@@ -1153,6 +1153,10 @@ for recipe_name, recipe in pairs(data.raw["recipe"] or {}) do
   end
 end
 add_special_paperwork("beacon", "treasury-bond", 1)
+-- Pipes are a low-prestige material for a megastructure; swap them out for
+-- a government grant, which fits the bureaucratic scale of a rocket programme.
+remove_ingredient_from_recipe("rocket-silo", "pipe")
+add_special_paperwork("rocket-silo", "government-grant", 1)
 
 -- Cliff charges should stay civilian; remove the hidden military grenade
 -- dependency after any recipe cloning/regulation has happened.
