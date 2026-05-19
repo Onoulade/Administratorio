@@ -456,20 +456,28 @@ release_biter = function(state, tick)
   state.biter_unit_number = nil
   clear_pending_path_request(state)
 
+  local return_destination = nil
   -- Command biter to walk back to spawner (or wander if spawner gone)
   if state.spawner and state.spawner.valid then
+    return_destination = {x = state.spawner.position.x, y = state.spawner.position.y}
     state.biter.commandable.set_command({
       type = defines.command.go_to_location,
-      destination = state.spawner.position,
+      destination = return_destination,
       radius = 3,
       distraction = defines.distraction.none,
     })
   end
+  state.biter.force = get_biter_force()
+  state.biter.active = true
+  state.biter.destructible = false
 
-  -- Track for despawn
+  -- Track until the biter actually reaches home. The timeout is only used to
+  -- refresh stale movement commands, not to delete a still-travelling worker.
   M.ensure_storage()
   storage.field_office_releasing[state.biter.unit_number] = {
     entity = state.biter,
+    return_destination = return_destination,
+    arrival_check_tick = tick + (C.RETURN_MIN_TRAVEL_TICKS or 0),
     despawn_tick = tick + C.FIELD_OFFICE_BITER_DESPAWN_TICKS,
   }
 
@@ -581,9 +589,27 @@ function M.update(tick, runtime_profile)
     for biter_id, info in pairs(storage.field_office_releasing) do
       if not info.entity or not info.entity.valid then
         storage.field_office_releasing[biter_id] = nil
-      elseif tick >= info.despawn_tick then
+      elseif info.return_destination
+          and tick >= (info.arrival_check_tick or 0)
+          and distance_squared(info.entity.position, info.return_destination) <= (C.RETURN_ARRIVAL_DISTANCE or 2.5) ^ 2 then
         info.entity.destroy()
         storage.field_office_releasing[biter_id] = nil
+      elseif tick >= info.despawn_tick then
+        if info.return_destination then
+          info.entity.force = get_biter_force()
+          info.entity.active = true
+          info.entity.destructible = false
+          info.entity.commandable.set_command({
+            type = defines.command.go_to_location,
+            destination = info.return_destination,
+            radius = C.RETURN_ARRIVAL_DISTANCE or 2.5,
+            distraction = defines.distraction.none,
+          })
+          info.despawn_tick = tick + C.FIELD_OFFICE_BITER_DESPAWN_TICKS
+        else
+          info.entity.destroy()
+          storage.field_office_releasing[biter_id] = nil
+        end
       end
     end
   end)

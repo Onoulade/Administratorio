@@ -334,6 +334,39 @@ test("multiple ready field offices each summon a worker across update shards", f
   end
 end)
 
+test("released field office worker is not destroyed before reaching its spawner", function()
+  reset()
+  local spawner = {valid = true, position = {x = 40, y = 50}}
+  local surface = new_surface({spawner})
+  local office = new_office(surface, 6, 100)
+  field_office.track_entity(office)
+
+  field_office.update(0)
+  local biter = surface.created_entities[1]
+  assert_true(biter ~= nil, "ready office should summon a worker")
+
+  biter.position = {x = office.position.x, y = office.position.y}
+  field_office.update(30)
+  assert_eq(storage.field_office_state[office.unit_number].phase, "working", "arrived worker should start working")
+
+  office.products_finished = 2
+  field_office.update(60)
+  assert_true(storage.field_office_releasing[biter.unit_number] ~= nil, "released worker should be tracked while returning")
+  assert_eq(biter.destructible, false, "returning worker should be protected from incidental removal")
+
+  biter.position = {x = office.position.x, y = office.position.y}
+  local command_count = #biter.commands
+  field_office.update(60 + C.FIELD_OFFICE_BITER_DESPAWN_TICKS)
+  assert_true(biter.valid, "returning worker should not be destroyed just because the stale timer elapsed")
+  assert_true(storage.field_office_releasing[biter.unit_number] ~= nil, "returning worker should remain tracked until arrival")
+  assert_true(#biter.commands > command_count, "stale return should reissue the home command")
+
+  biter.position = {x = spawner.position.x, y = spawner.position.y}
+  field_office.update(60 + C.FIELD_OFFICE_BITER_DESPAWN_TICKS + 5)
+  assert_true(not biter.valid, "returning worker should be removed after reaching its spawner")
+  assert_true(storage.field_office_releasing[biter.unit_number] == nil, "arrived worker should leave the releasing tracker")
+end)
+
 test("field office reports unreachable workers when caller gets stuck", function()
   reset()
   local spawner = {valid = true, position = {x = 40, y = 50}}
