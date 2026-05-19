@@ -254,7 +254,6 @@ local function new_test_context()
     start_return_home = function() end,
     background_state_shard_count = 1,
     protest_debug_status_ticks = 10 * 60,
-    log_prefix = "[Administratorio] ",
   }
 
   local controller = protest_factory.new(deps)
