@@ -986,7 +986,7 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
   local required_form = shared.get_required_form(recipe_name)
   local regulated_paperwork = shared.get_paperwork_requirements(required_form, true)
   local regulated_form = (regulated_paperwork[1] and regulated_paperwork[1].name) or required_form
-  batch_original_with_form(regulated, regulated_paperwork, multiplier)
+  regulate_recipe(regulated, regulated_paperwork, multiplier)
   apply_bulk_recipe_icon_overlay(regulated, multiplier, regulated_form)
 
   table.insert(admin_building_regulated, regulated)
