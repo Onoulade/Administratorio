@@ -80,6 +80,7 @@ shared.PAPERWORK_ITEMS = {
   ["treasury-bond"] = true,
   ["government-grant"] = true,
   -- Combined forms (tier form + work-order)
+  ["provisional-work-order"] = true,
   ["safety-work-order"] = true,
   ["construction-work-order"] = true,
   ["management-verbal-work-order"] = true,
@@ -136,6 +137,7 @@ end
 -- work-order has no combined form (it IS the base form for T0 items).
 -------------------------------------------------------------------------------
 shared.COMBINED_FORMS = {
+  ["provisional-approval"] = "provisional-work-order",
   ["safety-waiver"] = "safety-work-order",
   ["construction-permit"] = "construction-work-order",
   ["management-approval-verbal"] = "management-verbal-work-order",
@@ -254,6 +256,7 @@ shared.FORM_PRODUCTION_RECIPES = {
 -- Unlocks managed explicitly in technology.lua.
 -------------------------------------------------------------------------------
 shared.COMBINED_FORM_PRODUCTION_RECIPES = {
+  ["provisional-work-order"] = "provisional-work-order-production",
   ["safety-work-order"] = "safety-work-order-production",
   ["construction-work-order"] = "construction-work-order-production",
   ["management-verbal-work-order"] = "management-verbal-work-order-production",

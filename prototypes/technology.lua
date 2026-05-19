@@ -1073,6 +1073,7 @@ add_tech_unlock("production-science-pack", "locomotive")
 
 -- Unlock Work Orders with Automation (fuel for AM1)
 add_tech_unlock("automation", "work-order-production")
+add_tech_unlock("automation", "provisional-work-order-production")
 add_tech_unlock("automation", "research-grant-work-order-production")
 add_tech_unlock("automation", "safety-work-order-production")
 add_tech_unlock("automation", "construction-work-order-production")
