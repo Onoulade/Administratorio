@@ -1015,6 +1015,35 @@ test("removing the receiver spills queued documents and keeps in-flight source p
   assert_eq(emitter.inventory.get_item_count("work-order"), 1, "in-flight sender paperwork should stay at the source if the receiver disappears")
 end)
 
+test("registry rebuild skips absent fax prototypes", function()
+  local ctx = new_context()
+  local stale_combinator = {valid = true, destroyed = false}
+  function stale_combinator.destroy()
+    stale_combinator.destroyed = true
+    stale_combinator.valid = false
+  end
+
+  storage.fax_receivers[123] = {
+    entity = {valid = false},
+    combinator = stale_combinator,
+  }
+
+  local old_prototypes = prototypes
+  prototypes = {entity = {}}
+
+  local old_find = ctx.surfaces.nauvis.find_entities_filtered
+  function ctx.surfaces.nauvis.find_entities_filtered()
+    error("find_entities_filtered should not be called for absent fax prototypes")
+  end
+
+  local ok, err = pcall(fax.rebuild_registry)
+  ctx.surfaces.nauvis.find_entities_filtered = old_find
+  prototypes = old_prototypes
+
+  assert_true(ok, err)
+  assert_true(storage.fax_receivers[123] == nil, "stale fax receiver state should still be cleaned up")
+end)
+
 if failed > 0 then
   io.stderr:write(("Failed %d/%d tests\n"):format(failed, passed + failed))
   for _, err in ipairs(errors) do
