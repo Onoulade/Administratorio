@@ -7,6 +7,10 @@ on:
         description: "Release version, e.g. 0.5.0"
         required: true
         type: string
+      extra_entries:
+        description: "Extra changelog entries (one conventional commit subject per line, e.g. 'feat(x): add thing')"
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -38,6 +42,7 @@ jobs:
         id: prepare
         env:
           RELEASE_VERSION: ${{ inputs.version }}
+          EXTRA_ENTRIES: ${{ inputs.extra_entries }}
         run: |
           node <<'NODE'
           const fs = require("node:fs");
@@ -74,12 +79,20 @@ jobs:
             throw new Error(`info.json is already at ${version}`);
           }
 
-          const commits = sh(`git log --format=%s ${previousTag}..HEAD`)
+          const extraEntries = (process.env.EXTRA_ENTRIES || "")
             .split("\n")
             .map((line) => line.trim())
-            .filter(Boolean)
-            .filter((line) => !/^chore\(release\):/i.test(line))
-            .filter((line) => !/^Release [0-9]+\.[0-9]+\.[0-9]+$/i.test(line));
+            .filter(Boolean);
+
+          const commits = [
+            ...sh(`git log --format=%s ${previousTag}..HEAD`)
+              .split("\n")
+              .map((line) => line.trim())
+              .filter(Boolean)
+              .filter((line) => !/^chore\(release\):/i.test(line))
+              .filter((line) => !/^Release [0-9]+\.[0-9]+\.[0-9]+$/i.test(line)),
+            ...extraEntries,
+          ];
 
           const sections = [
             ["Features", ["feat", "feature"]],
