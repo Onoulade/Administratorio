@@ -104,6 +104,8 @@ M.ZONE_SAFE_TYPES = {
   ["character"] = true, ["unit"] = true, ["corpse"] = true, ["particle"] = true,
   ["projectile"] = true, ["smoke"] = true, ["explosion"] = true,
   ["construction-robot"] = true, ["logistic-robot"] = true, ["combat-robot"] = true,
+  -- Natural map features that vanilla lets you build over
+  ["item-entity"] = true, ["resource"] = true,
 }
 
 M.RETURN_WALK_DISTANCE = 200     -- how far resolved biters walk before despawning

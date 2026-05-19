@@ -899,6 +899,32 @@ local function on_entity_built_inner(event)
       return
     end
 
+    -- Sweep dropped items in the footprint into the placing player's inventory,
+    -- mirroring vanilla building placement (the admin station's custom collision
+    -- mask skips the engine's automatic item sweep).
+    local ground_items = surface.find_entities_filtered{
+      type = "item-entity",
+      area = {footprint.left_top, footprint.right_bottom},
+    }
+    for _, item_ent in ipairs(ground_items) do
+      if item_ent.valid then
+        local stack = item_ent.stack
+        local remaining = stack.count
+        if player and player.valid then
+          local inserted = player.insert{name = stack.name, count = stack.count, quality = stack.quality and stack.quality.name or nil}
+          remaining = stack.count - inserted
+        end
+        if remaining > 0 then
+          surface.spill_item_stack{
+            position = entity.position,
+            stack = {name = stack.name, count = remaining, quality = stack.quality and stack.quality.name or nil},
+            enable_looted = true,
+          }
+        end
+        item_ent.destroy()
+      end
+    end
+
     storage.desk_zones[desk_id] = {bounds = bounds, footprint = footprint}
     zones.create_corner_blockers(surface, footprint, entity.force)
     ensure_desk_combinator(entity)

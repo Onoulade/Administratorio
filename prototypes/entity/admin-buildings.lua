@@ -146,7 +146,7 @@ local admin_station_base = {
   collision_mask = {layers = {administratorio_station_footprint = true, water_tile = true}},
   collision_box = {{-4.4, -4.4}, {4.4, 4.4}},
   selection_box = {{-4.5, -4.5}, {4.5, 4.5}},
-  selection_priority = 1,
+  selection_priority = 51,
   inventory_size = 20,
   circuit_wire_max_distance = 9,
   fast_replaceable_group = "admin-station",
