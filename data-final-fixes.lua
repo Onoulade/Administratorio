@@ -181,7 +181,9 @@ if data.raw["assembling-machine"]["assembling-machine-2"] then
   data.raw["assembling-machine"]["assembling-machine-2"].crafting_categories = {"crafting-regulated", "advanced-crafting-regulated"}
 end
 if data.raw["assembling-machine"]["assembling-machine-3"] then
-  data.raw["assembling-machine"]["assembling-machine-3"].crafting_categories = {"crafting-regulated", "advanced-crafting-regulated"}
+  local am3 = data.raw["assembling-machine"]["assembling-machine-3"]
+  am3.crafting_categories = {"crafting-regulated", "advanced-crafting-regulated"}
+  am3.ingredient_count = 12
 end
 
 -------------------------------------------------------------------------------
@@ -1153,9 +1155,6 @@ for recipe_name, recipe in pairs(data.raw["recipe"] or {}) do
   end
 end
 add_special_paperwork("beacon", "treasury-bond", 1)
--- Pipes are a low-prestige material for a megastructure; swap them out for
--- a government grant, which fits the bureaucratic scale of a rocket programme.
-remove_ingredient_from_recipe("rocket-silo", "pipe")
 add_special_paperwork("rocket-silo", "government-grant", 1)
 
 -- Cliff charges should stay civilian; remove the hidden military grenade
