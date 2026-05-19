@@ -1,4 +1,39 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.0
+Date: 2026-05-19
+  Features:
+    - split release into prepare + publish workflows
+    - add extra_entries input to release workflow
+    - raise AM3 ingredient_count to 12, restore pipe in rocket-silo
+    - replace pipe with government-grant in rocket-silo recipe
+    - add provisional-work-order combined form for provisional-approval recipes
+  Bugfixes:
+    - restrict nest proximity check to admin desk only
+    - remove government-grant from rocket-silo recipe
+    - correct recipe names for beacon/rocket-silo paperwork injection
+    - make beacon and rocket-silo craftable in AM3
+    - restore work-order for admin buildings with no explicit paperwork in base recipe
+    - merge duplicate paperwork when regulating admin building recipes
+    - correctly combine tier forms into work-orders in admin building regulated recipes
+    - strip paperwork ingredients before regulating admin building recipes
+    - allow placement over items on ground and resource patches
+  Balancing:
+    - simplify union-headquarters recipe to 1 construction-permit and 1 verbal approval
+    - gate after-hours-operations at purple science only
+    - replace paper with green circuits in biterport chest recipes
+    - tune regulated batch multipliers for buildings and equipment
+  Changes:
+    - UI polish, Helmod icons, pneumatic fixes, and locale updates (#7)
+    - Expand protest slogans with radical and humorous variants
+    - Localize runtime UI, protests, and player messages
+    - Show item name alongside tube intake link in pneumatic note
+    - Add pneumatic transport note to item descriptions
+    - Add locale for taxpayer-money fuel category
+    - Fix Russian locale for pneumatic intake and outtake
+    - Allow rotation of pneumatic tube intake and outtake
+    - Fix Helmod assembler icons for admin buildings
+    - Improve complaint and resolution icon visibility
+---------------------------------------------------------------------------------------------------
 Version: 0.4.6
 Date: 2026-05-18
   Bugfixes:
