@@ -600,21 +600,21 @@ function M.update_tube_info_gui(player, entity)
   }
   frame.style.minimal_width = 220
 
-  local title = frame.add{type = "label", caption = "Tube Network"}
+  local title = frame.add{type = "label", caption = {"gui.tube-info-title"}}
   title.style.font = "default-bold"
   title.style.bottom_margin = 4
 
   -- Network status.
   if not net_id then
-    local status = frame.add{type = "label", caption = "Status: Disconnected"}
+    local status = frame.add{type = "label", caption = {"gui.tube-info-status-disconnected"}}
     status.style.font_color = {r=1, g=0.3, b=0.3}
     return
   elseif is_disabled then
-    local status = frame.add{type = "label", caption = "Status: Over-extended"}
+    local status = frame.add{type = "label", caption = {"gui.tube-info-status-overextended"}}
     status.style.font_color = {r=1, g=0.6, b=0.2}
     return
   else
-    local status = frame.add{type = "label", caption = "Status: Connected"}
+    local status = frame.add{type = "label", caption = {"gui.tube-info-status-connected"}}
     status.style.font_color = {r=0.3, g=1, b=0.3}
   end
 
@@ -625,7 +625,7 @@ function M.update_tube_info_gui(player, entity)
   local pct = capacity > 0 and (total / capacity) or 0
   local cap_color = pct < 0.7 and {r=0.3, g=1, b=0.3} or pct < 0.9 and {r=1, g=1, b=0.3} or {r=1, g=0.2, b=0.2}
 
-  local cap_label = frame.add{type = "label", caption = "Capacity: " .. total .. " / " .. capacity}
+  local cap_label = frame.add{type = "label", caption = {"gui.tube-info-capacity", total, capacity}}
   cap_label.style.font_color = cap_color
 
   local bar = frame.add{type = "progressbar", value = math.min(1, pct)}
@@ -634,7 +634,7 @@ function M.update_tube_info_gui(player, entity)
 
   -- Item breakdown.
   if pool and next(pool) then
-    local items_label = frame.add{type = "label", caption = "Contents:"}
+    local items_label = frame.add{type = "label", caption = {"gui.tube-info-contents"}}
     items_label.style.top_margin = 4
     items_label.style.font = "default-semibold"
 
@@ -648,11 +648,10 @@ function M.update_tube_info_gui(player, entity)
     table.sort(sorted, function(a, b) return a.count > b.count end)
 
     for _, item in ipairs(sorted) do
-      local display_name = item.name:gsub("%-", " ")
-      frame.add{type = "label", caption = "  [item=" .. item.name .. "] " .. display_name .. "  x" .. item.count}
+      frame.add{type = "label", caption = {"gui.tube-info-item-line", item.name, item.count}}
     end
   else
-    local empty_label = frame.add{type = "label", caption = "Empty"}
+    local empty_label = frame.add{type = "label", caption = {"gui.tube-info-empty"}}
     empty_label.style.font_color = {r=0.6, g=0.6, b=0.6}
     empty_label.style.top_margin = 4
   end
