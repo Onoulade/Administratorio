@@ -965,7 +965,96 @@ data:extend(regulated_list)
 -- (admin buildings and other admin-detected crafting recipes), but should
 -- still be craftable in assembling machines. Any recipe left in vanilla
 -- crafting categories gets a batched "-regulated" copy here.
+--
+-- Paperwork handling for admin building regulated copies:
+--   - Tier forms (construction-permit, safety-waiver, etc.) are replaced
+--     by their combined equivalents (construction-work-order, etc.).
+--   - All other paperwork items (combined forms, treasury-bond, …) are
+--     kept as fixed costs and NOT multiplied.
+--   - Regular material ingredients are multiplied by the batch multiplier.
 -------------------------------------------------------------------------------
+
+local function regulate_admin_building(recipe, multiplier)
+  local function process_level(target)
+    if not target then return end
+
+    target.energy_required = (target.energy_required or 0.5) * multiplier
+
+    if target.ingredients then
+      local new_ingredients = {}
+      local combined_forms = {}
+
+      for _, ing in ipairs(target.ingredients) do
+        local name = ing.name or ing[1]
+        local combined = shared.COMBINED_FORMS[name]
+        if combined then
+          -- Tier form → replace with combined form (fixed cost)
+          combined_forms[combined] = (combined_forms[combined] or 0) + (ing.amount or ing[2] or 1)
+        elseif shared.PAPERWORK_ITEMS[name] then
+          -- Other paperwork → keep as fixed cost, don't multiply
+          table.insert(new_ingredients, util.table.deepcopy(ing))
+        else
+          -- Regular material → multiply
+          local new_ing = util.table.deepcopy(ing)
+          if new_ing.amount then
+            new_ing.amount = new_ing.amount * multiplier
+          elseif new_ing[2] then
+            new_ing[2] = new_ing[2] * multiplier
+          end
+          table.insert(new_ingredients, new_ing)
+        end
+      end
+
+      for combined_name, amount in pairs(combined_forms) do
+        table.insert(new_ingredients, {type = "item", name = combined_name, amount = amount})
+      end
+      target.ingredients = new_ingredients
+    end
+
+    local results = {}
+    if target.results then
+      for _, res in ipairs(target.results) do
+        local new_res = util.table.deepcopy(res)
+        if new_res.amount then
+          new_res.amount = new_res.amount * multiplier
+        elseif new_res.amount_min and new_res.amount_max then
+          new_res.amount_min = new_res.amount_min * multiplier
+          new_res.amount_max = new_res.amount_max * multiplier
+        end
+        table.insert(results, new_res)
+      end
+    elseif target.result then
+      local count = (target.result_count or 1) * multiplier
+      table.insert(results, {type = "item", name = target.result, amount = count})
+      target.result = nil
+      target.result_count = nil
+    end
+    target.results = results
+    target.main_product = target.main_product or (results[1] and results[1].name)
+  end
+
+  process_level(recipe)
+  if recipe.normal then process_level(recipe.normal) end
+  if recipe.expensive then process_level(recipe.expensive) end
+end
+
+local function get_admin_building_icon_form(recipe)
+  local target = recipe.normal or recipe
+  if target.ingredients then
+    for _, ing in ipairs(target.ingredients) do
+      local name = ing.name or ing[1]
+      if shared.COMBINED_FORMS[name] then
+        return shared.COMBINED_FORMS[name]
+      end
+    end
+    for _, ing in ipairs(target.ingredients) do
+      local name = ing.name or ing[1]
+      if shared.PAPERWORK_ITEMS[name] then return name end
+    end
+  end
+  return "work-order"
+end
+
 local admin_building_regulated = {}
 for recipe_name, recipe in pairs(data.raw["recipe"]) do
   if REMOVED_VANILLA_RECIPES[recipe_name] then goto next_admin_building end
@@ -983,10 +1072,8 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
   regulated.category = (cat == "advanced-crafting") and "advanced-crafting-regulated" or "crafting-regulated"
 
   local multiplier = get_recipe_batch_multiplier(recipe_name, recipe)
-  local required_form = shared.get_required_form(recipe_name)
-  local regulated_paperwork = shared.get_paperwork_requirements(required_form, true)
-  local regulated_form = (regulated_paperwork[1] and regulated_paperwork[1].name) or required_form
-  regulate_recipe(regulated, regulated_paperwork, multiplier)
+  regulate_admin_building(regulated, multiplier)
+  local regulated_form = get_admin_building_icon_form(regulated)
   apply_bulk_recipe_icon_overlay(regulated, multiplier, regulated_form)
 
   table.insert(admin_building_regulated, regulated)
