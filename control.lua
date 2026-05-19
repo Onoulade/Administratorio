@@ -822,8 +822,8 @@ local function on_entity_built_inner(event)
   local surface = entity.surface
   local player = event.player_index and game.players[event.player_index]
 
-  -- Find any spawners within the limit
-  local nearby_spawner = find_nearby_enemy_spawner(surface, entity.position)
+  -- Only the admin desk is restricted from being placed near nests
+  local nearby_spawner = is_admin_station(entity) and find_nearby_enemy_spawner(surface, entity.position)
 
   if nearby_spawner then
       -- 1. Notify the player
@@ -991,6 +991,15 @@ end
 local function on_pre_build(event)
   local player = event.player_index and game.get_player(event.player_index)
   if not player or not player.valid then return end
+
+  -- Only warn for admin desk placements
+  local cursor = player.cursor_stack
+  local placing_admin = cursor and cursor.valid_for_read and is_admin_station(cursor.name)
+  if not placing_admin then
+    local ghost = player.cursor_ghost
+    placing_admin = ghost and is_admin_station(ghost.name)
+  end
+  if not placing_admin then return end
 
   if find_nearby_enemy_spawner(player.surface, event.position) then
     notify_player_build_denied(player, event.position)
