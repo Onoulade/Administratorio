@@ -2,15 +2,6 @@ name: Release
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Release version, e.g. 0.5.0"
-        required: true
-        type: string
-      extra_entries:
-        description: "Extra changelog entries (one conventional commit subject per line, e.g. 'feat(x): add thing')"
-        required: false
-        type: string
 
 permissions:
   contents: write
@@ -38,20 +29,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Prepare release metadata
-        id: prepare
-        env:
-          RELEASE_VERSION: ${{ inputs.version }}
-          EXTRA_ENTRIES: ${{ inputs.extra_entries }}
+      - name: Read release metadata
+        id: meta
         run: |
           node <<'NODE'
           const fs = require("node:fs");
           const cp = require("node:child_process");
-
-          const version = process.env.RELEASE_VERSION.trim();
-          if (!/^[0-9]+\.[0-9]+\.[0-9]+$/.test(version)) {
-            throw new Error(`Release version must look like x.y.z, got: ${version}`);
-          }
 
           const sh = (command) => cp.execSync(command, { encoding: "utf8" }).trim();
           const exists = (command) => {
@@ -63,92 +46,18 @@ jobs:
             }
           };
 
+          const info = JSON.parse(fs.readFileSync("info.json", "utf8"));
+          const version = info.version;
+
           if (exists(`git rev-parse --verify --quiet refs/tags/v${version}`)) {
-            throw new Error(`Tag v${version} already exists`);
+            throw new Error(`Tag v${version} already exists — did you forget to merge the prepare-release PR?`);
           }
 
-          const infoPath = "info.json";
-          const changelogPath = "changelog.txt";
-          const info = JSON.parse(fs.readFileSync(infoPath, "utf8"));
-          const previousVersion = info.version;
-          const previousTag = exists(`git rev-parse --verify --quiet refs/tags/v${previousVersion}`)
-            ? `v${previousVersion}`
-            : sh("git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*'");
-
-          if (version === previousVersion) {
-            throw new Error(`info.json is already at ${version}`);
-          }
-
-          const extraEntries = (process.env.EXTRA_ENTRIES || "")
-            .split("\n")
-            .map((line) => line.trim())
-            .filter(Boolean);
-
-          const commits = [
-            ...sh(`git log --format=%s ${previousTag}..HEAD`)
-              .split("\n")
-              .map((line) => line.trim())
-              .filter(Boolean)
-              .filter((line) => !/^chore\(release\):/i.test(line))
-              .filter((line) => !/^Release [0-9]+\.[0-9]+\.[0-9]+$/i.test(line)),
-            ...extraEntries,
-          ];
-
-          const sections = [
-            ["Features", ["feat", "feature"]],
-            ["Bugfixes", ["fix"]],
-            ["Balancing", ["balance"]],
-            ["Gui", ["gui"]],
-            ["Optimizations", ["perf", "performance"]],
-            ["Compatibility", ["compat", "compatibility"]],
-            ["Graphics", ["graphics"]],
-            ["Sounds", ["sound"]],
-            ["Locale", ["locale"]],
-            ["Translation", ["translate"]],
-            ["Control", ["control"]],
-            ["Docs", ["docs"]],
-            ["Internal", ["internal", "test", "chore", "ci", "build"]],
-            ["Changes", ["info", "other"]]
-          ];
-
-          const buckets = new Map(sections.map(([name]) => [name, []]));
-          const conventional = /^([a-z]+)(?:\([^)]+\))?!?:\s*(.+)$/i;
-          for (const commit of commits) {
-            const match = commit.match(conventional);
-            const type = match ? match[1].toLowerCase() : "other";
-            const subject = match ? match[2] : commit;
-            const bucket = sections.find(([, types]) => types.includes(type))?.[0] ?? "Changes";
-            buckets.get(bucket).push(subject);
-          }
-
-          const date = new Date().toISOString().slice(0, 10);
-          const lines = [
-            "---------------------------------------------------------------------------------------------------",
-            `Version: ${version}`,
-            `Date: ${date}`
-          ];
-
-          let hasNotes = false;
-          for (const [section] of sections) {
-            const entries = buckets.get(section);
-            if (!entries.length) continue;
-            hasNotes = true;
-            lines.push(`  ${section}:`);
-            for (const entry of entries) {
-              lines.push(`    - ${entry}`);
-            }
-          }
-
-          if (!hasNotes) {
-            lines.push("  Changes:");
-            lines.push("    - Release maintenance update.");
-          }
-
-          const releaseSection = `${lines.join("\n")}\n`;
-          info.version = version;
-          fs.writeFileSync(infoPath, `${JSON.stringify(info, null, 2)}\n`);
-          fs.writeFileSync(changelogPath, releaseSection + fs.readFileSync(changelogPath, "utf8"));
-          fs.writeFileSync("release-notes.md", releaseSection);
+          // Extract the top changelog block as release notes
+          const changelog = fs.readFileSync("changelog.txt", "utf8");
+          const blocks = changelog.split(/^-{50,}/m).filter(Boolean);
+          const releaseNotes = ("---------------------------------------------------------------------------------------------------\n" + (blocks[0] || "")).trimEnd() + "\n";
+          fs.writeFileSync("release-notes.md", releaseNotes);
 
           const output = fs.createWriteStream(process.env.GITHUB_OUTPUT, { flags: "a" });
           output.write(`version=${version}\n`);
@@ -158,29 +67,26 @@ jobs:
           output.end();
           NODE
 
-      - name: Commit and tag release
+      - name: Tag release
         run: |
-          git add info.json changelog.txt
-          git commit -m "Release ${{ steps.prepare.outputs.version }}"
-          git tag -a "${{ steps.prepare.outputs.tag }}" -F release-notes.md
-          git push origin HEAD:main
-          git push origin "${{ steps.prepare.outputs.tag }}"
+          git tag -a "${{ steps.meta.outputs.tag }}" -F release-notes.md
+          git push origin "${{ steps.meta.outputs.tag }}"
 
       - name: Build release zip
         run: |
           git archive \
             --format=zip \
-            --prefix="${{ steps.prepare.outputs.mod_name }}_${{ steps.prepare.outputs.version }}/" \
-            --output="${{ steps.prepare.outputs.zip_name }}" \
+            --prefix="${{ steps.meta.outputs.mod_name }}_${{ steps.meta.outputs.version }}/" \
+            --output="${{ steps.meta.outputs.zip_name }}" \
             HEAD
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PAT }}
         run: |
-          gh release create "${{ steps.prepare.outputs.tag }}" \
-            "${{ steps.prepare.outputs.zip_name }}#Packaged Mod" \
-            --title "${{ steps.prepare.outputs.version }}" \
+          gh release create "${{ steps.meta.outputs.tag }}" \
+            "${{ steps.meta.outputs.zip_name }}#Packaged Mod" \
+            --title "${{ steps.meta.outputs.version }}" \
             --notes-file release-notes.md
 
       - name: Upload to Factorio mod portal
@@ -190,8 +96,8 @@ jobs:
           init_response="$(
             curl -fsS \
               -H "Authorization: Bearer ${FACTORIO_TOKEN}" \
-              -F "mod=${{ steps.prepare.outputs.mod_name }}" \
+              -F "mod=${{ steps.meta.outputs.mod_name }}" \
               https://mods.factorio.com/api/v2/mods/releases/init_upload
           )"
           upload_url="$(node -e 'process.stdin.on("data", d => process.stdout.write(JSON.parse(d).upload_url))' <<< "$init_response")"
-          curl -fsS -F "file=@${{ steps.prepare.outputs.zip_name }}" "$upload_url"
+          curl -fsS -F "file=@${{ steps.meta.outputs.zip_name }}" "$upload_url"
