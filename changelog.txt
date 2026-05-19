@@ -4,12 +4,10 @@ Date: 2026-05-19
   Features:
     - split release into prepare + publish workflows
     - add extra_entries input to release workflow
-    - raise AM3 ingredient_count to 12, restore pipe in rocket-silo
-    - replace pipe with government-grant in rocket-silo recipe
+    - raise AM3 ingredient_count to 12
     - add provisional-work-order combined form for provisional-approval recipes
   Bugfixes:
     - restrict nest proximity check to admin desk only
-    - remove government-grant from rocket-silo recipe
     - correct recipe names for beacon/rocket-silo paperwork injection
     - make beacon and rocket-silo craftable in AM3
     - restore work-order for admin buildings with no explicit paperwork in base recipe
