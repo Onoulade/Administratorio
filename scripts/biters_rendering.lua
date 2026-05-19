@@ -3,6 +3,37 @@ local M = {}
 function M.new(deps)
   local controller = {}
 
+  -- Chart tags accept plain strings only (not LocalisedString tables).
+  local PROTEST_MAP_TAG_BY_LOCALE = {
+    en = "PROTEST",
+    ru = "ПРОТЕСТ",
+    fr = "PROTESTATION",
+  }
+
+  local function player_locale_code(player)
+    if not player or not player.valid then return "en" end
+    local player_settings = settings.get_player_settings(player)
+    local locale_setting = player_settings
+      and (player_settings["ui-translation-locale"] or player_settings["locale"])
+    if locale_setting and locale_setting.value then
+      return locale_setting.value
+    end
+    return "en"
+  end
+
+  local function locale_base(code)
+    if type(code) ~= "string" then return "en" end
+    return code:match("^(%w+)") or "en"
+  end
+
+  local function to_chart_tag_text(_localised, player)
+    if type(_localised) == "string" then
+      return _localised
+    end
+    local base = locale_base(player_locale_code(player))
+    return PROTEST_MAP_TAG_BY_LOCALE[base] or PROTEST_MAP_TAG_BY_LOCALE.en
+  end
+
   local function distance_sq(a, b)
     local dx = a.x - b.x
     local dy = a.y - b.y
@@ -46,16 +77,27 @@ function M.new(deps)
     return best_ticket or "ticket-landscape"
   end
 
+  local PROTEST_SLOGAN_FALLBACKS = {
+    {"gui.protest-slogan-fallback"},
+    {"gui.protest-slogan-fallback-2"},
+    {"gui.protest-slogan-fallback-3"},
+  }
+
   local function ensure_protest_theme(info)
     if not info then
-      return "ticket-landscape", "Public outrage!", deps.protest_tints["ticket-landscape"]
+      return "ticket-landscape", PROTEST_SLOGAN_FALLBACKS[1], deps.protest_tints["ticket-landscape"]
     end
 
     local ticket = info.protest_primary_ticket or pick_primary_complaint(info)
     info.protest_primary_ticket = ticket
 
+    -- Saves from before localization cached plain English slogans.
+    if info.protest_message and type(info.protest_message) == "string" then
+      info.protest_message = nil
+    end
+
     if not info.protest_message then
-      local slogans = deps.protest_slogans[ticket] or {"Public outrage!"}
+      local slogans = deps.protest_slogans[ticket] or PROTEST_SLOGAN_FALLBACKS
       info.protest_message = slogans[math.random(1, #slogans)]
     end
 
@@ -66,7 +108,7 @@ function M.new(deps)
 
   local function get_protest_alert_caption(info)
     local ticket, message = ensure_protest_theme(info)
-    return {"", {"item-name." .. ticket}, ": \"", message, "\""}
+    return {"", {"item-name." .. ticket}, ": ", message}
   end
 
   function controller.destroy_protest_chart_tag(info)
@@ -112,16 +154,17 @@ function M.new(deps)
       if player and player.valid and player.force then
         local force = player.force
         if not applied_forces[force.name] then
+          local tag_text = to_chart_tag_text(deps.protest_map_tag_text, player)
           local chart_tag = info.protest_chart_tags_by_force[force.name]
           if chart_tag and chart_tag.valid then
             chart_tag.icon = icon
             chart_tag.position = anchor.position
-            chart_tag.text = deps.protest_map_tag_text
+            chart_tag.text = tag_text
           else
             info.protest_chart_tags_by_force[force.name] = force.add_chart_tag(anchor.surface, {
               position = anchor.position,
               icon = icon,
-              text = deps.protest_map_tag_text,
+              text = tag_text,
             })
           end
           applied_forces[force.name] = true
@@ -135,16 +178,17 @@ function M.new(deps)
         return
       end
 
+      local tag_text = to_chart_tag_text(deps.protest_map_tag_text, player_override)
       local chart_tag = info.protest_chart_tag
       if chart_tag and chart_tag.valid then
         chart_tag.icon = icon
         chart_tag.position = anchor.position
-        chart_tag.text = deps.protest_map_tag_text
+        chart_tag.text = tag_text
       else
         info.protest_chart_tag = force.add_chart_tag(anchor.surface, {
           position = anchor.position,
           icon = icon,
-          text = deps.protest_map_tag_text,
+          text = tag_text,
         })
       end
     end
@@ -181,7 +225,7 @@ function M.new(deps)
     end
 
     local wait_text_tint = deps.pacified_wait_text_tint or {r = 1, g = 0.98, b = 0.85}
-    local wait_label = deps.pacified_wait_label or "No available desk"
+    local wait_label = deps.pacified_wait_label or {"gui.pacified-wait-no-desk"}
 
     if info.pacified_text_target_unit_number ~= entity.unit_number then
       destroy_render_object(info.pacified_text_render_id)
@@ -255,7 +299,7 @@ function M.new(deps)
 
       if not get_render_object(info.protest_stop_text_render_id) then
         info.protest_stop_text_render_id = rendering.draw_text{
-          text = "STOP",
+          text = deps.protest_stop_text or {"gui.protest-stop"},
           target = {entity = target, offset = {0, 0.35}},
           surface = target.surface,
           color = deps.protest_stop_text_tint,
@@ -283,7 +327,7 @@ function M.new(deps)
 
     if not get_render_object(info.protest_text_render_id) then
       info.protest_text_render_id = rendering.draw_text{
-        text = "[item=" .. ticket .. "] " .. message,
+        text = {"", "[item=" .. ticket .. "] ", message},
         surface = entity.surface,
         target = {entity = entity, offset = {0, -2.6}},
         color = complaint_tint,

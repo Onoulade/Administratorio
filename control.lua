@@ -83,7 +83,7 @@ end
 local function notify_player_build_denied(player, position)
   if not player then return end
   player.create_local_flying_text{
-    text = {"", "Too close to biter nest!"},
+    text = {"message.build-too-close-nest"},
     position = position,
     color = {r = 1, g = 0, b = 0}
   }
@@ -883,7 +883,7 @@ local function on_entity_built_inner(event)
     -- Prevent overlap with other station footprints or existing buildings.
     if overlaps_existing then
       if player then
-        player.print("Cannot place here: administrative station footprint would overlap another station.")
+        player.print({"message.admin-station-overlap"})
         player.insert{name = "admin-station", count = 1, quality = entity.quality and entity.quality.name or nil}
       end
       entity.destroy()
@@ -892,7 +892,7 @@ local function on_entity_built_inner(event)
 
     if not area_clear then
       if player then
-        player.print("Cannot place here: station footprint is blocked by terrain or buildings.")
+        player.print({"message.admin-station-blocked"})
         player.insert{name = "admin-station", count = 1, quality = entity.quality and entity.quality.name or nil}
       end
       entity.destroy()
@@ -922,7 +922,7 @@ local function on_entity_built_inner(event)
       if box and zones.is_in_admin_zone(entity.surface, box) then
         local player = event.player_index and game.get_player(event.player_index)
         if player then
-          player.print("Cannot build here: administrative station footprint is reserved.")
+          player.print({"message.admin-zone-reserved"})
           local item_to_return = entity.prototype and entity.prototype.items_to_place_this
           if item_to_return and item_to_return[1] then
             player.insert{name = item_to_return[1].name, count = 1}

@@ -26,6 +26,13 @@ local feature_flags = require("feature_flags")
 
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
 local REGULATED_AM_FACTORIOPEDIA_NOTE = {"administratorio-factoriopedia.regulated-assembling-note"}
+local PNEUMATIC_TRANSPORT_NOTE = {
+  "",
+  {"administratorio-factoriopedia.pneumatic-transport-note-prefix"},
+  " ",
+  {"item-name.tube-intake"},
+  " ([item=tube-intake]).",
+}
 local WORKING_HOURS_ENABLED = feature_flags.working_hours_enabled()
 local DEBUG_SHOW_PAPERWORK_ICON_OVERLAYS = false
 local NIGHT_WORK_BUILDINGS = {
@@ -1194,6 +1201,19 @@ end
 -- Fluid/recipe generation removed — the tube system now uses a script-managed
 -- signal chain.  The pneumatic items list lives in shared.PNEUMATIC_ITEMS.
 -------------------------------------------------------------------------------
+
+local function append_item_description_note(item, note)
+  if not item or not note then return end
+  local base = item.localised_description or {"item-description." .. item.name}
+  item.localised_description = {"", base, "\n\n", note}
+end
+
+for item_name in pairs(shared.PNEUMATIC_ITEMS) do
+  local item = data.raw.item[item_name]
+  if item then
+    append_item_description_note(item, PNEUMATIC_TRANSPORT_NOTE)
+  end
+end
 
 -------------------------------------------------------------------------------
 -- 8. ADMIN STATION COLLISION FOOTPRINT

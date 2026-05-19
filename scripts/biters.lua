@@ -32,46 +32,98 @@ local PROTEST_PROTECTED_NAMES = {
   ["admin-station"] = true,
   ["resolution-office"] = true,
 }
+local function protest_slogan(ticket, index)
+  return {"gui.protest-slogan-" .. ticket .. "-" .. index}
+end
+
 local PROTEST_SLOGANS = {
   ["ticket-landscape"] = {
-    "Stop paving our habitat!",
-    "Save the cliffs, save the nest!",
-    "This scenery was zoned!",
+    protest_slogan("ticket-landscape", 1),
+    protest_slogan("ticket-landscape", 2),
+    protest_slogan("ticket-landscape", 3),
+    protest_slogan("ticket-landscape", 4),
+    protest_slogan("ticket-landscape", 5),
+    protest_slogan("ticket-landscape", 6),
+    protest_slogan("ticket-landscape", 7),
+    protest_slogan("ticket-landscape", 8),
+    protest_slogan("ticket-landscape", 9),
   },
   ["ticket-smog"] = {
-    "Clean air, not excuses!",
-    "Smog is not a growth strategy!",
-    "We demand breathable chunks!",
+    protest_slogan("ticket-smog", 1),
+    protest_slogan("ticket-smog", 2),
+    protest_slogan("ticket-smog", 3),
+    protest_slogan("ticket-smog", 4),
+    protest_slogan("ticket-smog", 5),
+    protest_slogan("ticket-smog", 6),
+    protest_slogan("ticket-smog", 7),
+    protest_slogan("ticket-smog", 8),
+    protest_slogan("ticket-smog", 9),
   },
   ["ticket-noise"] = {
-    "Quiet hours now!",
-    "Your factory is too loud!",
-    "Silence the assemblers!",
+    protest_slogan("ticket-noise", 1),
+    protest_slogan("ticket-noise", 2),
+    protest_slogan("ticket-noise", 3),
+    protest_slogan("ticket-noise", 4),
+    protest_slogan("ticket-noise", 5),
+    protest_slogan("ticket-noise", 6),
+    protest_slogan("ticket-noise", 7),
+    protest_slogan("ticket-noise", 8),
+    protest_slogan("ticket-noise", 9),
   },
   ["ticket-unemployment"] = {
-    "Jobs for every jaw!",
-    "No growth without employment!",
-    "Eviction killed local industry!",
+    protest_slogan("ticket-unemployment", 1),
+    protest_slogan("ticket-unemployment", 2),
+    protest_slogan("ticket-unemployment", 3),
+    protest_slogan("ticket-unemployment", 4),
+    protest_slogan("ticket-unemployment", 5),
+    protest_slogan("ticket-unemployment", 6),
+    protest_slogan("ticket-unemployment", 7),
+    protest_slogan("ticket-unemployment", 8),
+    protest_slogan("ticket-unemployment", 9),
   },
   ["ticket-littering"] = {
-    "Pick up your acid!",
-    "Slime is not sidewalk art!",
-    "No more toxic litter!",
+    protest_slogan("ticket-littering", 1),
+    protest_slogan("ticket-littering", 2),
+    protest_slogan("ticket-littering", 3),
+    protest_slogan("ticket-littering", 4),
+    protest_slogan("ticket-littering", 5),
+    protest_slogan("ticket-littering", 6),
+    protest_slogan("ticket-littering", 7),
+    protest_slogan("ticket-littering", 8),
+    protest_slogan("ticket-littering", 9),
   },
   ["ticket-hazmat"] = {
-    "Hazmat means hazard!",
-    "Contain your goo!",
-    "PPE for every protester!",
+    protest_slogan("ticket-hazmat", 1),
+    protest_slogan("ticket-hazmat", 2),
+    protest_slogan("ticket-hazmat", 3),
+    protest_slogan("ticket-hazmat", 4),
+    protest_slogan("ticket-hazmat", 5),
+    protest_slogan("ticket-hazmat", 6),
+    protest_slogan("ticket-hazmat", 7),
+    protest_slogan("ticket-hazmat", 8),
+    protest_slogan("ticket-hazmat", 9),
   },
   ["ticket-loitering"] = {
-    "Standing here is not a crime!",
-    "Restricted by who?",
-    "We belong in this chunk too!",
+    protest_slogan("ticket-loitering", 1),
+    protest_slogan("ticket-loitering", 2),
+    protest_slogan("ticket-loitering", 3),
+    protest_slogan("ticket-loitering", 4),
+    protest_slogan("ticket-loitering", 5),
+    protest_slogan("ticket-loitering", 6),
+    protest_slogan("ticket-loitering", 7),
+    protest_slogan("ticket-loitering", 8),
+    protest_slogan("ticket-loitering", 9),
   },
   ["ticket-vagrancy"] = {
-    "Housing before harassment!",
-    "Displacement is the crime!",
-    "No nest, no peace!",
+    protest_slogan("ticket-vagrancy", 1),
+    protest_slogan("ticket-vagrancy", 2),
+    protest_slogan("ticket-vagrancy", 3),
+    protest_slogan("ticket-vagrancy", 4),
+    protest_slogan("ticket-vagrancy", 5),
+    protest_slogan("ticket-vagrancy", 6),
+    protest_slogan("ticket-vagrancy", 7),
+    protest_slogan("ticket-vagrancy", 8),
+    protest_slogan("ticket-vagrancy", 9),
   },
 }
 local PROTEST_TINTS = {
@@ -88,11 +140,12 @@ local PROTEST_STOP_TINT = {r = 1, g = 0.1, b = 0.1}
 local PROTEST_STOP_TEXT_TINT = {r = 1, g = 0.95, b = 0.95}
 local PACIFIED_WAIT_TINT = {r = 1, g = 0.76, b = 0.18}
 local PACIFIED_WAIT_TEXT_TINT = {r = 1, g = 0.98, b = 0.85}
-local PACIFIED_WAIT_LABEL = "No available desk"
+local PACIFIED_WAIT_LABEL = {"gui.pacified-wait-no-desk"}
 local PROTEST_ALERT_SOUND_PATH = "administratorio-protest-alert"
 local PROTEST_ALERT_SOUND_COOLDOWN_TICKS = 6 * 60
 local PROTEST_ALERT_SOUND_MAX_DISTANCE = 32
-local PROTEST_MAP_TAG_TEXT = "PROTEST"
+local PROTEST_MAP_TAG_TEXT = {"gui.protest-map-tag"}
+local PROTEST_STOP_TEXT = {"gui.protest-stop"}
 local WAITING_BITER_STATE_NAMES = {"waiting", "pathfinding", "protesting", "pacified", "returning_home"}
 local WAITING_PATHING_PROCESS_SHARD_COUNT = C.FRUST_PROTEST_PROCESS_SHARDS or 4
 local BITER_FORCE_NAME = "administratorio-biters"
@@ -777,6 +830,7 @@ protest_rendering = biters_rendering_factory.new({
   protest_alert_sound_path = PROTEST_ALERT_SOUND_PATH,
   protest_map_tag_text = PROTEST_MAP_TAG_TEXT,
   protest_slogans = PROTEST_SLOGANS,
+  protest_stop_text = PROTEST_STOP_TEXT,
   protest_stop_text_tint = PROTEST_STOP_TEXT_TINT,
   protest_stop_tint = PROTEST_STOP_TINT,
   protest_tints = PROTEST_TINTS,
