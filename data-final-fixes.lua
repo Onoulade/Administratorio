@@ -1152,8 +1152,8 @@ for recipe_name, recipe in pairs(data.raw["recipe"] or {}) do
     end
   end
 end
-add_special_paperwork("beacon-regulated", "treasury-bond", 1)
-add_special_paperwork("rocket-silo-regulated", "government-grant", 1)
+add_special_paperwork("beacon", "treasury-bond", 1)
+add_special_paperwork("rocket-silo", "government-grant", 1)
 
 -- Cliff charges should stay civilian; remove the hidden military grenade
 -- dependency after any recipe cloning/regulation has happened.
