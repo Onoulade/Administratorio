@@ -982,17 +982,18 @@ local function regulate_admin_building(recipe, multiplier)
 
     if target.ingredients then
       local new_ingredients = {}
-      local combined_forms = {}
+      local paperwork_accum = {}  -- merges tier forms + existing combined forms to avoid duplicates
 
       for _, ing in ipairs(target.ingredients) do
         local name = ing.name or ing[1]
+        local amount = ing.amount or ing[2] or 1
         local combined = shared.COMBINED_FORMS[name]
         if combined then
-          -- Tier form → replace with combined form (fixed cost)
-          combined_forms[combined] = (combined_forms[combined] or 0) + (ing.amount or ing[2] or 1)
+          -- Tier form → accumulate as combined form (fixed cost)
+          paperwork_accum[combined] = (paperwork_accum[combined] or 0) + amount
         elseif shared.PAPERWORK_ITEMS[name] then
-          -- Other paperwork → keep as fixed cost, don't multiply
-          table.insert(new_ingredients, util.table.deepcopy(ing))
+          -- Other paperwork → accumulate as fixed cost, don't multiply
+          paperwork_accum[name] = (paperwork_accum[name] or 0) + amount
         else
           -- Regular material → multiply
           local new_ing = util.table.deepcopy(ing)
@@ -1005,8 +1006,8 @@ local function regulate_admin_building(recipe, multiplier)
         end
       end
 
-      for combined_name, amount in pairs(combined_forms) do
-        table.insert(new_ingredients, {type = "item", name = combined_name, amount = amount})
+      for pw_name, pw_amount in pairs(paperwork_accum) do
+        table.insert(new_ingredients, {type = "item", name = pw_name, amount = pw_amount})
       end
       target.ingredients = new_ingredients
     end
