@@ -1015,6 +1015,10 @@ local function on_entity_removed(event)
   local entity = event.entity
   if not entity or not entity.valid then return end
 
+  if entity.type == "unit" and biters.on_biter_removed(entity, event) then
+    return
+  end
+
   biter_station.on_entity_removed(event)
   biters.on_protest_target_removed(entity)
 

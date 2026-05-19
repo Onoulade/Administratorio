@@ -9,8 +9,6 @@ local M = {}
 local protest_rendering
 local protest_system
 
--- Diagnostic logging prefix for easy filtering in factorio-current.log
-local LOG_PREFIX = "[Administratorio] "
 local PROTEST_TARGET_TYPES = {
   "assembling-machine",
   "furnace",
@@ -183,10 +181,6 @@ end
 local function format_position(pos)
   if not pos then return "[nil]" end
   return "[" .. math.floor(pos.x) .. "," .. math.floor(pos.y) .. "]"
-end
-
-local function log_return_home(message)
-  if log then log(LOG_PREFIX .. "RETURN-HOME " .. message) end
 end
 
 -- ============================================================
@@ -713,10 +707,6 @@ local function get_cached_desk_return_position(info, entity, desk_id)
     surface_index = surface_index,
     distance = distance,
   }
-  log_return_home("cached desk exit desk=" .. tostring(desk_id)
-    .. " pos=" .. format_position(position)
-    .. " distance=" .. tostring(distance)
-    .. " surface=" .. tostring(surface_index))
   return {x = position.x, y = position.y}, true
 end
 
@@ -766,20 +756,6 @@ local function start_return_home(info, entity, opts)
     radius = C.RETURN_ARRIVAL_DISTANCE or 2.5,
     distraction = defines.distraction.none,
   })
-
-  log_return_home("start unit=" .. tostring(entity.unit_number)
-    .. " name=" .. tostring(entity.name)
-    .. " force=" .. tostring(entity.force and entity.force.name)
-    .. " active=" .. tostring(entity.active)
-    .. " destructible=" .. tostring(entity.destructible)
-    .. " dest=" .. format_position(dest)
-    .. " target_kind=" .. tostring(info.return_target_kind)
-    .. " cached_desk=" .. tostring(info.return_cached_desk_id or "nil")
-    .. " spawner=" .. tostring(spawner and spawner.valid and spawner.unit_number or "nil")
-    .. " home_position=" .. format_position(home_position)
-    .. " force_home_position=" .. tostring(opts.force_home_position == true)
-    .. " arrival_check_tick=" .. tostring(info.return_arrival_check_tick)
-    .. " despawn_tick=" .. tostring(info.return_despawn_tick))
   return true
 end
 
@@ -821,7 +797,6 @@ end
 
 protest_rendering = biters_rendering_factory.new({
   format_position = format_position,
-  log_prefix = LOG_PREFIX,
   pacified_wait_label = PACIFIED_WAIT_LABEL,
   pacified_wait_text_tint = PACIFIED_WAIT_TEXT_TINT,
   pacified_wait_tint = PACIFIED_WAIT_TINT,
@@ -854,7 +829,6 @@ protest_system = biters_protests_factory.new({
   get_waiting_biter_state_set = get_waiting_biter_state_set,
   index_biter_to_desk = index_biter_to_desk,
   issue_desk_route_command = issue_desk_route_command,
-  log_prefix = LOG_PREFIX,
   mark_desk_circuit_dirty = mark_desk_circuit_dirty,
   normalize_case_progress = normalize_case_progress,
   protest_protected_names = PROTEST_PROTECTED_NAMES,
@@ -1175,6 +1149,10 @@ end
 
 function M.on_biter_died(entity)
   protest_system.on_biter_died(entity)
+end
+
+function M.on_biter_removed(entity, event)
+  return protest_system.on_biter_removed(entity, event)
 end
 
 function M.update_circuit_signals(desks)

@@ -5,17 +5,10 @@ function M.new(deps)
   local zones = deps.zones
   local working_hours = deps.working_hours
   local render = deps.render
-  local function debug_log(message)
-    if log then log(message) end
-  end
 
   local controller = {
     last_eviction_tick = 0,
   }
-
-  local function log_return_home(message)
-    debug_log(deps.log_prefix .. "RETURN-HOME " .. message)
-  end
 
   local protest_target_cache = nil  -- {tick=, surface_index=, targets={}}
 
@@ -121,6 +114,24 @@ function M.new(deps)
   end
 
   local count_protesters_on_target
+
+  local function protect_protesting_biter(info, entity, reason, opts)
+    if not info or info.state ~= "protesting" or not entity or not entity.valid then return false end
+
+    opts = opts or {}
+    entity.force = deps.get_biter_force()
+    entity.active = opts.active == false and false or true
+    entity.destructible = false
+
+    local commandable = entity.commandable
+    local spawner = commandable and commandable.spawner or nil
+    if spawner and spawner.valid and commandable.release_from_spawner then
+      deps.remember_home_spawner(info, spawner)
+      commandable.release_from_spawner()
+    end
+
+    return true
+  end
 
   local function disable_protest_target(target, protester_id)
     if not target or not target.valid then return end
@@ -583,20 +594,21 @@ function M.new(deps)
 
   local function park_protester(info, entity)
     if not info or not entity or not entity.valid then return end
-    local was_wandering = not info.protest_parked
-    entity.force = deps.get_biter_force()
+    local target = info.target_building
+    if not target or not target.valid then return end
+
+    protect_protesting_biter(info, entity, "park-inactive", {active = false})
+    info.protest_anchor_position = {x = entity.position.x, y = entity.position.y}
+    info.protest_last_command_tick = game.tick
+    info.protest_step_deadline_tick = nil
+    info.protest_parked = true
+    schedule_next_protest_step(info)
+
     entity.commandable.set_command({
       type = defines.command.stop,
       distraction = defines.distraction.none,
     })
-    info.protest_parked = true
-    if not info.arrived_at_building or not info.protest_anchor_position then
-      info.protest_anchor_position = {x = entity.position.x, y = entity.position.y}
-    end
-    info.protest_step_deadline_tick = nil
-    if not info.next_protest_wander_tick or info.next_protest_wander_tick <= game.tick then
-      schedule_next_protest_step(info)
-    end
+    entity.active = false
   end
 
   local function issue_protest_wander_command(info, entity, opts)
@@ -614,7 +626,7 @@ function M.new(deps)
     info.protest_last_command_tick = game.tick
     info.protest_step_deadline_tick = game.tick + C.PROTEST_STEP_ACTIVE_TICKS
     info.protest_parked = nil
-    entity.force = deps.get_biter_force()
+    protect_protesting_biter(info, entity, "wander")
 
     entity.commandable.set_command({
       type = defines.command.go_to_location,
@@ -629,28 +641,25 @@ function M.new(deps)
     if not info or not entity or not entity.valid then return end
     if not info.arrived_at_building or not info.target_building or not info.target_building.valid then return end
 
+    protect_protesting_biter(info, entity, "update-arrived", {active = not info.protest_parked})
     disable_protest_target(info.target_building, entity.unit_number)
 
     local anchor_pos = info.protest_anchor_position or get_protest_arrival_position(info) or info.target_building.position
     local anchor_dist = distance_sq(entity.position, anchor_pos)
     local target_dist = distance_sq(entity.position, info.target_building.position)
 
-    if not info.protest_parked
-       and (anchor_dist <= 0.5 * 0.5 or game.tick >= (info.protest_step_deadline_tick or 0)) then
-      if game.tick >= (info.protest_step_deadline_tick or 0) then
-        debug_log(deps.log_prefix .. "PROTEST-PARK deadline unit=" .. tostring(entity.unit_number)
-          .. " pos=" .. deps.format_position(entity.position))
-      end
+    if info.protest_parked then
+      entity.active = false
+    elseif anchor_dist <= 0.5 * 0.5 or game.tick >= (info.protest_step_deadline_tick or 0) or not entity.active then
       park_protester(info, entity)
-    elseif info.protest_parked
-       and game.tick > math.max(info.protest_arrival_tick or 0, info.protest_last_command_tick or 0)
-       and anchor_dist > C.PROTEST_MAX_DISTANCE_FROM_TARGET * C.PROTEST_MAX_DISTANCE_FROM_TARGET then
+    elseif game.tick > math.max(info.protest_arrival_tick or 0, info.protest_last_command_tick or 0)
+       and target_dist > C.PROTEST_MAX_DISTANCE_FROM_TARGET * C.PROTEST_MAX_DISTANCE_FROM_TARGET then
       issue_protest_wander_command(info, entity, {
         destination = anchor_pos,
         origin = entity.position,
         radius = 0.1,
       })
-    elseif info.protest_parked and game.tick >= (info.next_protest_wander_tick or 0) then
+    elseif game.tick >= (info.next_protest_wander_tick or 0) then
       issue_protest_wander_command(info, entity, {
         origin = anchor_pos,
         radius = 0.25,
@@ -665,6 +674,7 @@ function M.new(deps)
 
     info.arrived_at_building = true
     info.protest_arrival_tick = game.tick
+    protect_protesting_biter(info, entity, "arrived")
     disable_protest_target(info.target_building, entity.unit_number)
     park_protester(info, entity)
     render.ensure_protest_rendering(info)
@@ -677,6 +687,7 @@ function M.new(deps)
     if info.arrived_at_building then return false end
     if not info.target_building or not info.target_building.valid then return false end
 
+    protect_protesting_biter(info, entity, "resume")
     local arrival_pos = get_protest_arrival_position(info) or info.target_building.position
     if not arrival_pos then return false end
 
@@ -849,8 +860,7 @@ function M.new(deps)
     end
 
     if info.entity and info.entity.valid then
-      info.entity.force = deps.get_biter_force()
-      info.entity.active = true
+      protect_protesting_biter(info, info.entity, "retarget-after-target-loss")
       return assign_protest_target(surface or info.entity.surface, info, info.entity)
     end
 
@@ -922,7 +932,7 @@ function M.new(deps)
 
   local function revive_tracked_biter(b_id, info, fallback_surface)
     if not info or info.state == "returning_home" then return false end
-    if info.state == "protesting" or info.state == "pathfinding" or info.state == "waiting" then
+    if info.state == "pathfinding" or info.state == "waiting" then
       return false
     end
     local surface = find_revival_surface(info, fallback_surface)
@@ -987,7 +997,7 @@ function M.new(deps)
     elseif info.state == "protesting" then
       clear_pending_path_request(info)
       clear_pacified_runtime(info)
-      replacement.force = deps.get_biter_force()
+      protect_protesting_biter(info, replacement, "revive")
       if info.target_building and info.target_building.valid then
         if info.arrived_at_building then
           working_hours.transfer_protest_target(info.target_building, b_id, replacement.unit_number)
@@ -1122,8 +1132,7 @@ function M.new(deps)
         info.desk_dest = nil
         info.frustration = C.PROTEST_THRESHOLD
         deps.set_waiting_biter_state(info, "protesting")
-        biter.force = deps.get_biter_force()
-        biter.active = true
+        protect_protesting_biter(info, biter, "desk-removed")
         assign_protest_target(surface, info, biter)
       end
     end
@@ -1155,8 +1164,7 @@ function M.new(deps)
 
     info.entity = entity
     deps.track_waiting_biter(entity.unit_number, info)
-    entity.force = deps.get_biter_force()
-    entity.active = true
+    protect_protesting_biter(info, entity, "trigger-immediate")
 
     assign_protest_target(surface, info, entity)
   end
@@ -1200,11 +1208,11 @@ function M.new(deps)
       deps.normalize_case_progress(info)
       if not info.entity or not info.entity.valid then
         if info.state == "returning_home" then
-          log_return_home("invalid entity unit=" .. tostring(b_id)
-            .. " last_pos=" .. deps.format_position(info.last_known_position)
-            .. " started=" .. tostring(info.return_started_tick)
-            .. " arrival_check=" .. tostring(info.return_arrival_check_tick)
-            .. " despawn_tick=" .. tostring(info.return_despawn_tick))
+          reset_protest_targeting(info, b_id)
+          deps.unindex_biter_from_desk(info.desk_id, b_id)
+          zones.release_slot(info.desk_id, b_id)
+          deps.untrack_waiting_biter(b_id, info)
+          goto continue_biter
         end
         local bypass_retry = false
         if info.state == "pacified" then
@@ -1226,15 +1234,7 @@ function M.new(deps)
         goto continue_biter
       end
 
-        if info.state == "protesting" or info.state == "pathfinding" or info.state == "waiting" then
-          debug_log(deps.log_prefix .. "Tracked unit invalidated without revive unit=" .. tostring(b_id)
-            .. " state=" .. tostring(info.state)
-            .. " desk=" .. tostring(info.desk_id)
-            .. " last_pos=" .. deps.format_position(info.last_known_position)
-            .. " surface=" .. tostring(info.last_known_surface_index))
-          if info.state == "protesting" then
-            reset_protest_targeting(info, b_id)
-          end
+        if info.state == "pathfinding" or info.state == "waiting" then
           render.destroy_protest_rendering(info)
           render.destroy_pacified_rendering(info)
           clear_pacified_runtime(info)
@@ -1263,9 +1263,6 @@ function M.new(deps)
         end
         info.revival_failures = recovery_attempt
         if revive_tracked_biter(b_id, info, surface) then
-          debug_log(deps.log_prefix .. "Tracked unit revived unit=" .. tostring(b_id)
-            .. " state=" .. tostring(info.state)
-            .. " new_unit=" .. tostring(info.tracked_unit_number))
           goto continue_biter
         end
         info.next_revival_retry_tick = game.tick + C.INVALIDATED_BITER_REVIVE_RETRY_TICKS
@@ -1280,8 +1277,7 @@ function M.new(deps)
 
           if info.frustration >= C.PROTEST_THRESHOLD then
             deps.set_waiting_biter_state(info, "protesting")
-            info.entity.active = true
-            info.entity.force = deps.get_biter_force()
+            protect_protesting_biter(info, info.entity, "frustration-threshold")
             deps.unindex_biter_from_desk(info.desk_id, b_id)
             zones.release_slot(info.desk_id, b_id)
             info.desk_id = nil
@@ -1301,18 +1297,13 @@ function M.new(deps)
             deps.set_waiting_biter_state(info, "protesting")
             info.frustration = C.PROTEST_THRESHOLD
             info.promise_retry_until_tick = nil
-            info.entity.active = true
-            info.entity.force = deps.get_biter_force()
+            protect_protesting_biter(info, info.entity, "promise-expired")
             assign_protest_target(surface, info, info.entity)
           else
             maintain_pacified_entity(info, info.entity)
           end
         elseif info.state == "returning_home" then
           if info.return_despawn_tick and game.tick >= info.return_despawn_tick then
-            log_return_home("destroy timer unit=" .. tostring(b_id)
-              .. " tick=" .. tostring(game.tick)
-              .. " pos=" .. deps.format_position(info.entity.position)
-              .. " dest=" .. deps.format_position(info.return_dest))
             info.entity.destroy()
             deps.untrack_waiting_biter(b_id, info)
           else
@@ -1322,18 +1313,13 @@ function M.new(deps)
               local ddy = info.entity.position.y - dest.y
               local arrival_distance = C.RETURN_ARRIVAL_DISTANCE or 2.5
               if ddx * ddx + ddy * ddy <= arrival_distance * arrival_distance then
-                log_return_home("destroy arrived unit=" .. tostring(b_id)
-                  .. " tick=" .. tostring(game.tick)
-                  .. " pos=" .. deps.format_position(info.entity.position)
-                  .. " dest=" .. deps.format_position(dest)
-                  .. " dist_sq=" .. tostring(ddx * ddx + ddy * ddy)
-                  .. " arrival_distance=" .. tostring(arrival_distance))
                 info.entity.destroy()
                 deps.untrack_waiting_biter(b_id, info)
               end
             end
           end
         elseif info.state == "protesting" then
+          protect_protesting_biter(info, info.entity, "process")
           local target = info.target_building
           if target and not target.valid then
             reset_protest_targeting(info, b_id)
@@ -1396,6 +1382,7 @@ function M.new(deps)
          and info.target_building
          and info.target_building.valid
          and info.entity.surface == surface then
+        protect_protesting_biter(info, info.entity, "pacing")
         render.ensure_protest_rendering(info)
         if not info.arrived_at_building and not info.pending_path_request_id and not info.entity.active then
           if not resume_en_route_protest(info, info.entity) then
@@ -1432,8 +1419,7 @@ function M.new(deps)
           deps.set_waiting_biter_state(info, "protesting")
           info.frustration = C.PROTEST_THRESHOLD
           info.promise_retry_until_tick = nil
-          info.entity.active = true
-          info.entity.force = deps.get_biter_force()
+          protect_protesting_biter(info, info.entity, "pacing-promise-expired")
           assign_protest_target(surface, info, info.entity)
         else
           maintain_pacified_entity(info, info.entity)
@@ -1448,7 +1434,9 @@ function M.new(deps)
     local info = storage.waiting_biters[event.unit_number]
     if not info then return end
     local entity = info.entity
-    if not entity or not entity.valid then return end
+    if not entity or not entity.valid then
+      return
+    end
 
     if info.state == "pathfinding" and event.result == defines.behavior_result.fail then
       if info.desk_id and info.desk_dest then
@@ -1468,19 +1456,10 @@ function M.new(deps)
     if info.state == "returning_home" then
       if event.result == defines.behavior_result.fail then
         local cached_desk_id = info.return_cached_desk_id
-        log_return_home("command failed unit=" .. tostring(event.unit_number)
-          .. " tick=" .. tostring(game.tick)
-          .. " pos=" .. deps.format_position(entity.position)
-          .. " dest=" .. deps.format_position(info.return_dest)
-          .. " target_kind=" .. tostring(info.return_target_kind)
-          .. " cached_desk=" .. tostring(cached_desk_id or "nil")
-          .. " result=" .. tostring(event.result))
         if info.return_failed_once then return end
         info.return_failed_once = true
         if cached_desk_id and storage.desk_return_positions then
           storage.desk_return_positions[cached_desk_id] = nil
-          log_return_home("invalidated cached desk exit desk=" .. tostring(cached_desk_id)
-            .. " unit=" .. tostring(event.unit_number))
         end
         deps.start_return_home(info, entity, {force_home_position = true})
       end
@@ -1530,7 +1509,12 @@ function M.new(deps)
     storage.path_requests[event.id] = nil
 
     local info = storage.waiting_biters and storage.waiting_biters[request.unit_number]
-    if not info or info.pending_path_request_id ~= event.id then return end
+    if not info then
+      return
+    end
+    if info.pending_path_request_id ~= event.id then
+      return
+    end
     info.pending_path_request_id = nil
     clear_pending_protest_reservation(info)
 
@@ -1758,17 +1742,36 @@ function M.new(deps)
         deps.mark_desk_circuit_dirty(info.desk_id)
         return
       end
-      log_return_home("on_biter_died unit=" .. tostring(entity.unit_number)
-        .. " tick=" .. tostring(game.tick)
-        .. " pos=" .. deps.format_position(entity.position)
-        .. " force=" .. tostring(entity.force and entity.force.name)
-        .. " destructible=" .. tostring(entity.destructible)
-        .. " dest=" .. deps.format_position(info.return_dest))
       reset_protest_targeting(info, entity.unit_number)
       deps.unindex_biter_from_desk(info.desk_id, entity.unit_number)
       zones.release_slot(info.desk_id, entity.unit_number)
       deps.untrack_waiting_biter(entity.unit_number, info)
     end
+  end
+
+  function controller.on_biter_removed(entity, event)
+    if not entity or not entity.valid or not entity.unit_number then return false end
+
+    local info = storage.waiting_biters and storage.waiting_biters[entity.unit_number]
+    if not info then return false end
+
+    deps.remember_entity_tracking(info, entity)
+
+    if info.state == "returning_home" then
+      deps.untrack_waiting_biter(entity.unit_number, info)
+      return true
+    end
+
+    if info.state == "protesting" then
+      reset_protest_targeting(info, entity.unit_number)
+    end
+    render.destroy_protest_rendering(info)
+    render.destroy_pacified_rendering(info)
+    clear_pacified_runtime(info)
+    deps.unindex_biter_from_desk(info.desk_id, entity.unit_number)
+    zones.release_slot(info.desk_id, entity.unit_number)
+    deps.untrack_waiting_biter(entity.unit_number, info)
+    return true
   end
 
   function controller.process_calmed_spawners(tick)

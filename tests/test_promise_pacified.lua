@@ -62,7 +62,6 @@ local function new_test_context()
   local pacified_render_calls = 0
   local protest_render_calls = 0
   local desk_available = false
-  local entity_lifecycle_logging_enabled = false
   local next_unit_number = 100
 
   local surface
@@ -300,12 +299,8 @@ local function new_test_context()
     remember_home_spawner = function() end,
     send_biter_to_station_with_targets = function() end,
     start_return_home = function() end,
-    should_log_entity_lifecycle = function()
-      return entity_lifecycle_logging_enabled
-    end,
     background_state_shard_count = 4,
     protest_debug_status_ticks = 10 * 60,
-    log_prefix = "[Administratorio] ",
   }
 
   local controller = protest_factory.new(deps)
@@ -324,7 +319,6 @@ local function new_test_context()
     get_pacified_render_calls = function() return pacified_render_calls end,
     get_protest_render_calls = function() return protest_render_calls end,
     set_desk_available = function(value) desk_available = value end,
-    set_entity_lifecycle_logging = function(value) entity_lifecycle_logging_enabled = value end,
   }
 end
 
@@ -478,9 +472,20 @@ test("pacified invalid biter rematerializes only when a desk opens", function()
   assert_true(storage.waiting_biters[info.tracked_unit_number] == info, "tracked biter should move to the replacement unit number")
 end)
 
-test("entity lifecycle logging does not dereference invalid protesters", function()
+test("invalid protesting biter rematerializes instead of being untracked", function()
   local ctx = new_test_context()
-  ctx.set_entity_lifecycle_logging(true)
+  local target = {
+    valid = true,
+    active = false,
+    force = {name = "player"},
+    unit_number = 91,
+    position = {x = 7, y = 7},
+    surface = ctx.surface,
+    bounding_box = {
+      left_top = {x = 6, y = 6},
+      right_bottom = {x = 8, y = 8},
+    },
+  }
 
   local info = {
     state = "protesting",
@@ -488,16 +493,66 @@ test("entity lifecycle logging does not dereference invalid protesters", functio
     entity_name = "small-biter",
     last_known_position = {x = 4, y = 5},
     last_known_surface_index = 1,
-    tracked_unit_number = 14,
+    target_building = target,
+    arrived_at_building = true,
+    protest_anchor_position = {x = 6, y = 7},
+    tracked_unit_number = 16,
     complaints = {"ticket-landscape"},
   }
-  storage.waiting_biters[14] = info
-  ctx.state_sets.protesting[14] = true
+  storage.waiting_biters[16] = info
+  ctx.state_sets.protesting[16] = true
 
   game.tick = 0
   ctx.controller.process_frustration_and_protests(ctx.surface)
 
-  assert_true(storage.waiting_biters[14] == info, "logging invalid protesters should not crash processing")
+  assert_eq(ctx.get_create_calls(), 1, "invalid protester should be recreated")
+  assert_true(storage.waiting_biters[16] == nil, "old protester unit key should be replaced")
+  assert_true(info.entity and info.entity.valid, "protester should have a live replacement")
+  assert_true(storage.waiting_biters[info.tracked_unit_number] == info, "replacement should remain tracked")
+  assert_eq(info.state, "protesting", "replacement should keep protesting")
+  assert_eq(info.entity.destructible, false, "replacement protester should be protected")
+end)
+
+test("arrived protesting biter parks inactive like desk waiters", function()
+  local ctx = new_test_context()
+  local target = {
+    valid = true,
+    active = true,
+    force = {name = "player"},
+    unit_number = 91,
+    position = {x = 7, y = 7},
+    surface = ctx.surface,
+    bounding_box = {
+      left_top = {x = 6, y = 6},
+      right_bottom = {x = 8, y = 8},
+    },
+  }
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 7, y = 7},
+    force = "neutral",
+  }
+  entity.unit_number = 4
+  local info = {
+    state = "protesting",
+    entity = entity,
+    entity_name = entity.name,
+    tracked_unit_number = 4,
+    target_building = target,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[4] = info
+  ctx.state_sets.protesting[4] = true
+
+  game.tick = 0
+  ctx.controller.process_frustration_and_protests(ctx.surface)
+
+  assert_true(info.arrived_at_building, "nearby protester should be marked arrived")
+  assert_true(info.protest_parked, "arrived protester should be parked")
+  assert_eq(entity.active, false, "arrived protester should be inactive")
+  assert_eq(entity.destructible, false, "arrived protester should be protected")
+  assert_eq(ctx.get_last_stop_command().type, defines.command.stop, "arrived protester should receive a stop command")
+  assert_eq(target.active, false, "arrived protester should keep the target disabled")
 end)
 
 test("promise without desk capacity pacifies and explicitly stops the protester", function()
