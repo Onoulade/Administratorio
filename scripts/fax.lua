@@ -33,6 +33,19 @@ local function is_fax_name(name)
   return name == shared.RECEIVER_NAME or name == shared.EMITTER_NAME
 end
 
+local function entity_prototype_exists(name)
+  if not name then return false end
+  if prototypes and prototypes.entity then
+    return prototypes.entity[name] ~= nil
+  end
+  return true
+end
+
+local function find_existing_entities_by_name(surface, name)
+  if not entity_prototype_exists(name) then return {} end
+  return surface.find_entities_filtered{name = name}
+end
+
 local function connect_combinator(entity, combinator)
   if not entity or not entity.valid or not combinator or not combinator.valid then return end
   if not entity.get_wire_connector or not combinator.get_wire_connector then return end
@@ -1916,7 +1929,7 @@ function M.rebuild_registry()
   storage.fax_receivers_by_planet = {}
 
   for _, surface in pairs(game.surfaces or {}) do
-    for _, entity in ipairs(surface.find_entities_filtered{name = shared.RECEIVER_NAME}) do
+    for _, entity in ipairs(find_existing_entities_by_name(surface, shared.RECEIVER_NAME)) do
       if entity.valid then
         local state = register_receiver(entity)
         if state then
@@ -1925,7 +1938,7 @@ function M.rebuild_registry()
       end
     end
 
-    for _, entity in ipairs(surface.find_entities_filtered{name = shared.EMITTER_NAME}) do
+    for _, entity in ipairs(find_existing_entities_by_name(surface, shared.EMITTER_NAME)) do
       if entity.valid then
         local state = register_emitter(entity)
         if state then
