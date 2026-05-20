@@ -88,7 +88,10 @@ local function bfs_network_id(network_pipe)
         if connections then
           for _, connected_fb in ipairs(connections) do
             local owner = connected_fb.owner
-            if owner and owner.valid and not visited[owner.unit_number] then
+            -- Ghost entities participate in fluidbox connections in Factorio 2.x
+            -- (for placement preview), but must not count as real network links.
+            if owner and owner.valid and not visited[owner.unit_number]
+                and owner.type ~= "entity-ghost" then
               visited[owner.unit_number] = true
               if owner.unit_number < id then id = owner.unit_number end
               local pos = owner.position
@@ -327,6 +330,43 @@ function M.delete_pneumatic_supports(entity)
 
   -- Untrack from storage.
   M.ensure_storage()
+
+  -- Rescue in-flight items if this entity is the last on its network.
+  -- Removing it would cause rebuild_network_cache to prune the signal pool,
+  -- silently destroying any items still in transit.
+  local uid = entity.unit_number
+  local net_id = storage.tube_network_cache and storage.tube_network_cache[uid]
+  if net_id then
+    local pool = storage.tube_signals[net_id]
+    if pool and next(pool) then
+      local has_other = false
+      for other_uid in pairs(storage.tube_intakes) do
+        if other_uid ~= uid and storage.tube_network_cache[other_uid] == net_id then
+          has_other = true; break
+        end
+      end
+      if not has_other then
+        for other_uid in pairs(storage.tube_outtakes) do
+          if other_uid ~= uid and storage.tube_network_cache[other_uid] == net_id then
+            has_other = true; break
+          end
+        end
+      end
+      if not has_other then
+        for item_name, count in pairs(pool) do
+          if count > 0 then
+            entity.surface.spill_item_stack{
+              position = entity.position,
+              stack = {name = item_name, count = count},
+              enable_looted = true,
+            }
+          end
+        end
+        storage.tube_signals[net_id] = nil
+      end
+    end
+  end
+
   if entity.name == "tube-intake" then
     storage.tube_intakes[entity.unit_number] = nil
   elseif entity.name == "tube-outtake" then
@@ -456,6 +496,9 @@ function M.on_pneumatic_tick()
 
     if inv.is_empty() then
       set_intake_status_ready(entity)
+      -- Furnaces persist their recipe lock even when empty, preventing a
+      -- different item type from being inserted next.  Clear it here.
+      pcall(function() entity.recipe = nil end)
     else
       local stack = inv[1]
       if stack and stack.valid_for_read then
@@ -468,6 +511,9 @@ function M.on_pneumatic_tick()
 
         -- Remove exactly 1 item.
         inv.remove{name = item_name, count = 1}
+        -- Clear the furnace recipe lock so a different item type can be
+        -- inserted on the next cycle without the slot filter blocking it.
+        pcall(function() entity.recipe = nil end)
 
         local pool = storage.tube_signals[net_id]
         if not pool then

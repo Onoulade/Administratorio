@@ -123,7 +123,7 @@ do
     "watercooler-gossip", "office-drama",
     "taxpayer-money",
     "useless-documentation", "refined-nonsense",
-    "job-offer", "biter-worker", "biter-logistics-formation", "union-delegate", "chemical-operator", "nuclear-technician",
+    "job-offer",
   }
   for _, name in ipairs(extra) do
     shared.PNEUMATIC_ITEMS[name] = true
