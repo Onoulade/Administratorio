@@ -231,7 +231,7 @@ M.PNEUMATIC_ITEMS = {
   "watercooler-gossip", "office-drama",
   "taxpayer-money",
   "useless-documentation", "refined-nonsense",
-  "job-offer", "biter-worker", "biter-logistics-formation", "union-delegate", "chemical-operator", "nuclear-technician",
+  "job-offer",
 }
 
 M.EVOLUTION_COMPLAINT_WARNINGS = {
