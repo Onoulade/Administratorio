@@ -4,6 +4,7 @@
 -- Completely inactive otherwise. Does not call biters at night (unless overtime-exemption).
 local C = require("scripts.constants")
 local working_hours = require("scripts.working_hours")
+local unit_ai_settings = require("scripts.unit_ai_settings")
 
 local M = {}
 
@@ -280,6 +281,7 @@ local function spawn_worker_biter(office, spawner)
     force = get_biter_force(),
   }
   if not biter or not biter.valid then return nil end
+  unit_ai_settings.apply_managed_unit_settings(biter)
 
   local destination = find_worker_destination(surface, biter.name, office)
   biter.commandable.set_command({
@@ -423,6 +425,7 @@ local function recreate_missing_worker(state, office, tick)
     create_build_effect_smoke = false,
   }
   if not biter or not biter.valid then return nil end
+  unit_ai_settings.apply_managed_unit_settings(biter)
 
   local old_unit_number = state.biter_unit_number
   state.biter = biter
@@ -592,7 +595,7 @@ function M.update(tick, runtime_profile)
       elseif info.return_destination
           and tick >= (info.arrival_check_tick or 0)
           and distance_squared(info.entity.position, info.return_destination) <= (C.RETURN_ARRIVAL_DISTANCE or 2.5) ^ 2 then
-        info.entity.destroy()
+        unit_ai_settings.release_as_regular_enemy(info.entity)
         storage.field_office_releasing[biter_id] = nil
       elseif tick >= info.despawn_tick then
         if info.return_destination then
@@ -607,7 +610,7 @@ function M.update(tick, runtime_profile)
           })
           info.despawn_tick = tick + C.FIELD_OFFICE_BITER_DESPAWN_TICKS
         else
-          info.entity.destroy()
+          unit_ai_settings.release_as_regular_enemy(info.entity)
           storage.field_office_releasing[biter_id] = nil
         end
       end

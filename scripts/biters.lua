@@ -4,6 +4,7 @@ local zones = require("scripts.zones")
 local working_hours = require("scripts.working_hours")
 local biters_rendering_factory = require("scripts.biters_rendering")
 local biters_protests_factory = require("scripts.biters_protests")
+local unit_ai_settings = require("scripts.unit_ai_settings")
 
 local M = {}
 local protest_rendering
@@ -263,6 +264,7 @@ local function track_waiting_biter(unit_number, info)
   info.tracked_unit_number = unit_number
   if info.entity and info.entity.valid and info.state ~= "returning_home" then
     info.entity.force = get_biter_force()
+    unit_ai_settings.apply_managed_unit_settings(info.entity)
   end
 
   local state = info.state
@@ -519,6 +521,7 @@ local function adopt_redirected_biter(info, entity, force_name)
     capture_home_spawner(info, entity, true)
     return entity
   end
+  unit_ai_settings.apply_managed_unit_settings(replacement)
 
   capture_home_spawner(info, entity, false)
   if entity.health and replacement.health then
@@ -540,6 +543,7 @@ local function issue_desk_route_command(entity, destination)
   if not entity or not entity.valid or not destination then return false end
 
   entity.force = get_biter_force()
+  unit_ai_settings.apply_managed_unit_settings(entity)
   entity.active = true
   entity.commandable.set_command({
     type = defines.command.go_to_location,
@@ -556,6 +560,7 @@ local function park_waiting_biter(info, entity)
   set_waiting_biter_state(info, "waiting")
   info.desk_dest = nil
   entity.force = get_biter_force()
+  unit_ai_settings.apply_managed_unit_settings(entity)
   entity.commandable.set_command({
     type = defines.command.stop,
     distraction = defines.distraction.none,
@@ -748,6 +753,7 @@ local function start_return_home(info, entity, opts)
   info.return_despawn_tick = game.tick + C.RETURN_DESPAWN_TICKS
 
   entity.force = get_biter_force()
+  unit_ai_settings.apply_managed_unit_settings(entity)
   entity.destructible = false
   entity.active = true
   entity.commandable.set_command({
@@ -837,6 +843,8 @@ protest_system = biters_protests_factory.new({
   remember_entity_tracking = remember_entity_tracking,
   remember_home_spawner = remember_home_spawner,
   render = protest_rendering,
+  apply_managed_unit_settings = unit_ai_settings.apply_managed_unit_settings,
+  release_as_regular_enemy = unit_ai_settings.release_as_regular_enemy,
   replace_tracked_waiting_biter_unit_number = replace_tracked_waiting_biter_unit_number,
   route_biter_to_desk = route_biter_to_desk,
   send_biter_to_station_with_targets = function(...)

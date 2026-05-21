@@ -1,5 +1,6 @@
 local C = require("scripts.constants")
 local working_hours = require("scripts.working_hours")
+local unit_ai_settings = require("scripts.unit_ai_settings")
 
 local M = {}
 
@@ -1936,11 +1937,13 @@ local function spawn_worker(port, job_kind)
   local spawn_origin = port_spawn_position(port)
   local spawn_pos = port.surface.find_non_colliding_position(worker_entity_name, spawn_origin, 1, 0.25)
   if not spawn_pos then return nil end
-  return port.surface.create_entity{
+  local biter = port.surface.create_entity{
     name = worker_entity_name,
     position = spawn_pos,
     force = get_worker_force(),
   }
+  unit_ai_settings.apply_managed_unit_settings(biter)
+  return biter
 end
 
 local function refresh_active_worker_snapshot(active, biter)
@@ -1993,6 +1996,7 @@ local function recreate_missing_worker(active, tick)
     create_build_effect_smoke = false,
   }
   if not biter or not biter.valid then return nil end
+  unit_ai_settings.apply_managed_unit_settings(biter)
 
   apply_job_tint(biter, active.job and active.job.kind)
   local old_unit_number = active.biter_unit_number
