@@ -949,6 +949,9 @@ function M.new(deps)
     if not replacement or not replacement.valid then
       return false
     end
+    if deps.apply_managed_unit_settings then
+      deps.apply_managed_unit_settings(replacement)
+    end
 
     render.destroy_protest_rendering(info)
     info.entity = replacement
@@ -1304,7 +1307,11 @@ function M.new(deps)
           end
         elseif info.state == "returning_home" then
           if info.return_despawn_tick and game.tick >= info.return_despawn_tick then
-            info.entity.destroy()
+            if deps.release_as_regular_enemy then
+              deps.release_as_regular_enemy(info.entity)
+            else
+              info.entity.destroy()
+            end
             deps.untrack_waiting_biter(b_id, info)
           else
             local dest = info.return_dest
@@ -1313,7 +1320,11 @@ function M.new(deps)
               local ddy = info.entity.position.y - dest.y
               local arrival_distance = C.RETURN_ARRIVAL_DISTANCE or 2.5
               if ddx * ddx + ddy * ddy <= arrival_distance * arrival_distance then
-                info.entity.destroy()
+                if deps.release_as_regular_enemy then
+                  deps.release_as_regular_enemy(info.entity)
+                else
+                  info.entity.destroy()
+                end
                 deps.untrack_waiting_biter(b_id, info)
               end
             end

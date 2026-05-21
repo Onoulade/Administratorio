@@ -1,5 +1,6 @@
 local C = require("scripts.constants")
 local biters = require("scripts.biters")
+local unit_ai_settings = require("scripts.unit_ai_settings")
 local M = {}
 
 local SUPPLY_CHEST_NAME = "hired-biter-supply-chest"
@@ -312,11 +313,13 @@ function M.on_deploy(surface, position)
     direction = defines.direction.south,
   }
   if not unit then return false end
+  unit_ai_settings.apply_managed_unit_settings(unit)
   return track_entity(unit)
 end
 
 function M.track_entity(entity)
   if not entity or not entity.valid or entity.name ~= C.HIRED_BITER_UNIT_NAME then return false end
+  unit_ai_settings.apply_managed_unit_settings(entity)
   return track_entity(entity)
 end
 

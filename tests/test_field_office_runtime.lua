@@ -45,7 +45,7 @@ defines = {
   entity_status = {working = 1, normal = 2},
   behavior_result = {success = 1, fail = 2},
   command = {go_to_location = 1, stop = 2},
-  distraction = {none = 0},
+  distraction = {none = 0, by_enemy = 1},
   inventory = {
     assembling_machine_input = 1,
     assembling_machine_output = 2,
@@ -102,6 +102,7 @@ game = {
   connected_players = {},
   forces = {
     ["administratorio-biters"] = {name = "administratorio-biters"},
+    enemy = {name = "enemy"},
     neutral = {name = "neutral"},
     player = {name = "player"},
   },
@@ -151,6 +152,11 @@ local function new_surface(spawners)
       unit_number = 1000 + #surface.created_entities,
       commands = {},
       commandable = {},
+      ai_settings = {
+        destroy_when_commands_fail = true,
+        allow_try_return_to_spawner = true,
+        join_attacks = true,
+      },
     }
     function entity.commandable.set_command(command)
       entity.commands[#entity.commands + 1] = command
@@ -363,7 +369,12 @@ test("released field office worker is not destroyed before reaching its spawner"
 
   biter.position = {x = spawner.position.x, y = spawner.position.y}
   field_office.update(60 + C.FIELD_OFFICE_BITER_DESPAWN_TICKS + 5)
-  assert_true(not biter.valid, "returning worker should be removed after reaching its spawner")
+  assert_true(biter.valid, "returning worker should remain alive after reaching its spawner")
+  assert_eq(biter.force.name, "enemy", "returned worker should be handed back to the enemy force")
+  assert_eq(biter.destructible, true, "returned worker should be destructible like a regular biter")
+  assert_eq(biter.ai_settings.destroy_when_commands_fail, true, "returned worker should restore command-failure despawn behavior")
+  assert_eq(biter.ai_settings.allow_try_return_to_spawner, true, "returned worker should restore spawner-return behavior")
+  assert_eq(biter.ai_settings.join_attacks, true, "returned worker should restore normal attack joining")
   assert_true(storage.field_office_releasing[biter.unit_number] == nil, "arrived worker should leave the releasing tracker")
 end)
 

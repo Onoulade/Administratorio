@@ -9,6 +9,7 @@
 -- Propaganda Distillery (3x3): admin fluid processing (lies, misinformation)
 -------------------------------------------------------------------------------
 local feature_flags = require("feature_flags")
+local unit_ai_settings = require("scripts.unit_ai_settings")
 local working_hours_enabled = feature_flags.working_hours_enabled()
 local entity_graphics = "__administratorio__/graphics/entities/"
 local scrubber_graphics = entity_graphics .. "scrubber/"
@@ -1108,6 +1109,7 @@ local function make_worker_biter(name, source_name, localised_name, speed_multip
   biter.collision_box = {{-0.18, -0.18}, {0.18, 0.18}}
   biter.selection_box = {{-0.35, -0.45}, {0.35, 0.25}}
   add_worker_biter_helmet_overlay(biter)
+  unit_ai_settings.apply_managed_prototype_settings(biter)
   if speed_multiplier then
     if biter.movement_speed then
       biter.movement_speed = biter.movement_speed * speed_multiplier
@@ -1145,8 +1147,7 @@ local function make_hired_biter_unit()
   unit.max_pursue_distance = 0
   unit.min_pursue_time = 0
   unit.distraction_cooldown = 60 * 60 * 60
-  unit.ai_settings = table.deepcopy(unit.ai_settings or {})
-  unit.ai_settings.join_attacks = false
+  unit_ai_settings.apply_managed_prototype_settings(unit)
   if unit.attack_parameters then
     unit.attack_parameters.range = 0.01
     unit.attack_parameters.min_range = 0

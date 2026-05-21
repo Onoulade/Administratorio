@@ -1,5 +1,6 @@
 local C = require("scripts.constants")
 local working_hours = require("scripts.working_hours")
+local unit_ai_settings = require("scripts.unit_ai_settings")
 
 local M = {}
 
@@ -713,7 +714,7 @@ local function clear_active_queue_claims(active_state)
     biter_unit_number = active_state.biter.unit_number
   end
   for _, building in ipairs(active_state.building_queue) do
-    if building and building.unit_number then
+    if building and building.valid and building.unit_number then
       clear_building_claim(building.unit_number, biter_unit_number)
     end
   end
@@ -922,6 +923,7 @@ local function spawn_station_biter(station)
   if not biter or not biter.valid then
     return nil
   end
+  unit_ai_settings.apply_managed_unit_settings(biter)
   if biter.force and biter.force.name == "enemy" then
     local safe_force = station.force or game.forces["player"] or game.forces["neutral"]
     if safe_force and safe_force.valid and safe_force.name ~= "enemy" then
@@ -956,7 +958,7 @@ local function rekey_active_biter_state(active_state, old_unit_number, new_unit_
     station_map[new_unit_number] = true
   end
   for _, building in ipairs(active_state.building_queue or {}) do
-    local run_state = building and building.unit_number and storage.managed_building_run[building.unit_number]
+    local run_state = building and building.valid and building.unit_number and storage.managed_building_run[building.unit_number]
     if run_state and run_state.claimed_by == old_unit_number then
       run_state.claimed_by = new_unit_number
     end
@@ -988,6 +990,7 @@ local function recreate_missing_active_biter(active_state, station, tick)
     create_build_effect_smoke = false,
   }
   if not biter or not biter.valid then return nil end
+  unit_ai_settings.apply_managed_unit_settings(biter)
 
   apply_machine_tint(biter)
   destroy_overlay(active_state)
@@ -1323,7 +1326,7 @@ local function advance_active_biters(tick)
         local building = queue[active_state.current_idx]
 
         if not building or not building.valid or not building.unit_number then
-          if building and building.unit_number then
+          if building and building.valid and building.unit_number then
             clear_building_claim(building.unit_number, biter.unit_number)
           end
           active_state.current_idx = active_state.current_idx + 1

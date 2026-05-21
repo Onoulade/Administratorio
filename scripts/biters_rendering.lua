@@ -40,6 +40,10 @@ function M.new(deps)
     return dx * dx + dy * dy
   end
 
+  local function same_position(a, b)
+    return a and b and a.x == b.x and a.y == b.y
+  end
+
   local function get_render_object(render_ref)
     if not render_ref then return nil end
     if type(render_ref) == "number" then
@@ -130,6 +134,23 @@ function M.new(deps)
     info.protest_chart_tags_by_force = nil
   end
 
+  local function ensure_chart_tag_at(force, surface, position, icon, text, chart_tag)
+    if chart_tag and chart_tag.valid then
+      if chart_tag.surface == surface and same_position(chart_tag.position, position) then
+        chart_tag.icon = icon
+        chart_tag.text = text
+        return chart_tag
+      end
+      chart_tag.destroy()
+    end
+
+    return force.add_chart_tag(surface, {
+      position = position,
+      icon = icon,
+      text = text,
+    })
+  end
+
   function controller.ensure_protest_chart_tag(info, player_override)
     if not info or info.state ~= "protesting" then return end
     if not info.arrived_at_building then
@@ -156,17 +177,14 @@ function M.new(deps)
         if not applied_forces[force.name] then
           local tag_text = to_chart_tag_text(deps.protest_map_tag_text, player)
           local chart_tag = info.protest_chart_tags_by_force[force.name]
-          if chart_tag and chart_tag.valid then
-            chart_tag.icon = icon
-            chart_tag.position = anchor.position
-            chart_tag.text = tag_text
-          else
-            info.protest_chart_tags_by_force[force.name] = force.add_chart_tag(anchor.surface, {
-              position = anchor.position,
-              icon = icon,
-              text = tag_text,
-            })
-          end
+          info.protest_chart_tags_by_force[force.name] = ensure_chart_tag_at(
+            force,
+            anchor.surface,
+            anchor.position,
+            icon,
+            tag_text,
+            chart_tag
+          )
           applied_forces[force.name] = true
         end
       end
@@ -180,17 +198,14 @@ function M.new(deps)
 
       local tag_text = to_chart_tag_text(deps.protest_map_tag_text, player_override)
       local chart_tag = info.protest_chart_tag
-      if chart_tag and chart_tag.valid then
-        chart_tag.icon = icon
-        chart_tag.position = anchor.position
-        chart_tag.text = tag_text
-      else
-        info.protest_chart_tag = force.add_chart_tag(anchor.surface, {
-          position = anchor.position,
-          icon = icon,
-          text = tag_text,
-        })
-      end
+      info.protest_chart_tag = ensure_chart_tag_at(
+        force,
+        anchor.surface,
+        anchor.position,
+        icon,
+        tag_text,
+        chart_tag
+      )
     end
   end
 
