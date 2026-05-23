@@ -1306,12 +1306,10 @@ function M.new(deps)
             maintain_pacified_entity(info, info.entity)
           end
         elseif info.state == "returning_home" then
+          -- Resolved Administration Desk biters are complaint visitors, not
+          -- borrowed workers. Remove them once their exit walk finishes.
           if info.return_despawn_tick and game.tick >= info.return_despawn_tick then
-            if deps.release_as_regular_enemy then
-              deps.release_as_regular_enemy(info.entity)
-            else
-              info.entity.destroy()
-            end
+            info.entity.destroy()
             deps.untrack_waiting_biter(b_id, info)
           else
             local dest = info.return_dest
@@ -1320,11 +1318,7 @@ function M.new(deps)
               local ddy = info.entity.position.y - dest.y
               local arrival_distance = C.RETURN_ARRIVAL_DISTANCE or 2.5
               if ddx * ddx + ddy * ddy <= arrival_distance * arrival_distance then
-                if deps.release_as_regular_enemy then
-                  deps.release_as_regular_enemy(info.entity)
-                else
-                  info.entity.destroy()
-                end
+                info.entity.destroy()
                 deps.untrack_waiting_biter(b_id, info)
               end
             end
