@@ -27,6 +27,7 @@ local UNIT_GROUP_DEBUG_SCAN_INTERVAL = 180
 local UNIT_GROUP_GATHER_REDIRECT_TICKS = 300
 local WORKING_HOURS_ENABLED = feature_flags.working_hours_enabled()
 local needs_unit_group_scan = false
+local needs_load_bugged_biter_cleanup = false
 local resolution_processing
 local enable_regulated_variants_for_technology = regulated_unlocks.enable_regulated_variants_for_technology
 local FIELD_OFFICE_DEPLOYMENT_TECH = "field-office-deployment"
@@ -703,6 +704,7 @@ end
 local function on_load()
   resolution_processing.on_load()
   needs_unit_group_scan = true
+  needs_load_bugged_biter_cleanup = true
 end
 
 -- ============================================================
@@ -1068,8 +1070,6 @@ end
 -- BITER EVENTS
 -- ============================================================
 
-local LOG_PREFIX = "[Administratorio] "
-
 local GROUP_STATE_NAMES = {
   [defines.group_state.gathering] = "gathering",
   [defines.group_state.moving] = "moving",
@@ -1251,6 +1251,50 @@ local function summarize_group_command(command, depth)
   return trim_debug_text(table.concat(parts, " "), 220)
 end
 
+local function safe_unit_parent_group(unit)
+  if not unit or not unit.valid or not unit.commandable then return nil end
+  local ok, group = pcall(function() return unit.commandable.parent_group end)
+  if ok and group and group.valid then return group end
+  return nil
+end
+
+local function safe_unit_command(unit)
+  if not unit or not unit.valid or not unit.commandable then return nil end
+  local ok, command = pcall(function() return unit.commandable.command end)
+  if ok then return command end
+  return nil
+end
+
+local function safe_unit_spawner(unit)
+  if not unit or not unit.valid or not unit.commandable then return nil end
+  local ok, spawner = pcall(function() return unit.commandable.spawner end)
+  if ok and spawner and spawner.valid then return spawner end
+  return nil
+end
+
+local function is_legacy_resolved_biter_release(unit)
+  if not unit or not unit.valid or unit.type ~= "unit" then return false end
+  if not unit.force or unit.force.name ~= "enemy" then return false end
+  if storage.waiting_biters and storage.waiting_biters[unit.unit_number] then return false end
+  if storage.field_office_releasing and storage.field_office_releasing[unit.unit_number] then return false end
+  if storage.field_office_released_units and storage.field_office_released_units[unit.unit_number] then return false end
+  if safe_unit_parent_group(unit) then return false end
+  if safe_unit_spawner(unit) then return false end
+
+  local command = safe_unit_command(unit)
+  return command and command.type == defines.command.stop
+end
+
+local function cleanup_legacy_resolved_biter_releases()
+  for _, surface in pairs(game.surfaces) do
+    for _, unit in ipairs(surface.find_entities_filtered{force = "enemy", type = "unit"}) do
+      if is_legacy_resolved_biter_release(unit) then
+        unit.destroy()
+      end
+    end
+  end
+end
+
 local function snapshot_unit_group(group, tick)
   if not group or not group.valid or not group.is_unit_group or group.force.name ~= "enemy" then return nil end
 
@@ -1291,23 +1335,6 @@ local function snapshot_unit_group(group, tick)
 end
 
 local function log_unit_group_snapshot(reason, snapshot, extra)
-  if not snapshot then return end
-  local line = LOG_PREFIX
-    .. "Unit group DEBUG [" .. reason .. "]"
-    .. " id=" .. tostring(snapshot.unique_id)
-    .. " state=" .. group_state_name(snapshot.state)
-    .. " members=" .. tostring(snapshot.member_count)
-    .. " spread=" .. string.format("%.1f", snapshot.farthest_member_distance)
-    .. " pos=" .. format_debug_position(snapshot.position)
-    .. " command=" .. snapshot.command_summary
-    .. " spawner=" .. snapshot.spawner_summary
-    .. " script_driven=" .. tostring(snapshot.is_script_driven)
-  if snapshot.sample_members and snapshot.sample_members ~= "" then
-    line = line .. " sample_members=" .. snapshot.sample_members
-  end
-  if extra and extra ~= "" then
-    line = line .. " " .. extra
-  end
 end
 
 local function summarize_member_statuses_for_debug(member_refs)
@@ -1884,6 +1911,10 @@ local function on_unit_group_debug_tick(event)
 end
 
 local function on_main_tick(event)
+  if needs_load_bugged_biter_cleanup then
+    needs_load_bugged_biter_cleanup = false
+    cleanup_legacy_resolved_biter_releases()
+  end
   runtime_debug.run_profiled_external_sections("biter_station_sanitize", function()
     biter_station.sanitize_external_links()
   end)
