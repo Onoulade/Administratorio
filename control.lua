@@ -1285,10 +1285,28 @@ local function is_legacy_resolved_biter_release(unit)
   return command and command.type == defines.command.stop
 end
 
+local function is_stale_field_office_released_unit(unit)
+  if not unit or not unit.valid or unit.type ~= "unit" then return false end
+  if not unit.force or unit.force.name ~= "enemy" then return false end
+  if not storage.field_office_released_units or not storage.field_office_released_units[unit.unit_number] then return false end
+  if storage.field_office_releasing and storage.field_office_releasing[unit.unit_number] then return false end
+  if safe_unit_parent_group(unit) then return false end
+  if safe_unit_spawner(unit) then return false end
+
+  local command = safe_unit_command(unit)
+  return command and command.type == defines.command.stop
+end
+
 local function cleanup_legacy_resolved_biter_releases()
   for _, surface in pairs(game.surfaces) do
     for _, unit in ipairs(surface.find_entities_filtered{force = "enemy", type = "unit"}) do
+      local unit_number = unit.unit_number
       if is_legacy_resolved_biter_release(unit) then
+        unit.destroy()
+      elseif is_stale_field_office_released_unit(unit) then
+        if storage.field_office_released_units then
+          storage.field_office_released_units[unit_number] = nil
+        end
         unit.destroy()
       end
     end

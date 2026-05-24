@@ -59,6 +59,31 @@ local function get_biter_force()
   return game.forces[BITER_FORCE_NAME] or game.forces["neutral"]
 end
 
+local function safe_unit_parent_group(unit)
+  if not unit or not unit.valid or not unit.commandable then return nil end
+  local ok, group = pcall(function() return unit.commandable.parent_group end)
+  if ok and group and group.valid then return group end
+  return nil
+end
+
+local function safe_unit_spawner(unit)
+  if not unit or not unit.valid or not unit.commandable then return nil end
+  local ok, spawner = pcall(function() return unit.commandable.spawner end)
+  if ok and spawner and spawner.valid then return spawner end
+  return nil
+end
+
+local function release_or_destroy_returned_worker(unit)
+  if not unit or not unit.valid then return end
+  local group = safe_unit_parent_group(unit)
+  local spawner = safe_unit_spawner(unit)
+  if group or spawner then
+    unit_ai_settings.release_as_regular_enemy(unit)
+  else
+    unit.destroy()
+  end
+end
+
 function M.ensure_storage()
   storage.field_offices = storage.field_offices or {}
   storage.field_office_state = storage.field_office_state or {}
@@ -588,8 +613,8 @@ end
 function M.update(tick, runtime_profile)
   M.ensure_storage()
 
-  -- Field Office workers are borrowed from nests. Once they make it home,
-  -- hand them back to the enemy force instead of deleting them.
+  -- Field Office workers are only handed back when Factorio still recognizes
+  -- a real enemy AI owner. Script-created orphan workers are removed on return.
   run_profiled(runtime_profile, "field_office_releasing", function()
     for biter_id, info in pairs(storage.field_office_releasing) do
       if not info.entity or not info.entity.valid then
@@ -597,8 +622,7 @@ function M.update(tick, runtime_profile)
       elseif info.return_destination
           and tick >= (info.arrival_check_tick or 0)
           and distance_squared(info.entity.position, info.return_destination) <= (C.RETURN_ARRIVAL_DISTANCE or 2.5) ^ 2 then
-        storage.field_office_released_units[info.entity.unit_number] = true
-        unit_ai_settings.release_as_regular_enemy(info.entity)
+        release_or_destroy_returned_worker(info.entity)
         storage.field_office_releasing[biter_id] = nil
       elseif tick >= info.despawn_tick then
         if info.return_destination then
@@ -613,8 +637,7 @@ function M.update(tick, runtime_profile)
           })
           info.despawn_tick = tick + C.FIELD_OFFICE_BITER_DESPAWN_TICKS
         else
-          storage.field_office_released_units[info.entity.unit_number] = true
-          unit_ai_settings.release_as_regular_enemy(info.entity)
+          release_or_destroy_returned_worker(info.entity)
           storage.field_office_releasing[biter_id] = nil
         end
       end
