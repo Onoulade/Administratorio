@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.3
+Date: 2026-05-24
+  Bugfixes:
+    - remove orphaned returning workers
+  Changes:
+    - Merge branch 'main' of https://github.com/Onoulade/Administratorio
+---------------------------------------------------------------------------------------------------
 Version: 0.5.2
 Date: 2026-05-23
   Bugfixes:
