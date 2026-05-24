@@ -369,12 +369,7 @@ test("released field office worker is not destroyed before reaching its spawner"
 
   biter.position = {x = spawner.position.x, y = spawner.position.y}
   field_office.update(60 + C.FIELD_OFFICE_BITER_DESPAWN_TICKS + 5)
-  assert_true(biter.valid, "returning worker should remain alive after reaching its spawner")
-  assert_eq(biter.force.name, "enemy", "returned worker should be handed back to the enemy force")
-  assert_eq(biter.destructible, true, "returned worker should be destructible like a regular biter")
-  assert_eq(biter.ai_settings.destroy_when_commands_fail, true, "returned worker should restore command-failure despawn behavior")
-  assert_eq(biter.ai_settings.allow_try_return_to_spawner, true, "returned worker should restore spawner-return behavior")
-  assert_eq(biter.ai_settings.join_attacks, true, "returned worker should restore normal attack joining")
+  assert_true(not biter.valid, "script-created worker without an enemy AI owner should be destroyed after returning")
   assert_true(storage.field_office_releasing[biter.unit_number] == nil, "arrived worker should leave the releasing tracker")
 end)
 
