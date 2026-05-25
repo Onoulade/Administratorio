@@ -8,6 +8,7 @@ local STATE_EXPLANATION_KEYS = {
   protesting = "biter-info-explanation-protesting",
   pacified = "biter-info-explanation-pacified",
   returning_home = "biter-info-explanation-returning_home",
+  attacking = "biter-info-explanation-attacking",
 }
 
 local STATE_LABEL_KEYS = {
@@ -16,6 +17,7 @@ local STATE_LABEL_KEYS = {
   protesting = "biter-info-state-protesting",
   pacified = "biter-info-state-pacified",
   returning_home = "biter-info-state-returning_home",
+  attacking = "biter-info-state-attacking",
 }
 
 local TIER_MOOD_KEYS = {
@@ -57,7 +59,8 @@ function M.update_biter_info_gui(player, entity)
   title.style.font = "default-bold"
   title.style.bottom_margin = 4
 
-  local pct = math.floor(info.frustration / C.PROTEST_THRESHOLD * 100)
+  local capacity = C.get_frustration_capacity and C.get_frustration_capacity() or C.PROTEST_THRESHOLD
+  local pct = math.floor((info.frustration or 0) / capacity * 100)
   local color = pct < 50 and {r=0.3, g=1, b=0.3} or pct < 80 and {r=1, g=1, b=0.3} or {r=1, g=0.2, b=0.2}
   local frust_label = frame.add{type = "label", caption = {"gui.biter-info-frustration", pct}}
   frust_label.style.font_color = color

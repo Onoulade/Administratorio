@@ -17,4 +17,8 @@ function M.debug_protest_belts_and_inserters_enabled()
   return startup_bool("administratorio-debug-protest-belts-and-inserters", false)
 end
 
+function M.debug_hard_mode_enabled()
+  return startup_bool("administratorio-debug-hard-mode", false)
+end
+
 return M

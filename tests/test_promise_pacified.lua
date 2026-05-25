@@ -45,24 +45,29 @@ log = function() end
 
 local protest_factory = dofile(mod_root .. "scripts/biters_protests.lua")
 
-local function new_test_context()
+local function new_test_context(opts)
+  opts = opts or {}
   local state_sets = {
     protesting = {},
     pacified = {},
     returning_home = {},
     waiting = {},
     pathfinding = {},
+    attacking = {},
   }
   local create_calls = 0
   local route_calls = 0
   local finalize_calls = 0
+  local release_calls = 0
   local last_stop_command = nil
   local last_move_command = nil
   local last_route_initial_frustration = nil
+  local last_released_entity = nil
   local pacified_render_calls = 0
   local protest_render_calls = 0
   local desk_available = false
   local next_unit_number = 100
+  local hard_mode_capacity = math.floor(600 / 0.70)
 
   local surface
   surface = {
@@ -116,6 +121,7 @@ local function new_test_context()
     forces = {
       neutral = {name = "neutral"},
       player = {name = "player"},
+      enemy = {name = "enemy"},
     },
     get_surface = function(index)
       return game.surfaces[index]
@@ -147,6 +153,9 @@ local function new_test_context()
   local deps = {
     constants = {
       PROTEST_THRESHOLD = 600,
+      HARD_MODE_ENABLED = opts.hard_mode == true,
+      HARD_MODE_PROTEST_RATIO = 0.70,
+      HARD_MODE_FRUSTRATION_CAPACITY = hard_mode_capacity,
       PROMISE_HOLD_TICKS = 60 * 60,
       INVALIDATED_BITER_REVIVE_RETRY_TICKS = 60,
       PROTEST_TARGET_RETRY_TICKS = 5 * 60,
@@ -167,6 +176,14 @@ local function new_test_context()
       PACIFIED_FRUSTRATION_RATIO = 0.5,
       PACIFIED_ROAM_REISSUE_TICKS = 30,
       PACIFIED_ROAM_REISSUE_JITTER_TICKS = 0,
+      FRUST_GROWTH_RATES = {1.5, 1.2, 1.0, 0.8},
+      get_individual_frust_tier = function(info)
+        local pct = (info.frustration or 0) / 600
+        if pct < 0.25 then return 1
+        elseif pct < 0.50 then return 2
+        elseif pct < 0.75 then return 3
+        else return 4 end
+      end,
     },
     zones = {
       reassign_slot = function() end,
@@ -299,6 +316,20 @@ local function new_test_context()
     remember_home_spawner = function() end,
     send_biter_to_station_with_targets = function() end,
     start_return_home = function() end,
+    release_as_regular_enemy = function(entity)
+      release_calls = release_calls + 1
+      last_released_entity = entity
+      entity.force = game.forces.enemy
+      entity.active = true
+      entity.destructible = true
+      if entity.commandable then
+        entity.commandable.set_command({
+          type = defines.command.stop,
+          distraction = defines.distraction.none,
+        })
+      end
+      return true
+    end,
     background_state_shard_count = 4,
     protest_debug_status_ticks = 10 * 60,
   }
@@ -313,12 +344,15 @@ local function new_test_context()
     get_create_calls = function() return create_calls end,
     get_finalize_calls = function() return finalize_calls end,
     get_route_calls = function() return route_calls end,
+    get_release_calls = function() return release_calls end,
     get_last_stop_command = function() return last_stop_command end,
     get_last_move_command = function() return last_move_command end,
     get_last_route_initial_frustration = function() return last_route_initial_frustration end,
+    get_last_released_entity = function() return last_released_entity end,
     get_pacified_render_calls = function() return pacified_render_calls end,
     get_protest_render_calls = function() return protest_render_calls end,
     set_desk_available = function(value) desk_available = value end,
+    hard_mode_capacity = hard_mode_capacity,
   }
 end
 
@@ -749,6 +783,278 @@ test("pacified biter returns to full frustration when promise expires", function
 
   assert_eq(info.state, "protesting", "expired pacified biter should resume protesting")
   assert_eq(info.frustration, 600, "expired pacified biter should return to full protest frustration")
+end)
+
+test("hard mode starts protests at the normal threshold but only 70 percent capacity", function()
+  local ctx = new_test_context{hard_mode = true}
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 1, y = 1},
+    force = "neutral",
+  }
+  entity.unit_number = 24
+  local info = {
+    state = "waiting",
+    entity = entity,
+    entity_name = entity.name,
+    frustration = 600,
+    tracked_unit_number = 24,
+    desk_id = 77,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[24] = info
+  ctx.state_sets.waiting[24] = true
+
+  game.tick = 0
+  ctx.controller.process_frustration_and_protests(ctx.surface)
+
+  assert_eq(info.state, "protesting", "hard mode should protest at the same frustration threshold as normal mode")
+  assert_eq(math.floor(info.frustration / ctx.hard_mode_capacity * 100), 70, "hard mode protest threshold should be 70 percent of the larger capacity")
+  assert_eq(ctx.get_release_calls(), 0, "hard mode should not attack at the protest threshold")
+end)
+
+test("hard mode protesting biter escalates into a regular attacker at full capacity", function()
+  local ctx = new_test_context{hard_mode = true}
+  local target = {
+    valid = true,
+    active = false,
+    force = {name = "player"},
+    unit_number = 91,
+    position = {x = 7, y = 7},
+    surface = ctx.surface,
+    bounding_box = {
+      left_top = {x = 6, y = 6},
+      right_bottom = {x = 8, y = 8},
+    },
+  }
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 7, y = 7},
+    force = "neutral",
+  }
+  entity.unit_number = 29
+  local info = {
+    state = "protesting",
+    entity = entity,
+    entity_name = entity.name,
+    frustration = ctx.hard_mode_capacity - 1,
+    tracked_unit_number = 29,
+    target_building = target,
+    arrived_at_building = true,
+    last_frustration_tick = 0,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[29] = info
+  ctx.state_sets.protesting[29] = true
+
+  game.tick = 5 * 60
+  ctx.controller.process_frustration_and_protests(ctx.surface)
+
+  assert_eq(info.state, "attacking", "full hard-mode frustration should release the biter into attack mode")
+  assert_eq(info.frustration, ctx.hard_mode_capacity, "attacking biter should sit at full hard-mode frustration")
+  assert_eq(ctx.get_release_calls(), 1, "hard mode escalation should release the biter as a regular enemy")
+  assert_true(entity.force == game.forces.enemy, "released biter should be on the enemy force")
+  assert_true(entity.destructible == true, "released biter should be destructible like a regular enemy")
+  assert_true(target.active == true, "escalation should release the disabled protest target")
+end)
+
+test("hard mode protesting biter with missing frustration tick still rises past 70 percent", function()
+  local ctx = new_test_context{hard_mode = true}
+  local target = {
+    valid = true,
+    active = false,
+    force = {name = "player"},
+    unit_number = 94,
+    position = {x = 7, y = 7},
+    surface = ctx.surface,
+    bounding_box = {
+      left_top = {x = 6, y = 6},
+      right_bottom = {x = 8, y = 8},
+    },
+  }
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 7, y = 7},
+    force = "neutral",
+  }
+  entity.unit_number = 40
+  local info = {
+    state = "protesting",
+    entity = entity,
+    entity_name = entity.name,
+    frustration = 600,
+    tracked_unit_number = 40,
+    target_building = target,
+    arrived_at_building = true,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[40] = info
+  ctx.state_sets.protesting[40] = true
+
+  game.tick = 0
+  ctx.controller.process_frustration_and_protests(ctx.surface)
+  assert_eq(info.frustration, 600, "first pass should seed the missing frustration timestamp")
+
+  game.tick = 48 * 60
+  ctx.controller.process_frustration_and_protests(ctx.surface)
+
+  assert_true(info.frustration > 600, "hard mode protester should keep gaining frustration after timestamp recovery")
+  assert_true(math.floor(info.frustration / ctx.hard_mode_capacity * 100) > 70, "recovered hard mode protester should pass the 70 percent display")
+end)
+
+test("hard mode parked protester gains frustration during protest pacing", function()
+  local ctx = new_test_context{hard_mode = true}
+  local target = {
+    valid = true,
+    active = false,
+    force = {name = "player"},
+    unit_number = 95,
+    position = {x = 7, y = 7},
+    surface = ctx.surface,
+    bounding_box = {
+      left_top = {x = 6, y = 6},
+      right_bottom = {x = 8, y = 8},
+    },
+  }
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 7, y = 7},
+    force = "neutral",
+  }
+  entity.unit_number = 41
+  entity.active = false
+  local info = {
+    state = "protesting",
+    entity = entity,
+    entity_name = entity.name,
+    frustration = 600,
+    tracked_unit_number = 41,
+    target_building = target,
+    arrived_at_building = true,
+    last_frustration_tick = 0,
+    protest_parked = true,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[41] = info
+  ctx.state_sets.protesting[41] = true
+
+  game.tick = 48 * 60
+  ctx.controller.process_protest_pacing(ctx.surface)
+
+  assert_true(info.frustration > 600, "hard mode parked protester should gain frustration while inactive")
+  assert_true(math.floor(info.frustration / ctx.hard_mode_capacity * 100) > 70, "pacing growth should show above 70 percent")
+end)
+
+test("hard mode parked protester escalates during protest pacing", function()
+  local ctx = new_test_context{hard_mode = true}
+  local target = {
+    valid = true,
+    active = false,
+    force = {name = "player"},
+    unit_number = 96,
+    position = {x = 7, y = 7},
+    surface = ctx.surface,
+    bounding_box = {
+      left_top = {x = 6, y = 6},
+      right_bottom = {x = 8, y = 8},
+    },
+  }
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 7, y = 7},
+    force = "neutral",
+  }
+  entity.unit_number = 42
+  entity.active = false
+  local info = {
+    state = "protesting",
+    entity = entity,
+    entity_name = entity.name,
+    frustration = ctx.hard_mode_capacity - 1,
+    tracked_unit_number = 42,
+    target_building = target,
+    arrived_at_building = true,
+    last_frustration_tick = 0,
+    protest_parked = true,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[42] = info
+  ctx.state_sets.protesting[42] = true
+
+  game.tick = 5 * 60
+  ctx.controller.process_protest_pacing(ctx.surface)
+
+  assert_eq(info.state, "attacking", "hard mode parked protester should escalate during pacing")
+  assert_eq(ctx.get_release_calls(), 1, "pacing escalation should release the biter as a regular enemy")
+  assert_true(target.active == true, "pacing escalation should release the disabled protest target")
+end)
+
+test("promise sends hard mode attackers back to a desk when capacity exists", function()
+  local ctx = new_test_context{hard_mode = true}
+  storage.admin_desks[ctx.desk.unit_number] = ctx.desk
+  ctx.set_desk_available(true)
+
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 4, y = 5},
+    force = "enemy",
+  }
+  entity.unit_number = 32
+  local info = {
+    state = "attacking",
+    entity = entity,
+    entity_name = entity.name,
+    frustration = ctx.hard_mode_capacity,
+    tracked_unit_number = 32,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[32] = info
+  ctx.state_sets.attacking[32] = true
+
+  game.tick = 120
+  ctx.controller.on_script_trigger_effect{
+    effect_id = "promise-target",
+    target_entity = entity,
+  }
+
+  assert_eq(ctx.get_route_calls(), 1, "promise should route a hard-mode attacker back to an open desk")
+  assert_eq(ctx.get_last_route_initial_frustration(), 300, "promise should return hard-mode attackers at half of the protest threshold")
+  assert_eq(info.state, "pathfinding", "promised hard-mode attacker should become desk-bound again")
+end)
+
+test("promised hard mode attacker escalates again when no desk opens", function()
+  local ctx = new_test_context{hard_mode = true}
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 4, y = 5},
+    force = "enemy",
+  }
+  entity.unit_number = 34
+  local info = {
+    state = "attacking",
+    entity = entity,
+    entity_name = entity.name,
+    frustration = ctx.hard_mode_capacity,
+    tracked_unit_number = 34,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[34] = info
+  ctx.state_sets.attacking[34] = true
+
+  game.tick = 120
+  ctx.controller.on_script_trigger_effect{
+    effect_id = "promise-target",
+    target_entity = entity,
+  }
+
+  assert_eq(info.state, "pacified", "promise should pacify a hard-mode attacker while no desk is open")
+
+  game.tick = 120 + 60 * 60
+  ctx.controller.process_frustration_and_protests(ctx.surface)
+
+  assert_eq(info.state, "attacking", "hard-mode attacker should escalate again when the promise expires without desk capacity")
+  assert_eq(info.frustration, ctx.hard_mode_capacity, "promise expiry in hard mode should restore full capacity frustration")
+  assert_eq(ctx.get_release_calls(), 1, "promise expiry should release the biter back into attack mode")
 end)
 
 test("protest pacing refreshes protest rendering even before arrival", function()
