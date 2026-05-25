@@ -136,3 +136,4 @@ The first `coffee-bean` comes from `greenhouse-discovery` at 10% probability per
 | Setting | Default | Description |
 | --- | --- | --- |
 | `administratorio-enable-working-hours` | true | Enable/disable the working hours (night shutdown) system. Disable for planner mod compatibility. |
+| `administratorio-debug-protest-belts-and-inserters` | false | Debug option that lets protesters target transport belts, underground belts, splitters, and inserters. |
