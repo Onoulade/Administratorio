@@ -50,6 +50,25 @@ data = {
       ["assembling-machine-2"] = { name = "assembling-machine-2", type = "assembling-machine", crafting_categories = {"crafting", "advanced-crafting", "crafting-with-fluid"} },
       ["assembling-machine-3"] = { name = "assembling-machine-3", type = "assembling-machine", crafting_categories = {"crafting", "advanced-crafting", "crafting-with-fluid"} },
     },
+    furnace = {
+      ["stone-furnace"] = { name = "stone-furnace", type = "furnace", energy_source = {type = "burner", fuel_category = "chemical"} },
+      ["steel-furnace"] = { name = "steel-furnace", type = "furnace", energy_source = {type = "burner"} },
+    },
+    boiler = {
+      ["boiler"] = { name = "boiler", type = "boiler", energy_source = {type = "burner", fuel_categories = {"chemical"}} },
+    },
+    car = {
+      ["car"] = { name = "car", type = "car", energy_source = {type = "burner", fuel_categories = {"chemical"}} },
+      ["rideable-biter"] = {
+        name = "rideable-biter",
+        type = "car",
+        energy_source = {type = "burner", fuel_categories = {"administratorio-taxpayer-money"}, fuel_inventory_size = 1},
+        working_sound = {},
+      },
+    },
+    reactor = {
+      ["nuclear-reactor"] = { name = "nuclear-reactor", type = "reactor", energy_source = {type = "burner", fuel_category = "nuclear"} },
+    },
     ["module-category"] = {},
     fluid = {},
     item = {},
@@ -908,6 +927,17 @@ local function tech_unlocks_recipe(tech_name, recipe_name)
   return false
 end
 
+local function energy_source_accepts(energy_source, fuel_category)
+  if not energy_source then return false end
+  if energy_source.fuel_category == fuel_category then return true end
+  for _, category in ipairs(energy_source.fuel_categories or {}) do
+    if category == fuel_category then
+      return true
+    end
+  end
+  return false
+end
+
 local function has_icon_layer(recipe, icon_path)
   if not recipe or not recipe.icons then return false end
   for _, layer in ipairs(recipe.icons) do
@@ -944,17 +974,17 @@ test("printer-t1 gets a regulated AM recipe", function()
   local r = get_recipe("printer-t1-regulated")
   assert_true(r ~= nil, "printer-t1-regulated missing")
   assert_eq(r.category, "crafting-regulated", "printer-t1 regulated category")
-  assert_true(has_ingredient(r, "provisional-approval"), "printer-t1-regulated missing provisional-approval")
-  assert_true(has_ingredient(r, "work-order"), "printer-t1-regulated missing work-order")
+  assert_true(has_ingredient(r, "provisional-work-order"), "printer-t1-regulated missing provisional-work-order")
+  assert_true(not has_ingredient(r, "provisional-approval"), "printer-t1-regulated should combine provisional-approval")
 end)
 
 test("printer-t2 gets a regulated AM recipe", function()
   local r = get_recipe("printer-t2-regulated")
   assert_true(r ~= nil, "printer-t2-regulated missing")
   assert_eq(r.category, "crafting-regulated", "printer-t2 regulated category")
-  assert_true(has_ingredient(r, "construction-permit"), "printer-t2-regulated missing construction-permit")
+  assert_true(has_ingredient(r, "construction-work-order"), "printer-t2-regulated missing construction-work-order")
   assert_true(has_ingredient(r, "printer-t1"), "printer-t2-regulated missing printer-t1")
-  assert_true(has_ingredient(r, "work-order"), "printer-t2-regulated missing work-order")
+  assert_true(not has_ingredient(r, "construction-permit"), "printer-t2-regulated should combine construction-permit")
 end)
 
 test("paper and ink get regulated AM recipes", function()
@@ -1090,6 +1120,34 @@ test("boiler and steam-engine use safety paperwork in 2x batches", function()
   assert_true(has_ingredient(steam_engine_regulated, "safety-work-order"), "steam-engine-regulated should require safety-work-order")
   assert_eq(get_result_amount(steam_engine, "steam-engine"), 2, "steam-engine should batch handcraft results at 2x")
   assert_eq(get_result_amount(steam_engine_regulated, "steam-engine"), 2, "steam-engine-regulated should produce 2 steam engines")
+end)
+
+test("taxpayer money is accepted by regular burners", function()
+  local taxpayer_money_category = "administratorio-taxpayer-money"
+
+  assert_true(energy_source_accepts(data.raw.furnace["stone-furnace"].energy_source, taxpayer_money_category),
+    "stone furnace should accept taxpayer money")
+  assert_true(energy_source_accepts(data.raw.furnace["steel-furnace"].energy_source, taxpayer_money_category),
+    "steel furnace should accept taxpayer money when chemical fuel is implicit")
+  assert_true(energy_source_accepts(data.raw.boiler["boiler"].energy_source, taxpayer_money_category),
+    "boiler should accept taxpayer money")
+  assert_true(energy_source_accepts(data.raw.car["car"].energy_source, taxpayer_money_category),
+    "regular car should accept taxpayer money")
+
+  assert_true(energy_source_accepts(data.raw.furnace["stone-furnace"].energy_source, "chemical"),
+    "stone furnace should still accept chemical fuel")
+  assert_true(not energy_source_accepts(data.raw.reactor["nuclear-reactor"].energy_source, taxpayer_money_category),
+    "nuclear reactor should keep its non-chemical fuel restriction")
+end)
+
+test("rideable biter accepts only taxpayer money fuel", function()
+  local rideable_source = data.raw.car["rideable-biter"].energy_source
+
+  assert_true(energy_source_accepts(rideable_source, "administratorio-taxpayer-money"),
+    "rideable biter should accept taxpayer money")
+  assert_true(not energy_source_accepts(rideable_source, "chemical"),
+    "rideable biter should not accept ordinary chemical fuel")
+  assert_eq(rideable_source.fuel_inventory_size, 1, "rideable biter should keep one fuel slot")
 end)
 
 test("elevated rail ramps and supports require construction paperwork even on research-trigger techs", function()
