@@ -33,6 +33,24 @@ defines = {
 
 local frustration = require("scripts.frustration")
 
+local function load_locale_section(section_name)
+  local path = mod_root .. "locale/en/config.cfg"
+  local values = {}
+  local active = false
+  for line in io.lines(path) do
+    local section = line:match("^%[([^%]]+)%]")
+    if section then
+      active = section == section_name
+    elseif active then
+      local key, value = line:match("^([^=]+)=(.*)$")
+      if key then values[key] = value end
+    end
+  end
+  return values
+end
+
+local gui_locale = load_locale_section("gui")
+
 local function new_gui_element(name)
   local element = {
     name = name,
@@ -92,6 +110,10 @@ end
 
 local function has_caption(captions, expected)
   for _, caption in ipairs(captions) do
+    if type(caption) == "table" and type(caption[1]) == "string" then
+      local key = caption[1]:match("^gui%.(.+)$")
+      caption = key and gui_locale[key] or caption
+    end
     if caption == expected then return true end
   end
   return false

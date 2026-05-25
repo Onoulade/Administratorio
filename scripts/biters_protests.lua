@@ -11,6 +11,91 @@ function M.new(deps)
   }
 
   local protest_target_cache = nil  -- {tick=, surface_index=, targets={}}
+  local HARD_MODE_LOG_PREFIX = "[administratorio-hard-mode]"
+  local HARD_MODE_LOG_TICKS = deps.hard_mode_debug_log_ticks or deps.protest_debug_status_ticks or (10 * 60)
+
+  local function hard_mode_enabled()
+    if C.hard_mode_enabled then return C.hard_mode_enabled() end
+    return C.HARD_MODE_ENABLED == true
+  end
+
+  local function get_frustration_capacity()
+    if C.get_frustration_capacity then return C.get_frustration_capacity() end
+    if hard_mode_enabled() then
+      return C.HARD_MODE_FRUSTRATION_CAPACITY
+        or math.floor(C.PROTEST_THRESHOLD / (C.HARD_MODE_PROTEST_RATIO or 0.70))
+    end
+    return C.PROTEST_THRESHOLD
+  end
+
+  local function get_protest_threshold()
+    if C.get_protest_threshold then return C.get_protest_threshold() end
+    return C.PROTEST_THRESHOLD
+  end
+
+  local function get_attack_threshold()
+    if C.get_attack_threshold then return C.get_attack_threshold() end
+    if hard_mode_enabled() then return get_frustration_capacity() end
+    return nil
+  end
+
+  local function hard_mode_pct(value)
+    local capacity = get_frustration_capacity()
+    if capacity <= 0 then return 0 end
+    return math.floor(((value or 0) / capacity) * 100)
+  end
+
+  local function hard_mode_bool(value)
+    return value and "true" or "false"
+  end
+
+  local function hard_mode_log(info, entity, label, extra, opts)
+    if not hard_mode_enabled() or not log then return end
+    opts = opts or {}
+    if not opts.force and info then
+      info.hard_mode_debug_next_log_tick = info.hard_mode_debug_next_log_tick or {}
+      local key = label or "status"
+      local next_tick = info.hard_mode_debug_next_log_tick[key] or 0
+      if game.tick < next_tick then return end
+      info.hard_mode_debug_next_log_tick[key] = game.tick + HARD_MODE_LOG_TICKS
+    end
+
+    local unit_number = (entity and entity.valid and entity.unit_number)
+      or (info and info.tracked_unit_number)
+      or "nil"
+    local state = (info and info.state) or "nil"
+    local frustration = info and info.frustration or nil
+    local target = info and info.target_building or nil
+    local target_id = target and target.valid and (target.unit_number or target.name) or "nil"
+    local target_valid = target and target.valid or false
+    local active = entity and entity.valid and entity.active or false
+    local entity_valid = entity and entity.valid or false
+    local surface_index = entity and entity.valid and entity.surface and entity.surface.index or "nil"
+    local position = entity and entity.valid and entity.position and deps.format_position(entity.position) or "[nil]"
+
+    local parts = {
+      HARD_MODE_LOG_PREFIX,
+      "tick=" .. tostring(game.tick),
+      "label=" .. tostring(label),
+      "unit=" .. tostring(unit_number),
+      "state=" .. tostring(state),
+      "frustration=" .. tostring(frustration),
+      "capacity=" .. tostring(get_frustration_capacity()),
+      "pct=" .. tostring(hard_mode_pct(frustration)),
+      "last_tick=" .. tostring(info and info.last_frustration_tick or nil),
+      "accum=" .. tostring(info and info.frust_accum or nil),
+      "entity_valid=" .. hard_mode_bool(entity_valid),
+      "active=" .. hard_mode_bool(active),
+      "parked=" .. hard_mode_bool(info and info.protest_parked),
+      "arrived=" .. hard_mode_bool(info and info.arrived_at_building),
+      "target_valid=" .. hard_mode_bool(target_valid),
+      "target=" .. tostring(target_id),
+      "surface=" .. tostring(surface_index),
+      "pos=" .. position,
+    }
+    if extra then parts[#parts + 1] = tostring(extra) end
+    log(table.concat(parts, " "))
+  end
 
   local function is_eligible_protest_target(target)
     if not target or not target.valid then return false end
@@ -177,11 +262,85 @@ function M.new(deps)
     reset_protest_targeting(info, exclude_unit_number)
   end
 
-  local function get_pacified_frustration()
-    return math.floor(C.PROTEST_THRESHOLD * (C.PACIFIED_FRUSTRATION_RATIO or 0.5))
+  local clear_pacified_runtime
+
+  local function find_nearest_attack_target(surface, position)
+    if not surface or not position then return nil end
+    local best = nil
+    local best_dist = math.huge
+    for _, target in ipairs(get_cached_protest_targets(surface)) do
+      if target and target.valid then
+        local dx = target.position.x - position.x
+        local dy = target.position.y - position.y
+        local dist = dx * dx + dy * dy
+        if dist < best_dist then
+          best = target
+          best_dist = dist
+        end
+      end
+    end
+    return best
   end
 
-  local function clear_pacified_runtime(info)
+  local function issue_attack_approach_command(entity, target)
+    if not entity or not entity.valid or not target or not target.valid then return false end
+    if not entity.commandable or not entity.commandable.set_command then return false end
+    local distraction = (defines.distraction and defines.distraction.by_enemy) or defines.distraction.none
+    entity.commandable.set_command({
+      type = defines.command.go_to_location,
+      destination = target.position,
+      radius = 1.5,
+      distraction = distraction,
+    })
+    return true
+  end
+
+  local function release_hard_mode_attacker(info, entity, reason)
+    if not hard_mode_enabled() or not info or not entity or not entity.valid then
+      hard_mode_log(info, entity, "release-skip", "reason=" .. tostring(reason), {force = true})
+      return false
+    end
+
+    local unit_number = info.tracked_unit_number or entity.unit_number
+    local attack_target = (info.target_building and info.target_building.valid and info.target_building)
+      or find_nearest_attack_target(entity.surface, entity.position)
+
+    hard_mode_log(info, entity, "release", "reason=" .. tostring(reason), {force = true})
+    reset_protest_targeting(info, unit_number)
+    clear_pacified_runtime(info)
+    clear_pending_path_request(info)
+    if info.desk_id then
+      deps.unindex_biter_from_desk(info.desk_id, unit_number)
+      zones.release_slot(info.desk_id, unit_number)
+    end
+
+    deps.set_waiting_biter_state(info, "attacking")
+    info.frustration = get_frustration_capacity()
+    info.frust_accum = 0
+    info.promise_retry_until_tick = nil
+    info.desk_id = nil
+    info.desk_dest = nil
+    info.hard_mode_attack_reason = reason
+    info.hard_mode_attack_tick = game.tick
+    info.entity = entity
+    deps.remember_entity_tracking(info, entity)
+
+    if deps.release_as_regular_enemy then
+      deps.release_as_regular_enemy(entity)
+    else
+      entity.force = "enemy"
+      entity.active = true
+      entity.destructible = true
+    end
+    issue_attack_approach_command(entity, attack_target)
+    return true
+  end
+
+  local function get_pacified_frustration()
+    return math.floor(get_protest_threshold() * (C.PACIFIED_FRUSTRATION_RATIO or 0.5))
+  end
+
+  function clear_pacified_runtime(info)
     if not info then return end
     render.destroy_pacified_rendering(info)
     info.next_pacified_roam_tick = nil
@@ -1133,7 +1292,7 @@ function M.new(deps)
       if not reassigned then
         info.desk_id = nil
         info.desk_dest = nil
-        info.frustration = C.PROTEST_THRESHOLD
+        info.frustration = get_protest_threshold()
         deps.set_waiting_biter_state(info, "protesting")
         protect_protesting_biter(info, biter, "desk-removed")
         assign_protest_target(surface, info, biter)
@@ -1152,7 +1311,7 @@ function M.new(deps)
       entity = entity,
       desk_id = nil,
       complaints = complaints,
-      frustration = C.PROTEST_THRESHOLD,
+      frustration = get_protest_threshold(),
       complaints_total = previous_info and previous_info.complaints_total or #complaints,
       complaints_filed = previous_info and previous_info.complaints_filed == true or false,
       state = "protesting",
@@ -1172,21 +1331,56 @@ function M.new(deps)
     assign_protest_target(surface, info, entity)
   end
 
-  local function accumulate_biter_frustration(info)
-    local last_tick = info.last_frustration_tick or game.tick
+  local function accumulate_biter_frustration(info, entity, reason)
+    local last_tick = info.last_frustration_tick
+    if not last_tick then
+      info.last_frustration_tick = game.tick
+      hard_mode_log(info, entity, "seed-frustration-tick", "reason=" .. tostring(reason), {force = true})
+      return false
+    end
+
     local elapsed_ticks = math.max(0, game.tick - last_tick)
-    if elapsed_ticks <= 0 then return end
+    if elapsed_ticks <= 0 then
+      hard_mode_log(info, entity, "no-elapsed", "reason=" .. tostring(reason) .. " elapsed_ticks=" .. tostring(elapsed_ticks))
+      return false
+    end
 
     info.last_frustration_tick = game.tick
 
+    local before = info.frustration or 0
     local ft = C.get_individual_frust_tier(info)
     local growth = C.FRUST_GROWTH_RATES[ft]
     info.frust_accum = (info.frust_accum or 0) + growth * (elapsed_ticks / 60)
+    local whole = 0
     if info.frust_accum >= 1 then
-      local whole = math.floor(info.frust_accum)
+      whole = math.floor(info.frust_accum)
       info.frustration = (info.frustration or 0) + whole
       info.frust_accum = info.frust_accum - whole
     end
+    hard_mode_log(
+      info,
+      entity,
+      "accumulate",
+      "reason=" .. tostring(reason)
+        .. " elapsed_ticks=" .. tostring(elapsed_ticks)
+        .. " tier=" .. tostring(ft)
+        .. " growth=" .. tostring(growth)
+        .. " before=" .. tostring(before)
+        .. " whole=" .. tostring(whole)
+        .. " after=" .. tostring(info.frustration)
+    )
+    return whole > 0
+  end
+
+  local function process_hard_mode_protest_frustration(info, entity, reason)
+    if not hard_mode_enabled() then return false end
+    hard_mode_log(info, entity, "process", "reason=" .. tostring(reason))
+    accumulate_biter_frustration(info, entity, reason)
+    local attack_threshold = get_attack_threshold()
+    if attack_threshold and info.frustration >= attack_threshold then
+      return release_hard_mode_attacker(info, entity, reason)
+    end
+    return false
   end
 
   function controller.process_frustration_and_protests(surface)
@@ -1224,9 +1418,13 @@ function M.new(deps)
             bypass_retry = true
           elseif game.tick >= (info.promise_retry_until_tick or 0) then
             clear_pacified_runtime(info)
-            deps.set_waiting_biter_state(info, "protesting")
-            info.frustration = C.PROTEST_THRESHOLD
             info.promise_retry_until_tick = nil
+            if hard_mode_enabled() then
+              info.frustration = get_frustration_capacity()
+            else
+              deps.set_waiting_biter_state(info, "protesting")
+              info.frustration = get_protest_threshold()
+            end
             bypass_retry = true
           elseif info.pacified_visibility_hold then
             goto continue_biter
@@ -1276,9 +1474,9 @@ function M.new(deps)
       else
         deps.remember_entity_tracking(info, info.entity)
         if info.state == "pathfinding" or info.state == "waiting" then
-          accumulate_biter_frustration(info)
+          accumulate_biter_frustration(info, info.entity, "waiting-or-pathfinding")
 
-          if info.frustration >= C.PROTEST_THRESHOLD then
+          if info.frustration >= get_protest_threshold() then
             deps.set_waiting_biter_state(info, "protesting")
             protect_protesting_biter(info, info.entity, "frustration-threshold")
             deps.unindex_biter_from_desk(info.desk_id, b_id)
@@ -1296,12 +1494,16 @@ function M.new(deps)
           }) then
             clear_pacified_runtime(info)
           elseif game.tick >= (info.promise_retry_until_tick or 0) then
-            clear_pacified_runtime(info)
-            deps.set_waiting_biter_state(info, "protesting")
-            info.frustration = C.PROTEST_THRESHOLD
             info.promise_retry_until_tick = nil
-            protect_protesting_biter(info, info.entity, "promise-expired")
-            assign_protest_target(surface, info, info.entity)
+            if hard_mode_enabled() then
+              release_hard_mode_attacker(info, info.entity, "promise-expired")
+            else
+              clear_pacified_runtime(info)
+              deps.set_waiting_biter_state(info, "protesting")
+              info.frustration = get_protest_threshold()
+              protect_protesting_biter(info, info.entity, "promise-expired")
+              assign_protest_target(surface, info, info.entity)
+            end
           else
             maintain_pacified_entity(info, info.entity)
           end
@@ -1324,6 +1526,9 @@ function M.new(deps)
             end
           end
         elseif info.state == "protesting" then
+          if process_hard_mode_protest_frustration(info, info.entity, "frustration-capacity") then
+            goto continue_biter
+          end
           protect_protesting_biter(info, info.entity, "process")
           local target = info.target_building
           if target and not target.valid then
@@ -1380,13 +1585,24 @@ function M.new(deps)
 
     for unit_number in pairs(deps.get_waiting_biter_state_set("protesting")) do
       local info = storage.waiting_biters and storage.waiting_biters[unit_number]
-      if info
-         and info.state == "protesting"
-         and info.entity
-         and info.entity.valid
-         and info.target_building
-         and info.target_building.valid
-         and info.entity.surface == surface then
+      local entity = info and info.entity or nil
+      if not info then
+        if hard_mode_enabled() then
+          hard_mode_log({tracked_unit_number = unit_number, state = "missing"}, nil, "pacing-skip", "reason=missing-info")
+        end
+      elseif info.state ~= "protesting" then
+        hard_mode_log(info, entity, "pacing-skip", "reason=state-" .. tostring(info.state))
+      elseif not entity or not entity.valid then
+        hard_mode_log(info, entity, "pacing-skip", "reason=invalid-entity")
+      elseif not info.target_building or not info.target_building.valid then
+        hard_mode_log(info, entity, "pacing-skip", "reason=invalid-target")
+      elseif entity.surface ~= surface then
+        hard_mode_log(info, entity, "pacing-skip", "reason=surface-mismatch expected="
+          .. tostring(surface and surface.index or nil))
+      else
+        if process_hard_mode_protest_frustration(info, info.entity, "pacing-frustration-capacity") then
+          goto continue_protester
+        end
         protect_protesting_biter(info, info.entity, "pacing")
         render.ensure_protest_rendering(info)
         if not info.arrived_at_building and not info.pending_path_request_id and not info.entity.active then
@@ -1405,6 +1621,7 @@ function M.new(deps)
           end
         end
       end
+      ::continue_protester::
     end
 
     for unit_number in pairs(deps.get_waiting_biter_state_set("pacified")) do
@@ -1420,12 +1637,16 @@ function M.new(deps)
         }) then
           clear_pacified_runtime(info)
         elseif game.tick >= (info.promise_retry_until_tick or 0) then
-          clear_pacified_runtime(info)
-          deps.set_waiting_biter_state(info, "protesting")
-          info.frustration = C.PROTEST_THRESHOLD
           info.promise_retry_until_tick = nil
-          protect_protesting_biter(info, info.entity, "pacing-promise-expired")
-          assign_protest_target(surface, info, info.entity)
+          if hard_mode_enabled() then
+            release_hard_mode_attacker(info, info.entity, "pacing-promise-expired")
+          else
+            clear_pacified_runtime(info)
+            deps.set_waiting_biter_state(info, "protesting")
+            info.frustration = get_protest_threshold()
+            protect_protesting_biter(info, info.entity, "pacing-promise-expired")
+            assign_protest_target(surface, info, info.entity)
+          end
         else
           maintain_pacified_entity(info, info.entity)
         end
@@ -1557,7 +1778,9 @@ function M.new(deps)
 
   local EVICTION_PRIORITY = {["unit-spawner"] = 1}
   local EVICTION_COMPLAINT_RADIUS = 25
-  local EVICTION_BASE_FRUSTRATION = math.floor(C.PROTEST_THRESHOLD * 0.5)
+  local function get_eviction_base_frustration()
+    return math.floor(get_protest_threshold() * 0.5)
+  end
 
   local function find_best_eviction_target(surface, position, radius)
     local best = nil
@@ -1615,7 +1838,7 @@ function M.new(deps)
     end
 
     for _, unit in ipairs(biters_to_redirect) do
-      deps.send_biter_to_station_with_targets(unit, desks, {initial_frustration = EVICTION_BASE_FRUSTRATION})
+      deps.send_biter_to_station_with_targets(unit, desks, {initial_frustration = get_eviction_base_frustration()})
     end
   end
 
@@ -1642,7 +1865,7 @@ function M.new(deps)
       local biter_entity = event.target_entity
       if biter_entity.valid then
         local info = storage.waiting_biters[biter_entity.unit_number]
-        if info and info.state == "protesting" then
+        if info and (info.state == "protesting" or info.state == "attacking") then
           if not storage.achievements.protest_suppressed then
             storage.achievements.protest_suppressed = true
             for _, p in pairs(game.connected_players) do
@@ -1738,6 +1961,10 @@ function M.new(deps)
     local info = storage.waiting_biters[entity.unit_number]
     if info then
       deps.remember_entity_tracking(info, entity)
+      if info.state == "attacking" then
+        deps.untrack_waiting_biter(entity.unit_number, info)
+        return
+      end
       if info.state ~= "returning_home" then
         render.destroy_protest_rendering(info)
         render.destroy_pacified_rendering(info)
@@ -1763,6 +1990,11 @@ function M.new(deps)
     deps.remember_entity_tracking(info, entity)
 
     if info.state == "returning_home" then
+      deps.untrack_waiting_biter(entity.unit_number, info)
+      return true
+    end
+
+    if info.state == "attacking" then
       deps.untrack_waiting_biter(entity.unit_number, info)
       return true
     end
