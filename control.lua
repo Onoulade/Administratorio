@@ -306,6 +306,7 @@ local function collect_runtime_debug_counts(desks)
     protesting = 0,
     pacified = 0,
     returning_home = 0,
+    attacking = 0,
     pending_group_redirects = 0,
     pending_path_requests = 0,
     calmed_spawners = 0,
@@ -359,6 +360,8 @@ local function collect_runtime_debug_counts(desks)
       counts.pacified = counts.pacified + 1
     elseif info.state == "returning_home" then
       counts.returning_home = counts.returning_home + 1
+    elseif info.state == "attacking" then
+      counts.attacking = counts.attacking + 1
     end
   end
 
@@ -794,6 +797,19 @@ local function on_player_left_game(event)
   field_office.clear_placement_preview(event.player_index)
 end
 
+local function refresh_selected_biter_info_guis()
+  for _, player in pairs(game.connected_players) do
+    local entity = player.selected
+    if entity
+       and entity.valid
+       and entity.type == "unit"
+       and storage.waiting_biters[entity.unit_number]
+       and player.gui.left["administratorio-biter-info"] then
+      frustration.update_biter_info_gui(player, entity)
+    end
+  end
+end
+
 -- ============================================================
 -- ENTITY BUILD / REMOVE HANDLERS
 -- ============================================================
@@ -1124,6 +1140,16 @@ local function queue_pending_group_redirect(members, reason, tick)
       }
     end
   end
+end
+
+local function group_has_hard_mode_attacker(group)
+  if not group or not group.valid or not group.is_unit_group then return false end
+  for _, member in ipairs(group.members or {}) do
+    if member.valid and biters.is_hard_mode_attacker(member.unit_number) then
+      return true
+    end
+  end
+  return false
 end
 
 local function process_pending_group_redirects(tick)
@@ -1502,6 +1528,7 @@ end
 local function watch_unit_group_for_redirect(group, tick)
   if not group or not group.valid or not group.is_unit_group or group.force.name ~= "enemy" then return end
   if group.is_script_driven then return end
+  if group_has_hard_mode_attacker(group) then return end
   ensure_unit_group_redirect_watch_storage()
   local group_id = group.unique_id
   local existing = storage.unit_group_redirect_watch[group_id]
@@ -1519,6 +1546,8 @@ local function update_unit_group_redirect_watch(tick)
       storage.unit_group_redirect_watch[group_id] = nil
     elseif group.is_script_driven or group.force.name ~= "enemy" then
       storage.unit_group_redirect_watch[group_id] = nil
+    elseif group_has_hard_mode_attacker(group) then
+      storage.unit_group_redirect_watch[group_id] = nil
     elseif group.state ~= defines.group_state.gathering then
       storage.unit_group_redirect_watch[group_id] = nil
     elseif (tick - (info.created_tick or tick)) >= UNIT_GROUP_GATHER_REDIRECT_TICKS and not group.has_command then
@@ -1530,6 +1559,7 @@ end
 redirect_enemy_unit_group = function(group, tick, reason)
   if not group or not group.valid or not group.is_unit_group or group.force.name ~= "enemy" then return false end
   if group.is_script_driven then return false end
+  if group_has_hard_mode_attacker(group) then return false end
 
   local members = {}
   for _, member in ipairs(group.members) do
@@ -1581,6 +1611,12 @@ end
 local function on_unit_group_finished_gathering(event)
   local group = event.group
   if group and group.valid and group.force.name == "enemy" then
+    if group_has_hard_mode_attacker(group) then
+      if storage.unit_group_redirect_watch and group.is_unit_group then
+        storage.unit_group_redirect_watch[group.unique_id] = nil
+      end
+      return
+    end
     if storage.unit_group_redirect_watch and group.is_unit_group then
       storage.unit_group_redirect_watch[group.unique_id] = nil
     end
@@ -1913,6 +1949,7 @@ end
 local function on_protest_pacing_tick(_event)
   runtime_debug.run_profiled_external_sections("protest_pacing", function()
     biters.process_protest_pacing(game.surfaces[1])
+    refresh_selected_biter_info_guis()
   end)
 end
 

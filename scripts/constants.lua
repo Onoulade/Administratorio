@@ -1,4 +1,5 @@
 -- Shared runtime constants for control scripts
+local feature_flags = require("feature_flags")
 local M = {}
 
 -- Direct entity name -> complaint count lookup (avoids string.find in hot path)
@@ -26,6 +27,8 @@ M.BITER_WORKER_YIELD = {
 }
 
 M.PROTEST_THRESHOLD = 600 -- seconds of waiting before protest (~10 minutes)
+M.HARD_MODE_PROTEST_RATIO = 0.70
+M.HARD_MODE_FRUSTRATION_CAPACITY = math.floor(M.PROTEST_THRESHOLD / M.HARD_MODE_PROTEST_RATIO)
 M.PROMISE_HOLD_TICKS = 60 * 60 -- 60 seconds to find an open desk after a promise
 M.PACIFIED_FRUSTRATION_RATIO = 0.5
 M.PACIFIED_ROAM_REISSUE_TICKS = 30
@@ -84,7 +87,7 @@ M.IS_SPITTER = {
 
 -- Individual frustration tier thresholds (fraction of PROTEST_THRESHOLD)
 M.FRUST_TIER_THRESHOLDS = {0.25, 0.50, 0.75}
-M.FRUST_GROWTH_RATES    = {1.0,  0.6,  0.35, 0.2}   -- individual growth/s per tier
+M.FRUST_GROWTH_RATES    = {1.5,  1.2,  1.0,  0.8}   -- individual growth/s per tier
 
 M.ZONE_DIRECTIONS = {
   defines.direction.north,
@@ -285,6 +288,28 @@ function M.get_individual_frust_tier(info)
   elseif pct < 0.50 then return 2
   elseif pct < 0.75 then return 3
   else return 4 end
+end
+
+function M.hard_mode_enabled()
+  return feature_flags.debug_hard_mode_enabled()
+end
+
+function M.get_frustration_capacity()
+  if M.hard_mode_enabled() then
+    return M.HARD_MODE_FRUSTRATION_CAPACITY
+  end
+  return M.PROTEST_THRESHOLD
+end
+
+function M.get_protest_threshold()
+  return M.PROTEST_THRESHOLD
+end
+
+function M.get_attack_threshold()
+  if M.hard_mode_enabled() then
+    return M.get_frustration_capacity()
+  end
+  return nil
 end
 
 function M.generate_complaints(entity_name)

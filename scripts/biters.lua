@@ -128,7 +128,7 @@ local PROTEST_ALERT_SOUND_COOLDOWN_TICKS = 6 * 60
 local PROTEST_ALERT_SOUND_MAX_DISTANCE = 32
 local PROTEST_MAP_TAG_TEXT = {"gui.protest-map-tag"}
 local PROTEST_STOP_TEXT = {"gui.protest-stop"}
-local WAITING_BITER_STATE_NAMES = {"waiting", "pathfinding", "protesting", "pacified", "returning_home"}
+local WAITING_BITER_STATE_NAMES = {"waiting", "pathfinding", "protesting", "pacified", "returning_home", "attacking"}
 local WAITING_PATHING_PROCESS_SHARD_COUNT = C.FRUST_PROTEST_PROCESS_SHARDS or 4
 local BITER_FORCE_NAME = "administratorio-biters"
 
@@ -186,7 +186,8 @@ local function ensure_desk_circuit_dirty()
 end
 
 local function is_frustration_tracked_state(state)
-  return state == "waiting" or state == "pathfinding"
+  if state == "waiting" or state == "pathfinding" then return true end
+  return state == "protesting" and C.hard_mode_enabled and C.hard_mode_enabled()
 end
 
 local function rebuild_waiting_biter_state_index()
@@ -856,6 +857,11 @@ end
 
 function M.trigger_immediate_protest(entity, surface, previous_info)
   protest_system.trigger_immediate_protest(entity, surface, previous_info)
+end
+
+function M.is_hard_mode_attacker(unit_number)
+  local info = storage.waiting_biters and storage.waiting_biters[unit_number]
+  return info and info.state == "attacking" or false
 end
 
 function M.send_biter_to_station_with_targets(entity, targets, opts)

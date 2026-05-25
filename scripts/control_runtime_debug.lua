@@ -142,6 +142,7 @@ local RUNTIME_DEBUG_COUNT_ROWS = {
   {key = "protesting", label = {"gui.debug-count-protesting"}},
   {key = "pacified", label = {"gui.debug-count-pacified"}},
   {key = "returning_home", label = {"gui.debug-count-returning"}},
+  {key = "attacking", label = {"gui.debug-count-attacking"}},
   {key = "pending_group_redirects", label = {"gui.debug-count-pending-group-redirects"}},
   {key = "pending_path_requests", label = {"gui.debug-count-pending-path-requests"}},
   {key = "calmed_spawners", label = {"gui.debug-count-calmed-spawners"}},

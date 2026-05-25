@@ -137,3 +137,4 @@ The first `coffee-bean` comes from `greenhouse-discovery` at 10% probability per
 | --- | --- | --- |
 | `administratorio-enable-working-hours` | true | Enable/disable the working hours (night shutdown) system. Disable for planner mod compatibility. |
 | `administratorio-debug-protest-belts-and-inserters` | false | Debug option that lets protesters target transport belts, underground belts, splitters, and inserters. |
+| `administratorio-debug-hard-mode` | false | Debug option that raises frustration capacity: biters protest at 70% after the normal wait, keep gaining frustration while protesting, and attack as regular enemies at 100% until promised back to a desk. |
