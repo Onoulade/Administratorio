@@ -10,6 +10,7 @@
 --   6. Handcrafting visibility
 --   7. Pneumatic form transport recipe generation
 --   8. Admin station collision footprint layering
+--   9. Taxpayer money fuel compatibility
 --
 -- The regulation system:
 --   Red science or below (handcraftable):
@@ -35,6 +36,8 @@ local PNEUMATIC_TRANSPORT_NOTE = {
 }
 local WORKING_HOURS_ENABLED = feature_flags.working_hours_enabled()
 local DEBUG_SHOW_PAPERWORK_ICON_OVERLAYS = false
+local TAXPAYER_MONEY_FUEL_CATEGORY = "administratorio-taxpayer-money"
+local REGULAR_FUEL_CATEGORY = "chemical"
 local NIGHT_WORK_BUILDINGS = {
   ["office-desk"] = true,
   ["corporate-breakroom"] = true,
@@ -168,6 +171,61 @@ end
 
 for _, spawner in pairs(data.raw["unit-spawner"] or {}) do
     spawner.call_for_help_radius = 0
+end
+
+-------------------------------------------------------------------------------
+-- 2b. TAXPAYER MONEY FUEL SETUP
+-- Taxpayer money keeps its dedicated fuel category so the rideable biter can
+-- reject ordinary fuel, while regular chemical burners also accept it.
+-------------------------------------------------------------------------------
+local function fuel_category_list_has(categories, category_name)
+  if not categories then return false end
+  for _, fuel_category in ipairs(categories) do
+    if fuel_category == category_name then
+      return true
+    end
+  end
+  return false
+end
+
+local function burner_accepts_regular_fuel(energy_source)
+  if not energy_source or energy_source.type ~= "burner" then return false end
+
+  if energy_source.fuel_categories then
+    return fuel_category_list_has(energy_source.fuel_categories, REGULAR_FUEL_CATEGORY)
+  end
+
+  return (energy_source.fuel_category or REGULAR_FUEL_CATEGORY) == REGULAR_FUEL_CATEGORY
+end
+
+local function add_taxpayer_money_fuel_category(energy_source)
+  if not burner_accepts_regular_fuel(energy_source) then return end
+
+  local categories = {}
+  if energy_source.fuel_categories then
+    for _, fuel_category in ipairs(energy_source.fuel_categories) do
+      categories[#categories + 1] = fuel_category
+    end
+  else
+    categories[#categories + 1] = energy_source.fuel_category or REGULAR_FUEL_CATEGORY
+  end
+
+  if not fuel_category_list_has(categories, TAXPAYER_MONEY_FUEL_CATEGORY) then
+    categories[#categories + 1] = TAXPAYER_MONEY_FUEL_CATEGORY
+  end
+
+  energy_source.fuel_categories = categories
+  energy_source.fuel_category = nil
+end
+
+for _, prototypes in pairs(data.raw or {}) do
+  if type(prototypes) == "table" then
+    for _, prototype in pairs(prototypes) do
+      if type(prototype) == "table" then
+        add_taxpayer_money_fuel_category(prototype.energy_source)
+      end
+    end
+  end
 end
 
 -------------------------------------------------------------------------------
@@ -1434,13 +1492,18 @@ if biterport_item and not (data.raw["roboport"] and data.raw["roboport"]["biterp
 end
 
 -------------------------------------------------------------------------------
--- 9. RIDEABLE BITER SOUND OVERRIDE
+-- 10. RIDEABLE BITER SOUND OVERRIDE
 -- Force biter sounds onto the rideable-biter car last, after all mods run.
 -- The car type defaults to engine sounds; this must be set in final-fixes
 -- to guarantee it survives any data-stage ordering issues.
 -------------------------------------------------------------------------------
 local rideable = data.raw["car"] and data.raw["car"]["rideable-biter"]
 if rideable then
+  if rideable.energy_source then
+    rideable.energy_source.fuel_categories = {TAXPAYER_MONEY_FUEL_CATEGORY}
+    rideable.energy_source.fuel_category = nil
+    rideable.energy_source.fuel_inventory_size = 1
+  end
   rideable.working_sound = nil
   rideable.stop_trigger = nil
   rideable.stop_trigger_speed = nil
