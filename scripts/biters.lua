@@ -5,32 +5,15 @@ local working_hours = require("scripts.working_hours")
 local biters_rendering_factory = require("scripts.biters_rendering")
 local biters_protests_factory = require("scripts.biters_protests")
 local unit_ai_settings = require("scripts.unit_ai_settings")
+local protest_targets = require("scripts.protest_targets")
 
 local M = {}
 local protest_rendering
 local protest_system
 
-local PROTEST_TARGET_TYPES = {
-  "assembling-machine",
-  "furnace",
-  "lab",
-  "mining-drill",
-}
-local PROTEST_TARGET_NAMES = {
-  "office-desk",
-  "greenhouse",
-  "corporate-breakroom",
-  "union-headquarters",
-  "propaganda-distillery",
-  "printer-t1",
-  "printer-t2",
-  "tube-intake",
-  "tube-outtake",
-}
-local PROTEST_PROTECTED_NAMES = {
-  ["admin-station"] = true,
-  ["resolution-office"] = true,
-}
+local PROTEST_TARGET_TYPES = protest_targets.get_target_types()
+local PROTEST_TARGET_NAMES = protest_targets.get_target_names()
+local PROTEST_PROTECTED_NAMES = protest_targets.get_protected_names()
 local function protest_slogan(ticket, index)
   return {"gui.protest-slogan-" .. ticket .. "-" .. index}
 end
