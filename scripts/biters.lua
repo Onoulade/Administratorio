@@ -137,8 +137,50 @@ local function get_biter_force()
   return game.forces[BITER_FORCE_NAME] or game.forces["neutral"]
 end
 
+local function set_force_cease_fire(left, right, value)
+  if left and right and left.set_cease_fire then
+    pcall(function() left.set_cease_fire(right, value) end)
+  end
+end
+
+local function set_force_friend(left, right, value)
+  if left and right and left.set_friend then
+    pcall(function() left.set_friend(right, value) end)
+  end
+end
+
+local function configure_hard_mode_attack_force(force)
+  if not force then return nil end
+
+  local player = game.forces["player"]
+  local enemy = game.forces["enemy"]
+  local neutral = game.forces["neutral"]
+  local biter_force = get_biter_force()
+
+  set_force_cease_fire(force, player, false)
+  set_force_cease_fire(player, force, false)
+  set_force_friend(force, player, false)
+  set_force_friend(player, force, false)
+
+  set_force_cease_fire(force, enemy, true)
+  set_force_cease_fire(enemy, force, true)
+  set_force_cease_fire(force, biter_force, true)
+  set_force_cease_fire(biter_force, force, true)
+  set_force_cease_fire(force, neutral, true)
+  set_force_cease_fire(neutral, force, true)
+
+  return force
+end
+
 local function get_hard_mode_attack_force()
-  return game.forces[HARD_MODE_ATTACK_FORCE_NAME] or get_biter_force()
+  local force = game.forces[HARD_MODE_ATTACK_FORCE_NAME]
+  if not force and game.create_force then
+    local ok, created = pcall(function()
+      return game.create_force(HARD_MODE_ATTACK_FORCE_NAME)
+    end)
+    if ok then force = created end
+  end
+  return configure_hard_mode_attack_force(force) or get_biter_force()
 end
 
 local function ensure_runtime_profile_section(runtime_profile, key)
