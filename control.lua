@@ -356,6 +356,9 @@ local function collect_runtime_debug_counts(desks)
       counts.pathfinding = counts.pathfinding + 1
     elseif info.state == "protesting" then
       counts.protesting = counts.protesting + 1
+      if info.hard_mode_attacking then
+        counts.attacking = counts.attacking + 1
+      end
     elseif info.state == "pacified" then
       counts.pacified = counts.pacified + 1
     elseif info.state == "returning_home" then

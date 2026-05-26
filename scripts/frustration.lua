@@ -29,6 +29,9 @@ local TIER_MOOD_KEYS = {
 
 local function get_state_explanation(info)
   if not info then return nil end
+  if info.hard_mode_attacking then
+    return {"gui.biter-info-explanation-attacking"}
+  end
   local key = STATE_EXPLANATION_KEYS[info.state]
   if key then return {"gui." .. key} end
   return nil
