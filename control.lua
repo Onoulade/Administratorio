@@ -1685,7 +1685,7 @@ local function on_entity_died(event)
     return
   end
   if entity.type == "unit" then
-    biters.on_biter_died(entity)
+    biters.on_biter_died(entity, event)
     biterport.on_entity_died(event)
     biter_station.on_entity_died(event)
   else

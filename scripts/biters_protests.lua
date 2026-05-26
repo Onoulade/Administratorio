@@ -49,6 +49,67 @@ function M.new(deps)
     return value and "true" or "false"
   end
 
+  local function hard_mode_event_name(event)
+    if not event then return "nil" end
+    return event.name or event.event_name or "nil"
+  end
+
+  local function hard_mode_force_name(force)
+    if not force then return "nil" end
+    return force.name or tostring(force)
+  end
+
+  local function hard_mode_entity_summary(entity)
+    if not entity then return "nil" end
+    local ok_valid, valid = pcall(function() return entity.valid end)
+    if not ok_valid or not valid then return "invalid" end
+    local ok_name, name = pcall(function() return entity.name end)
+    local ok_force, force = pcall(function() return entity.force end)
+    local ok_active, active = pcall(function() return entity.active end)
+    local ok_destructible, destructible = pcall(function() return entity.destructible end)
+    local ok_health, health = pcall(function() return entity.health end)
+    local ok_command, command = pcall(function()
+      return entity.commandable and entity.commandable.command or nil
+    end)
+    local command_type = ok_command and command and command.type or "nil"
+    local ok_group, group = pcall(function()
+      return entity.commandable and entity.commandable.parent_group or nil
+    end)
+    local group_id = ok_group and group and group.valid and (group.unique_id or "valid") or "nil"
+    local ok_spawner, spawner = pcall(function()
+      return entity.commandable and entity.commandable.spawner or nil
+    end)
+    local spawner_id = ok_spawner and spawner and spawner.valid and (spawner.unit_number or spawner.name) or "nil"
+    return "name=" .. tostring(ok_name and name or "nil")
+      .. " force=" .. hard_mode_force_name(ok_force and force or nil)
+      .. " active=" .. tostring(ok_active and hard_mode_bool(active) or "n/a")
+      .. " destructible=" .. tostring(ok_destructible and hard_mode_bool(destructible) or "n/a")
+      .. " health=" .. tostring(ok_health and health or "n/a")
+      .. " command=" .. tostring(command_type)
+      .. " group=" .. tostring(group_id)
+      .. " spawner=" .. tostring(spawner_id)
+  end
+
+  local function hard_mode_target_summary(target)
+    if not target then return "nil" end
+    local ok_valid, valid = pcall(function() return target.valid end)
+    if not ok_valid or not valid then return "invalid" end
+    local ok_name, name = pcall(function() return target.name end)
+    local ok_id, unit_number = pcall(function() return target.unit_number end)
+    local ok_force, force = pcall(function() return target.force end)
+    local ok_active, active = pcall(function() return target.active end)
+    local ok_destructible, destructible = pcall(function() return target.destructible end)
+    local ok_health, health = pcall(function() return target.health end)
+    local ok_position, position = pcall(function() return target.position end)
+    return "name=" .. tostring(ok_name and name or "nil")
+      .. " id=" .. tostring(ok_id and unit_number or name or "nil")
+      .. " force=" .. hard_mode_force_name(ok_force and force or nil)
+      .. " active=" .. tostring(ok_active and hard_mode_bool(active) or "n/a")
+      .. " destructible=" .. tostring(ok_destructible and hard_mode_bool(destructible) or "n/a")
+      .. " health=" .. tostring(ok_health and health or "n/a")
+      .. " pos=" .. tostring(ok_position and position and deps.format_position(position) or "[nil]")
+  end
+
   local function hard_mode_log(info, entity, label, extra, opts)
     if not hard_mode_enabled() or not log then return end
     opts = opts or {}
@@ -92,6 +153,9 @@ function M.new(deps)
       "target=" .. tostring(target_id),
       "surface=" .. tostring(surface_index),
       "pos=" .. position,
+      "force=" .. hard_mode_force_name(entity and entity.valid and entity.force or nil),
+      "target_info=" .. hard_mode_target_summary(target),
+      "entity_info=" .. hard_mode_entity_summary(entity),
     }
     if extra then parts[#parts + 1] = tostring(extra) end
     log(table.concat(parts, " "))
@@ -310,7 +374,17 @@ function M.new(deps)
     local interval = opts.in_range and (C.HARD_MODE_ATTACK_ANIMATION_TICKS or C.HARD_MODE_ATTACK_DAMAGE_TICKS or 30)
       or (C.HARD_MODE_ATTACK_REISSUE_TICKS or (5 * 60))
     info.hard_mode_attack_next_command_tick = game.tick + interval
-    hard_mode_log(info, entity, "attack-command", "reason=" .. tostring(reason), {force = true})
+    hard_mode_log(
+      info,
+      entity,
+      "attack-command",
+      "reason=" .. tostring(reason)
+        .. " command_type=" .. tostring(command.type)
+        .. " interval=" .. tostring(interval)
+        .. " in_range=" .. hard_mode_bool(opts.in_range)
+        .. " command_target=" .. hard_mode_target_summary(target),
+      {force = true}
+    )
     return true
   end
 
@@ -328,6 +402,7 @@ function M.new(deps)
 
   local function prepare_hard_mode_attack_entity(entity)
     if not entity or not entity.valid then return false end
+    hard_mode_log(nil, entity, "attack-prepare-before", hard_mode_entity_summary(entity), {force = true})
     if deps.apply_managed_unit_settings then
       deps.apply_managed_unit_settings(entity)
     end
@@ -335,6 +410,7 @@ function M.new(deps)
     entity.force = attack_force
     entity.active = true
     entity.destructible = true
+    hard_mode_log(nil, entity, "attack-prepare-after", hard_mode_entity_summary(entity), {force = true})
     return true
   end
 
@@ -370,7 +446,10 @@ function M.new(deps)
       "attack-damage",
       "reason=" .. tostring(reason)
         .. " damage=" .. tostring(damage)
+        .. " damage_force=" .. hard_mode_force_name(damage_force)
         .. " did_damage=" .. hard_mode_bool(did_damage)
+        .. " target_after=" .. hard_mode_target_summary(target),
+      {force = true}
     )
     return true
   end
@@ -382,6 +461,7 @@ function M.new(deps)
     end
 
     if info.state ~= "protesting" then
+      hard_mode_log(info, entity, "attack-state-reset", "reason=" .. tostring(reason) .. " state=" .. tostring(info.state), {force = true})
       deps.set_waiting_biter_state(info, "protesting")
     end
     info.hard_mode_attacking = true
@@ -397,7 +477,26 @@ function M.new(deps)
       return false
     end
 
+    hard_mode_log(
+      info,
+      entity,
+      "attack-maintain",
+      "reason=" .. tostring(reason)
+        .. " selected_target=" .. hard_mode_target_summary(target)
+        .. " next_command_tick=" .. tostring(info.hard_mode_attack_next_command_tick)
+        .. " next_damage_tick=" .. tostring(info.hard_mode_attack_next_damage_tick)
+    )
+
     if info.target_building ~= target then
+      hard_mode_log(
+        info,
+        entity,
+        "attack-retarget",
+        "reason=" .. tostring(reason)
+          .. " old_target=" .. hard_mode_target_summary(info.target_building)
+          .. " new_target=" .. hard_mode_target_summary(target),
+        {force = true}
+      )
       if info.target_building and info.target_building.valid and info.arrived_at_building then
         release_protest_target(info.target_building, info.tracked_unit_number or entity.unit_number)
       end
@@ -417,6 +516,16 @@ function M.new(deps)
 
     local in_range = is_hard_mode_attack_in_range(entity, target)
     local commandable = entity.commandable
+    hard_mode_log(
+      info,
+      entity,
+      "attack-range-check",
+      "reason=" .. tostring(reason)
+        .. " in_range=" .. hard_mode_bool(in_range)
+        .. " commandable=" .. hard_mode_bool(commandable)
+        .. " can_command=" .. hard_mode_bool(commandable and commandable.set_command)
+        .. " target=" .. hard_mode_target_summary(target)
+    )
     if commandable
        and game.tick >= (info.hard_mode_attack_next_command_tick or 0) then
       issue_hard_mode_attack_command(info, entity, target, reason, {in_range = in_range})
@@ -1232,7 +1341,32 @@ function M.new(deps)
     local surface = find_revival_surface(info, fallback_surface)
     local position = find_revival_position(b_id, info, surface)
     if not surface or not position or not info.entity_name then
+      if info and info.hard_mode_attacking then
+        hard_mode_log(
+          info,
+          info.entity,
+          "revive-skip-missing-input",
+          "unit=" .. tostring(b_id)
+            .. " surface=" .. tostring(surface and surface.index or nil)
+            .. " position=" .. tostring(position and deps.format_position(position) or "[nil]")
+            .. " entity_name=" .. tostring(info and info.entity_name),
+          {force = true}
+        )
+      end
       return false
+    end
+
+    if info.hard_mode_attacking then
+      hard_mode_log(
+        info,
+        info.entity,
+        "revive-start",
+        "unit=" .. tostring(b_id)
+          .. " surface=" .. tostring(surface.index)
+          .. " position=" .. tostring(deps.format_position(position))
+          .. " entity_name=" .. tostring(info.entity_name),
+        {force = true}
+      )
     end
 
     local replacement = surface.create_entity{
@@ -1241,6 +1375,9 @@ function M.new(deps)
       force = deps.biter_force_name,
     }
     if not replacement or not replacement.valid then
+      if info.hard_mode_attacking then
+        hard_mode_log(info, info.entity, "revive-create-failed", "unit=" .. tostring(b_id), {force = true})
+      end
       return false
     end
     if deps.apply_managed_unit_settings then
@@ -1252,6 +1389,17 @@ function M.new(deps)
     info.next_revival_retry_tick = nil
     info.last_revive_tick = game.tick
     deps.remember_entity_tracking(info, replacement)
+    if info.hard_mode_attacking then
+      hard_mode_log(
+        info,
+        replacement,
+        "revive-created",
+        "old_unit=" .. tostring(b_id)
+          .. " new_unit=" .. tostring(replacement.unit_number)
+          .. " replacement=" .. hard_mode_entity_summary(replacement),
+        {force = true}
+      )
+    end
 
     if info.desk_id then
       zones.reassign_slot(info.desk_id, b_id, replacement.unit_number)
@@ -1295,6 +1443,7 @@ function M.new(deps)
       clear_pending_path_request(info)
       clear_pacified_runtime(info)
       if info.hard_mode_attacking then
+        hard_mode_log(info, replacement, "revive-maintain-attack", "old_unit=" .. tostring(b_id), {force = true})
         maintain_hard_mode_attack(info, replacement, "revive")
         return true
       end
@@ -1550,6 +1699,18 @@ function M.new(deps)
       end
       deps.normalize_case_progress(info)
       if not info.entity or not info.entity.valid then
+        if info.hard_mode_attacking then
+          hard_mode_log(
+            info,
+            info.entity,
+            "process-invalid-entity",
+            "unit=" .. tostring(b_id)
+              .. " next_revival_retry_tick=" .. tostring(info.next_revival_retry_tick)
+              .. " last_revive_tick=" .. tostring(info.last_revive_tick)
+              .. " revival_failures=" .. tostring(info.revival_failures),
+            {force = true}
+          )
+        end
         if info.state == "returning_home" then
           reset_protest_targeting(info, b_id)
           deps.unindex_biter_from_desk(info.desk_id, b_id)
@@ -1593,13 +1754,34 @@ function M.new(deps)
         if info.state == "attacking" then
           deps.set_waiting_biter_state(info, "protesting")
           info.hard_mode_attacking = true
+          hard_mode_log(info, info.entity, "process-legacy-attacking-state", "unit=" .. tostring(b_id), {force = true})
         end
 
         local recovery_attempt = (info.revival_failures or 0) + 1
         local is_rapid_revive = info.last_revive_tick
           and (game.tick - info.last_revive_tick) < C.RAPID_REVIVE_WINDOW_TICKS
         if is_rapid_revive then
+          if info.hard_mode_attacking then
+            hard_mode_log(
+              info,
+              info.entity,
+              "rapid-revive-check",
+              "unit=" .. tostring(b_id)
+                .. " recovery_attempt=" .. tostring(recovery_attempt)
+                .. " max=" .. tostring(C.MAX_RAPID_REVIVES),
+              {force = true}
+            )
+          end
           if recovery_attempt > C.MAX_RAPID_REVIVES then
+            if info.hard_mode_attacking then
+              hard_mode_log(
+                info,
+                info.entity,
+                "rapid-revive-abandon",
+                "unit=" .. tostring(b_id) .. " recovery_attempt=" .. tostring(recovery_attempt),
+                {force = true}
+              )
+            end
             if info.state == "protesting" then
               reset_protest_targeting(info, b_id)
             end
@@ -1616,6 +1798,16 @@ function M.new(deps)
         info.revival_failures = recovery_attempt
         if revive_tracked_biter(b_id, info, surface) then
           goto continue_biter
+        end
+        if info.hard_mode_attacking then
+          hard_mode_log(
+            info,
+            info.entity,
+            "revive-failed-scheduled",
+            "unit=" .. tostring(b_id)
+              .. " retry_tick=" .. tostring(game.tick + C.INVALIDATED_BITER_REVIVE_RETRY_TICKS),
+            {force = true}
+          )
         end
         info.next_revival_retry_tick = game.tick + C.INVALIDATED_BITER_REVIVE_RETRY_TICKS
         if info.state == "protesting" and info.arrived_at_building and info.target_building and info.target_building.valid then
@@ -1823,7 +2015,31 @@ function M.new(deps)
     if not info then return end
     local entity = info.entity
     if not entity or not entity.valid then
+      if info.hard_mode_attacking then
+        hard_mode_log(
+          info,
+          entity,
+          "command-completed-invalid-entity",
+          "event=" .. tostring(hard_mode_event_name(event))
+            .. " result=" .. tostring(event.result)
+            .. " distracted=" .. tostring(event.was_distracted),
+          {force = true}
+        )
+      end
       return
+    end
+
+    if info.hard_mode_attacking then
+      hard_mode_log(
+        info,
+        entity,
+        "command-completed",
+        "event=" .. tostring(hard_mode_event_name(event))
+          .. " result=" .. tostring(event.result)
+          .. " distracted=" .. tostring(event.was_distracted)
+          .. " entity=" .. hard_mode_entity_summary(entity),
+        {force = true}
+      )
     end
 
     if info.state == "pathfinding" and event.result == defines.behavior_result.fail then
@@ -2130,11 +2346,36 @@ function M.new(deps)
     return true
   end
 
-  function controller.on_biter_died(entity)
+  function controller.on_biter_died(entity, event)
     local info = storage.waiting_biters[entity.unit_number]
+    if not info and entity and entity.valid and entity.force and entity.force.name == (C.HARD_MODE_ATTACK_FORCE_NAME or "administratorio-hard-mode-biters") then
+      hard_mode_log(
+        {tracked_unit_number = entity.unit_number, state = "untracked"},
+        entity,
+        "biter-died-untracked-hard-force",
+        "event=" .. tostring(hard_mode_event_name(event))
+          .. " cause=" .. hard_mode_entity_summary(event and event.cause or nil),
+        {force = true}
+      )
+    end
     if info then
       deps.remember_entity_tracking(info, entity)
+      if info.hard_mode_attacking or info.state == "attacking" then
+        hard_mode_log(
+          info,
+          entity,
+          "biter-died",
+          "event=" .. tostring(hard_mode_event_name(event))
+            .. " cause=" .. hard_mode_entity_summary(event and event.cause or nil)
+            .. " unit=" .. tostring(entity.unit_number)
+            .. " state=" .. tostring(info.state)
+            .. " hard_mode_attacking=" .. hard_mode_bool(info.hard_mode_attacking)
+            .. " entity=" .. hard_mode_entity_summary(entity),
+          {force = true}
+        )
+      end
       if info.state == "attacking" or info.hard_mode_attacking then
+        hard_mode_log(info, entity, "biter-died-untrack", "unit=" .. tostring(entity.unit_number), {force = true})
         deps.untrack_waiting_biter(entity.unit_number, info)
         return
       end
@@ -2158,9 +2399,33 @@ function M.new(deps)
     if not entity or not entity.valid or not entity.unit_number then return false end
 
     local info = storage.waiting_biters and storage.waiting_biters[entity.unit_number]
-    if not info then return false end
+    if not info then
+      if entity.force and entity.force.name == (C.HARD_MODE_ATTACK_FORCE_NAME or "administratorio-hard-mode-biters") then
+        hard_mode_log(
+          {tracked_unit_number = entity.unit_number, state = "untracked"},
+          entity,
+          "biter-removed-untracked-hard-force",
+          "event=" .. tostring(hard_mode_event_name(event)) .. " entity=" .. hard_mode_entity_summary(entity),
+          {force = true}
+        )
+      end
+      return false
+    end
 
     deps.remember_entity_tracking(info, entity)
+    if info.hard_mode_attacking or info.state == "attacking" then
+      hard_mode_log(
+        info,
+        entity,
+        "biter-removed",
+        "event=" .. tostring(hard_mode_event_name(event))
+          .. " unit=" .. tostring(entity.unit_number)
+          .. " state=" .. tostring(info.state)
+          .. " hard_mode_attacking=" .. hard_mode_bool(info.hard_mode_attacking)
+          .. " entity=" .. hard_mode_entity_summary(entity),
+        {force = true}
+      )
+    end
 
     if info.state == "returning_home" then
       deps.untrack_waiting_biter(entity.unit_number, info)
@@ -2168,6 +2433,7 @@ function M.new(deps)
     end
 
     if info.state == "attacking" or info.hard_mode_attacking then
+      hard_mode_log(info, entity, "biter-removed-untrack", "unit=" .. tostring(entity.unit_number), {force = true})
       deps.untrack_waiting_biter(entity.unit_number, info)
       return true
     end
