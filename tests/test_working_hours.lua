@@ -105,6 +105,41 @@ test("worker station managed buildings can still be shut down by protests", func
   assert_eq(storage.working_hours_state[breakroom.unit_number].reason, "protest", "breakroom should keep the protest shutdown reason")
 end)
 
+test("hard mode attackers do not keep working-hours protest shutdown claims", function()
+  storage = {
+    waiting_biters = {
+      [42] = {
+        state = "protesting",
+        hard_mode_attacking = true,
+        arrived_at_building = true,
+      },
+    },
+  }
+  package.loaded["feature_flags"] = nil
+  package.loaded["scripts.working_hours"] = nil
+  local working_hours = require("scripts.working_hours")
+
+  local breakroom = new_entity("corporate-breakroom")
+  storage.waiting_biters[42].target_building = breakroom
+  game = {
+    surfaces = {
+      {
+        find_entities_filtered = function(params)
+          if params.name == "corporate-breakroom" then
+            return {breakroom}
+          end
+          return {}
+        end,
+      },
+    },
+  }
+
+  working_hours.rebuild_registry()
+
+  assert_eq(breakroom.active, true, "hard-mode attackers should release protest shutdowns so they can attack live buildings")
+  assert_eq(storage.working_hours_state[breakroom.unit_number].reason, nil, "hard-mode attackers should not leave a protest shutdown reason")
+end)
+
 print(("Working hours tests: %d passed, %d failed"):format(passed, failed))
 if failed > 0 then
   for _, err in ipairs(errors) do
