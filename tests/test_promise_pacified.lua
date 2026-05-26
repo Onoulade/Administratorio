@@ -884,6 +884,7 @@ test("hard mode protesting biter attacks a building while staying in protest mod
   assert_true(entity.destructible == true, "hard-mode attacking protester should be destructible")
   assert_true(target.active == true, "escalation should release the disabled protest target")
   assert_eq(nearest_damage_calls, 1, "hard-mode attacking protester should damage the nearest building when in range")
+  assert_true(ctx.get_last_move_command() ~= nil, "hard-mode attacking protester should receive a visible lunge movement command")
   assert_true(ctx.get_last_attack_command() == nil, "hard-mode attacking protester should not use vanilla attack AI")
 end)
 
@@ -1022,6 +1023,7 @@ test("hard mode parked protester escalates during protest pacing", function()
   assert_eq(ctx.get_release_calls(), 0, "pacing escalation should not release the biter to regular enemy AI")
   assert_true(target.active == true, "pacing escalation should release the disabled protest target")
   assert_eq(damage_calls, 1, "pacing escalation should damage the target when the biter is already in range")
+  assert_true(ctx.get_last_move_command() ~= nil, "pacing escalation should issue a visible lunge movement command")
   assert_true(ctx.get_last_attack_command() == nil, "pacing escalation should not use vanilla attack AI")
 end)
 
@@ -1109,8 +1111,9 @@ test("promised hard mode attacking protester escalates again when no desk opens"
   assert_eq(info.frustration, ctx.hard_mode_capacity, "promise expiry in hard mode should restore full capacity frustration")
   assert_eq(ctx.get_release_calls(), 0, "promise expiry should not release the biter to regular enemy AI")
   assert_true(ctx.get_last_move_command() ~= nil, "promise expiry should visibly send the biter toward the nearest available building")
-  assert_eq(ctx.get_last_move_command().destination.x, target.position.x, "promise expiry movement should target the nearest building x")
-  assert_eq(ctx.get_last_move_command().destination.y, target.position.y, "promise expiry movement should target the nearest building y")
+  local dx = ctx.get_last_move_command().destination.x - target.position.x
+  local dy = ctx.get_last_move_command().destination.y - target.position.y
+  assert_true(dx * dx + dy * dy <= 4, "promise expiry movement should stay near the nearest building")
   assert_true(ctx.get_last_attack_command() == nil, "promise expiry should not use vanilla attack AI")
 end)
 

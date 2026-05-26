@@ -283,19 +283,46 @@ function M.new(deps)
     return best
   end
 
-  local function issue_hard_mode_attack_command(info, entity, target, reason)
+  local function find_hard_mode_attack_destination(info, entity, target)
+    if not entity or not entity.valid or not target or not target.valid then return nil end
+    local surface = entity.surface
+    local radius = math.max(0.75, C.HARD_MODE_ATTACK_RADIUS or 1.5)
+    local unit_number = info and (info.tracked_unit_number or (entity.valid and entity.unit_number)) or 0
+    local step = (info and info.hard_mode_attack_step or 0) + 1
+    if info then info.hard_mode_attack_step = step end
+
+    for attempt = 0, 7 do
+      local angle = ((unit_number + step + attempt) % 8) * (math.pi / 4)
+      local candidate = {
+        x = target.position.x + math.cos(angle) * radius,
+        y = target.position.y + math.sin(angle) * radius,
+      }
+      local position = surface.find_non_colliding_position(entity.name, candidate, 0.75, 0.25)
+      if position then return position end
+    end
+
+    return surface.find_non_colliding_position(entity.name, target.position, radius + 1, 0.25)
+      or target.position
+  end
+
+  local function issue_hard_mode_attack_command(info, entity, target, reason, opts)
     if not entity or not entity.valid or not target or not target.valid then return false end
     if not entity.commandable or not entity.commandable.set_command then return false end
+    opts = opts or {}
+    local destination = find_hard_mode_attack_destination(info, entity, target)
+    if not destination then return false end
 
     entity.commandable.set_command({
       type = defines.command.go_to_location,
-      destination = target.position,
-      radius = C.HARD_MODE_ATTACK_RADIUS or 1.5,
+      destination = destination,
+      radius = C.HARD_MODE_ATTACK_COMMAND_RADIUS or 0.35,
       distraction = defines.distraction.none,
     })
     info.hard_mode_attack_target_unit_number = target.unit_number
     info.hard_mode_attack_last_command_tick = game.tick
-    info.hard_mode_attack_next_command_tick = game.tick + (C.HARD_MODE_ATTACK_REISSUE_TICKS or (5 * 60))
+    local interval = opts.in_range and (C.HARD_MODE_ATTACK_ANIMATION_TICKS or C.HARD_MODE_ATTACK_DAMAGE_TICKS or 30)
+      or (C.HARD_MODE_ATTACK_REISSUE_TICKS or (5 * 60))
+    info.hard_mode_attack_next_command_tick = game.tick + interval
     hard_mode_log(info, entity, "attack-command", "reason=" .. tostring(reason), {force = true})
     return true
   end
@@ -309,6 +336,7 @@ function M.new(deps)
     info.hard_mode_attack_last_command_tick = nil
     info.hard_mode_attack_next_command_tick = nil
     info.hard_mode_attack_next_damage_tick = nil
+    info.hard_mode_attack_step = nil
   end
   clear_hard_mode_attack_runtime = clear_hard_mode_attack_runtime_impl
 
@@ -399,15 +427,18 @@ function M.new(deps)
     release_protest_target(target, info.tracked_unit_number or entity.unit_number)
     prepare_hard_mode_attack_entity(entity)
     render.ensure_protest_rendering(info)
-    if damage_hard_mode_attack_target(info, entity, target, reason) then
-      return true
-    end
 
+    local in_range = is_hard_mode_attack_in_range(entity, target)
     local commandable = entity.commandable
     if commandable
-       and (not commandable.has_command or game.tick >= (info.hard_mode_attack_next_command_tick or 0)) then
-      return issue_hard_mode_attack_command(info, entity, target, reason)
+       and game.tick >= (info.hard_mode_attack_next_command_tick or 0) then
+      issue_hard_mode_attack_command(info, entity, target, reason, {in_range = in_range})
     end
+
+    if in_range then
+      damage_hard_mode_attack_target(info, entity, target, reason)
+    end
+
     return true
   end
 
@@ -1853,7 +1884,11 @@ function M.new(deps)
     if info.pending_path_request_id then return end
 
     if info.hard_mode_attacking then
-      info.hard_mode_attack_next_command_tick = game.tick
+      if info.target_building and info.target_building.valid and is_hard_mode_attack_in_range(entity, info.target_building) then
+        info.hard_mode_attack_next_command_tick = game.tick + (C.HARD_MODE_ATTACK_ANIMATION_TICKS or C.HARD_MODE_ATTACK_DAMAGE_TICKS or 30)
+      else
+        info.hard_mode_attack_next_command_tick = game.tick
+      end
       maintain_hard_mode_attack(info, entity, "command-completed")
       return
     end
