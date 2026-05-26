@@ -1150,8 +1150,8 @@ function M.on_script_trigger_effect(event)
   protest_system.on_script_trigger_effect(event)
 end
 
-function M.on_biter_died(entity)
-  protest_system.on_biter_died(entity)
+function M.on_biter_died(entity, event)
+  protest_system.on_biter_died(entity, event)
 end
 
 function M.on_biter_removed(entity, event)
