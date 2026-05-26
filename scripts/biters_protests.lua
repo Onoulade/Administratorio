@@ -283,41 +283,28 @@ function M.new(deps)
     return best
   end
 
-  local function find_hard_mode_attack_destination(info, entity, target)
-    if not entity or not entity.valid or not target or not target.valid then return nil end
-    local surface = entity.surface
-    local radius = math.max(0.75, C.HARD_MODE_ATTACK_RADIUS or 1.5)
-    local unit_number = info and (info.tracked_unit_number or (entity.valid and entity.unit_number)) or 0
-    local step = (info and info.hard_mode_attack_step or 0) + 1
-    if info then info.hard_mode_attack_step = step end
-
-    for attempt = 0, 7 do
-      local angle = ((unit_number + step + attempt) % 8) * (math.pi / 4)
-      local candidate = {
-        x = target.position.x + math.cos(angle) * radius,
-        y = target.position.y + math.sin(angle) * radius,
-      }
-      local position = surface.find_non_colliding_position(entity.name, candidate, 0.75, 0.25)
-      if position then return position end
-    end
-
-    return surface.find_non_colliding_position(entity.name, target.position, radius + 1, 0.25)
-      or target.position
-  end
-
   local function issue_hard_mode_attack_command(info, entity, target, reason, opts)
     if not entity or not entity.valid or not target or not target.valid then return false end
     if not entity.commandable or not entity.commandable.set_command then return false end
     opts = opts or {}
-    local destination = find_hard_mode_attack_destination(info, entity, target)
-    if not destination then return false end
 
-    entity.commandable.set_command({
-      type = defines.command.go_to_location,
-      destination = destination,
-      radius = C.HARD_MODE_ATTACK_COMMAND_RADIUS or 0.35,
-      distraction = defines.distraction.none,
-    })
+    local command_type = defines.command.attack or defines.command.go_to_location
+    local command
+    if command_type == defines.command.attack then
+      command = {
+        type = command_type,
+        target = target,
+        distraction = defines.distraction.none,
+      }
+    else
+      command = {
+        type = command_type,
+        destination = target.position,
+        radius = C.HARD_MODE_ATTACK_RADIUS or 1.5,
+        distraction = defines.distraction.none,
+      }
+    end
+    entity.commandable.set_command(command)
     info.hard_mode_attack_target_unit_number = target.unit_number
     info.hard_mode_attack_last_command_tick = game.tick
     local interval = opts.in_range and (C.HARD_MODE_ATTACK_ANIMATION_TICKS or C.HARD_MODE_ATTACK_DAMAGE_TICKS or 30)
@@ -336,7 +323,6 @@ function M.new(deps)
     info.hard_mode_attack_last_command_tick = nil
     info.hard_mode_attack_next_command_tick = nil
     info.hard_mode_attack_next_damage_tick = nil
-    info.hard_mode_attack_step = nil
   end
   clear_hard_mode_attack_runtime = clear_hard_mode_attack_runtime_impl
 
@@ -345,7 +331,8 @@ function M.new(deps)
     if deps.apply_managed_unit_settings then
       deps.apply_managed_unit_settings(entity)
     end
-    entity.force = deps.get_biter_force()
+    local attack_force = deps.get_hard_mode_attack_force and deps.get_hard_mode_attack_force() or deps.get_biter_force()
+    entity.force = attack_force
     entity.active = true
     entity.destructible = true
     return true
@@ -364,7 +351,7 @@ function M.new(deps)
     if game.tick < (info.hard_mode_attack_next_damage_tick or 0) then return true end
 
     local damage = C.HARD_MODE_ATTACK_DAMAGE or 10
-    local damage_force = game and game.forces and game.forces.enemy or entity.force
+    local damage_force = entity.force or (game and game.forces and game.forces.enemy)
     local did_damage = false
     if target.damage then
       local ok = pcall(function()

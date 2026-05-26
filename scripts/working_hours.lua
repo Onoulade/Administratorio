@@ -170,6 +170,7 @@ local function rebuild_protest_claims()
   for protester_id, info in pairs(storage.waiting_biters or {}) do
     if info
        and info.state == "protesting"
+       and not info.hard_mode_attacking
        and info.arrived_at_building
        and info.target_building
        and info.target_building.valid

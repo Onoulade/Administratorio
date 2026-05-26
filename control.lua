@@ -483,6 +483,27 @@ local function set_biter_ceasefire()
     biter_force.set_cease_fire(neutral, true)
     neutral.set_cease_fire(biter_force, true)
   end
+
+  local hard_mode_force_name = C.HARD_MODE_ATTACK_FORCE_NAME or "administratorio-hard-mode-biters"
+  local hard_mode_force = game.forces[hard_mode_force_name]
+  if not hard_mode_force then
+    hard_mode_force = game.create_force(hard_mode_force_name)
+  end
+  if hard_mode_force then
+    hard_mode_force.set_cease_fire(player, false)
+    player.set_cease_fire(hard_mode_force, false)
+    if hard_mode_force.set_friend then hard_mode_force.set_friend(player, false) end
+    if player.set_friend then player.set_friend(hard_mode_force, false) end
+
+    hard_mode_force.set_cease_fire(enemy, true)
+    enemy.set_cease_fire(hard_mode_force, true)
+    hard_mode_force.set_cease_fire(biter_force, true)
+    biter_force.set_cease_fire(hard_mode_force, true)
+    if neutral then
+      hard_mode_force.set_cease_fire(neutral, true)
+      neutral.set_cease_fire(hard_mode_force, true)
+    end
+  end
 end
 
 local function format_percent_text(value)

@@ -131,9 +131,14 @@ local PROTEST_STOP_TEXT = {"gui.protest-stop"}
 local WAITING_BITER_STATE_NAMES = {"waiting", "pathfinding", "protesting", "pacified", "returning_home", "attacking"}
 local WAITING_PATHING_PROCESS_SHARD_COUNT = C.FRUST_PROTEST_PROCESS_SHARDS or 4
 local BITER_FORCE_NAME = "administratorio-biters"
+local HARD_MODE_ATTACK_FORCE_NAME = C.HARD_MODE_ATTACK_FORCE_NAME or "administratorio-hard-mode-biters"
 
 local function get_biter_force()
   return game.forces[BITER_FORCE_NAME] or game.forces["neutral"]
+end
+
+local function get_hard_mode_attack_force()
+  return game.forces[HARD_MODE_ATTACK_FORCE_NAME] or get_biter_force()
 end
 
 local function ensure_runtime_profile_section(runtime_profile, key)
@@ -806,6 +811,7 @@ protest_system = biters_protests_factory.new({
   background_state_shard_count = WAITING_PATHING_PROCESS_SHARD_COUNT,
   biter_force_name = BITER_FORCE_NAME,
   get_biter_force = get_biter_force,
+  get_hard_mode_attack_force = get_hard_mode_attack_force,
   constants = C,
   copy_complaints = copy_complaints,
   ensure_achievements = ensure_achievements,
