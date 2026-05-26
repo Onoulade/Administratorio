@@ -287,25 +287,12 @@ function M.new(deps)
     if not entity or not entity.valid or not target or not target.valid then return false end
     if not entity.commandable or not entity.commandable.set_command then return false end
 
-    local distraction = (defines.distraction and defines.distraction.by_enemy) or defines.distraction.none
-    local command_type = defines.command.attack or defines.command.go_to_location
-    local command
-    if command_type == defines.command.attack then
-      command = {
-        type = command_type,
-        target = target,
-        distraction = distraction,
-      }
-    else
-      command = {
-        type = command_type,
-        destination = target.position,
-        radius = C.HARD_MODE_ATTACK_RADIUS or 1.5,
-        distraction = distraction,
-      }
-    end
-
-    entity.commandable.set_command(command)
+    entity.commandable.set_command({
+      type = defines.command.go_to_location,
+      destination = target.position,
+      radius = C.HARD_MODE_ATTACK_RADIUS or 1.5,
+      distraction = defines.distraction.none,
+    })
     info.hard_mode_attack_target_unit_number = target.unit_number
     info.hard_mode_attack_last_command_tick = game.tick
     info.hard_mode_attack_next_command_tick = game.tick + (C.HARD_MODE_ATTACK_REISSUE_TICKS or (5 * 60))
@@ -321,6 +308,7 @@ function M.new(deps)
     info.hard_mode_attack_target_unit_number = nil
     info.hard_mode_attack_last_command_tick = nil
     info.hard_mode_attack_next_command_tick = nil
+    info.hard_mode_attack_next_damage_tick = nil
   end
   clear_hard_mode_attack_runtime = clear_hard_mode_attack_runtime_impl
 
@@ -329,13 +317,46 @@ function M.new(deps)
     if deps.apply_managed_unit_settings then
       deps.apply_managed_unit_settings(entity)
     end
-    if game and game.forces and game.forces.enemy then
-      entity.force = game.forces.enemy
-    else
-      entity.force = "enemy"
-    end
+    entity.force = deps.get_biter_force()
     entity.active = true
     entity.destructible = true
+    return true
+  end
+
+  local function is_hard_mode_attack_in_range(entity, target)
+    if not entity or not entity.valid or not target or not target.valid then return false end
+    local radius = C.HARD_MODE_ATTACK_RADIUS or 1.5
+    local dx = entity.position.x - target.position.x
+    local dy = entity.position.y - target.position.y
+    return dx * dx + dy * dy <= radius * radius
+  end
+
+  local function damage_hard_mode_attack_target(info, entity, target, reason)
+    if not is_hard_mode_attack_in_range(entity, target) then return false end
+    if game.tick < (info.hard_mode_attack_next_damage_tick or 0) then return true end
+
+    local damage = C.HARD_MODE_ATTACK_DAMAGE or 10
+    local damage_force = game and game.forces and game.forces.enemy or entity.force
+    local did_damage = false
+    if target.damage then
+      local ok = pcall(function()
+        target.damage(damage, damage_force, "physical")
+      end)
+      did_damage = ok
+    elseif target.health then
+      target.health = math.max(0, target.health - damage)
+      did_damage = true
+    end
+
+    info.hard_mode_attack_next_damage_tick = game.tick + (C.HARD_MODE_ATTACK_DAMAGE_TICKS or 30)
+    hard_mode_log(
+      info,
+      entity,
+      "attack-damage",
+      "reason=" .. tostring(reason)
+        .. " damage=" .. tostring(damage)
+        .. " did_damage=" .. hard_mode_bool(did_damage)
+    )
     return true
   end
 
@@ -378,6 +399,9 @@ function M.new(deps)
     release_protest_target(target, info.tracked_unit_number or entity.unit_number)
     prepare_hard_mode_attack_entity(entity)
     render.ensure_protest_rendering(info)
+    if damage_hard_mode_attack_target(info, entity, target, reason) then
+      return true
+    end
 
     local commandable = entity.commandable
     if commandable
