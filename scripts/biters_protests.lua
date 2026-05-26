@@ -168,7 +168,7 @@ function M.new(deps)
   end
 
   local function append_state_unit_numbers(state, ids, seen, shard_index, shard_count)
-    for unit_number in pairs(deps.get_waiting_biter_state_set(state)) do
+    for unit_number in pairs(deps.get_waiting_biter_state_set(state) or {}) do
       if (not shard_count or (unit_number % shard_count) == shard_index) and not seen[unit_number] then
         ids[#ids + 1] = unit_number
         seen[unit_number] = true
@@ -263,6 +263,7 @@ function M.new(deps)
   end
 
   local clear_pacified_runtime
+  local clear_hard_mode_attack_runtime
 
   local function find_nearest_attack_target(surface, position)
     if not surface or not position then return nil end
@@ -282,16 +283,107 @@ function M.new(deps)
     return best
   end
 
-  local function issue_attack_approach_command(entity, target)
+  local function issue_hard_mode_attack_command(info, entity, target, reason)
     if not entity or not entity.valid or not target or not target.valid then return false end
     if not entity.commandable or not entity.commandable.set_command then return false end
+
     local distraction = (defines.distraction and defines.distraction.by_enemy) or defines.distraction.none
-    entity.commandable.set_command({
-      type = defines.command.go_to_location,
-      destination = target.position,
-      radius = 1.5,
-      distraction = distraction,
-    })
+    local command_type = defines.command.attack or defines.command.go_to_location
+    local command
+    if command_type == defines.command.attack then
+      command = {
+        type = command_type,
+        target = target,
+        distraction = distraction,
+      }
+    else
+      command = {
+        type = command_type,
+        destination = target.position,
+        radius = C.HARD_MODE_ATTACK_RADIUS or 1.5,
+        distraction = distraction,
+      }
+    end
+
+    entity.commandable.set_command(command)
+    info.hard_mode_attack_target_unit_number = target.unit_number
+    info.hard_mode_attack_last_command_tick = game.tick
+    info.hard_mode_attack_next_command_tick = game.tick + (C.HARD_MODE_ATTACK_REISSUE_TICKS or (5 * 60))
+    hard_mode_log(info, entity, "attack-command", "reason=" .. tostring(reason), {force = true})
+    return true
+  end
+
+  local function clear_hard_mode_attack_runtime_impl(info)
+    if not info then return end
+    info.hard_mode_attacking = nil
+    info.hard_mode_attack_reason = nil
+    info.hard_mode_attack_tick = nil
+    info.hard_mode_attack_target_unit_number = nil
+    info.hard_mode_attack_last_command_tick = nil
+    info.hard_mode_attack_next_command_tick = nil
+  end
+  clear_hard_mode_attack_runtime = clear_hard_mode_attack_runtime_impl
+
+  local function prepare_hard_mode_attack_entity(entity)
+    if not entity or not entity.valid then return false end
+    if deps.apply_managed_unit_settings then
+      deps.apply_managed_unit_settings(entity)
+    end
+    if game and game.forces and game.forces.enemy then
+      entity.force = game.forces.enemy
+    else
+      entity.force = "enemy"
+    end
+    entity.active = true
+    entity.destructible = true
+    return true
+  end
+
+  local function maintain_hard_mode_attack(info, entity, reason)
+    if not hard_mode_enabled() or not info or not entity or not entity.valid then
+      hard_mode_log(info, entity, "attack-maintain-skip", "reason=" .. tostring(reason), {force = true})
+      return false
+    end
+
+    if info.state ~= "protesting" then
+      deps.set_waiting_biter_state(info, "protesting")
+    end
+    info.hard_mode_attacking = true
+    info.frustration = get_frustration_capacity()
+    info.frust_accum = 0
+    info.entity = entity
+    deps.remember_entity_tracking(info, entity)
+
+    local target = find_nearest_attack_target(entity.surface, entity.position)
+      or (info.target_building and info.target_building.valid and info.target_building)
+    if not target or not target.valid then
+      hard_mode_log(info, entity, "attack-no-target", "reason=" .. tostring(reason), {force = true})
+      return false
+    end
+
+    if info.target_building ~= target then
+      if info.target_building and info.target_building.valid and info.arrived_at_building then
+        release_protest_target(info.target_building, info.tracked_unit_number or entity.unit_number)
+      end
+      render.destroy_protest_rendering(info)
+      render.destroy_protest_chart_tag(info)
+    end
+    info.target_building = target
+    info.arrived_at_building = true
+    info.protest_parked = nil
+    info.pending_path_request_id = nil
+    info.pending_protest_candidates = nil
+    info.next_protest_target_retry_tick = nil
+
+    release_protest_target(target, info.tracked_unit_number or entity.unit_number)
+    prepare_hard_mode_attack_entity(entity)
+    render.ensure_protest_rendering(info)
+
+    local commandable = entity.commandable
+    if commandable
+       and (not commandable.has_command or game.tick >= (info.hard_mode_attack_next_command_tick or 0)) then
+      return issue_hard_mode_attack_command(info, entity, target, reason)
+    end
     return true
   end
 
@@ -302,11 +394,14 @@ function M.new(deps)
     end
 
     local unit_number = info.tracked_unit_number or entity.unit_number
-    local attack_target = (info.target_building and info.target_building.valid and info.target_building)
-      or find_nearest_attack_target(entity.surface, entity.position)
+    local previous_target = info.target_building
+    local attack_target = find_nearest_attack_target(entity.surface, entity.position)
+      or (previous_target and previous_target.valid and previous_target)
 
     hard_mode_log(info, entity, "release", "reason=" .. tostring(reason), {force = true})
-    reset_protest_targeting(info, unit_number)
+    if previous_target and previous_target.valid and info.arrived_at_building then
+      release_protest_target(previous_target, unit_number)
+    end
     clear_pacified_runtime(info)
     clear_pending_path_request(info)
     if info.desk_id then
@@ -314,7 +409,9 @@ function M.new(deps)
       zones.release_slot(info.desk_id, unit_number)
     end
 
-    deps.set_waiting_biter_state(info, "attacking")
+    deps.set_waiting_biter_state(info, "protesting")
+    clear_hard_mode_attack_runtime(info)
+    info.hard_mode_attacking = true
     info.frustration = get_frustration_capacity()
     info.frust_accum = 0
     info.promise_retry_until_tick = nil
@@ -322,18 +419,13 @@ function M.new(deps)
     info.desk_dest = nil
     info.hard_mode_attack_reason = reason
     info.hard_mode_attack_tick = game.tick
+    info.target_building = attack_target
+    info.arrived_at_building = attack_target ~= nil
+    info.protest_parked = nil
     info.entity = entity
     deps.remember_entity_tracking(info, entity)
 
-    if deps.release_as_regular_enemy then
-      deps.release_as_regular_enemy(entity)
-    else
-      entity.force = "enemy"
-      entity.active = true
-      entity.destructible = true
-    end
-    issue_attack_approach_command(entity, attack_target)
-    return true
+    return maintain_hard_mode_attack(info, entity, reason)
   end
 
   local function get_pacified_frustration()
@@ -540,6 +632,7 @@ function M.new(deps)
       if unit_number ~= exclude_unit_number
          and other_info
          and other_info.state == "protesting"
+         and not other_info.hard_mode_attacking
          and same_protest_target(other_info.target_building, target) then
         total = total + 1
       end
@@ -1159,6 +1252,10 @@ function M.new(deps)
     elseif info.state == "protesting" then
       clear_pending_path_request(info)
       clear_pacified_runtime(info)
+      if info.hard_mode_attacking then
+        maintain_hard_mode_attack(info, replacement, "revive")
+        return true
+      end
       protect_protesting_biter(info, replacement, "revive")
       if info.target_building and info.target_building.valid then
         if info.arrived_at_building then
@@ -1202,10 +1299,10 @@ function M.new(deps)
         end
 
         if info.target_building and info.target_building.valid then
-          if info.arrived_at_building then
+          if info.arrived_at_building and not info.hard_mode_attacking then
             disable_protest_target(info.target_building, unit_number)
-            render.ensure_protest_rendering(info)
           end
+          render.ensure_protest_rendering(info)
           render.ensure_protest_chart_tag(info, player)
           render.notify_players_of_protest(info, player)
         end
@@ -1230,7 +1327,13 @@ function M.new(deps)
     end
 
     for _, info in ipairs(impacted) do
-      reassign_protest_after_target_loss(info, fallback_surface, removed_snapshot)
+      if info.hard_mode_attacking and info.entity and info.entity.valid then
+        info.target_building = nil
+        info.arrived_at_building = nil
+        maintain_hard_mode_attack(info, info.entity, "target-removed")
+      else
+        reassign_protest_after_target_loss(info, fallback_surface, removed_snapshot)
+      end
     end
   end
 
@@ -1396,6 +1499,7 @@ function M.new(deps)
     append_state_unit_numbers("returning_home", tracked_biter_ids, seen_biter_ids, shard_index, shard_count)
     append_state_unit_numbers("waiting", tracked_biter_ids, seen_biter_ids, shard_index, shard_count)
     append_state_unit_numbers("pathfinding", tracked_biter_ids, seen_biter_ids, shard_index, shard_count)
+    append_state_unit_numbers("attacking", tracked_biter_ids, seen_biter_ids, shard_index, shard_count)
 
     for _, b_id in ipairs(tracked_biter_ids) do
       local info = storage.waiting_biters and storage.waiting_biters[b_id]
@@ -1444,6 +1548,11 @@ function M.new(deps)
           goto continue_biter
         end
 
+        if info.state == "attacking" then
+          deps.set_waiting_biter_state(info, "protesting")
+          info.hard_mode_attacking = true
+        end
+
         local recovery_attempt = (info.revival_failures or 0) + 1
         local is_rapid_revive = info.last_revive_tick
           and (game.tick - info.last_revive_tick) < C.RAPID_REVIVE_WINDOW_TICKS
@@ -1473,6 +1582,11 @@ function M.new(deps)
         deps.mark_desk_circuit_dirty(info.desk_id)
       else
         deps.remember_entity_tracking(info, info.entity)
+        if info.state == "attacking" then
+          deps.set_waiting_biter_state(info, "protesting")
+          info.hard_mode_attacking = true
+        end
+
         if info.state == "pathfinding" or info.state == "waiting" then
           accumulate_biter_frustration(info, info.entity, "waiting-or-pathfinding")
 
@@ -1526,6 +1640,10 @@ function M.new(deps)
             end
           end
         elseif info.state == "protesting" then
+          if info.hard_mode_attacking then
+            maintain_hard_mode_attack(info, info.entity, "process")
+            goto continue_biter
+          end
           if process_hard_mode_protest_frustration(info, info.entity, "frustration-capacity") then
             goto continue_biter
           end
@@ -1565,7 +1683,7 @@ function M.new(deps)
             end
           end
 
-          if info.arrived_at_building and info.target_building and info.target_building.valid then
+          if info.arrived_at_building and info.target_building and info.target_building.valid and not info.hard_mode_attacking then
             disable_protest_target(info.target_building, b_id)
           end
         end
@@ -1594,11 +1712,13 @@ function M.new(deps)
         hard_mode_log(info, entity, "pacing-skip", "reason=state-" .. tostring(info.state))
       elseif not entity or not entity.valid then
         hard_mode_log(info, entity, "pacing-skip", "reason=invalid-entity")
-      elseif not info.target_building or not info.target_building.valid then
-        hard_mode_log(info, entity, "pacing-skip", "reason=invalid-target")
       elseif entity.surface ~= surface then
         hard_mode_log(info, entity, "pacing-skip", "reason=surface-mismatch expected="
           .. tostring(surface and surface.index or nil))
+      elseif info.hard_mode_attacking then
+        maintain_hard_mode_attack(info, info.entity, "pacing")
+      elseif not info.target_building or not info.target_building.valid then
+        hard_mode_log(info, entity, "pacing-skip", "reason=invalid-target")
       else
         if process_hard_mode_protest_frustration(info, info.entity, "pacing-frustration-capacity") then
           goto continue_protester
@@ -1707,6 +1827,12 @@ function M.new(deps)
 
     if info.state ~= "protesting" then return end
     if info.pending_path_request_id then return end
+
+    if info.hard_mode_attacking then
+      info.hard_mode_attack_next_command_tick = game.tick
+      maintain_hard_mode_attack(info, entity, "command-completed")
+      return
+    end
 
     if info.arrived_at_building and info.target_building and info.target_building.valid then
       if event.result == defines.behavior_result.fail then
@@ -1865,7 +1991,7 @@ function M.new(deps)
       local biter_entity = event.target_entity
       if biter_entity.valid then
         local info = storage.waiting_biters[biter_entity.unit_number]
-        if info and (info.state == "protesting" or info.state == "attacking") then
+        if info and (info.state == "protesting" or info.state == "attacking" or info.hard_mode_attacking) then
           if not storage.achievements.protest_suppressed then
             storage.achievements.protest_suppressed = true
             for _, p in pairs(game.connected_players) do
@@ -1875,6 +2001,7 @@ function M.new(deps)
           if storage.stats then storage.stats.protests_suppressed = (storage.stats.protests_suppressed or 0) + 1 end
 
           local desk = deps.find_nearest_available_desk(biter_entity.position)
+          clear_hard_mode_attack_runtime(info)
 
           if desk and deps.route_biter_to_desk(info, biter_entity, desk, {
             initial_frustration = get_pacified_frustration(),
@@ -1961,7 +2088,7 @@ function M.new(deps)
     local info = storage.waiting_biters[entity.unit_number]
     if info then
       deps.remember_entity_tracking(info, entity)
-      if info.state == "attacking" then
+      if info.state == "attacking" or info.hard_mode_attacking then
         deps.untrack_waiting_biter(entity.unit_number, info)
         return
       end
@@ -1994,7 +2121,7 @@ function M.new(deps)
       return true
     end
 
-    if info.state == "attacking" then
+    if info.state == "attacking" or info.hard_mode_attacking then
       deps.untrack_waiting_biter(entity.unit_number, info)
       return true
     end

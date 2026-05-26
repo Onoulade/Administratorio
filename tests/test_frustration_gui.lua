@@ -89,7 +89,8 @@ local function collect_captions(element, captions)
   return captions
 end
 
-local function panel_captions_for(state)
+local function panel_captions_for(state, opts)
+  opts = opts or {}
   local left = new_gui_element("left")
   local player = {gui = {left = left}}
   local entity = {valid = true, unit_number = 42}
@@ -99,6 +100,7 @@ local function panel_captions_for(state)
       [42] = {
         state = state,
         frustration = 300,
+        hard_mode_attacking = opts.hard_mode_attacking,
         complaints = {"ticket-landscape"},
       },
     },
@@ -123,6 +125,12 @@ test("protesting hover explains promise action", function()
   local captions = panel_captions_for("protesting")
   assert_true(has_caption(captions, "Protesting because the queue failed; use a Bureaucratic Promise so it stops and returns to a desk."),
     "protesting biter should explain why it protests and how to stop it")
+end)
+
+test("hard mode attacking protester hover explains escalation", function()
+  local captions = panel_captions_for("protesting", {hard_mode_attacking = true})
+  assert_true(has_caption(captions, "HARD MODE escalation: it complained past full capacity and is attacking the nearest eligible building while still protesting. Hit it with a Bureaucratic Promise to send it back toward a desk."),
+    "hard mode attacking protester should explain attack escalation without leaving protest mode")
 end)
 
 test("pacified hover explains desk requirement", function()
