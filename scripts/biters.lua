@@ -861,7 +861,7 @@ end
 
 function M.is_hard_mode_attacker(unit_number)
   local info = storage.waiting_biters and storage.waiting_biters[unit_number]
-  return info and info.state == "attacking" or false
+  return info and (info.hard_mode_attacking == true or info.state == "attacking") or false
 end
 
 function M.send_biter_to_station_with_targets(entity, targets, opts)

@@ -32,9 +32,11 @@ defines = {
   command = {
     stop = 1,
     go_to_location = 2,
+    attack = 3,
   },
   distraction = {
     none = 1,
+    by_enemy = 2,
   },
   behavior_result = {
     fail = 1,
@@ -61,6 +63,7 @@ local function new_test_context(opts)
   local release_calls = 0
   local last_stop_command = nil
   local last_move_command = nil
+  local last_attack_command = nil
   local last_route_initial_frustration = nil
   local last_released_entity = nil
   local pacified_render_calls = 0
@@ -73,7 +76,7 @@ local function new_test_context(opts)
   surface = {
     index = 1,
     find_entities_filtered = function()
-      return {}
+      return surface.protest_targets or {}
     end,
     find_non_colliding_position = function(_, pos)
       return pos
@@ -96,6 +99,8 @@ local function new_test_context(opts)
             last_stop_command = command
           elseif command.type == defines.command.go_to_location then
             last_move_command = command
+          elseif command.type == defines.command.attack then
+            last_attack_command = command
           end
         end,
       }
@@ -171,6 +176,8 @@ local function new_test_context(opts)
       PROTEST_STEP_ACTIVE_TICKS = 20,
       PROTEST_MAX_DISTANCE_FROM_TARGET = 3.5,
       PROTEST_ARRIVAL_DISTANCE = 2.25,
+      HARD_MODE_ATTACK_REISSUE_TICKS = 5 * 60,
+      HARD_MODE_ATTACK_RADIUS = 1.5,
       DESK_SLOT_COMMAND_RADIUS = 0.5,
       DESK_SLOT_ARRIVAL_DISTANCE = 1.0,
       PACIFIED_FRUSTRATION_RATIO = 0.5,
@@ -347,11 +354,13 @@ local function new_test_context(opts)
     get_release_calls = function() return release_calls end,
     get_last_stop_command = function() return last_stop_command end,
     get_last_move_command = function() return last_move_command end,
+    get_last_attack_command = function() return last_attack_command end,
     get_last_route_initial_frustration = function() return last_route_initial_frustration end,
     get_last_released_entity = function() return last_released_entity end,
     get_pacified_render_calls = function() return pacified_render_calls end,
     get_protest_render_calls = function() return protest_render_calls end,
     set_desk_available = function(value) desk_available = value end,
+    set_protest_targets = function(targets) surface.protest_targets = targets end,
     hard_mode_capacity = hard_mode_capacity,
   }
 end
@@ -813,20 +822,33 @@ test("hard mode starts protests at the normal threshold but only 70 percent capa
   assert_eq(ctx.get_release_calls(), 0, "hard mode should not attack at the protest threshold")
 end)
 
-test("hard mode protesting biter escalates into a regular attacker at full capacity", function()
+test("hard mode protesting biter attacks a building while staying in protest mode at full capacity", function()
   local ctx = new_test_context{hard_mode = true}
   local target = {
     valid = true,
     active = false,
     force = {name = "player"},
     unit_number = 91,
-    position = {x = 7, y = 7},
+    position = {x = 20, y = 20},
     surface = ctx.surface,
     bounding_box = {
-      left_top = {x = 6, y = 6},
-      right_bottom = {x = 8, y = 8},
+      left_top = {x = 19, y = 19},
+      right_bottom = {x = 21, y = 21},
     },
   }
+  local nearest_target = {
+    valid = true,
+    active = true,
+    force = {name = "player"},
+    unit_number = 92,
+    position = {x = 8, y = 7},
+    surface = ctx.surface,
+    bounding_box = {
+      left_top = {x = 7, y = 6},
+      right_bottom = {x = 9, y = 8},
+    },
+  }
+  ctx.set_protest_targets({target, nearest_target})
   local entity = ctx.surface.create_entity{
     name = "small-biter",
     position = {x = 7, y = 7},
@@ -850,12 +872,15 @@ test("hard mode protesting biter escalates into a regular attacker at full capac
   game.tick = 5 * 60
   ctx.controller.process_frustration_and_protests(ctx.surface)
 
-  assert_eq(info.state, "attacking", "full hard-mode frustration should release the biter into attack mode")
-  assert_eq(info.frustration, ctx.hard_mode_capacity, "attacking biter should sit at full hard-mode frustration")
-  assert_eq(ctx.get_release_calls(), 1, "hard mode escalation should release the biter as a regular enemy")
-  assert_true(entity.force == game.forces.enemy, "released biter should be on the enemy force")
-  assert_true(entity.destructible == true, "released biter should be destructible like a regular enemy")
+  assert_eq(info.state, "protesting", "full hard-mode frustration should keep the biter in protest mode")
+  assert_true(info.hard_mode_attacking == true, "full hard-mode frustration should mark the protester as attacking")
+  assert_eq(info.frustration, ctx.hard_mode_capacity, "hard-mode attacking protester should sit at full frustration")
+  assert_eq(ctx.get_release_calls(), 0, "hard mode escalation should not hand the biter back to regular enemy AI")
+  assert_true(entity.force == game.forces.enemy, "hard-mode attacking protester should be hostile to player buildings")
+  assert_true(entity.destructible == true, "hard-mode attacking protester should be destructible")
   assert_true(target.active == true, "escalation should release the disabled protest target")
+  assert_true(ctx.get_last_attack_command() ~= nil, "hard-mode attacking protester should receive an explicit attack command")
+  assert_true(ctx.get_last_attack_command().target == nearest_target, "hard-mode attacking protester should attack the nearest building")
 end)
 
 test("hard mode protesting biter with missing frustration tick still rises past 70 percent", function()
@@ -984,12 +1009,14 @@ test("hard mode parked protester escalates during protest pacing", function()
   game.tick = 5 * 60
   ctx.controller.process_protest_pacing(ctx.surface)
 
-  assert_eq(info.state, "attacking", "hard mode parked protester should escalate during pacing")
-  assert_eq(ctx.get_release_calls(), 1, "pacing escalation should release the biter as a regular enemy")
+  assert_eq(info.state, "protesting", "hard mode parked protester should stay in protest mode during escalation")
+  assert_true(info.hard_mode_attacking == true, "hard mode parked protester should escalate during pacing")
+  assert_eq(ctx.get_release_calls(), 0, "pacing escalation should not release the biter to regular enemy AI")
   assert_true(target.active == true, "pacing escalation should release the disabled protest target")
+  assert_true(ctx.get_last_attack_command() ~= nil, "pacing escalation should issue an explicit attack command")
 end)
 
-test("promise sends hard mode attackers back to a desk when capacity exists", function()
+test("promise sends hard mode attacking protesters back to a desk when capacity exists", function()
   local ctx = new_test_context{hard_mode = true}
   storage.admin_desks[ctx.desk.unit_number] = ctx.desk
   ctx.set_desk_available(true)
@@ -1001,15 +1028,16 @@ test("promise sends hard mode attackers back to a desk when capacity exists", fu
   }
   entity.unit_number = 32
   local info = {
-    state = "attacking",
+    state = "protesting",
     entity = entity,
     entity_name = entity.name,
     frustration = ctx.hard_mode_capacity,
+    hard_mode_attacking = true,
     tracked_unit_number = 32,
     complaints = {"ticket-landscape"},
   }
   storage.waiting_biters[32] = info
-  ctx.state_sets.attacking[32] = true
+  ctx.state_sets.protesting[32] = true
 
   game.tick = 120
   ctx.controller.on_script_trigger_effect{
@@ -1020,10 +1048,24 @@ test("promise sends hard mode attackers back to a desk when capacity exists", fu
   assert_eq(ctx.get_route_calls(), 1, "promise should route a hard-mode attacker back to an open desk")
   assert_eq(ctx.get_last_route_initial_frustration(), 300, "promise should return hard-mode attackers at half of the protest threshold")
   assert_eq(info.state, "pathfinding", "promised hard-mode attacker should become desk-bound again")
+  assert_true(info.hard_mode_attacking ~= true, "promise should clear hard-mode attacking status")
 end)
 
-test("promised hard mode attacker escalates again when no desk opens", function()
+test("promised hard mode attacking protester escalates again when no desk opens", function()
   local ctx = new_test_context{hard_mode = true}
+  local target = {
+    valid = true,
+    active = true,
+    force = {name = "player"},
+    unit_number = 97,
+    position = {x = 6, y = 5},
+    surface = ctx.surface,
+    bounding_box = {
+      left_top = {x = 5, y = 4},
+      right_bottom = {x = 7, y = 6},
+    },
+  }
+  ctx.set_protest_targets({target})
   local entity = ctx.surface.create_entity{
     name = "small-biter",
     position = {x = 4, y = 5},
@@ -1031,15 +1073,16 @@ test("promised hard mode attacker escalates again when no desk opens", function(
   }
   entity.unit_number = 34
   local info = {
-    state = "attacking",
+    state = "protesting",
     entity = entity,
     entity_name = entity.name,
     frustration = ctx.hard_mode_capacity,
+    hard_mode_attacking = true,
     tracked_unit_number = 34,
     complaints = {"ticket-landscape"},
   }
   storage.waiting_biters[34] = info
-  ctx.state_sets.attacking[34] = true
+  ctx.state_sets.protesting[34] = true
 
   game.tick = 120
   ctx.controller.on_script_trigger_effect{
@@ -1052,9 +1095,12 @@ test("promised hard mode attacker escalates again when no desk opens", function(
   game.tick = 120 + 60 * 60
   ctx.controller.process_frustration_and_protests(ctx.surface)
 
-  assert_eq(info.state, "attacking", "hard-mode attacker should escalate again when the promise expires without desk capacity")
+  assert_eq(info.state, "protesting", "hard-mode attacker should stay in protest mode when the promise expires without desk capacity")
+  assert_true(info.hard_mode_attacking == true, "hard-mode attacker should escalate again when the promise expires without desk capacity")
   assert_eq(info.frustration, ctx.hard_mode_capacity, "promise expiry in hard mode should restore full capacity frustration")
-  assert_eq(ctx.get_release_calls(), 1, "promise expiry should release the biter back into attack mode")
+  assert_eq(ctx.get_release_calls(), 0, "promise expiry should not release the biter to regular enemy AI")
+  assert_true(ctx.get_last_attack_command() ~= nil, "promise expiry should issue an explicit attack command")
+  assert_true(ctx.get_last_attack_command().target == target, "promise expiry should attack the nearest available building")
 end)
 
 test("protest pacing refreshes protest rendering even before arrival", function()
