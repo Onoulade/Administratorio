@@ -1,4 +1,24 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.5
+Date: 2026-05-30
+  Features:
+    - add hard mode escalation
+    - add debug belt and inserter targets
+  Bugfixes:
+    - lazily create hard mode attack force
+    - use real hard mode attack force
+    - animate hard mode scripted attacks
+    - script hard mode building attacks
+    - keep hard mode attackers protesting
+  Locale:
+    - update Russian localization (#17)
+  Internal:
+    - publish releases directly
+    - remove debug prefix from labels
+  Changes:
+    - trace hard mode attacker despawns
+    - Update Russian localization
+---------------------------------------------------------------------------------------------------
 Version: 0.5.4
 Date: 2026-05-25
   Bugfixes:
