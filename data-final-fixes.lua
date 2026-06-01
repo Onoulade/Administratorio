@@ -247,16 +247,83 @@ end
 -------------------------------------------------------------------------------
 -- 4. MACHINE-FAMILY OPERATING PAPERWORK
 -------------------------------------------------------------------------------
+local function ingredient_name(ingredient)
+  return ingredient and (ingredient.name or ingredient[1])
+end
+
+local function ingredient_type(ingredient)
+  return (ingredient and ingredient.type) or "item"
+end
+
+local function ingredient_amount(ingredient)
+  if not ingredient then return 0 end
+  return ingredient.amount or ingredient[2] or 1
+end
+
+local function set_ingredient_amount(ingredient, amount)
+  if ingredient.name or ingredient.type or ingredient.amount ~= nil then
+    ingredient.amount = amount
+  else
+    ingredient[2] = amount
+  end
+end
+
+local function append_or_merge_ingredient(ingredients, ingredient)
+  local name = ingredient_name(ingredient)
+  if not name then return end
+
+  local ing_type = ingredient_type(ingredient)
+  for _, existing in ipairs(ingredients) do
+    if ingredient_name(existing) == name and ingredient_type(existing) == ing_type then
+      set_ingredient_amount(existing, ingredient_amount(existing) + ingredient_amount(ingredient))
+      return
+    end
+  end
+
+  ingredients[#ingredients + 1] = ingredient
+end
+
+local function normalized_ingredient_list(ingredients)
+  local normalized = {}
+  for _, ingredient in ipairs(ingredients or {}) do
+    append_or_merge_ingredient(normalized, util.table.deepcopy(ingredient))
+  end
+  return normalized
+end
+
+local function add_ingredient_to_target(target, item_name, count)
+  if not target or not target.ingredients then return end
+
+  local ingredients = normalized_ingredient_list(target.ingredients)
+  append_or_merge_ingredient(ingredients, {type = "item", name = item_name, amount = count})
+  target.ingredients = ingredients
+end
+
+local function ensure_ingredient_in_target(target, item_name, count)
+  if not target or not target.ingredients then return end
+
+  local ingredients = normalized_ingredient_list(target.ingredients)
+  for _, ingredient in ipairs(ingredients) do
+    if ingredient_name(ingredient) == item_name and ingredient_type(ingredient) == "item" then
+      target.ingredients = ingredients
+      return
+    end
+  end
+
+  append_or_merge_ingredient(ingredients, {type = "item", name = item_name, amount = count})
+  target.ingredients = ingredients
+end
+
 local function add_ingredient_to_recipe(recipe_name, item_name, count)
   local recipe = data.raw["recipe"][recipe_name]
   if not recipe then return end
 
   if recipe.ingredients then
-    table.insert(recipe.ingredients, {type = "item", name = item_name, amount = count})
+    add_ingredient_to_target(recipe, item_name, count)
   elseif recipe.normal and recipe.normal.ingredients then
-    table.insert(recipe.normal.ingredients, {type = "item", name = item_name, amount = count})
+    add_ingredient_to_target(recipe.normal, item_name, count)
     if recipe.expensive and recipe.expensive.ingredients then
-      table.insert(recipe.expensive.ingredients, {type = "item", name = item_name, amount = count})
+      add_ingredient_to_target(recipe.expensive, item_name, count)
     end
   end
 end
@@ -265,19 +332,13 @@ local function add_special_paperwork(recipe_name, item_name, count)
   local recipe = data.raw["recipe"][recipe_name]
   if not recipe then return end
 
-  local function has_ingredient(target)
-    if not target or not target.ingredients then return false end
-    for _, ingredient in ipairs(target.ingredients) do
-      if (ingredient.name or ingredient[1]) == item_name then
-        return true
-      end
+  if recipe.ingredients then
+    ensure_ingredient_in_target(recipe, item_name, count)
+  elseif recipe.normal and recipe.normal.ingredients then
+    ensure_ingredient_in_target(recipe.normal, item_name, count)
+    if recipe.expensive and recipe.expensive.ingredients then
+      ensure_ingredient_in_target(recipe.expensive, item_name, count)
     end
-    return false
-  end
-
-  local target = recipe.normal or recipe
-  if not has_ingredient(target) then
-    add_ingredient_to_recipe(recipe_name, item_name, count)
   end
 end
 
@@ -290,8 +351,8 @@ local function remove_ingredient_from_recipe(recipe_name, item_name)
 
     local filtered = {}
     for _, ingredient in ipairs(target.ingredients) do
-      if (ingredient.name or ingredient[1]) ~= item_name then
-        filtered[#filtered + 1] = ingredient
+      if ingredient_name(ingredient) ~= item_name then
+        append_or_merge_ingredient(filtered, util.table.deepcopy(ingredient))
       end
     end
     target.ingredients = filtered
@@ -739,28 +800,24 @@ local function regulate_recipe(recipe, paperwork_requirements, multiplier)
       target.energy_required = 0.5 * multiplier
     end
 
-    -- Process ingredients: strip old paperwork, multiply base, add paperwork
+    -- Process ingredients: strip old paperwork, multiply base, add paperwork.
+    -- Build a fresh ingredient list so compatibility recipes that alias vanilla
+    -- ingredient tables do not mutate each other.
     if target.ingredients then
       local clean_ingredients = {}
       for _, ing in ipairs(target.ingredients) do
-        local name = ing.name or ing[1]
+        local name = ingredient_name(ing)
         if not shared.PAPERWORK_ITEMS[name] then
-          table.insert(clean_ingredients, ing)
+          local new_ing = util.table.deepcopy(ing)
+          set_ingredient_amount(new_ing, ingredient_amount(new_ing) * multiplier)
+          append_or_merge_ingredient(clean_ingredients, new_ing)
         end
       end
       target.ingredients = clean_ingredients
 
-      for _, ing in ipairs(target.ingredients) do
-        if ing.amount then
-          ing.amount = ing.amount * multiplier
-        else
-          ing[2] = ing[2] * multiplier
-        end
-      end
-
       -- Paperwork per batch is fixed and never multiplied.
       for _, paperwork in ipairs(paperwork_requirements) do
-        table.insert(target.ingredients, {type = "item", name = paperwork.name, amount = paperwork.amount})
+        append_or_merge_ingredient(target.ingredients, {type = "item", name = paperwork.name, amount = paperwork.amount})
       end
     end
 
@@ -808,30 +865,41 @@ local function batch_original_with_form(recipe, paperwork_requirements, multipli
       target.energy_required = 0.5 * multiplier
     end
 
-    -- Multiply ingredients, add paperwork
+    -- Multiply ingredients, strip any pre-existing paperwork, then add the
+    -- controlled paperwork cost. Some compatibility mods reuse vanilla
+    -- ingredient tables by reference, so assign a fresh list instead of
+    -- editing the shared table in place.
     if target.ingredients then
+      local clean_ingredients = {}
       for _, ing in ipairs(target.ingredients) do
-        if ing.amount then
-          ing.amount = ing.amount * multiplier
-        else
-          ing[2] = ing[2] * multiplier
+        local name = ingredient_name(ing)
+        if not shared.PAPERWORK_ITEMS[name] then
+          local new_ing = util.table.deepcopy(ing)
+          set_ingredient_amount(new_ing, ingredient_amount(new_ing) * multiplier)
+          append_or_merge_ingredient(clean_ingredients, new_ing)
         end
       end
+      target.ingredients = clean_ingredients
+
       for _, paperwork in ipairs(paperwork_requirements) do
-        table.insert(target.ingredients, {type = "item", name = paperwork.name, amount = paperwork.amount})
+        append_or_merge_ingredient(target.ingredients, {type = "item", name = paperwork.name, amount = paperwork.amount})
       end
     end
 
     -- Multiply results
     if target.results then
+      local results = {}
       for _, res in ipairs(target.results) do
-        if res.amount then
-          res.amount = res.amount * multiplier
-        elseif res.amount_min and res.amount_max then
-          res.amount_min = res.amount_min * multiplier
-          res.amount_max = res.amount_max * multiplier
+        local new_res = util.table.deepcopy(res)
+        if new_res.amount then
+          new_res.amount = new_res.amount * multiplier
+        elseif new_res.amount_min and new_res.amount_max then
+          new_res.amount_min = new_res.amount_min * multiplier
+          new_res.amount_max = new_res.amount_max * multiplier
         end
+        table.insert(results, new_res)
       end
+      target.results = results
     elseif target.result then
       local count = (target.result_count or 1) * multiplier
       target.results = {{type = "item", name = target.result, amount = count}}
@@ -937,11 +1005,9 @@ for name, recipe in pairs(data.raw["recipe"]) do
     local money_cost = shared.TAXPAYER_MONEY_COSTS[name]
     if money_cost then
       local target = recipe.normal or recipe
-      if target.ingredients then
-        table.insert(target.ingredients, {type = "item", name = "taxpayer-money", amount = money_cost})
-      end
+      add_ingredient_to_target(target, "taxpayer-money", money_cost)
       if recipe.normal and recipe.expensive and recipe.expensive.ingredients then
-        table.insert(recipe.expensive.ingredients, {type = "item", name = "taxpayer-money", amount = money_cost})
+        add_ingredient_to_target(recipe.expensive, "taxpayer-money", money_cost)
       end
     end
 
@@ -966,11 +1032,9 @@ for name, recipe in pairs(data.raw["recipe"]) do
     local money_cost = shared.TAXPAYER_MONEY_COSTS[name]
     if money_cost then
       local target = regulated.normal or regulated
-      if target.ingredients then
-        table.insert(target.ingredients, {type = "item", name = "taxpayer-money", amount = money_cost})
-      end
+      add_ingredient_to_target(target, "taxpayer-money", money_cost)
       if regulated.normal and regulated.expensive and regulated.expensive.ingredients then
-        table.insert(regulated.expensive.ingredients, {type = "item", name = "taxpayer-money", amount = money_cost})
+        add_ingredient_to_target(regulated.expensive, "taxpayer-money", money_cost)
       end
     end
 
@@ -1062,7 +1126,7 @@ local function regulate_admin_building(recipe, multiplier, recipe_name)
           elseif new_ing[2] then
             new_ing[2] = new_ing[2] * multiplier
           end
-          table.insert(new_ingredients, new_ing)
+          append_or_merge_ingredient(new_ingredients, new_ing)
         end
       end
 
@@ -1078,7 +1142,7 @@ local function regulate_admin_building(recipe, multiplier, recipe_name)
       end
 
       for pw_name, pw_amount in pairs(paperwork_accum) do
-        table.insert(new_ingredients, {type = "item", name = pw_name, amount = pw_amount})
+        append_or_merge_ingredient(new_ingredients, {type = "item", name = pw_name, amount = pw_amount})
       end
       target.ingredients = new_ingredients
     end
@@ -1259,15 +1323,7 @@ end
 -- regulated versions.
 -------------------------------------------------------------------------------
 local function inject_carbon_cert_to_boiler(recipe_name)
-  local recipe = data.raw["recipe"][recipe_name]
-  if not recipe then return end
-  local target = recipe.normal or recipe
-  if target.ingredients then
-    table.insert(target.ingredients, {type = "item", name = "carbon-offset-certificate-basic", amount = 1})
-  end
-  if recipe.normal and recipe.expensive and recipe.expensive.ingredients then
-    table.insert(recipe.expensive.ingredients, {type = "item", name = "carbon-offset-certificate-basic", amount = 1})
-  end
+  add_special_paperwork(recipe_name, "carbon-offset-certificate-basic", 1)
 end
 
 inject_carbon_cert_to_boiler("boiler")
