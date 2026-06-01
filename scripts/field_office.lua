@@ -566,6 +566,14 @@ local function clear_office_status(state, office)
   state.status_label = nil
 end
 
+local function is_working_or_power_limited_status(status)
+  local entity_status = defines.entity_status or {}
+  if status == entity_status.working or status == entity_status.normal then
+    return true
+  end
+  return entity_status.low_power ~= nil and status == entity_status.low_power
+end
+
 --- Check if the office's fluidbox has at least `amount` of `fluid_name`.
 local function fluidbox_has(office, fluid_name, amount)
   local fluidbox = office.fluidbox
@@ -876,7 +884,7 @@ function M.update(tick, runtime_profile)
       -- Release if the machine has nothing left to do (office is already active, check status directly)
       local status = office.status
       if not office.get_recipe()
-         or (status ~= defines.entity_status.working and status ~= defines.entity_status.normal) then
+         or not is_working_or_power_limited_status(status) then
         release_biter(state, tick)
         state.phase = "idle"
         office.active = false

@@ -42,7 +42,7 @@ storage = {}
 defines = {
   direction = {north = 0, east = 2, south = 4, west = 6},
   entity_status_diode = {red = 1, yellow = 2, green = 3},
-  entity_status = {working = 1, normal = 2},
+  entity_status = {working = 1, normal = 2, low_power = 3},
   behavior_result = {success = 1, fail = 2},
   command = {go_to_location = 1, stop = 2},
   distraction = {none = 0, by_enemy = 1},
@@ -371,6 +371,29 @@ test("released field office worker is not destroyed before reaching its spawner"
   field_office.update(60 + C.FIELD_OFFICE_BITER_DESPAWN_TICKS + 5)
   assert_true(not biter.valid, "script-created worker without an enemy AI owner should be destroyed after returning")
   assert_true(storage.field_office_releasing[biter.unit_number] == nil, "arrived worker should leave the releasing tracker")
+end)
+
+test("field office worker stays on site during low power", function()
+  reset()
+  local spawner = {valid = true, position = {x = 40, y = 50}}
+  local surface = new_surface({spawner})
+  local office = new_office(surface, 6, 100)
+  field_office.track_entity(office)
+
+  field_office.update(0)
+  local biter = surface.created_entities[1]
+  assert_true(biter ~= nil, "ready office should summon a worker")
+
+  biter.position = {x = office.position.x, y = office.position.y}
+  field_office.update(30)
+  assert_eq(storage.field_office_state[office.unit_number].phase, "working", "arrived worker should start working")
+
+  office.status = defines.entity_status.low_power
+  field_office.update(60)
+
+  assert_eq(storage.field_office_state[office.unit_number].phase, "working", "low power should not dismiss the worker")
+  assert_true(storage.field_office_releasing[biter.unit_number] == nil, "low power should not send the worker home")
+  assert_eq(office.active, true, "field office should remain active so it can keep progressing under brownout")
 end)
 
 test("field office reports unreachable workers when caller gets stuck", function()
