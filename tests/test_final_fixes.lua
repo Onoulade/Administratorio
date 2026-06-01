@@ -152,6 +152,13 @@ data.raw.item["splitter"] = {
   icon = "__base__/graphics/icons/splitter.png",
   icon_size = 64,
 }
+data.raw.item["lane-splitter"] = {
+  type = "item",
+  name = "lane-splitter",
+  stack_size = 50,
+  icon = "__lane-splitters__/graphics/icons/lane-splitter.png",
+  icon_size = 64,
+}
 data.raw.item["boiler"] = {
   type = "item",
   name = "boiler",
@@ -369,6 +376,17 @@ recipes["splitter"] = {
   },
   results = {
     { type = "item", name = "splitter", amount = 1 },
+  },
+}
+
+recipes["lane-splitter"] = {
+  type = "recipe",
+  name = "lane-splitter",
+  enabled = false,
+  energy_required = 1,
+  ingredients = recipes["splitter"].ingredients,
+  results = {
+    { type = "item", name = "lane-splitter", amount = 1 },
   },
 }
 
@@ -806,6 +824,7 @@ technologies["logistics"] = {
   name = "logistics",
   effects = {
     { type = "unlock-recipe", recipe = "splitter" },
+    { type = "unlock-recipe", recipe = "lane-splitter" },
   },
   unit = {
     count = 1,
@@ -904,6 +923,17 @@ local function get_ingredient_amount(recipe, item_name)
     end
   end
   return nil
+end
+
+local function count_ingredient(recipe, item_name)
+  if not recipe or not recipe.ingredients then return 0 end
+  local count = 0
+  for _, ing in ipairs(recipe.ingredients) do
+    if (ing.name or ing[1]) == item_name then
+      count = count + 1
+    end
+  end
+  return count
 end
 
 local function get_result_amount(recipe, item_name)
@@ -1100,6 +1130,25 @@ test("splitter uses safety waiver by hand and safety work order in regulated 5x 
   assert_eq(get_result_amount(regulated, "splitter"), 5, "splitter-regulated should produce 5 splitters")
 end)
 
+test("lane-splitters shared ingredient tables do not duplicate splitter paperwork", function()
+  local splitter = get_recipe("splitter")
+  local lane_splitter = get_recipe("lane-splitter")
+  local lane_splitter_regulated = get_recipe("lane-splitter-regulated")
+
+  assert_true(splitter ~= nil, "splitter missing")
+  assert_true(lane_splitter ~= nil, "lane-splitter missing")
+  assert_true(lane_splitter_regulated ~= nil, "lane-splitter-regulated missing")
+
+  assert_true(splitter.ingredients ~= lane_splitter.ingredients,
+    "splitter and lane-splitter should not keep sharing ingredient tables after regulation")
+  assert_eq(count_ingredient(splitter, "safety-waiver"), 1, "splitter should have one safety-waiver")
+  assert_eq(count_ingredient(lane_splitter, "safety-waiver"), 1, "lane-splitter should have one safety-waiver")
+  assert_eq(get_ingredient_amount(splitter, "electronic-circuit"), 5, "splitter should only be batched once")
+  assert_eq(get_ingredient_amount(lane_splitter, "electronic-circuit"), 5, "lane-splitter should only be batched once")
+  assert_true(has_ingredient(lane_splitter_regulated, "safety-work-order"),
+    "lane-splitter-regulated should require safety-work-order")
+end)
+
 test("boiler and steam-engine use safety paperwork in 2x batches", function()
   local boiler = get_recipe("boiler")
   local boiler_regulated = get_recipe("boiler-regulated")
@@ -1226,6 +1275,26 @@ test("admin building recipes redirect Factoriopedia to regulated copies", functi
   assert_eq(original.factoriopedia_alternative, "printer-t1-regulated", "printer-t1 should redirect Factoriopedia to the regulated recipe")
   assert_eq(original.hidden_in_factoriopedia, true, "printer-t1 should be hidden in Factoriopedia")
   assert_true(not regulated.hidden_in_factoriopedia, "printer-t1-regulated should remain visible in Factoriopedia")
+end)
+
+test("all recipe ingredient lists are duplicate-free", function()
+  local function assert_unique(target, label)
+    if not target or not target.ingredients then return end
+
+    local seen = {}
+    for _, ing in ipairs(target.ingredients) do
+      local name = ing.name or ing[1]
+      local key = (ing.type or "item") .. ":" .. tostring(name)
+      assert_true(not seen[key], label .. " has duplicate ingredient " .. key)
+      seen[key] = true
+    end
+  end
+
+  for name, recipe in pairs(recipes) do
+    assert_unique(recipe, name)
+    assert_unique(recipe.normal, name .. ".normal")
+    assert_unique(recipe.expensive, name .. ".expensive")
+  end
 end)
 
 -------------------------------------------------------------------------------
