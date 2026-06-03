@@ -318,6 +318,148 @@ test("managed building is claimed by the nearest station in overlapping coverage
   assert_eq(storage.managed_building_run[building.unit_number].claimed_by, active.biter_unit_number, "building should be claimed by the closest station worker")
 end)
 
+test("biter station stays minable while workers are active", function()
+  storage = {}
+  package.loaded["scripts.biter_station"] = nil
+  local surface = new_surface()
+  local force = {name = "player", valid = true, set_cease_fire = function() end, technologies = {}}
+  game = {
+    tick = 0,
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", valid = true, set_cease_fire = function() end},
+      neutral = {name = "neutral", valid = true, set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, valid = true, set_cease_fire = function() end, technologies = {}}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biter_station = require("scripts.biter_station")
+  local station = new_station(surface, force)
+  local building = new_managed_building(surface, force)
+  biter_station.track_station(station)
+  biter_station.track_managed_building(building)
+
+  biter_station.update(10)
+
+  assert_true(active_worker() ~= nil, "managed building should dispatch a station worker")
+  assert_eq(station.minable, true, "biter station should remain minable while a worker is out")
+end)
+
+test("almost-returned station worker protests instead of despawning after host removal", function()
+  storage = {}
+  package.loaded["scripts.biter_station"] = nil
+  package.loaded["scripts.biters"] = nil
+
+  local protested_entity = nil
+  local biters_stub = {
+    trigger_immediate_protest = function(entity, _, _, opts)
+      protested_entity = entity
+      assert_true(opts and opts.preserve_entity == true, "worker protest conversion should preserve the existing entity")
+      return true
+    end,
+  }
+
+  local surface = new_surface()
+  local force = {name = "player", valid = true, set_cease_fire = function() end, technologies = {}}
+  game = {
+    tick = 0,
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", valid = true, set_cease_fire = function() end},
+      neutral = {name = "neutral", valid = true, set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, valid = true, set_cease_fire = function() end, technologies = {}}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biter_station = require("scripts.biter_station")
+  biter_station.set_biters_module(biters_stub)
+  local station = new_station(surface, force)
+  local building = new_managed_building(surface, force)
+  biter_station.track_station(station)
+  biter_station.track_managed_building(building)
+
+  biter_station.update(10)
+
+  local active = active_worker()
+  assert_true(active ~= nil, "managed building should dispatch a station worker")
+  local worker_entity = active.biter
+  active.phase = "to_station"
+  active.phase_destination = {x = station.position.x, y = station.position.y}
+  active.phase_departed = true
+
+  biter_station.untrack_station(station, 10)
+  assert_eq(active.phase, "orphaned_returning", "returning worker should lose the removed-station return route")
+
+  worker_entity.position = {x = station.position.x, y = station.position.y}
+  biter_station.on_ai_command_completed{unit_number = active.biter_unit_number, tick = 20}
+  biter_station.update(30)
+
+  assert_true(protested_entity == worker_entity, "orphaned worker should protest immediately when no host has space")
+  assert_true(worker_entity.valid, "orphaned worker should not despawn at the removed station position")
+  assert_true(active_worker() == nil, "converted protester should leave station active worker tracking")
+end)
+
+test("non-returning orphaned station worker protests immediately without a host", function()
+  storage = {}
+  package.loaded["scripts.biter_station"] = nil
+  package.loaded["scripts.biters"] = nil
+
+  local protested_entity = nil
+  local biters_stub = {
+    trigger_immediate_protest = function(entity, _, _, opts)
+      protested_entity = entity
+      assert_true(opts and opts.preserve_entity == true, "worker protest conversion should preserve the existing entity")
+      return true
+    end,
+  }
+
+  local surface = new_surface()
+  local force = {name = "player", valid = true, set_cease_fire = function() end, technologies = {}}
+  game = {
+    tick = 0,
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", valid = true, set_cease_fire = function() end},
+      neutral = {name = "neutral", valid = true, set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, valid = true, set_cease_fire = function() end, technologies = {}}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biter_station = require("scripts.biter_station")
+  biter_station.set_biters_module(biters_stub)
+  local station = new_station(surface, force)
+  local building = new_managed_building(surface, force)
+  biter_station.track_station(station)
+  biter_station.track_managed_building(building)
+
+  biter_station.update(10)
+
+  local active = active_worker()
+  assert_true(active ~= nil, "managed building should dispatch a station worker")
+  local worker_entity = active.biter
+  active.current_idx = #(active.building_queue or {}) + 1
+
+  biter_station.untrack_station(station, 10)
+  assert_eq(active.phase, "orphaned_returning", "finished non-returning worker should become orphaned")
+  assert_true(protested_entity == worker_entity, "orphaned worker should become a protester immediately")
+  assert_true(active_worker() == nil, "converted protester should leave station active worker tracking")
+end)
+
 print(("Biter station runtime tests: %d passed, %d failed"):format(passed, failed))
 if failed > 0 then
   for _, err in ipairs(errors) do
