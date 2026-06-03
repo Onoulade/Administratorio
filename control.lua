@@ -21,6 +21,9 @@ local feature_flags = require("feature_flags")
 local hired_biter = require("scripts.hired_biter")
 local rideable_biter = require("scripts.rideable_biter")
 
+biter_station.set_biters_module(biters)
+biterport.set_biters_module(biters)
+
 local ADMIN_STATION_NAMES = "admin-station"
 
 local UNIT_GROUP_DEBUG_SCAN_INTERVAL = 180

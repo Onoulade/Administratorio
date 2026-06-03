@@ -13,6 +13,7 @@ function M.new(deps)
   local protest_target_cache = nil  -- {tick=, surface_index=, targets={}}
   local HARD_MODE_LOG_PREFIX = "[administratorio-hard-mode]"
   local HARD_MODE_LOG_TICKS = deps.hard_mode_debug_log_ticks or deps.protest_debug_status_ticks or (10 * 60)
+  local WORKER_PROTEST_LOG_PREFIX = "[administratorio-worker-protest]"
 
   local function hard_mode_enabled()
     if C.hard_mode_enabled then return C.hard_mode_enabled() end
@@ -156,6 +157,92 @@ function M.new(deps)
       "force=" .. hard_mode_force_name(entity and entity.valid and entity.force or nil),
       "target_info=" .. hard_mode_target_summary(target),
       "entity_info=" .. hard_mode_entity_summary(entity),
+    }
+    if extra then parts[#parts + 1] = tostring(extra) end
+    log(table.concat(parts, " "))
+  end
+
+  local function debug_pos(pos)
+    if not pos then return "[nil]" end
+    if deps.format_position then return deps.format_position(pos) end
+    return "[" .. tostring(pos.x) .. "," .. tostring(pos.y) .. "]"
+  end
+
+  local function debug_force_name(force)
+    if not force then return "nil" end
+    return force.name or tostring(force)
+  end
+
+  local function debug_bool(value)
+    return value and "true" or "false"
+  end
+
+  local function debug_entity_summary(entity)
+    if not entity then return "entity=nil" end
+    local ok_valid, valid = pcall(function() return entity.valid end)
+    if not ok_valid or not valid then return "entity=invalid" end
+    local ok_name, name = pcall(function() return entity.name end)
+    local ok_unit, unit_number = pcall(function() return entity.unit_number end)
+    local ok_force, force = pcall(function() return entity.force end)
+    local ok_active, active = pcall(function() return entity.active end)
+    local ok_destructible, destructible = pcall(function() return entity.destructible end)
+    local ok_position, position = pcall(function() return entity.position end)
+    local ok_has_command, has_command = pcall(function()
+      return entity.commandable and entity.commandable.has_command or false
+    end)
+    local ok_command, command = pcall(function()
+      return entity.commandable and entity.commandable.command or nil
+    end)
+    local ok_group, group = pcall(function()
+      return entity.commandable and entity.commandable.parent_group or nil
+    end)
+    local ok_spawner, spawner = pcall(function()
+      return entity.commandable and entity.commandable.spawner or nil
+    end)
+    return "entity_unit=" .. tostring(ok_unit and unit_number or "nil")
+      .. " entity_name=" .. tostring(ok_name and name or "nil")
+      .. " entity_force=" .. debug_force_name(ok_force and force or nil)
+      .. " entity_active=" .. tostring(ok_active and debug_bool(active) or "n/a")
+      .. " entity_destructible=" .. tostring(ok_destructible and debug_bool(destructible) or "n/a")
+      .. " entity_pos=" .. tostring(ok_position and debug_pos(position) or "[nil]")
+      .. " entity_has_command=" .. tostring(ok_has_command and debug_bool(has_command) or "n/a")
+      .. " entity_command=" .. tostring(ok_command and command and command.type or "nil")
+      .. " entity_group=" .. tostring(ok_group and group and group.valid and (group.unique_id or "valid") or "nil")
+      .. " entity_spawner=" .. tostring(ok_spawner and spawner and spawner.valid and (spawner.unit_number or spawner.name) or "nil")
+  end
+
+  local function debug_target_summary(target)
+    if not target then return "target=nil" end
+    local ok_valid, valid = pcall(function() return target.valid end)
+    if not ok_valid or not valid then return "target=invalid" end
+    local ok_name, name = pcall(function() return target.name end)
+    local ok_unit, unit_number = pcall(function() return target.unit_number end)
+    local ok_force, force = pcall(function() return target.force end)
+    local ok_active, active = pcall(function() return target.active end)
+    local ok_position, position = pcall(function() return target.position end)
+    return "target_unit=" .. tostring(ok_unit and unit_number or "nil")
+      .. " target_name=" .. tostring(ok_name and name or "nil")
+      .. " target_force=" .. debug_force_name(ok_force and force or nil)
+      .. " target_active=" .. tostring(ok_active and debug_bool(active) or "n/a")
+      .. " target_pos=" .. tostring(ok_position and debug_pos(position) or "[nil]")
+  end
+
+  local function protest_debug_log(label, info, entity, extra)
+    if not log then return end
+    local parts = {
+      WORKER_PROTEST_LOG_PREFIX,
+      "tick=" .. tostring(game and game.tick or "nil"),
+      "label=" .. tostring(label),
+      "state=" .. tostring(info and info.state or "nil"),
+      "tracked=" .. tostring(info and info.tracked_unit_number or "nil"),
+      "pending_path=" .. tostring(info and info.pending_path_request_id or "nil"),
+      "pending_candidates=" .. tostring(info and info.pending_protest_candidates and #info.pending_protest_candidates or 0),
+      "retry_tick=" .. tostring(info and info.next_protest_target_retry_tick or "nil"),
+      "wander_tick=" .. tostring(info and info.next_protest_wander_tick or "nil"),
+      "arrived=" .. tostring(info and debug_bool(info.arrived_at_building) or "nil"),
+      "anchor=" .. tostring(info and debug_pos(info.protest_anchor_position) or "[nil]"),
+      debug_entity_summary(entity),
+      debug_target_summary(info and info.target_building or nil),
     }
     if extra then parts[#parts + 1] = tostring(extra) end
     log(table.concat(parts, " "))
@@ -1015,14 +1102,23 @@ function M.new(deps)
   end
 
   local function issue_protest_wander_command(info, entity, opts)
-    if not info or not entity or not entity.valid then return false end
+    if not info or not entity or not entity.valid then
+      protest_debug_log("wander-command-skip-invalid-entity", info, entity)
+      return false
+    end
     local target = info.target_building
-    if not target or not target.valid then return false end
+    if not target or not target.valid then
+      protest_debug_log("wander-command-skip-invalid-target", info, entity)
+      return false
+    end
 
     opts = opts or {}
     local snapshot = get_protester_snapshot()
     local pos = opts.destination or pick_protest_wander_position(entity.surface, entity, target, opts.origin or entity.position, snapshot)
-    if not pos then return false end
+    if not pos then
+      protest_debug_log("wander-command-skip-no-position", info, entity)
+      return false
+    end
 
     schedule_next_protest_step(info)
     info.protest_anchor_position = {x = pos.x, y = pos.y}
@@ -1037,6 +1133,58 @@ function M.new(deps)
       radius = opts.radius or 0.5,
       distraction = defines.distraction.none,
     })
+    protest_debug_log("wander-command-issued", info, entity, "dest=" .. debug_pos(pos) .. " radius=" .. tostring(opts.radius or 0.5))
+    return true
+  end
+
+  local function issue_targetless_protest_wander_command(info, entity, surface)
+    if not info or not entity or not entity.valid then
+      protest_debug_log("targetless-wander-skip-invalid-entity", info, entity)
+      return false
+    end
+    surface = surface or entity.surface
+    if not surface then
+      protest_debug_log("targetless-wander-skip-no-surface", info, entity)
+      return false
+    end
+
+    local origin = info.protest_anchor_position or entity.position
+    local pos = nil
+    local min_radius = 3
+    local max_radius = 8
+
+    for _ = 1, C.PROTEST_WANDER_ATTEMPTS do
+      local angle = math.random() * (math.pi * 2)
+      local radius = min_radius + math.random() * (max_radius - min_radius)
+      local probe = {
+        x = origin.x + math.cos(angle) * radius,
+        y = origin.y + math.sin(angle) * radius,
+      }
+      pos = surface.find_non_colliding_position(entity.name, probe, 2, 0.5)
+      if pos and distance_sq(pos, entity.position) > 1 then break end
+      pos = nil
+    end
+
+    pos = pos or surface.find_non_colliding_position(entity.name, origin, 6, 0.5)
+    if not pos then
+      protest_debug_log("targetless-wander-skip-no-position", info, entity, "origin=" .. debug_pos(origin))
+      return false
+    end
+
+    schedule_next_protest_step(info)
+    info.protest_anchor_position = {x = pos.x, y = pos.y}
+    info.protest_last_command_tick = game.tick
+    info.protest_step_deadline_tick = game.tick + C.PROTEST_STEP_ACTIVE_TICKS
+    info.protest_parked = nil
+    protect_protesting_biter(info, entity, "wander-targetless")
+
+    entity.commandable.set_command({
+      type = defines.command.go_to_location,
+      destination = pos,
+      radius = 0.5,
+      distraction = defines.distraction.none,
+    })
+    protest_debug_log("targetless-wander-command-issued", info, entity, "origin=" .. debug_pos(origin) .. " dest=" .. debug_pos(pos))
     return true
   end
 
@@ -1103,6 +1251,65 @@ function M.new(deps)
       origin = entity.position,
       radius = 0.5,
     })
+  end
+
+  local function begin_protest_approach(info, entity, target, destination, radius)
+    if not info or not entity or not entity.valid then
+      protest_debug_log("begin-approach-skip-invalid-entity", info, entity, "dest=" .. debug_pos(destination))
+      return false
+    end
+    if not target or not target.valid or not destination then
+      protest_debug_log("begin-approach-skip-invalid-target-or-dest", info, entity, debug_target_summary(target) .. " dest=" .. debug_pos(destination))
+      return false
+    end
+
+    local previous_target = info.target_building
+    local previous_arrived = info.arrived_at_building
+    local previous_retry_tick = info.next_protest_target_retry_tick
+
+    info.target_building = target
+    info.arrived_at_building = nil
+    info.next_protest_target_retry_tick = nil
+
+    if issue_protest_wander_command(info, entity, {
+      destination = destination,
+      origin = entity.position,
+      radius = radius or 2,
+    }) then
+      protest_debug_log("begin-approach-command-ok", info, entity, debug_target_summary(target) .. " dest=" .. debug_pos(destination))
+      return true
+    end
+
+    info.target_building = previous_target
+    info.arrived_at_building = previous_arrived
+    info.next_protest_target_retry_tick = previous_retry_tick
+    protest_debug_log("begin-approach-command-failed-restored", info, entity, debug_target_summary(target) .. " dest=" .. debug_pos(destination))
+    return false
+  end
+
+  local function begin_pending_protest_approach(info, entity)
+    return begin_protest_approach(
+      info,
+      entity,
+      info and info.pending_protest_reserved_target,
+      info and info.pending_protest_reserved_position,
+      2
+    )
+  end
+
+  local function clear_protest_approach(info, target)
+    if not info then return end
+    if target and info.target_building and not same_protest_target(info.target_building, target) then return end
+
+    protest_debug_log("clear-approach", info, info.entity, debug_target_summary(target))
+    info.target_building = nil
+    info.arrived_at_building = nil
+    info.next_protest_wander_tick = nil
+    info.protest_anchor_position = nil
+    info.protest_last_command_tick = nil
+    info.protest_arrival_tick = nil
+    info.protest_step_deadline_tick = nil
+    info.protest_parked = nil
   end
 
   local function collect_protest_target_candidates(surface, info, entity, avoid_target, avoid_target_snapshot)
@@ -1182,9 +1389,15 @@ function M.new(deps)
   end
 
   local function request_next_protest_target_path(info, entity, start_index)
-    if not info or not entity or not entity.valid then return false end
+    if not info or not entity or not entity.valid then
+      protest_debug_log("request-path-skip-invalid-entity", info, entity, "start_index=" .. tostring(start_index))
+      return false
+    end
     local candidates = info.pending_protest_candidates
-    if not candidates then return false end
+    if not candidates then
+      protest_debug_log("request-path-skip-no-candidates", info, entity, "start_index=" .. tostring(start_index))
+      return false
+    end
 
     clear_pending_path_request(info)
     local snapshot = get_protester_snapshot()
@@ -1223,6 +1436,18 @@ function M.new(deps)
         info.pending_path_request_id = request_id
         info.pending_protest_reserved_target = candidate.target
         info.pending_protest_reserved_position = {x = candidate.pos.x, y = candidate.pos.y}
+        protest_debug_log(
+          "request-path",
+          info,
+          entity,
+          "request_id=" .. tostring(request_id)
+            .. " candidate_index=" .. tostring(index)
+            .. " candidate_count=" .. tostring(#candidates)
+            .. " claimed=" .. tostring(claimed)
+            .. " dest=" .. debug_pos(candidate.pos)
+            .. " "
+            .. debug_target_summary(candidate.target)
+        )
         return true
       end
       ::continue_candidate::
@@ -1230,11 +1455,15 @@ function M.new(deps)
 
     info.pending_protest_candidates = nil
     info.next_protest_target_retry_tick = game.tick + C.PROTEST_TARGET_RETRY_TICKS
+    protest_debug_log("request-path-no-candidates-left", info, entity, "start_index=" .. tostring(start_index))
     return false
   end
 
   local function assign_protest_target(surface, info, entity)
-    if not surface or not info or not entity or not entity.valid then return false end
+    if not surface or not info or not entity or not entity.valid then
+      protest_debug_log("assign-target-skip-invalid-input", info, entity, "surface=" .. tostring(surface and surface.index or nil))
+      return false
+    end
     local previous_target = info.target_building
     local avoided_target_snapshot = info.retarget_avoid_target_snapshot
     if not avoided_target_snapshot and previous_target and previous_target.valid then
@@ -1248,10 +1477,12 @@ function M.new(deps)
     local candidates = collect_protest_target_candidates(surface, info, entity, previous_target, avoided_target_snapshot)
     if #candidates == 0 then
       info.next_protest_target_retry_tick = game.tick + C.PROTEST_TARGET_RETRY_TICKS
+      protest_debug_log("assign-target-no-candidates", info, entity, "surface=" .. tostring(surface.index))
       return false
     end
 
     info.pending_protest_candidates = candidates
+    protest_debug_log("assign-target-candidates", info, entity, "count=" .. tostring(#candidates) .. " surface=" .. tostring(surface.index))
     return request_next_protest_target_path(info, entity, 1)
   end
 
@@ -1595,7 +1826,15 @@ function M.new(deps)
     storage.desk_biters[desk_id] = nil
   end
 
-  function controller.trigger_immediate_protest(entity, surface, previous_info)
+  function controller.trigger_immediate_protest(entity, surface, previous_info, opts)
+    opts = opts or {}
+    protest_debug_log(
+      "trigger-immediate-start",
+      previous_info,
+      entity,
+      "preserve=" .. tostring(opts.preserve_entity == true)
+        .. " surface=" .. tostring(surface and surface.index or nil)
+    )
     deps.normalize_case_progress(previous_info)
     local complaints = C.generate_complaints(entity.name)
     if previous_info and (previous_info.complaints_filed or (previous_info.complaints and #previous_info.complaints > 0)) then
@@ -1615,14 +1854,34 @@ function M.new(deps)
       deps.remember_home_spawner(info, previous_info.home_spawner)
       info.home_spawner_unit_number = previous_info.home_spawner_unit_number
     end
-    entity = deps.adopt_redirected_biter(info, entity, deps.biter_force_name)
-    if not entity or not entity.valid then return end
+    if opts.preserve_entity then
+      entity.force = deps.get_biter_force()
+      if deps.apply_managed_unit_settings then
+        deps.apply_managed_unit_settings(entity)
+      end
+    else
+      entity = deps.adopt_redirected_biter(info, entity, deps.biter_force_name)
+    end
+    if not entity or not entity.valid then
+      protest_debug_log("trigger-immediate-adopt-failed", info, entity, "preserve=" .. tostring(opts.preserve_entity == true))
+      return false
+    end
 
     info.entity = entity
     deps.track_waiting_biter(entity.unit_number, info)
     protect_protesting_biter(info, entity, "trigger-immediate")
+    protest_debug_log("trigger-immediate-tracked", info, entity, "preserve=" .. tostring(opts.preserve_entity == true))
 
-    assign_protest_target(surface, info, entity)
+    local assigned = assign_protest_target(surface, info, entity)
+    if assigned and opts.preserve_entity then
+      begin_pending_protest_approach(info, entity)
+    elseif opts.preserve_entity then
+      issue_targetless_protest_wander_command(info, entity, surface)
+    end
+    protest_debug_log("trigger-immediate-finish", info, entity, "assigned=" .. tostring(assigned))
+    render.ensure_protest_rendering(info)
+    render.notify_players_of_protest(info)
+    return true
   end
 
   local function accumulate_biter_frustration(info, entity, reason)
@@ -1899,7 +2158,11 @@ function M.new(deps)
 
           if not info.target_building then
             if not info.pending_path_request_id and game.tick >= (info.next_protest_target_retry_tick or 0) then
-              assign_protest_target(surface, info, info.entity)
+              if not assign_protest_target(surface, info, info.entity) then
+                issue_targetless_protest_wander_command(info, info.entity, surface)
+              end
+            elseif not info.pending_path_request_id and game.tick >= (info.next_protest_wander_tick or 0) then
+              issue_targetless_protest_wander_command(info, info.entity, surface)
             end
             goto continue_biter
           end
@@ -1953,6 +2216,14 @@ function M.new(deps)
         maintain_hard_mode_attack(info, info.entity, "pacing")
       elseif not info.target_building or not info.target_building.valid then
         hard_mode_log(info, entity, "pacing-skip", "reason=invalid-target")
+        render.ensure_protest_rendering(info)
+        if not info.pending_path_request_id and game.tick >= (info.next_protest_target_retry_tick or 0) then
+          if not assign_protest_target(surface, info, info.entity) then
+            issue_targetless_protest_wander_command(info, info.entity, surface)
+          end
+        elseif not info.pending_path_request_id and game.tick >= (info.next_protest_wander_tick or 0) then
+          issue_targetless_protest_wander_command(info, info.entity, surface)
+        end
       else
         if process_hard_mode_protest_frustration(info, info.entity, "pacing-frustration-capacity") then
           goto continue_protester
@@ -2107,13 +2378,14 @@ function M.new(deps)
       if resume_en_route_protest(info, entity) then
         return
       end
-      assign_protest_target(entity.surface, info, entity)
+      if not assign_protest_target(entity.surface, info, entity) then
+        issue_targetless_protest_wander_command(info, entity, entity.surface)
+      end
       return
     end
 
-    if assign_protest_target(entity.surface, info, entity) then
-      if info.target_building and info.target_building.valid then
-      end
+    if not assign_protest_target(entity.surface, info, entity) then
+      issue_targetless_protest_wander_command(info, entity, entity.surface)
     end
   end
 
@@ -2124,23 +2396,68 @@ function M.new(deps)
 
     local info = storage.waiting_biters and storage.waiting_biters[request.unit_number]
     if not info then
+      if log then
+        log(WORKER_PROTEST_LOG_PREFIX
+          .. " tick=" .. tostring(game and game.tick or "nil")
+          .. " label=path-finished-missing-info"
+          .. " request_id=" .. tostring(event.id)
+          .. " unit=" .. tostring(request.unit_number)
+          .. " kind=" .. tostring(request.kind))
+      end
       return
     end
     if info.pending_path_request_id ~= event.id then
+      protest_debug_log(
+        "path-finished-stale",
+        info,
+        info.entity,
+        "request_id=" .. tostring(event.id)
+          .. " expected=" .. tostring(info.pending_path_request_id)
+          .. " kind=" .. tostring(request.kind)
+      )
       return
     end
     info.pending_path_request_id = nil
     clear_pending_protest_reservation(info)
 
-    if request.kind ~= "protest_target" or info.state ~= "protesting" then return end
+    if request.kind ~= "protest_target" or info.state ~= "protesting" then
+      protest_debug_log(
+        "path-finished-ignored",
+        info,
+        info.entity,
+        "request_id=" .. tostring(event.id)
+          .. " kind=" .. tostring(request.kind)
+          .. " event_path_len=" .. tostring(event.path and #event.path or 0)
+      )
+      return
+    end
     if not info.entity or not info.entity.valid then
       info.pending_protest_candidates = nil
+      protest_debug_log(
+        "path-finished-invalid-entity",
+        info,
+        info.entity,
+        "request_id=" .. tostring(event.id)
+          .. " event_path_len=" .. tostring(event.path and #event.path or 0)
+      )
       return
     end
 
     local entity = info.entity
     local candidates = info.pending_protest_candidates or {}
     local candidate = candidates[request.candidate_index]
+    protest_debug_log(
+      "path-finished",
+      info,
+      entity,
+      "request_id=" .. tostring(event.id)
+        .. " candidate_index=" .. tostring(request.candidate_index)
+        .. " candidate_exists=" .. tostring(candidate ~= nil)
+        .. " try_again=" .. tostring(event.try_again_later == true)
+        .. " path_len=" .. tostring(event.path and #event.path or 0)
+        .. " "
+        .. debug_target_summary(candidate and candidate.target or nil)
+    )
 
     if event.try_again_later then
       request_next_protest_target_path(info, entity, request.candidate_index)
@@ -2148,20 +2465,18 @@ function M.new(deps)
     end
 
     if candidate and is_protest_target_allowed(candidate.target, entity) and event.path and #event.path > 0 then
-      info.target_building = candidate.target
-      info.arrived_at_building = nil
-      info.next_protest_target_retry_tick = nil
       info.pending_protest_candidates = nil
-      if issue_protest_wander_command(info, entity, {
-        destination = candidate.pos,
-        origin = entity.position,
-        radius = 2,
-      }) then
+      if begin_protest_approach(info, entity, candidate.target, candidate.pos, 2) then
         return
       end
     end
 
-    request_next_protest_target_path(info, entity, request.candidate_index + 1)
+    if candidate then
+      clear_protest_approach(info, candidate.target)
+    end
+    if not request_next_protest_target_path(info, entity, request.candidate_index + 1) then
+      issue_targetless_protest_wander_command(info, entity, entity.surface)
+    end
   end
 
   local EVICTION_PRIORITY = {["unit-spawner"] = 1}

@@ -903,8 +903,11 @@ function M.reroute_desk_biters(desk_id, surface)
   protest_system.reroute_desk_biters(desk_id, surface)
 end
 
-function M.trigger_immediate_protest(entity, surface, previous_info)
-  protest_system.trigger_immediate_protest(entity, surface, previous_info)
+function M.trigger_immediate_protest(entity, surface, previous_info, opts)
+  storage.waiting_biters = storage.waiting_biters or {}
+  storage.waiting_biter_state_index = storage.waiting_biter_state_index or {}
+  storage.path_requests = storage.path_requests or {}
+  return protest_system.trigger_immediate_protest(entity, surface, previous_info, opts)
 end
 
 function M.is_hard_mode_attacker(unit_number)

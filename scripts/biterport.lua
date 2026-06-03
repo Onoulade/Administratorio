@@ -3,6 +3,7 @@ local working_hours = require("scripts.working_hours")
 local unit_ai_settings = require("scripts.unit_ai_settings")
 
 local M = {}
+local biters_module = nil
 
 local PORT_NAME = C.BITERPORT_NAME
 local HIDDEN_ROBOPORT_NAME = C.BITERPORT_HIDDEN_ROBOPORT_NAME
@@ -56,7 +57,6 @@ local LOGISTIC_CHEST_NAMES = {
 
 local MIN_PHASE_TRAVEL_DISTANCE = 0.75
 local PHASE_STUCK_TIMEOUT_TICKS = 120
-
 local function copy_position(pos)
   return pos and {x = pos.x, y = pos.y} or nil
 end
@@ -109,6 +109,58 @@ end
 local function current_tick(fallback_tick)
   if fallback_tick ~= nil then return fallback_tick end
   return game and game.tick or 0
+end
+
+local function debug_position(pos)
+  if not pos then return "[nil]" end
+  return "[" .. tostring(pos.x) .. "," .. tostring(pos.y) .. "]"
+end
+
+local function debug_force_name(force)
+  if not force then return "nil" end
+  return force.name or tostring(force)
+end
+
+local function debug_entity_summary(entity)
+  if not entity then return "entity=nil" end
+  local ok_valid, valid = pcall(function() return entity.valid end)
+  if not ok_valid or not valid then return "entity=invalid" end
+  local ok_name, name = pcall(function() return entity.name end)
+  local ok_unit, unit_number = pcall(function() return entity.unit_number end)
+  local ok_force, force = pcall(function() return entity.force end)
+  local ok_active, active = pcall(function() return entity.active end)
+  local ok_position, position = pcall(function() return entity.position end)
+  local ok_has_command, has_command = pcall(function()
+    return entity.commandable and entity.commandable.has_command or false
+  end)
+  local ok_command, command = pcall(function()
+    return entity.commandable and entity.commandable.command or nil
+  end)
+  return "entity_unit=" .. tostring(ok_unit and unit_number or "nil")
+    .. " entity_name=" .. tostring(ok_name and name or "nil")
+    .. " entity_force=" .. debug_force_name(ok_force and force or nil)
+    .. " entity_active=" .. (ok_active and tostring(active) or "n/a")
+    .. " entity_pos=" .. tostring(ok_position and debug_position(position) or "[nil]")
+    .. " entity_has_command=" .. (ok_has_command and tostring(has_command) or "n/a")
+    .. " entity_command=" .. tostring(ok_command and command and command.type or "nil")
+end
+
+local function worker_debug_log(label, active, extra)
+  if not log then return end
+  local parts = {
+    "[administratorio-biterport-worker]",
+    "tick=" .. tostring(current_tick()),
+    "label=" .. tostring(label),
+    "worker_unit=" .. tostring(active and active.biter_unit_number or "nil"),
+    "phase=" .. tostring(active and active.phase or "nil"),
+    "home_port=" .. tostring(active and active.home_port_id or "nil"),
+    "return_port=" .. tostring(active and active.return_port_id or "nil"),
+    "job=" .. tostring(active and active.job and active.job.kind or "nil"),
+    "force=" .. debug_force_name(active and active.force or nil),
+    debug_entity_summary(active and active.biter or nil),
+  }
+  if extra then parts[#parts + 1] = tostring(extra) end
+  log(table.concat(parts, " "))
 end
 
 local function get_station_inventory(entity)
@@ -451,7 +503,6 @@ end
 
 local function refresh_port_status(port)
   if not port or not port.valid then return end
-  port.minable = not station_has_active_workers(port.unit_number)
   if station_has_active_workers(port.unit_number) then
     set_port_status(port, "biterport-calling")
   elseif port_worker_count(port) <= 0 then
@@ -2088,15 +2139,27 @@ local function return_carried_item(active, preferred_entity)
   active.carried_stack = nil
 end
 
+local function port_has_worker_space(port)
+  local inv = get_station_inventory(port)
+  if not inv then return false end
+  if inv.can_insert then
+    return inv.can_insert({name = WORKER_ITEM_NAME, count = 1})
+  end
+  return true
+end
+
 local function nearest_valid_port(active)
   local biter = active and active.biter
   local home = active and active.home_port_id and storage.biterports[active.home_port_id]
-  if home and home.valid then return home end
+  if home and home.valid and port_has_worker_space(home) then return home end
   if not biter or not biter.valid then return nil end
 
   local best, best_score = nil, math.huge
   for _, port in pairs(storage.biterports or {}) do
-    if port and port.valid and port.surface == biter.surface and port.force == active.force then
+    if port and port.valid
+       and port.surface == biter.surface
+       and port.force == active.force
+       and port_has_worker_space(port) then
       local score = distance_squared(biter.position, port.position)
       if score < best_score then
         best, best_score = port, score
@@ -2106,10 +2169,32 @@ local function nearest_valid_port(active)
   return best
 end
 
+local turn_worker_into_protester
+
 local function start_return(active, tick)
   local port = nearest_valid_port(active)
-  if not port or not port.valid then return false end
+  if not port or not port.valid then
+    worker_debug_log("start-return-no-port", active)
+    active.phase = "orphaned_returning"
+    active.return_port_id = nil
+    active.orphan_return_started_tick = active.orphan_return_started_tick or current_tick(tick)
+    active.phase_started_tick = current_tick(tick)
+    active.phase_destination = nil
+    active.phase_target_position = nil
+    active.phase_target_unit_number = nil
+    if active.biter and active.biter.valid and active.biter.commandable and defines.command.stop then
+      active.biter.commandable.set_command({
+        type = defines.command.stop,
+        distraction = defines.distraction.none,
+      })
+    end
+    local protested = turn_worker_into_protester(active, tick)
+    worker_debug_log("start-return-protest-result", active, "protested=" .. tostring(protested))
+    return true
+  end
+  worker_debug_log("start-return-retarget-port", active, "port=" .. tostring(port.unit_number) .. " port_pos=" .. debug_position(port.position))
   active.return_port_id = port.unit_number
+  active.orphan_return_started_tick = nil
   return begin_phase_move(
     active,
     "returning",
@@ -2117,6 +2202,61 @@ local function start_return(active, tick)
     C.BITERPORT_ARRIVAL_RADIUS,
     tick
   )
+end
+
+turn_worker_into_protester = function(active, tick)
+  if not active then
+    worker_debug_log("turn-protester-skip-no-active", active)
+    return false
+  end
+  local biter = active.biter
+  worker_debug_log("turn-protester-start", active)
+
+  if active.job and active.job.kind == "construction" and not active.job.built then
+    restore_construction_ghost(active.job)
+  elseif active.job and active.job.overlay_id then
+    destroy_render(active.job.overlay_id)
+    active.job.overlay_id = nil
+  end
+  release_logistics_reservation(active.job)
+  release_deconstruction_reservation(active.job)
+  return_carried_item(active, active.job and active.job.source)
+
+  if not biter or not biter.valid then
+    worker_debug_log("turn-protester-skip-invalid-biter", active)
+    return false
+  end
+  biter.active = true
+  biter.destructible = true
+
+  local biters = biters_module
+  if biters and biters.trigger_immediate_protest then
+    if biters.trigger_immediate_protest(biter, biter.surface, nil, {preserve_entity = true}) then
+      worker_debug_log("turn-protester-success", active)
+      unmark_worker_unit(active.biter_unit_number)
+      unregister_active_worker(active)
+      return true
+    end
+  end
+  worker_debug_log("turn-protester-failed", active, "has_module=" .. tostring(biters ~= nil) .. " has_trigger=" .. tostring(biters and biters.trigger_immediate_protest ~= nil))
+  return false
+end
+
+local function advance_orphaned_return(active, tick)
+  local port = nearest_valid_port(active)
+  if port and port.valid then
+    worker_debug_log("orphan-retarget-port", active, "port=" .. tostring(port.unit_number) .. " port_pos=" .. debug_position(port.position))
+    active.return_port_id = port.unit_number
+    active.orphan_return_started_tick = nil
+    begin_phase_move(active, "returning", port_despawn_position(port), C.BITERPORT_ARRIVAL_RADIUS, tick)
+    return "retargeted"
+  end
+
+  active.phase = "orphaned_returning"
+  active.orphan_return_started_tick = active.orphan_return_started_tick or current_tick(tick)
+  local protested = turn_worker_into_protester(active, tick)
+  worker_debug_log("orphan-protest-result", active, "protested=" .. tostring(protested))
+  return "protesting"
 end
 
 local function finish_worker(active, tick, return_worker)
@@ -2545,7 +2685,7 @@ local function advance_active_workers(tick)
         if port then active.return_port_id = port.unit_number end
       end
       if not port or not port.valid then
-        finish_worker(active, tick, false)
+        advance_orphaned_return(active, tick)
         goto continue
       end
       local return_destination = port_despawn_position(port)
@@ -2557,6 +2697,9 @@ local function advance_active_workers(tick)
           or (biter.commandable and not biter.commandable.has_command) then
         begin_phase_move(active, "returning", return_destination, C.BITERPORT_ARRIVAL_RADIUS, tick)
       end
+
+    elseif active.phase == "orphaned_returning" then
+      advance_orphaned_return(active, tick)
 
     elseif active.phase == "dispose_items" then
       local job = active.job
@@ -2730,6 +2873,10 @@ function M.is_hidden_roboport(entity_or_name)
   return name == HIDDEN_ROBOPORT_NAME
 end
 
+function M.set_biters_module(module)
+  biters_module = module
+end
+
 function M.is_worker_unit(unit_number)
   return unit_number
     and storage
@@ -2787,14 +2934,16 @@ function M.untrack_port(entity, tick)
   end
   local active_set = storage.biterport_active_by_port[port_id]
   if active_set then
-    local units = {}
-    for unit_number in pairs(active_set) do units[#units + 1] = unit_number end
-    for _, unit_number in ipairs(units) do
+    for unit_number in pairs(active_set) do
       local active = storage.biterport_workers[unit_number]
       if active then
+        worker_debug_log("untrack-port-active-worker", active, "removed_port=" .. tostring(port_id))
+        if active.home_port_id == port_id then active.home_port_id = nil end
+        if active.return_port_id == port_id then active.return_port_id = nil end
         fail_job_and_return(active, tick or game.tick)
       end
     end
+    storage.biterport_active_by_port[port_id] = nil
   end
 end
 
