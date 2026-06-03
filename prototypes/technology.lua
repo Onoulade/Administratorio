@@ -1184,6 +1184,7 @@ for _, tech_name in ipairs({
 end
 
 for _, tech_name in ipairs({
+  "after-hours-operations",
   "construction-robotics",
   "logistic-robotics",
   "personal-roboport-equipment",
@@ -1192,6 +1193,7 @@ for _, tech_name in ipairs({
 end
 
 for _, tech_name in ipairs({
+  "after-hours-operations",
   "construction-robotics",
   "logistic-robotics",
   "personal-roboport-equipment",
