@@ -992,6 +992,173 @@ test("biterport ignores players without a character body", function()
   assert_true(first_active_worker() == nil, "characterless players should not spawn walking logistics jobs")
 end)
 
+test("biterport stays minable while workers are active", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+
+  local surface = new_surface()
+  local force = {
+    name = "player",
+    technologies = {},
+    set_cease_fire = function() end,
+  }
+
+  game = {
+    tick = 0,
+    connected_players = {},
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 2, 2)
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {["iron-plate"] = 3})
+  provider.force = force
+  local player = new_player(surface, force, {{name = "iron-plate", count = 1}}, {}, {})
+  game.connected_players = {player}
+
+  biterport.track_port(port)
+  biterport.update(30)
+
+  assert_true(first_active_worker() ~= nil, "request should dispatch a logistics worker")
+  assert_eq(port.minable, true, "biterport should remain minable while a worker is out")
+end)
+
+test("almost-returned biterport worker protests instead of despawning after host removal", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+  package.loaded["scripts.biters"] = nil
+
+  local protested_entity = nil
+  local biters_stub = {
+    trigger_immediate_protest = function(entity, _, _, opts)
+      protested_entity = entity
+      assert_true(opts and opts.preserve_entity == true, "worker protest conversion should preserve the existing entity")
+      return true
+    end,
+  }
+
+  local surface = new_surface()
+  local force = {
+    name = "player",
+    technologies = {},
+    set_cease_fire = function() end,
+  }
+
+  game = {
+    tick = 0,
+    connected_players = {},
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biterport = require("scripts.biterport")
+  biterport.set_biters_module(biters_stub)
+  local port = new_port(surface, force, 2, 2)
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {["iron-plate"] = 3})
+  provider.force = force
+  local player = new_player(surface, force, {{name = "iron-plate", count = 1}}, {}, {})
+  game.connected_players = {player}
+
+  biterport.track_port(port)
+  biterport.update(30)
+
+  local active = first_active_worker()
+  assert_true(active ~= nil, "request should dispatch a logistics worker")
+  local worker_entity = active.biter
+  active.phase = "returning"
+  active.return_port_id = port.unit_number
+  active.phase_destination = {x = port.position.x, y = port.position.y}
+
+  biterport.untrack_port(port, 30)
+  assert_eq(active.phase, "orphaned_returning", "returning worker should lose the removed-host return route")
+
+  worker_entity.position = {x = port.position.x, y = port.position.y}
+  biterport.on_ai_command_completed{unit_number = active.biter_unit_number, tick = 60}
+  biterport.update(70)
+
+  assert_true(protested_entity == worker_entity, "orphaned worker should protest immediately when no host has space")
+  assert_true(worker_entity.valid, "orphaned worker should not despawn at the removed host position")
+  assert_eq(active_worker_count(), 0, "converted protester should leave biterport active worker tracking")
+end)
+
+test("non-returning orphaned biterport worker protests immediately without a host", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+  package.loaded["scripts.biters"] = nil
+
+  local protested_entity = nil
+  local biters_stub = {
+    trigger_immediate_protest = function(entity, _, _, opts)
+      protested_entity = entity
+      assert_true(opts and opts.preserve_entity == true, "worker protest conversion should preserve the existing entity")
+      return true
+    end,
+  }
+
+  local surface = new_surface()
+  local force = {
+    name = "player",
+    technologies = {},
+    set_cease_fire = function() end,
+  }
+
+  game = {
+    tick = 0,
+    connected_players = {},
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biterport = require("scripts.biterport")
+  biterport.set_biters_module(biters_stub)
+  local port = new_port(surface, force, 2, 2)
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {["iron-plate"] = 3})
+  provider.force = force
+  local player = new_player(surface, force, {{name = "iron-plate", count = 1}}, {}, {})
+  game.connected_players = {player}
+
+  biterport.track_port(port)
+  biterport.update(30)
+
+  local active = first_active_worker()
+  assert_true(active ~= nil, "request should dispatch a logistics worker")
+  local worker_entity = active.biter
+  provider.valid = false
+
+  biterport.untrack_port(port, 30)
+  assert_eq(active.phase, "orphaned_returning", "failed non-returning worker should become orphaned")
+  assert_true(protested_entity == worker_entity, "orphaned worker should become a protester immediately")
+  assert_eq(active_worker_count(), 0, "converted protester should leave biterport active worker tracking")
+end)
+
 print(("Biterport runtime tests: %d passed, %d failed"):format(passed, failed))
 if failed > 0 then
   for _, err in ipairs(errors) do

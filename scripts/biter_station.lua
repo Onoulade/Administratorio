@@ -3,6 +3,7 @@ local working_hours = require("scripts.working_hours")
 local unit_ai_settings = require("scripts.unit_ai_settings")
 
 local M = {}
+local biters_module = nil
 
 local WORKER_FORCE_NAME = "administratorio-biters"
 local STATION_NAME = "biter-station"
@@ -64,6 +65,58 @@ local ABANDON_STUCK_TICKS = 1800
 local PROGRESS_DISTANCE_SQUARED = 1.0
 
 local maybe_reinsert_worker
+local clear_active_queue_claims
+
+local function debug_position(pos)
+  if not pos then return "[nil]" end
+  return "[" .. tostring(pos.x) .. "," .. tostring(pos.y) .. "]"
+end
+
+local function debug_force_name(force)
+  if not force then return "nil" end
+  return force.name or tostring(force)
+end
+
+local function debug_entity_summary(entity)
+  if not entity then return "entity=nil" end
+  local ok_valid, valid = pcall(function() return entity.valid end)
+  if not ok_valid or not valid then return "entity=invalid" end
+  local ok_name, name = pcall(function() return entity.name end)
+  local ok_unit, unit_number = pcall(function() return entity.unit_number end)
+  local ok_force, force = pcall(function() return entity.force end)
+  local ok_active, active = pcall(function() return entity.active end)
+  local ok_position, position = pcall(function() return entity.position end)
+  local ok_has_command, has_command = pcall(function()
+    return entity.commandable and entity.commandable.has_command or false
+  end)
+  local ok_command, command = pcall(function()
+    return entity.commandable and entity.commandable.command or nil
+  end)
+  return "entity_unit=" .. tostring(ok_unit and unit_number or "nil")
+    .. " entity_name=" .. tostring(ok_name and name or "nil")
+    .. " entity_force=" .. debug_force_name(ok_force and force or nil)
+    .. " entity_active=" .. (ok_active and tostring(active) or "n/a")
+    .. " entity_pos=" .. tostring(ok_position and debug_position(position) or "[nil]")
+    .. " entity_has_command=" .. (ok_has_command and tostring(has_command) or "n/a")
+    .. " entity_command=" .. tostring(ok_command and command and command.type or "nil")
+end
+
+local function station_worker_debug_log(label, active_state, extra)
+  if not log then return end
+  local parts = {
+    "[administratorio-biter-station-worker]",
+    "tick=" .. tostring(game and game.tick or "nil"),
+    "label=" .. tostring(label),
+    "worker_unit=" .. tostring(active_state and active_state.biter_unit_number or "nil"),
+    "phase=" .. tostring(active_state and active_state.phase or "nil"),
+    "station=" .. tostring(active_state and active_state.station_id or "nil"),
+    "queue_idx=" .. tostring(active_state and active_state.current_idx or "nil"),
+    "force=" .. debug_force_name(active_state and active_state.force or nil),
+    debug_entity_summary(active_state and active_state.biter or nil),
+  }
+  if extra then parts[#parts + 1] = tostring(extra) end
+  log(table.concat(parts, " "))
+end
 
 local function mark_station_worker_unit(unit_number, station_id)
   if not unit_number then return end
@@ -372,8 +425,6 @@ end
 local function refresh_station_status(station)
   if not station or not station.valid then return end
 
-  station.minable = not station_has_active_workers(station.unit_number)
-
   if station_has_active_workers(station.unit_number) then
     set_station_status(station, "biter-station-calling")
     return
@@ -457,6 +508,61 @@ local function distance_squared(pos1, pos2)
   local dx = pos1.x - pos2.x
   local dy = pos1.y - pos2.y
   return dx * dx + dy * dy
+end
+
+local function station_has_worker_space(station)
+  local inv = get_station_inventory(station)
+  if not inv then return false end
+  if inv.can_insert then
+    return inv.can_insert({name = WORKER_ITEM_NAME, count = 1})
+  end
+  return true
+end
+
+local function nearest_valid_station(active_state)
+  local biter = active_state and active_state.biter
+  local current = active_state and active_state.station_id and storage.biter_stations[active_state.station_id]
+  if current and current.valid and station_has_worker_space(current) then return current end
+  if not biter or not biter.valid then return nil end
+
+  local station_force = active_state.force
+    or (active_state.station and active_state.station.force)
+    or (current and current.force)
+  local best, best_score = nil, math.huge
+  for _, station in pairs(storage.biter_stations or {}) do
+    if station and station.valid
+       and station.surface == biter.surface
+       and (not station_force or station.force == station_force)
+       and station_has_worker_space(station) then
+      local score = distance_squared(biter.position, station.position)
+      if score < best_score then
+        best, best_score = station, score
+      end
+    end
+  end
+  return best
+end
+
+local function reassign_active_station(active_state, station)
+  if not active_state or not station or not station.valid then return end
+  local old_station_id = active_state.station_id
+  local biter_unit_number = active_state.biter_unit_number
+  if old_station_id and storage.biter_station_active_by_station then
+    local old_map = storage.biter_station_active_by_station[old_station_id]
+    if old_map and biter_unit_number then
+      old_map[biter_unit_number] = nil
+      if not next(old_map) then storage.biter_station_active_by_station[old_station_id] = nil end
+    end
+  end
+
+  active_state.station_id = station.unit_number
+  active_state.station = station
+  active_state.force = station.force
+  storage.biter_station_active_by_station[station.unit_number] = storage.biter_station_active_by_station[station.unit_number] or {}
+  storage.biter_station_active_by_station[station.unit_number][biter_unit_number] = true
+  if storage.biter_station_worker_units and biter_unit_number then
+    storage.biter_station_worker_units[biter_unit_number] = station.unit_number
+  end
 end
 
 local function has_arrived(entity, target, radius)
@@ -640,6 +746,74 @@ local function begin_phase_move(active_state, biter, phase, destination, radius,
   issue_move_command(biter, command_destination, active_state.phase_command_radius)
 end
 
+local function begin_orphan_station_return(active_state, biter, tick)
+  if not active_state or not biter or not biter.valid then return end
+  station_worker_debug_log("begin-orphan-return", active_state)
+  active_state.phase = "orphaned_returning"
+  active_state.station = nil
+  active_state.station_id = nil
+  active_state.phase_started_tick = tick or game.tick
+  active_state.orphan_return_started_tick = active_state.orphan_return_started_tick or (tick or game.tick)
+  active_state.phase_destination = nil
+  active_state.phase_target_position = nil
+  active_state.phase_target_unit_number = nil
+  clear_pending_path_request(active_state)
+  if biter.commandable and defines.command.stop then
+    biter.commandable.set_command({
+      type = defines.command.stop,
+      distraction = defines.distraction.none,
+    })
+  end
+end
+
+local function turn_station_worker_into_protester(active_state, tick)
+  if not active_state then
+    station_worker_debug_log("turn-protester-skip-no-active-state", active_state)
+    return false
+  end
+  local biter = active_state.biter
+  station_worker_debug_log("turn-protester-start", active_state)
+
+  clear_active_queue_claims(active_state)
+  destroy_overlay(active_state)
+  clear_pending_path_request(active_state)
+
+  if not biter or not biter.valid then
+    station_worker_debug_log("turn-protester-skip-invalid-biter", active_state)
+    return false
+  end
+  biter.active = true
+  biter.destructible = true
+
+  local biters = biters_module
+  if biters and biters.trigger_immediate_protest then
+    if biters.trigger_immediate_protest(biter, biter.surface, nil, {preserve_entity = true}) then
+      station_worker_debug_log("turn-protester-success", active_state)
+      unmark_station_worker_unit(active_state.biter_unit_number)
+      unregister_active_biter_state(active_state)
+      return true
+    end
+  end
+  station_worker_debug_log("turn-protester-failed", active_state, "has_module=" .. tostring(biters ~= nil) .. " has_trigger=" .. tostring(biters and biters.trigger_immediate_protest ~= nil))
+  return false
+end
+
+local function advance_orphaned_station_return(active_state, biter, tick)
+  local station = nearest_valid_station(active_state)
+  if station and station.valid then
+    station_worker_debug_log("orphan-retarget-station", active_state, "station=" .. tostring(station.unit_number) .. " station_pos=" .. debug_position(station.position))
+    reassign_active_station(active_state, station)
+    active_state.orphan_return_started_tick = nil
+    begin_phase_move(active_state, biter, "to_station", station_interior_position(station), C.BITER_STATION_ARRIVAL_RADIUS, tick)
+    return "retargeted"
+  end
+
+  begin_orphan_station_return(active_state, biter, tick)
+  local protested = turn_station_worker_into_protester(active_state, tick)
+  station_worker_debug_log("orphan-protest-result", active_state, "protested=" .. tostring(protested))
+  return "protesting"
+end
+
 local function check_and_update_progress(active_state, biter, tick)
   if not active_state or not biter or not biter.valid then return false end
   local last_pos = active_state.last_progress_position
@@ -706,7 +880,7 @@ local function clear_building_claim(unit_number, biter_unit_number)
   clear_run_state_if_idle(unit_number, state)
 end
 
-local function clear_active_queue_claims(active_state)
+clear_active_queue_claims = function(active_state)
   if not active_state or not active_state.building_queue then return end
 
   local biter_unit_number = active_state.biter_unit_number
@@ -1097,6 +1271,7 @@ local function dispatch_single_station_biter(station, queue)
     biter_unit_number = biter.unit_number,
     station_id = station.unit_number,
     station = station,
+    force = station.force,
     building_queue = queue,
     current_idx = 1,
     salary_paid = salary_paid,
@@ -1295,11 +1470,12 @@ local function advance_active_biters(tick)
       goto continue
     end
     local station_id = active_state.station_id
-    local station = storage.biter_stations[station_id]
-
+    local station = station_id and storage.biter_stations[station_id] or nil
     if not station or not station.valid then
-      cleanup_active_biter(active_state, tick, true, "station-invalid")
-      goto continue
+      station = nearest_valid_station(active_state)
+      if station and station.valid then
+        reassign_active_station(active_state, station)
+      end
     end
 
     local biter = active_state.biter
@@ -1313,9 +1489,9 @@ local function advance_active_biters(tick)
     end
     refresh_active_biter_snapshot(active_state, biter)
 
-    if check_and_update_progress(active_state, biter, tick) then
+    if active_state.phase ~= "orphaned_returning" and check_and_update_progress(active_state, biter, tick) then
       cleanup_active_biter(active_state, tick, false, "stuck")
-      refresh_station_status(station)
+      if station and station.valid then refresh_station_status(station) end
       goto continue
     end
 
@@ -1355,10 +1531,22 @@ local function advance_active_biters(tick)
         ::continue_building_queue::
       end
 
-      begin_phase_move(active_state, biter, "to_station", station_interior_position(station), C.BITER_STATION_ARRIVAL_RADIUS, tick)
-      set_station_status(station, "biter-station-calling")
+      station = station and station.valid and station or nearest_valid_station(active_state)
+      if station and station.valid then
+        reassign_active_station(active_state, station)
+        begin_phase_move(active_state, biter, "to_station", station_interior_position(station), C.BITER_STATION_ARRIVAL_RADIUS, tick)
+        set_station_status(station, "biter-station-calling")
+      else
+        advance_orphaned_station_return(active_state, biter, tick)
+      end
 
     elseif active_state.phase == "to_station" then
+      station = station and station.valid and station or nearest_valid_station(active_state)
+      if not station or not station.valid then
+        advance_orphaned_station_return(active_state, biter, tick)
+        goto continue
+      end
+      reassign_active_station(active_state, station)
       local station_destination = station_interior_position(station)
       local arrived_station = phase_has_departed(active_state, biter, tick)
         and phase_is_arrived(active_state, biter, station_destination, C.BITER_STATION_ARRIVAL_RADIUS)
@@ -1373,9 +1561,17 @@ local function advance_active_biters(tick)
         begin_phase_move(active_state, biter, "to_station", station_destination, C.BITER_STATION_ARRIVAL_RADIUS, tick)
       end
       set_station_status(station, "biter-station-calling")
+    elseif active_state.phase == "orphaned_returning" then
+      advance_orphaned_station_return(active_state, biter, tick)
     else
-      begin_phase_move(active_state, biter, "to_station", station_interior_position(station), C.BITER_STATION_ARRIVAL_RADIUS, tick)
-      set_station_status(station, "biter-station-calling")
+      station = station and station.valid and station or nearest_valid_station(active_state)
+      if station and station.valid then
+        reassign_active_station(active_state, station)
+        begin_phase_move(active_state, biter, "to_station", station_interior_position(station), C.BITER_STATION_ARRIVAL_RADIUS, tick)
+        set_station_status(station, "biter-station-calling")
+      else
+        advance_orphaned_station_return(active_state, biter, tick)
+      end
     end
 
     ::continue::
@@ -1401,16 +1597,33 @@ local function initial_dispatch_check()
     if not station or not station.valid then
       local active_units = storage.biter_station_active_by_station and storage.biter_station_active_by_station[station_id] or nil
       if active_units then
-        local units_to_cleanup = {}
         for biter_unit_number in pairs(active_units) do
-          units_to_cleanup[#units_to_cleanup + 1] = biter_unit_number
-        end
-        for _, biter_unit_number in ipairs(units_to_cleanup) do
           local active_state = storage.biter_station_biter[biter_unit_number]
           if active_state then
-            cleanup_active_biter(active_state, game.tick, true, "initial-dispatch-station-invalid")
+            station_worker_debug_log("initial-dispatch-missing-station-active-worker", active_state, "removed_station=" .. tostring(station_id))
+            clear_active_queue_claims(active_state)
+            destroy_overlay(active_state)
+            active_state.force = active_state.force or (station and station.force)
+            active_state.station_id = nil
+            active_state.station = nil
+            active_state.phase = "orphaned_returning"
+            active_state.phase_started_tick = game.tick
+            active_state.orphan_return_started_tick = active_state.orphan_return_started_tick or game.tick
+            active_state.phase_arrived_tick = nil
+            active_state.phase_destination = nil
+            active_state.phase_target_position = nil
+            active_state.phase_target_unit_number = nil
+            clear_pending_path_request(active_state)
+            if active_state.biter and active_state.biter.valid and active_state.biter.commandable and defines.command.stop then
+              active_state.biter.commandable.set_command({
+                type = defines.command.stop,
+                distraction = defines.distraction.none,
+              })
+            end
+            advance_orphaned_station_return(active_state, active_state.biter, game.tick)
           end
         end
+        storage.biter_station_active_by_station[station_id] = nil
       end
       storage.biter_stations[station_id] = nil
     else
@@ -1457,6 +1670,10 @@ function M.is_managed_building(entity_or_name)
   return name and C.BITER_STATION_MANAGED_BUILDING_SET[name] == true or false
 end
 
+function M.set_biters_module(module)
+  biters_module = module
+end
+
 function M.is_station_worker_unit(unit_number)
   if not unit_number then return false end
   return storage
@@ -1485,23 +1702,40 @@ function M.untrack_station(entity, tick)
   if not entity or not entity.unit_number then return end
 
   local station_id = entity.unit_number
+  storage.biter_stations[station_id] = nil
   local active_units = storage.biter_station_active_by_station and storage.biter_station_active_by_station[station_id] or nil
   if active_units then
-    local units_to_cleanup = {}
     for biter_unit_number in pairs(active_units) do
-      units_to_cleanup[#units_to_cleanup + 1] = biter_unit_number
-    end
-    for _, biter_unit_number in ipairs(units_to_cleanup) do
       local active_state = storage.biter_station_biter[biter_unit_number]
       if active_state then
-        cleanup_active_biter(active_state, tick or game.tick, true, "untrack-station")
+        station_worker_debug_log("untrack-station-active-worker", active_state, "removed_station=" .. tostring(station_id))
+        clear_active_queue_claims(active_state)
+        destroy_overlay(active_state)
+        active_state.force = active_state.force or entity.force
+        active_state.station_id = nil
+        active_state.station = nil
+        active_state.phase = "orphaned_returning"
+        active_state.phase_started_tick = tick or game.tick
+        active_state.orphan_return_started_tick = active_state.orphan_return_started_tick or (tick or game.tick)
+        active_state.phase_arrived_tick = nil
+        active_state.phase_destination = nil
+        active_state.phase_target_position = nil
+        active_state.phase_target_unit_number = nil
+        clear_pending_path_request(active_state)
+        if active_state.biter and active_state.biter.valid and active_state.biter.commandable and defines.command.stop then
+          active_state.biter.commandable.set_command({
+            type = defines.command.stop,
+            distraction = defines.distraction.none,
+          })
+        end
+        advance_orphaned_station_return(active_state, active_state.biter, tick or game.tick)
       end
     end
+    storage.biter_station_active_by_station[station_id] = nil
   end
 
   destroy_hidden_coffee_input(station_id)
   destroy_wall_blockers(entity)
-  storage.biter_stations[station_id] = nil
 end
 
 function M.track_managed_building(entity)

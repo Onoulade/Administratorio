@@ -51,8 +51,12 @@ local function new_test_context()
   local next_unit_number = 100
   local next_request_id = 0
   local last_move_command = nil
+  local move_command_count = 0
   local pending_request_id = nil
   local protest_targets = {}
+  local protest_render_count = 0
+  local protest_notify_count = 0
+  local adopt_count = 0
 
   local surface
   surface = {
@@ -95,6 +99,7 @@ local function new_test_context()
         set_command = function(command)
           if command.type == defines.command.go_to_location then
             last_move_command = command
+            move_command_count = move_command_count + 1
           end
         end,
       }
@@ -162,6 +167,9 @@ local function new_test_context()
       PACIFIED_FRUSTRATION_RATIO = 0.5,
       PACIFIED_ROAM_REISSUE_TICKS = 30,
       PACIFIED_ROAM_REISSUE_JITTER_TICKS = 0,
+      generate_complaints = function()
+        return {"ticket-unemployment"}
+      end,
     },
     zones = {
       reassign_slot = function() end,
@@ -178,11 +186,15 @@ local function new_test_context()
     render = {
       destroy_protest_rendering = function() end,
       destroy_protest_chart_tag = function() end,
-      ensure_protest_rendering = function() end,
+      ensure_protest_rendering = function()
+        protest_render_count = protest_render_count + 1
+      end,
       ensure_protest_chart_tag = function() end,
       destroy_pacified_rendering = function() end,
       ensure_pacified_rendering = function() end,
-      notify_players_of_protest = function() end,
+      notify_players_of_protest = function()
+        protest_notify_count = protest_notify_count + 1
+      end,
     },
     ensure_achievements = function()
       storage.achievements = storage.achievements or {}
@@ -241,7 +253,10 @@ local function new_test_context()
     protest_protected_names = {},
     protest_target_names = {"office-desk"},
     protest_target_types = {},
-    adopt_redirected_biter = function(_, entity) return entity end,
+    adopt_redirected_biter = function(_, entity)
+      adopt_count = adopt_count + 1
+      return entity
+    end,
     copy_complaints = function(complaints)
       local copy = {}
       for i, complaint in ipairs(complaints or {}) do
@@ -267,8 +282,20 @@ local function new_test_context()
     get_last_move_command = function()
       return last_move_command
     end,
+    get_move_command_count = function()
+      return move_command_count
+    end,
     get_pending_request_id = function()
       return pending_request_id
+    end,
+    get_protest_render_count = function()
+      return protest_render_count
+    end,
+    get_protest_notify_count = function()
+      return protest_notify_count
+    end,
+    get_adopt_count = function()
+      return adopt_count
     end,
   }
 end
@@ -328,6 +355,113 @@ test("removing a protested building retargets the biter and resumes movement", f
   assert_true(info.arrived_at_building == nil, "reassigned protester should go back to the approach state")
   assert_true(ctx.get_last_move_command() ~= nil, "reassigned protester should receive a fresh movement command")
   assert_true(entity.active == true, "reassigned protester should be active while moving toward the new target")
+end)
+
+test("triggering an immediate protest renders even before a target is assigned", function()
+  local ctx = new_test_context()
+  ctx.set_protest_targets({})
+
+  local entity = ctx.surface.create_entity{
+    name = "biterport-worker",
+    position = {x = 4, y = 4},
+    force = "neutral",
+  }
+
+  ctx.controller.trigger_immediate_protest(entity, ctx.surface)
+
+  local info = storage.waiting_biters[entity.unit_number]
+  assert_true(info ~= nil, "immediate protest should register the worker as a waiting biter")
+  assert_eq(info.state, "protesting", "registered worker should be protesting")
+  assert_true(ctx.get_protest_render_count() > 0, "immediate protest should render protest text without a target")
+  assert_true(ctx.get_protest_notify_count() > 0, "immediate protest should notify using the protester when no target exists")
+end)
+
+test("preserved immediate protest keeps the existing worker entity", function()
+  local ctx = new_test_context()
+  ctx.set_protest_targets({})
+
+  local entity = ctx.surface.create_entity{
+    name = "biterport-worker",
+    position = {x = 4, y = 4},
+    force = "player",
+  }
+
+  assert_true(ctx.controller.trigger_immediate_protest(entity, ctx.surface, nil, {preserve_entity = true}), "preserved protest should succeed")
+
+  local info = storage.waiting_biters[entity.unit_number]
+  assert_true(info ~= nil, "preserved protest should track the same unit number")
+  assert_true(info.entity == entity, "preserved protest should keep the existing entity")
+  assert_true(entity.valid, "preserved protest should not destroy the worker entity")
+  assert_eq(ctx.get_adopt_count(), 0, "preserved protest should not use the clone/adopt path")
+end)
+
+test("preserved immediate protest wanders when no target is available", function()
+  local ctx = new_test_context()
+  ctx.set_protest_targets({})
+
+  local entity = ctx.surface.create_entity{
+    name = "biterport-worker",
+    position = {x = 4, y = 4},
+    force = "player",
+  }
+
+  assert_true(ctx.controller.trigger_immediate_protest(entity, ctx.surface, nil, {preserve_entity = true}), "preserved protest should succeed")
+
+  local info = storage.waiting_biters[entity.unit_number]
+  assert_true(info ~= nil, "preserved targetless protest should still be tracked")
+  assert_true(info.target_building == nil, "targetless protest should not claim a missing building")
+  assert_true(ctx.get_last_move_command() ~= nil, "targetless protest should receive a wander command")
+  assert_true(info.protest_anchor_position ~= nil, "targetless protest should keep a wander anchor")
+end)
+
+test("preserved immediate protest starts moving toward a target immediately", function()
+  local ctx = new_test_context()
+  local target = new_target(ctx.surface, 98, 20, 20)
+  ctx.set_protest_targets({target})
+
+  local entity = ctx.surface.create_entity{
+    name = "biterport-worker",
+    position = {x = 4, y = 4},
+    force = "player",
+  }
+
+  assert_true(ctx.controller.trigger_immediate_protest(entity, ctx.surface, nil, {preserve_entity = true}), "preserved protest should succeed")
+
+  local info = storage.waiting_biters[entity.unit_number]
+  local command = ctx.get_last_move_command()
+  assert_true(command ~= nil, "preserved protest should receive a move command before the path callback")
+  assert_true(info.target_building == target, "preserved protest should claim the target immediately")
+  assert_true(info.pending_path_request_id ~= nil, "preserved protest should still keep the async path validation request")
+  assert_eq(command.destination.x, info.protest_anchor_position.x, "move command should use the protest anchor x")
+  assert_eq(command.destination.y, info.protest_anchor_position.y, "move command should use the protest anchor y")
+end)
+
+test("preserved immediate protest clears an eager target when path validation fails", function()
+  local ctx = new_test_context()
+  local target = new_target(ctx.surface, 99, 20, 20)
+  ctx.set_protest_targets({target})
+
+  local entity = ctx.surface.create_entity{
+    name = "biterport-worker",
+    position = {x = 4, y = 4},
+    force = "player",
+  }
+
+  assert_true(ctx.controller.trigger_immediate_protest(entity, ctx.surface, nil, {preserve_entity = true}), "preserved protest should succeed")
+
+  local request_id = ctx.get_pending_request_id()
+  local info = storage.waiting_biters[entity.unit_number]
+  assert_true(info.target_building == target, "preserved protest should eagerly claim the target before validation")
+
+  ctx.controller.on_script_path_request_finished{
+    id = request_id,
+    path = nil,
+  }
+
+  assert_true(info.target_building == nil, "failed path validation should clear the eager protest target")
+  assert_true(info.protest_anchor_position ~= nil, "failed path validation should switch to a targetless wander anchor")
+  assert_true(ctx.get_move_command_count() >= 2, "failed path validation should issue a targetless wander command")
+  assert_true(info.next_protest_target_retry_tick ~= nil, "failed path validation should schedule another target search")
 end)
 
 test("invalid protest targets are cleared during processing so the biter can recover", function()
