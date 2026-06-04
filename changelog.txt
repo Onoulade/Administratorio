@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.6
+Date: 2026-06-04
+  Bugfixes:
+    - turn orphaned workers into protesters
+    - keep workers during low power
+  Compatibility:
+    - dedupe shared splitter paperwork
+  Changes:
+    - Merge branch 'main' of https://github.com/Onoulade/Administratorio
+---------------------------------------------------------------------------------------------------
 Version: 0.5.5
 Date: 2026-05-30
   Features:
