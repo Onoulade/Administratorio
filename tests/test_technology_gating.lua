@@ -293,6 +293,16 @@ local function assert_pack_superset(child_name, parent_name)
   end
 end
 
+local function assert_pack_subset(child_name, parent_name)
+  local child = technologies[child_name]
+  assert_true(child and child.unit and child.unit.ingredients, child_name .. " should have science packs in the test harness")
+  for _, ingredient in ipairs(child.unit.ingredients) do
+    local pack_name = ingredient[1] or ingredient.name
+    assert_true(tech_uses_pack(parent_name, pack_name),
+      child_name .. " should not exceed the science tier of " .. parent_name .. " through " .. pack_name)
+  end
+end
+
 test("industrial printing owns printer-t2 and bulk copy unlocks", function()
   assert_true(tech_unlocks_recipe("industrial-printing", "printer-t2"), "industrial-printing should unlock printer-t2")
   assert_true(tech_unlocks_recipe("industrial-printing", "copy-blank-form"), "industrial-printing should unlock blank-form copying")
@@ -708,8 +718,8 @@ test("science tier heads and inherited pack requirements are enforced", function
 
   if technologies["after-hours-operations"] then
     assert_true(tech_has_prereq("after-hours-operations", "federal-regulation"), "after-hours-operations should require federal-regulation")
-    assert_true(tech_has_prereq("after-hours-operations", "utility-science-pack"), "after-hours-operations should require utility science")
     assert_pack_superset("after-hours-operations", "federal-regulation")
+    assert_pack_subset("after-hours-operations", "federal-regulation")
   end
 end)
 

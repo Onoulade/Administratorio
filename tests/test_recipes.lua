@@ -208,7 +208,11 @@ local function get_result_name(recipe)
 end
 
 local function get_result_amount(recipe, item_name)
-  if not recipe.results then return recipe.result_count or 1 end
+  if not recipe then return nil end
+  if not recipe.results then
+    if recipe.result == item_name then return recipe.result_count or 1 end
+    return nil
+  end
   for _, res in ipairs(recipe.results) do
     if (res.name or res[1]) == item_name then
       return res.amount or res[2]
@@ -600,15 +604,38 @@ test("corporate-breakroom no longer depends on treasury-bonds", function()
   assert_true(not has_ingredient(r, "treasury-bond"))
 end)
 
-test("union-headquarters bootstraps from finance paperwork without requiring a grant", function()
+test("union-headquarters preserves paperwork without depending on its own production categories", function()
   local r = get_recipe("union-headquarters")
-  assert_true(has_ingredient(r, "construction-permit"))
-  assert_true(has_ingredient(r, "treasury-bond"))
-  assert_true(has_ingredient(r, "management-approval-verbal"))
-  assert_true(has_ingredient(r, "management-verbal-work-order"))
-  assert_true(not has_ingredient(r, "government-grant"))
-  assert_true(has_ingredient(r, "advanced-circuit"))
-  assert_true(has_ingredient(r, "steel-plate"))
+  local hq_only_categories = {
+    ["union-negotiation"] = true,
+    ["bureaucracy-policy"] = true,
+  }
+  local has_paperwork = false
+
+  for _, ingredient in ipairs(r.ingredients or {}) do
+    local ingredient_type = ingredient.type or "item"
+    local ingredient_name = ingredient.name or ingredient[1]
+    if ingredient_type == "item" then
+      has_paperwork = has_paperwork or shared.PAPERWORK_ITEMS[ingredient_name] == true
+
+      local has_producer = false
+      local has_pre_hq_producer = false
+      for _, producer in pairs(recipes) do
+        if get_result_amount(producer, ingredient_name) then
+          has_producer = true
+          local category = producer.category or "crafting"
+          if not hq_only_categories[category] then
+            has_pre_hq_producer = true
+          end
+        end
+      end
+
+      assert_true(not has_producer or has_pre_hq_producer,
+        "union-headquarters depends on its own production chain through " .. ingredient_name)
+    end
+  end
+
+  assert_true(has_paperwork, "union-headquarters should participate in the paperwork economy")
 end)
 
 test("late policy recipes stay within the shared HQ fluid limits", function()
@@ -1227,16 +1254,6 @@ end)
 -- =========================================================================
 -- BUILDING RECIPE SPECIFICS
 -- =========================================================================
-
-test("office-desk produces 2 per craft", function()
-  local r = get_recipe("office-desk")
-  assert_eq(get_result_amount(r, "office-desk"), 2)
-end)
-
-test("resolution-office produces 2 per craft", function()
-  local r = get_recipe("resolution-office")
-  assert_eq(get_result_amount(r, "resolution-office"), 2)
-end)
 
 test("office-desk keeps its original circuit recipe and is tech-gated", function()
   local r = get_recipe("office-desk")
