@@ -1008,6 +1008,27 @@ test("printer-t1 gets a regulated AM recipe", function()
   assert_true(not has_ingredient(r, "provisional-approval"), "printer-t1-regulated should combine provisional-approval")
 end)
 
+test("regulated admin building outputs follow their declared batch economics", function()
+  for building_name in pairs(shared.ADMIN_BUILDINGS) do
+    local base = get_recipe(building_name)
+    if base then
+      local regulated = get_recipe(building_name .. "-regulated")
+      assert_true(regulated ~= nil, building_name .. " should have a regulated assembler recipe")
+
+      local base_amount = get_result_amount(base, building_name)
+      if base_amount then
+        local multiplier = shared.BATCH_MULTIPLIERS[building_name]
+          or shared.BATCH_MULTIPLIER_DEFAULT
+        assert_eq(
+          get_result_amount(regulated, building_name),
+          base_amount * multiplier,
+          building_name .. " regulated output should match its batch multiplier"
+        )
+      end
+    end
+  end
+end)
+
 test("printer-t2 gets a regulated AM recipe", function()
   local r = get_recipe("printer-t2-regulated")
   assert_true(r ~= nil, "printer-t2-regulated missing")
