@@ -599,15 +599,21 @@ local function craft_readiness(office)
 
   if office.energy <= 0 then return "no-power" end
 
-  local input_inv = office.get_inventory(defines.inventory.assembling_machine_input)
-  for _, ingredient in pairs(recipe.ingredients) do
-    if ingredient.type == "item" then
-      if not input_inv or input_inv.get_item_count(ingredient.name) < ingredient.amount then
-        return "no-ingredients"
-      end
-    elseif ingredient.type == "fluid" then
-      if not fluidbox_has(office, ingredient.name, ingredient.amount) then
-        return "no-ingredients"
+  -- Factorio removes ingredients from the input inventory as soon as a craft
+  -- starts. If a worker's shift ends mid-craft, those committed ingredients
+  -- must still count or the inactive office can never summon its replacement.
+  local craft_in_progress = (office.crafting_progress or 0) > 0
+  if not craft_in_progress then
+    local input_inv = office.get_inventory(defines.inventory.assembling_machine_input)
+    for _, ingredient in pairs(recipe.ingredients) do
+      if ingredient.type == "item" then
+        if not input_inv or input_inv.get_item_count(ingredient.name) < ingredient.amount then
+          return "no-ingredients"
+        end
+      elseif ingredient.type == "fluid" then
+        if not fluidbox_has(office, ingredient.name, ingredient.amount) then
+          return "no-ingredients"
+        end
       end
     end
   end

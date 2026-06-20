@@ -199,6 +199,7 @@ local function new_office(surface, unit_number, energy)
     energy = energy == nil and 100 or energy,
     active = nil,
     status = defines.entity_status.working,
+    crafting_progress = 0,
     products_finished = 0,
   }
   function office.get_recipe()
@@ -394,6 +395,43 @@ test("field office worker stays on site during low power", function()
   assert_eq(storage.field_office_state[office.unit_number].phase, "working", "low power should not dismiss the worker")
   assert_true(storage.field_office_releasing[biter.unit_number] == nil, "low power should not send the worker home")
   assert_eq(office.active, true, "field office should remain active so it can keep progressing under brownout")
+end)
+
+test("field office summons a replacement worker for an in-progress craft", function()
+  reset()
+  local spawner = {valid = true, position = {x = 40, y = 50}}
+  local surface = new_surface({spawner})
+  local office = new_office(surface, 6, 100)
+  local input_count = 1
+  function office.get_recipe()
+    return {ingredients = {{type = "item", name = "ticket-landscape", amount = 1}}}
+  end
+  function office.get_inventory(inventory)
+    if inventory == defines.inventory.assembling_machine_output then
+      return {is_full = function() return false end}
+    end
+    return {get_item_count = function() return input_count end}
+  end
+  field_office.track_entity(office)
+
+  field_office.update(0)
+  local first_biter = surface.created_entities[1]
+  first_biter.position = {x = office.position.x, y = office.position.y}
+  field_office.update(30)
+
+  -- The next craft starts before the completed shift is observed, consuming
+  -- its complaint item from the input inventory.
+  input_count = 0
+  office.products_finished = 2
+  office.crafting_progress = 0.5
+  field_office.update(60)
+  assert_eq(storage.field_office_state[office.unit_number].phase, "idle", "completed shift should release its worker")
+
+  field_office.update(90)
+
+  assert_true(surface.created_entities[2] ~= nil, "committed craft ingredients should allow a replacement worker to be summoned")
+  assert_eq(storage.field_office_state[office.unit_number].phase, "calling", "office should call a worker to finish the in-progress craft")
+  assert_eq(office.custom_status.label[1], "gui.field-office-calling", "office should not report the committed complaint as missing")
 end)
 
 test("field office reports unreachable workers when caller gets stuck", function()
