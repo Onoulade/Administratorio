@@ -1824,7 +1824,7 @@ if space_age_planets and data.raw.recipe and data.raw.recipe["rocket-silo"] then
       planet = "fulgora",
       ingredients = {
         {type = "item", name = "digital-processing-certificate", amount = 1},
-        {type = "item", name = "archival-substrate", amount = 20},
+        {type = "item", name = "charged-toner", amount = 20},
         {type = "item", name = "redundant-rubble", amount = 100},
       },
     },
