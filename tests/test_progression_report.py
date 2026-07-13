@@ -59,6 +59,11 @@ RESOURCE_ROOT_TYPES = (
     "fish",
 )
 SECONDARY_RECIPE_CATEGORIES = {"pneumatic-liquify", "pneumatic-solidify"}
+RUNTIME_OBTAINABLE_ITEMS = {
+    # A resolved citizen consumes a job offer and is inserted into the desk as
+    # a worker by control-stage code; no prototype recipe is supposed to exist.
+    "biter-worker",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -244,7 +249,7 @@ class ProgressionAnalyzer:
         self.start_enabled_recipes = set(self.always_enabled_recipes) | self.world_trigger_recipes
 
     def _build_root_materials(self) -> Set[str]:
-        roots = {"water", "taxpayer-money"}
+        roots = {"water", "taxpayer-money"} | RUNTIME_OBTAINABLE_ITEMS
         for proto_type in RESOURCE_ROOT_TYPES:
             for proto in self.data_raw.get(proto_type, {}).values():
                 minable = proto.get("minable") or {}

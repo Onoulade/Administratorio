@@ -4,7 +4,7 @@ local M = {}
 
 local POST_NAME = "territorial-arbitration-post"
 local ORDER_ITEM = "territorial-resettlement-order"
-local COFFEE_FLUID = "liquid-coffee"
+local PROPAGANDA_FLUID = "lie"
 local PROCESS_INTERVAL = 60
 
 local function ensure_storage()
@@ -297,7 +297,7 @@ local function attempt_upkeep(post_state, territory_state)
     return false, size, orders_needed, coffee_needed
   end
 
-  if fluid_amount(fluidbox, COFFEE_FLUID) < coffee_needed then
+  if fluid_amount(fluidbox, PROPAGANDA_FLUID) < coffee_needed then
     mark_starved(entity)
     return false, size, orders_needed, coffee_needed
   end
@@ -307,7 +307,7 @@ local function attempt_upkeep(post_state, territory_state)
     return false, size, orders_needed, coffee_needed
   end
 
-  if remove_fluid(fluidbox, COFFEE_FLUID, coffee_needed) < coffee_needed then
+  if remove_fluid(fluidbox, PROPAGANDA_FLUID, coffee_needed) < coffee_needed then
     mark_starved(entity)
     return false, size, orders_needed, coffee_needed
   end
@@ -695,7 +695,8 @@ end
 
 M.POST_NAME = POST_NAME
 M.ORDER_ITEM = ORDER_ITEM
-M.COFFEE_FLUID = COFFEE_FLUID
+M.PROPAGANDA_FLUID = PROPAGANDA_FLUID
+M.COFFEE_FLUID = PROPAGANDA_FLUID -- compatibility for existing saves/tests
 M.PROCESS_INTERVAL = PROCESS_INTERVAL
 
 return M

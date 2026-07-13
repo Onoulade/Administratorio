@@ -365,7 +365,7 @@ test("territory shrink regrows only inside the original footprint when upkeep co
     {x = 2, y = 0},
   }
   local territory = new_territory(world.surface, original_chunks, "small-demolisher")
-  local post = new_post(world.surface, world.force, {{x = 0, y = 0}}, 2, 50)
+  local post = new_post(world.surface, world.force, {{x = 0, y = 0}}, 2, 100)
 
   assert_true(module.on_entity_built(post, world.player), "post should bind to the territory")
   run_tick(60)
@@ -398,7 +398,7 @@ test("multiple posts stack successful upkeep without extra starvation penalty", 
     {x = 2, y = 0},
   }, "small-demolisher")
 
-  local fed_post = new_post(world.surface, world.force, {{x = 0, y = 0}}, 1, 25)
+  local fed_post = new_post(world.surface, world.force, {{x = 0, y = 0}}, 1, 50)
   local starved_post = new_post(world.surface, world.force, {{x = 1, y = 0}}, 0, 0)
 
   assert_true(module.on_entity_built(fed_post, world.player), "fed post should bind")
@@ -431,7 +431,7 @@ test("one post touching multiple territories pays upkeep for each independently"
   local post = new_post(world.surface, world.force, {
     {x = 0, y = 0},
     {x = 1, y = 0},
-  }, 4, 100)
+  }, 4, 250)
 
   assert_true(module.on_entity_built(post, world.player), "multi-territory post should bind")
   run_tick(60)
@@ -443,7 +443,7 @@ test("one post touching multiple territories pays upkeep for each independently"
 
   assert_eq(#territory_states, 2, "two territories should remain tracked")
   assert_eq(post._inventory.count(), 0, "multi-territory upkeep should consume the summed order cost")
-  assert_eq(post._fluidbox:amount(), 0, "multi-territory upkeep should consume the summed coffee cost")
+  assert_eq(post._fluidbox:amount(), 0, "multi-territory upkeep should consume the summed propaganda-fluid cost")
   for _, territory_state in ipairs(territory_states) do
     assert_eq(territory_state.progress, 1, "each touched territory should advance independently")
   end
@@ -454,7 +454,7 @@ test("completion destroys the demolisher and permanently clears the territory", 
   local territory, segmented_unit = new_territory(world.surface, {
     {x = 0, y = 0},
   }, "small-demolisher")
-  local post = new_post(world.surface, world.force, {{x = 0, y = 0}}, 1, 25)
+  local post = new_post(world.surface, world.force, {{x = 0, y = 0}}, 1, 50)
 
   assert_true(module.on_entity_built(post, world.player), "post should bind")
   run_tick(60)

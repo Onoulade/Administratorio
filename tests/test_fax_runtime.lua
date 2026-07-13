@@ -595,24 +595,11 @@ local function charge_receiver(receiver, item_name_or_multiplier, multiplier)
     multiplier = item_name_or_multiplier or 1
   end
 
-  receiver.input_inventory.insert{name = shared.RECONSTRUCTION_PAPER_ITEM, count = multiplier}
-
-  local required_fluids = {}
-  local source = item_name and shared.get_document_ink_requirements(item_name) or shared.RECONSTRUCTION_INK_FLUIDS
-  for _, fluid in ipairs(source) do
-    required_fluids[fluid.name] = fluid.amount
-  end
-
-  for index, fluid in ipairs(shared.RECONSTRUCTION_INK_FLUIDS) do
-    if required_fluids[fluid.name] then
-      receiver.fluidbox[index] = {
-        name = fluid.name,
-        amount = required_fluids[fluid.name] * multiplier,
-        temperature = 25,
-      }
-    else
-      receiver.fluidbox[index] = nil
-    end
+  local requirements = shared.get_reconstruction_requirements(item_name or "work-order")
+  receiver.input_inventory.insert{name = shared.RECONSTRUCTION_PAPER_ITEM, count = requirements.sheets * multiplier}
+  receiver.input_inventory.insert{name = shared.RECONSTRUCTION_SUBSTRATE_ITEM, count = requirements.substrate * multiplier}
+  if requirements.ribbon > 0 then
+    receiver.input_inventory.insert{name = shared.RECONSTRUCTION_RIBBON_ITEM, count = requirements.ribbon * multiplier}
   end
 end
 
@@ -649,6 +636,15 @@ local function gui_contains_caption(root, caption)
     if gui_contains_caption(child, caption) then
       return true
     end
+  end
+  return false
+end
+
+local function gui_contains_localised_key(root, key)
+  if not root then return false end
+  if type(root.caption) == "table" and root.caption[1] == key then return true end
+  for _, child in pairs(root.children or {}) do
+    if gui_contains_localised_key(child, key) then return true end
   end
   return false
 end
@@ -720,7 +716,8 @@ test("receiver opens a custom screen UI and replaces the vanilla entity window",
   assert_true(ctx.player.gui.left[shared.GUI_FRAME_NAME] == nil, "receiver should not reuse the emitter side panel")
   assert_true(ctx.player.opened == frame, "opening the receiver should replace the vanilla window with the custom screen GUI")
   assert_true(gui_contains_caption(frame, "Queue"), "receiver queue should expose a dedicated queue section")
-  assert_true(gui_contains_caption(frame, "Required inks"), "receiver queue should include a column for ink requirements")
+  assert_true(gui_contains_localised_key(frame, "gui.fax-required-media"),
+    "receiver queue should include a localized column for dry-media requirements")
   assert_true(gui_contains_text(frame, "Queued"),
     "receiver queue rows should include explicit state text")
 
@@ -819,7 +816,7 @@ test("queue capacity upgrades raise the exported free slot count to twenty", fun
   assert_eq(free_slots, 20, "fully upgraded fax networks should export twenty free queue slots")
 end)
 
-test("faxed documents consume transfer media and ink and preserve quality when printed", function()
+test("faxed documents consume dry transfer media and preserve quality when printed", function()
   local ctx = new_context()
   local receiver = new_fax_entity(ctx.surfaces.vulcanus, ctx.force, shared.RECEIVER_NAME, 0, 0, 20)
   local emitter = new_fax_entity(ctx.surfaces.nauvis, ctx.force, shared.EMITTER_NAME, 0, 0, 12)
@@ -836,10 +833,10 @@ test("faxed documents consume transfer media and ink and preserve quality when p
 
   assert_eq(receiver.input_inventory.get_item_count(shared.RECONSTRUCTION_PAPER_ITEM), 0,
     "printing should consume one thermal transfer sheet")
-  assert_eq(get_fluid_amount(receiver, "liquid-black-ink"), 0, "black paperwork should consume black ink")
-  assert_eq(get_fluid_amount(receiver, "cyan-ink"), 0, "black paperwork should not need cyan ink")
-  assert_eq(get_fluid_amount(receiver, "yellow-ink"), 0, "black paperwork should not need yellow ink")
-  assert_eq(get_fluid_amount(receiver, "magenta-ink"), 0, "black paperwork should not need magenta ink")
+  assert_eq(receiver.input_inventory.get_item_count(shared.RECONSTRUCTION_SUBSTRATE_ITEM), 0,
+    "printing should consume archival substrate")
+  assert_eq(receiver.input_inventory.get_item_count(shared.RECONSTRUCTION_RIBBON_ITEM), 0,
+    "black paperwork should not consume a chroma-ribbon charge")
   assert_eq(receiver.output_inventory.get_item_count("construction-permit"), 1, "printed document should be inserted into the receiver output slot")
 
   local printed_quality = nil
@@ -852,7 +849,7 @@ test("faxed documents consume transfer media and ink and preserve quality when p
   assert_eq(printed_quality, "legendary", "printed fax output should preserve quality")
 end)
 
-test("colored faxing only consumes the required inks", function()
+test("colored faxing consumes the correct solid-media tier", function()
   local ctx = new_context()
   local receiver = new_fax_entity(ctx.surfaces.vulcanus, ctx.force, shared.RECEIVER_NAME, 0, 0, 20)
   local emitter = new_fax_entity(ctx.surfaces.nauvis, ctx.force, shared.EMITTER_NAME, 0, 0, 12)
@@ -869,14 +866,16 @@ test("colored faxing only consumes the required inks", function()
   fax.on_tick({tick = 240})
 
   assert_eq(receiver.output_inventory.get_item_count("cyan-yellow-form"), 1,
-    "a color document should print once its required inks are available")
-  assert_eq(get_fluid_amount(receiver, "cyan-ink"), 0, "the receiver should consume cyan ink for cyan-yellow paperwork")
-  assert_eq(get_fluid_amount(receiver, "yellow-ink"), 0, "the receiver should consume yellow ink for cyan-yellow paperwork")
-  assert_eq(get_fluid_amount(receiver, "liquid-black-ink"), 0, "the receiver should not require black ink for cyan-yellow paperwork")
-  assert_eq(get_fluid_amount(receiver, "magenta-ink"), 0, "the receiver should not require magenta ink for cyan-yellow paperwork")
+    "a color document should print once its dry media are available")
+  assert_eq(receiver.input_inventory.get_item_count(shared.RECONSTRUCTION_PAPER_ITEM), 0,
+    "bicolor paperwork should consume one transfer sheet")
+  assert_eq(receiver.input_inventory.get_item_count(shared.RECONSTRUCTION_SUBSTRATE_ITEM), 0,
+    "bicolor paperwork should consume two archival substrates")
+  assert_eq(receiver.input_inventory.get_item_count(shared.RECONSTRUCTION_RIBBON_ITEM), 0,
+    "bicolor paperwork should consume one chroma-ribbon charge")
 end)
 
-test("successful faxing ejects the original paperwork back at the emitter", function()
+test("successful faxing consumes the original paperwork at the emitter", function()
   local ctx = new_context()
   local receiver = new_fax_entity(ctx.surfaces.vulcanus, ctx.force, shared.RECEIVER_NAME, 0, 0, 20)
   local emitter = new_fax_entity(ctx.surfaces.nauvis, ctx.force, shared.EMITTER_NAME, 0, 0, 1)
@@ -891,8 +890,7 @@ test("successful faxing ejects the original paperwork back at the emitter", func
     "the emitter should hold the original document out of the slot while transmitting")
 
   fax.on_tick({tick = 120})
-  assert_eq(#ctx.surfaces.nauvis.spilled_items, 1, "successful faxing should eject the original document")
-  assert_eq(ctx.surfaces.nauvis.spilled_items[1].stack.name, "work-order", "the emitted document should match the original")
+  assert_eq(#ctx.surfaces.nauvis.spilled_items, 0, "successful faxing should consume rather than duplicate the original document")
   assert_eq(emitter.inventory.get_item_count("work-order"), 0, "the original should not be put back into the emitter slot automatically")
 end)
 

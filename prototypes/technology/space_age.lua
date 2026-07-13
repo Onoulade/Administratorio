@@ -12,6 +12,16 @@ local function add_tech_unlock(technology_name, recipe_name)
   table.insert(technology.effects, {type = "unlock-recipe", recipe = recipe_name})
 end
 
+local function add_tech_prerequisite(technology_name, prerequisite_name)
+  local technology = data.raw.technology and data.raw.technology[technology_name]
+  if not technology or not (data.raw.technology and data.raw.technology[prerequisite_name]) then return end
+  technology.prerequisites = technology.prerequisites or {}
+  for _, existing in ipairs(technology.prerequisites) do
+    if existing == prerequisite_name then return end
+  end
+  technology.prerequisites[#technology.prerequisites + 1] = prerequisite_name
+end
+
 data:extend({
   {
     type = "technology",
@@ -161,12 +171,10 @@ data:extend({
       {type = "unlock-recipe", recipe = "biochamber-operating-waiver"},
     },
     prerequisites = {"executive-review"},
-    unit = {
-      count = 320,
-      ingredients = {
-        {"administrative-science-pack", 1},
-      },
-      time = 45,
+    research_trigger = {
+      type = "craft-item",
+      item = "bullshit-ore",
+      count = 50,
     },
     order = "h-d",
   },
@@ -182,17 +190,11 @@ data:extend({
       {type = "unlock-recipe", recipe = "electromagnetic-operating-license"},
       {type = "unlock-recipe", recipe = "data-recovery-order"},
     },
-    prerequisites = {"chromatic-printing", "electromagnetic-science-pack"},
-    unit = {
-      count = 360,
-      ingredients = {
-        {"automation-science-pack", 1},
-        {"logistic-science-pack", 1},
-        {"chemical-science-pack", 1},
-        {"electromagnetic-science-pack", 1},
-        {"administrative-science-pack", 1},
-      },
-      time = 45,
+    prerequisites = {"chromatic-printing"},
+    research_trigger = {
+      type = "craft-item",
+      item = "charged-toner",
+      count = 20,
     },
     order = "h-e",
   },
@@ -407,6 +409,7 @@ data:extend({
 add_tech_unlock("workforce-formation", "licensed-notary-formation")
 add_tech_unlock("administrative-science-research", "research-grant-approval-vulcanus")
 add_tech_unlock("administrative-science-research", "administrative-science-pack-production-vulcanus")
+add_tech_unlock("administrative-science-research", "admin-station-vulcanus")
 add_tech_unlock("administrative-science-research", "admin-station-gleba")
 add_tech_unlock("administrative-science-research", "administrative-science-pack-production-gleba")
 add_tech_unlock("calcite-processing", "dubious-data-analysis-vulcanus")
@@ -422,6 +425,22 @@ add_tech_unlock("printing-technology", "printer-t1-gleba")
 add_tech_unlock("industrial-propaganda", "propaganda-distillery-vulcanus")
 add_tech_unlock("industrial-propaganda", "refined-nonsense-production-vulcanus")
 add_tech_unlock("local-precedents", "useless-documentation-production-gleba")
+add_tech_unlock("discovery-bullshit", "dubious-data-cultivation-gleba")
+add_tech_unlock("discovery-bullshit", "basic-excuse-cultivation-gleba")
+add_tech_unlock("discovery-bullshit", "provisional-approval-cultivation-gleba")
+add_tech_unlock("local-precedents", "useless-documentation-cultivation-gleba")
+add_tech_unlock("corporate-hospitality", "good-excuse-cultivation-gleba")
+add_tech_unlock("gleba-conciliation", "refined-nonsense-cultivation-gleba")
+add_tech_unlock("gleba-conciliation", "credentials-cultivation-gleba")
+add_tech_unlock("gleba-conciliation", "justification-cultivation-gleba")
+add_tech_unlock("chromatic-printing", "liquid-black-ink-fulgora")
+add_tech_unlock("chromatic-printing", "ink-recovery-fulgora")
+add_tech_unlock("chromatic-printing", "dubious-data-recovery-fulgora")
+add_tech_unlock("chromatic-printing", "basic-excuse-recovery-fulgora")
+add_tech_unlock("chromatic-printing", "carbon-offset-certificate-basic-fulgora")
+add_tech_unlock("electromagnetic-plant", "salvage-electrolyte-fulgora")
+add_tech_unlock("electromagnetic-science-pack", "electromagnetic-lubricant-fulgora")
+add_tech_unlock("rocket-fuel", "electromagnetic-rocket-fuel-fulgora")
 add_tech_unlock("agricultural-science-pack", "conciliation-officer-formation")
 add_tech_unlock("corporate-hospitality", "corporate-breakroom-gleba")
 add_tech_unlock("electromagnetic-science-pack", "relay-clerk-formation")
@@ -440,8 +459,17 @@ add_tech_unlock("cyan-yellow-bureaucracy", "big-space-tourist-jettison")
 add_tech_unlock("cyan-yellow-bureaucracy", "behemoth-space-tourist-jettison")
 add_tech_unlock("cyan-yellow-bureaucracy", "tourism-lure-spores-production")
 
+-- Chromatic printing is landing preparation, like packing enough belts and
+-- power poles. Requiring it before each basic planet prevents an optional
+-- Nauvis research omission from becoming an off-world bootstrap deadlock.
+for _, planet_name in ipairs({"vulcanus", "gleba", "fulgora"}) do
+  add_tech_prerequisite("planet-discovery-" .. planet_name, "chromatic-printing")
+end
+
 for item_name in pairs(fax_shared.FAX_DOCUMENTS) do
   add_tech_unlock(
     fax_shared.reconstruction_unlock_technology(item_name),
     fax_shared.reconstruction_recipe_name(item_name))
 end
+
+require("prototypes.technology.fulgora_archives")

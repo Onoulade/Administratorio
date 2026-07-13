@@ -10,6 +10,8 @@ require("prototypes.recipe.economy")
 require("prototypes.recipe.buildings")
 if space_age_enabled then
   require("prototypes.recipe.space_age")
+  require("prototypes.recipe.fulgora_archives")
+  require("prototypes.recipe.planetary_abundance")
 end
 if working_hours_enabled then
   require("prototypes.recipe.modules")

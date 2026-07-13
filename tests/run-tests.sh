@@ -1,6 +1,7 @@
 #!/bin/sh
 
 set -eu
+export PYTHONDONTWRITEBYTECODE=1
 
 usage() {
   cat <<'EOF'
@@ -51,6 +52,7 @@ done
 
 [ -n "$REPO_ROOT" ] || { echo "--repo-root is required" >&2; exit 1; }
 command -v lua >/dev/null 2>&1 || { echo "'lua' not found on PATH" >&2; exit 1; }
+command -v luac >/dev/null 2>&1 || { echo "'luac' not found on PATH" >&2; exit 1; }
 
 # Prefer python3. Fall back to python only if it is Python 3.
 if command -v python3 >/dev/null 2>&1; then
@@ -83,6 +85,15 @@ run_lua_tests() {
   done
 }
 
+run_lua_syntax_checks() {
+  printf '==> Lua syntax check\n'
+  find "$REPO_ROOT" -path "$REPO_ROOT/.git" -prune -o -type f -name '*.lua' -print |
+  while IFS= read -r lua_file; do
+    [ -n "$lua_file" ] || continue
+    luac -p "$lua_file"
+  done
+}
+
 run_python_tests() {
   find "$TEST_DIR" -maxdepth 1 -type f -name 'test_*.py' | sort |
   while IFS= read -r test_file; do
@@ -101,6 +112,7 @@ run_python_tests() {
 }
 
 cd "$REPO_ROOT"
+run_lua_syntax_checks
 run_lua_tests
 run_python_tests "$@"
 

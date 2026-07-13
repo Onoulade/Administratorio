@@ -495,55 +495,41 @@ end
 
 local function get_receiver_supply_snapshot(state, entry)
   local input_inventory = state and state.entity and get_receiver_input_inventory(state.entity) or nil
-  local fluidbox = state and state.entity and get_receiver_fluidbox(state.entity) or nil
-  local required_by_name = {}
-  for _, fluid in ipairs(shared.get_document_ink_requirements(entry and entry.name or nil)) do
-    required_by_name[fluid.name] = fluid
+  local requirements = entry and shared.get_reconstruction_requirements(entry.name) or {sheets = 0, substrate = 0, ribbon = 0}
+  local function item_count(name)
+    return input_inventory and input_inventory.get_item_count and (input_inventory.get_item_count(name) or 0) or 0
   end
 
   local snapshot = {
-    paper = inventory_has_item(input_inventory, shared.RECONSTRUCTION_PAPER_ITEM, 1),
+    paper = inventory_has_item(input_inventory, shared.RECONSTRUCTION_PAPER_ITEM, requirements.sheets),
     paper_required = entry ~= nil,
-    paper_count = input_inventory and input_inventory.get_item_count and input_inventory.get_item_count(shared.RECONSTRUCTION_PAPER_ITEM) or 0,
-    fluids = {},
-    missing_fluids = {},
+    paper_count = item_count(shared.RECONSTRUCTION_PAPER_ITEM),
+    paper_amount = requirements.sheets,
+    substrate_count = item_count(shared.RECONSTRUCTION_SUBSTRATE_ITEM),
+    substrate_amount = requirements.substrate,
+    ribbon_count = item_count(shared.RECONSTRUCTION_RIBBON_ITEM),
+    ribbon_amount = requirements.ribbon,
+    missing_items = {},
   }
-
-  for _, fluid in ipairs(shared.RECONSTRUCTION_INK_FLUIDS) do
-    local required = required_by_name[fluid.name]
-    local available = fluid_amount(fluidbox, fluid.name)
-    local is_required = required ~= nil
-    local fluid_state = {
-      id = fluid.id,
-      name = fluid.name,
-      label = fluid.label,
-      available = available,
-      required = required and required.amount or 0,
-      is_required = is_required,
-      ready = not is_required or available >= (required.amount or 0),
-    }
-    snapshot.fluids[#snapshot.fluids + 1] = fluid_state
-    if fluid_state.is_required and not fluid_state.ready then
-      snapshot.missing_fluids[#snapshot.missing_fluids + 1] = fluid_state.label
-    end
-  end
+  if snapshot.paper_count < requirements.sheets then snapshot.missing_items[#snapshot.missing_items + 1] = {"item-name.thermal-transfer-sheet"} end
+  if snapshot.substrate_count < requirements.substrate then snapshot.missing_items[#snapshot.missing_items + 1] = {"item-name.archival-substrate"} end
+  if snapshot.ribbon_count < requirements.ribbon then snapshot.missing_items[#snapshot.missing_items + 1] = {"item-name.composite-chroma-ribbon"} end
 
   return snapshot
 end
 
 local function receiver_missing_supplies_text(snapshot)
   if not snapshot then return nil end
-  local missing = {}
-  if snapshot.paper_required and not snapshot.paper then
-    missing[#missing + 1] = "thermal transfer sheet"
-  end
-  for _, fluid_label in ipairs(snapshot.missing_fluids or {}) do
-    missing[#missing + 1] = fluid_label
-  end
+  local missing = snapshot.missing_items or {}
   if #missing == 0 then
     return nil
   end
-  return table.concat(missing, ", ")
+  local caption = {""}
+  for index, item_name in ipairs(missing) do
+    if index > 1 then caption[#caption + 1] = ", " end
+    caption[#caption + 1] = item_name
+  end
+  return caption
 end
 
 local function receiver_output_stack(entry)
@@ -562,21 +548,20 @@ end
 
 local function receiver_has_required_supplies(state, entry)
   local snapshot = get_receiver_supply_snapshot(state, entry)
-  local has_paper = (not snapshot.paper_required) or snapshot.paper
-  return has_paper and #(snapshot.missing_fluids or {}) == 0, snapshot
+  return #(snapshot.missing_items or {}) == 0, snapshot
 end
 
 local function consume_receiver_supplies(state, entry)
   if not entry then return false end
   local input_inventory = state and state.entity and get_receiver_input_inventory(state.entity) or nil
-  local fluidbox = state and state.entity and get_receiver_fluidbox(state.entity) or nil
+  local requirements = shared.get_reconstruction_requirements(entry.name)
   local has_supplies = receiver_has_required_supplies(state, entry)
   if not has_supplies then return false end
-  if not remove_one_item(input_inventory, shared.RECONSTRUCTION_PAPER_ITEM) then
-    return false
-  end
-  for _, fluid in ipairs(shared.get_document_ink_requirements(entry.name)) do
-    remove_fluid(fluidbox, fluid.name, fluid.amount)
+  if not requirements then return false end
+  input_inventory.remove{name = shared.RECONSTRUCTION_PAPER_ITEM, count = requirements.sheets}
+  input_inventory.remove{name = shared.RECONSTRUCTION_SUBSTRATE_ITEM, count = requirements.substrate}
+  if requirements.ribbon > 0 then
+    input_inventory.remove{name = shared.RECONSTRUCTION_RIBBON_ITEM, count = requirements.ribbon}
   end
   return true
 end
@@ -674,10 +659,10 @@ local function compute_receiver_feedback(state, tick)
     local has_supplies, snapshot = receiver_has_required_supplies(state, next_entry)
     if not has_supplies then
       local missing = receiver_missing_supplies_text(snapshot)
-      local label = ("Waiting for %s"):format(missing or "supplies")
+      local label = {"gui.fax-waiting-for", missing or {"gui.fax-supplies"}}
       return {
         entity_label = label,
-        gui_label = ("%s. Queue %d/%d"):format(label, load, capacity),
+        gui_label = {"", label, ". ", {"gui.fax-queue-count", load, capacity}},
         diode = "yellow",
       }
     end
@@ -1260,7 +1245,7 @@ local function add_queue_header_row(parent)
   set_element_size(state, 120, nil)
   local source = row.add{type = "label", caption = "From"}
   set_element_size(source, 80, nil)
-  row.add{type = "label", caption = "Required inks"}
+  row.add{type = "label", caption = {"gui.fax-required-media"}}
   return row
 end
 
@@ -1325,7 +1310,7 @@ local function add_receiver_queue_row(parent, entry, state_text)
 
   local inks_label = body.add{
     type = "label",
-    caption = shared.format_required_inks(entry.name),
+    caption = shared.format_reconstruction_media(entry.name),
   }
   if inks_label.style then
     inks_label.style.horizontally_stretchable = true
@@ -1556,35 +1541,29 @@ local function populate_receiver_supplies(frame, state)
   add_icon_text_row(
     content,
     "[img=item.thermal-transfer-sheet]",
-    current_entry and ("Active requirements: %s"):format(shared.format_required_inks(current_entry.name)) or "Active requirements: none",
-    current_entry and "Transfer sheets plus only the inks listed below are needed." or "No queued form is currently being evaluated.")
+    current_entry and {"gui.fax-active-requirements", shared.format_reconstruction_media(current_entry.name)} or {"gui.fax-active-requirements-none"},
+    current_entry and {"gui.fax-dry-media-only"} or {"gui.fax-no-queued-form"})
 
   local table_element = content.add{
     type = "table",
     column_count = 3,
   }
-  add_gui_table_row(table_element, {"Supply", "Available", "State"})
+  add_gui_table_row(table_element, {{"gui.fax-supply"}, {"gui.fax-available"}, {"gui.fax-state"}})
   add_gui_table_row(table_element, {
-    "Transfer sheet",
-    tostring(snapshot.paper_count or 0),
-    current_entry and (snapshot.paper and "Ready" or "Missing") or "Idle",
+    {"item-name.thermal-transfer-sheet"},
+    current_entry and ("%d/%d"):format(snapshot.paper_count or 0, snapshot.paper_amount or 0) or tostring(snapshot.paper_count or 0),
+    current_entry and ((snapshot.paper_count or 0) >= (snapshot.paper_amount or 0) and {"gui.fax-ready"} or {"gui.fax-missing"}) or {"gui.fax-idle"},
   })
-
-  for _, fluid in ipairs(snapshot.fluids or {}) do
-    local state_text
-    if not current_entry then
-      state_text = "Idle"
-    elseif fluid.is_required then
-      state_text = fluid.ready and "Ready" or "Missing"
-    else
-      state_text = "Optional"
-    end
-    add_gui_table_row(table_element, {
-      fluid.label,
-      fluid.is_required and ("%.0f/%.0f"):format(fluid.available or 0, fluid.required or 0) or ("%.0f"):format(fluid.available or 0),
-      state_text,
-    })
-  end
+  add_gui_table_row(table_element, {
+    {"item-name.archival-substrate"},
+    current_entry and ("%d/%d"):format(snapshot.substrate_count or 0, snapshot.substrate_amount or 0) or tostring(snapshot.substrate_count or 0),
+    current_entry and ((snapshot.substrate_count or 0) >= (snapshot.substrate_amount or 0) and {"gui.fax-ready"} or {"gui.fax-missing"}) or {"gui.fax-idle"},
+  })
+  add_gui_table_row(table_element, {
+    {"item-name.composite-chroma-ribbon"},
+    current_entry and ("%d/%d"):format(snapshot.ribbon_count or 0, snapshot.ribbon_amount or 0) or tostring(snapshot.ribbon_count or 0),
+    current_entry and ((snapshot.ribbon_count or 0) >= (snapshot.ribbon_amount or 0) and {"gui.fax-ready"} or {"gui.fax-missing"}) or {"gui.fax-idle"},
+  })
 end
 
 local function populate_receiver_requests(frame, state)
@@ -1790,7 +1769,6 @@ local function process_emitter_jobs(tick)
           quality_name = job.quality_name,
           source_planet = job.source_planet,
         }
-        spill_job_document(state.entity, nil, job)
         state.last_delivery_tick = tick
         state.current_job = nil
       end
