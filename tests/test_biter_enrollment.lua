@@ -30,7 +30,9 @@ package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 
 local noop = function() end
 
-local function load_biters_module()
+local function load_biters_module(space_age_enabled)
+  mods = space_age_enabled and {["space-age"] = "2.0.0"} or {}
+  package.loaded["feature_flags"] = nil
   package.loaded["scripts.constants"] = {
     BITER_MAX_TIER = {
       ["small-biter"] = 1,
@@ -42,6 +44,10 @@ local function load_biters_module()
     BITER_PAYOUT = {
       ["small-biter"] = 5,
       ["small-spitter"] = 5,
+    },
+    BITER_WORKER_YIELD = {
+      ["small-biter"] = 1,
+      ["small-spitter"] = 1,
     },
     PROTEST_THRESHOLD = 600,
     ENROLLMENT_OFFER_LOW_FRUSTRATION_RATIO = 0.25,
@@ -101,7 +107,7 @@ defines = {
   },
 }
 
-local biters = load_biters_module()
+local biters = load_biters_module(true)
 
 local function new_inventory(opts)
   opts = opts or {}
@@ -132,6 +138,9 @@ local function new_inventory(opts)
     if spec.name == "taxpayer-money" and opts.taxpayer_room == false then
       return 0
     end
+    if spec.name == "biter-worker" and opts.worker_room == false then
+      return 0
+    end
     counts[spec.name] = (counts[spec.name] or 0) + count
     added[spec.name] = (added[spec.name] or 0) + count
     return count
@@ -143,6 +152,9 @@ local function new_inventory(opts)
     end
     if spec.name == "taxpayer-money" then
       return opts.taxpayer_room ~= false
+    end
+    if spec.name == "biter-worker" then
+      return opts.worker_room ~= false
     end
     return true
   end
@@ -348,6 +360,18 @@ test("job offer is not consumed when there is no room for enrolled-biter", funct
     assert_eq(ctx.inventory._added["taxpayer-money"], 5, "no-room case should keep the normal taxpayer payout")
     assert_true(ctx.inventory._added["enrolled-biter"] == nil, "no-room case should not produce enrolled-biter")
   end)
+end)
+
+test("base-only hiring produces the legacy worker directly", function()
+  local base_biters = load_biters_module(false)
+  local ctx = new_context({job_offer_count = 1, entity_name = "small-spitter", frustration = 500})
+  base_biters.process_resolutions({ctx.desk})
+
+  assert_true(ctx.entity.valid == false, "base-only hired citizen should be removed from the world")
+  assert_eq(ctx.inventory._removed["job-offer"], 1, "base-only hire should consume the offer")
+  assert_eq(ctx.inventory._added["biter-worker"], 1, "base-only hire should produce the reusable worker")
+  assert_true(ctx.inventory._added["taxpayer-money"] == nil, "base-only hire should replace the cash payout")
+  assert_true(ctx.inventory._added["enrolled-biter"] == nil, "base-only hire should not use Space Age enrollment")
 end)
 
 if failed > 0 then

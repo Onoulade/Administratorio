@@ -61,6 +61,7 @@ local technologies = {
   ["industrial-propaganda"] = {type = "technology", name = "industrial-propaganda", effects = {}},
   ["corporate-hospitality"] = {type = "technology", name = "corporate-hospitality", effects = {}},
   ["agricultural-science-pack"] = {type = "technology", name = "agricultural-science-pack", effects = {}},
+  ["electromagnetic-plant"] = {type = "technology", name = "electromagnetic-plant", effects = {}},
   ["electromagnetic-science-pack"] = {type = "technology", name = "electromagnetic-science-pack", effects = {}},
   ["cryogenic-science-pack"] = {type = "technology", name = "cryogenic-science-pack", effects = {}},
   ["after-hours-operations"] = {type = "technology", name = "after-hours-operations", effects = {}},
@@ -121,6 +122,7 @@ local fax_shared = require("scripts.fax_shared")
 dofile(mod_root .. "prototypes/item/space_age.lua")
 dofile(mod_root .. "prototypes/item/capsules-and-fluids.lua")
 dofile(mod_root .. "prototypes/recipe/space_age.lua")
+dofile(mod_root .. "prototypes/recipe/planetary_abundance.lua")
 dofile(mod_root .. "prototypes/technology/space_age.lua")
 dofile(mod_root .. "prototypes/signals.lua")
 
@@ -200,6 +202,16 @@ local function get_fluid_ingredient_amount(recipe, fluid_name)
   for _, ingredient in ipairs(recipe.ingredients) do
     if ingredient.type == "fluid" and ingredient.name == fluid_name then
       return ingredient.amount
+    end
+  end
+  return nil
+end
+
+local function get_item_ingredient_amount(recipe, item_name)
+  if not recipe or not recipe.ingredients then return nil end
+  for _, ingredient in ipairs(recipe.ingredients) do
+    if (ingredient.type or "item") == "item" and (ingredient.name or ingredient[1]) == item_name then
+      return ingredient.amount or ingredient[2]
     end
   end
   return nil
@@ -791,6 +803,14 @@ test("fulgora magenta chain defines the expected forms and staffed bureau", func
     "charged-toner",
     "redundant-rubble",
     "useless-documentation",
+    "old-archive",
+  }) do
+    assert_true(has_result(recipes["scrap-recycling"], result_name),
+      "scrap-recycling should randomly recover " .. result_name)
+    assert_true(get_result_probability(recipes["scrap-recycling"], result_name) < 1,
+      result_name .. " should be a probabilistic Fulgora salvage output")
+  end
+  for _, finished_form in ipairs({
     "signal-form-stock",
     "blank-magenta-form",
     "archive-recovery-permit",
@@ -798,13 +818,34 @@ test("fulgora magenta chain defines the expected forms and staffed bureau", func
     "electromagnetic-operating-license",
     "data-recovery-order",
   }) do
-    assert_true(has_result(recipes["scrap-recycling"], result_name),
-      "scrap-recycling should randomly recover " .. result_name)
-    assert_true(get_result_probability(recipes["scrap-recycling"], result_name) < 1,
-      result_name .. " should be a probabilistic Fulgora salvage output")
+    assert_true(not has_result(recipes["scrap-recycling"], finished_form),
+      "scrap should not bypass Fulgora processing by dropping " .. finished_form)
   end
   assert_true(data.raw.furnace["recycler"].result_inventory_size >= item_result_count(recipes["scrap-recycling"]),
     "recycler output inventory must fit the expanded scrap-recycling result table")
+end)
+
+test("fulgora archive and electrolyte bootstrap stays local", function()
+  local electrolyte = assert(recipes["salvage-electrolyte-fulgora"], "salvage-electrolyte-fulgora missing")
+  local archive_technology = assert(technologies["archive-recombination"], "archive-recombination missing")
+  local electromagnetic_plant = assert(technologies["electromagnetic-plant"], "electromagnetic-plant missing")
+
+  assert_eq(exact_surface_planet(electrolyte), "fulgora", "salvage electrolyte should stay on Fulgora")
+  assert_true(has_fluid_ingredient(electrolyte, "holmium-solution"), "salvage electrolyte should use holmium solution")
+  assert_true(has_fluid_ingredient(electrolyte, "water"), "salvage electrolyte should use water")
+  assert_true(has_ingredient(electrolyte, "charged-toner"), "salvage electrolyte should use charged toner")
+  assert_true(has_ingredient(electrolyte, "redundant-rubble"), "salvage electrolyte should use redundant rubble")
+  assert_true(not has_fluid_ingredient(electrolyte, "crude-oil"), "salvage electrolyte should not import crude oil")
+  assert_true(not has_fluid_ingredient(electrolyte, "heavy-oil"), "salvage electrolyte should not import heavy oil")
+  assert_true(tech_unlocks_recipe(electromagnetic_plant, "salvage-electrolyte-fulgora"),
+    "electromagnetic-plant should unlock the local electrolyte route")
+
+  assert_true(archive_technology.unit == nil, "archive recombination should not require off-world science packs")
+  assert_true(archive_technology.research_trigger ~= nil, "archive recombination should use a local craft trigger")
+  assert_eq(archive_technology.research_trigger.item, "digital-processing-certificate",
+    "archive recombination should be proven through Fulgora digital paperwork")
+  assert_eq(archive_technology.research_trigger.count, 5,
+    "archive recombination should require a meaningful local paperwork batch")
 end)
 
 test("aquilo fax network unlocks the printer, exchange, and multicolor paperwork", function()
@@ -828,7 +869,7 @@ test("aquilo fax network unlocks the printer, exchange, and multicolor paperwork
   end
 end)
 
-test("fax reconstruction recipes use exact inks and split unlocks between basic and color faxing", function()
+test("fax reconstruction recipes use tiered dry media and split unlocks between basic and color faxing", function()
   local aquilo = assert(technologies["aquilo-fax-network"], "aquilo-fax-network missing")
   local color_faxing = assert(technologies["color-faxing"], "color-faxing missing")
 
@@ -838,26 +879,23 @@ test("fax reconstruction recipes use exact inks and split unlocks between basic 
   for item_name in pairs(fax_shared.FAX_DOCUMENTS) do
     local recipe_name = fax_shared.reconstruction_recipe_name(item_name)
     local recipe = assert(recipes[recipe_name], recipe_name .. " missing")
-    local required_fluids = {}
+    local requirements = fax_shared.get_reconstruction_requirements(item_name)
     local expected_tech = fax_shared.document_requires_color(item_name) and color_faxing or aquilo
     local unexpected_tech = fax_shared.document_requires_color(item_name) and aquilo or color_faxing
 
     assert_true(recipe.hidden == true, recipe_name .. " should stay hidden")
     assert_true(recipe.enabled == false, recipe_name .. " should be tech-gated")
     assert_true(has_ingredient(recipe, fax_shared.RECONSTRUCTION_PAPER_ITEM),
-      recipe_name .. " should require paper")
-
-    for _, fluid in ipairs(fax_shared.get_document_ink_requirements(item_name)) do
-      required_fluids[fluid.name] = true
-      assert_eq(get_fluid_ingredient_amount(recipe, fluid.name), fluid.amount,
-        recipe_name .. " should require the correct amount of " .. fluid.name)
-    end
-
+      recipe_name .. " should require thermal transfer media")
+    assert_eq(get_item_ingredient_amount(recipe, fax_shared.RECONSTRUCTION_PAPER_ITEM), requirements.sheets,
+      recipe_name .. " should require the correct number of transfer sheets")
+    assert_eq(get_item_ingredient_amount(recipe, fax_shared.RECONSTRUCTION_SUBSTRATE_ITEM), requirements.substrate,
+      recipe_name .. " should require the correct amount of archival substrate")
+    assert_eq(get_item_ingredient_amount(recipe, fax_shared.RECONSTRUCTION_RIBBON_ITEM) or 0, requirements.ribbon,
+      recipe_name .. " should require the correct number of ribbon charges")
     for _, fluid in ipairs(fax_shared.RECONSTRUCTION_INK_FLUIDS) do
-      if not required_fluids[fluid.name] then
-        assert_true(not has_fluid_ingredient(recipe, fluid.name),
-          recipe_name .. " should not require unrelated ink " .. fluid.name)
-      end
+      assert_true(not has_fluid_ingredient(recipe, fluid.name),
+        recipe_name .. " should not require liquid ink " .. fluid.name)
     end
 
     assert_true(tech_unlocks_recipe(expected_tech, recipe_name),

@@ -5,6 +5,7 @@
 
 local feature_flags = require("feature_flags")
 local working_hours_enabled = feature_flags.working_hours_enabled()
+local space_age_enabled = feature_flags.space_age_enabled()
 
 data:extend({
   -- Category
@@ -225,4 +226,27 @@ if working_hours_enabled then
       }
     },
   })
+end
+
+-- ===== SPACE AGE PLANET MANIFESTS =====
+
+if space_age_enabled then
+  local planet_tips = {
+    {name = "administratorio-vulcanus-manifest", order = "n-a", technology = "vulcanus-certification"},
+    {name = "administratorio-gleba-manifest", order = "n-b", technology = "gleba-conciliation"},
+    {name = "administratorio-fulgora-archives", order = "n-c", technology = "archive-recombination"},
+    {name = "administratorio-aquilo-manifest", order = "n-d", technology = "aquilo-fax-network"},
+  }
+  local prototypes_to_add = {}
+  for _, tip in ipairs(planet_tips) do
+    prototypes_to_add[#prototypes_to_add + 1] = {
+      type = "tips-and-tricks-item",
+      name = tip.name,
+      category = "administratorio",
+      order = tip.order,
+      indent = 1,
+      trigger = {type = "research", technology = tip.technology},
+    }
+  end
+  data:extend(prototypes_to_add)
 end

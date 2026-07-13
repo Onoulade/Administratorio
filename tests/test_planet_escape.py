@@ -65,6 +65,63 @@ DEFAULT_TARGETS = (
     ("rocket-part", Fraction(100, 1)),
 )
 
+IMPORT_CLASSES = (
+    "ordinary-resource",
+    "ordinary-paperwork",
+    "staffing",
+    "conflict-resolution",
+    "planetary-export",
+    "capstone",
+)
+
+PROFILE_TARGETS = {
+    "bootstrap": (("admin-station", 1), ("printer-t1", 1)),
+    "assembling-machine-2": (("assembling-machine-2", 1),),
+    "chemical-plant": (("chemical-plant", 1),),
+    "rocket-escape": (("rocket-silo", 1), ("rocket-part", 100)),
+    "archive-bureau": (("archive-recombination-bureau", 1),),
+}
+
+PLANET_PROFILE_TARGETS = {
+    "native-machine": {
+        "vulcanus": (("foundry", 1),),
+        "gleba": (("biochamber", 1),),
+        "fulgora": (("electromagnetic-plant", 1),),
+        "aquilo": (("cryogenic-plant", 1),),
+    },
+    "colored-form": {
+        "vulcanus": (("blank-cyan-form", 1),),
+        "gleba": (("blank-yellow-form", 1),),
+        "fulgora": (("blank-magenta-form", 1),),
+    },
+    "aquilo-fax": {
+        "aquilo": (("thermal-transfer-sheet", 1), ("interplanetary-fax-exchange", 1)),
+    },
+}
+
+STAFFING_IMPORTS = {
+    "licensed-notary", "conciliation-officer", "relay-clerk", "cryoprint-technician",
+    "chemical-operator", "nuclear-technician", "union-delegate", "biter-worker",
+    "clerical-trainee", "management-trainee",
+}
+CONFLICT_IMPORTS = {"territorial-deed", "territorial-resettlement-order"}
+CAPSTONE_IMPORTS = {
+    "unified-operations-charter", "promethium-research-charter", "hardened-data-vault",
+    "cryogenic-operations-license", "trichromatic-permit",
+}
+PLANETARY_EXPORT_IMPORTS = {
+    "blank-cyan-form", "blank-yellow-form", "blank-magenta-form",
+    "cyan-yellow-form", "cyan-magenta-form", "yellow-magenta-form",
+    "archival-substrate", "industrial-charter", "offworld-metallurgy-charter",
+    "conciliation-order", "electromagnetic-operating-license", "data-recovery-order",
+}
+EXPLICIT_IMPORT_ALLOWLISTS = {
+    "vulcanus": {"licensed-notary", "chemical-operator", "territorial-deed"},
+    "gleba": {"clerical-trainee", "conciliation-officer", "chemical-operator"},
+    "fulgora": {"relay-clerk", "clerical-trainee", "chemical-operator"},
+    "aquilo": STAFFING_IMPORTS | PLANETARY_EXPORT_IMPORTS | CAPSTONE_IMPORTS,
+}
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -85,6 +142,17 @@ def parse_args() -> argparse.Namespace:
         dest="targets",
         metavar="NAME[:AMOUNT]",
         help="Escape target to analyze. Defaults to rocket-silo and 100 rocket-part.",
+    )
+    parser.add_argument(
+        "--profile",
+        action="append",
+        choices=sorted(set(PROFILE_TARGETS) | set(PLANET_PROFILE_TARGETS)),
+        help="Add a named progression profile to the target analysis. May be repeated.",
+    )
+    parser.add_argument(
+        "--enforce-import-policy",
+        action="store_true",
+        help="Fail when Vulcanus, Gleba, or Fulgora needs an import outside its explicit staffing/conflict allowlist.",
     )
     parser.add_argument(
         "--keep-temp",
@@ -194,6 +262,58 @@ def parse_targets(raw_targets: Optional[Sequence[str]]) -> List[Tuple[str, Fract
             amount = Fraction(1, 1)
         targets.append((name.strip(), amount))
     return targets
+
+
+def add_profile_targets(
+    targets: Sequence[Tuple[str, Fraction]],
+    profile_names: Optional[Sequence[str]],
+    planets: Sequence[str],
+) -> List[Tuple[str, Fraction]]:
+    expanded = list(targets)
+    for profile_name in profile_names or []:
+        for name, amount in PROFILE_TARGETS.get(profile_name, ()):
+            expanded.append((name, Fraction(amount)))
+        by_planet = PLANET_PROFILE_TARGETS.get(profile_name, {})
+        for planet_name in planets:
+            for name, amount in by_planet.get(planet_name, ()):
+                expanded.append((name, Fraction(amount)))
+    deduplicated: Dict[str, Fraction] = {}
+    for name, amount in expanded:
+        deduplicated[name] = max(amount, deduplicated.get(name, Fraction(0)))
+    return sorted(deduplicated.items())
+
+
+def classify_import(material_name: str, item_proto: Optional[Dict] = None) -> str:
+    if material_name in STAFFING_IMPORTS or material_name.endswith(("-clerk", "-officer", "-technician")):
+        return "staffing"
+    if material_name in CONFLICT_IMPORTS:
+        return "conflict-resolution"
+    if material_name in CAPSTONE_IMPORTS:
+        return "capstone"
+    if material_name in PLANETARY_EXPORT_IMPORTS:
+        return "planetary-export"
+    subgroup = (item_proto or {}).get("subgroup", "")
+    if subgroup.startswith("forms-") or "work-order" in material_name or material_name in {
+        "blank-form", "blank-approval", "blank-directive", "paper", "ink",
+        "dubious-data", "basic-excuse", "good-excuse", "refined-nonsense",
+        "useless-documentation", "carbon-offset-certificate-basic",
+    }:
+        return "ordinary-paperwork"
+    return "ordinary-resource"
+
+
+def classify_imports(imports: Counter, item_index: Dict[str, Dict]) -> Dict[str, Counter]:
+    classified = {class_name: Counter() for class_name in IMPORT_CLASSES}
+    for material_name, amount in imports.items():
+        classified[classify_import(material_name, item_index.get(material_name))][material_name] += amount
+    return classified
+
+
+def import_policy_violations(planet_name: str, imports: Counter, item_index: Dict[str, Dict]) -> List[str]:
+    if planet_name in {"nauvis", "aquilo"}:
+        return []
+    allowlist = EXPLICIT_IMPORT_ALLOWLISTS.get(planet_name, set())
+    return sorted(material_name for material_name in imports if material_name not in allowlist)
 
 
 def load_planet_properties() -> Dict[str, Dict[str, int]]:
@@ -687,7 +807,12 @@ class PlanetEscapeAnalyzer:
 
     @lru_cache(maxsize=None)
     def craftable_with_recipes(self, planet_name: str, material_name: str, available_key: Tuple[str, ...]) -> bool:
+        # Deliberate staffing/conflict seeds are part of the landing manifest.
+        # Treat them as available while deciding which local technologies can
+        # be researched; otherwise a single imported specialist makes every
+        # downstream native science pack look permanently impossible.
         local_materials = set(self.local_resources_by_planet[planet_name])
+        local_materials.update(EXPLICIT_IMPORT_ALLOWLISTS.get(planet_name, set()))
         available = set(available_key)
         producing = [
             recipe_name
@@ -1135,6 +1260,15 @@ def render_planet_section(
     lines.append(
         f"Aggregate imports for selected targets: {', '.join(render_counter(aggregate_imports)) if aggregate_imports else '(none)'}"
     )
+    classified_imports = classify_imports(aggregate_imports, analyzer.item_index)
+    lines.append("Import classifications:")
+    for class_name in IMPORT_CLASSES:
+        values = classified_imports[class_name]
+        lines.append(f"  {class_name}: {', '.join(render_counter(values)) if values else '(none)'}")
+    policy_violations = import_policy_violations(planet_name, aggregate_imports, analyzer.item_index)
+    lines.append(
+        "Unapproved imports: " + (", ".join(policy_violations) if policy_violations else "(none)")
+    )
 
     if import_depth > 0 and aggregate_imports:
         # Build a combined plan with merged recipes and import_usage across targets
@@ -1202,7 +1336,6 @@ def main() -> int:
         datefmt="%H:%M:%S",
     )
     targets = parse_targets(args.targets)
-    log.info("Targets: %s", ", ".join(f"{format_fraction(a)}x {n}" for n, a in targets))
     tmp_root = build_temp_profile(repo_name())
 
     try:
@@ -1213,6 +1346,8 @@ def main() -> int:
         invalid = sorted(set(requested_planets) - set(planet_properties))
         if invalid:
             raise ValueError(f"Unknown planet(s): {', '.join(invalid)}")
+        targets = add_profile_targets(targets, args.profile, requested_planets)
+        log.info("Targets: %s", ", ".join(f"{format_fraction(a)}x {n}" for n, a in targets))
 
         dump_path = run_dump_data(Path(args.factorio_bin), tmp_root)
         log.info("Parsing dump and building analyzer...")
@@ -1231,6 +1366,16 @@ def main() -> int:
                     f"{planet_name}: extracted unknown materials not present in dumped item/fluid prototypes: "
                     + ", ".join(unknown)
                 )
+
+            if args.enforce_import_policy:
+                aggregate = Counter()
+                for target_name, amount in targets:
+                    merge_counter(aggregate, analyzer.plan_target(planet_name, target_name, amount)["imports"])
+                violations = import_policy_violations(planet_name, aggregate, analyzer.item_index)
+                if violations:
+                    failures.append(
+                        f"{planet_name}: unapproved imports: " + ", ".join(violations)
+                    )
 
         report_text = render_report(analyzer, requested_planets, dump_path, targets, args.show_steps, args.import_depth)
         report_path = tmp_root / "script-output" / "administratorio-planet-escape-report.txt"

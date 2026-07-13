@@ -65,7 +65,7 @@ Forms travel through pneumatic tubes — Tube Intakes consume items into a per-n
 
 Beta status means the mod is ready for broader playtesting, not that the paperwork has achieved enlightenment. Expect balance changes, UI/locale cleanup, and the occasional migration wart as the late-game systems get more miles on them.
 
-Incompatible with Space Age and Quality. Requires Factorio 2.0. Space Age and Quality compatibility is on the radar, pending approval.
+Compatible with base Factorio 2.0 and Space Age. Space Age adds planet-specific administrative economies, dry interplanetary fax logistics, and Fulgora archive recombination. Quality is supported where the active Factorio dependency set provides it.
 
 One caveat: the Working Hours shutdown is runtime logic, so planner mods like Factory Planner will mis-model those buildings unless you account for it manually. If you prefer planner accuracy over the day/night subplot, disable Working Hours in startup settings.
 

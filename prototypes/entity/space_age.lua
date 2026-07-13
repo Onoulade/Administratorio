@@ -253,7 +253,7 @@ laser_printer.icon_size = 64
 laser_printer.minable = {mining_time = 0.2, result = "laser-printer"}
 laser_printer.placeable_by = placeable_by_item("laser-printer")
 laser_printer.next_upgrade = nil
-laser_printer.crafting_categories = {"printing", "printing-advanced", "printing-workorder", "printing-multicolor", "fax-reconstruction"}
+laser_printer.crafting_categories = {"printing", "printing-advanced", "printing-workorder", "printing-multicolor"}
 laser_printer.crafting_speed = 5
 laser_printer.energy_usage = "600kW"
 laser_printer.energy_source = {type = "electric", usage_priority = "secondary-input"}
@@ -381,33 +381,8 @@ interplanetary_fax_exchange.circuit_connector = circuit_connector_definitions.cr
     {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
   }
 )
-interplanetary_fax_exchange.fluid_boxes_off_when_no_fluid_recipe = false
-interplanetary_fax_exchange.fluid_boxes = {
-  {
-    production_type = "input",
-    pipe_covers = pipecoverspictures(),
-    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -1}}},
-    volume = 1000,
-  },
-  {
-    production_type = "input",
-    pipe_covers = pipecoverspictures(),
-    pipe_connections = {{flow_direction = "input", direction = defines.direction.east, position = {1, 0}}},
-    volume = 1000,
-  },
-  {
-    production_type = "input",
-    pipe_covers = pipecoverspictures(),
-    pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {0, 1}}},
-    volume = 1000,
-  },
-  {
-    production_type = "input",
-    pipe_covers = pipecoverspictures(),
-    pipe_connections = {{flow_direction = "input", direction = defines.direction.west, position = {-1, 0}}},
-    volume = 1000,
-  },
-}
+interplanetary_fax_exchange.fluid_boxes_off_when_no_fluid_recipe = true
+interplanetary_fax_exchange.fluid_boxes = {}
 interplanetary_fax_exchange.graphics_set = {
   animation = {
     layers = {

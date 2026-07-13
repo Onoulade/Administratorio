@@ -9,6 +9,7 @@ local biters = require("scripts.biters")
 local pentapods = require("scripts.pentapods")
 local trains = require("scripts.trains")
 local fax = require("scripts.fax")
+local archive_recombination = require("scripts.archive_recombination")
 local working_hours = require("scripts.working_hours")
 local field_office = require("scripts.field_office")
 local biter_station = require("scripts.biter_station")
@@ -26,6 +27,7 @@ local protest_targets = require("scripts.protest_targets")
 local hired_biter = require("scripts.hired_biter")
 local rideable_biter = require("scripts.rideable_biter")
 local spawner_population = require("scripts.spawner_population")
+local victory = require("scripts.victory")
 
 biter_station.set_biters_module(biters)
 biterport.set_biters_module(biters)
@@ -498,6 +500,7 @@ local function init_storage()
   trajectory_compliance.ensure_storage()
   territorial_arbitration.ensure_storage()
   fax.ensure_storage()
+  archive_recombination.ensure_storage()
   if WORKING_HOURS_ENABLED then
     working_hours.ensure_storage()
   end
@@ -671,6 +674,7 @@ local function on_init()
   init_storage()
   rebuild_desk_cache()
   fax.rebuild_registry()
+  archive_recombination.rebuild_registry()
   territorial_arbitration.rebuild_registry()
   biters.rebuild_desk_index()
   biters.rebuild_capture_bureau_ports()
@@ -723,6 +727,7 @@ local function on_configuration_changed(event)
   init_storage()
   rebuild_desk_cache()
   fax.rebuild_registry()
+  archive_recombination.rebuild_registry()
   territorial_arbitration.rebuild_registry()
   trains.on_init()
   set_biter_ceasefire()
@@ -945,12 +950,14 @@ end
 local function on_gui_opened(event)
   local player = game.get_player(event.player_index)
   if not player then return end
+  if archive_recombination.on_gui_opened(player, event.entity) then return end
   fax.on_gui_opened(player, event.entity)
 end
 
 local function on_gui_closed(event)
   local player = game.get_player(event.player_index)
   if not player then return end
+  if archive_recombination.on_gui_closed(player) then return end
   fax.on_gui_closed(player)
 end
 
@@ -1130,6 +1137,7 @@ local function on_entity_built_inner(event)
     if fax.is_fax_building(entity) and not fax.on_entity_built(entity, player) then
       return
     end
+    archive_recombination.on_entity_built(entity)
     if biterport.on_entity_built(event) then
       return
     end
@@ -1242,6 +1250,7 @@ local function on_entity_removed(event)
   if fax.is_fax_building(entity) then
     fax.on_entity_removed(entity, event.buffer)
   end
+  archive_recombination.on_entity_removed(entity)
   territorial_arbitration.on_entity_removed(entity)
 
   trains.on_removed(entity)
@@ -2097,8 +2106,13 @@ local function build_win_gui(player)
 end
 
 local function on_rocket_launched(event)
-  if storage.stats then
-    storage.stats.rockets_launched = (storage.stats.rockets_launched or 0) + 1
+  victory.record_rocket_launch(storage.stats)
+
+  -- Cargo rockets are ordinary infrastructure in Space Age. Let the
+  -- expansion own its victory condition instead of finishing the game on the
+  -- first interplanetary shipment.
+  if not victory.should_finish_on_rocket_launch(feature_flags.space_age_enabled()) then
+    return
   end
 
   -- Show GUI to the player who launched, or all connected players
@@ -2131,6 +2145,8 @@ local function on_gui_click(event)
     end
   elseif fax.on_gui_click(event) then
     return
+  elseif archive_recombination.on_gui_click(event) then
+    return
   elseif runtime_debug.handle_gui_click(player, event.element.name) then
     return
   end
@@ -2145,6 +2161,7 @@ local function on_gui_checked_state_changed(event)
 end
 
 local function on_gui_elem_changed(event)
+  if archive_recombination.on_gui_elem_changed(event) then return end
   fax.on_gui_elem_changed(event)
 end
 
@@ -2192,6 +2209,7 @@ local function on_main_tick(event)
   end)
   trajectory_compliance.on_tick(event)
   territorial_arbitration.on_tick(event)
+  archive_recombination.on_tick(event)
 end
 
 local function on_pneumatic_tick(_event)

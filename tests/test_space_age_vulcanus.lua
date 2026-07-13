@@ -260,7 +260,8 @@ test("aquilo printer and exchange are specialized endgame bureaucracy machines",
   assert_true(laser_categories["printing-advanced"], "laser-printer should keep advanced printing")
   assert_true(laser_categories["printing-workorder"], "laser-printer should keep work-order printing")
   assert_true(laser_categories["printing-multicolor"], "laser-printer should expose multicolor printing")
-  assert_true(laser_categories["fax-reconstruction"], "laser-printer should expose fax reconstruction")
+  assert_true(not laser_categories["fax-reconstruction"],
+    "laser-printer should leave fax reconstruction to the dedicated exchange")
   assert_eq(laser.crafting_speed, 5, "laser-printer should be the fastest printer")
   assert_eq(#(laser.fluid_boxes or {}), 0, "laser-printer should use solid transfer media instead of fluid ports")
 
@@ -273,9 +274,12 @@ test("aquilo printer and exchange are specialized endgame bureaucracy machines",
   assert_true(exchange ~= nil, "interplanetary-fax-exchange missing")
   assert_eq(exchange.placeable_by[1].item, "interplanetary-fax-exchange",
     "interplanetary-fax-exchange should build from the fax exchange item")
-  assert_true(exchange.fluid_boxes ~= nil and #exchange.fluid_boxes == 4,
-    "interplanetary-fax-exchange should expose four ink inputs")
-  assert_eq(exchange.ingredient_count, 5, "interplanetary-fax-exchange should take paper plus four inks")
+  assert_eq(exchange.crafting_categories[1], "fax-reconstruction",
+    "interplanetary-fax-exchange should own fax reconstruction")
+  assert_eq(#(exchange.fluid_boxes or {}), 0,
+    "interplanetary-fax-exchange should use dry sheets, substrate, and ribbon")
+  assert_eq(exchange.ingredient_count, 5,
+    "interplanetary-fax-exchange should have room for solid reconstruction media")
 end)
 
 test("non-orbital space age admin machines stay out of vacuum", function()

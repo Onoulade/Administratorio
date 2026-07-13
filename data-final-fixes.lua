@@ -25,6 +25,7 @@
 local shared = require("prototypes.shared")
 local factoriopedia_merge = require("prototypes.factoriopedia_merge")
 local feature_flags = require("feature_flags")
+local space_age_planets = feature_flags.space_age_enabled() and require("prototypes.shared.space_age_planets") or nil
 
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
 local REGULATED_AM_FACTORIOPEDIA_NOTE = {"administratorio-factoriopedia.regulated-assembling-note"}
@@ -1702,4 +1703,95 @@ if rideable then
   rideable.idle_sound = nil
   rideable.starting_sound = nil
   rideable.engine_sound = nil
+end
+
+-------------------------------------------------------------------------------
+-- 11. PLANET-SPECIFIC ROCKET-SILO AUTHORIZATION
+-- Each grounded Space Age economy pays in its own administrative abundance.
+-- The physical silo remains recognizable; only the bureaucratic overlay varies.
+-------------------------------------------------------------------------------
+if space_age_planets and data.raw.recipe and data.raw.recipe["rocket-silo"] then
+  local canonical = data.raw.recipe["rocket-silo"]
+  local replaceable_admin_ingredients = {
+    ["government-grant"] = true,
+    ["management-approval-written"] = true,
+    ["management-written-work-order"] = true,
+    ["construction-work-order"] = true,
+    ["environmental-impact-report"] = true,
+    ["taxpayer-money"] = true,
+  }
+
+  local function replace_admin_cost(recipe, additions)
+    local filtered = {}
+    for _, ingredient in ipairs(recipe.ingredients or {}) do
+      local name = ingredient.name or ingredient[1]
+      if not replaceable_admin_ingredients[name] then filtered[#filtered + 1] = ingredient end
+    end
+    for _, ingredient in ipairs(additions) do filtered[#filtered + 1] = ingredient end
+    recipe.ingredients = filtered
+  end
+
+  local variants = {
+    {
+      planet = "vulcanus",
+      ingredients = {
+        {type = "item", name = "territorial-deed", amount = 1},
+        {type = "item", name = "blank-cyan-form", amount = 2},
+        {type = "fluid", name = "lie", amount = 500},
+      },
+    },
+    {
+      planet = "gleba",
+      ingredients = {
+        {type = "item", name = "conciliation-order", amount = 1},
+        {type = "item", name = "blank-yellow-form", amount = 2},
+        {type = "item", name = "refined-nonsense", amount = 20},
+      },
+    },
+    {
+      planet = "fulgora",
+      ingredients = {
+        {type = "item", name = "digital-processing-certificate", amount = 1},
+        {type = "item", name = "archival-substrate", amount = 20},
+        {type = "item", name = "redundant-rubble", amount = 100},
+      },
+    },
+    {
+      planet = "aquilo",
+      ingredients = {
+        {type = "item", name = "unified-operations-charter", amount = 1},
+        {type = "item", name = "thermal-transfer-sheet", amount = 10},
+        {type = "item", name = "composite-chroma-ribbon", amount = 3},
+      },
+    },
+  }
+
+  space_age_planets.apply_planet_surface_conditions(canonical, "nauvis")
+  replace_admin_cost(canonical, {
+    {type = "item", name = "taxpayer-money", amount = 100},
+    {type = "item", name = "management-approval-written", amount = 1},
+  })
+
+  local clones = {}
+  for _, variant in ipairs(variants) do
+    local clone = table.deepcopy(canonical)
+    clone.name = "rocket-silo-" .. variant.planet
+    clone.localised_name = {"recipe-name.rocket-silo-planet", {"space-location-name." .. variant.planet}}
+    clone.localised_description = {"recipe-description.rocket-silo-planet", {"space-location-name." .. variant.planet}}
+    replace_admin_cost(clone, variant.ingredients)
+    space_age_planets.apply_planet_surface_conditions(clone, variant.planet)
+    clones[#clones + 1] = clone
+  end
+  data:extend(clones)
+
+  local rocket_technology = data.raw.technology and data.raw.technology["rocket-silo"]
+  if rocket_technology then
+    rocket_technology.effects = rocket_technology.effects or {}
+    for _, variant in ipairs(variants) do
+      rocket_technology.effects[#rocket_technology.effects + 1] = {
+        type = "unlock-recipe",
+        recipe = "rocket-silo-" .. variant.planet,
+      }
+    end
+  end
 end

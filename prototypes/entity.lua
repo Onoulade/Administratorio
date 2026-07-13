@@ -10,5 +10,6 @@ require("prototypes.entity.vehicles")
 require("prototypes.entity.printers")
 if space_age_enabled then
   require("prototypes.entity.space_age")
+  require("prototypes.entity.archive_recombination")
 end
 require("prototypes.entity.pneumatic")

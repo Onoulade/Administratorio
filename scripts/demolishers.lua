@@ -1,7 +1,7 @@
 local M = {}
 
 M.SIZE_ORDER_COST = {small = 1, medium = 2, big = 3}
-M.SIZE_COFFEE_COST = {small = 25, medium = 50, big = 75}
+M.SIZE_COFFEE_COST = {small = 50, medium = 100, big = 200}
 M.SIZE_DECAY = {small = 2, medium = 3, big = 4}
 
 function M.get_demolisher_name(territory)
