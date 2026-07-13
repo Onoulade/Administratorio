@@ -497,6 +497,7 @@ local function init_storage()
   storage.stats.rockets_launched = storage.stats.rockets_launched or 0
   storage.calmed_spawners = storage.calmed_spawners or {}
   trajectory_compliance.ensure_storage()
+  trajectory_compliance.configure_existing_arrays()
   territorial_arbitration.ensure_storage()
   fax.ensure_storage()
   archive_recombination.ensure_storage()
@@ -982,6 +983,10 @@ end
 local function on_entity_built_inner(event)
   local entity = event.entity or event.created_entity
   if not entity or not entity.valid then return end
+
+  -- A strict native priority list prevents lower-tier arrays from spending a
+  -- manager on an asteroid that their script-side jurisdiction must reject.
+  trajectory_compliance.configure_array(entity)
 
   local surface = entity.surface
   local player = event.player_index and game.players[event.player_index]
@@ -1897,6 +1902,7 @@ local ON_ENTITY_DIED_FILTERS = {
 
 local function on_script_trigger_effect(event)
   biters.on_script_trigger_effect(event)
+  trajectory_compliance.on_script_trigger_effect(event)
   if event.effect_id == "hired-biter-deploy" then
     local pos = event.target_position
     local surface = event.surface_index and game.get_surface(event.surface_index)

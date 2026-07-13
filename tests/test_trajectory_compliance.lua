@@ -37,222 +37,327 @@ defines = {
     turret_ammo = 1,
   },
   entity_status_diode = {
-    red = 1,
+    yellow = 2,
   },
 }
 
 storage = {}
 
-local function new_inventory(initial_count, initial_orders)
-  local count = initial_count or 0
-  local orders = initial_orders or 0
-  return {
+local module = dofile(mod_root .. "scripts/trajectory_compliance.lua")
+local next_unit_number = 100
+
+local function new_world(hub_capacity)
+  storage = {}
+
+  local hub = {
     valid = true,
-    get_item_count = function(name)
-      if name == "orbital-deviation-order" then
-        return orders
-      end
-      if name == "middle-management-managing-manager" then
-        return count
-      end
-      return 0
-    end,
-    remove = function(spec)
-      if spec.name == "orbital-deviation-order" then
-        local removed = math.min(orders, spec.count or 0)
-        orders = orders - removed
-        return removed
-      end
-      if spec.name ~= "middle-management-managing-manager" then
-        return 0
-      end
-      local removed = math.min(count, spec.count or 0)
-      count = count - removed
-      return removed
-    end,
-    set_count = function(value)
-      count = value
-    end,
-    set_orders = function(value)
-      orders = value
-    end,
-    _count = function()
-      return count
-    end,
-    _orders = function()
-      return orders
-    end,
+    capacity = hub_capacity or 100,
+    inserted = {},
   }
+  hub.insert = function(spec)
+    if #hub.inserted >= hub.capacity then return 0 end
+    hub.inserted[#hub.inserted + 1] = {
+      name = spec.name,
+      count = spec.count,
+      quality = spec.quality,
+    }
+    return spec.count
+  end
+
+  local platform = {
+    valid = true,
+    index = 7,
+    hub = hub,
+    created_chunks = {},
+  }
+  platform.create_asteroid_chunks = function(chunks)
+    for _, chunk in ipairs(chunks) do
+      platform.created_chunks[#platform.created_chunks + 1] = chunk
+    end
+  end
+  local surface = {
+    valid = true,
+    platform = platform,
+  }
+  platform.surface = surface
+
+  local force = {
+    valid = true,
+    platforms = {platform},
+  }
+  game = {
+    forces = {player = force},
+  }
+
+  return platform, hub, surface
 end
 
-local next_unit_number = 100
-local surface
-
-local function new_array(force, inventory_count, position, inventory_orders)
-  local inventory = new_inventory(inventory_count, inventory_orders)
+local function new_array(surface, quality, name)
+  local inventory = {
+    valid = true,
+    {
+      valid_for_read = true,
+      name = "middle-management-managing-manager",
+      quality = {name = quality or "normal"},
+    },
+  }
   local entity = {
     valid = true,
-    name = "trajectory-compliance-array",
-    force = force,
-    position = position or {x = 0, y = 0},
+    name = name or "trajectory-compliance-array",
     unit_number = next_unit_number,
-    custom_status = nil,
-    get_inventory = function(inventory_index)
-      assert_eq(inventory_index, defines.inventory.turret_ammo, "array should use turret ammo inventory")
-      return inventory
-    end,
+    surface = surface,
+    force = "player",
+    position = {x = 0, y = 0},
+    disabled_by_script = false,
+    priority_targets = {},
   }
   next_unit_number = next_unit_number + 1
-  entity._inventory = inventory
+  entity.get_inventory = function(inventory_index)
+    assert_eq(inventory_index, defines.inventory.turret_ammo, "quality lookup should use turret ammo inventory")
+    return inventory
+  end
+  entity.set_priority_target = function(index, asteroid_name)
+    entity.priority_targets[index] = asteroid_name
+  end
   return entity
 end
 
-local destroyed = {}
-local chunks = {}
-surface = {
-  valid = true,
-  find_entities_filtered = function(opts)
-    if opts.name == "trajectory-compliance-array" then
-      return surface._entities or {}
-    end
-    return {}
-  end,
-}
+local function new_target(entity_type, name)
+  entity_type = entity_type or "asteroid"
+  local target = {
+    valid = true,
+    type = entity_type,
+    name = name or (entity_type == "asteroid" and "small-metallic-asteroid" or "metallic-asteroid-chunk"),
+    position = {x = 10, y = 0},
+    destroyed = false,
+  }
+  target.destroy = function()
+    target.destroyed = true
+    target.valid = false
+    return true
+  end
+  return target
+end
 
-local platform = {
-  valid = true,
-  surface = surface,
-  find_asteroid_chunks_filtered = function(spec)
-    local limit = spec and spec.limit or #chunks
-    local results = {}
-    for i = 1, math.min(limit, #chunks) do
-      results[#results + 1] = chunks[i]
-    end
-    return results
-  end,
-  destroy_asteroid_chunks = function(spec)
-    destroyed[#destroyed + 1] = spec
-    for i, chunk in ipairs(chunks) do
-      if chunk.name == spec.name and chunk.position.x == spec.position.x and chunk.position.y == spec.position.y then
-        table.remove(chunks, i)
-        break
-      end
-    end
-  end,
-}
+local function fire(source, target, roll, effect_id)
+  return module.on_script_trigger_effect({
+    effect_id = effect_id or module.EFFECT_ID,
+    source_entity = source,
+    target_entity = target,
+  }, roll)
+end
 
-local printed_messages = {}
-local force = {
-  index = 1,
-  valid = true,
-  platforms = {[1] = platform},
-  print = function(message)
-    printed_messages[#printed_messages + 1] = message
-  end,
-}
-
-game = {
-  forces = {
-    player = force,
-  },
-}
-
-local module = dofile(mod_root .. "scripts/trajectory_compliance.lua")
-
-test("arrays do not spend MMMM when no asteroid chunk is present", function()
-  storage = {}
-  destroyed = {}
-  printed_messages = {}
-  chunks = {}
-  surface._entities = {new_array(force, 2)}
-
-  module.on_tick({tick = 60})
-
-  assert_eq(surface._entities[1]._inventory._count(), 2, "array should not spend MMMM without a target")
-  assert_eq(#destroyed, 0, "array should not destroy chunks without a target")
+test("probability boundaries are deterministic", function()
+  assert_eq(module.classify_outcome(0), module.OUTCOME_INTACT)
+  assert_eq(module.classify_outcome(0.899999), module.OUTCOME_INTACT)
+  assert_eq(module.classify_outcome(0.90), module.OUTCOME_BURNED_OUT)
+  assert_eq(module.classify_outcome(0.949999), module.OUTCOME_BURNED_OUT)
+  assert_eq(module.classify_outcome(0.95), module.OUTCOME_LOST)
+  assert_eq(module.classify_outcome(1), module.OUTCOME_LOST)
 end)
 
-test("arrays only scan platforms on their response interval", function()
-  storage = {}
-  destroyed = {}
-  printed_messages = {}
-  chunks = {
-    {name = "metallic-asteroid-chunk", position = {x = 4, y = 2}},
-  }
-  surface._entities = {new_array(force, 2)}
+test("array configuration installs strict size-appropriate native priorities", function()
+  local _, _, surface = new_world()
+  local junior = new_array(surface, "normal", "trajectory-compliance-array")
+  local senior = new_array(surface, "normal", "senior-trajectory-compliance-array")
+  local executive = new_array(surface, "normal", "executive-trajectory-compliance-array")
 
+  assert_true(module.configure_array(junior))
+  assert_true(module.configure_array(senior))
+  assert_true(module.configure_array(executive))
+  assert_true(junior.ignore_unprioritised_targets)
+  assert_true(senior.ignore_unprioritised_targets)
+  assert_true(executive.ignore_unprioritised_targets)
+  assert_eq(#junior.priority_targets, 8, "junior should list four families at two sizes")
+  assert_eq(#senior.priority_targets, 12, "senior should list four families at three sizes")
+  assert_eq(#executive.priority_targets, 16, "executive should list every family and size")
+  for _, name in ipairs(junior.priority_targets) do
+    assert_true(not name:match("^big%-") and not name:match("^huge%-"), "junior priority leaked a large asteroid")
+  end
+end)
+
+test("script effect converts an asteroid into collectible salvage and returns manager quality", function()
+  local platform, hub, surface = new_world()
+  local array = new_array(surface, "epic")
+  local asteroid = new_target("asteroid")
+
+  local handled, outcome = fire(array, asteroid, 0.42)
+
+  assert_true(handled, "trajectory effect should be handled")
+  assert_eq(outcome, module.OUTCOME_INTACT)
+  assert_true(asteroid.destroyed, "actual asteroid entity should be removed")
+  assert_eq(#platform.created_chunks, 2, "small asteroids should yield two collectible chunks")
+  assert_eq(platform.created_chunks[1].name, "metallic-asteroid-chunk")
+  assert_true(platform.created_chunks[1].movement.x < 0, "salvage should drift toward the source array")
+  assert_eq(#hub.inserted, 1, "returned manager should enter platform cargo")
+  assert_eq(hub.inserted[1].name, module.MANAGEMENT_ITEM)
+  assert_eq(hub.inserted[1].quality, "epic", "returned manager should preserve ammo quality")
+end)
+
+test("effect handler can resolve the turret's live shooting target", function()
+  local platform, _, surface = new_world()
+  local array = new_array(surface, "normal")
+  local asteroid = new_target("asteroid", "medium-carbonic-asteroid")
+  array.shooting_target = asteroid
+
+  local handled = module.on_script_trigger_effect({
+    effect_id = module.EFFECT_ID,
+    source_entity = array,
+  }, 0.95)
+
+  assert_true(handled)
+  assert_true(asteroid.destroyed)
+  assert_eq(#platform.created_chunks, 6)
+end)
+
+test("every asteroid size yields its full vanilla-equivalent salvage count", function()
+  local cases = {
+    {name = "small-metallic-asteroid", count = 2, chunk = "metallic-asteroid-chunk"},
+    {name = "medium-carbonic-asteroid", count = 6, chunk = "carbonic-asteroid-chunk"},
+    {name = "big-oxide-asteroid", count = 18, chunk = "oxide-asteroid-chunk"},
+    {name = "huge-promethium-asteroid", count = 54, chunk = "promethium-asteroid-chunk"},
+  }
+
+  for _, case in ipairs(cases) do
+    local platform, _, surface = new_world()
+    local executive = new_array(surface, "normal", "executive-trajectory-compliance-array")
+    assert_true(fire(executive, new_target("asteroid", case.name), 0.95), case.name .. " should be handled")
+    assert_eq(#platform.created_chunks, case.count, case.name .. " salvage count mismatch")
+    for _, chunk in ipairs(platform.created_chunks) do
+      assert_eq(chunk.name, case.chunk, case.name .. " should preserve asteroid family")
+    end
+  end
+end)
+
+test("burned-out boundary returns a burned manager with quality", function()
+  local _, hub, surface = new_world()
+  local array = new_array(surface, "rare")
+  local asteroid = new_target()
+
+  local _, outcome = fire(array, asteroid, 0.90)
+
+  assert_eq(outcome, module.OUTCOME_BURNED_OUT)
+  assert_true(asteroid.destroyed)
+  assert_eq(hub.inserted[1].name, module.BURNED_OUT_ITEM)
+  assert_eq(hub.inserted[1].quality, "rare")
+end)
+
+test("lost boundary destroys the asteroid without returning cargo", function()
+  local _, hub, surface = new_world()
+  local array = new_array(surface)
+  local asteroid = new_target()
+
+  local _, outcome = fire(array, asteroid, 0.95)
+
+  assert_eq(outcome, module.OUTCOME_LOST)
+  assert_true(asteroid.destroyed)
+  assert_eq(#hub.inserted, 0, "lost manager should not produce an output")
+  assert_true(not array.disabled_by_script, "lost output should not block the array")
+end)
+
+test("collectible chunks and unrelated script effects are ignored", function()
+  local _, hub, surface = new_world()
+  local array = new_array(surface)
+  local chunk = new_target("asteroid-chunk")
+  local asteroid = new_target("asteroid")
+
+  assert_true(not fire(array, chunk, 0), "collectible asteroid chunks should be ignored")
+  assert_true(not chunk.destroyed, "chunk should remain untouched")
+  assert_true(not fire(array, asteroid, 0, "some-other-effect"), "unrelated effects should be ignored")
+  assert_true(not asteroid.destroyed)
+  assert_eq(#hub.inserted, 0)
+end)
+
+test("array tiers enforce progressively larger asteroid jurisdiction", function()
+  local _, hub, surface = new_world()
+  local junior = new_array(surface, "normal", "trajectory-compliance-array")
+  local senior = new_array(surface, "normal", "senior-trajectory-compliance-array")
+  local executive = new_array(surface, "normal", "executive-trajectory-compliance-array")
+
+  assert_true(fire(junior, new_target("asteroid", "small-metallic-asteroid"), 0.95))
+  assert_true(fire(junior, new_target("asteroid", "medium-carbonic-asteroid"), 0.95))
+
+  local junior_big = new_target("asteroid", "big-oxide-asteroid")
+  assert_true(not fire(junior, junior_big, 0.95), "junior array must reject big asteroids")
+  assert_true(junior_big.valid, "rejected big asteroid should survive")
+
+  assert_true(fire(senior, new_target("asteroid", "big-metallic-asteroid"), 0.95))
+  local senior_huge = new_target("asteroid", "huge-carbonic-asteroid")
+  assert_true(not fire(senior, senior_huge, 0.95), "senior array must reject huge asteroids")
+  assert_true(senior_huge.valid, "rejected huge asteroid should survive")
+
+  assert_true(fire(executive, new_target("asteroid", "huge-promethium-asteroid"), 0.95),
+    "executive array should handle huge Promethium asteroids")
+  assert_eq(#hub.inserted, 0, "forced lost outcomes should not insert manager cargo")
+end)
+
+test("full hub queues output, blocks its source, and retries once per second", function()
+  local _, hub, surface = new_world(0)
+  local array = new_array(surface, "legendary")
+  local asteroid = new_target()
+
+  fire(array, asteroid, 0.2)
+
+  assert_true(array.disabled_by_script, "source array should be disabled while its output is blocked")
+  assert_true(array.custom_status ~= nil, "source array should show an output-blocked status")
+  assert_eq(array.custom_status.diode, defines.entity_status_diode.yellow)
+  assert_true(storage.trajectory_compliance.pending_outputs[array.unit_number] ~= nil, "output should be queued")
+
+  hub.capacity = 1
   module.on_tick({tick = 59})
-
-  assert_eq(surface._entities[1]._inventory._count(), 2, "array should not spend MMMM off-interval")
-  assert_eq(#destroyed, 0, "array should not scan or destroy chunks off-interval")
-end)
-
-test("arrays spend MMMM to deviate nearby asteroid chunks", function()
-  storage = {}
-  destroyed = {}
-  printed_messages = {}
-  chunks = {
-    {name = "metallic-asteroid-chunk", position = {x = 4, y = 2}},
-  }
-  surface._entities = {new_array(force, 2)}
-
+  assert_eq(#hub.inserted, 0, "queue should not retry before the one-second boundary")
   module.on_tick({tick = 60})
 
-  assert_eq(surface._entities[1]._inventory._count(), 1, "array should spend one MMMM when deviating a chunk")
-  assert_eq(#destroyed, 1, "array should destroy one chunk when loaded")
-  assert_eq(destroyed[1].name, "metallic-asteroid-chunk", "array should target the discovered chunk")
+  assert_eq(#hub.inserted, 1, "queued output should be delivered once cargo has room")
+  assert_eq(hub.inserted[1].quality, "legendary")
+  assert_true(not array.disabled_by_script, "array should resume after output delivery")
+  assert_eq(array.custom_status, nil, "blocked status should clear after delivery")
+  assert_eq(storage.trajectory_compliance.pending_outputs[array.unit_number], nil)
 end)
 
-test("arrays spend orbital deviation orders before MMMM", function()
-  storage = {}
-  destroyed = {}
-  printed_messages = {}
-  chunks = {
-    {name = "metallic-asteroid-chunk", position = {x = 4, y = 2}},
-  }
-  surface._entities = {new_array(force, 1, {x = 0, y = 0}, 1)}
+test("removing an array does not lose its queued manager while the platform survives", function()
+  local _, hub, surface = new_world(0)
+  local array = new_array(surface, "uncommon")
 
+  fire(array, new_target(), 0.1)
+  array.valid = false
+  hub.capacity = 1
   module.on_tick({tick = 60})
 
-  assert_eq(surface._entities[1]._inventory._orders(), 0, "array should spend an orbital deviation order first")
-  assert_eq(surface._entities[1]._inventory._count(), 1, "array should preserve MMMM when paperwork is available")
-  assert_eq(#destroyed, 1, "array should still destroy the targeted chunk")
+  assert_eq(#hub.inserted, 1, "deferred output should still reach the surviving platform")
+  assert_eq(hub.inserted[1].quality, "uncommon")
+  assert_eq(storage.trajectory_compliance.pending_outputs[array.unit_number], nil)
 end)
 
-test("arrays report starvation when asteroids arrive but MMMM is empty", function()
-  storage = {}
-  destroyed = {}
-  printed_messages = {}
-  chunks = {
-    {name = "carbonic-asteroid-chunk", position = {x = 1, y = 1}},
-  }
-  surface._entities = {new_array(force, 0)}
+test("orphaned queues are cleaned when both source and platform are removed", function()
+  local platform, _, surface = new_world(0)
+  local array = new_array(surface)
 
+  fire(array, new_target(), 0.1)
+  array.valid = false
+  platform.valid = false
   module.on_tick({tick = 60})
 
-  assert_eq(#destroyed, 0, "array should not destroy chunks without MMMM")
-  assert_true(surface._entities[1].custom_status ~= nil, "array should expose missing-management status")
-  assert_eq(#printed_messages, 1, "force should receive one starvation warning")
+  assert_eq(storage.trajectory_compliance.pending_outputs[array.unit_number], nil)
 end)
 
-test("multiple arrays scale total throughput by count", function()
-  storage = {}
-  destroyed = {}
-  printed_messages = {}
-  chunks = {
-    {name = "metallic-asteroid-chunk", position = {x = 1, y = 1}},
-    {name = "carbonic-asteroid-chunk", position = {x = 2, y = 2}},
-  }
+test("multiple arrays maintain independent blocked outputs", function()
+  local _, hub, surface = new_world(1)
+  local first = new_array(surface, "normal")
+  local second = new_array(surface, "rare")
 
-  local array_a = new_array(force, 1, {x = 0, y = 0})
-  local array_b = new_array(force, 1, {x = 8, y = 8})
-  surface._entities = {array_a, array_b}
+  fire(first, new_target(), 0.2)
+  fire(second, new_target(), 0.2)
 
+  assert_eq(#hub.inserted, 1)
+  assert_true(not first.disabled_by_script)
+  assert_true(second.disabled_by_script)
+
+  hub.capacity = 2
   module.on_tick({tick = 60})
-
-  assert_eq(#destroyed, 2, "two arrays should clear two chunks in the same cycle")
-  assert_eq(array_a._inventory._count(), 0, "first array should spend its MMMM")
-  assert_eq(array_b._inventory._count(), 0, "second array should spend its MMMM")
+  assert_eq(#hub.inserted, 2)
+  assert_eq(hub.inserted[2].quality, "rare")
+  assert_true(not second.disabled_by_script)
 end)
 
 print(string.format("\n=== ADMINISTRATORIO TRAJECTORY COMPLIANCE TESTS ==="))
