@@ -3,6 +3,7 @@
 
 local icons = "__administratorio__/graphics/icons/"
 local icon_layers = require("prototypes.shared.icon_layers")
+local feature_flags = require("feature_flags")
 
 data:extend({
   -------------------------------------------------------------------------------
@@ -255,3 +256,44 @@ data:extend({
     allowed_without_fight = true,
   },
 })
+
+if feature_flags.space_age_enabled() then
+  data:extend({
+    {
+      type = "research-achievement",
+      name = "terms-and-conditions-apply",
+      technology = "vulcanus-certification",
+      icon = icons .. "management-approval-written.png",
+      icon_size = 64,
+      order = "g[space-age]-a",
+      allowed_without_fight = true,
+    },
+    {
+      type = "research-achievement",
+      name = "organically-sourced-nonsense",
+      technology = "gleba-conciliation",
+      icon = icons .. "bullshit-ore.png",
+      icon_size = 64,
+      order = "g[space-age]-b",
+      allowed_without_fight = true,
+    },
+    {
+      type = "build-entity-achievement",
+      name = "file-not-found",
+      to_build = "archive-recombination-bureau",
+      icon = icons .. "office-building.png",
+      icon_size = 64,
+      order = "g[space-age]-c",
+      allowed_without_fight = true,
+    },
+    {
+      type = "research-achievement",
+      name = "frozen-pdf",
+      technology = "aquilo-fax-network",
+      icon = icons .. "steel-forge-icon.png",
+      icon_size = 64,
+      order = "g[space-age]-d",
+      allowed_without_fight = true,
+    },
+  })
+end

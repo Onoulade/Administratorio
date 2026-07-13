@@ -117,30 +117,26 @@ local function not_on_planet(recipe, planet_name)
   return recipe
 end
 
-add_scrap_recycling_result("charged-toner", 1, 0.18)
+add_scrap_recycling_result("charged-toner", 1, 0.12)
 add_scrap_recycling_result("redundant-rubble", 2, 0.35)
-add_scrap_recycling_result("useless-documentation", 1, 0.16)
-add_scrap_recycling_result("signal-form-stock", 1, 0.08)
-add_scrap_recycling_result("blank-magenta-form", 1, 0.05)
-add_scrap_recycling_result("archive-recovery-permit", 1, 0.025)
-add_scrap_recycling_result("digital-processing-certificate", 1, 0.02)
-add_scrap_recycling_result("electromagnetic-operating-license", 1, 0.015)
-add_scrap_recycling_result("data-recovery-order", 1, 0.015)
+add_scrap_recycling_result("useless-documentation", 1, 0.08)
+add_scrap_recycling_result("old-archive", 1, 0.06)
 sync_scrap_recycler_output_slots()
 
 local function make_fax_reconstruction_recipes()
   local recipes = {}
 
   for item_name in pairs(fax_shared.FAX_DOCUMENTS) do
+    local requirements = fax_shared.get_reconstruction_requirements(item_name)
     local ingredients = {
-      {type = "item", name = fax_shared.RECONSTRUCTION_PAPER_ITEM, amount = 1},
+      {type = "item", name = fax_shared.RECONSTRUCTION_PAPER_ITEM, amount = requirements.sheets},
+      {type = "item", name = fax_shared.RECONSTRUCTION_SUBSTRATE_ITEM, amount = requirements.substrate},
     }
-
-    for _, fluid in ipairs(fax_shared.get_document_ink_requirements(item_name)) do
+    if requirements.ribbon > 0 then
       ingredients[#ingredients + 1] = {
-        type = "fluid",
-        name = fluid.name,
-        amount = fluid.amount,
+        type = "item",
+        name = fax_shared.RECONSTRUCTION_RIBBON_ITEM,
+        amount = requirements.ribbon,
       }
     end
 
@@ -426,7 +422,7 @@ data:extend({
     allow_decomposition = false,
     ingredients = {
       {type = "item", name = "territorial-resettlement-order", amount = 1},
-      {type = "fluid", name = "liquid-coffee", amount = 25},
+      {type = "fluid", name = "lie", amount = 50},
     },
     results = {
       {type = "item", name = "territorial-deed", amount = 1},
@@ -788,7 +784,7 @@ data:extend({
       {type = "item", name = "nutrients", amount = 1},
     },
     results = {
-      {type = "item", name = "bullshit-ore", amount = 4},
+      {type = "item", name = "bullshit-ore", amount = 8},
     },
     energy_required = 1,
   }, "gleba"),
@@ -1285,7 +1281,7 @@ data:extend({
       {type = "item", name = "transfer-emulsion", amount = 1},
     },
     results = {
-      {type = "item", name = "composite-chroma-ribbon", amount = 1},
+      {type = "item", name = "composite-chroma-ribbon", amount = 10},
     },
     energy_required = 5,
   }, "aquilo"),
@@ -1721,7 +1717,7 @@ data:extend({
       {type = "fluid", name = "cyan-slurry", amount = 20},
     },
     results = {
-      {type = "fluid", name = "molten-promises", amount = 60},
+      {type = "fluid", name = "molten-promises", amount = 120},
     },
     energy_required = 4,
   }, "vulcanus"),
@@ -1961,7 +1957,7 @@ data:extend({
       {type = "item", name = "inspection-docket", amount = 1},
     },
     results = {
-      {type = "fluid", name = "lie", amount = 180},
+      {type = "fluid", name = "lie", amount = 300},
       {type = "item", name = "dubious-data", amount = 1},
     },
     main_product = "lie",

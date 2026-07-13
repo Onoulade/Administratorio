@@ -1056,6 +1056,26 @@ add_tech_unlock("discovery-redundant-rubble", "filing-landscape")
 add_tech_unlock("discovery-bullshit", "landscape-final")
 add_tech_prerequisite("printing-technology", "discovery-bullshit")
 add_tech_prerequisite("printing-technology", "discovery-redundant-rubble")
+add_tech_prerequisite("field-office-deployment", "electronics")
+add_tech_prerequisite("printing-technology", "field-office-deployment")
+add_tech_prerequisite("printing-technology", "electronics")
+add_tech_prerequisite("biter-employment", "field-office-deployment")
+add_tech_prerequisite("industrial-printing", "printing-technology")
+
+-- Regulated vanilla rewards consume paperwork that must already be printable
+-- at their technology card. Keep the unlock graph honest instead of relying
+-- on a later descendant technology to make the advertised recipe usable.
+for _, tech_name in ipairs({
+  "advanced-material-processing",
+  "electric-energy-distribution-1",
+  "logistics-2",
+}) do
+  add_tech_prerequisite(tech_name, "printing-technology")
+end
+
+for _, tech_name in ipairs({"productivity-module-3", "speed-module-3"}) do
+  add_tech_prerequisite(tech_name, "board-meetings")
+end
 
 remove_tech_unlock("railway", "locomotive")
 add_tech_unlock("production-science-pack", "locomotive")

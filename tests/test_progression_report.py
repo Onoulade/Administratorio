@@ -69,7 +69,17 @@ RESOURCE_ROOT_TYPES = (
     "simple-entity-with-force",
     "fish",
 )
-SECONDARY_RECIPE_CATEGORIES = {"pneumatic-intake", "smelting"}
+SECONDARY_RECIPE_CATEGORIES = {
+    "pneumatic-intake",
+    "pneumatic-liquify",
+    "pneumatic-solidify",
+    "smelting",
+}
+RUNTIME_OBTAINABLE_ITEMS = {
+    # A resolved citizen consumes a job offer and is inserted into the desk as
+    # a worker by control-stage code; no prototype recipe is supposed to exist.
+    "biter-worker",
+}
 STARTING_PROVIDER_ITEMS = ("mechanical-printer", "office-desk")
 STRUCTURAL_EMPTY_TECHS = {
     # Vanilla parent node for the first module branches; it exists to organize
@@ -270,7 +280,7 @@ class ProgressionAnalyzer:
         self.start_enabled_recipes = set(self.always_enabled_recipes) | self.world_trigger_recipes
 
     def _build_root_materials(self) -> Set[str]:
-        roots = {"water", "taxpayer-money", "biter-worker"}
+        roots = {"water", "taxpayer-money", "biter-worker"} | RUNTIME_OBTAINABLE_ITEMS
         for proto_type in RESOURCE_ROOT_TYPES:
             for proto in self.data_raw.get(proto_type, {}).values():
                 minable = proto.get("minable") or {}

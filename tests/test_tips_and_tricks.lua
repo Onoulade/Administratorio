@@ -43,6 +43,7 @@ else
   mod_root = "./"
 end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
+mods = { ["space-age"] = "2.0.0" }
 
 dofile(mod_root .. "prototypes/tips-and-tricks.lua")
 
@@ -111,6 +112,21 @@ test("biterport tip unlocks with biterport-logistics technology", function()
     trigger_contains(item.trigger, "research", "technology", "biterport-logistics"),
     "biterport tip should unlock from the biterport-logistics technology"
   )
+end)
+
+test("Space Age planet manifests unlock with their planetary systems", function()
+  local expected = {
+    ["administratorio-vulcanus-manifest"] = "vulcanus-certification",
+    ["administratorio-gleba-manifest"] = "gleba-conciliation",
+    ["administratorio-fulgora-archives"] = "archive-recombination",
+    ["administratorio-aquilo-manifest"] = "aquilo-fax-network",
+  }
+  for name, technology in pairs(expected) do
+    assert_true(
+      trigger_contains(tip(name).trigger, "research", "technology", technology),
+      name .. " should unlock from " .. technology
+    )
+  end
 end)
 
 print(("Tips & Tricks tests: %d passed, %d failed"):format(passed, failed))

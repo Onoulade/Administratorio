@@ -1,5 +1,6 @@
 -- Biter routing, registration, resolution, protest logic
 local C = require("scripts.constants")
+local feature_flags = require("feature_flags")
 local zones = require("scripts.zones")
 local working_hours = require("scripts.working_hours")
 local biters_rendering_factory = require("scripts.biters_rendering")
@@ -10,6 +11,7 @@ local spawner_population = require("scripts.spawner_population")
 local pentapods = require("scripts.pentapods")
 
 local M = {}
+local SPACE_AGE_ENABLED = feature_flags.space_age_enabled()
 local protest_rendering
 local protest_system
 
@@ -834,10 +836,8 @@ local function normalize_case_progress(info)
   end
 end
 
-local function is_nauvis_offer_recruitable_biter(entity_name)
-  return entity_name ~= nil
-    and C.BITER_MAX_TIER[entity_name] ~= nil
-    and not C.IS_SPITTER[entity_name]
+local function is_offer_recruitable_entity(entity_name)
+  return entity_name ~= nil and C.BITER_MAX_TIER[entity_name] ~= nil
 end
 
 local function get_nauvis_enrollment_offer_chance(info)
@@ -852,11 +852,11 @@ local function get_nauvis_enrollment_offer_chance(info)
 end
 
 -- Slot release, desk unindex, and cases_resolved are owned by process_resolutions.
-local function finalize_enrolled_biter_conversion(desk_id, info, inv)
+local function finalize_hired_biter_conversion(desk_id, info, inv, item_name, count)
   if not desk_id or not info or not inv then return false end
   local entity = info.entity
   if not entity or not entity.valid then return false end
-  if inv.insert({name = "enrolled-biter", count = 1}) <= 0 then return false end
+  if inv.insert({name = item_name, count = count}) < count then return false end
 
   untrack_waiting_biter(entity.unit_number, info)
   entity.destroy()
@@ -903,7 +903,21 @@ local function maybe_attempt_nauvis_enrollment_offer(desk_id, info, inv)
   if not desk_id or not info or not inv then return false end
   local entity = info.entity
   if not entity or not entity.valid then return false end
-  if not is_nauvis_offer_recruitable_biter(entity.name) then return false end
+  if not is_offer_recruitable_entity(entity.name) then return false end
+
+  -- Base-only Administratorio hires every resolved biter or spitter directly
+  -- into the legacy reusable worker pool. Space Age instead enrolls only
+  -- biters, then routes them through the explicit workforce-formation chain.
+  if not SPACE_AGE_ENABLED then
+    local worker_count = (C.BITER_WORKER_YIELD and C.BITER_WORKER_YIELD[entity.name]) or 1
+    if not inv.can_insert or not inv.can_insert({name = "biter-worker", count = worker_count}) then
+      return false
+    end
+    if inv.remove({name = "job-offer", count = 1}) <= 0 then return false end
+    return finalize_hired_biter_conversion(desk_id, info, inv, "biter-worker", worker_count)
+  end
+
+  if C.IS_SPITTER[entity.name] then return false end
   if not inv.can_insert or not inv.can_insert({name = "enrolled-biter", count = 1}) then
     return false
   end
@@ -911,7 +925,7 @@ local function maybe_attempt_nauvis_enrollment_offer(desk_id, info, inv)
 
   local chance = get_nauvis_enrollment_offer_chance(info)
   if chance > 0 and math.random() < chance then
-    return finalize_enrolled_biter_conversion(desk_id, info, inv)
+    return finalize_hired_biter_conversion(desk_id, info, inv, "enrolled-biter", 1)
   end
 
   mark_desk_circuit_dirty(desk_id)

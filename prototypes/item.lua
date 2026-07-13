@@ -19,6 +19,7 @@ require("prototypes.item.economy")
 require("prototypes.item.buildings")
 if space_age_enabled then
   require("prototypes.item.space_age")
+  require("prototypes.item.fulgora_archives")
 end
 if working_hours_enabled then
   require("prototypes.item.modules")
