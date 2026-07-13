@@ -364,6 +364,20 @@ data:extend({
     results = {{type = "item", name = "middle-management-managing-manager", amount = 1}},
     energy_required = 25
   },
+  {
+    type = "recipe",
+    name = "burned-out-manager-rehabilitation",
+    category = "watercooler-gossip",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "burned-out-manager", amount = 1},
+      {type = "item", name = "good-excuse", amount = 1},
+      {type = "fluid", name = "liquid-coffee", amount = 50},
+    },
+    results = {{type = "item", name = "management-trainee", amount = 1}},
+    energy_required = 10,
+    allow_productivity = false,
+  },
   not_on_planet({
     type = "recipe",
     name = "chromatic-printer",
@@ -584,6 +598,36 @@ data:extend({
   },
   {
     type = "recipe",
+    name = "senior-trajectory-compliance-array",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "trajectory-compliance-array", amount = 1},
+      {type = "item", name = "tungsten-carbide", amount = 10},
+      {type = "item", name = "carbon-fiber", amount = 10},
+      {type = "item", name = "supercapacitor", amount = 10},
+      {type = "item", name = "management-approval-written", amount = 2},
+      {type = "item", name = "construction-work-order", amount = 1},
+    },
+    results = {{type = "item", name = "senior-trajectory-compliance-array", amount = 1}},
+    energy_required = 30
+  },
+  {
+    type = "recipe",
+    name = "executive-trajectory-compliance-array",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "senior-trajectory-compliance-array", amount = 1},
+      {type = "item", name = "quantum-processor", amount = 50},
+      {type = "item", name = "lithium-plate", amount = 20},
+      {type = "item", name = "tungsten-plate", amount = 20},
+      {type = "item", name = "carbon-fiber", amount = 20},
+      {type = "item", name = "management-approval-written", amount = 5},
+    },
+    results = {{type = "item", name = "executive-trajectory-compliance-array", amount = 1}},
+    energy_required = 60
+  },
+  {
+    type = "recipe",
     name = "administrative-space-station",
     enabled = false,
     ingredients = {
@@ -668,29 +712,6 @@ data:extend({
       {type = "item", name = "offworld-metallurgy-charter", amount = 1},
     },
     energy_required = 6,
-    surface_conditions = {
-      {
-        property = "pressure",
-        min = 0,
-        max = 0,
-      },
-    },
-  },
-  {
-    type = "recipe",
-    name = "orbital-deviation-order",
-    category = "orbital-bureaucracy",
-    enabled = false,
-    ingredients = {
-      {type = "item", name = "astronaut", amount = 1},
-      {type = "item", name = "management-approval-written", amount = 1},
-      {type = "item", name = "radar", amount = 1},
-      {type = "item", name = "processing-unit", amount = 2},
-    },
-    results = {
-      {type = "item", name = "orbital-deviation-order", amount = 2},
-    },
-    energy_required = 8,
     surface_conditions = {
       {
         property = "pressure",
@@ -1384,6 +1405,30 @@ data:extend({
     },
     energy_required = 5,
   }, "aquilo"),
+  {
+    type = "recipe",
+    name = "promethium-research-charter-production",
+    category = "orbital-bureaucracy",
+    enabled = false,
+    localised_name = {"item-name.promethium-research-charter"},
+    ingredients = {
+      {type = "item", name = "unified-operations-charter", amount = 1},
+      {type = "item", name = "cryogenic-operations-license", amount = 1},
+      {type = "item", name = "hardened-data-vault", amount = 1},
+      {type = "item", name = "asteroid-processing-docket", amount = 1},
+    },
+    results = {
+      {type = "item", name = "promethium-research-charter", amount = 1},
+    },
+    energy_required = 8,
+    surface_conditions = {
+      {
+        property = "pressure",
+        min = 0,
+        max = 0,
+      },
+    },
+  },
   surface_limited({
     type = "recipe",
     name = "public-transportation-contract-production",

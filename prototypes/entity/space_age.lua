@@ -429,24 +429,107 @@ local fax_network_combinator = {
   circuit_wire_max_distance = 9
 }
 
-local trajectory_compliance_array = table.deepcopy(data.raw["ammo-turret"]["gun-turret"])
-trajectory_compliance_array.name = "trajectory-compliance-array"
-trajectory_compliance_array.icon = "__base__/graphics/icons/radar.png"
-trajectory_compliance_array.icon_size = 64
-trajectory_compliance_array.minable = {mining_time = 0.2, result = "trajectory-compliance-array"}
-trajectory_compliance_array.placeable_by = placeable_by_item("trajectory-compliance-array")
-trajectory_compliance_array.next_upgrade = nil
-trajectory_compliance_array.fast_replaceable_group = nil
-trajectory_compliance_array.attack_parameters.ammo_category = "trajectory-compliance"
-trajectory_compliance_array.attack_parameters.cooldown = 60
-trajectory_compliance_array.attack_parameters.range = 30
-trajectory_compliance_array.surface_conditions = {
-  {
-    property = "pressure",
-    min = 0,
-    max = 0,
-  },
+local asteroid_size_masks = {
+  small = "administratorio-asteroid-small",
+  medium = "administratorio-asteroid-medium",
+  big = "administratorio-asteroid-big",
+  huge = "administratorio-asteroid-huge",
 }
+
+data:extend({
+  {type = "trigger-target-type", name = asteroid_size_masks.small},
+  {type = "trigger-target-type", name = asteroid_size_masks.medium},
+  {type = "trigger-target-type", name = asteroid_size_masks.big},
+  {type = "trigger-target-type", name = asteroid_size_masks.huge},
+})
+
+-- Manager arrays have actual jurisdictional limits. Giving every asteroid size
+-- its own native target mask stops junior hardware from wasting managers and
+-- power on an asteroid that its committee is not authorised to subdivide.
+for _, size in ipairs({"small", "medium", "big", "huge"}) do
+  for _, family in ipairs({"metallic", "carbonic", "oxide", "promethium"}) do
+    local asteroid = data.raw.asteroid[size .. "-" .. family .. "-asteroid"]
+    if asteroid then
+      asteroid.trigger_target_mask = {asteroid_size_masks[size]}
+    end
+  end
+end
+
+local function trajectory_array_icons(tint, overlay)
+  return {
+    {icon = "__base__/graphics/icons/radar.png", icon_size = 64, tint = tint},
+    {icon = overlay, icon_size = 64, scale = 0.38, shift = {8, 8}},
+  }
+end
+
+local function make_trajectory_compliance_array(spec)
+  local array = table.deepcopy(data.raw["ammo-turret"]["gun-turret"])
+  array.name = spec.name
+  array.icon = nil
+  array.icons = spec.icons
+  array.minable = {mining_time = 0.2, result = spec.name}
+  array.placeable_by = placeable_by_item(spec.name)
+  array.next_upgrade = spec.next_upgrade
+  array.fast_replaceable_group = "trajectory-compliance-array"
+  array.attack_target_mask = spec.target_masks
+  array.attack_parameters.ammo_category = "trajectory-compliance"
+  array.attack_parameters.cooldown = 300
+  array.attack_parameters.range = 16
+  array.energy_source = {
+    type = "electric",
+    buffer_capacity = spec.energy_per_shot,
+    input_flow_limit = spec.input_flow_limit,
+    usage_priority = "primary-input",
+  }
+  array.energy_per_shot = spec.energy_per_shot
+  array.prepare_with_no_ammo = false
+  array.surface_conditions = {
+    {
+      property = "pressure",
+      min = 0,
+      max = 0,
+    },
+  }
+  return array
+end
+
+local trajectory_compliance_array = make_trajectory_compliance_array({
+  name = "trajectory-compliance-array",
+  icons = {{icon = "__base__/graphics/icons/radar.png", icon_size = 64}},
+  next_upgrade = "senior-trajectory-compliance-array",
+  target_masks = {asteroid_size_masks.small, asteroid_size_masks.medium},
+  energy_per_shot = "1.3MJ",
+  input_flow_limit = "2.6MW",
+})
+
+local senior_trajectory_compliance_array = make_trajectory_compliance_array({
+  name = "senior-trajectory-compliance-array",
+  icons = trajectory_array_icons(
+    {r = 0.72, g = 0.88, b = 1, a = 1},
+    "__base__/graphics/icons/behemoth-biter.png"
+  ),
+  next_upgrade = "executive-trajectory-compliance-array",
+  target_masks = {asteroid_size_masks.small, asteroid_size_masks.medium, asteroid_size_masks.big},
+  energy_per_shot = "2.6MJ",
+  input_flow_limit = "5.2MW",
+})
+
+local executive_trajectory_compliance_array = make_trajectory_compliance_array({
+  name = "executive-trajectory-compliance-array",
+  icons = trajectory_array_icons(
+    {r = 1, g = 0.72, b = 0.34, a = 1},
+    "__space-age__/graphics/icons/quantum-processor.png"
+  ),
+  next_upgrade = nil,
+  target_masks = {
+    asteroid_size_masks.small,
+    asteroid_size_masks.medium,
+    asteroid_size_masks.big,
+    asteroid_size_masks.huge,
+  },
+  energy_per_shot = "5.2MJ",
+  input_flow_limit = "10.4MW",
+})
 
 local public_train_stop = table.deepcopy(data.raw["train-stop"]["train-stop"])
 public_train_stop.name = "public-train-stop"
@@ -480,5 +563,7 @@ data:extend({
   interplanetary_fax_exchange,
   fax_network_combinator,
   trajectory_compliance_array,
+  senior_trajectory_compliance_array,
+  executive_trajectory_compliance_array,
   public_train_stop,
 })

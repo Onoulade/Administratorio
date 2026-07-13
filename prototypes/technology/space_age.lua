@@ -72,11 +72,11 @@ data:extend({
       {type = "unlock-recipe", recipe = "management-trainee-formation"},
       {type = "unlock-recipe", recipe = "astronaut-formation"},
       {type = "unlock-recipe", recipe = "middle-management-managing-manager-formation"},
+      {type = "unlock-recipe", recipe = "burned-out-manager-rehabilitation"},
       {type = "unlock-recipe", recipe = "administrative-space-station"},
       {type = "unlock-recipe", recipe = "thermal-process-license-orbital"},
       {type = "unlock-recipe", recipe = "calcite-reagent-waiver-orbital"},
       {type = "unlock-recipe", recipe = "offworld-metallurgy-charter-orbital"},
-      {type = "unlock-recipe", recipe = "orbital-deviation-order"},
       {type = "unlock-recipe", recipe = "asteroid-processing-docket"},
     },
     prerequisites = {"space-science-pack", "executive-review"},
@@ -403,6 +403,159 @@ data:extend({
     upgrade = true,
   },
 })
+
+data:extend({
+  {
+    type = "technology",
+    name = "trajectory-compliance-jurisdiction-2",
+    icons = {
+      {icon = "__base__/graphics/technology/weapon-shooting-speed-1.png", icon_size = 256},
+      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.5, shift = {32, 32}},
+    },
+    effects = {
+      {type = "unlock-recipe", recipe = "senior-trajectory-compliance-array"},
+    },
+    prerequisites = {
+      "workforce-formation",
+      "metallurgic-science-pack",
+      "agricultural-science-pack",
+      "electromagnetic-science-pack",
+    },
+    unit = {
+      count = 1200,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"utility-science-pack", 1},
+        {"space-science-pack", 1},
+        {"administrative-science-pack", 1},
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+      },
+      time = 60,
+    },
+    order = "h-b-j[02]",
+  },
+  {
+    type = "technology",
+    name = "trajectory-compliance-jurisdiction-3",
+    icons = {
+      {icon = "__base__/graphics/technology/weapon-shooting-speed-1.png", icon_size = 256},
+      {icon = "__space-age__/graphics/icons/quantum-processor.png", icon_size = 64, scale = 0.5, shift = {32, 32}},
+    },
+    effects = {
+      {type = "unlock-recipe", recipe = "executive-trajectory-compliance-array"},
+    },
+    prerequisites = {
+      "trajectory-compliance-jurisdiction-2",
+      "quantum-processor",
+    },
+    unit = {
+      count = 3000,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"utility-science-pack", 1},
+        {"space-science-pack", 1},
+        {"administrative-science-pack", 1},
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"cryogenic-science-pack", 1},
+      },
+      time = 60,
+    },
+    order = "h-b-j[03]",
+  },
+})
+
+local trajectory_speed_seconds = {4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0, 0.5}
+local trajectory_speed_counts = {200, 350, 550, 800, 1000, 1500, 2250, 3000, 4000}
+local trajectory_speed_techs = {}
+local previous_speed_modifier = 0
+
+local early_speed_packs = {
+  {"automation-science-pack", 1},
+  {"logistic-science-pack", 1},
+  {"chemical-science-pack", 1},
+  {"utility-science-pack", 1},
+  {"space-science-pack", 1},
+  {"administrative-science-pack", 1},
+}
+
+local function copy_science_packs(packs)
+  local copy = {}
+  for _, pack in ipairs(packs) do
+    copy[#copy + 1] = {pack[1], pack[2]}
+  end
+  return copy
+end
+
+for level, seconds in ipairs(trajectory_speed_seconds) do
+  local target_ticks = seconds * 60
+  local cumulative_modifier = 300 / target_ticks - 1
+  local packs = copy_science_packs(early_speed_packs)
+
+  if level >= 5 then
+    packs[#packs + 1] = {"metallurgic-science-pack", 1}
+    packs[#packs + 1] = {"agricultural-science-pack", 1}
+    packs[#packs + 1] = {"electromagnetic-science-pack", 1}
+  end
+  if level >= 8 then
+    packs[#packs + 1] = {"cryogenic-science-pack", 1}
+  end
+  if level >= 9 then
+    packs[#packs + 1] = {"promethium-science-pack", 1}
+  end
+
+  local prerequisites = level == 1
+    and {"workforce-formation"}
+    or {"trajectory-compliance-speed-" .. (level - 1)}
+  if level == 5 then
+    prerequisites[#prerequisites + 1] = "metallurgic-science-pack"
+    prerequisites[#prerequisites + 1] = "agricultural-science-pack"
+    prerequisites[#prerequisites + 1] = "electromagnetic-science-pack"
+  elseif level == 8 then
+    prerequisites[#prerequisites + 1] = "cryogenic-science-pack"
+  elseif level == 9 then
+    prerequisites[#prerequisites + 1] = "promethium-science-pack"
+  end
+
+  trajectory_speed_techs[#trajectory_speed_techs + 1] = {
+    type = "technology",
+    name = "trajectory-compliance-speed-" .. level,
+    icons = {
+      {icon = "__base__/graphics/technology/weapon-shooting-speed-1.png", icon_size = 256},
+      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.45, shift = {32, 32}},
+    },
+    effects = {
+      {
+        type = "gun-speed",
+        ammo_category = "trajectory-compliance",
+        modifier = cumulative_modifier - previous_speed_modifier,
+      },
+      {
+        type = "nothing",
+        effect_description = {"technology-effect.trajectory-compliance-speed", string.format("%.1f", seconds)},
+      },
+    },
+    prerequisites = prerequisites,
+    unit = {
+      count = trajectory_speed_counts[level],
+      ingredients = packs,
+      time = level <= 4 and 45 or 60,
+    },
+    order = "h-b-s[" .. string.format("%02d", level) .. "]",
+    upgrade = true,
+  }
+
+  previous_speed_modifier = cumulative_modifier
+end
+
+data:extend(trajectory_speed_techs)
 
 add_tech_unlock("workforce-formation", "licensed-notary-formation")
 add_tech_unlock("administrative-science-research", "research-grant-approval-vulcanus")

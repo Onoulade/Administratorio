@@ -24,6 +24,12 @@ local function assert_true(value, msg)
   if not value then error(msg or "assertion failed", 2) end
 end
 
+local function assert_near(actual, expected, epsilon, msg)
+  if math.abs(actual - expected) > (epsilon or 1e-9) then
+    error((msg or "") .. " - expected " .. tostring(expected) .. ", got " .. tostring(actual), 2)
+  end
+end
+
 local recipes = {
   foundry = {type = "recipe", name = "foundry", ingredients = {{type = "item", name = "steel-plate", amount = 50}}},
   ["tungsten-plate"] = {type = "recipe", name = "tungsten-plate", ingredients = {{type = "item", name = "tungsten-ore", amount = 4}}},
@@ -523,14 +529,57 @@ test("field agent recipes reuse the base hired biter instead of duplicate Space 
 end)
 
 test("MMMM is converted into trajectory-compliance ammo and sink hardware", function()
-  assert_true(ammos["middle-management-managing-manager"] ~= nil, "MMMM ammo missing")
-  assert_eq(ammos["middle-management-managing-manager"].type, "ammo", "MMMM should be ammo-backed for trajectory compliance")
-  assert_eq(ammos["middle-management-managing-manager"].ammo_category, "trajectory-compliance", "MMMM should feed trajectory-compliance arrays")
-  assert_true(ammos["orbital-deviation-order"] ~= nil, "orbital deviation order ammo missing")
-  assert_eq(ammos["orbital-deviation-order"].ammo_category, "trajectory-compliance",
-    "orbital-deviation-order should also feed trajectory-compliance arrays")
+  local manager = assert(ammos["middle-management-managing-manager"], "MMMM ammo missing")
+  assert_eq(manager.type, "ammo", "MMMM should be ammo-backed for trajectory compliance")
+  assert_eq(manager.ammo_category, "trajectory-compliance", "MMMM should feed trajectory-compliance arrays")
+  assert_eq(manager.magazine_size, 1, "one MMMM should power exactly one deviation")
+  local effects = manager.ammo_type.action.action_delivery.target_effects
+  assert_eq(effects[1].type, "script", "MMMM should resolve through the runtime deviation effect")
+  assert_eq(effects[1].effect_id, "administratorio-trajectory-deviation")
+  assert_eq(effects[1].affects_target, true, "script effect should retain the targeted asteroid entity")
+  assert_true(ammos["orbital-deviation-order"] == nil, "orbital deviation order ammo should be removed")
   assert_true(recipes["trajectory-compliance-array"] ~= nil, "trajectory compliance array recipe missing")
   assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "trajectory-compliance-array"), "workforce formation should unlock the compliance array")
+
+  local senior_recipe = assert(recipes["senior-trajectory-compliance-array"], "senior array recipe missing")
+  local executive_recipe = assert(recipes["executive-trajectory-compliance-array"], "executive array recipe missing")
+  assert_true(items["senior-trajectory-compliance-array"] ~= nil, "senior array item missing")
+  assert_true(items["executive-trajectory-compliance-array"] ~= nil, "executive array item missing")
+  assert_true(has_ingredient(senior_recipe, "trajectory-compliance-array"), "senior array should upgrade the junior array")
+  assert_true(has_ingredient(senior_recipe, "tungsten-carbide"), "senior array should require Vulcanus hardware")
+  assert_true(has_ingredient(senior_recipe, "carbon-fiber"), "senior array should require Gleba hardware")
+  assert_true(has_ingredient(senior_recipe, "supercapacitor"), "senior array should require Fulgora hardware")
+  assert_true(has_ingredient(executive_recipe, "senior-trajectory-compliance-array"),
+    "executive array should upgrade the senior array")
+  assert_true(has_ingredient(executive_recipe, "quantum-processor"),
+    "executive array should require pre-Promethium quantum processing")
+
+  local senior_tech = assert(technologies["trajectory-compliance-jurisdiction-2"], "senior jurisdiction missing")
+  local executive_tech = assert(technologies["trajectory-compliance-jurisdiction-3"], "executive jurisdiction missing")
+  assert_true(tech_unlocks_recipe(senior_tech, "senior-trajectory-compliance-array"))
+  assert_true(tech_unlocks_recipe(executive_tech, "executive-trajectory-compliance-array"))
+  local has_quantum_prerequisite = false
+  for _, prerequisite in ipairs(executive_tech.prerequisites or {}) do
+    if prerequisite == "quantum-processor" then has_quantum_prerequisite = true end
+  end
+  assert_true(has_quantum_prerequisite, "huge-asteroid jurisdiction must unlock through quantum processing")
+  for _, ingredient in ipairs(executive_tech.unit.ingredients or {}) do
+    assert_true((ingredient.name or ingredient[1]) ~= "promethium-science-pack",
+      "Promethium-capable hardware cannot require Promethium science")
+  end
+end)
+
+test("burned-out managers are rehabilitated without productivity", function()
+  assert_true(items["burned-out-manager"] ~= nil, "burned-out-manager item missing")
+  local recipe = assert(recipes["burned-out-manager-rehabilitation"], "manager rehabilitation recipe missing")
+  assert_eq(recipe.category, "watercooler-gossip")
+  assert_eq(recipe.energy_required, 10)
+  assert_true(has_ingredient(recipe, "burned-out-manager"))
+  assert_true(has_ingredient(recipe, "good-excuse"))
+  assert_true(has_fluid_ingredient(recipe, "liquid-coffee"))
+  assert_true(has_result(recipe, "management-trainee"))
+  assert_eq(recipe.allow_productivity, false, "rehabilitation must not duplicate workers through productivity")
+  assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "burned-out-manager-rehabilitation"))
 end)
 
 test("orbital admin station recipes cover offworld metallurgy and asteroid paperwork", function()
@@ -539,7 +588,6 @@ test("orbital admin station recipes cover offworld metallurgy and asteroid paper
     "thermal-process-license-orbital",
     "calcite-reagent-waiver-orbital",
     "offworld-metallurgy-charter-orbital",
-    "orbital-deviation-order",
     "asteroid-processing-docket",
   }) do
     local recipe = assert(recipes[recipe_name], recipe_name .. " missing")
@@ -549,6 +597,47 @@ test("orbital admin station recipes cover offworld metallurgy and asteroid paper
     assert_true(tech_unlocks_recipe(workforce, recipe_name), "workforce-formation should unlock " .. recipe_name)
   end
   assert_true(items["asteroid-processing-docket"] ~= nil, "asteroid-processing-docket missing")
+  assert_true(recipes["orbital-deviation-order"] == nil, "orbital-deviation-order recipe should be removed")
+  assert_true(not tech_unlocks_recipe(workforce, "orbital-deviation-order"),
+    "workforce formation should no longer unlock orbital-deviation-order")
+end)
+
+test("trajectory compliance speed research reaches every exact cooldown", function()
+  local expected_seconds = {4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0, 0.5}
+  local expected_counts = {200, 350, 550, 800, 1000, 1500, 2250, 3000, 4000}
+  local cumulative_modifier = 0
+
+  local function has_pack(technology, pack_name)
+    for _, ingredient in ipairs(technology.unit.ingredients or {}) do
+      if (ingredient.name or ingredient[1]) == pack_name then return true end
+    end
+    return false
+  end
+
+  for level, seconds in ipairs(expected_seconds) do
+    local technology = assert(technologies["trajectory-compliance-speed-" .. level], "speed tier missing")
+    assert_eq(technology.unit.count, expected_counts[level], "unexpected research count at tier " .. level)
+    local speed_effect
+    for _, effect in ipairs(technology.effects or {}) do
+      if effect.type == "gun-speed" and effect.ammo_category == "trajectory-compliance" then
+        speed_effect = effect
+      end
+    end
+    assert_true(speed_effect ~= nil, "gun-speed effect missing at tier " .. level)
+    cumulative_modifier = cumulative_modifier + speed_effect.modifier
+    assert_near(300 / (1 + cumulative_modifier), seconds * 60, 1e-9,
+      "cooldown mismatch at tier " .. level)
+
+    if level >= 5 then
+      assert_true(has_pack(technology, "metallurgic-science-pack"), "tier " .. level .. " should use metallurgic science")
+      assert_true(has_pack(technology, "agricultural-science-pack"), "tier " .. level .. " should use agricultural science")
+      assert_true(has_pack(technology, "electromagnetic-science-pack"), "tier " .. level .. " should use electromagnetic science")
+    end
+    assert_eq(has_pack(technology, "cryogenic-science-pack"), level >= 8,
+      "cryogenic gating mismatch at tier " .. level)
+    assert_eq(has_pack(technology, "promethium-science-pack"), level >= 9,
+      "promethium gating mismatch at tier " .. level)
+  end
 end)
 
 test("gleba conciliation unlocks the yellow chain and gleba specialist buildings", function()
@@ -989,6 +1078,14 @@ test("aquilo transfer media and multicolor forms define the expected convergence
     "unified-operations-charter should require electromagnetic-operating-license")
   assert_true(has_ingredient(recipes["cryogenic-operations-license-production"], "lithium-plate"),
     "cryogenic-operations-license should require lithium-plate")
+  assert_true(has_ingredient(recipes["promethium-research-charter-production"], "unified-operations-charter"),
+    "promethium-research-charter should require unified-operations-charter")
+  assert_true(has_ingredient(recipes["promethium-research-charter-production"], "hardened-data-vault"),
+    "promethium-research-charter should require Vulcanus-Fulgora hardened-data-vault")
+  assert_true(has_ingredient(recipes["promethium-research-charter-production"], "asteroid-processing-docket"),
+    "promethium-research-charter should require asteroid-processing-docket")
+  assert_true(not has_ingredient(recipes["promethium-research-charter-production"], "orbital-deviation-order"),
+    "promethium-research-charter should no longer require orbital-deviation-order")
   assert_true(not has_ingredient(recipes["transfer-emulsion-production"], "taxpayer-money"),
     "transfer-emulsion should not require taxpayer-money")
 end)

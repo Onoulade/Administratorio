@@ -28,11 +28,24 @@ mods = {
   ["space-age"] = "2.0.0",
 }
 
+local asteroid_prototypes = {}
+for _, size in ipairs({"small", "medium", "big", "huge"}) do
+  for _, family in ipairs({"metallic", "carbonic", "oxide", "promethium"}) do
+    local name = size .. "-" .. family .. "-asteroid"
+    asteroid_prototypes[name] = {
+      type = "asteroid",
+      name = name,
+      trigger_target_mask = {"common"},
+    }
+  end
+end
+
 data = {
   raw = {
     item = {},
     fluid = {},
     ["virtual-signal"] = {},
+    asteroid = asteroid_prototypes,
     recipe = {
       foundry = {type = "recipe", name = "foundry", ingredients = {}},
       biochamber = {type = "recipe", name = "biochamber", ingredients = {}},
@@ -174,6 +187,61 @@ local function has_ingredient(recipe, ingredient_name)
   end
   return false
 end
+
+test("trajectory compliance tiers use native powered timing, range, and asteroid-size masks", function()
+  local arrays = {
+    {
+      name = "trajectory-compliance-array",
+      energy = "1.3MJ",
+      flow = "2.6MW",
+      next_upgrade = "senior-trajectory-compliance-array",
+      masks = {small = true, medium = true},
+    },
+    {
+      name = "senior-trajectory-compliance-array",
+      energy = "2.6MJ",
+      flow = "5.2MW",
+      next_upgrade = "executive-trajectory-compliance-array",
+      masks = {small = true, medium = true, big = true},
+    },
+    {
+      name = "executive-trajectory-compliance-array",
+      energy = "5.2MJ",
+      flow = "10.4MW",
+      masks = {small = true, medium = true, big = true, huge = true},
+    },
+  }
+
+  for _, expected in ipairs(arrays) do
+    local array = assert(data.raw["ammo-turret"][expected.name], expected.name .. " missing")
+    assert_eq(array.attack_parameters.ammo_category, "trajectory-compliance")
+    assert_eq(array.attack_parameters.cooldown, 300, "base firing cooldown should be five seconds")
+    assert_eq(array.attack_parameters.range, 16, "array should defend a 32-tile diameter")
+    assert_eq(array.energy_source.type, "electric")
+    assert_eq(array.energy_source.buffer_capacity, expected.energy)
+    assert_eq(array.energy_source.input_flow_limit, expected.flow)
+    assert_eq(array.energy_per_shot, expected.energy)
+    assert_eq(array.prepare_with_no_ammo, false)
+    assert_eq(array.fast_replaceable_group, "trajectory-compliance-array")
+    assert_eq(array.next_upgrade, expected.next_upgrade)
+
+    local mask_set = {}
+    for _, mask in ipairs(array.attack_target_mask or {}) do mask_set[mask] = true end
+    for size, allowed in pairs(expected.masks) do
+      assert_eq(mask_set["administratorio-asteroid-" .. size], allowed, expected.name .. " target mask mismatch")
+    end
+  end
+
+  for _, size in ipairs({"small", "medium", "big", "huge"}) do
+    for _, family in ipairs({"metallic", "carbonic", "oxide", "promethium"}) do
+      local asteroid = assert(data.raw.asteroid[size .. "-" .. family .. "-asteroid"])
+      local masks = {}
+      for _, mask in ipairs(asteroid.trigger_target_mask or {}) do masks[mask] = true end
+      assert_true(masks["administratorio-asteroid-" .. size], "asteroid should receive its size target mask")
+      assert_true(not masks.common, "common targeting would let junior arrays waste managers on larger asteroids")
+    end
+  end
+end)
 
 test("chromatic printer is a flippable four-port liquid-fed machine", function()
   local entity = data.raw["assembling-machine"]["chromatic-printer"]
