@@ -277,7 +277,7 @@ test("aquilo printer and exchange are specialized endgame bureaucracy machines",
   assert_eq(exchange.crafting_categories[1], "fax-reconstruction",
     "interplanetary-fax-exchange should own fax reconstruction")
   assert_eq(#(exchange.fluid_boxes or {}), 0,
-    "interplanetary-fax-exchange should use dry sheets, substrate, and ribbon")
+    "interplanetary-fax-exchange should use dry sheets and ribbon")
   assert_eq(exchange.ingredient_count, 5,
     "interplanetary-fax-exchange should have room for solid reconstruction media")
 end)

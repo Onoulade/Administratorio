@@ -130,7 +130,6 @@ local function make_fax_reconstruction_recipes()
     local requirements = fax_shared.get_reconstruction_requirements(item_name)
     local ingredients = {
       {type = "item", name = fax_shared.RECONSTRUCTION_PAPER_ITEM, amount = requirements.sheets},
-      {type = "item", name = fax_shared.RECONSTRUCTION_SUBSTRATE_ITEM, amount = requirements.substrate},
     }
     if requirements.ribbon > 0 then
       ingredients[#ingredients + 1] = {

@@ -495,7 +495,7 @@ end
 
 local function get_receiver_supply_snapshot(state, entry)
   local input_inventory = state and state.entity and get_receiver_input_inventory(state.entity) or nil
-  local requirements = entry and shared.get_reconstruction_requirements(entry.name) or {sheets = 0, substrate = 0, ribbon = 0}
+  local requirements = entry and shared.get_reconstruction_requirements(entry.name) or {sheets = 0, ribbon = 0}
   local function item_count(name)
     return input_inventory and input_inventory.get_item_count and (input_inventory.get_item_count(name) or 0) or 0
   end
@@ -505,14 +505,11 @@ local function get_receiver_supply_snapshot(state, entry)
     paper_required = entry ~= nil,
     paper_count = item_count(shared.RECONSTRUCTION_PAPER_ITEM),
     paper_amount = requirements.sheets,
-    substrate_count = item_count(shared.RECONSTRUCTION_SUBSTRATE_ITEM),
-    substrate_amount = requirements.substrate,
     ribbon_count = item_count(shared.RECONSTRUCTION_RIBBON_ITEM),
     ribbon_amount = requirements.ribbon,
     missing_items = {},
   }
   if snapshot.paper_count < requirements.sheets then snapshot.missing_items[#snapshot.missing_items + 1] = {"item-name.thermal-transfer-sheet"} end
-  if snapshot.substrate_count < requirements.substrate then snapshot.missing_items[#snapshot.missing_items + 1] = {"item-name.archival-substrate"} end
   if snapshot.ribbon_count < requirements.ribbon then snapshot.missing_items[#snapshot.missing_items + 1] = {"item-name.composite-chroma-ribbon"} end
 
   return snapshot
@@ -559,7 +556,6 @@ local function consume_receiver_supplies(state, entry)
   if not has_supplies then return false end
   if not requirements then return false end
   input_inventory.remove{name = shared.RECONSTRUCTION_PAPER_ITEM, count = requirements.sheets}
-  input_inventory.remove{name = shared.RECONSTRUCTION_SUBSTRATE_ITEM, count = requirements.substrate}
   if requirements.ribbon > 0 then
     input_inventory.remove{name = shared.RECONSTRUCTION_RIBBON_ITEM, count = requirements.ribbon}
   end
@@ -1553,11 +1549,6 @@ local function populate_receiver_supplies(frame, state)
     {"item-name.thermal-transfer-sheet"},
     current_entry and ("%d/%d"):format(snapshot.paper_count or 0, snapshot.paper_amount or 0) or tostring(snapshot.paper_count or 0),
     current_entry and ((snapshot.paper_count or 0) >= (snapshot.paper_amount or 0) and {"gui.fax-ready"} or {"gui.fax-missing"}) or {"gui.fax-idle"},
-  })
-  add_gui_table_row(table_element, {
-    {"item-name.archival-substrate"},
-    current_entry and ("%d/%d"):format(snapshot.substrate_count or 0, snapshot.substrate_amount or 0) or tostring(snapshot.substrate_count or 0),
-    current_entry and ((snapshot.substrate_count or 0) >= (snapshot.substrate_amount or 0) and {"gui.fax-ready"} or {"gui.fax-missing"}) or {"gui.fax-idle"},
   })
   add_gui_table_row(table_element, {
     {"item-name.composite-chroma-ribbon"},

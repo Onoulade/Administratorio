@@ -23,8 +23,8 @@ data:extend({
   }),
 
   -- Fulgora turns salvage into the ordinary administrative inputs needed to
-  -- run a factory. Random archives seed the portfolio; these recipes provide
-  -- dependable throughput once the Digital Services Bureau is online.
+  -- run a factory. Random archives seed the form portfolio while redundant
+  -- rubble provides deterministic low-grade data throughput.
   on_planet("fulgora", {
     type = "recipe",
     name = "liquid-black-ink-fulgora",
@@ -52,28 +52,15 @@ data:extend({
   }),
   on_planet("fulgora", {
     type = "recipe",
-    name = "dubious-data-recovery-fulgora",
+    name = "salvaged-data-analysis-fulgora",
     category = "bureaucratic-bootstrap",
     enabled = false,
     ingredients = {
-      {type = "item", name = "old-archive", amount = 1},
-      {type = "item", name = "redundant-rubble", amount = 4},
+      {type = "item", name = "redundant-rubble", amount = 6},
+      {type = "item", name = "charged-toner", amount = 1},
     },
     results = {{type = "item", name = "dubious-data", amount = 4}},
     energy_required = 4,
-    allow_productivity = true,
-  }),
-  on_planet("fulgora", {
-    type = "recipe",
-    name = "basic-excuse-recovery-fulgora",
-    category = "bureaucratic-bootstrap",
-    enabled = false,
-    ingredients = {
-      {type = "item", name = "dubious-data", amount = 2},
-      {type = "item", name = "old-archive", amount = 1},
-    },
-    results = {{type = "item", name = "basic-excuse", amount = 2}},
-    energy_required = 3,
     allow_productivity = true,
   }),
   on_planet("fulgora", {
@@ -85,7 +72,7 @@ data:extend({
     ingredients = {
       {type = "item", name = "blank-form", amount = 1},
       {type = "item", name = "solid-fuel", amount = 2},
-      {type = "item", name = "archival-substrate", amount = 1},
+      {type = "item", name = "redundant-rubble", amount = 2},
     },
     results = {{type = "item", name = "carbon-offset-certificate-basic", amount = 2}},
     energy_required = 3,

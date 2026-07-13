@@ -112,7 +112,7 @@ CAPSTONE_IMPORTS = {
 PLANETARY_EXPORT_IMPORTS = {
     "blank-cyan-form", "blank-yellow-form", "blank-magenta-form",
     "cyan-yellow-form", "cyan-magenta-form", "yellow-magenta-form",
-    "archival-substrate", "industrial-charter", "offworld-metallurgy-charter",
+    "industrial-charter", "offworld-metallurgy-charter",
     "conciliation-order", "electromagnetic-operating-license", "data-recovery-order",
 }
 EXPLICIT_IMPORT_ALLOWLISTS = {

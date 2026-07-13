@@ -31,7 +31,6 @@ M.BASE_FAX_TECH = "aquilo-fax-network"
 M.COLOR_FAX_TECH = "color-faxing"
 M.RECONSTRUCTION_RECIPE_PREFIX = "faxed-document-reconstruction-"
 M.RECONSTRUCTION_PAPER_ITEM = "thermal-transfer-sheet"
-M.RECONSTRUCTION_SUBSTRATE_ITEM = "archival-substrate"
 M.RECONSTRUCTION_RIBBON_ITEM = "composite-chroma-ribbon"
 M.INK_DEFINITIONS = {
   black = {
@@ -247,19 +246,19 @@ function M.get_reconstruction_requirements(item_name)
     if ink_id ~= "black" then color_count = color_count + 1 end
   end
   if color_count == 0 then
-    return {sheets = 1, substrate = 1, ribbon = 0}
+    return {sheets = 2, ribbon = 0}
   elseif color_count == 1 then
-    return {sheets = 1, substrate = 1, ribbon = 1}
+    return {sheets = 2, ribbon = 1}
   elseif color_count == 2 then
-    return {sheets = 1, substrate = 2, ribbon = 1}
+    return {sheets = 3, ribbon = 1}
   end
-  return {sheets = 2, substrate = 2, ribbon = 2}
+  return {sheets = 4, ribbon = 2}
 end
 
 function M.format_reconstruction_media(item_name)
   local requirements = M.get_reconstruction_requirements(item_name)
   if not requirements then return {"gui.fax-none"} end
-  return {"gui.fax-reconstruction-media", requirements.sheets, requirements.substrate, requirements.ribbon}
+  return {"gui.fax-reconstruction-media", requirements.sheets, requirements.ribbon}
 end
 
 function M.format_required_inks(item_name)
