@@ -115,9 +115,9 @@ data:extend({
         type = "direct",
         action_delivery = {
           type = "instant",
-          source_effects = {
-            type = "create-explosion",
-            entity_name = "explosion-hit",
+          target_effects = {
+            {type = "script", effect_id = "administratorio-trajectory-deviation", affects_target = true},
+            {type = "create-explosion", entity_name = "explosion-hit"},
           },
         },
       },
@@ -129,12 +129,47 @@ data:extend({
   },
   {
     type = "item",
+    name = "burned-out-manager",
+    icons = {
+      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, tint = {r = 0.42, g = 0.42, b = 0.42, a = 1}},
+      {icon = "__space-age__/graphics/icons/carbon.png", icon_size = 64, scale = 0.42, shift = {8, 8}},
+    },
+    subgroup = "admin-biter-buildings",
+    order = "j-k",
+    stack_size = 20
+  },
+  {
+    type = "item",
     name = "trajectory-compliance-array",
     icon = "__base__/graphics/icons/radar.png",
     icon_size = 64,
     subgroup = "admin-buildings",
     order = "i",
     place_result = "trajectory-compliance-array",
+    stack_size = 20
+  },
+  {
+    type = "item",
+    name = "senior-trajectory-compliance-array",
+    icons = {
+      {icon = "__base__/graphics/icons/radar.png", icon_size = 64, tint = {r = 0.72, g = 0.88, b = 1, a = 1}},
+      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
+    },
+    subgroup = "admin-buildings",
+    order = "i-b",
+    place_result = "senior-trajectory-compliance-array",
+    stack_size = 20
+  },
+  {
+    type = "item",
+    name = "executive-trajectory-compliance-array",
+    icons = {
+      {icon = "__base__/graphics/icons/radar.png", icon_size = 64, tint = {r = 1, g = 0.72, b = 0.34, a = 1}},
+      {icon = "__space-age__/graphics/icons/quantum-processor.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
+    },
+    subgroup = "admin-buildings",
+    order = "i-c",
+    place_result = "executive-trajectory-compliance-array",
     stack_size = 20
   },
   {
@@ -571,32 +606,6 @@ data:extend({
     stack_size = 100
   },
   {
-    type = "ammo",
-    name = "orbital-deviation-order",
-    icons = {
-      {icon = item_icons .. "management-approval-written.png", icon_size = 64},
-      {icon = "__base__/graphics/icons/radar.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
-    },
-    ammo_category = "trajectory-compliance",
-    ammo_type = {
-      target_type = "entity",
-      action = {
-        type = "direct",
-        action_delivery = {
-          type = "instant",
-          source_effects = {
-            type = "create-explosion",
-            entity_name = "explosion-hit",
-          },
-        },
-      },
-    },
-    magazine_size = 1,
-    subgroup = "forms-permits",
-    order = "do",
-    stack_size = 50
-  },
-  {
     type = "item",
     name = "asteroid-processing-docket",
     icons = {
@@ -604,7 +613,7 @@ data:extend({
       {icon = "__base__/graphics/icons/processing-unit.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
     },
     subgroup = "forms-permits",
-    order = "dp",
+    order = "do",
     stack_size = 100
   },
   {

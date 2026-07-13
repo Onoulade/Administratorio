@@ -117,7 +117,7 @@ Colored paperwork gating:
   - explicit trichromatic convergence gates include `fusion-reactor`, `fusion-generator`, and `mech-armor`
 - Current explicit top-tier override:
   - `quantum-processor` consumes `unified-operations-charter`
-  - `promethium-science-pack` consumes `promethium-research-charter`, which is issued in vacuum from unified, cryogenic, hardened data custody, asteroid-processing, and orbital-deviation paperwork
+  - `promethium-science-pack` consumes `promethium-research-charter`, which is issued in vacuum from unified, cryogenic, hardened data custody, and asteroid-processing paperwork
 - Current Aquilo native gates:
   - `lithium` and `lithium-plate` consume `cyan-yellow-form`
   - `fluoroketone`, `fluoroketone-cooling`, and `cryogenic-plant` consume `cryogenic-operations-license`
@@ -286,7 +286,6 @@ Aquilo and orbital:
   - `thermal-process-license-orbital`
   - `calcite-reagent-waiver-orbital`
   - `offworld-metallurgy-charter-orbital`
-  - `orbital-deviation-order`
   - `asteroid-processing-docket`
   - `trajectory-compliance-array`
 
@@ -330,7 +329,7 @@ Professions:
   - `cryogenic-plant` requires `cryoprint-technician`
   - `laser-printer`, `fax-emitter`, and `interplanetary-fax-exchange` require `cryoprint-technician`
   - `overtime-exemption-staffed` uses `night-shift-supervisor`
-  - `trajectory-compliance-array` consumes `middle-management-managing-manager` / `orbital-deviation-order` as ammo
+  - trajectory compliance arrays consume `middle-management-managing-manager` as native turret ammo, convert one jurisdiction-appropriate asteroid into its full 2/6/18/54 collectible chunk yield, and return an intact or burned-out manager to platform cargo when probability permits
 
 Fax runtime:
 
@@ -467,7 +466,6 @@ Fax runtime:
     - `data-recovery-order`
     - `public-transportation-contract`
     - `asteroid-processing-docket`
-    - `orbital-deviation-order`
   - This may be intentional, but it must be explicit because faxing is supposed to move administrative value between planets.
 - Add tests for:
   - color faxing blocked before `color-faxing`

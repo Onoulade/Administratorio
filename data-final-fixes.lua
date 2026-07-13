@@ -184,10 +184,25 @@ if data.raw["character"]["character"] then
   char.guns_inventory_size = 1
 end
 
--- Hide all guns, ammo, and player turrets (final pass catches Space Age too).
+-- Hide all conventional guns, ammo, and player turrets (final pass catches
+-- Space Age too). Managerial asteroid defense is Administratorio's intended
+-- replacement, so its military-shaped prototypes remain visible.
+local MILITARY_VISIBILITY_EXCEPTIONS = {
+  ammo = {
+    ["middle-management-managing-manager"] = true,
+  },
+  ["ammo-turret"] = {
+    ["trajectory-compliance-array"] = true,
+    ["senior-trajectory-compliance-array"] = true,
+    ["executive-trajectory-compliance-array"] = true,
+  },
+}
+
 for _, proto_type in ipairs({"gun", "ammo", "ammo-turret", "electric-turret", "fluid-turret"}) do
-  for _, proto in pairs(data.raw[proto_type] or {}) do
-    proto.hidden = true
+  for name, proto in pairs(data.raw[proto_type] or {}) do
+    if not (MILITARY_VISIBILITY_EXCEPTIONS[proto_type] or {})[name] then
+      proto.hidden = true
+    end
   end
 end
 
