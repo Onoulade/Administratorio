@@ -950,14 +950,12 @@ end
 local function on_gui_opened(event)
   local player = game.get_player(event.player_index)
   if not player then return end
-  if archive_recombination.on_gui_opened(player, event.entity) then return end
   fax.on_gui_opened(player, event.entity)
 end
 
 local function on_gui_closed(event)
   local player = game.get_player(event.player_index)
   if not player then return end
-  if archive_recombination.on_gui_closed(player) then return end
   fax.on_gui_closed(player)
 end
 
@@ -2145,8 +2143,6 @@ local function on_gui_click(event)
     end
   elseif fax.on_gui_click(event) then
     return
-  elseif archive_recombination.on_gui_click(event) then
-    return
   elseif runtime_debug.handle_gui_click(player, event.element.name) then
     return
   end
@@ -2161,7 +2157,6 @@ local function on_gui_checked_state_changed(event)
 end
 
 local function on_gui_elem_changed(event)
-  if archive_recombination.on_gui_elem_changed(event) then return end
   fax.on_gui_elem_changed(event)
 end
 

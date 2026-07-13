@@ -73,24 +73,4 @@ signals[#signals + 1] = {
   order = "z[admin]-zc",
 }
 
-local archive_signal_icons = {
-  {"signal-archive-input-ready", "blank-form.png"},
-  {"signal-archive-valid-pair", "form-27b-6.png"},
-  {"signal-archive-working", "office-building.png"},
-  {"signal-archive-successes", "management-approval-written.png"},
-  {"signal-archive-failures", "useless-documentation.png"},
-  {"signal-archive-output-blocked", "protest-cross.png"},
-}
-for archive_signal_index, definition in ipairs(archive_signal_icons) do
-  local name, icon_name = definition[1], definition[2]
-  signals[#signals + 1] = {
-    type = "virtual-signal",
-    name = name,
-    icon = "__administratorio__/graphics/icons/" .. icon_name,
-    icon_size = 64,
-    subgroup = "virtual-signal",
-    order = "z[admin]-zd" .. archive_signal_index,
-  }
-end
-
 data:extend(signals)

@@ -597,7 +597,6 @@ local function charge_receiver(receiver, item_name_or_multiplier, multiplier)
 
   local requirements = shared.get_reconstruction_requirements(item_name or "work-order")
   receiver.input_inventory.insert{name = shared.RECONSTRUCTION_PAPER_ITEM, count = requirements.sheets * multiplier}
-  receiver.input_inventory.insert{name = shared.RECONSTRUCTION_SUBSTRATE_ITEM, count = requirements.substrate * multiplier}
   if requirements.ribbon > 0 then
     receiver.input_inventory.insert{name = shared.RECONSTRUCTION_RIBBON_ITEM, count = requirements.ribbon * multiplier}
   end
@@ -832,9 +831,7 @@ test("faxed documents consume dry transfer media and preserve quality when print
   fax.on_tick({tick = 240})
 
   assert_eq(receiver.input_inventory.get_item_count(shared.RECONSTRUCTION_PAPER_ITEM), 0,
-    "printing should consume one thermal transfer sheet")
-  assert_eq(receiver.input_inventory.get_item_count(shared.RECONSTRUCTION_SUBSTRATE_ITEM), 0,
-    "printing should consume archival substrate")
+    "printing should consume the required thermal transfer sheets")
   assert_eq(receiver.input_inventory.get_item_count(shared.RECONSTRUCTION_RIBBON_ITEM), 0,
     "black paperwork should not consume a chroma-ribbon charge")
   assert_eq(receiver.output_inventory.get_item_count("construction-permit"), 1, "printed document should be inserted into the receiver output slot")
@@ -868,9 +865,7 @@ test("colored faxing consumes the correct solid-media tier", function()
   assert_eq(receiver.output_inventory.get_item_count("cyan-yellow-form"), 1,
     "a color document should print once its dry media are available")
   assert_eq(receiver.input_inventory.get_item_count(shared.RECONSTRUCTION_PAPER_ITEM), 0,
-    "bicolor paperwork should consume one transfer sheet")
-  assert_eq(receiver.input_inventory.get_item_count(shared.RECONSTRUCTION_SUBSTRATE_ITEM), 0,
-    "bicolor paperwork should consume two archival substrates")
+    "bicolor paperwork should consume three transfer sheets")
   assert_eq(receiver.input_inventory.get_item_count(shared.RECONSTRUCTION_RIBBON_ITEM), 0,
     "bicolor paperwork should consume one chroma-ribbon charge")
 end)

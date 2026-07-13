@@ -20,8 +20,6 @@ data:extend({
     prerequisites = {"fulgora-digital-services"},
     effects = {
       {type = "unlock-recipe", recipe = "archive-recombination-bureau"},
-      {type = "unlock-recipe", recipe = "archival-substrate-production"},
-      {type = "unlock-recipe", recipe = "archive-residue-reprocessing"},
     },
     research_trigger = {
       type = "craft-item",

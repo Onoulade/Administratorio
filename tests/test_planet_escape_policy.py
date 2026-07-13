@@ -19,7 +19,6 @@ def check(condition: bool, message: str) -> None:
 
 check(planet_escape.classify_import("relay-clerk") == "staffing", "relay clerks must classify as staffing")
 check(planet_escape.classify_import("territorial-deed") == "conflict-resolution", "deeds must classify as conflict resolution")
-check(planet_escape.classify_import("archival-substrate") == "planetary-export", "substrate must classify as a planetary export")
 check(planet_escape.classify_import("blank-form") == "ordinary-paperwork", "blank forms must classify as ordinary paperwork")
 check(planet_escape.classify_import("crude-oil") == "ordinary-resource", "crude oil must classify as an ordinary resource")
 

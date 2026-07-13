@@ -889,8 +889,6 @@ test("fax reconstruction recipes use tiered dry media and split unlocks between 
       recipe_name .. " should require thermal transfer media")
     assert_eq(get_item_ingredient_amount(recipe, fax_shared.RECONSTRUCTION_PAPER_ITEM), requirements.sheets,
       recipe_name .. " should require the correct number of transfer sheets")
-    assert_eq(get_item_ingredient_amount(recipe, fax_shared.RECONSTRUCTION_SUBSTRATE_ITEM), requirements.substrate,
-      recipe_name .. " should require the correct amount of archival substrate")
     assert_eq(get_item_ingredient_amount(recipe, fax_shared.RECONSTRUCTION_RIBBON_ITEM) or 0, requirements.ribbon,
       recipe_name .. " should require the correct number of ribbon charges")
     for _, fluid in ipairs(fax_shared.RECONSTRUCTION_INK_FLUIDS) do
