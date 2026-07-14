@@ -239,6 +239,9 @@ if space_age_enabled then
   shared.ADMIN_BUILDINGS["formation-center"] = true
   shared.ADMIN_BUILDINGS["administrative-space-station"] = true
   shared.ADMIN_BUILDINGS["trajectory-compliance-array"] = true
+  shared.ADMIN_BUILDINGS["senior-trajectory-compliance-array"] = true
+  shared.ADMIN_BUILDINGS["executive-trajectory-compliance-array"] = true
+  shared.ADMIN_BUILDINGS["orbital-employment-cannon"] = true
   shared.ADMIN_BUILDINGS["notary-office"] = true
   shared.ADMIN_BUILDINGS["territorial-arbitration-post"] = true
   shared.ADMIN_BUILDINGS["capture-bureau"] = true
@@ -292,6 +295,7 @@ if space_age_enabled then
   shared.PAPERWORK_ITEMS["electromagnetic-operating-license"] = true
   shared.PAPERWORK_ITEMS["data-recovery-order"] = true
   shared.PAPERWORK_ITEMS["asteroid-processing-docket"] = true
+  shared.PAPERWORK_ITEMS["orbital-deviation-order"] = true
   shared.PAPERWORK_ITEMS["cyan-yellow-form"] = true
   shared.PAPERWORK_ITEMS["cyan-magenta-form"] = true
   shared.PAPERWORK_ITEMS["yellow-magenta-form"] = true
@@ -320,6 +324,8 @@ if space_age_enabled then
   shared.FORM_PRODUCTION_RECIPES["digital-processing-certificate"] = "digital-processing-certificate"
   shared.FORM_PRODUCTION_RECIPES["electromagnetic-operating-license"] = "electromagnetic-operating-license"
   shared.FORM_PRODUCTION_RECIPES["data-recovery-order"] = "data-recovery-order"
+  shared.FORM_PRODUCTION_RECIPES["hardened-data-vault"] = "hardened-data-vault-production"
+  shared.FORM_PRODUCTION_RECIPES["orbital-deviation-order"] = "orbital-deviation-order"
   shared.FORM_PRODUCTION_RECIPES["cyan-yellow-form"] = "cyan-yellow-form-production"
   shared.FORM_PRODUCTION_RECIPES["cyan-magenta-form"] = "cyan-magenta-form-production"
   shared.FORM_PRODUCTION_RECIPES["yellow-magenta-form"] = "yellow-magenta-form-production"

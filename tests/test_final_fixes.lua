@@ -123,6 +123,11 @@ mods = {
 data.raw.ammo["middle-management-managing-manager"] = {
   type = "ammo",
   name = "middle-management-managing-manager",
+  ammo_category = "orbital-biter-ballistics",
+}
+data.raw.ammo["orbital-deviation-order"] = {
+  type = "ammo",
+  name = "orbital-deviation-order",
   ammo_category = "trajectory-compliance",
 }
 data.raw.ammo["firearm-magazine"] = {
@@ -141,6 +146,10 @@ data.raw["ammo-turret"]["senior-trajectory-compliance-array"] = {
 data.raw["ammo-turret"]["executive-trajectory-compliance-array"] = {
   type = "ammo-turret",
   name = "executive-trajectory-compliance-array",
+}
+data.raw["ammo-turret"]["orbital-employment-cannon"] = {
+  type = "ammo-turret",
+  name = "orbital-employment-cannon",
 }
 data.raw["ammo-turret"]["gun-turret"] = {
   type = "ammo-turret",
@@ -1348,15 +1357,19 @@ end
 -- 3. TESTS
 -------------------------------------------------------------------------------
 
-test("manager ammo and trajectory array survive the military hiding pass", function()
+test("orbital administration weapons survive the military hiding pass", function()
   assert_true(not data.raw.ammo["middle-management-managing-manager"].hidden,
     "MMMM ammo should remain visible")
+  assert_true(not data.raw.ammo["orbital-deviation-order"].hidden,
+    "deviation order ammo should remain visible")
   assert_true(not data.raw["ammo-turret"]["trajectory-compliance-array"].hidden,
     "trajectory compliance array should remain visible")
   assert_true(not data.raw["ammo-turret"]["senior-trajectory-compliance-array"].hidden,
     "senior trajectory compliance array should remain visible")
   assert_true(not data.raw["ammo-turret"]["executive-trajectory-compliance-array"].hidden,
     "executive trajectory compliance array should remain visible")
+  assert_true(not data.raw["ammo-turret"]["orbital-employment-cannon"].hidden,
+    "orbital employment cannon should remain visible")
   assert_eq(data.raw.ammo["firearm-magazine"].hidden, true,
     "conventional ammunition should remain hidden")
   assert_eq(data.raw["ammo-turret"]["gun-turret"].hidden, true,

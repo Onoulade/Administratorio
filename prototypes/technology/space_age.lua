@@ -66,17 +66,18 @@ data:extend({
     effects = {
       {type = "unlock-recipe", recipe = "formation-center"},
       {type = "unlock-recipe", recipe = "trajectory-compliance-array"},
+      {type = "unlock-recipe", recipe = "orbital-employment-cannon"},
       {type = "unlock-recipe", recipe = "job-offer-production"},
       {type = "unlock-recipe", recipe = "worker-biter-formation"},
       {type = "unlock-recipe", recipe = "clerical-trainee-formation"},
       {type = "unlock-recipe", recipe = "management-trainee-formation"},
       {type = "unlock-recipe", recipe = "astronaut-formation"},
       {type = "unlock-recipe", recipe = "middle-management-managing-manager-formation"},
-      {type = "unlock-recipe", recipe = "burned-out-manager-rehabilitation"},
       {type = "unlock-recipe", recipe = "administrative-space-station"},
       {type = "unlock-recipe", recipe = "thermal-process-license-orbital"},
       {type = "unlock-recipe", recipe = "calcite-reagent-waiver-orbital"},
       {type = "unlock-recipe", recipe = "offworld-metallurgy-charter-orbital"},
+      {type = "unlock-recipe", recipe = "orbital-deviation-order"},
       {type = "unlock-recipe", recipe = "asteroid-processing-docket"},
     },
     prerequisites = {"space-science-pack", "executive-review"},
@@ -556,6 +557,125 @@ for level, seconds in ipairs(trajectory_speed_seconds) do
 end
 
 data:extend(trajectory_speed_techs)
+
+local orbital_employment_damage_counts = {350, 600, 1200, 2200, 4000}
+local orbital_employment_damage_techs = {}
+
+for level, count in ipairs(orbital_employment_damage_counts) do
+  local packs = copy_science_packs(early_speed_packs)
+  if level >= 3 then
+    packs[#packs + 1] = {"metallurgic-science-pack", 1}
+    packs[#packs + 1] = {"agricultural-science-pack", 1}
+    packs[#packs + 1] = {"electromagnetic-science-pack", 1}
+  end
+  if level >= 4 then
+    packs[#packs + 1] = {"cryogenic-science-pack", 1}
+  end
+  if level >= 5 then
+    packs[#packs + 1] = {"promethium-science-pack", 1}
+  end
+
+  local prerequisites = level == 1
+    and {"workforce-formation"}
+    or {"orbital-employment-damage-" .. (level - 1)}
+  if level == 3 then
+    prerequisites[#prerequisites + 1] = "metallurgic-science-pack"
+    prerequisites[#prerequisites + 1] = "agricultural-science-pack"
+    prerequisites[#prerequisites + 1] = "electromagnetic-science-pack"
+  elseif level == 4 then
+    prerequisites[#prerequisites + 1] = "cryogenic-science-pack"
+  elseif level == 5 then
+    prerequisites[#prerequisites + 1] = "promethium-science-pack"
+  end
+
+  orbital_employment_damage_techs[#orbital_employment_damage_techs + 1] = {
+    type = "technology",
+    name = "orbital-employment-damage-" .. level,
+    icons = {
+      {icon = "__space-age__/graphics/technology/railgun-damage.png", icon_size = 256},
+      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.5, shift = {32, 32}},
+    },
+    effects = {
+      {
+        type = "ammo-damage",
+        ammo_category = "orbital-biter-ballistics",
+        modifier = 0.5,
+      },
+      {
+        type = "nothing",
+        effect_description = {"technology-effect.orbital-employment-damage", tostring(125 * (1 + level * 0.5))},
+      },
+    },
+    prerequisites = prerequisites,
+    unit = {
+      count = count,
+      ingredients = packs,
+      time = level <= 2 and 45 or 60,
+    },
+    order = "h-b-d[" .. string.format("%02d", level) .. "]",
+    upgrade = true,
+  }
+end
+
+data:extend(orbital_employment_damage_techs)
+
+-- One manager per asteroid is the unresearched baseline. These four approvals
+-- raise the hard staffing allocation to five without relying on item quality.
+local orbital_employment_capacity_counts = {500, 1500, 3000, 6000}
+local orbital_employment_capacity_techs = {}
+
+for level, count in ipairs(orbital_employment_capacity_counts) do
+  local packs = copy_science_packs(early_speed_packs)
+  if level >= 2 then
+    packs[#packs + 1] = {"metallurgic-science-pack", 1}
+    packs[#packs + 1] = {"agricultural-science-pack", 1}
+    packs[#packs + 1] = {"electromagnetic-science-pack", 1}
+  end
+  if level >= 3 then
+    packs[#packs + 1] = {"cryogenic-science-pack", 1}
+  end
+  if level >= 4 then
+    packs[#packs + 1] = {"promethium-science-pack", 1}
+  end
+
+  local prerequisites = level == 1
+    and {"workforce-formation"}
+    or {"orbital-employment-capacity-" .. (level - 1)}
+  if level == 2 then
+    prerequisites[#prerequisites + 1] = "metallurgic-science-pack"
+    prerequisites[#prerequisites + 1] = "agricultural-science-pack"
+    prerequisites[#prerequisites + 1] = "electromagnetic-science-pack"
+  elseif level == 3 then
+    prerequisites[#prerequisites + 1] = "cryogenic-science-pack"
+  elseif level == 4 then
+    prerequisites[#prerequisites + 1] = "promethium-science-pack"
+  end
+
+  orbital_employment_capacity_techs[#orbital_employment_capacity_techs + 1] = {
+    type = "technology",
+    name = "orbital-employment-capacity-" .. level,
+    icons = {
+      {icon = "__space-age__/graphics/technology/railgun-damage.png", icon_size = 256},
+      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.5, shift = {32, 32}},
+    },
+    effects = {
+      {
+        type = "nothing",
+        effect_description = {"technology-effect.orbital-employment-capacity", tostring(level + 1)},
+      },
+    },
+    prerequisites = prerequisites,
+    unit = {
+      count = count,
+      ingredients = packs,
+      time = level == 1 and 45 or 60,
+    },
+    order = "h-b-c[" .. string.format("%02d", level) .. "]",
+    upgrade = true,
+  }
+end
+
+data:extend(orbital_employment_capacity_techs)
 
 add_tech_unlock("workforce-formation", "licensed-notary-formation")
 add_tech_unlock("administrative-science-research", "research-grant-approval-vulcanus")

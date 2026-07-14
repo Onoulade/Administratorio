@@ -1852,6 +1852,7 @@ end
 local function on_entity_died(event)
   local entity = event.entity
   spawner_population.on_entity_died(entity)
+  trajectory_compliance.on_entity_died(event)
   if entity.name == C.HIRED_BITER_UNIT_NAME then
     hired_biter.untrack(entity, event)
   end
@@ -1884,6 +1885,7 @@ local function on_entity_died(event)
 end
 
 local ON_ENTITY_DIED_FILTERS = {
+  {filter = "type", type = "asteroid"},
   {filter = "type", type = "unit"},
   {filter = "type", type = "pipe"},
   {filter = "type", type = "train-stop"},

@@ -285,8 +285,10 @@ Aquilo and orbital:
   - `thermal-process-license-orbital`
   - `calcite-reagent-waiver-orbital`
   - `offworld-metallurgy-charter-orbital`
+  - `orbital-deviation-order`
   - `asteroid-processing-docket`
   - `trajectory-compliance-array`
+  - `orbital-employment-cannon`
 
 Professions:
 
@@ -328,7 +330,11 @@ Professions:
   - `cryogenic-plant` requires `cryoprint-technician`
   - `laser-printer`, `fax-emitter`, and `interplanetary-fax-exchange` require `cryoprint-technician`
   - `overtime-exemption-staffed` uses `night-shift-supervisor`
-  - trajectory compliance arrays consume `middle-management-managing-manager` as native turret ammo, convert one jurisdiction-appropriate asteroid into its full 2/6/18/54 collectible chunk yield, and return an intact or burned-out manager to platform cargo when probability permits
+- trajectory compliance arrays consume `orbital-deviation-order` as native turret ammo and redirect jurisdiction-appropriate asteroids without producing salvage
+- the 48-tile Manager Catapult (`orbital-employment-cannon`) launches `middle-management-managing-manager` projectiles that attach visibly and deal research-scalable damage on one-second work cycles; completed demolitions create the full 2/6/18/54 collectible yield
+- every attached manager becomes an additional asteroid chunk when its target breaks; a native platform collector mines that chunk directly into reusable manager ammo in collector output for ordinary belt/inserter routing, so a missed chunk is deterministic permanent loss with no random recovery roll, burnout, recovery research, or scripted hub transfer
+- each asteroid begins with a hard allocation of one attached manager; four staffing-capacity researches raise it to five, capped cannons pause or retarget, and already-airborne overflow returns as a collectible employee chunk
+- quality invariant: MMMM item quality is cosmetic and must never modify damage, work rate, sortie count, salvage, or recovery; employee chunks may therefore return normal-quality MMMMs without losing mechanical value
 
 Fax runtime:
 

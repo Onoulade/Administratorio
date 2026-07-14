@@ -46,6 +46,26 @@ data = {
     fluid = {},
     ["virtual-signal"] = {},
     asteroid = asteroid_prototypes,
+    ["asteroid-chunk"] = {
+      ["metallic-asteroid-chunk"] = {
+        type = "asteroid-chunk",
+        name = "metallic-asteroid-chunk",
+        icon = "__space-age__/graphics/icons/metallic-asteroid-chunk.png",
+        minable = {mining_time = 0.2, result = "metallic-asteroid-chunk"},
+        graphics_set = {},
+      },
+    },
+    projectile = {
+      rocket = {
+        type = "projectile",
+        name = "rocket",
+        acceleration = 0.01,
+        animation = {},
+        shadow = {},
+        smoke = {},
+        action = {},
+      },
+    },
     recipe = {
       foundry = {type = "recipe", name = "foundry", ingredients = {}},
       biochamber = {type = "recipe", name = "biochamber", ingredients = {}},
@@ -98,6 +118,14 @@ data = {
         minable = {result = "gun-turret"},
         placeable_by = {{item = "gun-turret", count = 1}},
         attack_parameters = {},
+      },
+      ["railgun-turret"] = {
+        type = "ammo-turret",
+        name = "railgun-turret",
+        minable = {result = "railgun-turret"},
+        placeable_by = {{item = "railgun-turret", count = 1}},
+        attack_parameters = {},
+        energy_source = {},
       },
     },
     ["train-stop"] = {
@@ -195,6 +223,7 @@ test("trajectory compliance tiers use native powered timing, range, and asteroid
       energy = "1.3MJ",
       flow = "2.6MW",
       next_upgrade = "senior-trajectory-compliance-array",
+      range = 20,
       masks = {small = true, medium = true},
     },
     {
@@ -202,6 +231,7 @@ test("trajectory compliance tiers use native powered timing, range, and asteroid
       energy = "2.6MJ",
       flow = "5.2MW",
       next_upgrade = "executive-trajectory-compliance-array",
+      range = 30,
       masks = {small = true, medium = true, big = true},
     },
     {
@@ -209,6 +239,7 @@ test("trajectory compliance tiers use native powered timing, range, and asteroid
       energy = "5.2MJ",
       flow = "10.4MW",
       masks = {small = true, medium = true, big = true, huge = true},
+      range = 40,
     },
   }
 
@@ -216,7 +247,7 @@ test("trajectory compliance tiers use native powered timing, range, and asteroid
     local array = assert(data.raw["ammo-turret"][expected.name], expected.name .. " missing")
     assert_eq(array.attack_parameters.ammo_category, "trajectory-compliance")
     assert_eq(array.attack_parameters.cooldown, 300, "base firing cooldown should be five seconds")
-    assert_eq(array.attack_parameters.range, 16, "array should defend a 32-tile diameter")
+    assert_eq(array.attack_parameters.range, expected.range, "array range mismatch")
     assert_eq(array.energy_source.type, "electric")
     assert_eq(array.energy_source.buffer_capacity, expected.energy)
     assert_eq(array.energy_source.input_flow_limit, expected.flow)
@@ -241,6 +272,32 @@ test("trajectory compliance tiers use native powered timing, range, and asteroid
       assert_true(not masks.common, "common targeting would let junior arrays waste managers on larger asteroids")
     end
   end
+end)
+
+test("orbital employment cannon uses railgun-scale powered biter ballistics", function()
+  local cannon = assert(data.raw["ammo-turret"]["orbital-employment-cannon"])
+  assert_eq(cannon.attack_parameters.ammo_category, "orbital-biter-ballistics")
+  assert_eq(cannon.attack_parameters.cooldown, 240)
+  assert_eq(cannon.attack_parameters.range, 48)
+  assert_eq(cannon.attack_parameters.min_range, 4)
+  assert_eq(cannon.energy_per_shot, "5MJ")
+  assert_eq(cannon.energy_source.buffer_capacity, "10MJ")
+  assert_eq(cannon.surface_conditions[1].max, 0)
+
+  local projectile = assert(data.raw.projectile["orbital-biter-projectile"])
+  local effects = projectile.action.action_delivery.target_effects
+  assert_eq(effects[1].type, "script")
+  assert_eq(effects[1].effect_id, "administratorio-asteroid-biter-assault")
+  for _, effect in ipairs(effects) do
+    assert_true(effect.type ~= "damage",
+      "MMMM projectiles must not carry quality-scalable impact damage")
+  end
+
+  local chunk = assert(data.raw["asteroid-chunk"]["returning-orbital-employee"],
+    "returning employee asteroid chunk missing")
+  assert_eq(chunk.minable.result, "middle-management-managing-manager",
+    "collector should output the reusable manager directly")
+  assert_true(chunk.graphics_set.sprite ~= nil, "employee chunk should visibly combine biter and debris")
 end)
 
 test("chromatic printer is a flippable four-port liquid-fed machine", function()
