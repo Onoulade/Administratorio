@@ -2204,8 +2204,11 @@ local function on_main_tick(event)
   runtime_debug.run_profiled_external_sections("rideable_biter", function()
     rideable_biter.update(event.tick)
   end)
-  trajectory_compliance.on_tick(event)
   territorial_arbitration.on_tick(event)
+end
+
+local function on_trajectory_compliance_tick(event)
+  trajectory_compliance.on_tick(event)
 end
 
 local function on_pneumatic_tick(_event)
@@ -2271,6 +2274,7 @@ control_event_router.register({
   on_init = on_init,
   on_load = on_load,
   on_main_tick = on_main_tick,
+  on_trajectory_compliance_tick = on_trajectory_compliance_tick,
   on_pneumatic_tick = on_pneumatic_tick,
   on_player_created = on_player_created,
   on_player_cursor_stack_changed = on_player_cursor_stack_changed,

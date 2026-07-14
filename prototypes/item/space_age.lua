@@ -145,11 +145,17 @@ data:extend({
         action_delivery = {
           type = "projectile",
           projectile = "orbital-biter-projectile",
-          starting_speed = 0.35,
+          starting_speed = 0.24,
           source_effects = {
-            type = "create-explosion",
-            entity_name = "explosion-gunshot",
-            only_when_visible = true,
+            {
+              type = "create-explosion",
+              entity_name = "explosion-gunshot",
+              only_when_visible = true,
+            },
+            {
+              type = "script",
+              effect_id = "administratorio-asteroid-biter-launched",
+            },
           },
         },
       },
