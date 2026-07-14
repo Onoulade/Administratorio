@@ -28,4 +28,13 @@ function M.ticket_icon(ticket_name)
   return item_icons .. ticket_name .. ".png"
 end
 
+function M.orbital_infrastructure_permit_overlay()
+  return {
+    icon = item_icons .. "orbital-infrastructure-permit.png",
+    icon_size = 64,
+    scale = 0.28,
+    shift = {9, -9},
+  }
+end
+
 return M

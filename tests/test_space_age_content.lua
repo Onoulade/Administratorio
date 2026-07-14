@@ -60,6 +60,7 @@ local ammos = {}
 local fluids = {}
 local signals = {}
 local technologies = {
+  ["space-platform"] = {type = "technology", name = "space-platform", effects = {}},
   ["administrative-science-research"] = {type = "technology", name = "administrative-science-research", effects = {}},
   ["metallurgic-science-pack"] = {type = "technology", name = "metallurgic-science-pack", effects = {}},
   ["calcite-processing"] = {type = "technology", name = "calcite-processing", effects = {}},
@@ -138,6 +139,14 @@ local function has_ingredient(recipe, item_name)
     if (ingredient.name or ingredient[1]) == item_name then
       return true
     end
+  end
+  return false
+end
+
+local function has_icon_layer(prototype, icon_path)
+  if not prototype or not prototype.icons then return false end
+  for _, layer in ipairs(prototype.icons) do
+    if layer.icon == icon_path then return true end
   end
   return false
 end
@@ -317,6 +326,54 @@ test("astronaut training unlocks the orbital admin station chain", function()
     "workforce-formation should unlock administrative-space-station")
   assert_eq(recipes["administrative-space-station"].surface_conditions[1].max, 0,
     "administrative-space-station should be craftable only in vacuum")
+end)
+
+test("vacuum infrastructure uses one dedicated orbital permit", function()
+  local workforce = technologies["workforce-formation"]
+  local platform = technologies["space-platform"]
+  local permit_name = "orbital-infrastructure-permit"
+  local permit_icon = "__administratorio__/graphics/icons/orbital-infrastructure-permit.png"
+  local permit_recipe = assert(recipes[permit_name], "orbital infrastructure permit recipe missing")
+
+  assert_true(items[permit_name] ~= nil, "orbital infrastructure permit item missing")
+  assert_eq(items[permit_name].subgroup, "forms-permits")
+  assert_eq(permit_recipe.category, "bureaucracy-registration")
+  assert_eq(permit_recipe.surface_conditions[1].min, 1,
+    "orbital permits should be issued outside vacuum and shipped to the platform")
+  assert_true(has_ingredient(permit_recipe, "low-density-structure"),
+    "orbital permits should require launch-capable infrastructure")
+  assert_true(not has_ingredient(permit_recipe, "space-science-pack"),
+    "orbital permit issuance must not depend on the first platform's science output")
+  assert_true(tech_unlocks_recipe(platform, permit_name),
+    "creating a space platform should unlock orbital permit issuance")
+  assert_true(not tech_unlocks_recipe(workforce, permit_name),
+    "workforce formation should not delay orbital permit issuance")
+
+  local ordinary_paperwork = {
+    "work-order",
+    "construction-permit",
+    "construction-work-order",
+    "management-approval-verbal",
+    "management-verbal-work-order",
+    "management-approval-written",
+    "management-written-work-order",
+  }
+  for _, recipe_name in ipairs({
+    "administrative-space-station",
+    "trajectory-compliance-array",
+    "senior-trajectory-compliance-array",
+    "executive-trajectory-compliance-array",
+    "orbital-employment-cannon",
+  }) do
+    local recipe = assert(recipes[recipe_name], recipe_name .. " missing")
+    assert_true(has_ingredient(recipe, permit_name), recipe_name .. " should require the orbital permit")
+    for _, paperwork_name in ipairs(ordinary_paperwork) do
+      assert_true(not has_ingredient(recipe, paperwork_name),
+        recipe_name .. " should not require ordinary paperwork " .. paperwork_name)
+    end
+    assert_true(has_icon_layer(items[recipe_name], permit_icon),
+      recipe_name .. " icon should display its orbital permit gate")
+  end
 end)
 
 test("native Space Age buildings consume planet-specific specialists", function()

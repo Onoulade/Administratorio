@@ -1,4 +1,5 @@
 local item_icons = "__administratorio__/graphics/icons/"
+local icon_layers = require("prototypes.shared.icon_layers")
 
 data:extend({
   {
@@ -168,8 +169,10 @@ data:extend({
   {
     type = "item",
     name = "trajectory-compliance-array",
-    icon = "__base__/graphics/icons/radar.png",
-    icon_size = 64,
+    icons = {
+      {icon = "__base__/graphics/icons/radar.png", icon_size = 64},
+      icon_layers.orbital_infrastructure_permit_overlay(),
+    },
     subgroup = "admin-buildings",
     order = "i",
     place_result = "trajectory-compliance-array",
@@ -181,6 +184,7 @@ data:extend({
     icons = {
       {icon = "__base__/graphics/icons/radar.png", icon_size = 64, tint = {r = 0.72, g = 0.88, b = 1, a = 1}},
       {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
+      icon_layers.orbital_infrastructure_permit_overlay(),
     },
     subgroup = "admin-buildings",
     order = "i-b",
@@ -193,6 +197,7 @@ data:extend({
     icons = {
       {icon = "__base__/graphics/icons/radar.png", icon_size = 64, tint = {r = 1, g = 0.72, b = 0.34, a = 1}},
       {icon = "__space-age__/graphics/icons/quantum-processor.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
+      icon_layers.orbital_infrastructure_permit_overlay(),
     },
     subgroup = "admin-buildings",
     order = "i-c",
@@ -205,6 +210,7 @@ data:extend({
     icons = {
       {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
       {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
+      icon_layers.orbital_infrastructure_permit_overlay(),
     },
     subgroup = "admin-buildings",
     order = "i-d",
@@ -587,6 +593,15 @@ data:extend({
   },
   {
     type = "item",
+    name = "orbital-infrastructure-permit",
+    icon = item_icons .. "orbital-infrastructure-permit.png",
+    icon_size = 64,
+    subgroup = "forms-permits",
+    order = "dp",
+    stack_size = 100
+  },
+  {
+    type = "item",
     name = "capture-bureau",
     icons = {
       {icon = item_icons .. "admin-desk.png", icon_size = 64},
@@ -649,6 +664,7 @@ data:extend({
     icons = {
       {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.82, g = 0.92, b = 1, a = 1}},
       {icon = "__base__/graphics/icons/radar.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
+      icon_layers.orbital_infrastructure_permit_overlay(),
     },
     subgroup = "admin-buildings",
     order = "m1",
