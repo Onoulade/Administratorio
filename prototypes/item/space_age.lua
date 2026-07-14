@@ -103,10 +103,10 @@ data:extend({
   },
   {
     type = "ammo",
-    name = "middle-management-managing-manager",
+    name = "orbital-deviation-order",
     icons = {
-      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64},
-      {icon = item_icons .. "policy.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
+      {icon = item_icons .. "management-approval-written.png", icon_size = 64},
+      {icon = "__base__/graphics/icons/radar.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
     },
     ammo_category = "trajectory-compliance",
     ammo_type = {
@@ -124,18 +124,39 @@ data:extend({
     },
     magazine_size = 1,
     subgroup = "admin-biter-buildings",
-    order = "j-j",
-    stack_size = 20
+    order = "j-i",
+    stack_size = 100
   },
+  -- DESIGN INVARIANT: MMMM quality is cosmetic. Keep its orbital action free of
+  -- quality-scalable damage or quantity effects: returning employee chunks mine
+  -- into normal-quality ammo, and that downgrade must never cost gameplay value.
   {
-    type = "item",
-    name = "burned-out-manager",
+    type = "ammo",
+    name = "middle-management-managing-manager",
     icons = {
-      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, tint = {r = 0.42, g = 0.42, b = 0.42, a = 1}},
-      {icon = "__space-age__/graphics/icons/carbon.png", icon_size = 64, scale = 0.42, shift = {8, 8}},
+      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64},
+      {icon = item_icons .. "policy.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
     },
+    ammo_category = "orbital-biter-ballistics",
+    ammo_type = {
+      target_type = "entity",
+      action = {
+        type = "direct",
+        action_delivery = {
+          type = "projectile",
+          projectile = "orbital-biter-projectile",
+          starting_speed = 0.35,
+          source_effects = {
+            type = "create-explosion",
+            entity_name = "explosion-gunshot",
+            only_when_visible = true,
+          },
+        },
+      },
+    },
+    magazine_size = 1,
     subgroup = "admin-biter-buildings",
-    order = "j-k",
+    order = "j-j",
     stack_size = 20
   },
   {
@@ -171,6 +192,18 @@ data:extend({
     order = "i-c",
     place_result = "executive-trajectory-compliance-array",
     stack_size = 20
+  },
+  {
+    type = "item",
+    name = "orbital-employment-cannon",
+    icons = {
+      {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
+      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
+    },
+    subgroup = "admin-buildings",
+    order = "i-d",
+    place_result = "orbital-employment-cannon",
+    stack_size = 10
   },
   {
     type = "item",

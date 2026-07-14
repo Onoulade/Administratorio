@@ -39,9 +39,22 @@ test("0.5.6 renames orbital deviation orders to MMMMs", function()
   assert_true(migration:find('"middle-management-managing-manager"', 1, true) ~= nil, "new item name missing")
 end)
 
-test("mod version is 0.5.6", function()
+test("0.5.7 reapplies researched recipe unlocks", function()
+  local migration = read_file(mod_root .. "migrations/0.5.7.lua")
+  assert_true(migration:find("reset_technology_effects", 1, true) ~= nil,
+    "new orbital recipes should unlock for established forces")
+end)
+
+test("0.5.7 converts legacy burned-out managers back to active staff", function()
+  local migration = read_file(mod_root .. "migrations/0.5.7.json")
+  assert_true(migration:find('"burned-out-manager"', 1, true) ~= nil, "legacy item name missing")
+  assert_true(migration:find('"middle-management-managing-manager"', 1, true) ~= nil,
+    "active manager replacement missing")
+end)
+
+test("mod version is 0.5.7", function()
   local info = read_file(mod_root .. "info.json")
-  assert_true(info:find('"version": "0.5.6"', 1, true) ~= nil, "info.json should advertise migration version")
+  assert_true(info:find('"version": "0.5.7"', 1, true) ~= nil, "info.json should advertise migration version")
 end)
 
 print(string.format("\n=== ADMINISTRATORIO TRAJECTORY COMPLIANCE MIGRATION TESTS ==="))
