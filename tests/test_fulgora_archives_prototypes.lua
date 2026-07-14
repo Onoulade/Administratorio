@@ -85,6 +85,8 @@ local root = debug.getinfo(1, "S").source:match("@(.*/)"):gsub("tests/$", "")
 package.path = root .. "?.lua;" .. root .. "?/init.lua;" .. package.path
 
 local taxonomy = require("prototypes.shared.paperwork_taxonomy")
+local reassignment_rules = require("scripts.archive_recombination_rules")
+local paperwork_recycling = require("prototypes.shared.paperwork_recycling")
 dofile(root .. "prototypes/item/paperwork.lua")
 for _, item in ipairs({
   {type = "item", name = "heatproof-form-stock", subgroup = "forms-printed"},
@@ -141,6 +143,10 @@ test("all paperwork forms recycle to paper at twenty-five percent", function()
       assert_eq(#recipe.results, 1)
       assert_eq(recipe.results[1].name, "paper")
       assert_eq(recipe.results[1].probability, 0.25)
+      assert_eq(recipe.hidden, true)
+      assert_eq(recipe.hidden_in_factoriopedia, false)
+      assert_eq(recipe.hide_from_player_crafting, true)
+      assert_eq(recipe.subgroup, "form-paper-recycling-recipes")
       checked = checked + 1
     end
   end
@@ -155,6 +161,49 @@ test("all paperwork forms recycle to paper at twenty-five percent", function()
   }) do
     assert_true(raw.recipe[item_name .. "-recycling"] ~= nil,
       item_name .. " must recycle even though it is outside Bureau eligibility")
+  end
+end)
+
+test("final paperwork pass replaces later automatic ingredient refunds", function()
+  local recipe = assert(raw.recipe["work-order-recycling"])
+  recipe.normal = {results = {{type = "item", name = "processing-unit", amount = 1}}}
+  recipe.results = {{type = "item", name = "processing-unit", amount = 1}}
+  recipe.energy_required = 99
+  recipe.hidden_in_factoriopedia = true
+
+  paperwork_recycling.apply()
+
+  assert_true(recipe.normal == nil)
+  assert_eq(recipe.energy_required, 0.5)
+  assert_eq(#recipe.ingredients, 1)
+  assert_eq(recipe.ingredients[1].name, "work-order")
+  assert_eq(#recipe.results, 1)
+  assert_eq(recipe.results[1].name, "paper")
+  assert_eq(recipe.results[1].probability, 0.25)
+  assert_eq(recipe.hidden_in_factoriopedia, false)
+  assert_eq(recipe.hide_from_player_crafting, true)
+  assert_eq(recipe.subgroup, "form-paper-recycling-recipes")
+end)
+
+test("supported forms have separate native reassignment recipes", function()
+  for _, input_name in ipairs(taxonomy.recyclable_names()) do
+    local recipe_name = reassignment_rules.recipe_name(input_name)
+    local recipe = assert(raw.recipe[recipe_name], recipe_name .. " missing")
+    assert_eq(recipe.category, "archive-reassignment")
+    assert_eq(#recipe.ingredients, 1)
+    assert_eq(recipe.ingredients[1].name, input_name)
+    assert_eq(recipe.ingredients[1].amount, 1)
+    assert_eq(recipe.hidden, true)
+    assert_eq(recipe.hidden_in_factoriopedia, false)
+    assert_eq(recipe.hide_from_player_crafting, true)
+    assert_eq(recipe.localised_name[1], "recipe-name.archive-form-reassignment")
+    assert_eq(recipe.subgroup, "form-reassignment-recipes")
+    assert_eq(#recipe.results, reassignment_rules.CANDIDATE_COUNT)
+    for _, product in ipairs(recipe.results) do
+      assert_eq(product.probability, 0.25)
+      assert_true(product.name ~= input_name)
+      assert_eq(taxonomy.get(product.name).rank, taxonomy.get(input_name).rank)
+    end
   end
 end)
 
@@ -173,22 +222,22 @@ test("archival substrate and residue no longer exist", function()
   assert_true(raw.recipe["archive-residue-reprocessing"] == nil)
 end)
 
-test("bureau is an employee-built automatic multi-input processor", function()
-  local bureau = assert(raw.lab["archive-recombination-bureau"])
-  assert_eq(#bureau.inputs, #taxonomy.recyclable_names())
-  assert_eq(bureau.module_slots, 0)
-  assert_eq(bureau.energy_usage, "1W")
-  assert_eq(bureau.energy_source.buffer_capacity, "2MJ")
-  local sink = assert(raw["electric-energy-interface"]["archive-recombination-power-sink"])
-  assert_eq(sink.energy_usage, "1MW")
-  assert_eq(sink.energy_source.usage_priority, "secondary-input")
-  assert_true(sink.hidden and sink.selectable_in_game == false)
-  assert_true(raw.furnace["archive-recombination-bureau"] == nil)
+test("bureau is an employee-built one-input Recycler variant", function()
+  local bureau = assert(raw.furnace["archive-recombination-bureau"])
+  assert_eq(#bureau.crafting_categories, 1)
+  assert_eq(bureau.crafting_categories[1], "archive-reassignment")
+  assert_eq(bureau.source_inventory_size, 1)
+  assert_eq(bureau.result_inventory_size, 12)
+  assert_eq(bureau.energy_usage, "1MW")
+  assert_eq(bureau.crafting_speed, 0.5)
+  assert_true(raw.lab["archive-recombination-bureau"] == nil)
+  assert_true(raw["electric-energy-interface"] == nil
+    or raw["electric-energy-interface"]["archive-recombination-power-sink"] == nil)
   assert_true(raw["assembling-machine"] == nil or raw["assembling-machine"]["archive-recombination-bureau"] == nil)
 
   local construction = assert(raw.recipe["archive-recombination-bureau"])
   assert_eq(ingredient_amount(construction, "relay-clerk"), 1)
-  assert_true(raw.recipe["archive-recombination-001"] == nil, "automatic Bureau should not expose pair recipes")
+  assert_true(raw.recipe["archive-recombination-001"] == nil, "Recycler variant should not expose pair recipes")
   assert_true(raw.item["archive-attempt-record"] == nil)
   assert_true(raw.item["recombination-envelope"] == nil)
 end)

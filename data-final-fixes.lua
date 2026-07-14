@@ -27,6 +27,13 @@ local factoriopedia_merge = require("prototypes.factoriopedia_merge")
 local feature_flags = require("feature_flags")
 local space_age_planets = feature_flags.space_age_enabled() and require("prototypes.shared.space_age_planets") or nil
 
+-- Quality builds automatic recycling recipes during data-updates, after this
+-- mod's data.lua. Reassert the intended lossy paperwork rule at the final stage:
+-- every form in a paperwork subgroup recycles to one paper at 25% probability.
+if feature_flags.space_age_enabled() then
+  require("prototypes.shared.paperwork_recycling").apply()
+end
+
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
 local REGULATED_AM_FACTORIOPEDIA_NOTE = {"administratorio-factoriopedia.regulated-assembling-note"}
 local PNEUMATIC_TRANSPORT_NOTE = {
