@@ -448,9 +448,9 @@ data:extend({
   {type = "trigger-target-type", name = asteroid_size_masks.huge},
 })
 
--- Manager arrays have actual jurisdictional limits. Giving every asteroid size
--- its own native target mask stops junior hardware from wasting managers and
--- power on an asteroid that its committee is not authorised to subdivide.
+-- Deviation arrays have actual jurisdictional limits. Giving every asteroid
+-- size its own native target mask stops junior hardware from wasting orders and
+-- power on an asteroid that its committee is not authorised to redirect.
 for _, size in ipairs({"small", "medium", "big", "huge"}) do
   for _, family in ipairs({"metallic", "carbonic", "oxide", "promethium"}) do
     local asteroid = data.raw.asteroid[size .. "-" .. family .. "-asteroid"]
@@ -479,7 +479,7 @@ local function make_trajectory_compliance_array(spec)
   array.attack_target_mask = spec.target_masks
   array.attack_parameters.ammo_category = "trajectory-compliance"
   array.attack_parameters.cooldown = 300
-  array.attack_parameters.range = 16
+  array.attack_parameters.range = spec.range
   array.energy_source = {
     type = "electric",
     buffer_capacity = spec.energy_per_shot,
@@ -503,6 +503,7 @@ local trajectory_compliance_array = make_trajectory_compliance_array({
   icons = {{icon = "__base__/graphics/icons/radar.png", icon_size = 64}},
   next_upgrade = "senior-trajectory-compliance-array",
   target_masks = {asteroid_size_masks.small, asteroid_size_masks.medium},
+  range = 20,
   energy_per_shot = "1.3MJ",
   input_flow_limit = "2.6MW",
 })
@@ -515,6 +516,7 @@ local senior_trajectory_compliance_array = make_trajectory_compliance_array({
   ),
   next_upgrade = "executive-trajectory-compliance-array",
   target_masks = {asteroid_size_masks.small, asteroid_size_masks.medium, asteroid_size_masks.big},
+  range = 30,
   energy_per_shot = "2.6MJ",
   input_flow_limit = "5.2MW",
 })
@@ -532,9 +534,125 @@ local executive_trajectory_compliance_array = make_trajectory_compliance_array({
     asteroid_size_masks.big,
     asteroid_size_masks.huge,
   },
+  range = 40,
   energy_per_shot = "5.2MJ",
   input_flow_limit = "10.4MW",
 })
+
+-- A fired manager rides the asteroid until demolition, then becomes one more
+-- native collectible chunk. Mining that chunk returns the manager directly to
+-- collector output, so belts and inserters can route the employee normally.
+local returning_employee_chunk = table.deepcopy(data.raw["asteroid-chunk"]["metallic-asteroid-chunk"])
+returning_employee_chunk.name = "returning-orbital-employee"
+returning_employee_chunk.localised_name = {"item-name.returning-orbital-employee"}
+returning_employee_chunk.localised_description = {"item-description.returning-orbital-employee"}
+returning_employee_chunk.icon = nil
+returning_employee_chunk.icons = {
+  {icon = "__space-age__/graphics/icons/metallic-asteroid-chunk.png", icon_size = 64},
+  {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.48, shift = {4, -2}},
+}
+returning_employee_chunk.minable = {
+  mining_time = 0.2,
+  result = "middle-management-managing-manager",
+  mining_particle = "metallic-asteroid-chunk-particle-medium",
+}
+returning_employee_chunk.graphics_set = {
+  rotation_speed = 0.01,
+  sprite = {
+    layers = {
+      {
+        filename = "__space-age__/graphics/icons/metallic-asteroid-chunk.png",
+        size = 64,
+        scale = 0.52,
+      },
+      {
+        filename = "__base__/graphics/icons/behemoth-biter.png",
+        size = 64,
+        scale = 0.32,
+        shift = {0.08, -0.05},
+      },
+    },
+  },
+}
+returning_employee_chunk.dying_trigger_effect = {
+  type = "create-explosion",
+  entity_name = "explosion-hit",
+  only_when_visible = true,
+}
+data:extend({returning_employee_chunk})
+
+-- The projectile is, with complete institutional sincerity, a behemoth biter.
+-- Its script effect attaches the worker; one-second work cycles perform damage,
+-- and collection of the eventual employee chunk is the only return path.
+local orbital_biter_projectile = table.deepcopy(data.raw.projectile["rocket"])
+orbital_biter_projectile.name = "orbital-biter-projectile"
+orbital_biter_projectile.animation = {
+  filename = "__base__/graphics/icons/behemoth-biter.png",
+  width = 64,
+  height = 64,
+  scale = 0.55,
+  priority = "high",
+}
+orbital_biter_projectile.shadow = {
+  filename = "__base__/graphics/icons/behemoth-biter.png",
+  width = 64,
+  height = 64,
+  scale = 0.55,
+  shift = util.by_pixel(6, 6),
+  draw_as_shadow = true,
+  priority = "high",
+}
+orbital_biter_projectile.smoke = nil
+orbital_biter_projectile.action = {
+  type = "direct",
+  action_delivery = {
+    type = "instant",
+    target_effects = {
+      {
+        type = "script",
+        effect_id = "administratorio-asteroid-biter-assault",
+        affects_target = true,
+      },
+      {type = "create-explosion", entity_name = "explosion-hit"},
+    },
+  },
+}
+
+local orbital_employment_cannon = table.deepcopy(data.raw["ammo-turret"]["railgun-turret"])
+orbital_employment_cannon.name = "orbital-employment-cannon"
+orbital_employment_cannon.icon = nil
+orbital_employment_cannon.icons = {
+  {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
+  {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
+}
+orbital_employment_cannon.minable = {mining_time = 0.5, result = "orbital-employment-cannon"}
+orbital_employment_cannon.placeable_by = placeable_by_item("orbital-employment-cannon")
+orbital_employment_cannon.next_upgrade = nil
+orbital_employment_cannon.fast_replaceable_group = nil
+orbital_employment_cannon.attack_target_mask = {
+  asteroid_size_masks.small,
+  asteroid_size_masks.medium,
+  asteroid_size_masks.big,
+  asteroid_size_masks.huge,
+}
+orbital_employment_cannon.attack_parameters.ammo_category = "orbital-biter-ballistics"
+orbital_employment_cannon.attack_parameters.cooldown = 240
+orbital_employment_cannon.attack_parameters.range = 48
+orbital_employment_cannon.attack_parameters.min_range = 4
+orbital_employment_cannon.energy_source = {
+  type = "electric",
+  buffer_capacity = "10MJ",
+  input_flow_limit = "5MW",
+  usage_priority = "primary-input",
+}
+orbital_employment_cannon.energy_per_shot = "5MJ"
+orbital_employment_cannon.surface_conditions = {
+  {
+    property = "pressure",
+    min = 0,
+    max = 0,
+  },
+}
 
 local public_train_stop = table.deepcopy(data.raw["train-stop"]["train-stop"])
 public_train_stop.name = "public-train-stop"
@@ -567,8 +685,10 @@ data:extend({
   fax_emitter,
   interplanetary_fax_exchange,
   fax_network_combinator,
+  orbital_biter_projectile,
   trajectory_compliance_array,
   senior_trajectory_compliance_array,
   executive_trajectory_compliance_array,
+  orbital_employment_cannon,
   public_train_stop,
 })

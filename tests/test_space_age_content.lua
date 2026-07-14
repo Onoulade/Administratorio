@@ -528,18 +528,29 @@ test("field agent recipes reuse the base hired biter instead of duplicate Space 
   assert_true(tech_unlocks_recipe(technologies["hired-biter-fieldwork"], "eviction-notice-production-negotiated"), "hired-biter-fieldwork should unlock negotiated eviction")
 end)
 
-test("MMMM is converted into trajectory-compliance ammo and sink hardware", function()
+test("deviation paperwork and biter cannon are distinct orbital systems", function()
   local manager = assert(ammos["middle-management-managing-manager"], "MMMM ammo missing")
-  assert_eq(manager.type, "ammo", "MMMM should be ammo-backed for trajectory compliance")
-  assert_eq(manager.ammo_category, "trajectory-compliance", "MMMM should feed trajectory-compliance arrays")
-  assert_eq(manager.magazine_size, 1, "one MMMM should power exactly one deviation")
-  local effects = manager.ammo_type.action.action_delivery.target_effects
-  assert_eq(effects[1].type, "script", "MMMM should resolve through the runtime deviation effect")
+  assert_eq(manager.type, "ammo")
+  assert_eq(manager.ammo_category, "orbital-biter-ballistics", "MMMM should feed the employment cannon")
+  assert_eq(manager.magazine_size, 1, "one MMMM should power exactly one biter sortie")
+  local delivery = manager.ammo_type.action.action_delivery
+  assert_eq(delivery.type, "projectile")
+  assert_eq(delivery.projectile, "orbital-biter-projectile")
+
+  local deviation = assert(ammos["orbital-deviation-order"], "deviation order ammo missing")
+  assert_eq(deviation.ammo_category, "trajectory-compliance")
+  assert_eq(deviation.magazine_size, 1)
+  local effects = deviation.ammo_type.action.action_delivery.target_effects
+  assert_eq(effects[1].type, "script")
   assert_eq(effects[1].effect_id, "administratorio-trajectory-deviation")
-  assert_eq(effects[1].affects_target, true, "script effect should retain the targeted asteroid entity")
-  assert_true(ammos["orbital-deviation-order"] == nil, "orbital deviation order ammo should be removed")
+  assert_eq(effects[1].affects_target, true)
+
   assert_true(recipes["trajectory-compliance-array"] ~= nil, "trajectory compliance array recipe missing")
   assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "trajectory-compliance-array"), "workforce formation should unlock the compliance array")
+  assert_true(items["orbital-employment-cannon"] ~= nil, "orbital employment cannon item missing")
+  assert_true(recipes["orbital-employment-cannon"] ~= nil, "orbital employment cannon recipe missing")
+  assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "orbital-employment-cannon"),
+    "workforce formation should unlock the employment cannon")
 
   local senior_recipe = assert(recipes["senior-trajectory-compliance-array"], "senior array recipe missing")
   local executive_recipe = assert(recipes["executive-trajectory-compliance-array"], "executive array recipe missing")
@@ -569,17 +580,12 @@ test("MMMM is converted into trajectory-compliance ammo and sink hardware", func
   end
 end)
 
-test("burned-out managers are rehabilitated without productivity", function()
-  assert_true(items["burned-out-manager"] ~= nil, "burned-out-manager item missing")
-  local recipe = assert(recipes["burned-out-manager-rehabilitation"], "manager rehabilitation recipe missing")
-  assert_eq(recipe.category, "watercooler-gossip")
-  assert_eq(recipe.energy_required, 10)
-  assert_true(has_ingredient(recipe, "burned-out-manager"))
-  assert_true(has_ingredient(recipe, "good-excuse"))
-  assert_true(has_fluid_ingredient(recipe, "liquid-coffee"))
-  assert_true(has_result(recipe, "management-trainee"))
-  assert_eq(recipe.allow_productivity, false, "rehabilitation must not duplicate workers through productivity")
-  assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "burned-out-manager-rehabilitation"))
+test("returning employees need no intermediate inventory item or burnout path", function()
+  assert_true(items["burned-out-manager"] == nil, "random burnout item should be removed")
+  assert_true(recipes["burned-out-manager-rehabilitation"] == nil, "burnout rehabilitation should be removed")
+  assert_true(not tech_unlocks_recipe(technologies["workforce-formation"], "burned-out-manager-rehabilitation"))
+  assert_true(items["returning-orbital-employee"] == nil,
+    "collector should mine the chunk straight into manager ammo, not an intermediate item")
 end)
 
 test("orbital admin station recipes cover offworld metallurgy and asteroid paperwork", function()
@@ -588,6 +594,7 @@ test("orbital admin station recipes cover offworld metallurgy and asteroid paper
     "thermal-process-license-orbital",
     "calcite-reagent-waiver-orbital",
     "offworld-metallurgy-charter-orbital",
+    "orbital-deviation-order",
     "asteroid-processing-docket",
   }) do
     local recipe = assert(recipes[recipe_name], recipe_name .. " missing")
@@ -597,9 +604,8 @@ test("orbital admin station recipes cover offworld metallurgy and asteroid paper
     assert_true(tech_unlocks_recipe(workforce, recipe_name), "workforce-formation should unlock " .. recipe_name)
   end
   assert_true(items["asteroid-processing-docket"] ~= nil, "asteroid-processing-docket missing")
-  assert_true(recipes["orbital-deviation-order"] == nil, "orbital-deviation-order recipe should be removed")
-  assert_true(not tech_unlocks_recipe(workforce, "orbital-deviation-order"),
-    "workforce formation should no longer unlock orbital-deviation-order")
+  assert_eq(get_result_amount(recipes["orbital-deviation-order"], "orbital-deviation-order"), 4,
+    "one staffed review should issue four deviation orders")
 end)
 
 test("trajectory compliance speed research reaches every exact cooldown", function()
@@ -637,6 +643,68 @@ test("trajectory compliance speed research reaches every exact cooldown", functi
       "cryogenic gating mismatch at tier " .. level)
     assert_eq(has_pack(technology, "promethium-science-pack"), level >= 9,
       "promethium gating mismatch at tier " .. level)
+  end
+end)
+
+test("orbital employment damage research scales by 50 percent through late science", function()
+  local expected_counts = {350, 600, 1200, 2200, 4000}
+  for level, count in ipairs(expected_counts) do
+    local technology = assert(technologies["orbital-employment-damage-" .. level], "damage tier missing")
+    assert_eq(technology.unit.count, count)
+    local damage_effect
+    for _, effect in ipairs(technology.effects or {}) do
+      if effect.type == "ammo-damage" and effect.ammo_category == "orbital-biter-ballistics" then
+        damage_effect = effect
+      end
+    end
+    assert_true(damage_effect ~= nil, "biter ammo damage effect missing at tier " .. level)
+    assert_eq(damage_effect.modifier, 0.5)
+    local description_effect
+    for _, effect in ipairs(technology.effects or {}) do
+      if effect.type == "nothing" then description_effect = effect end
+    end
+    assert_eq(description_effect.effect_description[2], tostring(125 * (1 + level * 0.5)))
+  end
+end)
+
+test("orbital staffing capacity grows from two through five managers", function()
+  local function technology_has_pack(technology, pack_name)
+    for _, ingredient in ipairs(technology.unit.ingredients or {}) do
+      if (ingredient.name or ingredient[1]) == pack_name then return true end
+    end
+    return false
+  end
+
+  local expected_counts = {500, 1500, 3000, 6000}
+  for level, count in ipairs(expected_counts) do
+    local technology = assert(technologies["orbital-employment-capacity-" .. level],
+      "staffing capacity tier missing")
+    assert_eq(technology.unit.count, count)
+
+    local description_effect
+    for _, effect in ipairs(technology.effects or {}) do
+      if effect.type == "nothing" then description_effect = effect end
+    end
+    assert_true(description_effect ~= nil, "capacity description effect missing at tier " .. level)
+    assert_eq(description_effect.effect_description[2], tostring(level + 1))
+
+    assert_eq(technology_has_pack(technology, "metallurgic-science-pack"), level >= 2,
+      "metallurgic capacity gating mismatch")
+    assert_eq(technology_has_pack(technology, "agricultural-science-pack"), level >= 2,
+      "agricultural capacity gating mismatch")
+    assert_eq(technology_has_pack(technology, "electromagnetic-science-pack"), level >= 2,
+      "electromagnetic capacity gating mismatch")
+    assert_eq(technology_has_pack(technology, "cryogenic-science-pack"), level >= 3,
+      "cryogenic capacity gating mismatch")
+    assert_eq(technology_has_pack(technology, "promethium-science-pack"), level >= 4,
+      "Promethium capacity gating mismatch")
+  end
+end)
+
+test("orbital employee return has no random recovery research", function()
+  for level = 1, 9 do
+    assert_true(technologies["orbital-employment-recovery-" .. level] == nil,
+      "obsolete recovery tier should not exist: " .. level)
   end
 end)
 

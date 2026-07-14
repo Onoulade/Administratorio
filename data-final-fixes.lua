@@ -196,12 +196,14 @@ end
 -- replacement, so its military-shaped prototypes remain visible.
 local MILITARY_VISIBILITY_EXCEPTIONS = {
   ammo = {
+    ["orbital-deviation-order"] = true,
     ["middle-management-managing-manager"] = true,
   },
   ["ammo-turret"] = {
     ["trajectory-compliance-array"] = true,
     ["senior-trajectory-compliance-array"] = true,
     ["executive-trajectory-compliance-array"] = true,
+    ["orbital-employment-cannon"] = true,
   },
 }
 
