@@ -567,6 +567,20 @@ data:extend({
     results = {{type = "item", name = "digital-services-bureau", amount = 1}},
     energy_required = 20
   }, "fulgora"),
+  not_in_space({
+    type = "recipe",
+    name = "orbital-infrastructure-permit",
+    category = "bureaucracy-registration",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "blank-directive", amount = 1},
+      {type = "item", name = "transit-authorization", amount = 1},
+      {type = "item", name = "low-density-structure", amount = 1},
+      {type = "item", name = "processing-unit", amount = 1},
+    },
+    results = {{type = "item", name = "orbital-infrastructure-permit", amount = 1}},
+    energy_required = 8
+  }),
   {
     type = "recipe",
     name = "trajectory-compliance-array",
@@ -576,8 +590,7 @@ data:extend({
       {type = "item", name = "processing-unit", amount = 10},
       {type = "item", name = "low-density-structure", amount = 10},
       {type = "item", name = "refined-concrete", amount = 20},
-      {type = "item", name = "management-approval-written", amount = 1},
-      {type = "item", name = "construction-work-order", amount = 1},
+      {type = "item", name = "orbital-infrastructure-permit", amount = 1},
     },
     results = {{type = "item", name = "trajectory-compliance-array", amount = 1}},
     energy_required = 20
@@ -591,8 +604,7 @@ data:extend({
       {type = "item", name = "tungsten-carbide", amount = 10},
       {type = "item", name = "carbon-fiber", amount = 10},
       {type = "item", name = "supercapacitor", amount = 10},
-      {type = "item", name = "management-approval-written", amount = 2},
-      {type = "item", name = "construction-work-order", amount = 1},
+      {type = "item", name = "orbital-infrastructure-permit", amount = 1},
     },
     results = {{type = "item", name = "senior-trajectory-compliance-array", amount = 1}},
     energy_required = 30
@@ -607,7 +619,7 @@ data:extend({
       {type = "item", name = "lithium-plate", amount = 20},
       {type = "item", name = "tungsten-plate", amount = 20},
       {type = "item", name = "carbon-fiber", amount = 20},
-      {type = "item", name = "management-approval-written", amount = 5},
+      {type = "item", name = "orbital-infrastructure-permit", amount = 1},
     },
     results = {{type = "item", name = "executive-trajectory-compliance-array", amount = 1}},
     energy_required = 60
@@ -622,8 +634,7 @@ data:extend({
       {type = "item", name = "low-density-structure", amount = 25},
       {type = "item", name = "electric-engine-unit", amount = 20},
       {type = "item", name = "steel-plate", amount = 25},
-      {type = "item", name = "management-approval-written", amount = 3},
-      {type = "item", name = "construction-work-order", amount = 1},
+      {type = "item", name = "orbital-infrastructure-permit", amount = 1},
     },
     results = {{type = "item", name = "orbital-employment-cannon", amount = 1}},
     energy_required = 45
@@ -638,7 +649,7 @@ data:extend({
       {type = "item", name = "processing-unit", amount = 12},
       {type = "item", name = "low-density-structure", amount = 12},
       {type = "item", name = "refined-concrete", amount = 20},
-      {type = "item", name = "construction-work-order", amount = 1},
+      {type = "item", name = "orbital-infrastructure-permit", amount = 1},
     },
     results = {{type = "item", name = "administrative-space-station", amount = 1}},
     energy_required = 20,

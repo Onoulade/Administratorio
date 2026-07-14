@@ -120,6 +120,7 @@ local black_only_documents = {
   "management-written-proposal",
   "management-approval-written",
   "transit-authorization",
+  "orbital-infrastructure-permit",
   "research-grant-approval",
   "work-order",
   "form-27b-6",

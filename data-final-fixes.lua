@@ -23,6 +23,7 @@
 --     Keeps recipe identity and tech unlocks intact
 
 local shared = require("prototypes.shared")
+local icon_layers = require("prototypes.shared.icon_layers")
 local factoriopedia_merge = require("prototypes.factoriopedia_merge")
 local feature_flags = require("feature_flags")
 local space_age_planets = feature_flags.space_age_enabled() and require("prototypes.shared.space_age_planets") or nil
@@ -1572,6 +1573,90 @@ for recipe_name, form_name in pairs(CRYOGENIC_RECIPE_GATING) do
 end
 
 -------------------------------------------------------------------------------
+-- 7b. SPACE-PLATFORM BUILDING PERMITS
+-- Platform buildings consume exactly one orbital infrastructure permit as
+-- their sole paperwork ingredient. Run this after every general/special gate
+-- so construction, management, chromatic, or compatibility paperwork cannot
+-- leak back into either the canonical or regulated recipe.
+-------------------------------------------------------------------------------
+local ORBITAL_INFRASTRUCTURE_PERMIT = "orbital-infrastructure-permit"
+local ORBITAL_INFRASTRUCTURE_PERMIT_ICON =
+  "__administratorio__/graphics/icons/orbital-infrastructure-permit.png"
+
+local space_platform_building_recipes = util.table.deepcopy(shared.SPACE_PLATFORM_BUILDING_RECIPES or {})
+for _, item_type in ipairs(ITEM_LIKE_PROTOTYPE_TYPES) do
+  for item_name, item in pairs(data.raw[item_type] or {}) do
+    if item.subgroup == "space-platform"
+      and item.place_result
+      and data.raw.recipe[item_name]
+    then
+      space_platform_building_recipes[item_name] = true
+    end
+  end
+end
+
+local function require_only_orbital_infrastructure_permit(recipe)
+  if not recipe then return end
+
+  local function replace_target_paperwork(target)
+    if not target or not target.ingredients then return end
+
+    local ingredients = {}
+    for _, ingredient in ipairs(target.ingredients) do
+      local name = ingredient_name(ingredient)
+      if not shared.PAPERWORK_ITEMS[name] then
+        append_or_merge_ingredient(ingredients, util.table.deepcopy(ingredient))
+      end
+    end
+    append_or_merge_ingredient(ingredients, {
+      type = "item",
+      name = ORBITAL_INFRASTRUCTURE_PERMIT,
+      amount = 1,
+    })
+    target.ingredients = ingredients
+  end
+
+  replace_target_paperwork(recipe)
+  replace_target_paperwork(recipe.normal)
+  replace_target_paperwork(recipe.expensive)
+end
+
+local function apply_orbital_infrastructure_permit_badge(prototype, is_recipe)
+  if not prototype then return end
+  local icons = is_recipe and get_recipe_base_icons(prototype) or clone_icon_layers(prototype)
+  if not icons then return end
+
+  for _, layer in ipairs(icons) do
+    if layer.icon == ORBITAL_INFRASTRUCTURE_PERMIT_ICON then
+      return
+    end
+  end
+
+  icons[#icons + 1] = icon_layers.orbital_infrastructure_permit_overlay()
+  prototype.icons = icons
+  prototype.icon = nil
+  prototype.icon_size = nil
+  prototype.icon_mipmaps = nil
+end
+
+for recipe_name in pairs(space_platform_building_recipes) do
+  local regulated_name = recipe_name .. "-regulated"
+  require_only_orbital_infrastructure_permit(data.raw.recipe[recipe_name])
+  require_only_orbital_infrastructure_permit(data.raw.recipe[regulated_name])
+
+  -- Items and their placed entities share the recipe name in both vanilla and
+  -- Administratorio. Badge every matching icon-bearing prototype, then badge
+  -- recipes explicitly so crafting views never depend on icon inheritance.
+  for prototype_type, prototype_group in pairs(data.raw) do
+    if prototype_type ~= "recipe" and type(prototype_group) == "table" then
+      apply_orbital_infrastructure_permit_badge(prototype_group[recipe_name])
+    end
+  end
+  apply_orbital_infrastructure_permit_badge(data.raw.recipe[recipe_name], true)
+  apply_orbital_infrastructure_permit_badge(data.raw.recipe[regulated_name], true)
+end
+
+-------------------------------------------------------------------------------
 -- 8. PNEUMATIC TUBE TRANSPORT
 -- Fluid/recipe generation removed — the tube system now uses a script-managed
 -- signal chain.  The pneumatic items list lives in shared.PNEUMATIC_ITEMS.
@@ -1772,4 +1857,39 @@ if space_age_planets and data.raw.recipe and data.raw.recipe["rocket-silo"] then
     local recipe_name = factoriopedia_recipe_renames[source_recipe_name] or source_recipe_name
     space_age_planets.apply_planet_surface_conditions(data.raw.recipe[recipe_name], "nauvis")
   end
+end
+
+-------------------------------------------------------------------------------
+-- 12. SCIENCE PACKS ARE RESEARCH-ONLY
+-- Science packs belong in technology unit ingredients, never crafting recipe
+-- ingredients. Discover them from loaded item prototypes so vanilla, Space
+-- Age, Administratorio, and compatibility-mod packs all obey the same rule.
+-- This runs last to prevent any earlier recipe mutation from reintroducing one.
+-------------------------------------------------------------------------------
+local science_pack_items = {}
+for _, item_type in ipairs(ITEM_LIKE_PROTOTYPE_TYPES) do
+  for item_name, item in pairs(data.raw[item_type] or {}) do
+    if item.subgroup == "science-pack" or item_name:find("science%-pack$") then
+      science_pack_items[item_name] = true
+    end
+  end
+end
+
+local function strip_science_pack_ingredients(target)
+  if not target or not target.ingredients then return end
+
+  local ingredients = {}
+  for _, ingredient in ipairs(target.ingredients) do
+    local name = ingredient_name(ingredient)
+    if ingredient_type(ingredient) ~= "item" or not science_pack_items[name] then
+      append_or_merge_ingredient(ingredients, util.table.deepcopy(ingredient))
+    end
+  end
+  target.ingredients = ingredients
+end
+
+for _, recipe in pairs(data.raw.recipe or {}) do
+  strip_science_pack_ingredients(recipe)
+  strip_science_pack_ingredients(recipe.normal)
+  strip_science_pack_ingredients(recipe.expensive)
 end

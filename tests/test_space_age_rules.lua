@@ -97,11 +97,40 @@ test("space age admin buildings stay out of vanilla recipe regulation", function
   assert_true(shared.is_admin_recipe("trajectory-compliance-array"), "trajectory-compliance-array should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("orbital-employment-cannon"), "orbital-employment-cannon should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("orbital-deviation-order"), "orbital-deviation-order should be treated as an admin recipe")
+  assert_true(shared.is_admin_recipe("orbital-infrastructure-permit"), "orbital-infrastructure-permit should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("territorial-arbitration-post"), "territorial-arbitration-post should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("capture-bureau"), "capture-bureau should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("digital-services-bureau"), "digital-services-bureau should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("fax-emitter"), "fax-emitter should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("interplanetary-fax-exchange"), "interplanetary-fax-exchange should be treated as an admin recipe")
+end)
+
+test("orbital infrastructure permits participate in shared paperwork systems", function()
+  assert_true(shared.PAPERWORK_ITEMS["orbital-infrastructure-permit"] == true,
+    "orbital infrastructure permit should be recognized as paperwork")
+  assert_eq(shared.FORM_PRODUCTION_RECIPES["orbital-infrastructure-permit"], "orbital-infrastructure-permit",
+    "orbital infrastructure permit should map to its issuance recipe")
+end)
+
+test("every current space-platform building is registered for its dedicated permit", function()
+  for _, recipe_name in ipairs({
+    "cargo-bay",
+    "asteroid-collector",
+    "crusher",
+    "thruster",
+    "administrative-space-station",
+    "trajectory-compliance-array",
+    "senior-trajectory-compliance-array",
+    "executive-trajectory-compliance-array",
+    "orbital-employment-cannon",
+  }) do
+    assert_true(shared.SPACE_PLATFORM_BUILDING_RECIPES[recipe_name] == true,
+      recipe_name .. " should be registered as space-platform infrastructure")
+  end
+  assert_nil(shared.SPACE_PLATFORM_BUILDING_RECIPES["space-platform-foundation"],
+    "foundation tiles should remain bootstrap infrastructure")
+  assert_nil(shared.SPACE_PLATFORM_BUILDING_RECIPES["space-platform-starter-pack"],
+    "starter packs should remain bootstrap infrastructure")
 end)
 
 test("rocket silos finance through derivatives instead of loose taxpayer money", function()

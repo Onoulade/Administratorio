@@ -1,5 +1,7 @@
 local planets = require("prototypes.shared.space_age_planets")
+local icon_layers = require("prototypes.shared.icon_layers")
 local entity_graphics = "__administratorio__/graphics/entities/"
+local item_icons = "__administratorio__/graphics/icons/"
 local sound_path = "__administratorio__/sound/buildings/"
 
 local function placeable_by_item(name)
@@ -278,8 +280,12 @@ laser_printer.working_sound = {
 
 local administrative_space_station = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
 administrative_space_station.name = "administrative-space-station"
-administrative_space_station.icon = "__administratorio__/graphics/icons/office-building.png"
-administrative_space_station.icon_size = 64
+administrative_space_station.icon = nil
+administrative_space_station.icons = {
+  {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.82, g = 0.92, b = 1, a = 1}},
+  {icon = "__base__/graphics/icons/radar.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
+  icon_layers.orbital_infrastructure_permit_overlay(),
+}
 administrative_space_station.minable = {mining_time = 0.2, result = "administrative-space-station"}
 administrative_space_station.placeable_by = placeable_by_item("administrative-space-station")
 administrative_space_station.next_upgrade = nil
@@ -456,10 +462,14 @@ for _, size in ipairs({"small", "medium", "big", "huge"}) do
 end
 
 local function trajectory_array_icons(tint, overlay)
-  return {
+  local icons = {
     {icon = "__base__/graphics/icons/radar.png", icon_size = 64, tint = tint},
-    {icon = overlay, icon_size = 64, scale = 0.38, shift = {8, 8}},
   }
+  if overlay then
+    icons[#icons + 1] = {icon = overlay, icon_size = 64, scale = 0.38, shift = {8, 8}}
+  end
+  icons[#icons + 1] = icon_layers.orbital_infrastructure_permit_overlay()
+  return icons
 end
 
 local function make_trajectory_compliance_array(spec)
@@ -495,7 +505,7 @@ end
 
 local trajectory_compliance_array = make_trajectory_compliance_array({
   name = "trajectory-compliance-array",
-  icons = {{icon = "__base__/graphics/icons/radar.png", icon_size = 64}},
+  icons = trajectory_array_icons(),
   next_upgrade = "senior-trajectory-compliance-array",
   target_masks = {asteroid_size_masks.small, asteroid_size_masks.medium},
   range = 20,
@@ -702,6 +712,7 @@ orbital_employment_cannon.icon = nil
 orbital_employment_cannon.icons = {
   {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
   {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
+  icon_layers.orbital_infrastructure_permit_overlay(),
 }
 orbital_employment_cannon.minable = {mining_time = 0.5, result = "orbital-employment-cannon"}
 orbital_employment_cannon.placeable_by = placeable_by_item("orbital-employment-cannon")
