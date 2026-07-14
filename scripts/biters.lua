@@ -1625,7 +1625,10 @@ function M.process_resolutions(desks)
                       else
                         start_return_home(info, info.entity)
                         local amount = C.BITER_PAYOUT[biter_name]
-                        if amount and inv.can_insert({name = "taxpayer-money", count = amount}) then
+                        local payout_surface = info.entity and info.entity.surface
+                        local taxpayer_payout_allowed = not SPACE_AGE_ENABLED
+                          or (payout_surface and payout_surface.name == "nauvis")
+                        if taxpayer_payout_allowed and amount and inv.can_insert({name = "taxpayer-money", count = amount}) then
                           inv.insert({name = "taxpayer-money", count = amount})
                           if storage.stats then storage.stats.money_earned = (storage.stats.money_earned or 0) + amount end
                         end

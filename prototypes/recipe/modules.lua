@@ -11,7 +11,7 @@ data:extend({
     ingredients = {
       {type = "item", name = "processing-unit", amount = 10},
       {type = "item", name = "advanced-circuit", amount = 20},
-      {type = "item", name = "government-grant", amount = 4},
+      {type = "item", name = "treasury-bond", amount = 4},
       {type = "item", name = "management-approval-written", amount = 1},
       {type = "fluid", name = "liquid-coffee", amount = 100},
     },

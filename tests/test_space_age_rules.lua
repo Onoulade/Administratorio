@@ -102,6 +102,10 @@ test("space age admin buildings stay out of vanilla recipe regulation", function
   assert_true(shared.is_admin_recipe("interplanetary-fax-exchange"), "interplanetary-fax-exchange should be treated as an admin recipe")
 end)
 
+test("rocket silos finance through derivatives instead of loose taxpayer money", function()
+  assert_nil(shared.TAXPAYER_MONEY_COSTS["rocket-silo"])
+end)
+
 if failed > 0 then
   io.stderr:write(("Failed %d/%d tests\n"):format(failed, passed + failed))
   for _, err in ipairs(errors) do
