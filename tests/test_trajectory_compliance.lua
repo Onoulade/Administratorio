@@ -127,7 +127,19 @@ local function new_world(hub_capacity, damage_modifier, capacity_level)
   }
   surface.find_entities_filtered = function(filter)
     if filter.type == "asteroid-collector" then return {collector} end
-    if filter.type == "asteroid" then return surface.asteroids end
+    if filter.type == "asteroid" then
+      if not filter.position or not filter.radius then return surface.asteroids end
+      local matches = {}
+      local radius_squared = filter.radius * filter.radius
+      for _, asteroid in ipairs(surface.asteroids) do
+        local dx = asteroid.position.x - filter.position.x
+        local dy = asteroid.position.y - filter.position.y
+        if dx * dx + dy * dy <= radius_squared then
+          matches[#matches + 1] = asteroid
+        end
+      end
+      return matches
+    end
     if filter.name then
       local accepted = {}
       if type(filter.name) == "table" then
@@ -165,6 +177,7 @@ local function new_world(hub_capacity, damage_modifier, capacity_level)
 
   game = {
     forces = {player = force},
+    surfaces = {surface},
   }
 
   return platform, hub, surface, force, collector_inventory
@@ -418,6 +431,23 @@ test("deviation pushes threats outward without deleting or salvaging them", func
     "one pulse should push a medium asteroid slowly away from the hub")
   assert_eq(#platform.created_chunks, 0)
   assert_eq(#hub.inserted, 0)
+end)
+
+test("arrays periodically retarget the nearest eligible asteroid", function()
+  local _, _, surface, force = new_world()
+  local array = new_source(surface, force, "normal", "trajectory-compliance-array")
+  local already_deviated = new_target("asteroid", "small-metallic-asteroid", nil, surface)
+  local incoming = new_target("asteroid", "medium-carbonic-asteroid", nil, surface)
+  already_deviated.position.x = 8
+  incoming.position.x = 9
+
+  fire_deviation(array, already_deviated)
+  already_deviated.position.x = 11
+  module.on_tick({tick = module.ARRAY_RETARGET_INTERVAL})
+
+  assert_eq(array.shooting_target, incoming,
+    "an array should leave a sufficiently displaced asteroid for the nearest eligible threat")
+  assert_true(not array.disabled_by_script)
 end)
 
 test("asteroid mass and overlapping deviation pulses scale sustained movement", function()

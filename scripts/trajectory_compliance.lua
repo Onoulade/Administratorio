@@ -62,6 +62,10 @@ local ASSIGNMENT_RESERVATION_LIFETIME = 600
 local DEVIATION_PUSH_LIFETIME = 330
 local DEVIATION_FORCE_PER_PULSE = 0.025
 local DEVIATION_MAX_SPEED = 0.04
+-- Arrays otherwise retain their engine-selected target indefinitely. Recheck
+-- often enough to follow the nearest incoming threat, without scanning every
+-- tick on platforms with many arrays.
+local ARRAY_RETARGET_INTERVAL = 30
 local DEVIATION_MASS_FACTORS = {
   small = 1,
   medium = 1.25,
@@ -117,6 +121,7 @@ M.ASSAULT_INTERVAL = ASSAULT_INTERVAL
 M.DEVIATION_PUSH_LIFETIME = DEVIATION_PUSH_LIFETIME
 M.DEVIATION_FORCE_PER_PULSE = DEVIATION_FORCE_PER_PULSE
 M.DEVIATION_MAX_SPEED = DEVIATION_MAX_SPEED
+M.ARRAY_RETARGET_INTERVAL = ARRAY_RETARGET_INTERVAL
 M.DEVIATION_MASS_FACTORS = DEVIATION_MASS_FACTORS
 M.ASTEROID_ROTATION_SPEEDS = ASTEROID_ROTATION_SPEEDS
 M.MANAGER_ORIENTATION_INTERVAL = MANAGER_ORIENTATION_INTERVAL
@@ -669,6 +674,19 @@ local function refresh_blocked_arrays()
   end
 end
 
+local function refresh_array_targets()
+  if not game or not game.surfaces then return end
+  local names = {}
+  for name in pairs(ARRAY_TIERS) do names[#names + 1] = name end
+  for _, surface in pairs(game.surfaces) do
+    for _, array in ipairs(surface.find_entities_filtered{name = names}) do
+      -- Set the explicit closest eligible target instead of merely clearing
+      -- shooting_target and relying on Factorio's cached target selection.
+      reroute_or_pause_array(array)
+    end
+  end
+end
+
 local function resolve_biter_launch(event)
   local source = source_from_event(event)
   if not source or source.name ~= CANNON_NAME then return false end
@@ -989,6 +1007,9 @@ function M.on_tick(event)
   if not event or not event.tick then return end
   process_pending_assignments(event.tick)
   process_deviations(event.tick)
+  if event.tick % ARRAY_RETARGET_INTERVAL == 0 then
+    refresh_array_targets()
+  end
   if event.tick % MANAGER_ORIENTATION_INTERVAL == 0 then
     process_manager_visuals(event.tick)
   end
