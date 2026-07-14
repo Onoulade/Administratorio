@@ -371,6 +371,24 @@ data.raw.item["asteroid-collector"] = {
   icon = "__space-age__/graphics/icons/asteroid-collector.png",
   icon_size = 64,
 }
+data.raw.item["crusher"] = {
+  type = "item",
+  name = "crusher",
+  stack_size = 10,
+  subgroup = "space-platform",
+  place_result = "crusher",
+  icon = "__space-age__/graphics/icons/crusher.png",
+  icon_size = 64,
+}
+data.raw.item["thruster"] = {
+  type = "item",
+  name = "thruster",
+  stack_size = 10,
+  subgroup = "space-platform",
+  place_result = "thruster",
+  icon = "__space-age__/graphics/icons/thruster.png",
+  icon_size = 64,
+}
 data.raw.item["space-platform-foundation"] = {
   type = "item",
   name = "space-platform-foundation",
@@ -424,6 +442,22 @@ data.raw.tool["promethium-science-pack"] = {
   name = "promethium-science-pack",
   stack_size = 200,
   icon = "__space-age__/graphics/icons/promethium-science-pack.png",
+  icon_size = 64,
+}
+data.raw.tool["automation-science-pack"] = {
+  type = "tool",
+  name = "automation-science-pack",
+  subgroup = "science-pack",
+  stack_size = 200,
+  icon = "__base__/graphics/icons/automation-science-pack.png",
+  icon_size = 64,
+}
+data.raw.tool["space-science-pack"] = {
+  type = "tool",
+  name = "space-science-pack",
+  subgroup = "science-pack",
+  stack_size = 200,
+  icon = "__base__/graphics/icons/space-science-pack.png",
   icon_size = 64,
 }
 data.raw.item["heating-tower"] = {
@@ -1012,6 +1046,30 @@ recipes["promethium-science-pack"] = {
   },
 }
 
+-- Deliberately invalid input fixture: final-fixes must preserve the material
+-- ingredients while removing every science pack from both difficulty levels.
+recipes["science-pack-smuggling"] = {
+  type = "recipe",
+  name = "science-pack-smuggling",
+  category = "chemistry",
+  enabled = false,
+  normal = {
+    ingredients = {
+      { type = "item", name = "iron-plate", amount = 2 },
+      { type = "item", name = "automation-science-pack", amount = 1 },
+      { type = "item", name = "administrative-science-pack", amount = 1 },
+    },
+    results = {{ type = "item", name = "iron-plate", amount = 1 }},
+  },
+  expensive = {
+    ingredients = {
+      { type = "item", name = "iron-plate", amount = 4 },
+      { type = "item", name = "space-science-pack", amount = 2 },
+    },
+    results = {{ type = "item", name = "iron-plate", amount = 1 }},
+  },
+}
+
 recipes["heating-tower"] = {
   type = "recipe",
   name = "heating-tower",
@@ -1560,6 +1618,38 @@ end
 -- 3. TESTS
 -------------------------------------------------------------------------------
 
+test("science packs are research-only and never recipe ingredients", function()
+  local science_pack_items = {}
+  for item_name, item in pairs(data.raw.tool or {}) do
+    if item.subgroup == "science-pack" or item_name:find("science%-pack$") then
+      science_pack_items[item_name] = true
+    end
+  end
+
+  local function assert_level_is_clean(target, label)
+    for _, ingredient in ipairs((target and target.ingredients) or {}) do
+      local item_name = ingredient.name or ingredient[1]
+      local item_type = ingredient.type or "item"
+      assert_true(item_type ~= "item" or not science_pack_items[item_name],
+        label .. " should not consume science pack " .. tostring(item_name))
+    end
+  end
+
+  for recipe_name, recipe in pairs(recipes) do
+    assert_level_is_clean(recipe, recipe_name)
+    assert_level_is_clean(recipe.normal, recipe_name .. ".normal")
+    assert_level_is_clean(recipe.expensive, recipe_name .. ".expensive")
+  end
+
+  local smuggling = assert(get_recipe("science-pack-smuggling"), "science-pack-smuggling missing")
+  assert_true((get_ingredient_amount(smuggling.normal, "iron-plate") or 0) > 0,
+    "normal material ingredients should survive science-pack cleanup")
+  assert_true((get_ingredient_amount(smuggling.expensive, "iron-plate") or 0) > 0,
+    "expensive material ingredients should survive science-pack cleanup")
+  assert_true((get_result_amount(get_recipe("promethium-science-pack"), "promethium-science-pack") or 0) > 0,
+    "science-pack production outputs should remain intact")
+end)
+
 test("orbital administration weapons survive the military hiding pass", function()
   assert_true(not data.raw.ammo["middle-management-managing-manager"].hidden,
     "MMMM ammo should remain visible")
@@ -1716,6 +1806,55 @@ test("space platform structures stay unbatched at 1x", function()
     "cargo-bay should not show a 1x overlay")
   assert_true(not has_icon_layer(cargo_bay, "__base__/graphics/icons/signal/signal_5.png"),
     "cargo-bay should not show a 5x overlay")
+end)
+
+test("space platform buildings use the orbital permit as their only paperwork", function()
+  local permit_name = "orbital-infrastructure-permit"
+  local permit_icon = "__administratorio__/graphics/icons/orbital-infrastructure-permit.png"
+
+  for _, recipe_name in ipairs({"cargo-bay", "asteroid-collector", "crusher", "thruster"}) do
+    local saw_recipe = false
+    for _, candidate_name in ipairs({recipe_name, recipe_name .. "-regulated"}) do
+      local recipe = get_recipe(candidate_name)
+      if recipe then
+        saw_recipe = true
+        local target = recipe.normal or recipe
+        local paperwork_count = 0
+        local permit_count = 0
+        for _, ingredient in ipairs(target.ingredients or {}) do
+          local ingredient_name = ingredient.name or ingredient[1]
+          if shared.PAPERWORK_ITEMS[ingredient_name] then
+            paperwork_count = paperwork_count + 1
+            if ingredient_name == permit_name then
+              permit_count = permit_count + 1
+            end
+          end
+        end
+
+        assert_eq(paperwork_count, 1, candidate_name .. " should have exactly one paperwork ingredient")
+        assert_eq(permit_count, 1, candidate_name .. " should use only the orbital infrastructure permit")
+        assert_eq(get_ingredient_amount(target, permit_name), 1,
+          candidate_name .. " should consume one orbital infrastructure permit")
+        assert_true(has_icon_layer(recipe, permit_icon),
+          candidate_name .. " recipe icon should display the orbital permit badge")
+      end
+    end
+
+    assert_true(saw_recipe, recipe_name .. " recipe missing")
+    assert_true(has_icon_layer(data.raw.item[recipe_name], permit_icon),
+      recipe_name .. " item icon should display the orbital permit badge")
+  end
+
+  for _, bootstrap_name in ipairs({"space-platform-foundation", "space-platform-starter-pack"}) do
+    assert_true(not has_ingredient(get_recipe(bootstrap_name), permit_name),
+      bootstrap_name .. " should remain permit-free bootstrap infrastructure")
+    local item = data.raw.item[bootstrap_name]
+      or data.raw["space-platform-starter-pack"][bootstrap_name]
+    if item then
+      assert_true(not has_icon_layer(item, permit_icon),
+        bootstrap_name .. " should not display the building permit badge")
+    end
+  end
 end)
 
 test("space platform starter pack stays unbatched at 1x", function()

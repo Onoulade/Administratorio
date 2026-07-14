@@ -679,6 +679,9 @@ end
 
 data:extend(orbital_employment_capacity_techs)
 
+-- Platform creation unlocks the permit before the first collector and crusher
+-- are built, avoiding a circular dependency on space science.
+add_tech_unlock("space-platform", "orbital-infrastructure-permit")
 add_tech_unlock("workforce-formation", "licensed-notary-formation")
 add_tech_unlock("administrative-science-research", "research-grant-approval-vulcanus")
 add_tech_unlock("administrative-science-research", "administrative-science-pack-production-vulcanus")

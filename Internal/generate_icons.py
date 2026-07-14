@@ -1660,6 +1660,15 @@ SPACE_AGE_FORM_ICON_DEFS = {
         "hole_punches": 2,
         "desc": "Punched orbital asteroid processing docket",
     },
+    "orbital-infrastructure-permit": {
+        "base": "form", "tint": (218, 228, 239, 255),
+        "header_bands": [S_DARK_BLUE, S_CYAN],
+        "symbol": SYM_HAMMER, "symbol_color": SC_BLUE, "symbol_pos": "center",
+        "symbol2": SYM_STAR, "symbol2_color": SC_TEAL, "symbol2_pos": "br",
+        "stamp": (SC_BLUE, "tr"),
+        "lines_color": (125, 145, 175, 90),
+        "desc": "Blue-cyan orbital infrastructure permit with hammer, star, and approval stamp",
+    },
     "provisional-work-order": {
         "base": "form", "tint": (248, 222, 178, 255),
         "header_bands": [S_RED, S_YELLOW],

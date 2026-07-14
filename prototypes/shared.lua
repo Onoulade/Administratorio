@@ -297,6 +297,7 @@ if space_age_enabled then
   shared.PAPERWORK_ITEMS["hardened-data-vault"] = true
   shared.PAPERWORK_ITEMS["asteroid-processing-docket"] = true
   shared.PAPERWORK_ITEMS["orbital-deviation-order"] = true
+  shared.PAPERWORK_ITEMS["orbital-infrastructure-permit"] = true
   shared.PAPERWORK_ITEMS["cyan-yellow-form"] = true
   shared.PAPERWORK_ITEMS["cyan-magenta-form"] = true
   shared.PAPERWORK_ITEMS["yellow-magenta-form"] = true
@@ -328,6 +329,7 @@ if space_age_enabled then
   shared.FORM_PRODUCTION_RECIPES["data-recovery-order"] = "data-recovery-order"
   shared.FORM_PRODUCTION_RECIPES["hardened-data-vault"] = "hardened-data-vault-production"
   shared.FORM_PRODUCTION_RECIPES["orbital-deviation-order"] = "orbital-deviation-order"
+  shared.FORM_PRODUCTION_RECIPES["orbital-infrastructure-permit"] = "orbital-infrastructure-permit"
   shared.FORM_PRODUCTION_RECIPES["cyan-yellow-form"] = "cyan-yellow-form-production"
   shared.FORM_PRODUCTION_RECIPES["cyan-magenta-form"] = "cyan-magenta-form-production"
   shared.FORM_PRODUCTION_RECIPES["yellow-magenta-form"] = "yellow-magenta-form-production"
@@ -431,6 +433,23 @@ shared.UNBATCHED_RESULT_SUBGROUPS = {
   ["space-platform"] = true,
   ["space-rocket"] = true,
   ["space-interactors"] = true,
+}
+
+-- Placeable structures whose construction is intrinsically tied to a space
+-- platform. data-final-fixes also discovers compatible placeable items in the
+-- vanilla "space-platform" subgroup so newly added platform buildings inherit
+-- the same permit rule automatically. Foundation tiles and starter packs are
+-- deliberately absent: they bootstrap the platform rather than build on it.
+shared.SPACE_PLATFORM_BUILDING_RECIPES = {
+  ["cargo-bay"] = true,
+  ["asteroid-collector"] = true,
+  ["crusher"] = true,
+  ["thruster"] = true,
+  ["administrative-space-station"] = true,
+  ["trajectory-compliance-array"] = true,
+  ["senior-trajectory-compliance-array"] = true,
+  ["executive-trajectory-compliance-array"] = true,
+  ["orbital-employment-cannon"] = true,
 }
 
 shared.UNBATCHED_RESULT_NAMES = {
