@@ -539,69 +539,152 @@ local executive_trajectory_compliance_array = make_trajectory_compliance_array({
   input_flow_limit = "10.4MW",
 })
 
+local fallback_manager_animation = {
+  filename = "__base__/graphics/icons/behemoth-biter.png",
+  width = 64,
+  height = 64,
+  frame_count = 1,
+  direction_count = 1,
+}
+local manager_unit = data.raw.unit and data.raw.unit["behemoth-biter"] or {
+  run_animation = fallback_manager_animation,
+  attack_parameters = {animation = fallback_manager_animation},
+}
+
+local function scale_layer_shift(layer, scale_factor)
+  local shift = layer.shift
+  if not shift then return end
+  if shift.x ~= nil or shift.y ~= nil then
+    shift.x = (shift.x or 0) * scale_factor
+    shift.y = (shift.y or 0) * scale_factor
+  else
+    shift[1] = (shift[1] or 0) * scale_factor
+    shift[2] = (shift[2] or 0) * scale_factor
+  end
+end
+
+local function scale_animation_layers(animation, scale_factor, animation_speed)
+  local result = table.deepcopy(animation)
+  for _, layer in ipairs(result.layers or {result}) do
+    layer.scale = (layer.scale or 1) * scale_factor
+    scale_layer_shift(layer, scale_factor)
+    if animation_speed then layer.animation_speed = animation_speed end
+  end
+  return result
+end
+
+local function make_manager_attack_animation(source_animation, scale_factor, animation_speed)
+  local animation = {type = "animation", name = "orbital-manager-attack", layers = {}}
+  for _, source_layer in ipairs(source_animation.layers or {source_animation}) do
+    local layer = table.deepcopy(source_layer)
+    if layer.filenames then
+      layer.filename = layer.filenames[1]
+      layer.filenames = nil
+      layer.lines_per_file = nil
+      layer.slice = nil
+    end
+    layer.direction_count = nil
+    layer.scale = (layer.scale or 1) * scale_factor
+    scale_layer_shift(layer, scale_factor)
+    layer.animation_speed = animation_speed
+    animation.layers[#animation.layers + 1] = layer
+  end
+  return animation
+end
+
+local function make_manager_still_sprite(source_animation, direction_index, scale_factor)
+  local sprite = {layers = {}}
+  for _, source_layer in ipairs(source_animation.layers or {source_animation}) do
+    local layer = table.deepcopy(source_layer)
+    local frame_count = layer.frame_count or 1
+    local line_length = layer.line_length or frame_count
+    local first_frame = direction_index * frame_count
+    local first_row = math.floor(first_frame / line_length)
+    local first_column = first_frame % line_length
+
+    if layer.filenames then
+      local lines_per_file = layer.lines_per_file or 1
+      local file_index = math.floor(first_row / lines_per_file) + 1
+      layer.filename = layer.filenames[file_index]
+      layer.y = (layer.y or 0) + (first_row % lines_per_file) * layer.height
+      layer.filenames = nil
+      layer.lines_per_file = nil
+      layer.slice = nil
+    else
+      layer.y = (layer.y or 0) + first_row * layer.height
+    end
+
+    layer.x = (layer.x or 0) + first_column * layer.width
+    layer.direction_count = nil
+    layer.frame_count = nil
+    layer.line_length = nil
+    layer.animation_speed = nil
+    layer.scale = (layer.scale or 1) * scale_factor
+    scale_layer_shift(layer, scale_factor)
+    sprite.layers[#sprite.layers + 1] = layer
+  end
+  return sprite
+end
+
+local manager_attack_animation = make_manager_attack_animation(
+  manager_unit.attack_parameters.animation,
+  0.46,
+  1
+)
+data:extend({manager_attack_animation})
+
 -- A fired manager rides the asteroid until demolition, then becomes one more
 -- native collectible chunk. Mining that chunk returns the manager directly to
 -- collector output, so belts and inserters can route the employee normally.
-local returning_employee_chunk = table.deepcopy(data.raw["asteroid-chunk"]["metallic-asteroid-chunk"])
-returning_employee_chunk.name = "returning-orbital-employee"
-returning_employee_chunk.localised_name = {"item-name.returning-orbital-employee"}
-returning_employee_chunk.localised_description = {"item-description.returning-orbital-employee"}
-returning_employee_chunk.icon = nil
-returning_employee_chunk.icons = {
-  {icon = "__space-age__/graphics/icons/metallic-asteroid-chunk.png", icon_size = 64},
-  {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.48, shift = {4, -2}},
-}
-returning_employee_chunk.minable = {
-  mining_time = 0.2,
-  result = "middle-management-managing-manager",
-  mining_particle = "metallic-asteroid-chunk-particle-medium",
-}
-returning_employee_chunk.graphics_set = {
-  rotation_speed = 0.01,
-  sprite = {
-    layers = {
-      {
-        filename = "__space-age__/graphics/icons/metallic-asteroid-chunk.png",
-        size = 64,
-        scale = 0.52,
-      },
-      {
-        filename = "__base__/graphics/icons/behemoth-biter.png",
-        size = 64,
-        scale = 0.32,
-        shift = {0.08, -0.05},
-      },
-    },
-  },
-}
-returning_employee_chunk.dying_trigger_effect = {
-  type = "create-explosion",
-  entity_name = "explosion-hit",
-  only_when_visible = true,
-}
-data:extend({returning_employee_chunk})
+-- Asteroid chunks cannot animate themselves. Use a still frame from the real
+-- biter run sheet. Sixteen hidden directional variants preserve the manager's
+-- final facing without polling or synchronising an invisible render object.
+local returning_employee_chunks = {}
+for direction_index = 0, 15 do
+  local returning_employee_chunk = table.deepcopy(data.raw["asteroid-chunk"]["metallic-asteroid-chunk"])
+  returning_employee_chunk.name = direction_index == 0
+      and "returning-orbital-employee"
+    or string.format("returning-orbital-employee-orientation-%02d", direction_index)
+  returning_employee_chunk.localised_name = {"item-name.returning-orbital-employee"}
+  returning_employee_chunk.localised_description = {"item-description.returning-orbital-employee"}
+  returning_employee_chunk.icon = nil
+  returning_employee_chunk.icons = {
+    {icon = "__space-age__/graphics/icons/metallic-asteroid-chunk.png", icon_size = 64},
+    {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.48, shift = {4, -2}},
+  }
+  returning_employee_chunk.minable = {
+    mining_time = 0.2,
+    result = "middle-management-managing-manager",
+    mining_particle = "metallic-asteroid-chunk-particle-medium",
+  }
+  returning_employee_chunk.graphics_set = {
+    rotation_speed = 0,
+    sprite = make_manager_still_sprite(manager_unit.run_animation, direction_index, 0.46),
+  }
+  returning_employee_chunk.dying_trigger_effect = {
+    type = "create-explosion",
+    entity_name = "explosion-hit",
+    only_when_visible = true,
+  }
+  if direction_index ~= 0 then
+    returning_employee_chunk.hidden_in_factoriopedia = true
+    returning_employee_chunk.hide_from_signal_gui = true
+  end
+  returning_employee_chunks[#returning_employee_chunks + 1] = returning_employee_chunk
+end
+data:extend(returning_employee_chunks)
 
 -- The projectile is, with complete institutional sincerity, a behemoth biter.
 -- Its script effect attaches the worker; one-second work cycles perform damage,
 -- and collection of the eventual employee chunk is the only return path.
 local orbital_biter_projectile = table.deepcopy(data.raw.projectile["rocket"])
 orbital_biter_projectile.name = "orbital-biter-projectile"
-orbital_biter_projectile.animation = {
-  filename = "__base__/graphics/icons/behemoth-biter.png",
-  width = 64,
-  height = 64,
-  scale = 0.55,
-  priority = "high",
-}
-orbital_biter_projectile.shadow = {
-  filename = "__base__/graphics/icons/behemoth-biter.png",
-  width = 64,
-  height = 64,
-  scale = 0.55,
-  shift = util.by_pixel(6, 6),
-  draw_as_shadow = true,
-  priority = "high",
-}
+orbital_biter_projectile.acceleration = 0
+orbital_biter_projectile.max_speed = 0.24
+orbital_biter_projectile.turn_speed = 0.08
+orbital_biter_projectile.turning_speed_increases_exponentially_with_projectile_speed = nil
+orbital_biter_projectile.animation = scale_animation_layers(manager_unit.run_animation, 0.46, 0.18)
+orbital_biter_projectile.shadow = nil
 orbital_biter_projectile.smoke = nil
 orbital_biter_projectile.action = {
   type = "direct",

@@ -55,6 +55,7 @@ function M.register(deps)
   script.on_event(defines.events.on_ai_command_completed, deps.on_ai_command_completed)
   script.on_event(defines.events.on_script_path_request_finished, deps.on_script_path_request_finished)
   script.on_event(defines.events.on_string_translated, deps.on_string_translated)
+  script.on_event(defines.events.on_tick, deps.on_trajectory_compliance_tick)
 
   script.on_event(defines.events.on_train_changed_state, deps.on_train_changed_state)
   script.on_event(defines.events.on_rocket_launched, deps.on_rocket_launched)

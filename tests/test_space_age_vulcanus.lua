@@ -66,6 +66,36 @@ data = {
         action = {},
       },
     },
+    unit = {
+      ["behemoth-biter"] = {
+        run_animation = {
+          layers = {{
+            filename = "mock-biter-run.png",
+            width = 64,
+            height = 64,
+            frame_count = 16,
+            direction_count = 16,
+            line_length = 16,
+            scale = 2,
+            shift = {x = 1, y = -2},
+          }},
+        },
+        attack_parameters = {
+          animation = {
+            layers = {{
+              filename = "mock-biter-attack.png",
+              width = 64,
+              height = 64,
+              frame_count = 11,
+              direction_count = 16,
+              line_length = 11,
+              scale = 2,
+              shift = {x = 1, y = -2},
+            }},
+          },
+        },
+      },
+    },
     recipe = {
       foundry = {type = "recipe", name = "foundry", ingredients = {}},
       biochamber = {type = "recipe", name = "biochamber", ingredients = {}},
@@ -292,12 +322,33 @@ test("orbital employment cannon uses railgun-scale powered biter ballistics", fu
     assert_true(effect.type ~= "damage",
       "MMMM projectiles must not carry quality-scalable impact damage")
   end
+  assert_eq(projectile.animation.layers[1].scale, 0.92,
+    "projectile body should scale the real biter layer")
+  assert_eq(projectile.animation.layers[1].shift.x, 0.46,
+    "projectile layer anchors must scale with the sprite")
+  assert_eq(projectile.animation.layers[1].shift.y, -0.92,
+    "projectile layer anchors must remain aligned after scaling")
+
+  local attack = assert(data.raw.animation["orbital-manager-attack"])
+  assert_eq(attack.layers[1].shift.x, 0.46,
+    "attached manager attack layers must use the same scaled anchor")
+  assert_eq(attack.layers[1].animation_speed, 1,
+    "runtime render objects should own each manager's animation clock")
 
   local chunk = assert(data.raw["asteroid-chunk"]["returning-orbital-employee"],
     "returning employee asteroid chunk missing")
   assert_eq(chunk.minable.result, "middle-management-managing-manager",
     "collector should output the reusable manager directly")
   assert_true(chunk.graphics_set.sprite ~= nil, "employee chunk should visibly combine biter and debris")
+  for direction_index = 1, 15 do
+    local oriented_name = string.format("returning-orbital-employee-orientation-%02d", direction_index)
+    local oriented = assert(data.raw["asteroid-chunk"][oriented_name],
+      "returning employee orientation variant missing")
+    assert_eq(oriented.minable.result, "middle-management-managing-manager")
+    assert_eq(oriented.graphics_set.rotation_speed, 0)
+    assert_true(oriented.hidden_in_factoriopedia,
+      "orientation variants must not clutter Factoriopedia")
+  end
 end)
 
 test("chromatic printer is a flippable four-port liquid-fed machine", function()
