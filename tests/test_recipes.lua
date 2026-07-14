@@ -1074,7 +1074,12 @@ test("treasury-bond requires taxpayer-money at the office desk", function()
   local r = get_recipe("treasury-bond-production")
   assert_eq(r.category, "bureaucracy-registration")
   assert_true(has_ingredient(r, "taxpayer-money"))
-  assert_eq(get_ingredient_amount(r, "taxpayer-money"), 10)
+  assert_eq(get_ingredient_amount(r, "taxpayer-money"), 50)
+  assert_eq(r.auto_recycle, false, "treasury bonds must not recycle back into loose taxpayer money")
+end)
+
+test("rocket-silo financing uses grants instead of a direct taxpayer-money surcharge", function()
+  assert_nil(shared.TAXPAYER_MONEY_COSTS["rocket-silo"])
 end)
 
 test("rideable biter uses paperwork and coffee in its assignment recipe", function()
@@ -1117,7 +1122,22 @@ test("government-grant requires treasury-bond and union negotiation", function()
   local r = get_recipe("government-grant-production")
   assert_eq(r.category, "union-negotiation")
   assert_true(has_ingredient(r, "treasury-bond"))
+  assert_eq(get_ingredient_amount(r, "treasury-bond"), 10)
   assert_true(has_ingredient(r, "management-approval-verbal"))
+end)
+
+test("repeatable policy and casework use bonds instead of megaproject grants", function()
+  for _, recipe_name in ipairs({
+    "policy-production",
+    "regulation-production",
+    "case-unemployment",
+    "hired-biter-capsule",
+    "overtime-exemption",
+  }) do
+    local r = get_recipe(recipe_name)
+    assert_true(has_ingredient(r, "treasury-bond"), recipe_name .. " should consume treasury bonds")
+    assert_false(has_ingredient(r, "government-grant"), recipe_name .. " should not consume government grants")
+  end
 end)
 
 test("specialist training bootstraps before the buildings that consume specialists", function()
@@ -1194,6 +1214,7 @@ test("slush-fund-production uses propaganda-distillery", function()
   local r = get_recipe("slush-fund-production")
   assert_eq(r.category, "propaganda-distillery")
   assert_true(has_ingredient(r, "treasury-bond"))
+  assert_eq(get_ingredient_amount(r, "treasury-bond"), 1)
 end)
 
 -- =========================================================================
@@ -1380,7 +1401,8 @@ test("overtime-exemption requires union-negotiation category", function()
   local r = get_recipe("overtime-exemption")
   assert_eq(r.category, "union-negotiation")
   assert_true(has_ingredient(r, "processing-unit"))
-  assert_true(has_ingredient(r, "government-grant"))
+  assert_eq(get_ingredient_amount(r, "treasury-bond"), 4)
+  assert_false(has_ingredient(r, "government-grant"))
   assert_true(has_ingredient(r, "management-approval-written"))
   assert_false(has_ingredient(r, "taxpayer-money"))
   assert_false(has_ingredient(r, "regulation"))

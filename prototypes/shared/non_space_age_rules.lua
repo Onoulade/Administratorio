@@ -99,7 +99,6 @@ rules.TAXPAYER_MONEY_COSTS = {
   ["beacon"] = 30,
   ["nuclear-reactor"] = 100,
   ["centrifuge"] = 50,
-  ["rocket-silo"] = 200,
 }
 
 return rules

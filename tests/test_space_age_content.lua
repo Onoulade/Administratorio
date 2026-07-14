@@ -670,28 +670,28 @@ test("gleba conciliation also unlocks orbital spitter tourism", function()
       tourist_item = "small-space-tourist",
       tourism_recipe = "small-spitter-space-tourism",
       jettison_recipe = "small-space-tourist-jettison",
-      payout = 75,
+      bond_payout = 2,
     },
     {
       package_item = "medium-spitter-tourism-package",
       tourist_item = "medium-space-tourist",
       tourism_recipe = "medium-spitter-space-tourism",
       jettison_recipe = "medium-space-tourist-jettison",
-      payout = 175,
+      bond_payout = 4,
     },
     {
       package_item = "big-spitter-tourism-package",
       tourist_item = "big-space-tourist",
       tourism_recipe = "big-spitter-space-tourism",
       jettison_recipe = "big-space-tourist-jettison",
-      payout = 450,
+      bond_payout = 9,
     },
     {
       package_item = "behemoth-spitter-tourism-package",
       tourist_item = "behemoth-space-tourist",
       tourism_recipe = "behemoth-spitter-space-tourism",
       jettison_recipe = "behemoth-space-tourist-jettison",
-      payout = 1200,
+      bond_payout = 24,
     },
   }
 
@@ -707,7 +707,12 @@ test("gleba conciliation also unlocks orbital spitter tourism", function()
     assert_true(has_ingredient(tourism_recipe, "transit-authorization"), variant.tourism_recipe .. " should require transit authorization")
     assert_true(not has_ingredient(tourism_recipe, "cyan-yellow-form"), variant.tourism_recipe .. " should not require cyan-yellow-form directly in orbit")
     assert_true(has_result(tourism_recipe, variant.tourist_item), variant.tourism_recipe .. " should emit a paid tourist")
-    assert_eq(get_result_amount(tourism_recipe, "taxpayer-money"), variant.payout, variant.tourism_recipe .. " should pay the expected amount")
+    assert_eq(get_result_amount(tourism_recipe, "treasury-bond"), variant.bond_payout,
+      variant.tourism_recipe .. " should pay the expected bond amount")
+    assert_true(not has_result(tourism_recipe, "government-grant"),
+      variant.tourism_recipe .. " should not award megaproject grants")
+    assert_true(not has_result(tourism_recipe, "taxpayer-money"),
+      variant.tourism_recipe .. " should not mint loose taxpayer money in orbit")
     assert_true(tech_unlocks_recipe(technologies["cyan-yellow-bureaucracy"], variant.tourism_recipe), "cyan-yellow-bureaucracy should unlock " .. variant.tourism_recipe)
 
     local jettison_recipe = assert(recipes[variant.jettison_recipe], variant.jettison_recipe .. " missing")

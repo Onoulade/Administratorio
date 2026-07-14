@@ -209,7 +209,11 @@ local function new_context(opts)
     force = {name = "neutral"},
     active = false,
   }
-  local surface = {index = 1}
+  local surface = {
+    index = 1,
+    name = opts.surface_name or "nauvis",
+    find_non_colliding_position = function(_, pos) return pos end,
+  }
   entity.surface = surface
   entity.commandable = {
     set_command = function(command)
@@ -359,6 +363,17 @@ test("job offer is not consumed when there is no room for enrolled-biter", funct
     assert_eq(ctx.inventory._removed["job-offer"] or 0, 0, "job offer should be preserved if enrolled-biter cannot be inserted")
     assert_eq(ctx.inventory._added["taxpayer-money"], 5, "no-room case should keep the normal taxpayer payout")
     assert_true(ctx.inventory._added["enrolled-biter"] == nil, "no-room case should not produce enrolled-biter")
+  end)
+end)
+
+test("Space Age resolutions outside Nauvis do not mint taxpayer money", function()
+  with_random(0.50, function()
+    local ctx = new_context({surface_name = "gleba", frustration = 100})
+    biters.process_resolutions({ctx.desk})
+
+    assert_true(ctx.inventory._added["taxpayer-money"] == nil,
+      "off-world resolutions should not pay loose taxpayer money")
+    assert_eq(storage.stats.money_earned, 0, "off-world resolutions should not count taxpayer revenue")
   end)
 end)
 
