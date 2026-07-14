@@ -536,14 +536,25 @@ test("deviation paperwork and biter cannon are distinct orbital systems", functi
   local delivery = manager.ammo_type.action.action_delivery
   assert_eq(delivery.type, "projectile")
   assert_eq(delivery.projectile, "orbital-biter-projectile")
+  local has_launch_reservation = false
+  for _, effect in ipairs(delivery.source_effects or {}) do
+    if effect.type == "script"
+      and effect.effect_id == "administratorio-asteroid-biter-launched"
+    then
+      has_launch_reservation = true
+    end
+  end
+  assert_true(has_launch_reservation,
+    "manager catapult should reserve asteroid capacity when the projectile launches")
 
   local deviation = assert(ammos["orbital-deviation-order"], "deviation order ammo missing")
   assert_eq(deviation.ammo_category, "trajectory-compliance")
   assert_eq(deviation.magazine_size, 1)
-  local effects = deviation.ammo_type.action.action_delivery.target_effects
-  assert_eq(effects[1].type, "script")
-  assert_eq(effects[1].effect_id, "administratorio-trajectory-deviation")
-  assert_eq(effects[1].affects_target, true)
+  local deviation_delivery = deviation.ammo_type.action.action_delivery
+  assert_eq(deviation_delivery.type, "instant")
+  assert_eq(deviation_delivery.target_effects[1].type, "script")
+  assert_eq(deviation_delivery.target_effects[1].effect_id, "administratorio-trajectory-deviation")
+  assert_eq(deviation_delivery.target_effects[1].affects_target, true)
 
   assert_true(recipes["trajectory-compliance-array"] ~= nil, "trajectory compliance array recipe missing")
   assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "trajectory-compliance-array"), "workforce formation should unlock the compliance array")
