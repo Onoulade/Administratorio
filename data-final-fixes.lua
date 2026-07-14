@@ -1366,6 +1366,9 @@ for recipe_name, recipe in pairs(data.raw["recipe"] or {}) do
   end
 end
 add_special_paperwork("beacon", "treasury-bond", 1)
+-- One grant represents 500 taxpayer-money through the bond/grant chain. The
+-- silo consumes financed public works rather than loose currency, making the
+-- derivative the efficient interplanetary export.
 add_special_paperwork("rocket-silo", "government-grant", 1)
 
 -- Space-platform asteroid cracking should also consume explicit orbital
@@ -1782,9 +1785,10 @@ if rideable then
 end
 
 -------------------------------------------------------------------------------
--- 11. PLANET-SPECIFIC ROCKET-SILO AUTHORIZATION
--- Each grounded Space Age economy pays in its own administrative abundance.
--- The physical silo remains recognizable; only the bureaucratic overlay varies.
+-- 11. SHARED ROCKET-SILO AUTHORIZATION
+-- Space Age planets use the same physical silo and the same administrative
+-- recipe. Public finance travels as grants rather than loose taxpayer money;
+-- Aquilo remains import-dependent because it cannot produce every input.
 -------------------------------------------------------------------------------
 if space_age_planets and data.raw.recipe and data.raw.recipe["rocket-silo"] then
   local canonical = data.raw.recipe["rocket-silo"]
@@ -1807,67 +1811,17 @@ if space_age_planets and data.raw.recipe and data.raw.recipe["rocket-silo"] then
     recipe.ingredients = filtered
   end
 
-  local variants = {
-    {
-      planet = "vulcanus",
-      ingredients = {
-        {type = "item", name = "territorial-deed", amount = 1},
-        {type = "item", name = "blank-cyan-form", amount = 2},
-        {type = "fluid", name = "lie", amount = 500},
-      },
-    },
-    {
-      planet = "gleba",
-      ingredients = {
-        {type = "item", name = "conciliation-order", amount = 1},
-        {type = "item", name = "blank-yellow-form", amount = 2},
-        {type = "item", name = "refined-nonsense", amount = 20},
-      },
-    },
-    {
-      planet = "fulgora",
-      ingredients = {
-        {type = "item", name = "digital-processing-certificate", amount = 1},
-        {type = "item", name = "charged-toner", amount = 20},
-        {type = "item", name = "redundant-rubble", amount = 100},
-      },
-    },
-    {
-      planet = "aquilo",
-      ingredients = {
-        {type = "item", name = "unified-operations-charter", amount = 1},
-        {type = "item", name = "thermal-transfer-sheet", amount = 10},
-        {type = "item", name = "composite-chroma-ribbon", amount = 3},
-      },
-    },
-  }
-
-  space_age_planets.apply_planet_surface_conditions(canonical, "nauvis")
   replace_admin_cost(canonical, {
-    {type = "item", name = "taxpayer-money", amount = 100},
+    {type = "item", name = "government-grant", amount = 1},
     {type = "item", name = "management-approval-written", amount = 1},
   })
+  canonical.surface_conditions = nil
 
-  local clones = {}
-  for _, variant in ipairs(variants) do
-    local clone = table.deepcopy(canonical)
-    clone.name = "rocket-silo-" .. variant.planet
-    clone.localised_name = {"recipe-name.rocket-silo-planet", {"space-location-name." .. variant.planet}}
-    clone.localised_description = {"recipe-description.rocket-silo-planet", {"space-location-name." .. variant.planet}}
-    replace_admin_cost(clone, variant.ingredients)
-    space_age_planets.apply_planet_surface_conditions(clone, variant.planet)
-    clones[#clones + 1] = clone
-  end
-  data:extend(clones)
-
-  local rocket_technology = data.raw.technology and data.raw.technology["rocket-silo"]
-  if rocket_technology then
-    rocket_technology.effects = rocket_technology.effects or {}
-    for _, variant in ipairs(variants) do
-      rocket_technology.effects[#rocket_technology.effects + 1] = {
-        type = "unlock-recipe",
-        recipe = "rocket-silo-" .. variant.planet,
-      }
-    end
+  -- Taxpayer money is generated and securitized on Nauvis. Off-world finance
+  -- comes from shipping its much denser derivatives or earning bonds through
+  -- orbital tourism, never from minting loose taxpayer money on another world.
+  for _, source_recipe_name in ipairs({"treasury-bond-production", "tax-audit"}) do
+    local recipe_name = factoriopedia_recipe_renames[source_recipe_name] or source_recipe_name
+    space_age_planets.apply_planet_surface_conditions(data.raw.recipe[recipe_name], "nauvis")
   end
 end

@@ -192,6 +192,13 @@ data.raw.item["nuclear-reactor"] = {
   icon = "__base__/graphics/icons/nuclear-reactor.png",
   icon_size = 64,
 }
+data.raw.item["rocket-silo"] = {
+  type = "item",
+  name = "rocket-silo",
+  stack_size = 1,
+  icon = "__base__/graphics/icons/rocket-silo.png",
+  icon_size = 64,
+}
 data.raw.item["splitter"] = {
   type = "item",
   name = "splitter",
@@ -635,6 +642,25 @@ recipes["nuclear-reactor"] = {
   },
   results = {
     { type = "item", name = "nuclear-reactor", amount = 1 },
+  },
+}
+
+recipes["rocket-silo"] = {
+  type = "recipe",
+  name = "rocket-silo",
+  category = "advanced-crafting",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "concrete", amount = 1000 },
+    { type = "item", name = "steel-plate", amount = 1000 },
+    { type = "item", name = "processing-unit", amount = 200 },
+    { type = "item", name = "electric-engine-unit", amount = 200 },
+  },
+  results = {
+    { type = "item", name = "rocket-silo", amount = 1 },
+  },
+  surface_conditions = {
+    { property = "pressure", min = 1000, max = 1000 },
   },
 }
 
@@ -1306,6 +1332,24 @@ technologies["nuclear-power"] = {
   },
 }
 
+technologies["rocket-silo"] = {
+  type = "technology",
+  name = "rocket-silo",
+  effects = {
+    { type = "unlock-recipe", recipe = "rocket-silo" },
+  },
+  unit = {
+    count = 1,
+    ingredients = {
+      {"automation-science-pack", 1},
+      {"logistic-science-pack", 1},
+      {"chemical-science-pack", 1},
+      {"utility-science-pack", 1},
+    },
+    time = 1,
+  },
+}
+
 technologies["logistics"] = {
   type = "technology",
   name = "logistics",
@@ -1840,6 +1884,41 @@ test("boiler and steam-engine use safety paperwork in 2x batches", function()
   assert_true(has_ingredient(steam_engine_regulated, "safety-work-order"), "steam-engine-regulated should require safety-work-order")
   assert_eq(get_result_amount(steam_engine, "steam-engine"), 2, "steam-engine should batch handcraft results at 2x")
   assert_eq(get_result_amount(steam_engine_regulated, "steam-engine"), 2, "steam-engine-regulated should produce 2 steam engines")
+end)
+
+test("Space Age uses one shared rocket-silo recipe on every planet", function()
+  local recipe = get_recipe("rocket-silo")
+  assert_true(recipe ~= nil, "rocket-silo missing")
+  assert_eq(recipe.surface_conditions, nil, "rocket-silo should be craftable on every planet")
+  assert_true(not has_ingredient(recipe, "taxpayer-money"),
+    "rocket-silo should not consume loose taxpayer money")
+  assert_eq(get_ingredient_amount(recipe, "government-grant"), 1,
+    "rocket-silo should consume one financed government grant")
+  assert_eq(get_ingredient_amount(recipe, "management-approval-written"), 1,
+    "rocket-silo should keep the shared written approval")
+  assert_true(not has_ingredient(recipe, "management-written-work-order"),
+    "rocket-silo should replace the regulated work order with its shared authorization")
+
+  for _, planet in ipairs({"vulcanus", "gleba", "fulgora", "aquilo"}) do
+    local variant_name = "rocket-silo-" .. planet
+    assert_eq(get_recipe(variant_name), nil, variant_name .. " should not exist")
+    assert_true(not tech_unlocks_recipe("rocket-silo", variant_name),
+      variant_name .. " should not be unlocked")
+  end
+end)
+
+test("Space Age issues loose taxpayer money only on Nauvis", function()
+  for _, recipe_name in ipairs({"treasury-bond", "taxpayer-money"}) do
+    local recipe = get_recipe(recipe_name)
+    assert_true(recipe ~= nil, recipe_name .. " missing")
+    assert_true(recipe.surface_conditions ~= nil, recipe_name .. " should be surface-limited")
+    assert_eq(recipe.surface_conditions[1].property, "pressure", recipe_name .. " should use Nauvis pressure")
+    assert_eq(recipe.surface_conditions[1].min, 1000, recipe_name .. " should require Nauvis pressure")
+    assert_eq(recipe.surface_conditions[1].max, 1000, recipe_name .. " should require Nauvis pressure")
+    assert_eq(recipe.surface_conditions[2].property, "gravity", recipe_name .. " should use Nauvis gravity")
+    assert_eq(recipe.surface_conditions[2].min, 10, recipe_name .. " should require Nauvis gravity")
+    assert_eq(recipe.surface_conditions[2].max, 10, recipe_name .. " should require Nauvis gravity")
+  end
 end)
 
 test("taxpayer money is accepted by regular burners", function()

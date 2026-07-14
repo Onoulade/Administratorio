@@ -54,8 +54,8 @@ end
 
 data:extend({
   -- Taxpayer Money System
-  { type = "recipe", name = "treasury-bond-production",    category = "bureaucracy-registration", enabled = false, ingredients = {{type="item", name="taxpayer-money", amount=10}, {type="item", name="blank-form", amount=1}, {type="item", name="useless-documentation", amount=1}, {type="fluid", name="liquid-coffee", amount=10}}, results = {{type="item", name="treasury-bond", amount=1}},    energy_required = 5 },
-  { type = "recipe", name = "government-grant-production", category = "union-negotiation", enabled = false, ingredients = {{type="item", name="treasury-bond", amount=2},  {type="item", name="crappy-report", amount=1}, {type="item", name="management-approval-verbal", amount=1}},  results = {{type="item", name="government-grant", amount=1}}, energy_required = 15, crafting_machine_tint = icon_tints.recipe_tint("government-grant-production") },
+  { type = "recipe", name = "treasury-bond-production",    category = "bureaucracy-registration", enabled = false, auto_recycle = false, ingredients = {{type="item", name="taxpayer-money", amount=50}, {type="item", name="blank-form", amount=1}, {type="item", name="useless-documentation", amount=1}, {type="fluid", name="liquid-coffee", amount=10}}, results = {{type="item", name="treasury-bond", amount=1}},    energy_required = 5 },
+  { type = "recipe", name = "government-grant-production", category = "union-negotiation", enabled = false, ingredients = {{type="item", name="treasury-bond", amount=10}, {type="item", name="crappy-report", amount=1}, {type="item", name="management-approval-verbal", amount=1}}, results = {{type="item", name="government-grant", amount=1}}, energy_required = 15, crafting_machine_tint = icon_tints.recipe_tint("government-grant-production") },
   {
     type = "recipe", name = "tax-audit", category = "bureaucracy-policy", enabled = false,
     ingredients = {{type="fluid", name="slush-fund", amount=200}, {type="item", name="blank-form", amount=1}, {type="item", name="data", amount=1}, {type="fluid", name="liquid-coffee", amount=15}},
@@ -67,7 +67,7 @@ data:extend({
     type = "recipe", name = "slush-fund-production", category = "propaganda-distillery", enabled = false,
     icon = "__administratorio__/graphics/icons/slush-fund.png", icon_size = 64,
     subgroup = "admin-money", order = "d",
-    ingredients = {{type="item", name="treasury-bond", amount=5}, {type="fluid", name="lie", amount=50}},
+    ingredients = {{type="item", name="treasury-bond", amount=1}, {type="fluid", name="lie", amount=50}},
     results = {{type="fluid", name="slush-fund", amount=500}},
     energy_required = 30,
     crafting_machine_tint = distillery_recipe_tint("lie", "slush-fund")
@@ -102,8 +102,8 @@ data:extend({
     energy_required = 20,
     crafting_machine_tint = icon_tints.recipe_tint("narrative-production") },
   { type = "recipe", name = "white-paper-production",    category = "bureaucracy-policy",       enabled = false, ingredients = {{type="item", name="paper", amount=8}, {type="item", name="processing-unit", amount=1}, {type="item", name="treasury-bond", amount=1}, {type="fluid", name="lie", amount=35}, {type="fluid", name="liquid-coffee", amount=20}}, results = {{type="item", name="white-paper", amount=1}},      energy_required = 30, crafting_machine_tint = icon_tints.recipe_tint("white-paper-production") },
-  { type = "recipe", name = "policy-production",         category = "bureaucracy-policy", enabled = false, ingredients = {{type="item", name="white-paper", amount=1}, {type="fluid", name="misinformation", amount=80}, {type="item", name="government-grant", amount=1}, {type="item", name="processing-unit", amount=1}, {type="fluid", name="liquid-coffee", amount=30}}, results = {{type="item", name="policy", amount=1}},     energy_required = 45, crafting_machine_tint = icon_tints.recipe_tint("policy-production") },
-  { type = "recipe", name = "regulation-production",     category = "bureaucracy-policy", enabled = false, ingredients = {{type="item", name="policy", amount=1}, {type="item", name="government-grant", amount=2}, {type="item", name="processing-unit", amount=2}, {type="fluid", name="liquid-coffee", amount=35}}, results = {{type="item", name="regulation", amount=1}}, energy_required = 60, crafting_machine_tint = icon_tints.recipe_tint("regulation-production") },
+  { type = "recipe", name = "policy-production",         category = "bureaucracy-policy", enabled = false, ingredients = {{type="item", name="white-paper", amount=1}, {type="fluid", name="misinformation", amount=80}, {type="item", name="treasury-bond", amount=1}, {type="item", name="processing-unit", amount=1}, {type="fluid", name="liquid-coffee", amount=30}}, results = {{type="item", name="policy", amount=1}},     energy_required = 45, crafting_machine_tint = icon_tints.recipe_tint("policy-production") },
+  { type = "recipe", name = "regulation-production",     category = "bureaucracy-policy", enabled = false, ingredients = {{type="item", name="policy", amount=1}, {type="item", name="treasury-bond", amount=2}, {type="item", name="processing-unit", amount=2}, {type="fluid", name="liquid-coffee", amount=35}}, results = {{type="item", name="regulation", amount=1}}, energy_required = 60, crafting_machine_tint = icon_tints.recipe_tint("regulation-production") },
 
   -- Promise, Hush Money & Eviction
   { type = "recipe", name = "hush-money-production",      category = "bureaucratic-bootstrap", enabled = false, ingredients = {{type="item", name="taxpayer-money", amount=50}, {type="item", name="form-27b-6", amount=1}, {type="item", name="useless-documentation", amount=1}}, results = {{type="item", name="hush-money", amount=1}}, energy_required = 10 },
@@ -248,7 +248,7 @@ data:extend({
     category = "biter-training", enabled = false,
     ingredients = {
       {type="item", name="biter-worker",    amount=1},
-      {type="item", name="government-grant", amount=2},
+      {type="item", name="treasury-bond", amount=2},
       {type="item", name="management-written-work-order", amount=2},
       {type="item", name="research-grant-work-order", amount=1},
       {type="fluid", name="liquid-coffee", amount=100},

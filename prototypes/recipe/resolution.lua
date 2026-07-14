@@ -234,7 +234,7 @@ local PAIRED_PIPELINES = {
         result = "case-u",
         ingredients = {
           item("data", 1),
-          item("government-grant", 1),
+          item("treasury-bond", 1),
           fluid("liquid-coffee", 25),
         },
         energy = 45,
