@@ -12,8 +12,8 @@ local function document(rank, family, unlock_technology, colors)
   }
 end
 
--- Keep this list deliberately bounded. Every unordered pair becomes a valid
--- Archive Recombination Bureau input, so prototype/runtime cost grows O(n^2).
+-- Keep this list deliberately bounded. Every entry receives one native archive
+-- reassignment recipe with three same-rank, color-safe candidate outputs.
 M.documents = {
   ["blank-form"] = document(0, "blank"),
   ["blank-approval"] = document(0, "blank"),

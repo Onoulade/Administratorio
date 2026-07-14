@@ -16,8 +16,8 @@ data:extend({
     type = "item",
     name = "archive-recombination-bureau",
     icons = {
-      {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.75, g = 0.58, b = 0.86, a = 1}},
-      {icon = item_icons .. "redundant-rubble.png", icon_size = 64, scale = 0.32, shift = {8, 8}},
+      {icon = "__quality__/graphics/icons/recycler.png", icon_size = 64, tint = {r = 0.82, g = 0.68, b = 0.96, a = 1}},
+      {icon = item_icons .. "blank-form.png", icon_size = 64, scale = 0.34, shift = {8, 8}},
     },
     subgroup = "admin-buildings",
     order = "l2[archive-recombination-bureau]",

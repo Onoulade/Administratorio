@@ -9,7 +9,6 @@ local biters = require("scripts.biters")
 local pentapods = require("scripts.pentapods")
 local trains = require("scripts.trains")
 local fax = require("scripts.fax")
-local archive_recombination = require("scripts.archive_recombination")
 local working_hours = require("scripts.working_hours")
 local field_office = require("scripts.field_office")
 local biter_station = require("scripts.biter_station")
@@ -501,7 +500,6 @@ local function init_storage()
   trajectory_compliance.configure_existing_arrays()
   territorial_arbitration.ensure_storage()
   fax.ensure_storage()
-  archive_recombination.ensure_storage()
   if WORKING_HOURS_ENABLED then
     working_hours.ensure_storage()
   end
@@ -675,7 +673,6 @@ local function on_init()
   init_storage()
   rebuild_desk_cache()
   fax.rebuild_registry()
-  archive_recombination.rebuild_registry()
   territorial_arbitration.rebuild_registry()
   biters.rebuild_desk_index()
   biters.rebuild_capture_bureau_ports()
@@ -728,7 +725,6 @@ local function on_configuration_changed(event)
   init_storage()
   rebuild_desk_cache()
   fax.rebuild_registry()
-  archive_recombination.rebuild_registry()
   territorial_arbitration.rebuild_registry()
   trains.on_init()
   set_biter_ceasefire()
@@ -1140,7 +1136,6 @@ local function on_entity_built_inner(event)
     if fax.is_fax_building(entity) and not fax.on_entity_built(entity, player) then
       return
     end
-    archive_recombination.on_entity_built(entity)
     if biterport.on_entity_built(event) then
       return
     end
@@ -1253,7 +1248,6 @@ local function on_entity_removed(event)
   if fax.is_fax_building(entity) then
     fax.on_entity_removed(entity, event.buffer)
   end
-  archive_recombination.on_entity_removed(entity)
   territorial_arbitration.on_entity_removed(entity)
 
   trains.on_removed(entity)
@@ -2210,7 +2204,6 @@ local function on_main_tick(event)
   end)
   trajectory_compliance.on_tick(event)
   territorial_arbitration.on_tick(event)
-  archive_recombination.on_tick(event)
 end
 
 local function on_pneumatic_tick(_event)

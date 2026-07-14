@@ -251,9 +251,8 @@ data:extend({
   {
     type = "item",
     name = "heatproof-form-stock",
-    icons = {
-      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.75, g = 0.95, b = 0.95, a = 1}},
-    },
+    icon = item_icons .. "heatproof-form-stock.png",
+    icon_size = 64,
     subgroup = "forms-printed",
     order = "da",
     stack_size = 100
@@ -261,10 +260,8 @@ data:extend({
   {
     type = "item",
     name = "blank-cyan-form",
-    icons = {
-      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.8, g = 1, b = 1, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
-    },
+    icon = item_icons .. "blank-cyan-form.png",
+    icon_size = 64,
     subgroup = "forms-printed",
     order = "db",
     stack_size = 100
@@ -272,9 +269,8 @@ data:extend({
   {
     type = "item",
     name = "mycelial-form-stock",
-    icons = {
-      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.95, g = 0.88, b = 0.45, a = 1}},
-    },
+    icon = item_icons .. "mycelial-form-stock.png",
+    icon_size = 64,
     subgroup = "forms-printed",
     order = "dc",
     stack_size = 100,
@@ -284,10 +280,8 @@ data:extend({
   {
     type = "item",
     name = "blank-yellow-form",
-    icons = {
-      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.98, g = 0.92, b = 0.55, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
-    },
+    icon = item_icons .. "blank-yellow-form.png",
+    icon_size = 64,
     subgroup = "forms-printed",
     order = "dd",
     stack_size = 100,
@@ -297,9 +291,8 @@ data:extend({
   {
     type = "item",
     name = "signal-form-stock",
-    icons = {
-      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.95, g = 0.82, b = 0.93, a = 1}},
-    },
+    icon = item_icons .. "signal-form-stock.png",
+    icon_size = 64,
     subgroup = "forms-printed",
     order = "dde",
     stack_size = 100
@@ -307,10 +300,8 @@ data:extend({
   {
     type = "item",
     name = "blank-magenta-form",
-    icons = {
-      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.95, g = 0.82, b = 0.93, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
-    },
+    icon = item_icons .. "blank-magenta-form.png",
+    icon_size = 64,
     subgroup = "forms-printed",
     order = "ddf",
     stack_size = 100
@@ -318,11 +309,8 @@ data:extend({
   {
     type = "item",
     name = "cyan-yellow-form",
-    icons = {
-      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.9, g = 0.94, b = 0.98, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {-8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {8, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
-    },
+    icon = item_icons .. "cyan-yellow-form.png",
+    icon_size = 64,
     subgroup = "forms-printed",
     order = "ddg",
     stack_size = 100
@@ -330,11 +318,8 @@ data:extend({
   {
     type = "item",
     name = "cyan-magenta-form",
-    icons = {
-      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.92, g = 0.92, b = 0.99, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {-8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
-    },
+    icon = item_icons .. "cyan-magenta-form.png",
+    icon_size = 64,
     subgroup = "forms-printed",
     order = "ddh",
     stack_size = 100
@@ -342,11 +327,8 @@ data:extend({
   {
     type = "item",
     name = "yellow-magenta-form",
-    icons = {
-      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.96, g = 0.9, b = 0.9, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {-8, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
-    },
+    icon = item_icons .. "yellow-magenta-form.png",
+    icon_size = 64,
     subgroup = "forms-printed",
     order = "ddi",
     stack_size = 100
@@ -354,10 +336,8 @@ data:extend({
   {
     type = "item",
     name = "permit-draft",
-    icons = {
-      {icon = item_icons .. "construction-permit-draft.png", icon_size = 64},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
-    },
+    icon = item_icons .. "permit-draft.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "de",
     stack_size = 100
@@ -365,10 +345,8 @@ data:extend({
   {
     type = "item",
     name = "inspection-docket",
-    icons = {
-      {icon = item_icons .. "form-27b-6.png", icon_size = 64},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
-    },
+    icon = item_icons .. "inspection-docket.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "df",
     stack_size = 100
@@ -376,10 +354,8 @@ data:extend({
   {
     type = "item",
     name = "symbiosis-record",
-    icons = {
-      {icon = item_icons .. "form-27b-6.png", icon_size = 64},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
-    },
+    icon = item_icons .. "symbiosis-record.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "dg",
     stack_size = 100,
@@ -389,10 +365,8 @@ data:extend({
   {
     type = "item",
     name = "conciliation-order",
-    icons = {
-      {icon = item_icons .. "construction-permit.png", icon_size = 64},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
-    },
+    icon = item_icons .. "conciliation-order.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "dh",
     stack_size = 100,
@@ -402,10 +376,8 @@ data:extend({
   {
     type = "item",
     name = "biochamber-operating-waiver",
-    icons = {
-      {icon = item_icons .. "safety-waiver.png", icon_size = 64},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
-    },
+    icon = item_icons .. "biochamber-operating-waiver.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "di",
     stack_size = 100,
@@ -415,10 +387,8 @@ data:extend({
   {
     type = "item",
     name = "archive-recovery-permit",
-    icons = {
-      {icon = item_icons .. "construction-permit.png", icon_size = 64},
-      {icon = item_icons .. "useless-documentation.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
-    },
+    icon = item_icons .. "archive-recovery-permit.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "dia",
     stack_size = 100
@@ -426,10 +396,8 @@ data:extend({
   {
     type = "item",
     name = "digital-processing-certificate",
-    icons = {
-      {icon = item_icons .. "blank-approval.png", icon_size = 64},
-      {icon = item_icons .. "data.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
-    },
+    icon = item_icons .. "digital-processing-certificate.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "dib",
     stack_size = 100
@@ -437,10 +405,8 @@ data:extend({
   {
     type = "item",
     name = "electromagnetic-operating-license",
-    icons = {
-      {icon = item_icons .. "management-approval-written.png", icon_size = 64},
-      {icon = item_icons .. "data.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
-    },
+    icon = item_icons .. "electromagnetic-operating-license.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "dic",
     stack_size = 100
@@ -448,10 +414,8 @@ data:extend({
   {
     type = "item",
     name = "data-recovery-order",
-    icons = {
-      {icon = item_icons .. "work-order.png", icon_size = 64},
-      {icon = item_icons .. "data.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
-    },
+    icon = item_icons .. "data-recovery-order.png",
+    icon_size = 64,
     subgroup = "forms-work-orders",
     order = "cid",
     stack_size = 100
@@ -459,11 +423,8 @@ data:extend({
   {
     type = "item",
     name = "hardened-data-vault",
-    icons = {
-      {icon = item_icons .. "management-approval-written.png", icon_size = 64},
-      {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.28, shift = {-8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
-      {icon = item_icons .. "data.png", icon_size = 64, scale = 0.32, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
-    },
+    icon = item_icons .. "hardened-data-vault.png",
+    icon_size = 64,
     subgroup = "forms-work-orders",
     order = "cie",
     stack_size = 100
@@ -471,12 +432,8 @@ data:extend({
   {
     type = "item",
     name = "trichromatic-permit",
-    icons = {
-      {icon = item_icons .. "construction-permit.png", icon_size = 64},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {-10, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {0, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {10, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
-    },
+    icon = item_icons .. "trichromatic-permit.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "die",
     stack_size = 100
@@ -484,12 +441,8 @@ data:extend({
   {
     type = "item",
     name = "unified-operations-charter",
-    icons = {
-      {icon = item_icons .. "management-approval-written.png", icon_size = 64},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {-10, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {0, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {10, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
-    },
+    icon = item_icons .. "unified-operations-charter.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "dif",
     stack_size = 100
@@ -497,11 +450,8 @@ data:extend({
   {
     type = "item",
     name = "public-transportation-contract",
-    icons = {
-      {icon = item_icons .. "construction-permit.png", icon_size = 64},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {-8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {8, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
-    },
+    icon = item_icons .. "public-transportation-contract.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "dig",
     stack_size = 100
@@ -509,10 +459,8 @@ data:extend({
   {
     type = "item",
     name = "cryogenic-operations-license",
-    icons = {
-      {icon = item_icons .. "construction-permit.png", icon_size = 64, tint = {r = 0.88, g = 0.96, b = 1, a = 1}},
-      {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.3, shift = {8, 8}, tint = {r = 0.72, g = 0.9, b = 1, a = 1}},
-    },
+    icon = item_icons .. "cryogenic-operations-license.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "dig",
     stack_size = 100
@@ -520,10 +468,8 @@ data:extend({
   {
     type = "item",
     name = "promethium-research-charter",
-    icons = {
-      {icon = item_icons .. "management-approval-written.png", icon_size = 64, tint = {r = 0.92, g = 0.88, b = 1, a = 1}},
-      {icon = item_icons .. "administrative-science-pack.png", icon_size = 64, scale = 0.32, shift = {8, 8}, tint = {r = 0.72, g = 0.55, b = 1, a = 1}},
-    },
+    icon = item_icons .. "promethium-research-charter.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "dih",
     stack_size = 100
@@ -531,10 +477,8 @@ data:extend({
   {
     type = "item",
     name = "embossed-seal",
-    icons = {
-      {icon = item_icons .. "blank-approval.png", icon_size = 64},
-      {icon = item_icons .. "management-approval-written.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
-    },
+    icon = item_icons .. "embossed-seal.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "dj",
     stack_size = 100
@@ -542,10 +486,8 @@ data:extend({
   {
     type = "item",
     name = "industrial-charter",
-    icons = {
-      {icon = item_icons .. "construction-permit.png", icon_size = 64},
-      {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
-    },
+    icon = item_icons .. "industrial-charter.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "dk",
     stack_size = 100
@@ -553,10 +495,8 @@ data:extend({
   {
     type = "item",
     name = "territorial-resettlement-order",
-    icons = {
-      {icon = item_icons .. "construction-permit.png", icon_size = 64},
-      {icon = item_icons .. "management-approval-written.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
-    },
+    icon = item_icons .. "territorial-resettlement-order.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "dk1",
     stack_size = 100
@@ -564,10 +504,8 @@ data:extend({
   {
     type = "item",
     name = "territorial-deed",
-    icons = {
-      {icon = item_icons .. "management-approval-written.png", icon_size = 64},
-      {icon = item_icons .. "construction-permit.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.85, g = 0.55, b = 0.12, a = 1}},
-    },
+    icon = item_icons .. "territorial-deed.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "dk2",
     stack_size = 100
@@ -575,10 +513,8 @@ data:extend({
   {
     type = "item",
     name = "thermal-process-license",
-    icons = {
-      {icon = item_icons .. "construction-permit.png", icon_size = 64},
-      {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
-    },
+    icon = item_icons .. "thermal-process-license.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "dl",
     stack_size = 100
@@ -586,10 +522,8 @@ data:extend({
   {
     type = "item",
     name = "calcite-reagent-waiver",
-    icons = {
-      {icon = item_icons .. "safety-waiver.png", icon_size = 64},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
-    },
+    icon = item_icons .. "calcite-reagent-waiver.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "dm",
     stack_size = 100
@@ -597,10 +531,8 @@ data:extend({
   {
     type = "item",
     name = "offworld-metallurgy-charter",
-    icons = {
-      {icon = item_icons .. "management-approval-written.png", icon_size = 64},
-      {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
-    },
+    icon = item_icons .. "offworld-metallurgy-charter.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "dn",
     stack_size = 100
@@ -608,10 +540,8 @@ data:extend({
   {
     type = "item",
     name = "asteroid-processing-docket",
-    icons = {
-      {icon = item_icons .. "construction-work-order.png", icon_size = 64},
-      {icon = "__base__/graphics/icons/processing-unit.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
-    },
+    icon = item_icons .. "asteroid-processing-docket.png",
+    icon_size = 64,
     subgroup = "forms-permits",
     order = "do",
     stack_size = 100
