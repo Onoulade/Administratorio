@@ -1,4 +1,5 @@
 local item_icons = "__administratorio__/graphics/icons/"
+local feature_flags = require("feature_flags")
 
 -- Item Groups
 data:extend({
@@ -17,6 +18,39 @@ data:extend({
     icon_size = 64
   }
 })
+
+-- Space Age's hidden Recycler recipes remain browseable in Factoriopedia. Keep
+-- them out of the normal paperwork tab so the two form-conversion paths and
+-- Old Archive recovery can be found without scanning ordinary production.
+if feature_flags.space_age_enabled() then
+  data:extend({
+    {
+      type = "item-group",
+      name = "admin-recycling-group",
+      order = "zc",
+      icon = "__quality__/graphics/icons/recycler.png",
+      icon_size = 64,
+    },
+    {
+      type = "item-subgroup",
+      name = "archive-recovery-recipes",
+      group = "admin-recycling-group",
+      order = "a",
+    },
+    {
+      type = "item-subgroup",
+      name = "form-reassignment-recipes",
+      group = "admin-recycling-group",
+      order = "b",
+    },
+    {
+      type = "item-subgroup",
+      name = "form-paper-recycling-recipes",
+      group = "admin-recycling-group",
+      order = "c",
+    },
+  })
+end
 
 -- Subgroups (Paperwork Group)
 data:extend({

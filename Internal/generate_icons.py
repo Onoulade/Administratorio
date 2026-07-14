@@ -25,6 +25,11 @@ Parameters per icon (defined in ICON_DEFS below):
     clip          - Draw a paper clip or staple at top
     watermark     - Faint background symbol
     badge         - Small colored circle badge with a letter
+    header_bands  - One or more family colors split across the document header
+
+Every item in a ``forms-*`` subgroup must have a dedicated entry in
+``ICON_DEFS``.  The generator validates this contract before writing icons so
+Space Age documents cannot silently fall back to unrelated layered artwork.
 """
 
 import argparse
@@ -84,6 +89,15 @@ SYM_SMOKE = "smoke"
 SYM_SOUND = "sound"
 SYM_PERSON = "person"
 SYM_WARNING = "warning"
+SYM_ARCHIVE = "archive"
+SYM_ASTEROID = "asteroid"
+SYM_ATOM = "atom"
+SYM_CIRCUIT = "circuit"
+SYM_HEAT = "heat"
+SYM_INK = "ink"
+SYM_SEAL = "seal"
+SYM_SNOWFLAKE = "snowflake"
+SYM_VAULT = "vault"
 
 # Colors (More saturated/distinct)
 C_WHITE = (255, 255, 255, 255)
@@ -114,6 +128,8 @@ S_DARK_RED = (140, 20, 20, 240)
 S_DARK_BLUE = (20, 40, 140, 240)
 S_DARK_GREEN = (20, 90, 40, 240)
 S_GOLD = (210, 160, 20, 230)
+S_CYAN = (20, 190, 205, 235)
+S_MAGENTA = (205, 45, 145, 235)
 
 # Symbol colors (high contrast)
 SC_RED = (180, 20, 20, 240)
@@ -370,6 +386,36 @@ def _dim(color, factor):
     return tuple(max(0, min(255, int(c * factor))) for c in color[:3]) + (color[3],)
 
 
+def apply_material_finish(img, geo):
+    """Give every document the same warm, slightly worn Factorio-like finish."""
+    pixels = img.load()
+    width, height = img.size
+    for y in range(height):
+        for x in range(width):
+            r, g, b, a = pixels[x, y]
+            if a < 70:
+                continue
+            diagonal_light = 1.045 - 0.085 * ((x + y) / max(1, width + height - 2))
+            paper_grain = 0.018 * math.sin(x * 0.23 + y * 0.11)
+            paper_grain += 0.012 * math.sin(x * 0.07 - y * 0.19)
+            factor = diagonal_light + paper_grain
+            pixels[x, y] = (
+                max(0, min(255, int(r * factor))),
+                max(0, min(255, int(g * factor))),
+                max(0, min(255, int(b * factor))),
+                a,
+            )
+
+    # A shared bevel makes stacks, ledgers, blanks, and permits feel like one set.
+    draw = ImageDraw.Draw(img)
+    tl, tr, br, bl = geo["corners"]
+    edge = max(1, SIZE // 96)
+    draw.line([tl, tr], fill=(255, 250, 225, 150), width=edge)
+    draw.line([tl, bl], fill=(255, 248, 220, 105), width=edge)
+    draw.line([tr, br], fill=(75, 60, 48, 105), width=edge)
+    draw.line([bl, br], fill=(65, 52, 42, 125), width=edge)
+
+
 def _pos_offset(pos, symbol_size=16):
     """Get (x, y) center for a named position."""
     hs = symbol_size // 2
@@ -424,6 +470,33 @@ def draw_stripe(img, color, position="top", thickness=7, geo=None):
         draw.polygon([p0, p1, p2, p3], fill=color)
 
 
+def draw_header_bands(img, colors, thickness=7, geo=None):
+    """Split the top document band into stable family-color segments."""
+    if not colors:
+        return
+    draw = ImageDraw.Draw(img)
+    corners = geo["corners"] if geo else [(4, 2), (59, 2), (59, 61), (4, 61)]
+    tl, tr, br, bl = corners
+    vertical_span = ((bl[1] - tl[1]) + (br[1] - tr[1])) / 2
+    t = thickness / max(1, vertical_span)
+    lower_left = _lerp(tl, bl, t)
+    lower_right = _lerp(tr, br, t)
+
+    count = len(colors)
+    for index, color in enumerate(colors):
+        start = index / count
+        end = (index + 1) / count
+        pts = [
+            _lerp(tl, tr, start),
+            _lerp(tl, tr, end),
+            _lerp(lower_left, lower_right, end),
+            _lerp(lower_left, lower_right, start),
+        ]
+        draw.polygon(pts, fill=color)
+        if index:
+            draw.line([pts[0], pts[3]], fill=(45, 38, 34, 150), width=max(1, SIZE // 128))
+
+
 def draw_lines(img, color=(180, 175, 165, 120), count=5, geo=None):
     """Draw fake text lines that follow the paper geometry."""
     draw = ImageDraw.Draw(img)
@@ -453,10 +526,11 @@ def draw_stamp(img, color, pos="tr", radius=9):
     cx, cy = _pos_offset(pos, radius * 2)
     sw = max(2, radius // 4)
     
-    # Thick pure white background halo
-    hw = max(2, radius // 5)
-    draw.ellipse([(cx - radius - hw, cy - radius - hw), (cx + radius + hw, cy + radius + hw)],
-                 outline=(255, 255, 255, 255), width=sw + hw*2)
+    # Ink bleed and a tiny southeast impression shadow keep stamps on the paper.
+    bleed = max(1, radius // 7)
+    draw.ellipse([(cx - radius + bleed, cy - radius + bleed),
+                  (cx + radius + bleed, cy + radius + bleed)],
+                 outline=(35, 28, 24, 80), width=sw)
 
     # Outer ring
     draw.ellipse([(cx - radius, cy - radius), (cx + radius, cy + radius)],
@@ -483,8 +557,8 @@ def draw_corner_tab(img, color, corner="tr", tab_size=14, geo=None):
     elif corner == "bl":
         pts = [bl, _lerp(bl, br, t), _lerp(bl, tl, t)]
     
-    # Thick pure white border for the tab
-    draw.polygon(pts, outline=(255, 255, 255, 255), width=max(2, SIZE // 32))
+    # Muted edge instead of a sticker-like white halo.
+    draw.polygon(pts, outline=(55, 45, 38, 190), width=max(1, SIZE // 48))
     draw.polygon(pts, fill=color)
 
 
@@ -757,6 +831,100 @@ def _draw_symbol(draw, name, cx, cy, color, size=14):
         draw.line([(cx, cy + w), (cx - hs // 2, cy + hs)], fill=color, width=w)
         draw.line([(cx, cy + w), (cx + hs // 2, cy + hs)], fill=color, width=w)
 
+    elif name == SYM_ARCHIVE:
+        lid_h = max(3, size // 5)
+        draw.rectangle([(cx - hs, cy - hs), (cx + hs, cy - hs + lid_h)], fill=color)
+        draw.rectangle([(cx - hs + w, cy - hs + lid_h), (cx + hs - w, cy + hs)], outline=color, width=w)
+        slot_w = max(3, size // 4)
+        draw.line([(cx - slot_w, cy), (cx + slot_w, cy)], fill=color, width=w)
+
+    elif name == SYM_ASTEROID:
+        pts = [
+            (cx - hs, cy - hs // 4), (cx - hs // 2, cy - hs),
+            (cx + hs // 3, cy - hs + w), (cx + hs, cy - hs // 3),
+            (cx + hs - w, cy + hs // 2), (cx + hs // 4, cy + hs),
+            (cx - hs // 2, cy + hs - w),
+        ]
+        draw.polygon(pts, outline=color, fill=(*color[:3], 75), width=w)
+        crater = max(2, size // 7)
+        draw.ellipse([(cx - crater * 2, cy - crater), (cx, cy + crater)], outline=color, width=max(1, w // 2))
+        draw.ellipse([(cx + crater // 2, cy - crater * 2),
+                      (cx + crater * 2, cy - crater // 2)], outline=color, width=max(1, w // 2))
+
+    elif name == SYM_ATOM:
+        orbit_w = max(1, w // 2)
+        draw.ellipse([(cx - hs, cy - hs // 2), (cx + hs, cy + hs // 2)], outline=color, width=orbit_w)
+        draw.ellipse([(cx - hs // 2, cy - hs), (cx + hs // 2, cy + hs)], outline=color, width=orbit_w)
+        draw.line([(cx - hs * 3 // 4, cy + hs * 3 // 4),
+                   (cx + hs * 3 // 4, cy - hs * 3 // 4)], fill=color, width=orbit_w)
+        nucleus = max(2, size // 9)
+        draw.ellipse([(cx - nucleus, cy - nucleus), (cx + nucleus, cy + nucleus)], fill=color)
+
+    elif name == SYM_CIRCUIT:
+        chip = max(3, size // 4)
+        draw.rectangle([(cx - chip, cy - chip), (cx + chip, cy + chip)], outline=color, width=w)
+        lead = max(2, size // 5)
+        for offset in (-chip // 2, chip // 2):
+            draw.line([(cx + offset, cy - chip), (cx + offset, cy - chip - lead)], fill=color, width=max(1, w // 2))
+            draw.line([(cx + offset, cy + chip), (cx + offset, cy + chip + lead)], fill=color, width=max(1, w // 2))
+            draw.line([(cx - chip, cy + offset), (cx - chip - lead, cy + offset)], fill=color, width=max(1, w // 2))
+            draw.line([(cx + chip, cy + offset), (cx + chip + lead, cy + offset)], fill=color, width=max(1, w // 2))
+        dot = max(1, size // 12)
+        draw.ellipse([(cx - dot, cy - dot), (cx + dot, cy + dot)], fill=color)
+
+    elif name == SYM_HEAT:
+        for offset in (-hs // 2, 0, hs // 2):
+            pts = [
+                (cx + offset, cy + hs),
+                (cx + offset - w, cy + hs // 3),
+                (cx + offset + w, cy - hs // 3),
+                (cx + offset, cy - hs),
+            ]
+            draw.line(pts, fill=color, width=max(1, w // 2))
+
+    elif name == SYM_INK:
+        drop_top = (cx, cy - hs)
+        drop_left = (cx - hs * 3 // 4, cy + hs // 3)
+        drop_right = (cx + hs * 3 // 4, cy + hs // 3)
+        draw.polygon([drop_top, drop_left, drop_right], fill=(*color[:3], 180))
+        draw.ellipse([(cx - hs * 3 // 4, cy - hs // 4),
+                      (cx + hs * 3 // 4, cy + hs)], fill=(*color[:3], 180), outline=color, width=w)
+
+    elif name == SYM_SEAL:
+        seal_r = max(3, size // 3)
+        draw.polygon([(cx - seal_r, cy + seal_r // 2), (cx - hs, cy + hs),
+                      (cx - w, cy + seal_r), (cx + w, cy + seal_r),
+                      (cx + hs, cy + hs), (cx + seal_r, cy + seal_r // 2)], fill=color)
+        draw.ellipse([(cx - seal_r, cy - seal_r), (cx + seal_r, cy + seal_r)],
+                     fill=(*color[:3], 120), outline=color, width=w)
+        inner = max(2, seal_r - w * 2)
+        draw.ellipse([(cx - inner, cy - inner), (cx + inner, cy + inner)], outline=color, width=max(1, w // 2))
+
+    elif name == SYM_SNOWFLAKE:
+        for angle in (0, 60, 120):
+            rad = math.radians(angle)
+            dx = int(hs * math.cos(rad))
+            dy = int(hs * math.sin(rad))
+            draw.line([(cx - dx, cy - dy), (cx + dx, cy + dy)], fill=color, width=w)
+        branch = max(2, size // 5)
+        for dx, dy in ((0, -hs), (0, hs), (-hs, 0), (hs, 0)):
+            sx = -1 if dx > 0 else 1 if dx < 0 else 0
+            sy = -1 if dy > 0 else 1 if dy < 0 else 0
+            draw.line([(cx + dx, cy + dy), (cx + dx + sy * branch, cy + dy + sx * branch)],
+                      fill=color, width=max(1, w // 2))
+
+    elif name == SYM_VAULT:
+        radius = max(1, size // 8)
+        draw.rounded_rectangle([(cx - hs, cy - hs), (cx + hs, cy + hs)],
+                               radius=radius, outline=color, width=w)
+        wheel_r = max(3, size // 4)
+        draw.ellipse([(cx - wheel_r, cy - wheel_r), (cx + wheel_r, cy + wheel_r)], outline=color, width=w)
+        for angle in (0, 90, 180, 270):
+            rad = math.radians(angle)
+            draw.line([(cx, cy),
+                       (cx + int(wheel_r * math.cos(rad)), cy + int(wheel_r * math.sin(rad)))],
+                      fill=color, width=max(1, w // 2))
+
     elif name == SYM_WARNING:
         draw.polygon([(cx, cy - hs), (cx - hs, cy + hs), (cx + hs, cy + hs)],
                      outline=color, fill=(*color[:3], 60), width=w)
@@ -791,22 +959,9 @@ def draw_symbol(img, name, color, pos="center", size=14):
     draw = ImageDraw.Draw(img)
     cx, cy = _pos_offset(pos, size)
 
-    # Use a single, high-contrast halo
-    # Center symbols get white (pops against saturated paper)
-    # Corner symbols get black (appendix look)
-    if pos == "center":
-        halo_color = (255, 255, 255, 255)
-        off = max(1, SIZE // 64)
-    else:
-        halo_color = (0, 0, 0, 255)
-        off = max(1, SIZE // 128) # Thinner for corner elements
-        
-    # Draw 8-way halo
-    for dx in [-off, 0, off]:
-        for dy in [-off, 0, off]:
-            if dx == 0 and dy == 0: continue
-            _draw_symbol(draw, name, cx + dx, cy + dy, halo_color, size)
-
+    # A single offset impression replaces the old sticker-like eight-way halo.
+    off = max(1, SIZE // 96)
+    _draw_symbol(draw, name, cx + off, cy + off, (35, 28, 24, 125), size)
     _draw_symbol(draw, name, cx, cy, color, size)
 
 def draw_watermark(img, name, color):
@@ -895,14 +1050,6 @@ ICON_DEFS = {
         "lines_color": (170, 180, 200, 100),
         "desc": "Blue-white form with centered flask",
     },
-    "petrochemical-operating-permit": {
-        "base": "ledger", "tint": C_LIGHT_GREEN,
-        "symbol": SYM_FLASK, "symbol_color": SC_GREEN, "symbol_pos": "center",
-        "symbol2": SYM_WARNING, "symbol2_color": SC_ORANGE, "symbol2_pos": "br",
-        "badge": ("P", S_DARK_GREEN, "bl"),
-        "desc": "Green ledger permit with flask, warning, and P badge",
-    },
-
     # ===== DRAFTS & PROPOSALS (Tilted Paper, Pen icon, Post-it) =====
     "safety-waiver-draft": {
         "base": "paper", "tint": C_LIGHT_BLUE,
@@ -1278,6 +1425,253 @@ ICON_DEFS = {
     },
 }
 
+# Space Age paperwork uses the same lifecycle grammar as the Nauvis set:
+# stacks are unprinted stock, tilted sheets are drafts, punched forms are work
+# orders, straight forms are permits/certificates, and bound ledgers are
+# charters/deeds.  Header colors identify the planet or chromatic lineage:
+# cyan=Vulcanus, yellow=Gleba, magenta=Fulgora, CMY=Aquilo convergence.
+SPACE_AGE_FORM_ICON_DEFS = {
+    "heatproof-form-stock": {
+        "base": "stack", "tint": (205, 240, 235, 255),
+        "header_bands": [S_CYAN],
+        "symbol": SYM_HEAT, "symbol_color": SC_ORANGE, "symbol_pos": "center", "symbol_size": 22,
+        "corner_tab": (S_ORANGE, "br"),
+        "desc": "Cyan Vulcanus stock with heat treatment mark",
+    },
+    "blank-cyan-form": {
+        "base": "form", "tint": (218, 248, 246, 255),
+        "header_bands": [S_CYAN],
+        "lines_color": (90, 145, 145, 95),
+        "symbol2": SYM_INK, "symbol2_color": SC_TEAL, "symbol2_pos": "br", "symbol2_size": 14,
+        "desc": "Blank cyan form with a cyan registration band",
+    },
+    "mycelial-form-stock": {
+        "base": "stack", "tint": (238, 226, 160, 255),
+        "header_bands": [S_YELLOW],
+        "symbol": SYM_LEAF, "symbol_color": SC_GREEN, "symbol_pos": "center", "symbol_size": 22,
+        "corner_tab": (S_GREEN, "br"),
+        "desc": "Organic yellow Gleba stock with mycelial mark",
+    },
+    "blank-yellow-form": {
+        "base": "form", "tint": (250, 239, 178, 255),
+        "header_bands": [S_YELLOW],
+        "lines_color": (155, 135, 60, 95),
+        "symbol2": SYM_INK, "symbol2_color": SC_GOLD, "symbol2_pos": "br", "symbol2_size": 14,
+        "desc": "Blank yellow form with a yellow registration band",
+    },
+    "signal-form-stock": {
+        "base": "stack", "tint": (239, 214, 232, 255),
+        "header_bands": [S_MAGENTA],
+        "symbol": SYM_CIRCUIT, "symbol_color": SC_PURPLE, "symbol_pos": "center", "symbol_size": 22,
+        "corner_tab": (S_BLUE, "br"),
+        "desc": "Magenta Fulgora stock with embedded signal traces",
+    },
+    "blank-magenta-form": {
+        "base": "form", "tint": (247, 224, 240, 255),
+        "header_bands": [S_MAGENTA],
+        "lines_color": (155, 95, 135, 95),
+        "symbol2": SYM_INK, "symbol2_color": SC_PINK, "symbol2_pos": "br", "symbol2_size": 14,
+        "desc": "Blank magenta form with a magenta registration band",
+    },
+    "cyan-yellow-form": {
+        "base": "form", "tint": (235, 242, 215, 255),
+        "header_bands": [S_CYAN, S_YELLOW],
+        "symbol": SYM_STAMP_CIRCLE, "symbol_color": SC_DARK, "symbol_pos": "center", "symbol_size": 24,
+        "lines_color": (125, 125, 100, 85),
+        "desc": "Registered cyan-yellow dual-planet form",
+    },
+    "cyan-magenta-form": {
+        "base": "form", "tint": (235, 228, 242, 255),
+        "header_bands": [S_CYAN, S_MAGENTA],
+        "symbol": SYM_STAMP_CIRCLE, "symbol_color": SC_DARK, "symbol_pos": "center", "symbol_size": 24,
+        "lines_color": (120, 105, 135, 85),
+        "desc": "Registered cyan-magenta dual-planet form",
+    },
+    "yellow-magenta-form": {
+        "base": "form", "tint": (244, 226, 210, 255),
+        "header_bands": [S_YELLOW, S_MAGENTA],
+        "symbol": SYM_STAMP_CIRCLE, "symbol_color": SC_DARK, "symbol_pos": "center", "symbol_size": 24,
+        "lines_color": (140, 105, 105, 85),
+        "desc": "Registered yellow-magenta dual-planet form",
+    },
+    "permit-draft": {
+        "base": "paper", "tint": (205, 238, 235, 255),
+        "header_bands": [S_CYAN],
+        "symbol": SYM_HAMMER, "symbol_color": SC_GRAY, "symbol_pos": "center",
+        "symbol2": SYM_PEN, "symbol2_color": SC_DARK, "symbol2_pos": "br",
+        "post_it": True, "post_it_color": (115, 225, 225, 255),
+        "desc": "Tilted cyan Vulcanus permit draft",
+    },
+    "inspection-docket": {
+        "base": "stack", "tint": (213, 242, 238, 255),
+        "header_bands": [S_CYAN],
+        "symbol": SYM_MAGNIFIER, "symbol_color": SC_TEAL, "symbol_pos": "center",
+        "clip": True,
+        "desc": "Clipped cyan Vulcanus inspection docket",
+    },
+    "symbiosis-record": {
+        "base": "form", "tint": (245, 232, 170, 255),
+        "header_bands": [S_YELLOW],
+        "symbol": SYM_LEAF, "symbol_color": SC_GREEN, "symbol_pos": "center",
+        "symbol2": SYM_HANDSHAKE, "symbol2_color": SC_GOLD, "symbol2_pos": "br",
+        "desc": "Yellow Gleba biological symbiosis record",
+    },
+    "conciliation-order": {
+        "base": "form", "tint": (247, 232, 170, 255),
+        "header_bands": [S_YELLOW],
+        "symbol": SYM_HANDSHAKE, "symbol_color": SC_GREEN, "symbol_pos": "center",
+        "symbol2": SYM_GAVEL, "symbol2_color": SC_GOLD, "symbol2_pos": "br",
+        "stamp": (SC_GREEN, "tr"),
+        "desc": "Stamped yellow Gleba conciliation order",
+    },
+    "biochamber-operating-waiver": {
+        "base": "form", "tint": (238, 236, 170, 255),
+        "header_bands": [S_YELLOW, S_GREEN],
+        "symbol": SYM_SHIELD, "symbol_color": SC_GREEN, "symbol_pos": "center",
+        "symbol2": SYM_BIOHAZARD, "symbol2_color": SC_GOLD, "symbol2_pos": "br",
+        "desc": "Yellow-green Gleba biochamber waiver",
+    },
+    "archive-recovery-permit": {
+        "base": "form", "tint": (241, 222, 236, 255),
+        "header_bands": [S_MAGENTA],
+        "symbol": SYM_ARCHIVE, "symbol_color": SC_PURPLE, "symbol_pos": "center",
+        "symbol2": SYM_MAGNIFIER, "symbol2_color": SC_BLUE, "symbol2_pos": "br",
+        "desc": "Magenta Fulgora archive recovery permit",
+    },
+    "digital-processing-certificate": {
+        "base": "form", "tint": (242, 220, 238, 255),
+        "header_bands": [S_MAGENTA],
+        "symbol": SYM_CIRCUIT, "symbol_color": SC_PURPLE, "symbol_pos": "center",
+        "stamp": (SC_GREEN, "tr"),
+        "desc": "Verified magenta digital processing certificate",
+    },
+    "electromagnetic-operating-license": {
+        "base": "form", "tint": (232, 222, 241, 255),
+        "header_bands": [S_MAGENTA, S_BLUE],
+        "symbol": SYM_LIGHTNING, "symbol_color": SC_PURPLE, "symbol_pos": "center",
+        "stamp": (SC_PURPLE, "tr"),
+        "desc": "Magenta-blue electromagnetic operating license",
+    },
+    "data-recovery-order": {
+        "base": "form", "tint": (238, 218, 234, 255),
+        "header_bands": [S_MAGENTA],
+        "symbol": SYM_ARCHIVE, "symbol_color": SC_PURPLE, "symbol_pos": "center",
+        "symbol2": SYM_GEAR, "symbol2_color": SC_DARK, "symbol2_pos": "tr",
+        "hole_punches": 2,
+        "desc": "Punched magenta archive recovery work order",
+    },
+    "hardened-data-vault": {
+        "base": "form", "tint": (218, 225, 236, 255),
+        "header_bands": [S_CYAN, S_MAGENTA],
+        "symbol": SYM_VAULT, "symbol_color": SC_DARK, "symbol_pos": "center",
+        "symbol2": SYM_GEAR, "symbol2_color": SC_PURPLE, "symbol2_pos": "tr",
+        "hole_punches": 2,
+        "desc": "Hardened cyan-magenta data vault order",
+    },
+    "trichromatic-permit": {
+        "base": "form", "tint": (236, 234, 225, 255),
+        "header_bands": [S_CYAN, S_YELLOW, S_MAGENTA],
+        "symbol": SYM_SEAL, "symbol_color": SC_DARK, "symbol_pos": "center",
+        "stamp": (SC_PURPLE, "tr"),
+        "desc": "Official three-color convergence permit",
+    },
+    "unified-operations-charter": {
+        "base": "ledger", "tint": (226, 224, 220, 255),
+        "header_bands": [S_CYAN, S_YELLOW, S_MAGENTA],
+        "symbol": SYM_CROWN, "symbol_color": SC_GOLD, "symbol_pos": "center",
+        "symbol2": SYM_GEAR, "symbol2_color": SC_DARK, "symbol2_pos": "br",
+        "desc": "Bound CMY unified operations charter",
+    },
+    "public-transportation-contract": {
+        "base": "form", "tint": (232, 239, 205, 255),
+        "header_bands": [S_CYAN, S_YELLOW],
+        "symbol": SYM_TRAIN, "symbol_color": SC_TEAL, "symbol_pos": "center",
+        "symbol2": SYM_HANDSHAKE, "symbol2_color": SC_GOLD, "symbol2_pos": "br",
+        "desc": "Cyan-yellow public transportation contract",
+    },
+    "cryogenic-operations-license": {
+        "base": "form", "tint": (222, 239, 246, 255),
+        "header_bands": [S_CYAN, S_YELLOW, S_MAGENTA],
+        "symbol": SYM_SNOWFLAKE, "symbol_color": SC_BLUE, "symbol_pos": "center",
+        "stamp": (SC_TEAL, "tr"),
+        "desc": "Frost-blue Aquilo operations license with CMY authority",
+    },
+    "promethium-research-charter": {
+        "base": "ledger", "tint": (226, 216, 238, 255),
+        "header_bands": [S_CYAN, S_YELLOW, S_MAGENTA],
+        "symbol": SYM_ATOM, "symbol_color": SC_PURPLE, "symbol_pos": "center",
+        "symbol2": SYM_FLASK, "symbol2_color": SC_BLUE, "symbol2_pos": "br",
+        "desc": "Bound CMY Promethium research charter",
+    },
+    "embossed-seal": {
+        "base": "form", "tint": (244, 229, 193, 255),
+        "header_bands": [S_GOLD],
+        "symbol": SYM_SEAL, "symbol_color": SC_GOLD, "symbol_pos": "center", "symbol_size": 30,
+        "stamp": (SC_PURPLE, "tr"),
+        "desc": "Heavy gold embossed notarial seal",
+    },
+    "industrial-charter": {
+        "base": "ledger", "tint": (214, 234, 225, 255),
+        "header_bands": [S_CYAN, S_ORANGE],
+        "symbol": SYM_GEAR, "symbol_color": SC_ORANGE, "symbol_pos": "center",
+        "stamp": (SC_GOLD, "tr"),
+        "desc": "Bound cyan-bronze Vulcanus industrial charter",
+    },
+    "territorial-resettlement-order": {
+        "base": "form", "tint": (220, 234, 220, 255),
+        "header_bands": [S_CYAN, S_ORANGE],
+        "symbol": SYM_GAVEL, "symbol_color": SC_BROWN, "symbol_pos": "center",
+        "symbol2": SYM_PERSON, "symbol2_color": SC_ORANGE, "symbol2_pos": "br",
+        "desc": "Cyan-bronze territorial resettlement order",
+    },
+    "territorial-deed": {
+        "base": "ledger", "tint": (226, 232, 211, 255),
+        "header_bands": [S_CYAN, S_ORANGE],
+        "symbol": SYM_SCALES, "symbol_color": SC_BROWN, "symbol_pos": "center",
+        "symbol2": SYM_SEAL, "symbol2_color": SC_GOLD, "symbol2_pos": "br",
+        "desc": "Bound cyan-bronze territorial deed",
+    },
+    "thermal-process-license": {
+        "base": "form", "tint": (218, 235, 225, 255),
+        "header_bands": [S_CYAN, S_ORANGE],
+        "symbol": SYM_HEAT, "symbol_color": SC_ORANGE, "symbol_pos": "center",
+        "stamp": (SC_GOLD, "tr"),
+        "desc": "Cyan-bronze thermal process license",
+    },
+    "calcite-reagent-waiver": {
+        "base": "form", "tint": (221, 240, 228, 255),
+        "header_bands": [S_CYAN, S_ORANGE],
+        "symbol": SYM_FLASK, "symbol_color": SC_TEAL, "symbol_pos": "center",
+        "symbol2": SYM_SHIELD, "symbol2_color": SC_ORANGE, "symbol2_pos": "br",
+        "desc": "Cyan Vulcanus calcite reagent waiver",
+    },
+    "offworld-metallurgy-charter": {
+        "base": "ledger", "tint": (216, 231, 231, 255),
+        "header_bands": [S_CYAN, S_DARK_BLUE],
+        "symbol": SYM_HAMMER, "symbol_color": SC_TEAL, "symbol_pos": "center",
+        "symbol2": SYM_STAR, "symbol2_color": SC_BLUE, "symbol2_pos": "br",
+        "desc": "Bound cyan offworld metallurgy charter",
+    },
+    "asteroid-processing-docket": {
+        "base": "form", "tint": (218, 228, 239, 255),
+        "header_bands": [S_DARK_BLUE, S_CYAN],
+        "symbol": SYM_ASTEROID, "symbol_color": SC_GRAY, "symbol_pos": "center",
+        "symbol2": SYM_GEAR, "symbol2_color": SC_BLUE, "symbol2_pos": "tr",
+        "hole_punches": 2,
+        "desc": "Punched orbital asteroid processing docket",
+    },
+    "provisional-work-order": {
+        "base": "form", "tint": (248, 222, 178, 255),
+        "header_bands": [S_RED, S_YELLOW],
+        "symbol": SYM_EXCLAIM, "symbol_color": SC_RED, "symbol_pos": "center",
+        "symbol2": SYM_GEAR, "symbol2_color": SC_DARK, "symbol2_pos": "tr",
+        "hole_punches": 2,
+        "desc": "Provisional punched work order",
+    },
+}
+
+ICON_DEFS.update(SPACE_AGE_FORM_ICON_DEFS)
+
 # Technology icons generated from the administrative-bureaucracy paper base.
 # The source icon is projected onto the visible sheet so it sits with the same
 # perspective as the base artwork instead of looking like a flat UI overlay.
@@ -1408,6 +1802,7 @@ def generate_icon(name, defn, output_dir):
     # Generate base image at supersampled size
     generator = BASE_GENERATORS.get(base_type, make_base_paper)
     img, geo = generator(tint)
+    apply_material_finish(img, geo)
 
     # Draw text lines
     if "lines_color" in defn:
@@ -1425,6 +1820,8 @@ def generate_icon(name, defn, output_dir):
     if "stripe2" in defn:
         color, pos = defn["stripe2"]
         draw_stripe(img, color, pos, thickness=_s(0.11), geo=geo)
+    if "header_bands" in defn:
+        draw_header_bands(img, defn["header_bands"], thickness=_s(0.12), geo=geo)
 
     # Corner tab
     if "corner_tab" in defn:
@@ -1509,6 +1906,63 @@ def generate_preview(icons, output_dir):
     return preview_path
 
 
+def discover_form_items(root_dir):
+    """Return forms-* item names and their dedicated generated icon stems."""
+    items = {}
+    item_dir = root_dir / "prototypes" / "item"
+    name_pattern = re.compile(r'\bname\s*=\s*"([^"]+)"')
+    subgroup_pattern = re.compile(r'\bsubgroup\s*=\s*"(forms-[^"]+)"')
+    icon_pattern = re.compile(r'\bicon\s*=\s*item_icons\s*\.\.\s*"([^"]+)\.png"')
+
+    for item_path in sorted(item_dir.glob("*.lua")):
+        current_name = None
+        current_icon = None
+        for line in item_path.read_text(encoding="utf-8").splitlines():
+            name_match = name_pattern.search(line)
+            if name_match:
+                current_name = name_match.group(1)
+                current_icon = None
+            icon_match = icon_pattern.search(line)
+            if icon_match:
+                current_icon = icon_match.group(1)
+            if subgroup_pattern.search(line):
+                if not current_name:
+                    raise RuntimeError(f"form subgroup without preceding item name in {item_path}")
+                items[current_name] = current_icon
+    return items
+
+
+def validate_form_icon_coverage(root_dir, require_files=False):
+    """Fail when a forms-* item lacks a generated definition or committed PNG."""
+    form_items = discover_form_items(root_dir)
+    form_names = set(form_items)
+    missing_defs = sorted(form_names - set(ICON_DEFS))
+    if missing_defs:
+        raise RuntimeError(
+            "form items missing from ICON_DEFS: " + ", ".join(missing_defs)
+        )
+
+    indirect_icons = sorted(
+        name for name, icon_name in form_items.items() if icon_name != name
+    )
+    if indirect_icons:
+        raise RuntimeError(
+            "form items not using their dedicated generated PNG: "
+            + ", ".join(indirect_icons)
+        )
+
+    if require_files:
+        icon_dir = root_dir / "graphics" / "icons"
+        missing_files = sorted(
+            name for name in form_names if not (icon_dir / f"{name}.png").is_file()
+        )
+        if missing_files:
+            raise RuntimeError(
+                "generated form PNGs missing: " + ", ".join(missing_files)
+            )
+    return form_names
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -1525,7 +1979,16 @@ def main():
                         help="Generate technology icons instead of item icons")
     parser.add_argument("--list", action="store_true",
                         help="List all available icon names")
+    parser.add_argument("--check-coverage", action="store_true",
+                        help="Verify every forms-* item has a definition and generated PNG")
     args = parser.parse_args()
+
+    script_dir = Path(__file__).parent.parent
+    form_names = validate_form_icon_coverage(script_dir, require_files=args.check_coverage)
+
+    if args.check_coverage:
+        print(f"Form icon coverage complete: {len(form_names)} items")
+        return
 
     if args.list:
         if args.technology:
@@ -1535,8 +1998,6 @@ def main():
             for name, defn in sorted(ICON_DEFS.items()):
                 print(f"  {name:40s} {defn.get('desc', '')}")
         return
-
-    script_dir = Path(__file__).parent.parent
 
     # Default output to graphics/icons/ or graphics/technology relative to script
     if args.output:

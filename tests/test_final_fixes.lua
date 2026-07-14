@@ -1501,6 +1501,19 @@ test("manager ammo and trajectory array survive the military hiding pass", funct
     "conventional ammo turrets should remain hidden")
 end)
 
+test("Factoriopedia has a dedicated administrative recycling tab", function()
+  local group = assert(data.raw["item-group"]["admin-recycling-group"])
+  assert_eq(group.order, "zc")
+  for _, subgroup_name in ipairs({
+    "archive-recovery-recipes",
+    "form-reassignment-recipes",
+    "form-paper-recycling-recipes",
+  }) do
+    local subgroup = assert(data.raw["item-subgroup"][subgroup_name], subgroup_name .. " missing")
+    assert_eq(subgroup.group, "admin-recycling-group")
+  end
+end)
+
 test("mechanical-printer gets a regulated AM recipe", function()
   local r = get_recipe("mechanical-printer-regulated")
   assert_true(r ~= nil, "mechanical-printer-regulated missing")

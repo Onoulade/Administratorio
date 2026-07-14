@@ -14,8 +14,8 @@ data:extend({
     type = "technology",
     name = "archive-recombination",
     icons = {
-      {icon = "__administratorio__/graphics/icons/office-building.png", icon_size = 64, tint = {r = 0.75, g = 0.58, b = 0.86, a = 1}},
-      {icon = "__administratorio__/graphics/icons/redundant-rubble.png", icon_size = 64, scale = 0.36, shift = {8, 8}},
+      {icon = "__quality__/graphics/icons/recycler.png", icon_size = 64, tint = {r = 0.82, g = 0.68, b = 0.96, a = 1}},
+      {icon = "__administratorio__/graphics/icons/blank-form.png", icon_size = 64, scale = 0.36, shift = {8, 8}},
     },
     prerequisites = {"fulgora-digital-services"},
     effects = {
