@@ -2,39 +2,48 @@ local base_rules = require("prototypes.shared.non_space_age_rules")
 
 local rules = {}
 
-rules.OPERATING_FORM_BY_CATEGORY = {
-  ["oil-processing"] = "chemical-handling-work-order",
-  ["chemistry"] = "chemical-handling-work-order",
-  ["centrifuging"] = "radiological-work-order",
+local function copy_rule_table(source)
+  local copy = {}
+  for name, rule in pairs(source or {}) do
+    copy[name] = {form = rule.form, exempt = rule.exempt}
+  end
+  return copy
+end
+
+rules.OPERATING_FORM_CONFIG = {
+  categories = copy_rule_table(base_rules.OPERATING_FORM_CONFIG.categories),
+  recipes = copy_rule_table(base_rules.OPERATING_FORM_CONFIG.recipes),
 }
 
-rules.OPERATING_FORM_BY_RECIPE = {
-  ["advanced-oil-processing"] = "chemical-handling-work-order",
-  ["coal-liquefaction"] = "chemical-handling-work-order",
-}
-rules.OPERATING_FORM_EXEMPT_BY_CATEGORY = {
-  ["metallurgy"] = true,
-  ["organic"] = true,
-  ["electromagnetics"] = true,
-  ["cryogenics"] = true,
-  ["bureaucracy-certification"] = true,
-  ["bureaucracy-conciliation"] = true,
-  ["orbital-bureaucracy"] = true,
-}
-rules.OPERATING_FORM_EXEMPT_BY_RECIPE = {
-  ["foundry"] = true,
-  ["biochamber"] = true,
-  ["electromagnetic-plant"] = true,
-  ["cryogenic-plant"] = true,
-  ["plastic-bar-vulcanus"] = true,
-  ["heatproof-paper-production"] = true,
-  ["liquid-stimulant-production"] = true,
-  ["liquid-coffee-vulcanus"] = true,
-  ["notary-office"] = true,
-  ["territorial-arbitration-post"] = true,
-  ["capture-bureau"] = true,
-  ["conciliation-desk"] = true,
-}
+rules.OPERATING_FORM_CONFIG.categories["oil-processing"] = {form = "chemical-handling-work-order"}
+for _, category in ipairs({
+  "metallurgy",
+  "organic",
+  "electromagnetics",
+  "cryogenics",
+  "bureaucracy-certification",
+  "bureaucracy-conciliation",
+  "orbital-bureaucracy",
+}) do
+  rules.OPERATING_FORM_CONFIG.categories[category] = {exempt = true}
+end
+
+for _, recipe_name in ipairs({
+  "foundry",
+  "biochamber",
+  "electromagnetic-plant",
+  "cryogenic-plant",
+  "plastic-bar-vulcanus",
+  "heatproof-paper-production",
+  "liquid-stimulant-production",
+  "liquid-coffee-vulcanus",
+  "notary-office",
+  "territorial-arbitration-post",
+  "capture-bureau",
+  "conciliation-desk",
+}) do
+  rules.OPERATING_FORM_CONFIG.recipes[recipe_name] = {exempt = true}
+end
 rules.TAXPAYER_MONEY_COSTS = base_rules.TAXPAYER_MONEY_COSTS
 
 function rules.get_required_form(recipe_name)

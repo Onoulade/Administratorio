@@ -1486,6 +1486,15 @@ end
 -- Regression guard: explicit equipment overrides must be ignored by final-fixes.
 shared.BATCH_MULTIPLIERS["battery-equipment"] = 99
 
+-- Mirror data.lua's ownership capture while loading Administratorio fixtures.
+-- The hand-built recipes above represent vanilla/Space Age input and must not
+-- be registered as Administratorio recipes.
+local extend_prototypes = data.extend
+function data:extend(prototypes)
+  shared.register_admin_recipe_prototypes(prototypes)
+  return extend_prototypes(self, prototypes)
+end
+
 dofile(mod_root .. "prototypes/categories.lua")
 
 dofile(mod_root .. "prototypes/item/groups.lua")
@@ -1503,6 +1512,7 @@ dofile(mod_root .. "prototypes/recipe/economy.lua")
 dofile(mod_root .. "prototypes/recipe/resolution.lua")
 dofile(mod_root .. "prototypes/recipe/modules.lua")
 dofile(mod_root .. "prototypes/technology.lua")
+data.extend = extend_prototypes
 dofile(mod_root .. "data-final-fixes.lua")
 
 -------------------------------------------------------------------------------
