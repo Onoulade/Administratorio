@@ -2085,18 +2085,27 @@ test("Space Age keeps the admin desk on Nauvis", function()
   end
 end)
 
-test("Space Age issues loose taxpayer money only on Nauvis", function()
-  for _, recipe_name in ipairs({"treasury-bond", "taxpayer-money"}) do
-    local recipe = get_recipe(recipe_name)
-    assert_true(recipe ~= nil, recipe_name .. " missing")
-    assert_true(recipe.surface_conditions ~= nil, recipe_name .. " should be surface-limited")
-    assert_eq(recipe.surface_conditions[1].property, "pressure", recipe_name .. " should use Nauvis pressure")
-    assert_eq(recipe.surface_conditions[1].min, 1000, recipe_name .. " should require Nauvis pressure")
-    assert_eq(recipe.surface_conditions[1].max, 1000, recipe_name .. " should require Nauvis pressure")
-    assert_eq(recipe.surface_conditions[2].property, "gravity", recipe_name .. " should use Nauvis gravity")
-    assert_eq(recipe.surface_conditions[2].min, 10, recipe_name .. " should require Nauvis gravity")
-    assert_eq(recipe.surface_conditions[2].max, 10, recipe_name .. " should require Nauvis gravity")
-  end
+test("Space Age securitizes taxpayer money only on Nauvis", function()
+  local recipe = get_recipe("treasury-bond")
+  assert_true(recipe ~= nil, "treasury-bond missing")
+  assert_true(recipe.surface_conditions ~= nil, "treasury-bond should be surface-limited")
+  assert_eq(recipe.surface_conditions[1].property, "pressure", "treasury-bond should use Nauvis pressure")
+  assert_eq(recipe.surface_conditions[1].min, 1000, "treasury-bond should require Nauvis pressure")
+  assert_eq(recipe.surface_conditions[1].max, 1000, "treasury-bond should require Nauvis pressure")
+  assert_eq(recipe.surface_conditions[2].property, "gravity", "treasury-bond should use Nauvis gravity")
+  assert_eq(recipe.surface_conditions[2].min, 10, "treasury-bond should require Nauvis gravity")
+  assert_eq(recipe.surface_conditions[2].max, 10, "treasury-bond should require Nauvis gravity")
+end)
+
+test("Space Age replaces slush-fund laundering with tourism revenue", function()
+  assert_eq(get_recipe("slush-fund-production"), nil,
+    "Space Age should not register slush-fund production")
+  assert_eq(get_recipe("tax-audit"), nil,
+    "Space Age should not register the taxpayer-money laundering payout")
+  assert_eq(technologies["creative-accounting"], nil,
+    "Space Age should not expose a technology whose only purpose is laundering")
+  assert_true(not tech_unlocks_recipe("eminent-domain-zoning", "slush-fund-production"),
+    "eminent-domain-zoning should not unlock slush funds in Space Age")
 end)
 
 test("taxpayer money is accepted by regular burners", function()
