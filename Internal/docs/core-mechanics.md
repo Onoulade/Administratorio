@@ -160,8 +160,8 @@ From there, the workforce branches out to the Formation Center, Biter Employment
 ## Current State
 
 - **Status:** Beta. The main progression path and runtime systems are ready for broader playtesting, while balance, compatibility, translations, and late-game polish remain active work.
-- **Incompatible with:** Space Age and Quality.
+- **Compatible with:** Space Age and the optional native Quality dependency.
 - **Requires:** Factorio 2.0.
-- **Compatibility on the radar:** Space Age and Quality are pending approval.
+- **Quality integration:** rethemed as Administrative Certification. It keeps native grades and probabilities, gives selected facilities explicitly documented metrics, and leaves permit strength, paperwork yield, pneumatic hardware, archive/territorial/orbital systems, and MMMM mechanics unchanged.
 
 **Note on planning mods:** The Working Hours shutdown is runtime logic, so planner mods like Factory Planner will mis-model those buildings unless you account for it manually. If you prefer planner accuracy over the day/night subplot, disable Working Hours in startup settings.
