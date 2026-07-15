@@ -40,16 +40,23 @@ check(
     "Gleba should allow its deliberate staffing seeds",
 )
 
-targets = planet_escape.add_profile_targets(
+fulgora_targets = planet_escape.add_profile_targets(
     [("rocket-part", Fraction(100))],
     ["bootstrap", "native-machine", "colored-form", "aquilo-fax"],
-    ["fulgora", "aquilo"],
+    ["fulgora"],
 )
-target_names = {name for name, _ in targets}
+target_names = {name for name, _ in fulgora_targets}
 for required in {
-    "admin-station", "printer-t1", "electromagnetic-plant", "cryogenic-plant",
-    "blank-magenta-form", "thermal-transfer-sheet", "interplanetary-fax-exchange",
+    "printer-t1", "electromagnetic-plant", "blank-magenta-form",
 }:
     check(required in target_names, f"missing named-profile target {required}")
+check("admin-station" not in target_names, "Fulgora bootstrap must not require a Nauvis Admin Desk")
+check("cryogenic-plant" not in target_names, "Fulgora must not inherit Aquilo's native-machine target")
+
+nauvis_targets = planet_escape.add_profile_targets(
+    [], ["bootstrap"], ["nauvis"],
+)
+check("admin-station" in {name for name, _ in nauvis_targets},
+      "Nauvis bootstrap must retain the Admin Desk target")
 
 print("Planet escape import-policy tests passed")

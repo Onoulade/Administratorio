@@ -97,7 +97,12 @@ data = {
       },
     },
     recipe = {
-      foundry = {type = "recipe", name = "foundry", ingredients = {}},
+      foundry = {
+        type = "recipe",
+        name = "foundry",
+        surface_conditions = {{property = "pressure", min = 4000, max = 4000}},
+        ingredients = {},
+      },
       biochamber = {type = "recipe", name = "biochamber", ingredients = {}},
       ["electromagnetic-plant"] = {type = "recipe", name = "electromagnetic-plant", ingredients = {}},
       ["cryogenic-plant"] = {type = "recipe", name = "cryogenic-plant", ingredients = {}},
@@ -231,6 +236,7 @@ package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 dofile(mod_root .. "prototypes/item/capsules-and-fluids.lua")
 dofile(mod_root .. "prototypes/item/space_age.lua")
 dofile(mod_root .. "prototypes/recipe/space_age.lua")
+dofile(mod_root .. "prototypes/recipe/planetary_abundance.lua")
 dofile(mod_root .. "prototypes/entity/space_age.lua")
 dofile(mod_root .. "prototypes/technology/space_age.lua")
 
@@ -509,11 +515,12 @@ test("planet helper exposes exact basic-planet conditions and abundance outputs"
   assert_eq(planets.BASIC_PLANET_ABUNDANCE.fulgora, "useless-documentation", "fulgora abundance should be useless-documentation")
 end)
 
-test("vulcanus printer and notary split is present and surface-limited", function()
+test("vulcanus local inputs and notary split are present and surface-limited", function()
   local required = {
     "paper-production-vulcanus",
     "carbon-offset-certificate-basic-vulcanus",
-    "printer-t1-vulcanus",
+    "provisional-approval-vulcanus",
+    "compacted-rubble-production-vulcanus",
     "dubious-data-analysis-vulcanus",
     "research-grant-approval-vulcanus",
     "administrative-science-pack-production-vulcanus",
@@ -583,19 +590,19 @@ test("chromatic printer and liquid black ink are excluded from Aquilo", function
   assert_eq(printer_entity.surface_conditions[1].min, 301, "chromatic-printer entity should exclude Aquilo placement")
 end)
 
-test("offworld recipe variants keep vulcanus paperwork gates off the home planet", function()
-  assert_true(data.raw.recipe["foundry"].surface_conditions ~= nil, "foundry should be home-planet limited")
-  assert_true(data.raw.recipe["foundry-offworld"].surface_conditions ~= nil, "foundry-offworld should be surface-limited")
+test("offworld variants cover materials, not Foundry construction", function()
+  assert_eq(#data.raw.recipe["foundry"].surface_conditions, 1,
+    "foundry should retain the single vanilla surface condition")
+  assert_eq(data.raw.recipe["foundry"].surface_conditions[1].property, "pressure",
+    "foundry should retain vanilla pressure gating")
+  assert_eq(data.raw.recipe["foundry"].surface_conditions[1].min, 4000,
+    "foundry should be restricted to Vulcanus pressure")
+  assert_eq(data.raw.recipe["foundry"].surface_conditions[1].max, 4000,
+    "foundry should retain vanilla maximum pressure")
   assert_true(has_ingredient(data.raw.recipe["foundry"], "licensed-notary"), "foundry should require licensed-notary")
   assert_true(has_ingredient(data.raw.recipe["foundry"], "tungsten-carbide"), "foundry should require tungsten-carbide")
-  assert_true(has_ingredient(data.raw.recipe["foundry-offworld"], "offworld-metallurgy-charter"),
-    "foundry-offworld should require the offworld charter")
-  assert_true(has_ingredient(data.raw.recipe["foundry-offworld"], "licensed-notary"),
-    "foundry-offworld should require licensed-notary")
-  assert_true(has_ingredient(data.raw.recipe["foundry-offworld"], "tungsten-carbide"),
-    "foundry-offworld should require tungsten-carbide")
-  assert_true(not has_ingredient(data.raw.recipe["foundry"], "offworld-metallurgy-charter"),
-    "home-planet foundry should not consume the offworld charter")
+  assert_true(data.raw.recipe["foundry-offworld"] == nil,
+    "foundry must not have a separate offworld construction recipe")
 end)
 
 test("licensed notary training moves earlier but stays Nauvis-only", function()
@@ -634,11 +641,9 @@ test("licensed notary training moves earlier but stays Nauvis-only", function()
   assert_true(export_unlocks["offworld-metallurgy-charter"], "vulcanus-export-charters should unlock offworld-metallurgy-charter")
 end)
 
-test("gleba alternates are surface-limited and keep the yellow family compact", function()
+test("gleba ingredient routes are surface-limited and keep the yellow family compact", function()
   local required = {
-    "admin-station-gleba",
-    "printer-t1-gleba",
-    "corporate-breakroom-gleba",
+    "construction-permit-gleba",
     "administrative-science-pack-production-gleba",
     "capture-bureau",
     "capture-bureau-pentapod-eggs",
@@ -647,7 +652,6 @@ test("gleba alternates are surface-limited and keep the yellow family compact", 
     "blank-yellow-form-production",
     "symbiosis-record",
     "conciliation-order",
-    "biochamber-operating-waiver",
   }
 
   for _, recipe_name in ipairs(required) do
@@ -667,18 +671,27 @@ test("gleba alternates are surface-limited and keep the yellow family compact", 
     "rocket-control-unit-gleba should stay absent")
   assert_true(data.raw.recipe["rocket-silo-gleba"] == nil,
     "rocket-silo-gleba should stay absent")
+  for _, recipe_name in ipairs({
+    "admin-station-gleba",
+    "printer-t1-gleba",
+    "corporate-breakroom-gleba",
+    "propaganda-distillery-vulcanus",
+    "foundry-offworld",
+  }) do
+    assert_true(data.raw.recipe[recipe_name] == nil, recipe_name .. " must not duplicate a building recipe")
+  end
 end)
 
-test("gleba offworld bio exports keep paperwork off the home planet", function()
+test("vanilla gleba bio recipes remain unmodified and uncloned", function()
   for _, recipe_name in ipairs({"rocket-fuel-from-jelly", "bioplastic", "biosulfur", "biolubricant"}) do
     local source = assert(data.raw.recipe[recipe_name], recipe_name .. " missing")
-    local clone = assert(data.raw.recipe[recipe_name .. "-offworld"], recipe_name .. "-offworld missing")
-    assert_true(source.surface_conditions ~= nil, recipe_name .. " should stay home-planet limited")
-    assert_true(has_ingredient(clone, "biochamber-operating-waiver"),
-      recipe_name .. "-offworld should require biochamber-operating-waiver")
-    assert_true(not has_ingredient(source, "biochamber-operating-waiver"),
-      recipe_name .. " should not consume biochamber-operating-waiver on Gleba")
+    assert_true(source.surface_conditions == nil,
+      recipe_name .. " should retain its vanilla surface conditions")
+    assert_true(data.raw.recipe[recipe_name .. "-offworld"] == nil,
+      recipe_name .. " must not gain an offworld clone")
   end
+  assert_true(data.raw.item["biochamber-operating-waiver"] == nil,
+    "obsolete offworld Biochamber paperwork should not exist")
 end)
 
 test("fulgora bureau and magenta paperwork stay on fulgora", function()

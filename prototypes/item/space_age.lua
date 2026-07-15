@@ -420,17 +420,6 @@ data:extend({
   },
   {
     type = "item",
-    name = "biochamber-operating-waiver",
-    icon = item_icons .. "biochamber-operating-waiver.png",
-    icon_size = 64,
-    subgroup = "forms-permits",
-    order = "di",
-    stack_size = 100,
-    spoil_ticks = 36000,
-    spoil_result = "paper",
-  },
-  {
-    type = "item",
     name = "archive-recovery-permit",
     icon = item_icons .. "archive-recovery-permit.png",
     icon_size = 64,

@@ -140,9 +140,8 @@ Working names and roles:
 - `blank-yellow-form`: yellow substrate for final paperwork
 - `symbiosis-record`: registry and bookkeeping form for local biological handling
 - `conciliation-order`: narrow exception-order form for living-target and facility handling
-- `biochamber-operating-waiver`: build-time or process-time biochamber permission
 
-All of these should be short-lived and spoil back into `paper`.
+The perishable forms should be short-lived and spoil back into `paper`.
 
 ## Planned Enemy And Workforce Loop
 

@@ -31,7 +31,12 @@ local function assert_near(actual, expected, epsilon, msg)
 end
 
 local recipes = {
-  foundry = {type = "recipe", name = "foundry", ingredients = {{type = "item", name = "steel-plate", amount = 50}}},
+  foundry = {
+    type = "recipe",
+    name = "foundry",
+    surface_conditions = {{property = "pressure", min = 4000, max = 4000}},
+    ingredients = {{type = "item", name = "steel-plate", amount = 50}},
+  },
   ["tungsten-plate"] = {type = "recipe", name = "tungsten-plate", ingredients = {{type = "item", name = "tungsten-ore", amount = 4}}},
   ["tungsten-carbide"] = {type = "recipe", name = "tungsten-carbide", ingredients = {{type = "item", name = "tungsten-plate", amount = 2}}},
   ["casting-low-density-structure"] = {type = "recipe", name = "casting-low-density-structure", ingredients = {{type = "item", name = "plastic-bar", amount = 20}}},
@@ -44,7 +49,12 @@ local recipes = {
   ["molten-copper"] = {type = "recipe", name = "molten-copper", ingredients = {{type = "item", name = "calcite", amount = 1}}},
   ["molten-copper-from-lava"] = {type = "recipe", name = "molten-copper-from-lava", ingredients = {{type = "item", name = "calcite", amount = 1}}},
   ["simple-coal-liquefaction"] = {type = "recipe", name = "simple-coal-liquefaction", ingredients = {{type = "item", name = "calcite", amount = 1}}},
-  ["acid-neutralisation"] = {type = "recipe", name = "acid-neutralisation", ingredients = {{type = "item", name = "calcite", amount = 1}}},
+  ["acid-neutralisation"] = {
+    type = "recipe",
+    name = "acid-neutralisation",
+    surface_conditions = {{property = "pressure", min = 4000, max = 4000}},
+    ingredients = {{type = "item", name = "calcite", amount = 1}},
+  },
   ["rocket-fuel-from-jelly"] = {type = "recipe", name = "rocket-fuel-from-jelly", ingredients = {{type = "item", name = "jelly", amount = 1}}},
   ["bioplastic"] = {type = "recipe", name = "bioplastic", ingredients = {{type = "item", name = "bioflux", amount = 1}}},
   ["biosulfur"] = {type = "recipe", name = "biosulfur", ingredients = {{type = "item", name = "bioflux", amount = 1}}},
@@ -376,13 +386,14 @@ test("vacuum infrastructure uses one dedicated orbital permit", function()
   end
 end)
 
-test("native Space Age buildings consume planet-specific specialists", function()
+test("native Space Age buildings use one canonical construction recipe", function()
   assert_true(has_ingredient(recipes["foundry"], "licensed-notary"), "foundry should require licensed-notary")
   assert_true(has_ingredient(recipes["foundry"], "tungsten-carbide"), "foundry should require tungsten-carbide")
-  assert_true(not has_ingredient(recipes["foundry"], "offworld-metallurgy-charter"), "home-planet foundry should not require offworld-metallurgy-charter")
-  assert_true(has_ingredient(recipes["foundry-offworld"], "licensed-notary"), "offworld foundry should still require licensed-notary")
-  assert_true(has_ingredient(recipes["foundry-offworld"], "tungsten-carbide"), "offworld foundry should require tungsten-carbide")
-  assert_true(has_ingredient(recipes["foundry-offworld"], "offworld-metallurgy-charter"), "offworld foundry should require offworld-metallurgy-charter")
+  assert_eq(#recipes["foundry"].surface_conditions, 1, "foundry should retain the single vanilla surface condition")
+  assert_eq(recipes["foundry"].surface_conditions[1].property, "pressure", "foundry should retain vanilla pressure gating")
+  assert_eq(recipes["foundry"].surface_conditions[1].min, 4000, "foundry should retain vanilla minimum pressure")
+  assert_eq(recipes["foundry"].surface_conditions[1].max, 4000, "foundry should retain vanilla maximum pressure")
+  assert_true(recipes["foundry-offworld"] == nil, "foundry must not have an offworld construction variant")
   assert_true(has_ingredient(recipes["notary-office"], "licensed-notary"), "notary-office should require licensed-notary")
   assert_true(has_ingredient(recipes["territorial-arbitration-post"], "licensed-notary"),
     "territorial-arbitration-post should require licensed-notary")
@@ -417,19 +428,18 @@ test("chromatic printing unlocks the base chromatic chains across planets", func
   end
 end)
 
-test("vulcanus early bootstrap unlocks local dubious data and research grants before chromatic printing", function()
+test("vulcanus early bootstrap supplies canonical building ingredients", function()
   local calcite = technologies["calcite-processing"]
   local admin_research = technologies["administrative-science-research"]
-  local printing = technologies["printing-technology"]
   assert_true(calcite ~= nil, "calcite-processing missing")
   assert_true(admin_research ~= nil, "administrative-science-research missing")
-  assert_true(printing ~= nil, "printing-technology missing")
   assert_true(tech_unlocks_recipe(calcite, "dubious-data-analysis-vulcanus"), "calcite-processing should unlock dubious-data-analysis-vulcanus")
   assert_true(tech_unlocks_recipe(calcite, "paper-production-vulcanus"), "calcite-processing should unlock paper-production-vulcanus")
   assert_true(tech_unlocks_recipe(calcite, "carbon-offset-certificate-basic-vulcanus"), "calcite-processing should unlock carbon-offset-certificate-basic-vulcanus")
   assert_true(tech_unlocks_recipe(admin_research, "research-grant-approval-vulcanus"), "administrative-science-research should unlock research-grant-approval-vulcanus")
   assert_true(tech_unlocks_recipe(admin_research, "administrative-science-pack-production-vulcanus"), "administrative-science-research should unlock administrative-science-pack-production-vulcanus")
-  assert_true(tech_unlocks_recipe(printing, "printer-t1-vulcanus"), "printing-technology should unlock printer-t1-vulcanus")
+  assert_true(tech_unlocks_recipe(admin_research, "provisional-approval-vulcanus"), "administrative-science-research should unlock provisional-approval-vulcanus")
+  assert_true(recipes["printer-t1-vulcanus"] == nil, "printer-t1 must keep one canonical recipe")
 end)
 
 test("vulcanus certification unlocks the notary office and fallback paperwork", function()
@@ -528,33 +538,29 @@ test("vulcanus chemistry unlocks local stimulant and paper shortcuts", function(
   end
 end)
 
-test("off-world vulcanus anchor recipes require shipped chromatic paperwork", function()
-  assert_true(not has_ingredient(recipes["tungsten-plate"], "thermal-process-license"), "home-planet tungsten-plate should not require thermal-process-license")
-  assert_true(not has_ingredient(recipes["tungsten-carbide"], "thermal-process-license"), "home-planet tungsten-carbide should not require thermal-process-license")
-  assert_true(has_ingredient(recipes["tungsten-plate-offworld"], "thermal-process-license"), "tungsten-plate-offworld should require thermal-process-license")
-  assert_true(has_ingredient(recipes["tungsten-carbide-offworld"], "thermal-process-license"), "tungsten-carbide-offworld should require thermal-process-license")
-  assert_true(not has_ingredient(recipes["casting-low-density-structure"], "offworld-metallurgy-charter"), "home-planet LDS casting should not require offworld-metallurgy-charter")
-  assert_true(has_ingredient(recipes["casting-low-density-structure-offworld"], "offworld-metallurgy-charter"), "casting-low-density-structure-offworld should require offworld-metallurgy-charter")
+test("vanilla Vulcanus process recipes and restrictions stay untouched", function()
   for _, recipe_name in ipairs({
-    "molten-iron-offworld",
-    "molten-iron-from-lava-offworld",
-    "molten-copper-offworld",
-    "molten-copper-from-lava-offworld",
-    "simple-coal-liquefaction-offworld",
-    "acid-neutralisation-offworld",
-  }) do
-    assert_true(has_ingredient(recipes[recipe_name], "calcite-reagent-waiver"), recipe_name .. " should require calcite-reagent-waiver")
-  end
-  for _, recipe_name in ipairs({
+    "tungsten-plate",
+    "tungsten-carbide",
     "molten-iron",
     "molten-iron-from-lava",
     "molten-copper",
     "molten-copper-from-lava",
     "simple-coal-liquefaction",
-    "acid-neutralisation",
+    "casting-low-density-structure",
   }) do
-    assert_true(not has_ingredient(recipes[recipe_name], "calcite-reagent-waiver"), recipe_name .. " should stay clean on Vulcanus")
+    assert_true(recipes[recipe_name].surface_conditions == nil,
+      recipe_name .. " should retain its unrestricted vanilla recipe prototype")
+    assert_true(recipes[recipe_name .. "-offworld"] == nil,
+      recipe_name .. " must not gain an offworld clone")
   end
+  local neutralisation = recipes["acid-neutralisation"]
+  assert_eq(#neutralisation.surface_conditions, 1, "acid-neutralisation should retain one vanilla condition")
+  assert_eq(neutralisation.surface_conditions[1].property, "pressure", "acid-neutralisation should retain pressure gating")
+  assert_eq(neutralisation.surface_conditions[1].min, 4000, "acid-neutralisation should retain Vulcanus pressure")
+  assert_eq(neutralisation.surface_conditions[1].max, 4000, "acid-neutralisation should retain Vulcanus pressure")
+  assert_true(recipes["acid-neutralisation-offworld"] == nil,
+    "acid-neutralisation must retain its vanilla Vulcanus isolation")
 end)
 
 test("workforce tech owns the workforce progression unlocks", function()
@@ -788,7 +794,6 @@ test("gleba conciliation unlocks the yellow chain and gleba specialist buildings
     "blank-yellow-form-production",
     "symbiosis-record",
     "conciliation-order",
-    "biochamber-operating-waiver",
   }) do
     assert_true(tech_unlocks_recipe(gleba, recipe_name), "gleba-conciliation should unlock " .. recipe_name)
   end
@@ -930,7 +935,6 @@ test("gleba chromatic chain defines amber sap and printer-fed yellow forms", fun
   assert_true(items["blank-yellow-form"] ~= nil, "blank-yellow-form missing")
   assert_true(items["symbiosis-record"] ~= nil, "symbiosis-record missing")
   assert_true(items["conciliation-order"] ~= nil, "conciliation-order missing")
-  assert_true(items["biochamber-operating-waiver"] ~= nil, "biochamber-operating-waiver missing")
 
   assert_true(has_fluid_ingredient(recipes["yellow-ink-production"], "amber-sap"), "yellow-ink should consume amber-sap")
   assert_true(has_ingredient(recipes["yellow-ink-production"], "nutrients"), "yellow-ink should consume nutrients")
@@ -938,14 +942,12 @@ test("gleba chromatic chain defines amber sap and printer-fed yellow forms", fun
   assert_true(has_fluid_ingredient(recipes["blank-yellow-form-production"], "yellow-ink"), "blank-yellow-form should consume yellow-ink")
 end)
 
-test("gleba adds targeted alternates instead of a duplicated paperwork ladder", function()
+test("gleba adds targeted ingredients instead of duplicate building recipes", function()
   for _, recipe_name in ipairs({
     "amber-sap-nonsense-seeding",
     "ink-production-gleba",
     "carbon-offset-certificate-basic-gleba",
-    "admin-station-gleba",
-    "printer-t1-gleba",
-    "corporate-breakroom-gleba",
+    "construction-permit-gleba",
     "administrative-science-pack-production-gleba",
     "capture-bureau",
   }) do
@@ -953,7 +955,16 @@ test("gleba adds targeted alternates instead of a duplicated paperwork ladder", 
   end
 
   assert_true(has_ingredient(recipes["capture-bureau"], "worker-biter"), "capture-bureau should require worker-biter")
+  assert_true(has_ingredient(recipes["capture-bureau"], "construction-permit"), "capture-bureau should use Gleba's local construction permit route")
+  assert_true(not has_ingredient(recipes["capture-bureau"], "admin-station"), "capture-bureau must not import a Nauvis admin desk")
   assert_true(has_ingredient(recipes["capture-bureau"], "construction-work-order"), "capture-bureau should require imported construction paperwork")
+  for _, recipe_name in ipairs({
+    "admin-station-gleba",
+    "printer-t1-gleba",
+    "corporate-breakroom-gleba",
+  }) do
+    assert_true(recipes[recipe_name] == nil, recipe_name .. " must not duplicate a building recipe")
+  end
   assert_true(recipes["management-approval-written-gleba"] == nil, "management-approval-written-gleba should not exist")
   assert_true(recipes["management-approval-verbal-gleba"] == nil, "management-approval-verbal-gleba should not exist")
   assert_true(recipes["research-grant-approval-gleba"] == nil, "research-grant-approval-gleba should not exist")
@@ -964,17 +975,15 @@ test("gleba adds targeted alternates instead of a duplicated paperwork ladder", 
   assert_true(recipes["rocket-silo-gleba"] == nil, "rocket-silo-gleba should not exist")
 end)
 
-test("gleba offworld bio variants require the operating waiver", function()
-  for _, recipe_name in ipairs({
-    "rocket-fuel-from-jelly-offworld",
-    "bioplastic-offworld",
-    "biosulfur-offworld",
-    "biolubricant-offworld",
-  }) do
-    assert_true(recipes[recipe_name] ~= nil, recipe_name .. " missing")
-    assert_true(has_ingredient(recipes[recipe_name], "biochamber-operating-waiver"),
-      recipe_name .. " should require biochamber-operating-waiver")
+test("vanilla Gleba bio recipes stay untouched and uncloned", function()
+  for _, recipe_name in ipairs({"rocket-fuel-from-jelly", "bioplastic", "biosulfur", "biolubricant"}) do
+    assert_true(recipes[recipe_name].surface_conditions == nil,
+      recipe_name .. " should retain its unrestricted vanilla recipe prototype")
+    assert_true(recipes[recipe_name .. "-offworld"] == nil,
+      recipe_name .. " must not gain an offworld clone")
   end
+  assert_true(items["biochamber-operating-waiver"] == nil,
+    "obsolete offworld Biochamber paperwork should not exist")
 end)
 
 test("fulgora digital services unlocks the bureau and finalized digital paperwork", function()

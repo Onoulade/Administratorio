@@ -1524,13 +1524,6 @@ SPACE_AGE_FORM_ICON_DEFS = {
         "stamp": (SC_GREEN, "tr"),
         "desc": "Stamped yellow Gleba conciliation order",
     },
-    "biochamber-operating-waiver": {
-        "base": "form", "tint": (238, 236, 170, 255),
-        "header_bands": [S_YELLOW, S_GREEN],
-        "symbol": SYM_SHIELD, "symbol_color": SC_GREEN, "symbol_pos": "center",
-        "symbol2": SYM_BIOHAZARD, "symbol2_color": SC_GOLD, "symbol2_pos": "br",
-        "desc": "Yellow-green Gleba biochamber waiver",
-    },
     "archive-recovery-permit": {
         "base": "form", "tint": (241, 222, 236, 255),
         "header_bands": [S_MAGENTA],

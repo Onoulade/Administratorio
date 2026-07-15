@@ -289,7 +289,6 @@ if space_age_enabled then
   shared.PAPERWORK_ITEMS["offworld-metallurgy-charter"] = true
   shared.PAPERWORK_ITEMS["symbiosis-record"] = true
   shared.PAPERWORK_ITEMS["conciliation-order"] = true
-  shared.PAPERWORK_ITEMS["biochamber-operating-waiver"] = true
   shared.PAPERWORK_ITEMS["archive-recovery-permit"] = true
   shared.PAPERWORK_ITEMS["digital-processing-certificate"] = true
   shared.PAPERWORK_ITEMS["electromagnetic-operating-license"] = true
@@ -322,7 +321,6 @@ if space_age_enabled then
   shared.FORM_PRODUCTION_RECIPES["offworld-metallurgy-charter"] = "offworld-metallurgy-charter"
   shared.FORM_PRODUCTION_RECIPES["symbiosis-record"] = "symbiosis-record"
   shared.FORM_PRODUCTION_RECIPES["conciliation-order"] = "conciliation-order"
-  shared.FORM_PRODUCTION_RECIPES["biochamber-operating-waiver"] = "biochamber-operating-waiver"
   shared.FORM_PRODUCTION_RECIPES["archive-recovery-permit"] = "archive-recovery-permit"
   shared.FORM_PRODUCTION_RECIPES["digital-processing-certificate"] = "digital-processing-certificate"
   shared.FORM_PRODUCTION_RECIPES["electromagnetic-operating-license"] = "electromagnetic-operating-license"

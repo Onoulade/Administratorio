@@ -59,7 +59,6 @@ M.restricted_documents = {
   ["calcite-reagent-waiver"] = true,
   ["offworld-metallurgy-charter"] = true,
   ["conciliation-order"] = true,
-  ["biochamber-operating-waiver"] = true,
   ["archive-recovery-permit"] = true,
   ["digital-processing-certificate"] = true,
   ["electromagnetic-operating-license"] = true,
