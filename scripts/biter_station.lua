@@ -56,8 +56,10 @@ local function get_worker_entity_name()
   else return WORKER_ENTITY_NAME end
 end
 
-local function get_dispatch_salary()
-  return get_crafts_tier()
+local function get_dispatch_salary(enablement_count)
+  local tier_salary = get_crafts_tier()
+  if enablement_count == nil then return tier_salary end
+  return math.min(tier_salary, math.max(1, enablement_count))
 end
 local MIN_PHASE_TRAVEL_DISTANCE = 0.75
 local PHASE_STUCK_TIMEOUT_TICKS = 90
@@ -412,7 +414,7 @@ local function has_station_inputs(station)
   if not inv then return false, false, false end
 
   local has_worker = inv.get_item_count(WORKER_ITEM_NAME) > 0
-  local has_money = inv.get_item_count(MONEY_ITEM_NAME) >= get_dispatch_salary()
+  local has_money = inv.get_item_count(MONEY_ITEM_NAME) >= C.BITER_STATION_SALARY
   local has_coffee = has_dispatch_coffee(station)
   return has_worker, has_money, has_coffee
 end
@@ -1241,10 +1243,10 @@ local function dispatch_single_station_biter(station, queue)
     return false
   end
 
+  local dispatch_salary = get_dispatch_salary(#queue)
   local salary_paid = false
   if dispatch_requires_coffee(station) then
-    local salary = get_dispatch_salary()
-    if inv.remove({name = MONEY_ITEM_NAME, count = salary}) < salary then
+    if inv.remove({name = MONEY_ITEM_NAME, count = dispatch_salary}) < dispatch_salary then
       biter.destroy()
       maybe_reinsert_worker(station)
       set_station_status(station, "biter-station-no-money")
@@ -1255,7 +1257,7 @@ local function dispatch_single_station_biter(station, queue)
 
   if not remove_dispatch_coffee(station) then
     if salary_paid then
-      inv.insert({name = MONEY_ITEM_NAME, count = get_dispatch_salary()})
+      inv.insert({name = MONEY_ITEM_NAME, count = dispatch_salary})
     end
     biter.destroy()
     maybe_reinsert_worker(station)
@@ -1274,6 +1276,7 @@ local function dispatch_single_station_biter(station, queue)
     force = station.force,
     building_queue = queue,
     current_idx = 1,
+    dispatch_salary = dispatch_salary,
     salary_paid = salary_paid,
     overlay_id = create_worker_overlay(biter),
     phase = "to_building",
@@ -1327,22 +1330,11 @@ local function dispatch_station_biters(station)
   end
 
   local enablements_per_trip = get_enablements_per_trip()
-  local max_by_money = math.floor(money_count / get_dispatch_salary())
-  local max_by_coffee = math.floor(coffee_count / C.BITER_STATION_NIGHT_COFFEE_PER_DISPATCH)
-  local needed_workers = math.ceil(#queue / enablements_per_trip)
-  local worker_dispatches = math.min(worker_count, max_by_money, max_by_coffee, needed_workers)
-  if worker_dispatches <= 0 then
-    if max_by_money <= 0 then
-      set_station_status(station, "biter-station-no-money")
-    else
-      set_station_status(station, "biter-station-no-coffee")
-    end
-    return 0
-  end
-
+  local worker_queues = {}
   local queue_idx = 1
-  local dispatched = 0
-  for _ = 1, worker_dispatches do
+  local planned_salary = 0
+  local max_by_coffee = math.floor(coffee_count / C.BITER_STATION_NIGHT_COFFEE_PER_DISPATCH)
+  while #worker_queues < worker_count and #worker_queues < max_by_coffee and queue_idx <= #queue do
     local worker_queue = {}
     for _ = 1, enablements_per_trip do
       local building = queue[queue_idx]
@@ -1350,9 +1342,26 @@ local function dispatch_station_biters(station)
       worker_queue[#worker_queue + 1] = building
       queue_idx = queue_idx + 1
     end
-    if #worker_queue == 0 then
+
+    local salary = get_dispatch_salary(#worker_queue)
+    if planned_salary + salary > money_count then
       break
     end
+    planned_salary = planned_salary + salary
+    worker_queues[#worker_queues + 1] = worker_queue
+  end
+
+  if #worker_queues == 0 then
+    if money_count < get_dispatch_salary(math.min(enablements_per_trip, #queue)) then
+      set_station_status(station, "biter-station-no-money")
+    else
+      set_station_status(station, "biter-station-no-coffee")
+    end
+    return 0
+  end
+
+  local dispatched = 0
+  for _, worker_queue in ipairs(worker_queues) do
     if dispatch_single_station_biter(station, worker_queue) then
       dispatched = dispatched + 1
     else
@@ -1373,7 +1382,9 @@ local function finish_station_circuit(station_id, station, active_state)
     local inv = get_station_inventory(station)
     if inv then
       if not active_state.salary_paid then
-        inv.remove({name = MONEY_ITEM_NAME, count = get_dispatch_salary()})
+        local salary = active_state.dispatch_salary
+          or get_dispatch_salary(#(active_state.building_queue or {}))
+        inv.remove({name = MONEY_ITEM_NAME, count = salary})
       end
       maybe_reinsert_worker(station)
     end

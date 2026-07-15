@@ -278,6 +278,53 @@ test("biter station keeps a triggered machine active until recipe progress wraps
   assert_eq(storage.managed_building_run[building.unit_number], nil, "completed recipe authorization should clear runtime state")
 end)
 
+test("labor efficiency charges only for the buildings assigned to a trip", function()
+  storage = {}
+  package.loaded["scripts.biter_station"] = nil
+  local surface = new_surface()
+  local force = {name = "player", valid = true, set_cease_fire = function() end, technologies = {}}
+  game = {
+    tick = 0,
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", valid = true, set_cease_fire = function() end},
+      neutral = {name = "neutral", valid = true, set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, valid = true, set_cease_fire = function() end, technologies = {}}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biter_station = require("scripts.biter_station")
+  local station = new_station(surface, force, {
+    inventory = {['biter-worker'] = 1, ['taxpayer-money'] = 1},
+  })
+  local building = new_managed_building(surface, force)
+  biter_station.track_station(station)
+  biter_station.track_managed_building(building)
+  storage.biter_station_crafts_per_visit = 3
+
+  biter_station.update(10)
+
+  local active = active_worker()
+  assert_true(active ~= nil, "one funded assignment should dispatch at labor efficiency tier one")
+  assert_eq(#active.building_queue, 1, "worker trip should contain only the building that needs activation")
+  assert_eq(active.dispatch_salary, 1, "one-building trip should reserve one taxpayer money")
+
+  active.biter.position = {x = building.position.x, y = building.position.y}
+  active.phase_departed = true
+  biter_station.update(20)
+  assert_eq(active.phase, "to_station", "worker should return after its only assignment")
+
+  active.biter.position = {x = station.position.x, y = station.position.y}
+  active.phase_departed = true
+  biter_station.update(30)
+  assert_eq(station.inventory.get_item_count("taxpayer-money"), 0, "completed one-building trip should charge exactly one taxpayer money")
+end)
+
 test("managed building is claimed by the nearest station in overlapping coverage", function()
   storage = {}
   package.loaded["scripts.biter_station"] = nil
