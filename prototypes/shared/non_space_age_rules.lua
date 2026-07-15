@@ -74,18 +74,16 @@ function rules.get_required_form(recipe_name)
   return "work-order"
 end
 
-rules.OPERATING_FORM_BY_CATEGORY = {
-  ["chemistry"] = "chemical-handling-work-order",
-  ["centrifuging"] = "radiological-work-order",
+rules.OPERATING_FORM_CONFIG = {
+  categories = {
+    ["chemistry"] = {form = "chemical-handling-work-order"},
+    ["centrifuging"] = {form = "radiological-work-order"},
+  },
+  recipes = {
+    ["advanced-oil-processing"] = {form = "chemical-handling-work-order"},
+    ["coal-liquefaction"] = {form = "chemical-handling-work-order"},
+  },
 }
-
-rules.OPERATING_FORM_BY_RECIPE = {
-  ["advanced-oil-processing"] = "chemical-handling-work-order",
-  ["coal-liquefaction"] = "chemical-handling-work-order",
-}
-
-rules.OPERATING_FORM_EXEMPT_BY_CATEGORY = {}
-rules.OPERATING_FORM_EXEMPT_BY_RECIPE = {}
 
 rules.TAXPAYER_MONEY_COSTS = {
   ["roboport"] = 25,
