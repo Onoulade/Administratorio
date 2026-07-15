@@ -6,6 +6,7 @@ local function entity_recipe(name, recipe)
 end
 
 local icon_tints = require("prototypes.shared.icon_tints")
+local space_age_enabled = require("feature_flags").space_age_enabled()
 
 local function rgba(r, g, b, a)
   return {r = r, g = g, b = b, a = a or 1}
@@ -52,26 +53,35 @@ local function distillery_recipe_tint(primary_name, secondary_name)
   }
 end
 
+-- In the base game, creative accounting provides a late-game way to turn
+-- treasury bonds back into taxpayer money. Space Age deliberately replaces
+-- that renewable-money loop with orbital tourism, so neither half of the
+-- laundering chain is registered when the expansion is active.
+if not space_age_enabled then
+  data:extend({
+    {
+      type = "recipe", name = "tax-audit", category = "bureaucracy-policy", enabled = false,
+      ingredients = {{type="fluid", name="slush-fund", amount=200}, {type="item", name="blank-form", amount=1}, {type="item", name="data", amount=1}, {type="fluid", name="liquid-coffee", amount=15}},
+      results = {{type="item", name="taxpayer-money", amount=30}},
+      energy_required = 20,
+      crafting_machine_tint = icon_tints.recipe_tint("tax-audit")
+    },
+    {
+      type = "recipe", name = "slush-fund-production", category = "propaganda-distillery", enabled = false,
+      icon = "__administratorio__/graphics/icons/slush-fund.png", icon_size = 64,
+      subgroup = "admin-money", order = "d",
+      ingredients = {{type="item", name="treasury-bond", amount=1}, {type="fluid", name="lie", amount=50}},
+      results = {{type="fluid", name="slush-fund", amount=500}},
+      energy_required = 30,
+      crafting_machine_tint = distillery_recipe_tint("lie", "slush-fund")
+    },
+  })
+end
+
 data:extend({
   -- Taxpayer Money System
   { type = "recipe", name = "treasury-bond-production",    category = "bureaucracy-registration", enabled = false, auto_recycle = false, ingredients = {{type="item", name="taxpayer-money", amount=50}, {type="item", name="blank-form", amount=1}, {type="item", name="useless-documentation", amount=1}, {type="fluid", name="liquid-coffee", amount=10}}, results = {{type="item", name="treasury-bond", amount=1}},    energy_required = 5 },
   { type = "recipe", name = "government-grant-production", category = "union-negotiation", enabled = false, ingredients = {{type="item", name="treasury-bond", amount=10}, {type="item", name="crappy-report", amount=1}, {type="item", name="management-approval-verbal", amount=1}}, results = {{type="item", name="government-grant", amount=1}}, energy_required = 15, crafting_machine_tint = icon_tints.recipe_tint("government-grant-production") },
-  {
-    type = "recipe", name = "tax-audit", category = "bureaucracy-policy", enabled = false,
-    ingredients = {{type="fluid", name="slush-fund", amount=200}, {type="item", name="blank-form", amount=1}, {type="item", name="data", amount=1}, {type="fluid", name="liquid-coffee", amount=15}},
-    results = {{type="item", name="taxpayer-money", amount=30}},
-    energy_required = 20,
-    crafting_machine_tint = icon_tints.recipe_tint("tax-audit")
-  },
-  {
-    type = "recipe", name = "slush-fund-production", category = "propaganda-distillery", enabled = false,
-    icon = "__administratorio__/graphics/icons/slush-fund.png", icon_size = 64,
-    subgroup = "admin-money", order = "d",
-    ingredients = {{type="item", name="treasury-bond", amount=1}, {type="fluid", name="lie", amount=50}},
-    results = {{type="fluid", name="slush-fund", amount=500}},
-    energy_required = 30,
-    crafting_machine_tint = distillery_recipe_tint("lie", "slush-fund")
-  },
 
   -- Bullshit Economy
   { type = "recipe", name = "dubious-data-refining",     category = "smelting",        enabled = false, ingredients = {{type="item", name="bullshit-ore", amount=10}},                                                     results = {{type="item", name="dubious-data", amount=20}},     energy_required = 64 },
