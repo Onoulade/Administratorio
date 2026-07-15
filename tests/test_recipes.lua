@@ -164,6 +164,12 @@ dofile(mod_root .. "prototypes/recipe/modules.lua")
 -- Load shared constants
 local shared = require("prototypes.shared")
 
+-- Mirror data.lua's recipe-ownership registration for this focused recipe
+-- fixture, which loads Administratorio recipe files directly.
+for recipe_name in pairs(recipes) do
+  shared.register_admin_recipe(recipe_name)
+end
+
 -------------------------------------------------------------------------------
 -- HELPERS
 -------------------------------------------------------------------------------
@@ -1301,10 +1307,16 @@ test("is_admin_recipe returns false for vanilla recipes", function()
   end
 end)
 
-test("is_admin_recipe detects resolution recipes", function()
+test("is_admin_recipe detects explicitly registered resolution recipes", function()
   local resolution = {"filing-landscape", "case-smog", "noise-final", "unemployment-final"}
   for _, name in ipairs(resolution) do
     assert_true(shared.is_admin_recipe(name), name .. " not detected as admin")
+  end
+end)
+
+test("is_admin_recipe does not classify third-party recipes by name pattern", function()
+  for _, name in ipairs({"advanced-circuit-production", "third-party-basic-excuse-production", "outside-permit"}) do
+    assert_false(shared.is_admin_recipe(name), name .. " should not be treated as an admin recipe")
   end
 end)
 
@@ -1465,6 +1477,18 @@ test("pneumatic intake recipes accept every transportable item without outputs",
     assert_eq(#recipe.ingredients, 1, recipe.name .. " should have one ingredient")
     assert_eq(recipe.ingredients[1].name, item_name, recipe.name .. " wrong ingredient")
     assert_eq(#recipe.results, 0, recipe.name .. " should not output anything")
+  end
+end)
+
+test("data-stage and runtime pneumatic payload sets stay identical", function()
+  local runtime_items = require("prototypes.shared.pneumatic_items").names
+  local runtime_set = {}
+  for _, item_name in ipairs(runtime_items) do
+    runtime_set[item_name] = true
+    assert_true(shared.PNEUMATIC_ITEMS[item_name], item_name .. " is missing from data-stage pneumatic items")
+  end
+  for item_name in pairs(shared.PNEUMATIC_ITEMS) do
+    assert_true(runtime_set[item_name], item_name .. " is missing from runtime pneumatic items")
   end
 end)
 

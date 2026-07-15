@@ -75,6 +75,16 @@ end
 -------------------------------------------------------------------------------
 -- 2. LOAD ALL MOD PROTOTYPES
 -------------------------------------------------------------------------------
+-- Track recipe ownership while this mod loads its own prototype files.  The
+-- final regulation pass uses this explicit registry instead of guessing from
+-- recipe-name patterns, which keeps third-party recipes out of the admin path.
+local shared = require("prototypes.shared")
+local extend_prototypes = data.extend
+function data:extend(prototypes)
+  shared.register_admin_recipe_prototypes(prototypes)
+  return extend_prototypes(self, prototypes)
+end
+
 require("prototypes.item")
 require("prototypes.tiles")
 require("prototypes.entity")
@@ -84,6 +94,8 @@ require("prototypes.signals")
 require("prototypes.sounds")
 require("prototypes.tips-and-tricks")
 require("prototypes.achievements")
+
+data.extend = extend_prototypes
 
 -------------------------------------------------------------------------------
 -- 3. VANILLA OVERRIDES (hide military, pacify biters, replace science, etc.)

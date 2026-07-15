@@ -854,8 +854,9 @@ end
 
 -- Create a batched copy of a recipe with paperwork requirements.
 -- Paperwork is always consumed (no return).
-local function regulate_recipe(recipe, paperwork_requirements, multiplier)
+local function regulate_recipe(recipe, paperwork_requirements, multiplier, options)
   if not recipe then return end
+  options = options or {}
   paperwork_requirements = normalize_paperwork_requirements(paperwork_requirements)
 
   local function process_level(target)
@@ -873,15 +874,40 @@ local function regulate_recipe(recipe, paperwork_requirements, multiplier)
     -- ingredient tables do not mutate each other.
     if target.ingredients then
       local clean_ingredients = {}
+      local retained_paperwork = {}
+      local has_retained_paperwork = false
       for _, ing in ipairs(target.ingredients) do
         local name = ingredient_name(ing)
-        if not shared.PAPERWORK_ITEMS[name] then
+        if shared.PAPERWORK_ITEMS[name] and options.preserve_existing_paperwork then
+          local resolved_name = shared.COMBINED_FORMS[name] or name
+          append_or_merge_ingredient(retained_paperwork, {
+            type = "item",
+            name = resolved_name,
+            amount = ingredient_amount(ing),
+          })
+          has_retained_paperwork = true
+        elseif not shared.PAPERWORK_ITEMS[name] then
           local new_ing = util.table.deepcopy(ing)
           set_ingredient_amount(new_ing, ingredient_amount(new_ing) * multiplier)
           append_or_merge_ingredient(clean_ingredients, new_ing)
         end
       end
       target.ingredients = clean_ingredients
+
+      if options.preserve_existing_paperwork and not has_retained_paperwork
+          and options.fallback_paperwork then
+        for _, paperwork in ipairs(options.fallback_paperwork()) do
+          append_or_merge_ingredient(target.ingredients, {
+            type = "item",
+            name = paperwork.name,
+            amount = paperwork.amount,
+          })
+        end
+      end
+
+      for _, paperwork in ipairs(retained_paperwork) do
+        append_or_merge_ingredient(target.ingredients, paperwork)
+      end
 
       -- Paperwork per batch is fixed and never multiplied.
       for _, paperwork in ipairs(paperwork_requirements) do
@@ -1164,79 +1190,12 @@ data:extend(regulated_list)
 -------------------------------------------------------------------------------
 
 local function regulate_admin_building(recipe, multiplier, recipe_name)
-  local function process_level(target)
-    if not target then return end
-
-    target.energy_required = (target.energy_required or 0.5) * multiplier
-
-    if target.ingredients then
-      local new_ingredients = {}
-      local paperwork_accum = {}  -- merges tier forms + existing combined forms to avoid duplicates
-
-      for _, ing in ipairs(target.ingredients) do
-        local name = ing.name or ing[1]
-        local amount = ing.amount or ing[2] or 1
-        local combined = shared.COMBINED_FORMS[name]
-        if combined then
-          -- Tier form → accumulate as combined form (fixed cost)
-          paperwork_accum[combined] = (paperwork_accum[combined] or 0) + amount
-        elseif shared.PAPERWORK_ITEMS[name] then
-          -- Other paperwork → accumulate as fixed cost, don't multiply
-          paperwork_accum[name] = (paperwork_accum[name] or 0) + amount
-        else
-          -- Regular material → multiply
-          local new_ing = util.table.deepcopy(ing)
-          if new_ing.amount then
-            new_ing.amount = new_ing.amount * multiplier
-          elseif new_ing[2] then
-            new_ing[2] = new_ing[2] * multiplier
-          end
-          append_or_merge_ingredient(new_ingredients, new_ing)
-        end
-      end
-
-      -- If no paperwork was found in the base recipe, fall back to the
-      -- tier-based form so recipes with no explicit forms (office-desk,
-      -- field-office, greenhouse, …) still receive a work-order.
-      if not next(paperwork_accum) then
-        local required_form = shared.get_required_form(recipe_name)
-        local reqs = shared.get_paperwork_requirements(required_form, true)
-        for _, req in ipairs(reqs) do
-          paperwork_accum[req.name] = (paperwork_accum[req.name] or 0) + req.amount
-        end
-      end
-
-      for pw_name, pw_amount in pairs(paperwork_accum) do
-        append_or_merge_ingredient(new_ingredients, {type = "item", name = pw_name, amount = pw_amount})
-      end
-      target.ingredients = new_ingredients
-    end
-
-    local results = {}
-    if target.results then
-      for _, res in ipairs(target.results) do
-        local new_res = util.table.deepcopy(res)
-        if new_res.amount then
-          new_res.amount = new_res.amount * multiplier
-        elseif new_res.amount_min and new_res.amount_max then
-          new_res.amount_min = new_res.amount_min * multiplier
-          new_res.amount_max = new_res.amount_max * multiplier
-        end
-        table.insert(results, new_res)
-      end
-    elseif target.result then
-      local count = (target.result_count or 1) * multiplier
-      table.insert(results, {type = "item", name = target.result, amount = count})
-      target.result = nil
-      target.result_count = nil
-    end
-    target.results = results
-    target.main_product = target.main_product or (results[1] and results[1].name)
-  end
-
-  process_level(recipe)
-  if recipe.normal then process_level(recipe.normal) end
-  if recipe.expensive then process_level(recipe.expensive) end
+  regulate_recipe(recipe, {}, multiplier, {
+    preserve_existing_paperwork = true,
+    fallback_paperwork = function()
+      return shared.get_paperwork_requirements(shared.get_required_form(recipe_name), true)
+    end,
+  })
 end
 
 local function get_admin_building_icon_form(recipe)

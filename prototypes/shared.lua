@@ -3,6 +3,7 @@
 
 local shared = {}
 local feature_flags = require("feature_flags")
+local pneumatic_items = require("prototypes.shared.pneumatic_items")
 local space_age_enabled = feature_flags.space_age_enabled()
 local compatibility_rules = space_age_enabled
   and require("prototypes.shared.space_age_rules")
@@ -101,38 +102,7 @@ shared.PAPERWORK_ITEMS = {
 -- administrative goods. Used by both data stage (recipe generation if any)
 -- and control stage (intake inserter filter setup).
 -------------------------------------------------------------------------------
-shared.PNEUMATIC_ITEMS = {}
-for name, _ in pairs(shared.PAPERWORK_ITEMS) do
-  shared.PNEUMATIC_ITEMS[name] = true
-end
-do
-  local extra = {
-    "paper", "ink", "blank-form", "blank-approval", "blank-directive",
-    "safety-waiver-draft", "construction-permit-draft",
-    "management-verbal-draft", "management-written-proposal",
-    "ticket-landscape", "ticket-smog", "ticket-noise", "ticket-unemployment",
-    "ticket-littering", "ticket-hazmat", "ticket-loitering", "ticket-vagrancy",
-    "filing-l", "filing-s", "filing-n", "filing-u",
-    "filing-lt", "filing-h", "filing-lo", "filing-v",
-    "case-s", "case-n", "case-u",
-    "case-h", "case-lo", "case-v",
-    "brief-n", "brief-u",
-    "brief-lo", "brief-v",
-    "resolved-landscape", "resolved-smog", "resolved-noise", "resolved-unemployment",
-    "resolved-littering", "resolved-hazmat", "resolved-loitering", "resolved-vagrancy",
-    "osha-violation",
-    "basic-excuse", "crappy-report", "credentials", "data",
-    "good-excuse", "justification", "narrative", "policy", "regulation",
-    "white-paper", "administrative-science-pack",
-    "watercooler-gossip", "office-drama",
-    "taxpayer-money",
-    "useless-documentation", "refined-nonsense",
-    "job-offer",
-  }
-  for _, name in ipairs(extra) do
-    shared.PNEUMATIC_ITEMS[name] = true
-  end
-end
+shared.PNEUMATIC_ITEMS = pneumatic_items.as_set()
 
 -------------------------------------------------------------------------------
 -- COMBINED FORMS
@@ -348,73 +318,50 @@ shared.COMBINED_FORM_PRODUCTION_RECIPES = {
   ["research-grant-work-order"] = "research-grant-work-order-production",
 }
 
+-- ADMIN RECIPE REGISTRATION
+--
+-- Recipes are registered while Administratorio loads its own prototype files
+-- (see data.lua).  This deliberately avoids name-pattern guessing: a third
+-- party recipe named "permit-production" is not ours merely because it has a
+-- bureaucratic-sounding name.
 -------------------------------------------------------------------------------
--- ADMIN RECIPE DETECTION
--- Returns true if a recipe name belongs to our mod and should NOT be processed
--- by the vanilla recipe regulation system.
--------------------------------------------------------------------------------
+shared.ADMIN_RECIPE_REGULATION_EXEMPTIONS = {
+  -- These Administratorio recipes intentionally enter the vanilla regulation
+  -- path; they are base materials in the automated economy.
+  ["paper-production"] = true,
+  ["ink-production"] = true,
+}
+shared.ADMIN_RECIPE_NAMES = {}
+
+function shared.register_admin_recipe(name)
+  if name and not shared.ADMIN_RECIPE_REGULATION_EXEMPTIONS[name] then
+    shared.ADMIN_RECIPE_NAMES[name] = true
+  end
+end
+
+function shared.register_admin_recipe_prototypes(prototypes)
+  for _, prototype in ipairs(prototypes or {}) do
+    if prototype.type == "recipe" then
+      shared.register_admin_recipe(prototype.name)
+    end
+  end
+end
+
+-- Form-production recipes are declared in this shared module rather than in a
+-- single prototype file, so register them directly as well. This keeps the
+-- classifier correct for focused tests and for any future loader that does not
+-- use data.lua's prototype-registration wrapper.
+for _, recipe_name in pairs(shared.FORM_PRODUCTION_RECIPES) do
+  shared.register_admin_recipe(recipe_name)
+end
+for _, recipe_name in pairs(shared.COMBINED_FORM_PRODUCTION_RECIPES) do
+  shared.register_admin_recipe(recipe_name)
+end
+
 function shared.is_admin_recipe(name)
-  -- Recipes that match admin patterns but should still be regulated
-  local NOT_ADMIN = {
-    ["paper-production"] = true,
-    ["ink-production"] = true,
-  }
-  if NOT_ADMIN[name] then return false end
-  if name:match("%-barrel$") or name:match("%-unbarrel$") then return false end
-
-  -- Explicit building check
-  if shared.ADMIN_BUILDINGS[name] then return true end
-
-  -- Explicit form production recipe check
-  for _, recipe_name in pairs(shared.FORM_PRODUCTION_RECIPES) do
-    if name == recipe_name then return true end
-  end
-
-  -- Explicit combined form production recipe check
-  for _, recipe_name in pairs(shared.COMBINED_FORM_PRODUCTION_RECIPES) do
-    if name == recipe_name then return true end
-  end
-
-  -- Pattern-based detection for mod recipe naming conventions.
-  local patterns = {
-    -- Core admin patterns
-    "^admin", "bureau", "^filing%-", "^case%-", "^brief%-",
-    "^landscape%-final", "^smog%-final", "^noise%-final", "^unemployment%-final",
-    "^littering%-final", "^hazmat%-final", "^loitering%-final", "^vagrancy%-final",
-    -- Paperwork production
-    "%-production$", "%-refining$", "%-batch$", "^copy%-",
-    -- Specific item/recipe names
-    "certificate", "form%-27b", "waiver", "approval",
-    "permit", "clearance", "provisional",
-    "bond", "grant", "slush", "ink", "audit",
-    -- Combined forms
-    "%-work%-order",
-    -- Draft/printing pipeline
-    "directive", "%-draft", "%-printing", "%-proposal", "%-review",
-    -- BS economy
-    "dubious%-data", "excuse", "gossip", "justification",
-    "narrative", "white%-paper", "policy%-production", "regulation%-production",
-    "promise", "eviction", "osha", "office%-drama",
-    -- Rubble derivatives
-    "useless%-documentation", "compacted%-rubble", "refined%-nonsense",
-    -- Greenhouse & coffee
-    "greenhouse", "coffee",
-    -- Paper & forms
-    "^blank%-form", "^blank%-approval", "^blank%-directive",
-    -- Resolution
-    "^resolved%-", "waiting%-zone",
-    -- Pneumatic
-    "^pneumatic%-", "^form%-liquifier", "^form%-solidifier",
-    -- Science
-    "administrative%-science",
-    -- Biter employment
-    "job%-offer", "biter%-worker", "biter%-logistics%-formation", "union%-delegate", "chemical%-operator", "nuclear%-technician",
-    "specialist%-training",
-  }
-  for _, pat in ipairs(patterns) do
-    if name:find(pat) then return true end
-  end
-  return false
+  if shared.ADMIN_RECIPE_REGULATION_EXEMPTIONS[name] then return false end
+  return shared.ADMIN_RECIPE_NAMES[name] == true
+    or shared.ADMIN_BUILDINGS[name] == true
 end
 
 -------------------------------------------------------------------------------
@@ -613,10 +560,29 @@ end
 -- baseline petrochem stays on the basic permit while advanced processing and
 -- more demanding chemistry step up to the chemical work order.
 -------------------------------------------------------------------------------
-shared.OPERATING_FORM_BY_CATEGORY = compatibility_rules.OPERATING_FORM_BY_CATEGORY
-shared.OPERATING_FORM_BY_RECIPE = compatibility_rules.OPERATING_FORM_BY_RECIPE
-shared.OPERATING_FORM_EXEMPT_BY_CATEGORY = compatibility_rules.OPERATING_FORM_EXEMPT_BY_CATEGORY or {}
-shared.OPERATING_FORM_EXEMPT_BY_RECIPE = compatibility_rules.OPERATING_FORM_EXEMPT_BY_RECIPE or {}
+shared.OPERATING_FORM_CONFIG = compatibility_rules.OPERATING_FORM_CONFIG
+
+-- Compatibility views for consumers that still inspect the old tables. The
+-- rule source remains OPERATING_FORM_CONFIG, so category defaults, recipe
+-- overrides, and exemptions cannot drift across parallel structures.
+shared.OPERATING_FORM_BY_CATEGORY = {}
+shared.OPERATING_FORM_BY_RECIPE = {}
+shared.OPERATING_FORM_EXEMPT_BY_CATEGORY = {}
+shared.OPERATING_FORM_EXEMPT_BY_RECIPE = {}
+for category, rule in pairs(shared.OPERATING_FORM_CONFIG.categories or {}) do
+  if rule.exempt then
+    shared.OPERATING_FORM_EXEMPT_BY_CATEGORY[category] = true
+  elseif rule.form then
+    shared.OPERATING_FORM_BY_CATEGORY[category] = rule.form
+  end
+end
+for recipe_name, rule in pairs(shared.OPERATING_FORM_CONFIG.recipes or {}) do
+  if rule.exempt then
+    shared.OPERATING_FORM_EXEMPT_BY_RECIPE[recipe_name] = true
+  elseif rule.form then
+    shared.OPERATING_FORM_BY_RECIPE[recipe_name] = rule.form
+  end
+end
 
 function shared.get_operating_form(recipe_or_name, category)
   local recipe_name = recipe_or_name
@@ -625,16 +591,15 @@ function shared.get_operating_form(recipe_or_name, category)
     category = recipe_or_name.category
   end
 
-  if shared.OPERATING_FORM_EXEMPT_BY_RECIPE[recipe_name] then
-    return nil
+  local recipe_rule = shared.OPERATING_FORM_CONFIG.recipes[recipe_name]
+  if recipe_rule then
+    return recipe_rule.exempt and nil or recipe_rule.form
   end
 
-  if shared.OPERATING_FORM_EXEMPT_BY_CATEGORY[category or "crafting"] then
-    return nil
+  local category_rule = shared.OPERATING_FORM_CONFIG.categories[category or "crafting"]
+  if category_rule then
+    return category_rule.exempt and nil or category_rule.form
   end
-
-  return shared.OPERATING_FORM_BY_RECIPE[recipe_name]
-    or shared.OPERATING_FORM_BY_CATEGORY[category or "crafting"]
 end
 
 -------------------------------------------------------------------------------
