@@ -35,3 +35,31 @@ for _, cache in pairs(storage.biterport_storage_target_cache or {}) do
     end
   end
 end
+
+-- MMMMs are now meeting catalysts rather than cannon ammunition. Preserve any
+-- workers already loaded into an orbital deployment cannon by converting only
+-- those turret-ammo stacks into the replacement VESM ammunition. MMMMs stored
+-- elsewhere remain managers and enter the new briefing loop unchanged.
+for _, surface in pairs(game.surfaces or {}) do
+  local cannons = surface.find_entities_filtered{
+    name = "orbital-employment-cannon",
+  }
+  for _, cannon in pairs(cannons or {}) do
+    local inventory = cannon.get_inventory(defines.inventory.turret_ammo)
+    if inventory and inventory.valid then
+      for slot_index = 1, #inventory do
+        local stack = inventory[slot_index]
+        if stack and stack.valid_for_read
+          and stack.name == "middle-management-managing-manager"
+        then
+          local quality = stack.quality and stack.quality.name or "normal"
+          stack.set_stack{
+            name = "voluntary-exploration-space-miner",
+            count = stack.count,
+            quality = quality,
+          }
+        end
+      end
+    end
+  end
+end

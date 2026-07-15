@@ -45,7 +45,7 @@ local ASTEROID_SALVAGE_RADII = {
   huge = 2.0,
 }
 local DEVIATION_AMMO = "orbital-deviation-order"
-local MANAGEMENT_ITEM = "middle-management-managing-manager"
+local EXPLORER_ITEM = "voluntary-exploration-space-miner"
 local RETURNING_CHUNK = "returning-orbital-employee"
 local RETURNING_CHUNK_DIRECTIONS = 16
 local DEVIATION_EFFECT_ID = "administratorio-trajectory-deviation"
@@ -104,7 +104,8 @@ M.TARGET_TIERS = TARGET_TIERS
 M.ASTEROID_SIZE_RANKS = ASTEROID_SIZE_RANKS
 M.ASTEROID_CHUNK_YIELDS = ASTEROID_CHUNK_YIELDS
 M.DEVIATION_AMMO = DEVIATION_AMMO
-M.MANAGEMENT_ITEM = MANAGEMENT_ITEM
+M.EXPLORER_ITEM = EXPLORER_ITEM
+M.MANAGEMENT_ITEM = EXPLORER_ITEM -- Compatibility for older integrations.
 M.RETURNING_CHUNK = RETURNING_CHUNK
 M.RETURNING_CHUNK_DIRECTIONS = RETURNING_CHUNK_DIRECTIONS
 M.DEVIATION_EFFECT_ID = DEVIATION_EFFECT_ID
@@ -359,9 +360,9 @@ local function update_worker_visual_orientation(worker, target, tick)
 end
 
 function M.biter_damage(force)
-  -- Manager item/entity quality is intentionally absent. MMMMs must perform
-  -- identically at every quality because their collectible return chunk mines
-  -- back into normal-quality ammunition. Only explicit research may scale them.
+  -- VESM item/entity quality is intentionally absent. Returning chunks mine
+  -- back into normal-quality ammunition, so only explicit research may scale
+  -- their asteroid work.
   local modifier = 0
   if force and force.get_ammo_damage_modifier then
     modifier = force.get_ammo_damage_modifier(BITER_AMMO_CATEGORY) or 0

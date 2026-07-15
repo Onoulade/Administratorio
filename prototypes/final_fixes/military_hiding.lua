@@ -6,7 +6,7 @@ local M = {}
 local visibility_exceptions = {
   ammo = {
     ["orbital-deviation-order"] = true,
-    ["middle-management-managing-manager"] = true,
+    ["voluntary-exploration-space-miner"] = true,
   },
   ["ammo-turret"] = {
     ["trajectory-compliance-array"] = true,

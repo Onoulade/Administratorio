@@ -1,4 +1,5 @@
 local fax_shared = require("scripts.fax_shared")
+local manager_briefings = require("prototypes.shared.manager_briefings")
 
 local function add_tech_unlock(technology_name, recipe_name)
   local technology = data.raw["technology"] and data.raw["technology"][technology_name]
@@ -594,7 +595,7 @@ for level, count in ipairs(orbital_employment_damage_counts) do
     name = "orbital-employment-damage-" .. level,
     icons = {
       {icon = "__space-age__/graphics/technology/railgun-damage.png", icon_size = 256},
-      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.5, shift = {32, 32}},
+      {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.5, shift = {32, 32}},
     },
     effects = {
       {
@@ -620,7 +621,7 @@ end
 
 data:extend(orbital_employment_damage_techs)
 
--- One manager per asteroid is the unresearched baseline. These four approvals
+-- One VESM per asteroid is the unresearched baseline. These four approvals
 -- raise the hard staffing allocation to five without relying on item quality.
 local orbital_employment_capacity_counts = {500, 1500, 3000, 6000}
 local orbital_employment_capacity_techs = {}
@@ -657,7 +658,7 @@ for level, count in ipairs(orbital_employment_capacity_counts) do
     name = "orbital-employment-capacity-" .. level,
     icons = {
       {icon = "__space-age__/graphics/technology/railgun-damage.png", icon_size = 256},
-      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.5, shift = {32, 32}},
+      {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.5, shift = {32, 32}},
     },
     effects = {
       {
@@ -721,6 +722,10 @@ add_tech_unlock("hired-biter-fieldwork", "promise-production-negotiated")
 add_tech_unlock("hired-biter-fieldwork", "eviction-notice-production-negotiated")
 add_tech_unlock("workforce-formation", "capture-bureau-workforce")
 add_tech_unlock("workforce-formation", "workforce-lure-spores-production")
+add_tech_unlock("workforce-formation", "voluntary-exploration-space-miner-formation")
+for _, briefing in ipairs(manager_briefings.BRIEFINGS) do
+  add_tech_unlock("workforce-formation", briefing.recipe)
+end
 add_tech_unlock("cyan-yellow-bureaucracy", "small-spitter-space-tourism")
 add_tech_unlock("cyan-yellow-bureaucracy", "medium-spitter-space-tourism")
 add_tech_unlock("cyan-yellow-bureaucracy", "big-spitter-space-tourism")

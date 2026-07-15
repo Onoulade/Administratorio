@@ -36,8 +36,30 @@ formation_center.crafting_speed = 1.5
 formation_center.energy_usage = "500kW"
 formation_center.energy_source = {type = "electric", usage_priority = "secondary-input"}
 formation_center.ingredient_count = 6
+formation_center.result_inventory_size = 4
 formation_center.module_slots = 4
 formation_center.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+formation_center.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_connections = {{
+      flow_direction = "input",
+      direction = defines.direction.north,
+      position = {0, -1},
+    }},
+    volume = 100,
+  },
+  {
+    production_type = "input",
+    pipe_connections = {{
+      flow_direction = "input",
+      direction = defines.direction.south,
+      position = {0, 1},
+    }},
+    volume = 100,
+  },
+}
+formation_center.fluid_boxes_off_when_no_fluid_recipe = true
 
 local chromatic_printer = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
 chromatic_printer.name = "chromatic-printer"
@@ -643,8 +665,8 @@ local manager_attack_animation = make_manager_attack_animation(
 )
 data:extend({manager_attack_animation})
 
--- A fired manager rides the asteroid until demolition, then becomes one more
--- native collectible chunk. Mining that chunk returns the manager directly to
+-- A deployed VESM rides the asteroid until demolition, then becomes one more
+-- native collectible chunk. Mining that chunk returns the miner directly to
 -- collector output, so belts and inserters can route the employee normally.
 -- Asteroid chunks cannot animate themselves. Use a still frame from the real
 -- biter run sheet. Sixteen hidden directional variants preserve the manager's
@@ -661,10 +683,11 @@ for direction_index = 0, 15 do
   returning_employee_chunk.icons = {
     {icon = "__space-age__/graphics/icons/metallic-asteroid-chunk.png", icon_size = 64},
     {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.48, shift = {4, -2}},
+    {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.28, shift = {9, 7}},
   }
   returning_employee_chunk.minable = {
     mining_time = 0.2,
-    result = "middle-management-managing-manager",
+    result = "voluntary-exploration-space-miner",
     mining_particle = "metallic-asteroid-chunk-particle-medium",
   }
   returning_employee_chunk.graphics_set = {
@@ -716,7 +739,7 @@ orbital_employment_cannon.name = "orbital-employment-cannon"
 orbital_employment_cannon.icon = nil
 orbital_employment_cannon.icons = {
   {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
-  {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
+  {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
   icon_layers.orbital_infrastructure_permit_overlay(),
 }
 orbital_employment_cannon.minable = {mining_time = 0.5, result = "orbital-employment-cannon"}

@@ -120,9 +120,9 @@ mods = {
   ["space-age"] = "2.0.0",
 }
 
-data.raw.ammo["middle-management-managing-manager"] = {
+data.raw.ammo["voluntary-exploration-space-miner"] = {
   type = "ammo",
-  name = "middle-management-managing-manager",
+  name = "voluntary-exploration-space-miner",
   ammo_category = "orbital-biter-ballistics",
 }
 data.raw.ammo["orbital-deviation-order"] = {
@@ -1661,8 +1661,8 @@ test("science packs are research-only and never recipe ingredients", function()
 end)
 
 test("orbital administration weapons survive the military hiding pass", function()
-  assert_true(not data.raw.ammo["middle-management-managing-manager"].hidden,
-    "MMMM ammo should remain visible")
+  assert_true(not data.raw.ammo["voluntary-exploration-space-miner"].hidden,
+    "VESM ammo should remain visible")
   assert_true(not data.raw.ammo["orbital-deviation-order"].hidden,
     "deviation order ammo should remain visible")
   assert_true(not data.raw["ammo-turret"]["trajectory-compliance-array"].hidden,

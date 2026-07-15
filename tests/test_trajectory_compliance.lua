@@ -188,7 +188,7 @@ local function new_source(surface, force, quality, name)
     valid = true,
     {
       valid_for_read = true,
-      name = "middle-management-managing-manager",
+      name = "voluntary-exploration-space-miner",
       quality = {name = quality or "normal"},
     },
   }
@@ -281,7 +281,7 @@ test("native ammo damage research scales per-second biter damage", function()
   assert_near(module.biter_damage(force), 312.5, 1e-9)
 end)
 
-test("MMMM quality never changes orbital performance", function()
+test("VESM quality never changes orbital performance", function()
   local _, _, surface, force = new_world()
   local normal_cannon = new_source(surface, force, "normal")
   local legendary_cannon = new_source(surface, force, "legendary")
@@ -294,12 +294,12 @@ test("MMMM quality never changes orbital performance", function()
   assert_true(normal_handled and legendary_handled)
   assert_eq(normal_damage, module.BASE_BITER_DAMAGE)
   assert_eq(legendary_damage, module.BASE_BITER_DAMAGE,
-    "higher-quality MMMMs must not gain a damage bonus")
+    "higher-quality VESMs must not gain a damage bonus")
 
   module.on_tick({tick = 60})
   assert_eq(normal_target.health, 275)
   assert_eq(legendary_target.health, 275,
-    "higher-quality MMMMs must not gain a work-cycle bonus")
+    "higher-quality VESMs must not gain a work-cycle bonus")
 end)
 
 test("staffing research raises the hard per-asteroid employee cap", function()
