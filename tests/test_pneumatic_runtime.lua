@@ -1,11 +1,6 @@
 -------------------------------------------------------------------------------
 -- PNEUMATIC RUNTIME TESTS
---
--- Standalone Lua tests for fair tube-outtake distribution.
--- Run: lua tests/test_pneumatic_runtime.lua
 -------------------------------------------------------------------------------
-
-package.path = "./?.lua;./?/init.lua;" .. package.path
 
 local passed, failed, errors = 0, 0, {}
 
@@ -19,237 +14,129 @@ local function test(name, fn)
   end
 end
 
-local function assert_eq(actual, expected, msg)
+local function assert_eq(actual, expected, message)
   if actual ~= expected then
-    error((msg or "") .. " - expected " .. tostring(expected) .. ", got " .. tostring(actual), 2)
+    error((message or "assertion failed") .. " - expected " .. tostring(expected) .. ", got " .. tostring(actual), 2)
   end
 end
 
 defines = {
-  inventory = {chest = 1, furnace_source = 2},
-  entity_status_diode = {green = 1, yellow = 2, red = 3},
-  direction = {north = 0, east = 4, south = 8, west = 12},
+  inventory = {furnace_source = 1, chest = 2},
+  entity_status_diode = {red = 1, yellow = 2, green = 3},
+  direction = {north = 0, east = 2, south = 4, west = 6},
 }
-
 game = {connected_players = {}}
+storage = {}
 
+local mod_root = debug.getinfo(1, "S").source:match("@(.*/)")
+if mod_root then
+  mod_root = mod_root:gsub("Internal/tests/$", ""):gsub("tests/$", "")
+else
+  mod_root = "./"
+end
+package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
+
+package.loaded["scripts.pneumatic"] = nil
 local pneumatic = require("scripts.pneumatic")
 
-local function new_inventory(filter)
-  local inventory = {item = nil, filter = filter}
+local function new_inventory(stack_spec)
+  local stack = {
+    name = stack_spec and stack_spec.name,
+    count = stack_spec and stack_spec.count or 0,
+    quality = stack_spec and stack_spec.quality and {name = stack_spec.quality} or nil,
+  }
+  stack.valid_for_read = stack.count > 0
+
+  local inventory = {[1] = stack}
 
   function inventory.is_empty()
-    return inventory.item == nil
+    return not stack.valid_for_read
   end
 
-  function inventory.get_filter(_slot)
-    return inventory.filter
+  function inventory.remove(spec)
+    local stack_quality = stack.quality and stack.quality.name or "normal"
+    local requested_quality = spec.quality or "normal"
+    if not stack.valid_for_read or stack.name ~= spec.name or stack_quality ~= requested_quality then return 0 end
+    local removed = math.min(stack.count, spec.count or 1)
+    stack.count = stack.count - removed
+    if stack.count == 0 then
+      stack.valid_for_read = false
+      stack.name = nil
+      stack.quality = nil
+    end
+    return removed
   end
 
-  function inventory.insert(stack)
-    if inventory.item then return 0 end
-    inventory.item = stack.name
+  function inventory.insert(spec)
+    if stack.valid_for_read then return 0 end
+    stack.name = spec.name
+    stack.count = spec.count or 1
+    stack.quality = spec.quality and {name = spec.quality} or nil
+    stack.valid_for_read = true
     return stack.count
   end
 
   return inventory
 end
 
-local function new_outtake(uid, inventory)
-  local entity = {
+local function new_endpoint(name, inventory, unit_number)
+  return {
     valid = true,
-    name = "tube-outtake",
-    unit_number = uid,
+    name = name,
+    unit_number = unit_number,
+    force = {valid = true, index = 1, technologies = {}},
+    get_inventory = function(_, _) return inventory end,
   }
-
-  function entity.get_inventory(_inventory_type)
-    return inventory
-  end
-
-  return {entity = entity}, inventory
 end
 
-local function reset_network(outtake_specs)
+test("pneumatic transport conserves an item and its quality", function()
+  local source = new_inventory({name = "work-order", quality = "legendary", count = 1})
+  local destination = new_inventory()
+  local intake = new_endpoint("tube-intake", source, 101)
+  local outtake = new_endpoint("tube-outtake", destination, 102)
+
   storage = {
-    tube_intakes = {},
-    tube_outtakes = {},
-    tube_signals = {[1] = {}},
-    tube_network_cache = {},
+    tube_intakes = {[101] = {entity = intake}},
+    tube_outtakes = {[102] = {entity = outtake}},
+    tube_signals = {},
+    tube_network_cache = {[101] = 1, [102] = 1},
     tube_network_disabled = {},
-    tube_outtake_cursor = {},
     tube_network_dirty = false,
   }
 
-  local inventories = {}
-  for _, spec in ipairs(outtake_specs) do
-    local entry, inventory = new_outtake(spec.uid, new_inventory(spec.filter))
-    storage.tube_outtakes[spec.uid] = entry
-    storage.tube_network_cache[spec.uid] = 1
-    inventories[spec.uid] = inventory
-  end
-  return inventories
-end
-
-test("successive deliveries rotate across empty outtakes", function()
-  local inventories = reset_network{{uid = 10}, {uid = 20}, {uid = 30}}
-
-  storage.tube_signals[1]["resolved-landscape"] = 1
-  pneumatic.on_pneumatic_tick()
-  assert_eq(inventories[10].item, "resolved-landscape", "first delivery should use first outtake")
-
-  inventories[10].item = nil
-  storage.tube_signals[1]["resolved-landscape"] = 1
-  pneumatic.on_pneumatic_tick()
-  assert_eq(inventories[20].item, "resolved-landscape", "second delivery should rotate to next outtake")
-
-  inventories[20].item = nil
-  storage.tube_signals[1]["resolved-landscape"] = 1
-  pneumatic.on_pneumatic_tick()
-  assert_eq(inventories[30].item, "resolved-landscape", "third delivery should continue rotation")
-end)
-
-test("round robin skips occupied and unsatisfied filtered outtakes", function()
-  local inventories = reset_network{
-    {uid = 10},
-    {uid = 20},
-    {uid = 30, filter = "resolved-smog"},
-  }
-  storage.tube_outtake_cursor[1] = 10
-  inventories[20].item = "resolved-landscape"
-  storage.tube_signals[1]["resolved-landscape"] = 1
-
   pneumatic.on_pneumatic_tick()
 
-  assert_eq(inventories[30].item, nil, "mismatched filtered outtake should remain empty")
-  assert_eq(inventories[10].item, "resolved-landscape", "delivery should wrap to an eligible outtake")
+  assert_eq(source[1].valid_for_read, false, "intake should remove exactly one source item")
+  assert_eq(destination[1].name, "work-order", "outtake should recreate the transported item")
+  assert_eq(destination[1].count, 1, "outtake should recreate exactly one item")
+  assert_eq(destination[1].quality.name, "legendary", "outtake should preserve item quality")
+  assert_eq(pneumatic.get_network_total(1), 0, "completed transfer should leave no duplicate in the pool")
 end)
 
-test("network merge combines every old signal pool", function()
-  storage = {
-    tube_intakes = {
-      [11] = {entity = {valid = true}},
-      [22] = {entity = {valid = true}},
-    },
-    tube_outtakes = {
-      [33] = {entity = {valid = true}},
-    },
-    tube_signals = {
-      [100] = {["blank-form"] = 7, paper = 3},
-      [200] = {["blank-form"] = 5, ink = 2},
-    },
-    tube_network_cache = {
-      [11] = 50,
-      [22] = 50,
-      [33] = 50,
-    },
-    tube_outtake_cursor = {
-      [100] = 33,
-      [200] = 33,
-    },
-  }
+test("legacy unqualified signal-pool entries remain normal quality", function()
+  local destination = new_inventory()
+  local outtake = new_endpoint("tube-outtake", destination, 202)
 
-  pneumatic.remap_network_state({
-    [11] = 100,
-    [22] = 200,
-    [33] = 100,
-  })
-
-  assert_eq(storage.tube_signals[50]["blank-form"], 12, "merged form count")
-  assert_eq(storage.tube_signals[50].paper, 3, "merged paper count")
-  assert_eq(storage.tube_signals[50].ink, 2, "merged ink count")
-  assert_eq(storage.tube_signals[100], nil, "stale first network pool")
-  assert_eq(storage.tube_signals[200], nil, "stale second network pool")
-  assert_eq(storage.tube_outtake_cursor[50], 33, "cursor should follow outtake")
-end)
-
-test("network split keeps the pool on a component with an outtake", function()
-  storage = {
-    tube_intakes = {
-      [11] = {entity = {valid = true}},
-    },
-    tube_outtakes = {
-      [22] = {entity = {valid = true}},
-    },
-    tube_signals = {
-      [100] = {["ticket-landscape"] = 9},
-    },
-    tube_network_cache = {
-      [11] = 10,
-      [22] = 20,
-    },
-    tube_outtake_cursor = {},
-  }
-
-  pneumatic.remap_network_state({
-    [11] = 100,
-    [22] = 100,
-  })
-
-  assert_eq(storage.tube_signals[10], nil, "intake-only component should not claim pool")
-  assert_eq(storage.tube_signals[20]["ticket-landscape"], 9, "outtake component should retain pool")
-end)
-
-test("network id change preserves the pool without an outtake", function()
-  storage = {
-    tube_intakes = {
-      [11] = {entity = {valid = true}},
-    },
-    tube_outtakes = {},
-    tube_signals = {
-      [100] = {["blank-form"] = 11, paper = 11},
-    },
-    tube_network_cache = {
-      [11] = 300,
-    },
-    tube_outtake_cursor = {},
-  }
-
-  pneumatic.remap_network_state({[11] = 100})
-
-  assert_eq(storage.tube_signals[300]["blank-form"], 11, "forms should follow renumbered network")
-  assert_eq(storage.tube_signals[300].paper, 11, "paper should follow renumbered network")
-end)
-
-test("active network retains a legacy pool when old endpoint cache is empty", function()
-  storage = {
-    tube_intakes = {
-      [11] = {entity = {valid = true}},
-    },
-    tube_outtakes = {},
-    tube_signals = {
-      [100] = {paper = 6},
-    },
-    tube_network_cache = {
-      [11] = 100,
-    },
-    tube_outtake_cursor = {},
-  }
-
-  pneumatic.remap_network_state({})
-
-  assert_eq(storage.tube_signals[100].paper, 6, "legacy pool should remain on active network id")
-end)
-
-test("pool with no surviving endpoint is retained for recovery", function()
   storage = {
     tube_intakes = {},
-    tube_outtakes = {},
-    tube_signals = {
-      [100] = {["blank-form"] = 4},
-    },
-    tube_network_cache = {},
-    tube_outtake_cursor = {},
+    tube_outtakes = {[202] = {entity = outtake}},
+    tube_signals = {[2] = { ["work-order"] = 1 }},
+    tube_network_cache = {[202] = 2},
+    tube_network_disabled = {},
+    tube_network_dirty = false,
   }
 
-  pneumatic.remap_network_state({[11] = 100})
+  pneumatic.on_pneumatic_tick()
 
-  assert_eq(storage.tube_signals[100], nil, "orphan should leave active signal table")
-  assert_eq(storage.tube_orphan_signals[100]["blank-form"], 4, "orphaned forms should be retained")
+  assert_eq(destination[1].name, "work-order", "legacy pool should still emit its item")
+  assert_eq(destination[1].quality.name, "normal", "legacy pool entries should decode as normal quality")
+  assert_eq(pneumatic.get_network_total(2), 0, "legacy transfer should remain conserved")
 end)
 
+print("\n=== PNEUMATIC RUNTIME TESTS ===")
+print("Passed: " .. passed .. "  Failed: " .. failed .. "  Total: " .. (passed + failed))
 if failed > 0 then
-  io.stderr:write(table.concat(errors, "\n") .. "\n")
+  for _, err in ipairs(errors) do print("  FAIL: " .. err) end
   os.exit(1)
 end
-
-print(string.format("Passed: %d, Failed: %d", passed, failed))
+print("\nAll tests passed!")

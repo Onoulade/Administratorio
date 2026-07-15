@@ -715,28 +715,31 @@ function M.on_pneumatic_tick()
           local allowed_name = inventory_filter_name(slot_filter)
 
           -- Pick item: if filtered, only that item; otherwise largest-count-first.
-          local best_name, best_count = nil, 0
+          local best_key, best_count = nil, 0
           if allowed_name then
-            local count = pool[allowed_name]
-            if count and count > 0 then
-              best_name = allowed_name
-              best_count = count
+            for pool_key, count in pairs(pool) do
+              local item_name = parse_pool_key(pool_key)
+              if item_name == allowed_name and count > best_count then
+                best_key = pool_key
+                best_count = count
+              end
             end
           else
-            for item_name, count in pairs(pool) do
+            for pool_key, count in pairs(pool) do
               if count > best_count then
-                best_name = item_name
+                best_key = pool_key
                 best_count = count
               end
             end
           end
 
-          if best_name and best_count > 0 then
-            local inserted = inv.insert{name = best_name, count = 1}
+          if best_key and best_count > 0 then
+            local item_name, quality_name = parse_pool_key(best_key)
+            local inserted = inv.insert{name = item_name, quality = quality_name, count = 1}
             if inserted > 0 then
-              pool[best_name] = best_count - inserted
-              if pool[best_name] <= 0 then
-                pool[best_name] = nil
+              pool[best_key] = best_count - inserted
+              if pool[best_key] <= 0 then
+                pool[best_key] = nil
               end
               storage.tube_outtake_cursor[net_id] = outtake.uid
               networks_changed[net_id] = true

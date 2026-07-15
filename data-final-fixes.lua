@@ -35,7 +35,6 @@ if feature_flags.space_age_enabled() then
   require("prototypes.shared.paperwork_recycling").apply()
 end
 
-local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
 local REGULATED_AM_FACTORIOPEDIA_NOTE = {"administratorio-factoriopedia.regulated-assembling-note"}
 local PNEUMATIC_TRANSPORT_NOTE = {
   "",
@@ -44,15 +43,9 @@ local PNEUMATIC_TRANSPORT_NOTE = {
   {"item-name.tube-intake"},
   " ([item=tube-intake]).",
 }
-local WORKING_HOURS_ENABLED = feature_flags.working_hours_enabled()
 local DEBUG_SHOW_PAPERWORK_ICON_OVERLAYS = false
 local TAXPAYER_MONEY_FUEL_CATEGORY = "administratorio-taxpayer-money"
 local REGULAR_FUEL_CATEGORY = "chemical"
-local NIGHT_WORK_BUILDINGS = {
-  ["office-desk"] = true,
-  ["corporate-breakroom"] = true,
-  ["union-headquarters"] = true,
-}
 local HATCHED_PENTAPOD_UNITS = {
   ["small-pentapod-premature"] = true,
   ["medium-pentapod-premature"] = true,
@@ -87,91 +80,6 @@ end
 
 sync_scrap_recycler_output_slots()
 
-local ADMIN_STATION_NON_BLOCKING_NAMES = {
-  ["admin-station-combinator"] = true,
-  ["biterport-hidden-roboport"] = true,
-  ["biter-station-wall-blocker"] = true,
-  ["biterport-wall-blocker"] = true,
-  ["transit-permit-chest"] = true,
-  ["pneumatic-hidden-network-pipe"] = true,
-}
-
-local ADMIN_STATION_EXCLUDED_TYPES = {
-  -- Ephemeral / non-physical entities
-  ["character"] = true,
-  ["combat-robot"] = true,
-  ["construction-robot"] = true,
-  ["corpse"] = true,
-  ["entity-ghost"] = true,
-  ["explosion"] = true,
-  ["fire"] = true,
-  ["highlight-box"] = true,
-  ["item-entity"] = true,
-  ["logistic-robot"] = true,
-  ["optimized-decorative"] = true,
-  ["particle"] = true,
-  ["particle-source"] = true,
-  ["projectile"] = true,
-  ["rocket-silo-rocket"] = true,
-  ["segment"] = true,
-  ["segmented-unit"] = true,
-  ["smoke"] = true,
-  ["smoke-with-trigger"] = true,
-  ["speech-bubble"] = true,
-  ["spider-leg"] = true,
-  ["spider-unit"] = true,
-  ["stream"] = true,
-  ["tile-ghost"] = true,
-  ["unit"] = true,
-  -- Natural map features — must not block placement of miners, buildings, etc.
-  ["resource"] = true,
-  ["tree"] = true,
-  ["simple-entity"] = true,
-  ["simple-entity-with-force"] = true,
-  ["simple-entity-with-owner"] = true,
-  ["cliff"] = true,
-  ["fish"] = true,
-  -- Enemy structures — already blocked by object layer, no need for extra layer
-  ["unit-spawner"] = true,
-  ["turret"] = true,            -- enemy worms (player turrets are ammo-/electric-/fluid-turret)
-  -- Walkable entities — player walks over these in vanilla
-  ["transport-belt"] = true,
-  ["underground-belt"] = true,
-  ["splitter"] = true,
-  ["loader"] = true,
-  ["loader-1x1"] = true,
-  ["linked-belt"] = true,
-  ["lane-splitter"] = true,
-  ["inserter"] = true,
-  ["land-mine"] = true,
-  ["straight-rail"] = true,
-  ["curved-rail-a"] = true,
-  ["curved-rail-b"] = true,
-  ["half-diagonal-rail"] = true,
-  ["elevated-straight-rail"] = true,
-  ["elevated-curved-rail-a"] = true,
-  ["elevated-curved-rail-b"] = true,
-  ["elevated-half-diagonal-rail"] = true,
-  ["rail-ramp"] = true,
-  ["rail-support"] = true,
-  ["legacy-straight-rail"] = true,
-  ["legacy-curved-rail"] = true,
-  ["rail-signal"] = true,
-  ["rail-chain-signal"] = true,
-  ["display-panel"] = true,
-  -- Vehicles — mobile, should not be blocked by footprint
-  ["car"] = true,               -- cars and tanks
-  ["spider-vehicle"] = true,    -- spidertron
-  ["locomotive"] = true,
-  ["cargo-wagon"] = true,
-  ["fluid-wagon"] = true,
-}
-
-local ADMIN_STATION_EXCLUDED_FLAGS = {
-  ["not-on-map"] = true,
-  ["placeable-off-grid"] = true,
-}
-
 -------------------------------------------------------------------------------
 -- 1. ADDITIONAL RECIPE CATEGORIES
 -------------------------------------------------------------------------------
@@ -192,45 +100,7 @@ if data.raw["character"]["character"] then
   char.guns_inventory_size = 1
 end
 
--- Hide all conventional guns, ammo, and player turrets (final pass catches
--- Space Age too). Managerial asteroid defense is Administratorio's intended
--- replacement, so its military-shaped prototypes remain visible.
-local MILITARY_VISIBILITY_EXCEPTIONS = {
-  ammo = {
-    ["orbital-deviation-order"] = true,
-    ["middle-management-managing-manager"] = true,
-  },
-  ["ammo-turret"] = {
-    ["trajectory-compliance-array"] = true,
-    ["senior-trajectory-compliance-array"] = true,
-    ["executive-trajectory-compliance-array"] = true,
-    ["orbital-employment-cannon"] = true,
-  },
-}
-
-for _, proto_type in ipairs({"gun", "ammo", "ammo-turret", "electric-turret", "fluid-turret"}) do
-  for name, proto in pairs(data.raw[proto_type] or {}) do
-    if not (MILITARY_VISIBILITY_EXCEPTIONS[proto_type] or {})[name] then
-      proto.hidden = true
-    end
-  end
-end
-
-for _, name in ipairs({
-  "railgun", "railgun-ammo", "railgun-turret",
-  "teslagun", "tesla-gun", "tesla-ammo", "tesla-turret",
-}) do
-  for _, proto_type in ipairs({"item", "gun", "ammo", "recipe", "ammo-turret", "electric-turret", "fluid-turret"}) do
-    if data.raw[proto_type] and data.raw[proto_type][name] then
-      data.raw[proto_type][name].hidden = true
-      data.raw[proto_type][name].enabled = false
-    end
-  end
-  if data.raw.technology and data.raw.technology[name] then
-    data.raw.technology[name].hidden = true
-    data.raw.technology[name].enabled = false
-  end
-end
+require("prototypes.final_fixes.military_hiding").apply(data)
 
 -------------------------------------------------------------------------------
 -- 2a. BITER SETUP
@@ -1638,101 +1508,7 @@ end
 -------------------------------------------------------------------------------
 -- 9. ADMIN STATION COLLISION FOOTPRINT
 -------------------------------------------------------------------------------
-
-local function collision_box_is_zero(box)
-  return box
-    and box[1] and box[2]
-    and box[1][1] == 0 and box[1][2] == 0
-    and box[2][1] == 0 and box[2][2] == 0
-end
-
-local function normalize_collision_mask(mask)
-  if not mask then
-    -- Preserve Factorio's default collision layers for ground entities;
-    -- without these the entity loses water/object/player collision entirely.
-    return {layers = {item = true, object = true, player = true, water_tile = true}}
-  end
-  if mask.layers then
-    mask.layers = mask.layers or {}
-    return mask
-  end
-
-  local normalized = {layers = {}}
-  for key, value in pairs(mask) do
-    if key == "not_colliding_with_itself" or key == "consider_tile_transitions" or key == "colliding_with_tiles_only" then
-      normalized[key] = value
-    elseif type(key) == "number" and type(value) == "string" then
-      normalized.layers[value] = true
-    elseif type(key) == "string" and value == true then
-      normalized.layers[key] = true
-    end
-  end
-  return normalized
-end
-
-local function has_excluded_flag(prototype)
-  if not prototype.flags then return false end
-  for _, flag in ipairs(prototype.flags) do
-    if ADMIN_STATION_EXCLUDED_FLAGS[flag] then
-      return true
-    end
-  end
-  return false
-end
-
-local function should_add_admin_station_layer(prototype)
-  if not prototype or ADMIN_STATION_NON_BLOCKING_NAMES[prototype.name] then
-    return false
-  end
-  if ADMIN_STATION_EXCLUDED_TYPES[prototype.type] or has_excluded_flag(prototype) then
-    return false
-  end
-  if not prototype.collision_mask then
-    return false
-  end
-  if not prototype.collision_box or collision_box_is_zero(prototype.collision_box) then
-    return false
-  end
-  return true
-end
-
-local function build_standard_module_categories()
-  local categories = {}
-  for name, _ in pairs(data.raw["module-category"] or {}) do
-    if name ~= "night-work" then
-      categories[#categories + 1] = name
-    end
-  end
-  table.sort(categories)
-  return categories
-end
-
-local function copy_array(values)
-  local copy = {}
-  for index, value in ipairs(values) do
-    copy[index] = value
-  end
-  return copy
-end
-
-local STANDARD_MODULE_CATEGORIES = build_standard_module_categories()
-
-for _, prototype_set in pairs(data.raw) do
-  for _, prototype in pairs(prototype_set) do
-    if should_add_admin_station_layer(prototype) then
-      prototype.collision_mask = normalize_collision_mask(prototype.collision_mask)
-      prototype.collision_mask.layers[ADMIN_STATION_COLLISION_LAYER] = true
-    end
-
-    if prototype and type(prototype.module_slots) == "number" and prototype.module_slots > 0 then
-      local categories = copy_array(STANDARD_MODULE_CATEGORIES)
-      if WORKING_HOURS_ENABLED and NIGHT_WORK_BUILDINGS[prototype.name] then
-        categories[#categories + 1] = "night-work"
-      end
-      prototype.allowed_module_categories = categories
-    end
-  end
-end
+require("prototypes.final_fixes.collision_masks").apply(data, feature_flags.working_hours_enabled())
 
 -------------------------------------------------------------------------------
 -- 8b. BITERPORT ITEM PLACE_RESULT FALLBACK
@@ -1825,30 +1601,4 @@ end
 -- Age, Administratorio, and compatibility-mod packs all obey the same rule.
 -- This runs last to prevent any earlier recipe mutation from reintroducing one.
 -------------------------------------------------------------------------------
-local science_pack_items = {}
-for _, item_type in ipairs(ITEM_LIKE_PROTOTYPE_TYPES) do
-  for item_name, item in pairs(data.raw[item_type] or {}) do
-    if item.subgroup == "science-pack" or item_name:find("science%-pack$") then
-      science_pack_items[item_name] = true
-    end
-  end
-end
-
-local function strip_science_pack_ingredients(target)
-  if not target or not target.ingredients then return end
-
-  local ingredients = {}
-  for _, ingredient in ipairs(target.ingredients) do
-    local name = ingredient_name(ingredient)
-    if ingredient_type(ingredient) ~= "item" or not science_pack_items[name] then
-      append_or_merge_ingredient(ingredients, util.table.deepcopy(ingredient))
-    end
-  end
-  target.ingredients = ingredients
-end
-
-for _, recipe in pairs(data.raw.recipe or {}) do
-  strip_science_pack_ingredients(recipe)
-  strip_science_pack_ingredients(recipe.normal)
-  strip_science_pack_ingredients(recipe.expensive)
-end
+require("prototypes.final_fixes.science_pack_stripping").apply(data, ITEM_LIKE_PROTOTYPE_TYPES)
