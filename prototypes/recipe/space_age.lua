@@ -162,57 +162,6 @@ local function not_in_space(recipe)
   return planets.require_non_vacuum_surface(recipe)
 end
 
-local function clone_recipe(source_name, clone_name)
-  local source = data.raw.recipe and data.raw.recipe[source_name]
-  if not source then return nil end
-  local clone
-  if table.deepcopy then
-    clone = table.deepcopy(source)
-  else
-    local function copy(value, seen)
-      if type(value) ~= "table" then return value end
-      if seen[value] then return seen[value] end
-      local out = {}
-      seen[value] = out
-      for key, entry in pairs(value) do
-        out[copy(key, seen)] = copy(entry, seen)
-      end
-      return setmetatable(out, getmetatable(value))
-    end
-    clone = copy(source, {})
-  end
-  clone.name = clone_name
-  clone.localised_name = source.localised_name or {"recipe-name." .. source_name}
-  clone.localised_description = source.localised_description or {"recipe-description." .. source_name}
-  return clone
-end
-
-local function add_unlock_for_clone(source_name, clone_name)
-  for _, technology in pairs(data.raw.technology or {}) do
-    local effects = technology.effects or {}
-    local should_unlock = false
-    for _, effect in ipairs(effects) do
-      if effect.type == "unlock-recipe" and effect.recipe == source_name then
-        should_unlock = true
-        break
-      end
-    end
-    if should_unlock then
-      local already_present = false
-      for _, effect in ipairs(effects) do
-        if effect.type == "unlock-recipe" and effect.recipe == clone_name then
-          already_present = true
-          break
-        end
-      end
-      if not already_present then
-        table.insert(effects, {type = "unlock-recipe", recipe = clone_name})
-      end
-      technology.effects = effects
-    end
-  end
-end
-
 data:extend({
   surface_limited({
     type = "recipe",
@@ -230,20 +179,6 @@ data:extend({
     results = {{type = "item", name = "job-offer", amount = 1}},
     energy_required = 30
   }, "nauvis"),
-  not_in_space({
-    type = "recipe",
-    name = "formation-center",
-    enabled = false,
-    ingredients = {
-      {type = "item", name = "office-desk", amount = 2},
-      {type = "item", name = "printer-t2", amount = 1},
-      {type = "item", name = "processing-unit", amount = 10},
-      {type = "item", name = "management-approval-written", amount = 1},
-      {type = "item", name = "refined-concrete", amount = 20},
-    },
-    results = {{type = "item", name = "formation-center", amount = 1}},
-    energy_required = 30
-  }),
   surface_limited({
     type = "recipe",
     name = "worker-biter-formation",
@@ -435,7 +370,7 @@ data:extend({
     localised_name = {"item-name.capture-bureau"},
     localised_description = {"item-description.capture-bureau"},
     ingredients = {
-      {type = "item", name = "admin-station", amount = 1},
+      {type = "item", name = "construction-permit", amount = 1},
       {type = "item", name = "conciliation-officer", amount = 1},
       {type = "item", name = "worker-biter", amount = 1},
       {type = "item", name = "steel-plate", amount = 20},
@@ -877,58 +812,6 @@ data:extend({
   }, "gleba"),
   surface_limited({
     type = "recipe",
-    name = "admin-station-gleba",
-    enabled = false,
-    localised_name = {"item-name.admin-station"},
-    localised_description = {"item-description.admin-station"},
-    ingredients = {
-      {type = "item", name = "iron-plate", amount = 20},
-      {type = "item", name = "electronic-circuit", amount = 10},
-      {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
-    },
-    results = {
-      {type = "item", name = "admin-station", amount = 1},
-    },
-    energy_required = 15,
-  }, "gleba"),
-  surface_limited({
-    type = "recipe",
-    name = "printer-t1-gleba",
-    enabled = false,
-    localised_name = {"item-name.printer-t1"},
-    localised_description = {"item-description.printer-t1"},
-    ingredients = {
-      {type = "item", name = "iron-plate", amount = 10},
-      {type = "item", name = "iron-gear-wheel", amount = 5},
-      {type = "item", name = "electronic-circuit", amount = 3},
-      {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
-    },
-    results = {
-      {type = "item", name = "printer-t1", amount = 1},
-    },
-    energy_required = 2,
-  }, "gleba"),
-  surface_limited({
-    type = "recipe",
-    name = "corporate-breakroom-gleba",
-    enabled = false,
-    localised_name = {"item-name.corporate-breakroom"},
-    localised_description = {"item-description.corporate-breakroom"},
-    ingredients = {
-      {type = "item", name = "iron-plate", amount = 16},
-      {type = "item", name = "wood", amount = 8},
-      {type = "item", name = "stone-brick", amount = 8},
-      {type = "item", name = "pipe", amount = 3},
-      {type = "item", name = "electronic-circuit", amount = 4},
-      {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
-    },
-    results = {
-      {type = "item", name = "corporate-breakroom", amount = 1},
-    },
-    energy_required = 10,
-  }, "gleba"),
-  surface_limited({
-    type = "recipe",
     name = "administrative-science-pack-production-gleba",
     category = "bureaucracy-registration",
     enabled = false,
@@ -1079,21 +962,6 @@ data:extend({
     },
     results = {
       {type = "item", name = "conciliation-order", amount = 1},
-    },
-    energy_required = 5,
-  }, "gleba"),
-  surface_limited({
-    type = "recipe",
-    name = "biochamber-operating-waiver",
-    category = "bureaucracy-conciliation",
-    enabled = false,
-    ingredients = {
-      {type = "item", name = "blank-yellow-form", amount = 1},
-      {type = "item", name = "symbiosis-record", amount = 1},
-      {type = "item", name = "nutrients", amount = 4},
-    },
-    results = {
-      {type = "item", name = "biochamber-operating-waiver", amount = 1},
     },
     energy_required = 5,
   }, "gleba"),
@@ -1540,20 +1408,33 @@ data:extend({
   }, "vulcanus"),
   surface_limited({
     type = "recipe",
-    name = "printer-t1-vulcanus",
+    name = "provisional-approval-vulcanus",
+    category = "bureaucracy-registration",
     enabled = false,
-    localised_name = {"item-name.printer-t1"},
-    localised_description = {"item-description.printer-t1"},
+    localised_name = {"item-name.provisional-approval"},
     ingredients = {
-      {type = "item", name = "iron-plate", amount = 10},
-      {type = "item", name = "iron-gear-wheel", amount = 5},
-      {type = "item", name = "electronic-circuit", amount = 3},
-      {type = "item", name = "dubious-data", amount = 1},
+      {type = "item", name = "blank-form", amount = 1},
+      {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
     },
     results = {
-      {type = "item", name = "printer-t1", amount = 1},
+      {type = "item", name = "provisional-approval", amount = 1},
     },
-    energy_required = 5,
+    energy_required = 1,
+  }, "vulcanus"),
+  surface_limited({
+    type = "recipe",
+    name = "compacted-rubble-production-vulcanus",
+    category = "smelting-basic",
+    enabled = false,
+    localised_name = {"item-name.compacted-rubble"},
+    ingredients = {
+      {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
+      {type = "item", name = "calcite", amount = 5},
+    },
+    results = {
+      {type = "item", name = "compacted-rubble", amount = 5},
+    },
+    energy_required = 16,
   }, "vulcanus"),
   surface_limited({
     type = "recipe",
@@ -2003,74 +1884,9 @@ data:extend({
   }, "vulcanus"),
 })
 
-do
-  local offworld_clones = {
-    {source = "foundry", clone = "foundry-offworld", ingredient = "offworld-metallurgy-charter", amount = 1},
-    {source = "tungsten-plate", clone = "tungsten-plate-offworld", ingredient = "thermal-process-license", amount = 1},
-    {source = "tungsten-carbide", clone = "tungsten-carbide-offworld", ingredient = "thermal-process-license", amount = 1},
-    {source = "molten-iron", clone = "molten-iron-offworld", ingredient = "calcite-reagent-waiver", amount = 1},
-    {source = "molten-iron-from-lava", clone = "molten-iron-from-lava-offworld", ingredient = "calcite-reagent-waiver", amount = 1},
-    {source = "molten-copper", clone = "molten-copper-offworld", ingredient = "calcite-reagent-waiver", amount = 1},
-    {source = "molten-copper-from-lava", clone = "molten-copper-from-lava-offworld", ingredient = "calcite-reagent-waiver", amount = 1},
-    {source = "simple-coal-liquefaction", clone = "simple-coal-liquefaction-offworld", ingredient = "calcite-reagent-waiver", amount = 1},
-    {source = "acid-neutralisation", clone = "acid-neutralisation-offworld", ingredient = "calcite-reagent-waiver", amount = 1},
-    {source = "casting-low-density-structure", clone = "casting-low-density-structure-offworld", ingredient = "offworld-metallurgy-charter", amount = 1},
-  }
-
-  local clones = {}
-  for _, spec in ipairs(offworld_clones) do
-    local source = data.raw.recipe and data.raw.recipe[spec.source]
-    if source then
-      surface_limited(source, "vulcanus")
-      local clone = clone_recipe(spec.source, spec.clone)
-      if clone then
-        add_item_ingredient(clone, spec.ingredient, spec.amount)
-        not_on_planet(clone, "vulcanus")
-        table.insert(clones, clone)
-      end
-    end
-  end
-
-  if #clones > 0 then
-    data:extend(clones)
-    for _, spec in ipairs(offworld_clones) do
-      if data.raw.recipe and data.raw.recipe[spec.clone] then
-        add_unlock_for_clone(spec.source, spec.clone)
-      end
-    end
-  end
-end
-
-do
-  local gleba_bio_exports = {
-    "rocket-fuel-from-jelly",
-    "bioplastic",
-    "biosulfur",
-    "biolubricant",
-  }
-
-  local clones = {}
-  for _, recipe_name in ipairs(gleba_bio_exports) do
-    local source = data.raw.recipe and data.raw.recipe[recipe_name]
-    if source then
-      surface_limited(source, "gleba")
-      local clone = clone_recipe(recipe_name, recipe_name .. "-offworld")
-      if clone then
-        add_item_ingredient(clone, "biochamber-operating-waiver", 1)
-        table.insert(clones, clone)
-      end
-    end
-  end
-
-  if #clones > 0 then
-    data:extend(clones)
-    for _, recipe_name in ipairs(gleba_bio_exports) do
-      if data.raw.recipe and data.raw.recipe[recipe_name .. "-offworld"] then
-        add_unlock_for_clone(recipe_name, recipe_name .. "-offworld")
-      end
-    end
-  end
-end
+-- Vanilla owns the availability of Foundry, Biochamber, and their native
+-- processes. Do not rewrite those restrictions or clone their recipes merely
+-- to make planet-native processes portable.
 
 for _, recipe_name in ipairs({
   "foundry",
@@ -2087,9 +1903,7 @@ for _, recipe_name in ipairs({
   add_item_ingredient(data.raw.recipe and data.raw.recipe[recipe_name], specialist_by_recipe[recipe_name], 1)
 end
 
-add_item_ingredient(data.raw.recipe and data.raw.recipe["foundry-offworld"], "licensed-notary", 1)
 add_item_ingredient(data.raw.recipe and data.raw.recipe["foundry"], "tungsten-carbide", 4)
-add_item_ingredient(data.raw.recipe and data.raw.recipe["foundry-offworld"], "tungsten-carbide", 4)
 
 local SPACE_TOURISM_VARIANTS = {
   {

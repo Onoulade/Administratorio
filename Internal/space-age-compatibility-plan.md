@@ -97,16 +97,15 @@ If a form is copyable and the only reason to localize it would be to support a o
 
 This rule should especially apply to deep executive, policy, or funding trees that do not become part of the target planet's core identity.
 
-### 7. Export pressure should live in off-world variants
+### 7. Preserve vanilla restrictions; localize Administratorio inputs
 
-When a planet should export paperwork for its own technology family, the clean pattern is:
+Vanilla Space Age owns the availability of its buildings and native processes. Administratorio must not rewrite those surface conditions or clone vanilla processes merely to make them portable.
 
-- keep the home-planet recipe straightforward
-- add off-world recipe variants that require the exported form
+- keep one construction recipe per building
+- leave vanilla recipe and entity restrictions untouched
+- add planet-local alternatives for Administratorio intermediates when a canonical building would otherwise need excessive imports
 
-That keeps the home planet readable while still giving the paperwork a shipping or fax value everywhere else.
-
-The Vulcanus implementation uses this pattern for selected foundry, tungsten, calcite, and molten-metal chains.
+This preserves planet identity while keeping the mod's own building costs practical.
 
 ### 8. Space Age compatibility should not erase cross-planet identity
 
@@ -217,7 +216,7 @@ Its design principles are:
 - make the planet good at `lie`, with `dubious-data` arriving as a constrained useful byproduct
 - keep the `chromatic-printer` narrow and coherent
 - move the support-heavy or legally dense work into the `notary-office`
-- use Vulcanus-exclusive paperwork as off-world gates for Vulcanus tech
+- use Vulcanus-exclusive paperwork in Administratorio's interplanetary paperwork chains
 - the `notary-office` requires a `licensed-notary` worker to craft but no operating paperwork
 
 ### Vulcanus bootstrap layer
@@ -226,8 +225,8 @@ The first playable Vulcanus pass adds early bootstrap recipes so the planet can 
 
 - `paper-production-vulcanus`
 - `carbon-offset-certificate-basic-vulcanus`
-- `admin-station-vulcanus`
-- `printer-t1-vulcanus`
+- `provisional-approval-vulcanus`
+- `compacted-rubble-production-vulcanus`
 - `research-grant-approval-vulcanus`
 - `administrative-science-pack-production-vulcanus`
 - `plastic-bar-vulcanus`
@@ -276,7 +275,7 @@ Vulcanus creates non-copyable forms that matter off-world:
 - `calcite-reagent-waiver`
 - `offworld-metallurgy-charter`
 
-These forms are consumed by off-world variants of important Vulcanus-tech recipes rather than polluting the core home-planet recipes.
+These forms feed Administratorio's interplanetary permits and convergence paperwork. They do not alter or clone vanilla Vulcanus processes.
 
 Additionally, cyan forms are required as ingredients in any recipe consuming tungsten plate, making Vulcanus paperwork essential for late-game manufacturing everywhere.
 

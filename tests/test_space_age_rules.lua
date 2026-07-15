@@ -71,8 +71,6 @@ end)
 test("space age admin and convergence categories stay free of recurring operating paperwork", function()
   assert_nil(shared.get_operating_form({name = "industrial-charter", category = "bureaucracy-certification"}),
     "bureaucracy-certification should be exempt")
-  assert_nil(shared.get_operating_form({name = "biochamber-operating-waiver", category = "bureaucracy-conciliation"}),
-    "bureaucracy-conciliation should be exempt")
   assert_nil(shared.get_operating_form({name = "territorial-arbitration-processing", category = "territorial-arbitration"}),
     "territorial-arbitration should stay exempt")
   assert_nil(shared.get_operating_form({name = "asteroid-processing-docket", category = "orbital-bureaucracy"}),

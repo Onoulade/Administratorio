@@ -140,8 +140,8 @@ Vulcanus:
   - `paper-production-vulcanus`
   - `heatproof-paper-production`
   - `carbon-offset-certificate-basic-vulcanus`
-  - `printer-t1-vulcanus`
-  - `propaganda-distillery-vulcanus`
+  - `provisional-approval-vulcanus`
+  - `compacted-rubble-production-vulcanus`
   - `dubious-data-analysis-vulcanus`
   - `research-grant-approval-vulcanus`
   - `administrative-science-pack-production-vulcanus`
@@ -176,17 +176,7 @@ Vulcanus:
   - `management-approval-written-vulcanus`
   - `heatproof-filler-documentation`
   - `form-27b-6-vulcanus`
-- Off-world clones exist for selected Vulcanus recipes:
-  - `foundry-offworld`
-  - `tungsten-plate-offworld`
-  - `tungsten-carbide-offworld`
-  - `molten-iron-offworld`
-  - `molten-iron-from-lava-offworld`
-  - `molten-copper-offworld`
-  - `molten-copper-from-lava-offworld`
-  - `simple-coal-liquefaction-offworld`
-  - `acid-neutralisation-offworld`
-  - `casting-low-density-structure-offworld`
+- Vanilla Vulcanus process recipes retain their original surface conditions and have no Administratorio off-world clones.
 
 Gleba:
 
@@ -199,9 +189,8 @@ Gleba:
   - `amber-sap-nonsense-seeding`
   - `ink-production-gleba`
   - `carbon-offset-certificate-basic-gleba`
-  - `admin-station-gleba`
-  - `printer-t1-gleba`
-  - `corporate-breakroom-gleba`
+  - `provisional-approval-cultivation-gleba`
+  - `construction-permit-gleba`
   - `administrative-science-pack-production-gleba`
 - Yellow paperwork:
   - `yellow-ink`
@@ -209,13 +198,11 @@ Gleba:
   - `blank-yellow-form`
   - `symbiosis-record`
   - `conciliation-order`
-  - `biochamber-operating-waiver`
 - Spoilage is implemented for:
   - `mycelial-form-stock`
   - `blank-yellow-form`
   - `symbiosis-record`
   - `conciliation-order`
-  - `biochamber-operating-waiver`
 - Hostile-acquisition and tourism:
   - `capture-bureau`
   - `conciliation-desk`
@@ -226,11 +213,7 @@ Gleba:
   - space tourist items
   - orbital tourism payout recipes
   - jettison recipes
-- Off-world bio variants exist for:
-  - `rocket-fuel-from-jelly-offworld`
-  - `bioplastic-offworld`
-  - `biosulfur-offworld`
-  - `biolubricant-offworld`
+- Vanilla Gleba biological recipes retain their original surface conditions and have no Administratorio off-world clones.
 
 Fulgora:
 
@@ -319,7 +302,8 @@ Professions:
   - `field-negotiator-formation`
   - `middle-management-managing-manager-formation`
 - Implemented profession hooks:
-  - `foundry` and `foundry-offworld` require `licensed-notary`
+  - `foundry` requires `licensed-notary`
+  - the single `foundry` construction recipe retains vanilla Space Age's own Vulcanus pressure restriction and is shipped offworld
   - `notary-office` requires `licensed-notary`
   - `territorial-arbitration-post` requires `licensed-notary`
   - `biochamber` requires `conciliation-officer`
@@ -400,16 +384,18 @@ Fax runtime:
 - Worker documentation now matches the portable specialist surface rule:
   - Nauvis-bound seed: `job-offer-production`, `worker-biter-formation`, `management-trainee-formation`, `licensed-notary-formation`
   - portable specialist routing: clerical, astronaut, supervisor, conciliation, relay, cryoprint, field-negotiator, and MMMM formation recipes
-- Decide whether `admin-station-gleba` is still a true bootstrap item. It crafts an `admin-station` item on Gleba, but `admin-station` placement is restricted to Nauvis when Space Age is enabled.
+- The canonical `admin-station` recipe and entity are Nauvis-only. Other planets use their own specialist interfaces and never need to import an Admin Desk.
 
 ### Surface Conditions And Planet Identity
 
 - Worker surface policy is now explicit and covered by `tests/test_space_age_content.lua`:
   - Nauvis-bound recruitment and seed recipes: `job-offer-production`, `worker-biter-formation`, `management-trainee-formation`, `licensed-notary-formation`
   - portable post-seed specialist recipes: `clerical-trainee-formation`, `astronaut-formation`, `night-shift-supervisor-formation`, `conciliation-officer-formation`, `relay-clerk-formation`, `cryoprint-technician-formation`, `field-negotiator-formation`, `middle-management-managing-manager-formation`
-- Remaining likely mismatches:
-  - `admin-station-gleba` crafts an `admin-station` item that cannot be placed on Gleba under Space Age placement rules.
-  - `public-transportation-contract-production` is wrapped in `surface_limited(...)` without a planet argument, which is effectively a no-op.
+- Recently resolved mismatches:
+  - canonical `admin-station` crafts and places only on Nauvis.
+  - Gleba's `capture-bureau` consumes its local `construction-permit` route rather than an imported Admin Desk.
+  - vanilla Foundry, Biochamber, and native-process restrictions are left untouched.
+  - `public-transportation-contract-production` is intentionally global/category-gated and no longer carries a no-op `surface_limited(...)` wrapper.
 
 ### Base-Only Compatibility
 
@@ -440,7 +426,7 @@ Fax runtime:
 - Manual report review still needed for:
   - Aquilo first-start experience, because the route output shows many paper, ink, coffee, and office-drama bootstrap cycles even though the final selected target is graph-valid
   - whether every required building category is actually placeable and unlockable on the planet where the route says it is needed
-  - whether off-world recipe variants are doing too much hidden work for first-planet escape
+  - whether each canonical Administratorio building has practical local intermediate routes without weakening vanilla planet identity
   - whether imports shown inside non-selected intermediate explanations are expected diagnostics or signal a real rough edge
   - whether the analyzer should treat building availability as a stricter requirement instead of reporting categories separately
   - whether the route should validate one complete planet escape path per planet with local buildings, not only item reachability and selected escape targets
@@ -464,7 +450,6 @@ Fax runtime:
     - `offworld-metallurgy-charter`
     - `symbiosis-record`
     - `conciliation-order`
-    - `biochamber-operating-waiver`
     - `archive-recovery-permit`
     - `digital-processing-certificate`
     - `electromagnetic-operating-license`
@@ -489,26 +474,28 @@ Fax runtime:
 
 ### Planet Escape And Bootstrap
 
+- Real Factorio 2.0.77 validation confirms:
+  - `admin-station` recipe and entity are Nauvis-only
+  - vanilla Foundry and `acid-neutralisation` retain their single pressure condition
+  - other audited vanilla Vulcanus and Gleba processes retain their original unrestricted recipe prototypes
+  - no planet-suffixed building construction recipes or `-offworld` process clones remain
+  - named analyzer profiles now apply planet-specific targets instead of combining every planet's targets into one global list
 - Vulcanus:
-  - latest Space Age route analyzer run completed successfully after recent fax/UI/public transportation work
-  - current selected-target aggregate reports no imports and no deadlocks
-  - `notary-office` crafting is now Vulcanus-bound and covered by Space Age content tests
-  - verify `thermal-process-license` / `calcite-reagent-waiver` / `offworld-metallurgy-charter` are valuable off-world without polluting home-planet recipes
+  - `printer-t1` and `propaganda-distillery` are locally craftable
+  - `foundry` needs one imported `licensed-notary`, preserving the intentional Nauvis workforce seed
+  - the optional canonical breakroom needs eight imported wood; it has no Vulcanus-specific building recipe
+  - verify `thermal-process-license` / `calcite-reagent-waiver` / `offworld-metallurgy-charter` remain valuable in Administratorio paperwork without altering vanilla processes
 - Gleba:
-  - latest Space Age route analyzer run completed successfully, but still needs manual report review for import-like diagnostics and bootstrap roughness
-  - verify whether `admin-station-gleba` is useful if `admin-station` can only be placed on Nauvis
+  - `printer-t1` and `corporate-breakroom` are locally craftable
+  - `capture-bureau` imports only the compact workforce seed (`clerical-trainee` and `worker-biter`), not an Admin Desk or bulk Nauvis materials
+  - the optional canonical distillery needs five imported `redundant-rubble`; it has no Gleba-specific building recipe
   - verify the player can practically reach the intended escape milestone without over-importing `lie`, `redundant-rubble`, advanced paperwork, or nonlocal buildings
-  - decide whether more narrow Gleba shortcuts are needed or whether import-heavy is intended
   - validate yellow paperwork spoil times in real play
 - Fulgora:
-  - latest Space Age route analyzer run completed successfully, but still needs manual report review for import-like diagnostics and bootstrap roughness
-  - still lacks explicit bootstrap variants comparable to Vulcanus and Gleba for:
-    - local admin station equivalent
-    - local printer bootstrap
-    - local administrative science pack route
-    - local breakroom / gossip bridge if needed
-  - decide whether the `Digital Services Bureau` is enough as the local admin upgrade or whether Fulgora needs a cheaper first-planet bootstrap layer
-  - balance `scrap -> charged-toner`, `scrap -> redundant-rubble`, and `scrap + charged-toner -> useless-documentation + paper`
+  - `printer-t1`, `corporate-breakroom`, and `propaganda-distillery` are locally craftable
+  - `digital-services-bureau` needs only its compact workforce seed
+  - new `static-charge-deposit` provides a planet-local raw shortcut to `charged-toner`
+  - balance `static-charge-deposit -> charged-toner`, `scrap -> charged-toner`, `scrap -> redundant-rubble`, and `scrap + charged-toner -> useless-documentation + paper`
 - Aquilo:
   - not intended as a first planet
   - verify that the Aquilo tech and recipe model assumes prior planets cleanly without making the fax network awkward to bootstrap
@@ -589,7 +576,7 @@ Fax runtime:
   - validate whether bicolor forms are too cheap relative to exporting two separate blanks
 - Vulcanus:
   - validate `vulcanus-lie-distillation` output of `180 lie + 1 dubious-data`
-  - validate whether `thermal-process-license` and `calcite-reagent-waiver` are the right cost for repeated offworld metallurgy
+  - validate whether `thermal-process-license` and `calcite-reagent-waiver` are the right cost in interplanetary permit chains
   - validate `territorial-arbitration-post` footprint and upkeep in real maps
 - Gleba:
   - validate yellow paperwork spoil times (`18000` and `36000` ticks)
@@ -622,9 +609,8 @@ Implemented first pass:
 - Gleba yellow paperwork spoilage is in place
 - Gleba bootstrap variants now exist:
   - `carbon-offset-certificate-basic-gleba`
-  - `admin-station-gleba`
-  - `printer-t1-gleba`
-  - `corporate-breakroom-gleba`
+  - `provisional-approval-cultivation-gleba`
+  - `construction-permit-gleba`
   - `administrative-science-pack-production-gleba`
 - Fulgora first pass now exists:
   - `digital-services-bureau`
@@ -740,7 +726,6 @@ Status: done for:
 - `blank-yellow-form`
 - `symbiosis-record`
 - `conciliation-order`
-- `biochamber-operating-waiver`
 
 ### Step 3.4: Complete Gleba bootstrap recipes
 
@@ -749,9 +734,8 @@ Status: first pass done.
 Added:
 
 - `carbon-offset-certificate-basic-gleba`
-- `admin-station-gleba`
-- `printer-t1-gleba`
-- `corporate-breakroom-gleba`
+- `provisional-approval-cultivation-gleba`
+- `construction-permit-gleba`
 - `administrative-science-pack-production-gleba`
 
 Follow-up only if solver requires more:

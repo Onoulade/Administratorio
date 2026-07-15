@@ -169,7 +169,6 @@ data:extend({
       {type = "unlock-recipe", recipe = "blank-yellow-form-production"},
       {type = "unlock-recipe", recipe = "symbiosis-record"},
       {type = "unlock-recipe", recipe = "conciliation-order"},
-      {type = "unlock-recipe", recipe = "biochamber-operating-waiver"},
     },
     prerequisites = {"executive-review"},
     research_trigger = {
@@ -683,8 +682,7 @@ add_tech_unlock("space-platform", "orbital-infrastructure-permit")
 add_tech_unlock("workforce-formation", "licensed-notary-formation")
 add_tech_unlock("administrative-science-research", "research-grant-approval-vulcanus")
 add_tech_unlock("administrative-science-research", "administrative-science-pack-production-vulcanus")
-add_tech_unlock("administrative-science-research", "admin-station-vulcanus")
-add_tech_unlock("administrative-science-research", "admin-station-gleba")
+add_tech_unlock("administrative-science-research", "provisional-approval-vulcanus")
 add_tech_unlock("administrative-science-research", "administrative-science-pack-production-gleba")
 add_tech_unlock("calcite-processing", "dubious-data-analysis-vulcanus")
 add_tech_unlock("calcite-processing", "paper-production-vulcanus")
@@ -694,9 +692,7 @@ add_tech_unlock("calcite-processing", "liquid-coffee-vulcanus")
 add_tech_unlock("calcite-processing", "plastic-bar-vulcanus")
 add_tech_unlock("calcite-processing", "heatproof-paper-production")
 add_tech_unlock("calcite-processing", "molten-promises-production")
-add_tech_unlock("printing-technology", "printer-t1-vulcanus")
-add_tech_unlock("printing-technology", "printer-t1-gleba")
-add_tech_unlock("industrial-propaganda", "propaganda-distillery-vulcanus")
+add_tech_unlock("industrial-propaganda", "compacted-rubble-production-vulcanus")
 add_tech_unlock("industrial-propaganda", "refined-nonsense-production-vulcanus")
 add_tech_unlock("local-precedents", "useless-documentation-production-gleba")
 add_tech_unlock("discovery-bullshit", "dubious-data-cultivation-gleba")
@@ -716,7 +712,7 @@ add_tech_unlock("electromagnetic-plant", "salvage-electrolyte-fulgora")
 add_tech_unlock("electromagnetic-science-pack", "electromagnetic-lubricant-fulgora")
 add_tech_unlock("rocket-fuel", "electromagnetic-rocket-fuel-fulgora")
 add_tech_unlock("agricultural-science-pack", "conciliation-officer-formation")
-add_tech_unlock("corporate-hospitality", "corporate-breakroom-gleba")
+add_tech_unlock("corporate-hospitality", "construction-permit-gleba")
 add_tech_unlock("electromagnetic-science-pack", "relay-clerk-formation")
 add_tech_unlock("cryogenic-science-pack", "cryoprint-technician-formation")
 add_tech_unlock("hired-biter-fieldwork", "promise-production-negotiated")
