@@ -1,5 +1,46 @@
 local item_icons = "__administratorio__/graphics/icons/"
 local icon_layers = require("prototypes.shared.icon_layers")
+local manager_briefings = require("prototypes.shared.manager_briefings")
+
+local briefing_overlay_icons = {
+  training = "__base__/graphics/icons/iron-gear-wheel.png",
+  staffing = "__base__/graphics/icons/repair-pack.png",
+  compliance = item_icons .. "blank-form.png",
+  liaison = "__base__/graphics/icons/electronic-circuit.png",
+  orbital = "__base__/graphics/icons/rocket-fuel.png",
+}
+
+local manager_items = {
+  {
+    type = "item",
+    name = manager_briefings.REGULAR_MANAGER,
+    icons = {
+      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64},
+      {icon = item_icons .. "policy.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
+    },
+    subgroup = "admin-biter-buildings",
+    order = "j-j",
+    stack_size = 20,
+  },
+}
+
+for _, briefing in ipairs(manager_briefings.BRIEFINGS) do
+  manager_items[#manager_items + 1] = {
+    type = "item",
+    name = briefing.item,
+    icons = {
+      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64},
+      {icon = briefing_overlay_icons[briefing.key], icon_size = 64, scale = 0.42, shift = {8, 8}},
+    },
+    subgroup = "admin-biter-buildings",
+    order = briefing.order,
+    stack_size = 5,
+    spoil_ticks = manager_briefings.SPOIL_TICKS,
+    spoil_result = manager_briefings.REGULAR_MANAGER,
+  }
+end
+
+data:extend(manager_items)
 
 data:extend({
   {
@@ -128,15 +169,15 @@ data:extend({
     order = "j-i",
     stack_size = 100
   },
-  -- DESIGN INVARIANT: MMMM quality is cosmetic. Keep its orbital action free of
-  -- quality-scalable damage or quantity effects: returning employee chunks mine
-  -- into normal-quality ammo, and that downgrade must never cost gameplay value.
+  -- Voluntary Exploration Space Miners inherit the former orbital employee
+  -- deployment behavior. Managers now remain in the factory, where they can
+  -- attend meetings and obstruct otherwise useful workforce processes.
   {
     type = "ammo",
-    name = "middle-management-managing-manager",
+    name = manager_briefings.VESM,
     icons = {
       {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64},
-      {icon = item_icons .. "policy.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
+      {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.42, shift = {8, 8}},
     },
     ammo_category = "orbital-biter-ballistics",
     ammo_type = {
@@ -209,7 +250,7 @@ data:extend({
     name = "orbital-employment-cannon",
     icons = {
       {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
-      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
+      {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
       icon_layers.orbital_infrastructure_permit_overlay(),
     },
     subgroup = "admin-buildings",

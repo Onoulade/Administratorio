@@ -158,8 +158,8 @@ Administratorio is an ambitious total-conversion mod that replaces Factorio's mi
 | **Raw Admin Resources** | bullshit-ore, redundant-rubble, politician-fluid | verdigris-crust (lie) | amber-sap (bullshit-ore) | charged-toner (static charge), redundant-rubble (salvage) | — | — |
 | **Ink Production** | black ink | cyan ink | yellow ink | magenta ink | **frozen** (no liquid ink) | — |
 | **Printer Tier** | Printer T1/T2 | Chromatic Printer (cyan) | Chromatic Printer (yellow) | Chromatic Printer (magenta) | Laser Printer (transfer media) | — |
-| **Admin Building** | Admin Station, Field Office, Resolution Office, Union HQ, etc. | Notary Office, Territorial Arbitration Post | Capture Bureau, Conciliation Desk | Digital Services Bureau | Laser Printer, Fax Emitter, Interplanetary Fax Exchange | Admin Space Station, Trajectory Compliance Arrays, Orbital Employment Cannon |
-| **Workforce** | Worker Biter, Clerical Trainee, Management Trainee, Astronaut, Licensed Notary | Licensed Notary | Conciliation Officer | Relay Clerk | Cryoprint Technician | Middle Management Managing Manager (MMMM) |
+| **Admin Building** | Admin Station, Field Office, Resolution Office, Union HQ, etc. | Notary Office, Territorial Arbitration Post | Capture Bureau, Conciliation Desk | Digital Services Bureau | Laser Printer, Fax Emitter, Interplanetary Fax Exchange | Admin Space Station, Trajectory Compliance Arrays, Orbital Miner Deployment Cannon |
+| **Workforce** | Worker Biter, Clerical Trainee, Management Trainee, Astronaut, Licensed Notary | Licensed Notary | Conciliation Officer | Relay Clerk | Cryoprint Technician | Briefed MMMMs, Voluntary Exploration Space Miner |
 | **Paperwork Family** | Full T0–T7 tree | Cyan forms, permits, charters, thermal process license | Yellow forms (spoiling), symbiosis, conciliation | Magenta forms, archive recovery, digital certs | Bicolor/trichromatic forms, cryogenic licenses, unified charter | Orbital permits, deviation orders, asteroid dockets |
 | **Unique Mechanic** | Pneumatic tubes, protests, working hours | Lie distillation, territorial arbitration | Spore lures, hostile acquisition, tourism, spoilage | Scrap→toner, archive recovery, 24/7 bureau | Frozen ink constraint, fax reconstruction, transfer media | Asteroid redirection, orbital employment, platform permits |
 
@@ -259,7 +259,7 @@ T7: Constitutional Law (unemployment) → requires federal regulation
 **Space Age Branch (h):**
 ```
 h-a: Chromatic Printing (cyan/yellow/magenta inks, blank forms) → requires executive-review
-h-b: Workforce Formation (formation center, trajectory arrays, orbital cannon, astronauts, MMMM) → requires space-sci + executive-review
+h-b: Workforce Formation (formation center, MMMM meetings, trajectory arrays, orbital miner cannon, astronauts, VESMs) → requires space-sci + executive-review
 h-c: Vulcanus Certification (notary, territorial arbitration, vulcanus forms) → requires chromatic-printing
 h-c2: Vulcanus Export Charters (thermal license, calcite waiver, metallurgy charter) → requires vulcanus-cert + metallurgic-sci
 h-d: Gleba Conciliation (capture bureau, conciliation desk, yellow ink) → trigger: craft 50 bullshit-ore

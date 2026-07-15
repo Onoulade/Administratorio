@@ -35,11 +35,13 @@ Resolve a complaint with a **Job Offer** waiting in the desk, and the biter pick
 
 From there, the workforce branches out:
 
-- **Formation Center** — the only building that can train biters into specialists (Union Delegates, Chemical Operators, Nuclear Technicians), logistics formations, and rideable assignments. Chemical plants, centrifuges, nuclear reactors, and Union HQs require certified specialists to construct. Credentials matter.
+- **Formation Center** — the only building that can train biters into specialists and conduct managerial briefings. Space Age meetings consume five MMMMs, Taxpayer Money, Liquid Coffee, and one thematic training material over 30 unmodified seconds; the five resulting briefed managers spoil back into regular MMMMs after three minutes.
 - **Biter Employment Office** — dispatches workers to nearby managed machines, one authorized craft per visit. Breakrooms, Union HQs, Propaganda Distilleries, oil refineries, centrifuges, and the industrial printer all run on biter visits. Which means the biters are now upstream of your own paperwork supply.
 - **Biterport** — a roboport, but staffed by walking biters instead of flying robots. Progress.
 - **Rideable Biter** — personal transport that runs on Taxpayer Money, available well before the vanilla car. Cannot be picked back up once placed, because the assignment is permanent by design. Run out of funding for 10 minutes and it reverts to a regular biter and files a complaint about you. Which is fair.
 - **Hired Biter (Field Agent)** — a controllable worker you deploy via capsule to evict enemy nests and follow waypoints.
+
+Space Age adds five temporary MMMM briefings: Training, Staffing, Compliance, Liaison, and Orbital Operations. Relevant formations and staffed construction recipes consume the correct briefed managers and return them as regular MMMMs, forcing another meeting before the next use. The orbital cannon no longer launches managers; it deploys recoverable **Voluntary Exploration Space Miners**, trained from an Astronaut, an Electric Mining Drill, and three differently briefed MMMMs.
 
 ### Labor relations
 
@@ -71,7 +73,7 @@ Ordinary administrative production facilities use native Quality speed and modul
 
 Paperwork may be high quality, but its permit strength, form cost, research value, and recipe yield never change. Faxes, pneumatic tubes, and biterport logistics preserve a document's exact grade. In particular, unqualified biterport requester filters request normal stock only; an explicit Quality filter requests that exact grade, including for construction ghosts.
 
-Pneumatic hardware itself is Quality-neutral and cannot be produced at a Quality grade. Archive recombination, territorial arbitration, trajectory compliance, orbital employment, and MMMM systems treat Quality as cosmetic only: no extra speed, range, damage, yield, staffing, payload, or module departments.
+Pneumatic hardware itself is Quality-neutral and cannot be produced at a Quality grade. Archive recombination, territorial arbitration, trajectory compliance, and orbital mining treat Quality as cosmetic only: no extra speed, range, damage, yield, staffing, payload, or module departments. MMMM quality never improves meeting output or the process they supervise; native Quality may only preserve a temporary briefing longer before it spoils back into a regular manager.
 
 ## Current State
 
