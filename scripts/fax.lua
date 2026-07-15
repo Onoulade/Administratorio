@@ -1,4 +1,5 @@
 local shared = require("scripts.fax_shared")
+local quality = require("scripts.quality")
 
 local M = {}
 
@@ -431,7 +432,7 @@ local function build_receiver_slots(state, reserved_counts)
   local slots = {}
   local queued = get_receiver_total_load(state)
   local reserved = (reserved_counts and reserved_counts[state.planet_name]) or 0
-  local capacity = shared.get_queue_capacity(state.entity.force)
+  local capacity = shared.get_queue_capacity(state.entity.force, state.entity)
   local free = math.max(0, capacity - queued - reserved)
 
   if state.read_queue_status ~= false then
@@ -455,7 +456,7 @@ local function build_emitter_slots(state, reserved_counts)
   local slots = {}
   local queued = get_receiver_total_load(receiver_state)
   local reserved = (reserved_counts and reserved_counts[state.destination_planet]) or 0
-  local capacity = shared.get_queue_capacity(receiver_state.entity.force)
+  local capacity = shared.get_queue_capacity(receiver_state.entity.force, receiver_state.entity)
   local free = math.max(0, capacity - queued - reserved)
 
   if receiver_state.read_queue_status ~= false then
@@ -599,7 +600,7 @@ local function compute_receiver_feedback(state, tick)
   end
 
   local queued = #(state.queue or {})
-  local capacity = shared.get_queue_capacity(state.entity.force)
+  local capacity = shared.get_queue_capacity(state.entity.force, state.entity)
   local load = queued + (state.active_print and 1 or 0)
 
   if state.active_print then
@@ -713,7 +714,7 @@ local function compute_emitter_feedback(state, tick, reserved_counts)
   local destination_name = shared.format_planet_name(state.destination_planet)
   if state.current_job then
     local start_tick = state.current_job.start_tick
-      or math.max(0, (state.current_job.complete_tick or tick or 0) - shared.TRANSMIT_TICKS)
+      or math.max(0, (state.current_job.complete_tick or tick or 0) - shared.get_transmit_ticks(state.entity))
     local complete_tick = state.current_job.complete_tick or start_tick
     local duration = math.max(1, complete_tick - start_tick)
     local elapsed = math.max(0, math.min(duration, (tick or complete_tick) - start_tick))
@@ -765,7 +766,7 @@ local function compute_emitter_feedback(state, tick, reserved_counts)
       }
     end
 
-    local capacity = shared.get_queue_capacity(receiver_state.entity.force)
+    local capacity = shared.get_queue_capacity(receiver_state.entity.force, receiver_state.entity)
     local total_load = get_receiver_total_load(receiver_state)
     local reserved = (reserved_counts and reserved_counts[state.destination_planet]) or 0
     if total_load + reserved >= capacity then
@@ -1462,7 +1463,11 @@ local function update_emitter_gui(player, state, tick, reserved_counts)
   if not status or not status.valid then return end
 
   local feedback = compute_emitter_feedback(state, tick, reserved_counts)
-  status.caption = feedback and feedback.gui_label or ""
+  local timing = ("%s certification | Send %dt"):format(
+    quality.name(state.entity),
+    shared.get_transmit_ticks(state.entity))
+  local feedback_label = feedback and feedback.gui_label or ""
+  status.caption = feedback_label == "" and timing or (timing .. " | " .. feedback_label)
 end
 
 local function set_receiver_toggle_checkbox(frame, name, enabled)
@@ -1523,7 +1528,7 @@ local function populate_receiver_status(frame, state, tick)
     type = "label",
     caption = ("Queue occupancy: %d/%d"):format(
       get_receiver_total_load(state),
-      shared.get_queue_capacity(state.entity.force)),
+      shared.get_queue_capacity(state.entity.force, state.entity)),
   }
 end
 
@@ -1671,14 +1676,16 @@ local function update_receiver_gui(player, state, tick)
   if not frame or not frame.valid then return end
 
   local load = get_receiver_total_load(state)
-  local capacity = shared.get_queue_capacity(state.entity.force)
+  local capacity = shared.get_queue_capacity(state.entity.force, state.entity)
   local top_request = state.current_request_signal
     and ("%s x%d"):format(format_document_label(state.current_request_signal.name, state.current_request_signal.quality), state.current_request_count or 0)
     or (state.accept_circuit_requests == false and "Requests disabled" or "No current request")
 
   set_gui_label(frame, shared.RECEIVER_GUI_HEADER_NAME,
-    ("%s | Queue %d/%d | Top request: %s"):format(
+    ("%s | %s certification | Reconstruction %dt | Queue %d/%d | Top request: %s"):format(
       shared.format_planet_name(state.planet_name),
+      quality.name(state.entity),
+      shared.get_print_ticks(state.entity),
       load,
       capacity,
       top_request))
@@ -1745,7 +1752,7 @@ local function process_emitter_jobs(tick)
         end
       end
       if job then
-        job.start_tick = job.start_tick or math.max(0, (job.complete_tick or tick) - shared.TRANSMIT_TICKS)
+        job.start_tick = job.start_tick or math.max(0, (job.complete_tick or tick) - shared.get_transmit_ticks(state.entity))
       end
     end
 
@@ -1772,7 +1779,7 @@ local function process_new_emitter_jobs(tick, reserved_counts)
     if not state.current_job then
       local receiver_state = get_receiver_state_for_planet(state.destination_planet)
       if receiver_state and receiver_state.entity.force == state.entity.force then
-        local capacity = shared.get_queue_capacity(receiver_state.entity.force)
+        local capacity = shared.get_queue_capacity(receiver_state.entity.force, receiver_state.entity)
         local total_load = get_receiver_total_load(receiver_state)
         local reserved = reserved_counts[state.destination_planet] or 0
         if total_load + reserved < capacity then
@@ -1788,7 +1795,7 @@ local function process_new_emitter_jobs(tick, reserved_counts)
                 source_planet = state.planet_name,
                 slot_index = slot_index,
                 start_tick = tick,
-                complete_tick = tick + shared.TRANSMIT_TICKS,
+                complete_tick = tick + shared.get_transmit_ticks(state.entity),
                 document_held = true,
               }
               reserved_counts[state.destination_planet] = reserved + 1
@@ -1820,7 +1827,7 @@ local function process_receivers(tick)
           and consume_receiver_supplies(state, next_entry) then
           state.active_print = table.remove(state.queue, 1)
           state.active_print.start_tick = tick
-          state.active_print.ready_tick = tick + shared.PRINT_TICKS
+          state.active_print.ready_tick = tick + shared.get_print_ticks(state.entity)
           sync_receiver_recipe(state)
         end
       end

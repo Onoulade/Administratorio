@@ -546,6 +546,22 @@ test("field office restores a working worker if its entity is invalid after load
   assert_eq(office.active, true, "office should remain active with the restored worker")
 end)
 
+test("field office certification scales biter range and placement preview radius", function()
+  assert_near(field_office.get_spawner_range({quality = {name = "normal"}}), C.FIELD_OFFICE_SPAWNER_RANGE,
+    "normal certification should retain the base range")
+  assert_near(field_office.get_spawner_range({quality = {name = "legendary"}}), C.FIELD_OFFICE_SPAWNER_RANGE * 1.5,
+    "legendary certification should use the infrastructure curve")
+
+  reset()
+  local surface = new_surface({})
+  local player = new_player(surface, "field-office")
+  player.cursor_stack.quality = {name = "legendary"}
+  field_office.update_placement_preview(player, 0, true)
+  local circle = drawn[1]
+  assert_near(circle.params.radius, C.FIELD_OFFICE_SPAWNER_RANGE * 1.5,
+    "legendary field-office cursor preview should match the placed office range")
+end)
+
 if failed > 0 then
   io.stderr:write("Field office runtime tests failed:\n")
   for _, err in ipairs(errors) do

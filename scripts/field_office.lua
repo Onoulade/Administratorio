@@ -3,6 +3,7 @@
 -- Only operates (1.0x, 0 pollution) while a biter is physically present and working.
 -- Completely inactive otherwise. Runs day and night — no working hours, no module slots.
 local C = require("scripts.constants")
+local quality = require("scripts.quality")
 local unit_ai_settings = require("scripts.unit_ai_settings")
 local spawner_population = require("scripts.spawner_population")
 
@@ -54,6 +55,10 @@ end
 
 local function is_field_office(name)
   return name == ENTITY_NAME
+end
+
+local function field_office_spawner_range(subject)
+  return C.FIELD_OFFICE_SPAWNER_RANGE * quality.infrastructure_multiplier(subject)
 end
 
 local function get_biter_force()
@@ -214,9 +219,10 @@ function M.update_placement_preview(player, tick, force_refresh)
   clear_placement_renders(player.index)
 
   local surface = player.surface
+  local placement_range = field_office_spawner_range(player.cursor_stack)
   add_placement_render(player.index, rendering.draw_circle{
     color = PLACEMENT_RANGE_COLOR,
-    radius = C.FIELD_OFFICE_SPAWNER_RANGE,
+    radius = placement_range,
     width = 3,
     target = player.position,
     surface = surface,
@@ -227,7 +233,7 @@ function M.update_placement_preview(player, tick, force_refresh)
   local spawners = surface.find_entities_filtered{
     type = SPAWNER_TYPES,
     position = player.position,
-    radius = C.FIELD_OFFICE_SPAWNER_RANGE,
+    radius = placement_range,
     force = "enemy",
     limit = C.FIELD_OFFICE_PLACEMENT_PREVIEW_NEST_LIMIT or 32,
   }
@@ -259,7 +265,7 @@ end
 local function try_refresh_spawner_cache(state, office, office_id, tick)
   local ttl = C.FIELD_OFFICE_SPAWNER_CACHE_TTL
   if state.spawner_cache_tick and (tick - state.spawner_cache_tick) < ttl then return end
-  state.cached_spawner = find_nearest_spawner(office.surface, office.position, C.FIELD_OFFICE_SPAWNER_RANGE)
+  state.cached_spawner = find_nearest_spawner(office.surface, office.position, field_office_spawner_range(office))
   state.spawner_cache_tick = tick
 end
 
@@ -270,7 +276,7 @@ local function get_nearest_spawner(state, office, tick)
     return state.cached_spawner
   end
 
-  local spawner = find_nearest_spawner(office.surface, office.position, C.FIELD_OFFICE_SPAWNER_RANGE)
+  local spawner = find_nearest_spawner(office.surface, office.position, field_office_spawner_range(office))
   state.cached_spawner = spawner
   state.spawner_cache_tick = tick
   return spawner
@@ -995,5 +1001,6 @@ function M.rebuild_registry()
 end
 
 M.is_field_office = is_field_office
+M.get_spawner_range = field_office_spawner_range
 
 return M

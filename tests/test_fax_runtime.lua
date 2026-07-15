@@ -815,6 +815,43 @@ test("queue capacity upgrades raise the exported free slot count to twenty", fun
   assert_eq(free_slots, 20, "fully upgraded fax networks should export twenty free queue slots")
 end)
 
+test("fax certification uses every native timing tier and adds receiver queue slots", function()
+  local force = new_force()
+  local tiers = {
+    {name = "normal", level = 0, send = 60, print = 120},
+    {name = "uncommon", level = 1, send = 47, print = 93},
+    {name = "rare", level = 2, send = 38, print = 75},
+    {name = "epic", level = 3, send = 32, print = 64},
+    {name = "legendary", level = 5, send = 24, print = 48},
+  }
+  for _, tier in ipairs(tiers) do
+    local entity = {quality = {name = tier.name}}
+    assert_eq(shared.get_transmit_ticks(entity), tier.send, tier.name .. " send duration")
+    assert_eq(shared.get_print_ticks(entity), tier.print, tier.name .. " reconstruction duration")
+    assert_eq(shared.get_queue_capacity(force, entity), 5 + tier.level, tier.name .. " receiver queue capacity")
+  end
+end)
+
+test("legendary fax machines complete a send and reconstruction on their scaled ticks", function()
+  local ctx = new_context()
+  local receiver = new_fax_entity(ctx.surfaces.vulcanus, ctx.force, shared.RECEIVER_NAME, 0, 0, 20)
+  local emitter = new_fax_entity(ctx.surfaces.nauvis, ctx.force, shared.EMITTER_NAME, 0, 0, 12)
+  receiver.quality = {name = "legendary"}
+  emitter.quality = {name = "legendary"}
+  fax.on_entity_built(receiver, ctx.player)
+  fax.on_entity_built(emitter, ctx.player)
+  storage.fax_emitters[emitter.unit_number].destination_planet = "vulcanus"
+  charge_receiver(receiver, "construction-permit", 1)
+  emitter.inventory.insert{name = "construction-permit", count = 1}
+
+  fax.on_tick({tick = 0})
+  assert_eq(storage.fax_emitters[emitter.unit_number].current_job.complete_tick, 24,
+    "legendary emitter should use the native 2.5x send curve")
+  fax.on_tick({tick = 24})
+  assert_eq(storage.fax_receivers[receiver.unit_number].active_print.ready_tick, 72,
+    "legendary receiver should use the native 2.5x reconstruction curve")
+end)
+
 test("faxed documents consume dry transfer media and preserve quality when printed", function()
   local ctx = new_context()
   local receiver = new_fax_entity(ctx.surfaces.vulcanus, ctx.force, shared.RECEIVER_NAME, 0, 0, 20)
