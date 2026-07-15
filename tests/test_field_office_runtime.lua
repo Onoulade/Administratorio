@@ -120,11 +120,17 @@ local function reset()
 end
 
 local function new_surface(spawners)
+  spawners = spawners or {}
+  for index, spawner in ipairs(spawners) do
+    spawner.unit_number = spawner.unit_number or (500 + index)
+    spawner.type = spawner.type or "unit-spawner"
+    spawner.prototype = spawner.prototype or {max_count_of_owned_units = 7}
+  end
   local surface = {
     last_filter = nil,
     path_requests = {},
     next_path_request_id = 0,
-    spawners = spawners or {},
+    spawners = spawners,
     created_entities = {},
   }
 
@@ -319,7 +325,7 @@ test("field office path check does not target the occupied office center", funct
   assert_near(surface.created_entities[1].commands[1].destination.y, request.goal.y, "worker command and path check should use the same goal")
 end)
 
-test("multiple ready field offices each summon a worker across update shards", function()
+test("field offices share their home nest population limit across update shards", function()
   reset()
   local spawner = {valid = true, position = {x = 40, y = 50}}
   local surface = new_surface({spawner})
@@ -335,10 +341,18 @@ test("multiple ready field offices each summon a worker across update shards", f
     field_office.update(tick)
   end
 
-  assert_eq(#surface.created_entities, 10, "each ready office should get its own worker")
+  assert_eq(#surface.created_entities, 7, "one nest should not lease more workers than its population limit")
+  local calling = 0
+  local unavailable = 0
   for _, office in ipairs(offices) do
-    assert_eq(office.custom_status.label[1], "gui.field-office-calling", "each ready office should be calling")
+    if office.custom_status.label[1] == "gui.field-office-calling" then
+      calling = calling + 1
+    elseif office.custom_status.label[1] == "gui.field-office-no-workers-available" then
+      unavailable = unavailable + 1
+    end
   end
+  assert_eq(calling, 7, "available nest slots should each dispatch one worker")
+  assert_eq(unavailable, 3, "excess offices should wait for a leased slot to return")
 end)
 
 test("released field office worker is not destroyed before reaching its spawner", function()
