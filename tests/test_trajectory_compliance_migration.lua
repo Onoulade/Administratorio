@@ -52,9 +52,17 @@ test("0.5.7 converts legacy burned-out managers back to active staff", function(
     "active manager replacement missing")
 end)
 
-test("mod version is 0.5.7", function()
+test("0.5.8 converts loaded cannon ammunition to VESMs", function()
+  local migration = read_file(mod_root .. "migrations/0.5.8.lua")
+  assert_true(migration:find('"orbital-employment-cannon"', 1, true) ~= nil,
+    "migration should inspect existing deployment cannons")
+  assert_true(migration:find('"voluntary-exploration-space-miner"', 1, true) ~= nil,
+    "migration should install replacement VESM ammunition")
+end)
+
+test("mod version is 0.5.8", function()
   local info = read_file(mod_root .. "info.json")
-  assert_true(info:find('"version": "0.5.7"', 1, true) ~= nil, "info.json should advertise migration version")
+  assert_true(info:find('"version": "0.5.8"', 1, true) ~= nil, "info.json should advertise migration version")
 end)
 
 print(string.format("\n=== ADMINISTRATORIO TRAJECTORY COMPLIANCE MIGRATION TESTS ==="))

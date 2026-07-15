@@ -289,6 +289,8 @@ Professions:
   - `cryoprint-technician`
   - `field-negotiator`
   - `middle-management-managing-manager`
+  - five temporary briefed MMMM variants: training, staffing, compliance, liaison, and orbital
+  - `voluntary-exploration-space-miner`
 - Implemented profession recipes include:
   - `worker-biter-formation`
   - `clerical-trainee-formation`
@@ -301,6 +303,8 @@ Professions:
   - `cryoprint-technician-formation`
   - `field-negotiator-formation`
   - `middle-management-managing-manager-formation`
+  - five batched MMMM briefing meetings
+  - `voluntary-exploration-space-miner-formation`
 - Implemented profession hooks:
   - `foundry` requires `licensed-notary`
   - the single `foundry` construction recipe retains vanilla Space Age's own Vulcanus pressure restriction and is shipped offworld
@@ -315,10 +319,12 @@ Professions:
   - `laser-printer`, `fax-emitter`, and `interplanetary-fax-exchange` require `cryoprint-technician`
   - `overtime-exemption-staffed` uses `night-shift-supervisor`
 - trajectory compliance arrays consume `orbital-deviation-order` as native turret ammo and redirect jurisdiction-appropriate asteroids without producing salvage
-- the 48-tile Manager Catapult (`orbital-employment-cannon`) launches `middle-management-managing-manager` projectiles that attach visibly and deal research-scalable damage on one-second work cycles; completed demolitions create the full 2/6/18/54 collectible yield
-- every attached manager becomes an additional asteroid chunk when its target breaks; a native platform collector mines that chunk directly into reusable manager ammo in collector output for ordinary belt/inserter routing, so a missed chunk is deterministic permanent loss with no random recovery roll, burnout, recovery research, or scripted hub transfer
-- each asteroid begins with a hard allocation of one attached manager; four staffing-capacity researches raise it to five, capped cannons pause or retarget, and already-airborne overflow returns as a collectible employee chunk
-- quality invariant: MMMM item quality is cosmetic and must never modify damage, work rate, sortie count, salvage, or recovery; employee chunks may therefore return normal-quality MMMMs without losing mechanical value
+- five Formation Center meetings consume five regular MMMMs, 25 Taxpayer Money, 50 Liquid Coffee, and one thematic material over 45 recipe-seconds (30 real seconds at the center's base speed), producing five briefed managers that spoil back to regular MMMMs after three minutes
+- formation, staffed construction, and orbital recipes consume the relevant briefed variants and return the same number of regular MMMMs with productivity explicitly ignored
+- high-end formations combine different briefings; VESM formation consumes an astronaut, an electric mining drill, and training/compliance/orbital MMMMs, then returns all three managers unbriefed
+- the 48-tile Orbital Miner Deployment Cannon (`orbital-employment-cannon`) launches `voluntary-exploration-space-miner` projectiles that attach visibly and perform research-scalable mining damage on one-second work cycles; completed demolitions create the full 2/6/18/54 collectible yield
+- every attached VESM becomes an additional asteroid chunk when its target breaks; a native platform collector mines that chunk directly into reusable VESM ammunition, while a missed chunk is deterministic permanent loss
+- each asteroid begins with a hard allocation of one attached miner; four staffing-capacity researches raise it to five, capped cannons pause or retarget, and already-airborne overflow returns as a collectible employee chunk
 
 Fax runtime:
 

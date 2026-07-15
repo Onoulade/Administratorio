@@ -315,6 +315,7 @@ test("workforce surface policy keeps seed roles Nauvis-bound and specialists por
     "relay-clerk-formation",
     "cryoprint-technician-formation",
     "middle-management-managing-manager-formation",
+    "voluntary-exploration-space-miner-formation",
   }) do
     assert_true(recipes[recipe_name] ~= nil, recipe_name .. " missing")
     assert_true(recipes[recipe_name].surface_conditions == nil,
@@ -402,6 +403,17 @@ test("native Space Age buildings use one canonical construction recipe", functio
   assert_true(has_ingredient(recipes["biochamber"], "conciliation-officer"), "biochamber should require conciliation-officer")
   assert_true(has_ingredient(recipes["electromagnetic-plant"], "relay-clerk"), "electromagnetic-plant should require relay-clerk")
   assert_true(has_ingredient(recipes["cryogenic-plant"], "cryoprint-technician"), "cryogenic-plant should require cryoprint-technician")
+  for _, recipe_name in ipairs({"foundry", "biochamber", "electromagnetic-plant", "cryogenic-plant", "notary-office"}) do
+    assert_true(has_ingredient(recipes[recipe_name], "staffing-briefed-middle-management-managing-manager"),
+      recipe_name .. " should require a freshly staffing-briefed MMMM")
+    assert_eq(get_result_amount(recipes[recipe_name], "middle-management-managing-manager"), 1,
+      recipe_name .. " should return its manager unbriefed")
+  end
+  assert_true(has_ingredient(recipes["territorial-arbitration-post"],
+    "compliance-briefed-middle-management-managing-manager"),
+    "territorial arbitration construction should also require compliance oversight")
+  assert_eq(get_result_amount(recipes["territorial-arbitration-post"],
+    "middle-management-managing-manager"), 2)
 end)
 
 test("chromatic printing unlocks the base chromatic chains across planets", function()
@@ -591,12 +603,63 @@ test("field agent recipes reuse the base hired biter instead of duplicate Space 
   assert_true(tech_unlocks_recipe(technologies["hired-biter-fieldwork"], "eviction-notice-production-negotiated"), "hired-biter-fieldwork should unlock negotiated eviction")
 end)
 
-test("deviation paperwork and biter cannon are distinct orbital systems", function()
-  local manager = assert(ammos["middle-management-managing-manager"], "MMMM ammo missing")
-  assert_eq(manager.type, "ammo")
-  assert_eq(manager.ammo_category, "orbital-biter-ballistics", "MMMM should feed the employment cannon")
-  assert_eq(manager.magazine_size, 1, "one MMMM should power exactly one biter sortie")
-  local delivery = manager.ammo_type.action.action_delivery
+test("MMMM meetings batch five temporary briefings and formations return regular managers", function()
+  local manager = assert(items["middle-management-managing-manager"], "regular MMMM missing")
+  assert_eq(manager.type, "item")
+  assert_eq(manager.stack_size, 20)
+
+  local briefing_specs = {
+    training = {material = "iron-gear-wheel", amount = 5},
+    staffing = {material = "repair-pack", amount = 5},
+    compliance = {material = "blank-form", amount = 5},
+    liaison = {material = "electronic-circuit", amount = 5},
+    orbital = {material = "rocket-fuel", amount = 1},
+  }
+  local workforce = technologies["workforce-formation"]
+
+  for key, spec in pairs(briefing_specs) do
+    local item_name = key .. "-briefed-middle-management-managing-manager"
+    local recipe_name = "middle-management-" .. key .. "-briefing"
+    local briefed = assert(items[item_name], item_name .. " missing")
+    local meeting = assert(recipes[recipe_name], recipe_name .. " missing")
+    assert_eq(briefed.stack_size, 5)
+    assert_eq(briefed.spoil_ticks, 3 * 60 * 60)
+    assert_eq(briefed.spoil_result, "middle-management-managing-manager")
+    assert_eq(meeting.energy_required, 45)
+    assert_eq(meeting.allow_productivity, false)
+    assert_eq(get_item_ingredient_amount(meeting, "middle-management-managing-manager"), 5)
+    assert_eq(get_item_ingredient_amount(meeting, "taxpayer-money"), 25)
+    assert_eq(get_item_ingredient_amount(meeting, spec.material), spec.amount)
+    assert_eq(get_fluid_ingredient_amount(meeting, "liquid-coffee"), 50)
+    assert_eq(get_result_amount(meeting, item_name), 5)
+    assert_true(tech_unlocks_recipe(workforce, recipe_name), recipe_name .. " should unlock with workforce formation")
+  end
+
+  local expected_formations = {
+    ["clerical-trainee-formation"] = {"training"},
+    ["astronaut-formation"] = {"training", "orbital"},
+    ["licensed-notary-formation"] = {"training", "compliance"},
+    ["conciliation-officer-formation"] = {"training", "liaison"},
+    ["relay-clerk-formation"] = {"training", "liaison"},
+    ["cryoprint-technician-formation"] = {"training", "compliance"},
+  }
+  for recipe_name, keys in pairs(expected_formations) do
+    local recipe = assert(recipes[recipe_name])
+    for _, key in ipairs(keys) do
+      assert_true(has_ingredient(recipe, key .. "-briefed-middle-management-managing-manager"),
+        recipe_name .. " should require its " .. key .. " briefing")
+    end
+    assert_eq(get_result_amount(recipe, "middle-management-managing-manager"), #keys,
+      recipe_name .. " should return every manager unbriefed")
+  end
+end)
+
+test("deviation paperwork and VESM cannon are distinct orbital systems", function()
+  local miner = assert(ammos["voluntary-exploration-space-miner"], "VESM ammo missing")
+  assert_eq(miner.type, "ammo")
+  assert_eq(miner.ammo_category, "orbital-biter-ballistics", "VESM should feed the deployment cannon")
+  assert_eq(miner.magazine_size, 1, "one VESM should power exactly one orbital sortie")
+  local delivery = miner.ammo_type.action.action_delivery
   assert_eq(delivery.type, "projectile")
   assert_eq(delivery.projectile, "orbital-biter-projectile")
   local has_launch_reservation = false
@@ -608,7 +671,17 @@ test("deviation paperwork and biter cannon are distinct orbital systems", functi
     end
   end
   assert_true(has_launch_reservation,
-    "manager catapult should reserve asteroid capacity when the projectile launches")
+    "miner deployment cannon should reserve asteroid capacity when the projectile launches")
+
+  local formation = assert(recipes["voluntary-exploration-space-miner-formation"], "VESM formation missing")
+  assert_true(has_ingredient(formation, "astronaut"))
+  assert_true(has_ingredient(formation, "electric-mining-drill"))
+  assert_true(has_ingredient(formation, "training-briefed-middle-management-managing-manager"))
+  assert_true(has_ingredient(formation, "compliance-briefed-middle-management-managing-manager"))
+  assert_true(has_ingredient(formation, "orbital-briefed-middle-management-managing-manager"))
+  assert_eq(get_result_amount(formation, "voluntary-exploration-space-miner"), 1)
+  assert_eq(get_result_amount(formation, "middle-management-managing-manager"), 3)
+  assert_true(tech_unlocks_recipe(technologies["workforce-formation"], formation.name))
 
   local deviation = assert(ammos["orbital-deviation-order"], "deviation order ammo missing")
   assert_eq(deviation.ammo_category, "trajectory-compliance")
@@ -659,7 +732,7 @@ test("returning employees need no intermediate inventory item or burnout path", 
   assert_true(recipes["burned-out-manager-rehabilitation"] == nil, "burnout rehabilitation should be removed")
   assert_true(not tech_unlocks_recipe(technologies["workforce-formation"], "burned-out-manager-rehabilitation"))
   assert_true(items["returning-orbital-employee"] == nil,
-    "collector should mine the chunk straight into manager ammo, not an intermediate item")
+    "collector should mine the chunk straight into VESM ammo, not an intermediate item")
 end)
 
 test("orbital admin station recipes cover offworld metallurgy and asteroid paperwork", function()
@@ -675,6 +748,10 @@ test("orbital admin station recipes cover offworld metallurgy and asteroid paper
     assert_eq(recipe.category, "orbital-bureaucracy", recipe_name .. " should use orbital-bureaucracy")
     assert_eq(recipe.surface_conditions[1].max, 0, recipe_name .. " should stay vacuum-only")
     assert_true(has_ingredient(recipe, "astronaut"), recipe_name .. " should require astronaut staffing")
+    assert_true(has_ingredient(recipe, "orbital-briefed-middle-management-managing-manager"),
+      recipe_name .. " should require a fresh orbital briefing")
+    assert_eq(get_result_amount(recipe, "middle-management-managing-manager"), 1,
+      recipe_name .. " should return its manager unbriefed")
     assert_true(tech_unlocks_recipe(workforce, recipe_name), "workforce-formation should unlock " .. recipe_name)
   end
   assert_true(items["asteroid-processing-docket"] ~= nil, "asteroid-processing-docket missing")
@@ -741,7 +818,7 @@ test("orbital employment damage research scales by 50 percent through late scien
   end
 end)
 
-test("orbital staffing capacity grows from two through five managers", function()
+test("orbital staffing capacity grows from two through five VESMs", function()
   local function technology_has_pack(technology, pack_name)
     for _, ingredient in ipairs(technology.unit.ingredients or {}) do
       if (ingredient.name or ingredient[1]) == pack_name then return true end

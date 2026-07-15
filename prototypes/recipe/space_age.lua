@@ -1,5 +1,6 @@
 local planets = require("prototypes.shared.space_age_planets")
 local fax_shared = require("scripts.fax_shared")
+local manager_briefings = require("prototypes.shared.manager_briefings")
 
 local function add_item_ingredient(recipe, ingredient_name, amount)
   if not recipe then return end
@@ -19,6 +20,67 @@ local function add_item_ingredient(recipe, ingredient_name, amount)
   apply_to_variant(recipe)
   apply_to_variant(recipe.normal)
   apply_to_variant(recipe.expensive)
+end
+
+local function add_item_result(recipe, result_name, amount, ignored_by_productivity, ignored_by_stats)
+  if not recipe then return end
+
+  local function apply_to_variant(target)
+    if not target then return end
+    target.results = target.results or {}
+
+    for _, result in ipairs(target.results) do
+      if (result.name or result[1]) == result_name then
+        return
+      end
+    end
+
+    if not target.main_product then
+      local first_result = target.results[1]
+      target.main_product = first_result and (first_result.name or first_result[1]) or nil
+    end
+
+    table.insert(target.results, {
+      type = "item",
+      name = result_name,
+      amount = amount,
+      ignored_by_productivity = ignored_by_productivity,
+      ignored_by_stats = ignored_by_stats,
+    })
+  end
+
+  apply_to_variant(recipe)
+  apply_to_variant(recipe.normal)
+  apply_to_variant(recipe.expensive)
+end
+
+local function add_manager_requirements(recipe_name, briefing_keys)
+  local recipe = data.raw.recipe and data.raw.recipe[recipe_name]
+  if not recipe then return end
+
+  for _, key in ipairs(briefing_keys) do
+    local briefing = assert(manager_briefings.BY_KEY[key], "unknown manager briefing: " .. tostring(key))
+    add_item_ingredient(recipe, briefing.item, 1)
+
+    local function mark_ingredient(target)
+      for _, ingredient in ipairs((target and target.ingredients) or {}) do
+        if (ingredient.name or ingredient[1]) == briefing.item then
+          ingredient.ignored_by_stats = 1
+        end
+      end
+    end
+    mark_ingredient(recipe)
+    mark_ingredient(recipe.normal)
+    mark_ingredient(recipe.expensive)
+  end
+
+  add_item_result(
+    recipe,
+    manager_briefings.REGULAR_MANAGER,
+    #briefing_keys,
+    #briefing_keys,
+    #briefing_keys
+  )
 end
 
 local function remove_ingredient(recipe, ingredient_name)
@@ -162,6 +224,41 @@ local function not_in_space(recipe)
   return planets.require_non_vacuum_surface(recipe)
 end
 
+local manager_meeting_recipes = {}
+for _, briefing in ipairs(manager_briefings.BRIEFINGS) do
+  manager_meeting_recipes[#manager_meeting_recipes + 1] = {
+    type = "recipe",
+    name = briefing.recipe,
+    category = "workforce-formation",
+    enabled = false,
+    ingredients = {
+      {
+        type = "item",
+        name = manager_briefings.REGULAR_MANAGER,
+        amount = 5,
+        ignored_by_stats = 5,
+      },
+      {type = "item", name = "taxpayer-money", amount = 25},
+      {type = "item", name = briefing.material, amount = briefing.material_amount},
+      {type = "fluid", name = "liquid-coffee", amount = 50},
+    },
+    results = {
+      {
+        type = "item",
+        name = briefing.item,
+        amount = 5,
+        ignored_by_productivity = 5,
+        ignored_by_stats = 5,
+      },
+    },
+    energy_required = 45,
+    allow_productivity = false,
+    allow_decomposition = false,
+    auto_recycle = false,
+  }
+end
+data:extend(manager_meeting_recipes)
+
 data:extend({
   surface_limited({
     type = "recipe",
@@ -298,6 +395,47 @@ data:extend({
     },
     results = {{type = "item", name = "middle-management-managing-manager", amount = 1}},
     energy_required = 25
+  },
+  {
+    type = "recipe",
+    name = "voluntary-exploration-space-miner-formation",
+    category = "workforce-formation",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "astronaut", amount = 1},
+      {type = "item", name = "electric-mining-drill", amount = 1},
+      {
+        type = "item",
+        name = manager_briefings.BY_KEY.training.item,
+        amount = 1,
+        ignored_by_stats = 1,
+      },
+      {
+        type = "item",
+        name = manager_briefings.BY_KEY.compliance.item,
+        amount = 1,
+        ignored_by_stats = 1,
+      },
+      {
+        type = "item",
+        name = manager_briefings.BY_KEY.orbital.item,
+        amount = 1,
+        ignored_by_stats = 1,
+      },
+    },
+    results = {
+      {type = "item", name = manager_briefings.VESM, amount = 1},
+      {
+        type = "item",
+        name = manager_briefings.REGULAR_MANAGER,
+        amount = 3,
+        ignored_by_productivity = 3,
+        ignored_by_stats = 3,
+      },
+    },
+    main_product = manager_briefings.VESM,
+    energy_required = 60,
+    auto_recycle = false,
   },
   not_on_planet({
     type = "recipe",
@@ -2013,3 +2151,52 @@ end
 
 data:extend(tourism_recipes)
 data:extend(make_fax_reconstruction_recipes())
+
+-- Briefed managers are single-use administrative catalysts. Every affected
+-- process returns the same number of regular managers, who must attend another
+-- meeting before they can obstruct useful work again.
+local formation_manager_requirements = {
+  ["clerical-trainee-formation"] = {"training"},
+  ["astronaut-formation"] = {"training", "orbital"},
+  ["licensed-notary-formation"] = {"training", "compliance"},
+  ["conciliation-officer-formation"] = {"training", "liaison"},
+  ["relay-clerk-formation"] = {"training", "liaison"},
+  ["cryoprint-technician-formation"] = {"training", "compliance"},
+}
+
+local staffed_building_manager_requirements = {
+  ["foundry"] = {"staffing"},
+  ["biochamber"] = {"staffing"},
+  ["electromagnetic-plant"] = {"staffing"},
+  ["cryogenic-plant"] = {"staffing"},
+  ["notary-office"] = {"staffing"},
+  ["territorial-arbitration-post"] = {"staffing", "compliance"},
+  ["capture-bureau"] = {"staffing", "liaison"},
+  ["conciliation-desk"] = {"staffing"},
+  ["digital-services-bureau"] = {"staffing"},
+  ["laser-printer"] = {"staffing"},
+  ["fax-emitter"] = {"staffing"},
+  ["interplanetary-fax-exchange"] = {"staffing", "liaison"},
+  ["administrative-space-station"] = {"staffing", "orbital"},
+}
+
+local orbital_manager_requirements = {
+  ["thermal-process-license-orbital"] = {"orbital"},
+  ["calcite-reagent-waiver-orbital"] = {"orbital"},
+  ["offworld-metallurgy-charter-orbital"] = {"orbital"},
+  ["orbital-deviation-order"] = {"orbital"},
+  ["asteroid-processing-docket"] = {"orbital"},
+}
+
+for recipe_name, briefing_keys in pairs(formation_manager_requirements) do
+  add_manager_requirements(recipe_name, briefing_keys)
+end
+for recipe_name, briefing_keys in pairs(staffed_building_manager_requirements) do
+  add_manager_requirements(recipe_name, briefing_keys)
+end
+for recipe_name, briefing_keys in pairs(orbital_manager_requirements) do
+  add_manager_requirements(recipe_name, briefing_keys)
+end
+for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
+  add_manager_requirements(variant.tourism_recipe, {"orbital"})
+end

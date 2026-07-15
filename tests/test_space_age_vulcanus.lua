@@ -310,7 +310,7 @@ test("trajectory compliance tiers use native powered timing, range, and asteroid
   end
 end)
 
-test("orbital employment cannon uses railgun-scale powered biter ballistics", function()
+test("orbital employment cannon deploys powered voluntary space miners", function()
   local cannon = assert(data.raw["ammo-turret"]["orbital-employment-cannon"])
   assert_eq(cannon.attack_parameters.ammo_category, "orbital-biter-ballistics")
   assert_eq(cannon.attack_parameters.cooldown, 240)
@@ -326,7 +326,7 @@ test("orbital employment cannon uses railgun-scale powered biter ballistics", fu
   assert_eq(effects[1].effect_id, "administratorio-asteroid-biter-assault")
   for _, effect in ipairs(effects) do
     assert_true(effect.type ~= "damage",
-      "MMMM projectiles must not carry quality-scalable impact damage")
+      "VESM projectiles must not carry quality-scalable impact damage")
   end
   assert_eq(projectile.animation.layers[1].scale, 0.92,
     "projectile body should scale the real biter layer")
@@ -343,14 +343,14 @@ test("orbital employment cannon uses railgun-scale powered biter ballistics", fu
 
   local chunk = assert(data.raw["asteroid-chunk"]["returning-orbital-employee"],
     "returning employee asteroid chunk missing")
-  assert_eq(chunk.minable.result, "middle-management-managing-manager",
-    "collector should output the reusable manager directly")
+  assert_eq(chunk.minable.result, "voluntary-exploration-space-miner",
+    "collector should output the reusable VESM directly")
   assert_true(chunk.graphics_set.sprite ~= nil, "employee chunk should visibly combine biter and debris")
   for direction_index = 1, 15 do
     local oriented_name = string.format("returning-orbital-employee-orientation-%02d", direction_index)
     local oriented = assert(data.raw["asteroid-chunk"][oriented_name],
       "returning employee orientation variant missing")
-    assert_eq(oriented.minable.result, "middle-management-managing-manager")
+    assert_eq(oriented.minable.result, "voluntary-exploration-space-miner")
     assert_eq(oriented.graphics_set.rotation_speed, 0)
     assert_true(oriented.hidden_in_factoriopedia,
       "orientation variants must not clutter Factoriopedia")
@@ -462,6 +462,21 @@ test("aquilo printer and exchange are specialized endgame bureaucracy machines",
     "interplanetary-fax-exchange should use dry sheets and ribbon")
   assert_eq(exchange.ingredient_count, 5,
     "interplanetary-fax-exchange should have room for solid reconstruction media")
+end)
+
+test("formation center supports coffee-fed batch meetings", function()
+  local center = assert(data.raw["assembling-machine"]["formation-center"])
+  assert_eq(center.crafting_speed, 1.5)
+  assert_eq(center.result_inventory_size, 4,
+    "advanced formations need room for their employee and returned managers")
+  assert_eq(#(center.fluid_boxes or {}), 2,
+    "managerial meetings should accept coffee from either side")
+  assert_eq(center.fluid_boxes[1].production_type, "input")
+  assert_eq(center.fluid_boxes[2].production_type, "input")
+  assert_true(center.fluid_boxes_off_when_no_fluid_recipe)
+  local allowed = {}
+  for _, effect in ipairs(center.allowed_effects or {}) do allowed[effect] = true end
+  assert_true(allowed.speed, "Formation Center meetings should accept speed modules")
 end)
 
 test("non-orbital space age admin machines stay out of vacuum", function()

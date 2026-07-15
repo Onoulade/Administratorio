@@ -203,14 +203,15 @@ This should stay a prestige branch, not a first-release dependency.
 
 Best uses:
 
-- Manager Catapult (`orbital-employment-cannon`)
-- optional late satirical management paperwork
+- temporary Training, Staffing, Compliance, Liaison, and Orbital briefings
+- mandatory no-benefit attendance in employee-dependent recipes
+- repeatable coffee, public-money, meeting-capacity, and routing overhead
 
-This is still the main infinite sink.
+Regular MMMMs attend 30-second Formation Center meetings in batches of five. Each meeting consumes Taxpayer Money, Liquid Coffee, and one thematic training material. A briefed manager is valid for three minutes, supervises exactly one matching process, and returns as a regular MMMM; an unused briefing simply spoils back to the regular manager.
 
-It should not compete with the useful specialists on efficiency. It exists to turn excess recruitment into an absurd orbital budget drain. The Manager Catapult launches managers that attach visibly to an asteroid and deal damage on one-second work cycles. The base staffing allocation is one manager per asteroid; four `orbital-employment-capacity` researches raise that hard cap to five through early space, three-planet, cryogenic, and Promethium science. A catapult pauses or retargets after filling an asteroid's allocation, while an already-airborne excess manager becomes a collectible return chunk rather than disappearing. When the asteroid breaks, every attached manager becomes a distinct collectible chunk alongside the normal salvage. An asteroid collector mines that chunk directly into reusable manager ammunition in its output inventory, ready for belts and inserters; a missed chunk is deterministic permanent loss, with no burnout roll or recovery research.
+Managers never replace the real specialist and never improve output. Their economic effect is exclusively the recurring meeting inputs and the logistics required to circulate them.
 
-Quality invariant: `middle-management-managing-manager` must receive no gameplay bonus from item quality. Higher-quality MMMMs must not gain damage, extra sorties, improved recovery, additional salvage, faster work cycles, or any other advantage. Employee chunks deliberately return normal-quality MMMMs, so this downgrade has no mechanical cost. Preserve this invariant when the broader quality system is designed.
+Orbital asteroid work now belongs to `voluntary-exploration-space-miner`. A VESM is formed from an astronaut, an electric mining drill, and training/compliance/orbital MMMMs. The managers return unbriefed; the VESM becomes recoverable cannon ammunition and retains the former attach, work-cycle, capacity, salvage, and collectible-chunk loop.
 
 ## Night Shift Module Review
 

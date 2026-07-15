@@ -237,6 +237,9 @@ test("bureau is an employee-built one-input Recycler variant", function()
 
   local construction = assert(raw.recipe["archive-recombination-bureau"])
   assert_eq(ingredient_amount(construction, "relay-clerk"), 1)
+  assert_eq(ingredient_amount(construction,
+    "staffing-briefed-middle-management-managing-manager"), 1)
+  assert_eq(result(construction, "middle-management-managing-manager").amount, 1)
   assert_true(raw.recipe["archive-recombination-001"] == nil, "Recycler variant should not expose pair recipes")
   assert_true(raw.item["archive-attempt-record"] == nil)
   assert_true(raw.item["recombination-envelope"] == nil)

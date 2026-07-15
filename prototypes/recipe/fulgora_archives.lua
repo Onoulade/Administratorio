@@ -1,6 +1,7 @@
 local planets = require("prototypes.shared.space_age_planets")
 local reassignment_rules = require("scripts.archive_recombination_rules")
 local paperwork_recycling = require("prototypes.shared.paperwork_recycling")
+local manager_briefings = require("prototypes.shared.manager_briefings")
 
 local function on_fulgora(recipe)
   return planets.apply_planet_surface_conditions(recipe, "fulgora")
@@ -42,13 +43,27 @@ data:extend({
     ingredients = {
       {type = "item", name = "recycler", amount = 1},
       {type = "item", name = "relay-clerk", amount = 1},
+      {
+        type = "item",
+        name = manager_briefings.BY_KEY.staffing.item,
+        amount = 1,
+        ignored_by_stats = 1,
+      },
       {type = "item", name = "processing-unit", amount = 15},
       {type = "item", name = "holmium-plate", amount = 20},
       {type = "item", name = "construction-work-order", amount = 1},
     },
     results = {
       {type = "item", name = "archive-recombination-bureau", amount = 1},
+      {
+        type = "item",
+        name = manager_briefings.REGULAR_MANAGER,
+        amount = 1,
+        ignored_by_productivity = 1,
+        ignored_by_stats = 1,
+      },
     },
+    main_product = "archive-recombination-bureau",
     energy_required = 20,
   }),
 })
