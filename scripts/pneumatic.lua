@@ -25,6 +25,28 @@ for _, name in ipairs(C.PNEUMATIC_ITEMS) do
   PNEUMATIC_SET[name] = true
 end
 
+-- Store quality alongside item identity. Item names alone are not enough: a
+-- tube must neither downgrade nor merge stacks of different qualities.
+-- The separator cannot occur in a Factorio prototype name; legacy unqualified
+-- save keys decode as normal quality.
+local POOL_KEY_SEPARATOR = "\31"
+
+local function get_stack_quality_name(stack)
+  local quality = stack and stack.quality
+  if quality and type(quality) ~= "string" then quality = quality.name end
+  return quality or "normal"
+end
+
+local function make_pool_key(item_name, quality_name)
+  return item_name .. POOL_KEY_SEPARATOR .. (quality_name or "normal")
+end
+
+local function parse_pool_key(pool_key)
+  local separator_start = pool_key:find(POOL_KEY_SEPARATOR, 1, true)
+  if not separator_start then return pool_key, "normal" end
+  return pool_key:sub(1, separator_start - 1), pool_key:sub(separator_start + #POOL_KEY_SEPARATOR)
+end
+
 local function get_intake_inventory(entity)
   local source_inventory = defines.inventory.furnace_source
   if source_inventory then
@@ -232,9 +254,13 @@ local function update_combinator_signals(combinator, pool)
   -- Clear existing slots and set new ones from pool.
   local slot_idx = 1
   if pool then
-    for item_name, count in pairs(pool) do
+    for pool_key, count in pairs(pool) do
       if count > 0 then
-        section.set_slot(slot_idx, {value = item_name, min = count})
+        local item_name, quality_name = parse_pool_key(pool_key)
+        section.set_slot(slot_idx, {
+          value = {type = "item", name = item_name, quality = quality_name},
+          min = count,
+        })
         slot_idx = slot_idx + 1
       end
     end
@@ -353,11 +379,12 @@ function M.delete_pneumatic_supports(entity)
         end
       end
       if not has_other then
-        for item_name, count in pairs(pool) do
+        for pool_key, count in pairs(pool) do
           if count > 0 then
+            local item_name, quality_name = parse_pool_key(pool_key)
             entity.surface.spill_item_stack{
               position = entity.position,
-              stack = {name = item_name, count = count},
+              stack = {name = item_name, quality = quality_name, count = count},
               enable_looted = true,
             }
           end
@@ -503,14 +530,19 @@ function M.on_pneumatic_tick()
       local stack = inv[1]
       if stack and stack.valid_for_read then
         local item_name = stack.name
+        local quality_name = get_stack_quality_name(stack)
 
         if not PNEUMATIC_SET[item_name] then
           set_intake_status_blocked(entity, "invalid-item")
           goto next_intake
         end
 
-        -- Remove exactly 1 item.
-        inv.remove{name = item_name, count = 1}
+        -- Remove exactly one matching-quality item before crediting the pool.
+        local removed = inv.remove{name = item_name, quality = quality_name, count = 1}
+        if removed ~= 1 then
+          set_intake_status_blocked(entity, "no-input")
+          goto next_intake
+        end
         -- Clear the furnace recipe lock so a different item type can be
         -- inserted on the next cycle without the slot filter blocking it.
         pcall(function() entity.recipe = nil end)
@@ -520,7 +552,8 @@ function M.on_pneumatic_tick()
           pool = {}
           storage.tube_signals[net_id] = pool
         end
-        pool[item_name] = (pool[item_name] or 0) + 1
+        local pool_key = make_pool_key(item_name, quality_name)
+        pool[pool_key] = (pool[pool_key] or 0) + 1
         networks_changed[net_id] = true
         set_intake_status_intaking(entity)
       else
@@ -559,28 +592,31 @@ function M.on_pneumatic_tick()
     local allowed_name = inventory_filter_name(slot_filter)
 
     -- Pick item: if filtered, only that item; otherwise largest-count-first.
-    local best_name, best_count = nil, 0
+    local best_key, best_count = nil, 0
     if allowed_name then
-      local count = pool[allowed_name]
-      if count and count > 0 then
-        best_name = allowed_name
-        best_count = count
+      for pool_key, count in pairs(pool) do
+        local item_name = parse_pool_key(pool_key)
+        if item_name == allowed_name and count > best_count then
+          best_key = pool_key
+          best_count = count
+        end
       end
     else
-      for item_name, count in pairs(pool) do
+      for pool_key, count in pairs(pool) do
         if count > best_count then
-          best_name = item_name
+          best_key = pool_key
           best_count = count
         end
       end
     end
 
-    if best_name and best_count > 0 then
-      local inserted = inv.insert{name = best_name, count = 1}
+    if best_key and best_count > 0 then
+      local item_name, quality_name = parse_pool_key(best_key)
+      local inserted = inv.insert{name = item_name, quality = quality_name, count = 1}
       if inserted > 0 then
-        pool[best_name] = best_count - inserted
-        if pool[best_name] <= 0 then
-          pool[best_name] = nil
+        pool[best_key] = best_count - inserted
+        if pool[best_key] <= 0 then
+          pool[best_key] = nil
         end
         networks_changed[net_id] = true
       end
@@ -686,9 +722,10 @@ function M.update_tube_info_gui(player, entity)
 
     -- Sort by count descending.
     local sorted = {}
-    for item_name, count in pairs(pool) do
+    for pool_key, count in pairs(pool) do
       if count > 0 then
-        table.insert(sorted, {name = item_name, count = count})
+        local item_name, quality_name = parse_pool_key(pool_key)
+        table.insert(sorted, {name = item_name, quality = quality_name, count = count})
       end
     end
     table.sort(sorted, function(a, b) return a.count > b.count end)

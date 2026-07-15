@@ -29,12 +29,12 @@ Administratorio is an ambitious total-conversion mod that replaces Factorio's mi
 
 ### 1.2 Critical Code Quality Issues
 
-#### **ISSUE-001: Massive `data-final-fixes.lua` (1,967 lines) — Monolithic God File**
+#### **ISSUE-001: Massive `data-final-fixes.lua` — Monolithic God File**
 - **File:** `data-final-fixes.lua`
 - **Severity:** **High** — Maintenance burden, cognitive load, bug surface
 - **Description:** This single file handles: recipe categories, character setup, military hiding, biter pacification, taxpayer money fuel injection, AM category reassignment, machine-family operating paperwork, factoriopedia merges, red-science detection, full recipe regulation (vanilla + admin buildings), oil-processing bulking, handcrafting visibility, admin recipe UI ordering, colored ink gating, space-platform permits, pneumatic tube notes, admin station collision masks, biterport fallback, rideable biter sounds, rocket silo finance, science pack stripping — **all in one linear pass**.
 - **Impact:** Changes to one system risk breaking others; no modular testing of individual final-fix passes; difficult to reason about order dependencies.
-- **Evidence:** Lines 175–1388 handle recipe regulation; lines 1548–1645 handle colored ink gating; lines 1731–1729 handle pneumatic; lines 1898–1966 handle science pack stripping.
+- **Progress (2026-07-15):** Extracted the independent military-hiding, collision/module-mask, and science-pack stripping passes into `prototypes/final_fixes/`. The orchestrator is materially smaller, while recipe regulation and planet-gating passes remain to be separated.
 - **Solution:** Split into logical modules loaded from a thin orchestrator:
   - `final-fixes/recipe_regulation.lua`
   - `final-fixes/colored_ink_gating.lua`
@@ -283,9 +283,8 @@ The administrative-science timing, science-pack distribution, profession-access 
 
 #### **EXPLOIT-001: Pneumatic Tube Item Duplication via Quality**
 - **Severity:** **Medium** — If quality enabled
-- **Description:** Pneumatic system transports items via script. Quality preservation is implemented (`get_quality_name`, `spill_document` preserves quality). But no test verifies that quality-insertion into intake → output doesn't duplicate.
-- **Risk:** If intake inserter inserts quality item, and output inserter takes it, but script also recreates it → duplication.
-- **Solution:** Add test: "Pneumatic transport preserves item count and quality exactly."
+- **Status:** **Resolved (2026-07-15)**
+- **Resolution:** Tube signal-pool entries now key both item name and quality. Intake removal, outtake insertion, circuit signals, and last-endpoint rescue spills preserve that identity; legacy name-only save entries decode as normal quality. `test_pneumatic_runtime.lua` verifies exact one-for-one transport of a legendary document with no residual pool entry.
 
 ## 7. Cross-Cutting Integration Issues
 
