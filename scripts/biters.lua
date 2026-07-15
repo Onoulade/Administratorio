@@ -131,6 +131,7 @@ local PROTEST_MAP_TAG_TEXT = {"gui.protest-map-tag"}
 local PROTEST_STOP_TEXT = {"gui.protest-stop"}
 local WAITING_BITER_STATE_NAMES = {"waiting", "pathfinding", "protesting", "pacified", "returning_home", "attacking"}
 local WAITING_PATHING_PROCESS_SHARD_COUNT = C.FRUST_PROTEST_PROCESS_SHARDS or 4
+local DESK_CIRCUIT_RECONCILE_TICKS = 60
 local BITER_FORCE_NAME = "administratorio-biters"
 local HARD_MODE_ATTACK_FORCE_NAME = C.HARD_MODE_ATTACK_FORCE_NAME or "administratorio-hard-mode-biters"
 
@@ -1232,28 +1233,43 @@ function M.update_circuit_signals(desks)
   ensure_desk_circuit_dirty()
   for _, desk in ipairs(desks) do
     local desk_id = desk.unit_number
+    local reconcile = game and game.tick
+      and game.tick % DESK_CIRCUIT_RECONCILE_TICKS == desk_id % DESK_CIRCUIT_RECONCILE_TICKS
+    if reconcile then
+      storage.desk_circuit_dirty[desk_id] = true
+    end
     if storage.desk_circuit_dirty[desk_id] then
       local combinator = storage.desk_combinators[desk_id]
       if combinator and combinator.valid then
         local complaint_counts = {l = 0, s = 0, n = 0, u = 0, lt = 0, h = 0, lo = 0, v = 0}
         local total_waiting = 0
-        local desk_set = storage.desk_biters[desk_id]
-        if desk_set then
-          for b_id in pairs(desk_set) do
-            local info = storage.waiting_biters[b_id]
-            if info and info.state == "waiting" and info.entity and info.entity.valid then
-              total_waiting = total_waiting + 1
-              for _, ticket in ipairs(info.complaints) do
-                if ticket == "ticket-landscape" then complaint_counts.l = complaint_counts.l + 1
-                elseif ticket == "ticket-smog" then complaint_counts.s = complaint_counts.s + 1
-                elseif ticket == "ticket-noise" then complaint_counts.n = complaint_counts.n + 1
-                elseif ticket == "ticket-unemployment" then complaint_counts.u = complaint_counts.u + 1
-                elseif ticket == "ticket-littering" then complaint_counts.lt = complaint_counts.lt + 1
-                elseif ticket == "ticket-hazmat" then complaint_counts.h = complaint_counts.h + 1
-                elseif ticket == "ticket-loitering" then complaint_counts.lo = complaint_counts.lo + 1
-                elseif ticket == "ticket-vagrancy" then complaint_counts.v = complaint_counts.v + 1
-                end
+        local function count_waiting_info(info)
+          if info and info.desk_id == desk_id and info.state == "waiting"
+             and info.entity and info.entity.valid then
+            total_waiting = total_waiting + 1
+            for _, ticket in ipairs(info.complaints or {}) do
+              if ticket == "ticket-landscape" then complaint_counts.l = complaint_counts.l + 1
+              elseif ticket == "ticket-smog" then complaint_counts.s = complaint_counts.s + 1
+              elseif ticket == "ticket-noise" then complaint_counts.n = complaint_counts.n + 1
+              elseif ticket == "ticket-unemployment" then complaint_counts.u = complaint_counts.u + 1
+              elseif ticket == "ticket-littering" then complaint_counts.lt = complaint_counts.lt + 1
+              elseif ticket == "ticket-hazmat" then complaint_counts.h = complaint_counts.h + 1
+              elseif ticket == "ticket-loitering" then complaint_counts.lo = complaint_counts.lo + 1
+              elseif ticket == "ticket-vagrancy" then complaint_counts.v = complaint_counts.v + 1
               end
+            end
+          end
+        end
+
+        if reconcile then
+          for _, info in pairs(storage.waiting_biters or {}) do
+            count_waiting_info(info)
+          end
+        else
+          local desk_set = storage.desk_biters[desk_id]
+          if desk_set then
+            for b_id in pairs(desk_set) do
+              count_waiting_info(storage.waiting_biters[b_id])
             end
           end
         end
@@ -1264,16 +1280,23 @@ function M.update_circuit_signals(desks)
           local section = behavior.get_section(1)
           if not section then section = behavior.add_section() end
           if section then
-            section.set_slot(1, {value = "signal-complaint-l", min = complaint_counts.l})
-            section.set_slot(2, {value = "signal-complaint-s", min = complaint_counts.s})
-            section.set_slot(3, {value = "signal-complaint-n", min = complaint_counts.n})
-            section.set_slot(4, {value = "signal-complaint-u", min = complaint_counts.u})
-            section.set_slot(5, {value = "signal-complaint-lt", min = complaint_counts.lt})
-            section.set_slot(6, {value = "signal-complaint-h", min = complaint_counts.h})
-            section.set_slot(7, {value = "signal-complaint-lo", min = complaint_counts.lo})
-            section.set_slot(8, {value = "signal-complaint-v", min = complaint_counts.v})
-            section.set_slot(9, {value = "signal-available-slots", min = available})
-            section.set_slot(10, {value = "signal-total-waiting", min = total_waiting})
+            local function set_signal(slot, signal, count)
+              if count == 0 then
+                section.clear_slot(slot)
+              else
+                section.set_slot(slot, {value = signal, min = count})
+              end
+            end
+            set_signal(1, "signal-complaint-l", complaint_counts.l)
+            set_signal(2, "signal-complaint-s", complaint_counts.s)
+            set_signal(3, "signal-complaint-n", complaint_counts.n)
+            set_signal(4, "signal-complaint-u", complaint_counts.u)
+            set_signal(5, "signal-complaint-lt", complaint_counts.lt)
+            set_signal(6, "signal-complaint-h", complaint_counts.h)
+            set_signal(7, "signal-complaint-lo", complaint_counts.lo)
+            set_signal(8, "signal-complaint-v", complaint_counts.v)
+            set_signal(9, "signal-available-slots", available)
+            set_signal(10, "signal-total-waiting", total_waiting)
           end
         end
       end
