@@ -35,6 +35,12 @@ if feature_flags.space_age_enabled() then
   require("prototypes.shared.paperwork_recycling").apply()
 end
 
+-- The Quality mod owns its native recipes and automatic recycling recipes.
+-- Apply the administrative retheme only after every data-updates pass has run.
+if feature_flags.quality_enabled() then
+  require("prototypes.final_fixes.quality_integration").apply(data)
+end
+
 local REGULATED_AM_FACTORIOPEDIA_NOTE = {"administratorio-factoriopedia.regulated-assembling-note"}
 local PNEUMATIC_TRANSPORT_NOTE = {
   "",

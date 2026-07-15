@@ -38,4 +38,11 @@ function M.space_age_enabled()
   return mod_enabled("space-age")
 end
 
+-- Quality is an optional native dependency.  Keep this as a distinct feature
+-- flag rather than treating Space Age as a proxy: base-only Quality installs
+-- are valid and Administratorio must remain unchanged without it.
+function M.quality_enabled()
+  return mod_enabled("quality")
+end
+
 return M

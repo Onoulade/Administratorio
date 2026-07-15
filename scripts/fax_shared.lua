@@ -1,3 +1,4 @@
+local quality = require("scripts.quality")
 local M = {}
 
 M.RECEIVER_NAME = "interplanetary-fax-exchange"
@@ -298,8 +299,8 @@ function M.can_force_fax_document(force, item_name)
   return M.is_color_faxing_unlocked(force)
 end
 
-function M.get_queue_capacity(force)
-  local capacity = M.BASE_QUEUE_CAPACITY
+function M.get_queue_capacity(force, receiver)
+  local capacity = M.BASE_QUEUE_CAPACITY + quality.level(receiver)
   if not force or not force.valid or not force.technologies then
     return capacity
   end
@@ -312,6 +313,14 @@ function M.get_queue_capacity(force)
   end
 
   return capacity
+end
+
+function M.get_transmit_ticks(emitter)
+  return quality.scaled_ticks(M.TRANSMIT_TICKS, emitter)
+end
+
+function M.get_print_ticks(receiver)
+  return quality.scaled_ticks(M.PRINT_TICKS, receiver)
 end
 
 function M.get_planet_name(surface)
