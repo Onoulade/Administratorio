@@ -129,6 +129,45 @@ test("Space Age planet manifests unlock with their planetary systems", function(
   end
 end)
 
+test("orbital tips unlock with the feature they explain", function()
+  local workforce_tips = {
+    "administratorio-workforce-formation-title",
+    "administratorio-workforce-formation",
+    "administratorio-orbital-specialists",
+    "administratorio-trajectory-compliance-arrays",
+    "administratorio-orbital-employment-cannon",
+    "administratorio-administrative-space-station",
+  }
+  for _, name in ipairs(workforce_tips) do
+    assert_true(
+      trigger_contains(tip(name).trigger, "research", "technology", "workforce-formation"),
+      name .. " should unlock from workforce-formation"
+    )
+  end
+
+  local permit = tip("administratorio-orbital-infrastructure-permit")
+  assert_true(
+    trigger_contains(permit.trigger, "research", "technology", "space-platform"),
+    "orbital-infrastructure-permit should unlock from space-platform"
+  )
+end)
+
+test("advanced orbital tips wait for their first relevant research", function()
+  local expected = {
+    ["administratorio-senior-trajectory-compliance-array"] = "trajectory-compliance-jurisdiction-2",
+    ["administratorio-executive-trajectory-compliance-array"] = "trajectory-compliance-jurisdiction-3",
+    ["administratorio-orbital-employment-damage"] = "orbital-employment-damage-1",
+    ["administratorio-orbital-employment-capacity"] = "orbital-employment-capacity-1",
+    ["administratorio-trajectory-compliance-speed"] = "trajectory-compliance-speed-1",
+  }
+  for name, technology in pairs(expected) do
+    assert_true(
+      trigger_contains(tip(name).trigger, "research", "technology", technology),
+      name .. " should unlock from " .. technology
+    )
+  end
+end)
+
 print(("Tips & Tricks tests: %d passed, %d failed"):format(passed, failed))
 if failed > 0 then
   for _, err in ipairs(errors) do

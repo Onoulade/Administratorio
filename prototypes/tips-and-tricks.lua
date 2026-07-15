@@ -213,7 +213,7 @@ if working_hours_enabled then
       type = "tips-and-tricks-item",
       name = "administratorio-working-hours",
       category = "administratorio",
-      order = "f",
+      order = "d-a",
       indent = 1,
       trigger = {
         type = "or",
@@ -250,4 +250,384 @@ if space_age_enabled then
     }
   end
   data:extend(prototypes_to_add)
+
+  -- ===== WORKFORCE FORMATION & ORBITAL OPERATIONS =====
+
+  data:extend({
+    -- Workforce Formation (title section)
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-workforce-formation-title",
+      category = "administratorio",
+      order = "o",
+      is_title = true,
+      indent = 0,
+      trigger = {type = "research", technology = "workforce-formation"},
+    },
+
+    -- Workforce Formation overview
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-workforce-formation",
+      category = "administratorio",
+      order = "oa",
+      indent = 1,
+      trigger = {type = "research", technology = "workforce-formation"},
+    },
+
+    -- Formation Center (covered by existing tip "administratorio-biter-workers" but we add orbital-specific note)
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-orbital-specialists",
+      category = "administratorio",
+      order = "ob",
+      indent = 1,
+      trigger = {type = "research", technology = "workforce-formation"},
+    },
+
+    -- Trajectory Compliance Arrays
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-trajectory-compliance-arrays",
+      category = "administratorio",
+      order = "oc",
+      indent = 1,
+      trigger = {type = "research", technology = "workforce-formation"},
+    },
+
+    -- Senior Trajectory Compliance Array
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-senior-trajectory-compliance-array",
+      category = "administratorio",
+      order = "oc2",
+      indent = 1,
+      trigger = {type = "research", technology = "trajectory-compliance-jurisdiction-2"},
+    },
+
+    -- Executive Trajectory Compliance Array
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-executive-trajectory-compliance-array",
+      category = "administratorio",
+      order = "oc3",
+      indent = 1,
+      trigger = {type = "research", technology = "trajectory-compliance-jurisdiction-3"},
+    },
+
+    -- Orbital Employment Cannon & VESM
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-orbital-employment-cannon",
+      category = "administratorio",
+      order = "od",
+      indent = 1,
+      trigger = {type = "research", technology = "workforce-formation"},
+    },
+
+    -- Orbital Employment Damage upgrades
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-orbital-employment-damage",
+      category = "administratorio",
+      order = "oe",
+      indent = 1,
+      trigger = {type = "research", technology = "orbital-employment-damage-1"},
+    },
+
+    -- Orbital Employment Capacity upgrades
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-orbital-employment-capacity",
+      category = "administratorio",
+      order = "of",
+      indent = 1,
+      trigger = {type = "research", technology = "orbital-employment-capacity-1"},
+    },
+
+    -- Administrative Space Station
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-administrative-space-station",
+      category = "administratorio",
+      order = "og",
+      indent = 1,
+      trigger = {type = "research", technology = "workforce-formation"},
+    },
+
+    -- Orbital Infrastructure Permit
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-orbital-infrastructure-permit",
+      category = "administratorio",
+      order = "oh",
+      indent = 1,
+      trigger = {type = "research", technology = "space-platform"},
+    },
+
+    -- Trajectory Compliance Speed upgrades
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-trajectory-compliance-speed",
+      category = "administratorio",
+      order = "oi",
+      indent = 1,
+      trigger = {type = "research", technology = "trajectory-compliance-speed-1"},
+    },
+
+    -- ===== CHROMATIC PRINTING =====
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-chromatic-printing",
+      category = "administratorio",
+      order = "p",
+      is_title = true,
+      indent = 0,
+      trigger = {type = "research", technology = "chromatic-printing"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-chromatic-printer",
+      category = "administratorio",
+      order = "pa",
+      indent = 1,
+      trigger = {type = "research", technology = "chromatic-printing"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-chromatic-inks",
+      category = "administratorio",
+      order = "pb",
+      indent = 1,
+      trigger = {type = "research", technology = "chromatic-printing"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-multicolor-forms",
+      category = "administratorio",
+      order = "pc",
+      indent = 1,
+      trigger = {type = "research", technology = "chromatic-printing"},
+    },
+
+    -- ===== VULCANUS CERTIFICATION =====
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-vulcanus-certification",
+      category = "administratorio",
+      order = "q",
+      is_title = true,
+      indent = 0,
+      trigger = {type = "research", technology = "vulcanus-certification"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-notary-office",
+      category = "administratorio",
+      order = "qa",
+      indent = 1,
+      trigger = {type = "research", technology = "vulcanus-certification"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-territorial-arbitration",
+      category = "administratorio",
+      order = "qb",
+      indent = 1,
+      trigger = {type = "research", technology = "vulcanus-certification"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-vulcanus-export-charters",
+      category = "administratorio",
+      order = "qc",
+      indent = 1,
+      trigger = {type = "research", technology = "vulcanus-export-charters"},
+    },
+
+    -- ===== GLEBA CONCILIATION =====
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-gleba-conciliation",
+      category = "administratorio",
+      order = "r",
+      is_title = true,
+      indent = 0,
+      trigger = {type = "research", technology = "gleba-conciliation"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-conciliation-desk",
+      category = "administratorio",
+      order = "ra",
+      indent = 1,
+      trigger = {type = "research", technology = "gleba-conciliation"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-capture-bureau",
+      category = "administratorio",
+      order = "rb",
+      indent = 1,
+      trigger = {type = "research", technology = "gleba-conciliation"},
+    },
+
+    -- ===== INTERPLANETARY BUREAUCRACY (CROSS-PLANET) =====
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-cross-planet-bureaucracy",
+      category = "administratorio",
+      order = "s",
+      is_title = true,
+      indent = 0,
+      trigger = {type = "research", technology = "cyan-yellow-bureaucracy"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-cyan-yellow-bureaucracy",
+      category = "administratorio",
+      order = "sa",
+      indent = 1,
+      trigger = {type = "research", technology = "cyan-yellow-bureaucracy"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-cyan-magenta-bureaucracy",
+      category = "administratorio",
+      order = "sb",
+      indent = 1,
+      trigger = {type = "research", technology = "cyan-magenta-bureaucracy"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-yellow-magenta-bureaucracy",
+      category = "administratorio",
+      order = "sc",
+      indent = 1,
+      trigger = {type = "research", technology = "yellow-magenta-bureaucracy"},
+    },
+
+    -- ===== FULGORA DIGITAL SERVICES =====
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-fulgora-digital-services",
+      category = "administratorio",
+      order = "t",
+      is_title = true,
+      indent = 0,
+      trigger = {type = "research", technology = "fulgora-digital-services"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-digital-services-bureau",
+      category = "administratorio",
+      order = "ta",
+      indent = 1,
+      trigger = {type = "research", technology = "fulgora-digital-services"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-archive-recombination",
+      category = "administratorio",
+      order = "tb",
+      indent = 1,
+      trigger = {type = "research", technology = "archive-recombination"},
+    },
+
+    -- ===== AQUILO FAX NETWORK =====
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-aquilo-fax-network",
+      category = "administratorio",
+      order = "u",
+      is_title = true,
+      indent = 0,
+      trigger = {type = "research", technology = "aquilo-fax-network"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-fax-emitter",
+      category = "administratorio",
+      order = "ua",
+      indent = 1,
+      trigger = {type = "research", technology = "aquilo-fax-network"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-interplanetary-fax-exchange",
+      category = "administratorio",
+      order = "ub",
+      indent = 1,
+      trigger = {type = "research", technology = "aquilo-fax-network"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-laser-printer",
+      category = "administratorio",
+      order = "uc",
+      indent = 1,
+      trigger = {type = "research", technology = "aquilo-fax-network"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-color-faxing",
+      category = "administratorio",
+      order = "ud",
+      indent = 1,
+      trigger = {type = "research", technology = "color-faxing"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-fax-queue-capacity",
+      category = "administratorio",
+      order = "ue",
+      indent = 1,
+      trigger = {type = "research", technology = "fax-queue-capacity-1"},
+    },
+
+    -- ===== BUREAUCRATIC TRANSCENDENCE =====
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-bureaucratic-transcendence",
+      category = "administratorio",
+      order = "v",
+      is_title = true,
+      indent = 0,
+      trigger = {type = "research", technology = "bureaucratic-transcendence"},
+    },
+
+    {
+      type = "tips-and-tricks-item",
+      name = "administratorio-public-train-stop",
+      category = "administratorio",
+      order = "va",
+      indent = 1,
+      trigger = {type = "research", technology = "bureaucratic-transcendence"},
+    },
+  })
 end
