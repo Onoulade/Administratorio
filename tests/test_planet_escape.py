@@ -75,7 +75,6 @@ IMPORT_CLASSES = (
 )
 
 PROFILE_TARGETS = {
-    "bootstrap": (("admin-station", 1), ("printer-t1", 1)),
     "assembling-machine-2": (("assembling-machine-2", 1),),
     "chemical-plant": (("chemical-plant", 1),),
     "rocket-escape": (("rocket-silo", 1), ("rocket-part", 100)),
@@ -83,6 +82,13 @@ PROFILE_TARGETS = {
 }
 
 PLANET_PROFILE_TARGETS = {
+    "bootstrap": {
+        "nauvis": (("admin-station", 1), ("printer-t1", 1)),
+        "vulcanus": (("printer-t1", 1),),
+        "gleba": (("printer-t1", 1),),
+        "fulgora": (("printer-t1", 1),),
+        "aquilo": (("printer-t1", 1),),
+    },
     "native-machine": {
         "vulcanus": (("foundry", 1),),
         "gleba": (("biochamber", 1),),
@@ -1304,7 +1310,7 @@ def render_report(
     analyzer: PlanetEscapeAnalyzer,
     planets: Sequence[str],
     dump_path: Path,
-    targets: Sequence[Tuple[str, Fraction]],
+    targets_by_planet: Dict[str, Sequence[Tuple[str, Fraction]]],
     show_steps: bool,
     import_depth: int,
 ) -> str:
@@ -1314,10 +1320,15 @@ def render_report(
         "",
         f"Prototype dump: {dump_path}",
         f"Planets analyzed: {', '.join(planets)}",
-        "Escape targets: " + ", ".join(f"{format_fraction(amount)}x {name}" for name, amount in targets),
+        "Escape targets vary by planet when named profiles are used.",
     ]
 
     for planet_name in planets:
+        targets = targets_by_planet[planet_name]
+        lines.append(
+            f"Targets for {planet_name}: "
+            + ", ".join(f"{format_fraction(amount)}x {name}" for name, amount in targets)
+        )
         lines.extend(render_planet_section(analyzer, planet_name, targets, show_steps, import_depth))
 
     return "\n".join(lines) + "\n"
@@ -1335,7 +1346,7 @@ def main() -> int:
         format="%(asctime)s %(name)s %(levelname)s  %(message)s",
         datefmt="%H:%M:%S",
     )
-    targets = parse_targets(args.targets)
+    base_targets = parse_targets(args.targets)
     tmp_root = build_temp_profile(repo_name())
 
     try:
@@ -1346,8 +1357,13 @@ def main() -> int:
         invalid = sorted(set(requested_planets) - set(planet_properties))
         if invalid:
             raise ValueError(f"Unknown planet(s): {', '.join(invalid)}")
-        targets = add_profile_targets(targets, args.profile, requested_planets)
-        log.info("Targets: %s", ", ".join(f"{format_fraction(a)}x {n}" for n, a in targets))
+        targets_by_planet = {
+            planet_name: add_profile_targets(base_targets, args.profile, [planet_name])
+            for planet_name in requested_planets
+        }
+        for planet_name, targets in targets_by_planet.items():
+            log.info("[%s] Targets: %s", planet_name,
+                     ", ".join(f"{format_fraction(a)}x {n}" for n, a in targets))
 
         dump_path = run_dump_data(Path(args.factorio_bin), tmp_root)
         log.info("Parsing dump and building analyzer...")
@@ -1356,6 +1372,7 @@ def main() -> int:
 
         failures: List[str] = []
         for planet_name in requested_planets:
+            targets = targets_by_planet[planet_name]
             local_resources = analyzer.local_resources_by_planet[planet_name]
             if not local_resources:
                 failures.append(f"{planet_name}: no local resources discovered from dumped prototypes")
@@ -1377,7 +1394,9 @@ def main() -> int:
                         f"{planet_name}: unapproved imports: " + ", ".join(violations)
                     )
 
-        report_text = render_report(analyzer, requested_planets, dump_path, targets, args.show_steps, args.import_depth)
+        report_text = render_report(
+            analyzer, requested_planets, dump_path, targets_by_planet, args.show_steps, args.import_depth
+        )
         report_path = tmp_root / "script-output" / "administratorio-planet-escape-report.txt"
         write_file(report_path, report_text)
         print(report_text, end="")

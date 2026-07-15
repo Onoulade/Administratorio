@@ -29,8 +29,8 @@ This is why Vulcanus has dedicated bootstrap recipes for:
 
 - `paper-production-vulcanus`
 - `carbon-offset-certificate-basic-vulcanus`
-- `admin-station-vulcanus`
-- `printer-t1-vulcanus`
+- `provisional-approval-vulcanus`
+- `compacted-rubble-production-vulcanus`
 - `research-grant-approval-vulcanus`
 - `administrative-science-pack-production-vulcanus`
 - `plastic-bar-vulcanus`
@@ -98,27 +98,15 @@ The Vulcanus advantage is not "cyan can copy everything." The advantage is:
 
 Standard black-ink copying still exists for ordinary forms. Vulcanus chromatic forms are their own family and are not meant to become a universal replacement for the normal copy economy.
 
-### 6. Off-world recipe variants carry the export pressure
+### 6. Vanilla restrictions remain authoritative
 
-Vulcanus should export permission, not just material.
+Vulcanus should retain its vanilla industrial identity. Administratorio does not rewrite the restrictions on the Foundry or native Vulcanus processes, and it does not add off-world clones for them.
 
-The clean pattern is:
+The clean pattern is instead:
 
-- keep home-planet Vulcanus tech readable
-- add off-world variants that require Vulcanus forms
-
-The current implementation follows this for selected off-world variants of:
-
-- `foundry`
-- `tungsten-plate`
-- `tungsten-carbide`
-- `molten-iron`
-- `molten-iron-from-lava`
-- `molten-copper`
-- `molten-copper-from-lava`
-- `simple-coal-liquefaction`
-- `acid-neutralisation`
-- `casting-low-density-structure`
+- keep one canonical building recipe
+- preserve vanilla recipe and entity surface conditions
+- provide local routes for Administratorio intermediates needed by the canonical building costs
 
 The forms carrying that export role are:
 
@@ -126,7 +114,7 @@ The forms carrying that export role are:
 - `calcite-reagent-waiver`
 - `offworld-metallurgy-charter`
 
-Additionally, cyan forms are required as ingredients in any recipe consuming tungsten plate, making Vulcanus paperwork essential for late-game manufacturing everywhere. On Vulcanus, these forms are cheap. Off-world, they must be shipped.
+These forms remain useful in Administratorio construction permits and interplanetary convergence paperwork without changing vanilla production recipes.
 
 ### 7. The notary office requires a worker but no operating paperwork
 

@@ -2023,6 +2023,22 @@ test("Space Age uses one shared rocket-silo recipe on every planet", function()
   end
 end)
 
+test("Space Age keeps the admin desk on Nauvis", function()
+  local recipe = get_recipe("admin-station")
+  assert_true(recipe ~= nil, "admin-station missing")
+  assert_true(recipe.surface_conditions ~= nil, "admin-station should be surface-limited")
+  assert_eq(recipe.surface_conditions[1].property, "pressure", "admin-station should use Nauvis pressure")
+  assert_eq(recipe.surface_conditions[1].min, 1000, "admin-station should require Nauvis pressure")
+  assert_eq(recipe.surface_conditions[1].max, 1000, "admin-station should require Nauvis pressure")
+  assert_eq(recipe.surface_conditions[2].property, "gravity", "admin-station should use Nauvis gravity")
+  assert_eq(recipe.surface_conditions[2].min, 10, "admin-station should require Nauvis gravity")
+  assert_eq(recipe.surface_conditions[2].max, 10, "admin-station should require Nauvis gravity")
+  for _, planet in ipairs({"vulcanus", "gleba", "fulgora", "aquilo"}) do
+    assert_eq(get_recipe("admin-station-" .. planet), nil,
+      "admin-station must not gain a planet-specific recipe")
+  end
+end)
+
 test("Space Age issues loose taxpayer money only on Nauvis", function()
   for _, recipe_name in ipairs({"treasury-bond", "taxpayer-money"}) do
     local recipe = get_recipe(recipe_name)

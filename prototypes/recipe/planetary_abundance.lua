@@ -5,21 +5,22 @@ local function on_planet(planet_name, recipe)
 end
 
 data:extend({
-  -- Vulcanus can establish its first complaint desk from local carbon evidence
-  -- instead of importing Nauvis rubble just to make a provisional approval.
-  on_planet("vulcanus", {
+  -- Gleba can make the construction permit used by the canonical breakroom
+  -- recipe from its biological paperwork supply, instead of owning a second
+  -- breakroom construction recipe.
+  on_planet("gleba", {
     type = "recipe",
-    name = "admin-station-vulcanus",
+    name = "construction-permit-gleba",
+    category = "bureaucracy-registration",
     enabled = false,
-    localised_name = {"item-name.admin-station"},
-    localised_description = {"item-description.admin-station"},
+    localised_name = {"item-name.construction-permit"},
     ingredients = {
-      {type = "item", name = "iron-plate", amount = 20},
-      {type = "item", name = "electronic-circuit", amount = 10},
+      {type = "item", name = "blank-form", amount = 1},
       {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
+      {type = "item", name = "dubious-data", amount = 2},
     },
-    results = {{type = "item", name = "admin-station", amount = 1}},
-    energy_required = 15,
+    results = {{type = "item", name = "construction-permit", amount = 1}},
+    energy_required = 4,
   }),
 
   -- Fulgora turns salvage into the ordinary administrative inputs needed to
