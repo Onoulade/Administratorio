@@ -20,6 +20,7 @@ local regulated_unlocks = require("scripts.regulated_unlocks")
 local feature_flags = require("feature_flags")
 local hired_biter = require("scripts.hired_biter")
 local rideable_biter = require("scripts.rideable_biter")
+local spawner_population = require("scripts.spawner_population")
 
 biter_station.set_biters_module(biters)
 biterport.set_biters_module(biters)
@@ -443,6 +444,7 @@ local function init_storage()
     working_hours.ensure_storage()
   end
   field_office.ensure_storage()
+  spawner_population.ensure_storage()
   biter_station.ensure_storage()
   biterport.ensure_storage()
   hired_biter.ensure_storage()
@@ -603,6 +605,7 @@ local function on_init()
     working_hours.rebuild_registry()
   end
   field_office.rebuild_registry()
+  spawner_population.rebuild()
   biter_station.rebuild_registry()
   biterport.rebuild_registry()
   hired_biter.ensure_storage()
@@ -675,6 +678,7 @@ local function on_configuration_changed(event)
   biters.mark_all_desk_circuit_dirty()
   working_hours.rebuild_registry()
   field_office.rebuild_registry()
+  spawner_population.rebuild()
   biter_station.rebuild_registry()
   biterport.rebuild_registry()
   rideable_biter.rebuild_registry()
@@ -1628,11 +1632,16 @@ local function on_unit_group_created(event)
 end
 
 local function on_unit_added_to_group(event)
+  spawner_population.on_unit_added_to_group(event)
   -- Do NOT redirect or snapshot here. adopt_redirected_biter destroys the original
   -- entity, which corrupts the group's member list while the Commander is still
   -- building the group. Subsequent .members reads find the destroyed entity and
   -- crash (LuaEntity assertion !entity->isToBeDeleted()). The redirect is handled
   -- safely by on_unit_group_finished_gathering once the group is fully formed.
+end
+
+local function on_entity_spawned(event)
+  spawner_population.on_entity_spawned(event)
 end
 
 local function on_unit_group_finished_gathering(event)
@@ -1679,6 +1688,7 @@ end
 
 local function on_entity_died(event)
   local entity = event.entity
+  spawner_population.on_entity_died(entity)
   if entity.name == C.HIRED_BITER_UNIT_NAME then
     hired_biter.untrack(entity, event)
   end
@@ -2059,6 +2069,7 @@ control_event_router.register({
   on_entity_built = on_entity_built,
   on_entity_died = on_entity_died,
   on_entity_died_filters = ON_ENTITY_DIED_FILTERS,
+  on_entity_spawned = on_entity_spawned,
   on_entity_removed = on_entity_removed,
   on_field_agent_waypoint_input = on_field_agent_waypoint_input,
   on_gui_click = on_gui_click,

@@ -5,6 +5,7 @@
 local C = require("scripts.constants")
 local working_hours = require("scripts.working_hours")
 local unit_ai_settings = require("scripts.unit_ai_settings")
+local spawner_population = require("scripts.spawner_population")
 
 local M = {}
 
@@ -296,6 +297,9 @@ end
 
 local function spawn_worker_biter(office, spawner)
   if not office or not office.valid or not spawner or not spawner.valid then return nil end
+  if not spawner_population.can_lease_new_unit(spawner) then
+    return nil, nil, "capacity"
+  end
 
   local surface = office.surface
   local spawn_pos = surface.find_non_colliding_position("small-biter", spawner.position, 5, 0.5)
@@ -307,6 +311,10 @@ local function spawn_worker_biter(office, spawner)
     force = get_biter_force(),
   }
   if not biter or not biter.valid then return nil end
+  if not spawner_population.lease_new_unit(biter, spawner) then
+    biter.destroy()
+    return nil, nil, "capacity"
+  end
   unit_ai_settings.apply_managed_unit_settings(biter)
 
   local destination = find_worker_destination(surface, biter.name, office)
@@ -456,6 +464,7 @@ local function recreate_missing_worker(state, office, tick)
   local old_unit_number = state.biter_unit_number
   state.biter = biter
   state.biter_unit_number = biter.unit_number
+  spawner_population.rekey_detached(old_unit_number, biter.unit_number, biter, state.spawner)
   rekey_worker_state(state, old_unit_number, biter.unit_number)
   refresh_worker_snapshot(state, biter)
   reset_calling_progress(state, biter, tick or game.tick)
@@ -474,6 +483,7 @@ release_biter = function(state, tick)
   if not state.biter or not state.biter.valid then
     if state.biter_unit_number then
       storage.field_office_worker_to_office[state.biter_unit_number] = nil
+      spawner_population.untrack_unit(state.biter_unit_number)
       state.biter_unit_number = nil
     end
     clear_pending_path_request(state)
@@ -505,6 +515,7 @@ release_biter = function(state, tick)
   M.ensure_storage()
   storage.field_office_releasing[state.biter.unit_number] = {
     entity = state.biter,
+    spawner = state.spawner,
     return_destination = return_destination,
     arrival_check_tick = tick + (C.RETURN_MIN_TRAVEL_TICKS or 0),
     despawn_tick = tick + C.FIELD_OFFICE_BITER_DESPAWN_TICKS,
@@ -521,9 +532,11 @@ local function mark_worker_unreachable(state, office, tick)
   clear_pending_path_request(state)
   if state.biter and state.biter.valid then
     storage.field_office_worker_to_office[state.biter.unit_number] = nil
+    spawner_population.untrack_unit(state.biter.unit_number)
     state.biter.destroy()
   elseif state.biter_unit_number then
     storage.field_office_worker_to_office[state.biter_unit_number] = nil
+    spawner_population.untrack_unit(state.biter_unit_number)
   end
   destroy_overlay(state)
   clear_calling_progress(state)
@@ -632,10 +645,12 @@ function M.update(tick, runtime_profile)
   run_profiled(runtime_profile, "field_office_releasing", function()
     for biter_id, info in pairs(storage.field_office_releasing) do
       if not info.entity or not info.entity.valid then
+        spawner_population.untrack_unit(biter_id)
         storage.field_office_releasing[biter_id] = nil
       elseif info.return_destination
           and tick >= (info.arrival_check_tick or 0)
           and distance_squared(info.entity.position, info.return_destination) <= (C.RETURN_ARRIVAL_DISTANCE or 2.5) ^ 2 then
+        spawner_population.untrack_unit(biter_id)
         release_or_destroy_returned_worker(info.entity)
         storage.field_office_releasing[biter_id] = nil
       elseif tick >= info.despawn_tick then
@@ -651,6 +666,7 @@ function M.update(tick, runtime_profile)
           })
           info.despawn_tick = tick + C.FIELD_OFFICE_BITER_DESPAWN_TICKS
         else
+          spawner_population.untrack_unit(biter_id)
           release_or_destroy_returned_worker(info.entity)
           storage.field_office_releasing[biter_id] = nil
         end
@@ -679,9 +695,11 @@ function M.update(tick, runtime_profile)
         clear_pending_path_request(state)
         if state.biter and state.biter.valid then
           storage.field_office_worker_to_office[state.biter.unit_number] = nil
+          spawner_population.untrack_unit(state.biter.unit_number)
           state.biter.destroy()
         elseif state.biter_unit_number then
           storage.field_office_worker_to_office[state.biter_unit_number] = nil
+          spawner_population.untrack_unit(state.biter_unit_number)
         end
         destroy_overlay(state)
       end
@@ -744,9 +762,11 @@ function M.update(tick, runtime_profile)
       end)
       if spawner then
         local destination = nil
+        local summon_failure = nil
         local biter = run_profiled(runtime_profile, "field_office_spawn_worker", function()
-          local spawned_biter, spawned_destination = spawn_worker_biter(office, spawner)
+          local spawned_biter, spawned_destination, failure = spawn_worker_biter(office, spawner)
           destination = spawned_destination
+          summon_failure = failure
           return spawned_biter
         end)
         if biter then
@@ -759,6 +779,8 @@ function M.update(tick, runtime_profile)
           storage.field_office_worker_to_office[biter.unit_number] = office_id
           request_worker_path_check(state, office, biter, destination)
           set_office_status(state, office, defines.entity_status_diode.yellow, "gui.field-office-calling")
+        elseif summon_failure == "capacity" then
+          set_office_status(state, office, defines.entity_status_diode.red, "gui.field-office-no-workers-available")
         else
           mark_worker_unreachable(state, office, tick)
         end
@@ -774,11 +796,7 @@ function M.update(tick, runtime_profile)
 
       -- If night falls while biter is en route, release it
       if night then
-        if state.biter and state.biter.valid then
-          release_biter(state, tick)
-        else
-          state.biter = nil
-        end
+        release_biter(state, tick)
         state.phase = "idle"
         clear_calling_progress(state)
         set_office_status(state, office, defines.entity_status_diode.red, "gui.working-hours-night-status")
@@ -804,6 +822,7 @@ function M.update(tick, runtime_profile)
         end
         if state.biter_unit_number then
           storage.field_office_worker_to_office[state.biter_unit_number] = nil
+          spawner_population.untrack_unit(state.biter_unit_number)
           state.biter_unit_number = nil
         end
         state.biter = nil
@@ -823,7 +842,6 @@ function M.update(tick, runtime_profile)
       -- Check if biter has arrived
       if biter_has_arrived(state.biter, office) then
         storage.field_office_worker_to_office[state.biter.unit_number] = nil
-        state.biter_unit_number = nil
 
         -- Stop biter movement
         state.biter.commandable.set_command({
@@ -865,6 +883,7 @@ function M.update(tick, runtime_profile)
           destroy_overlay(state)
           if state.biter_unit_number then
             storage.field_office_worker_to_office[state.biter_unit_number] = nil
+            spawner_population.untrack_unit(state.biter_unit_number)
             state.biter_unit_number = nil
           end
           state.biter = nil
@@ -963,10 +982,14 @@ function M.rebuild_registry()
   -- Destroy existing worker biters and overlays before rebuild
   for office_id, state in pairs(storage.field_office_state) do
     clear_pending_path_request(state)
+    local unit_number = state.biter_unit_number
+      or (state.biter and state.biter.valid and state.biter.unit_number)
+    if unit_number then spawner_population.untrack_unit(unit_number) end
     if state.biter and state.biter.valid then state.biter.destroy() end
     destroy_overlay(state)
   end
-  for _, info in pairs(storage.field_office_releasing) do
+  for unit_number, info in pairs(storage.field_office_releasing) do
+    spawner_population.untrack_unit(unit_number)
     if info.entity and info.entity.valid then info.entity.destroy() end
   end
 

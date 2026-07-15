@@ -6,6 +6,7 @@ local biters_rendering_factory = require("scripts.biters_rendering")
 local biters_protests_factory = require("scripts.biters_protests")
 local unit_ai_settings = require("scripts.unit_ai_settings")
 local protest_targets = require("scripts.protest_targets")
+local spawner_population = require("scripts.spawner_population")
 
 local M = {}
 local protest_rendering
@@ -293,6 +294,9 @@ local function track_waiting_biter(unit_number, info)
 
   storage.waiting_biters[unit_number] = info
   info.tracked_unit_number = unit_number
+  if info.home_spawner and info.home_spawner.valid then
+    spawner_population.restore_detached(unit_number, info.entity, info.home_spawner)
+  end
   if info.entity and info.entity.valid and info.state ~= "returning_home" then
     info.entity.force = get_biter_force()
     unit_ai_settings.apply_managed_unit_settings(info.entity)
@@ -326,6 +330,7 @@ local function untrack_waiting_biter(unit_number, info)
   end
 
   storage.waiting_biters[unit_number] = nil
+  spawner_population.untrack_unit(unit_number)
 end
 
 local function replace_tracked_waiting_biter_unit_number(old_unit_number, new_unit_number, info)
@@ -340,6 +345,12 @@ local function replace_tracked_waiting_biter_unit_number(old_unit_number, new_un
   storage.waiting_biters[old_unit_number] = nil
   storage.waiting_biters[new_unit_number] = info
   info.tracked_unit_number = new_unit_number
+  spawner_population.rekey_detached(
+    old_unit_number,
+    new_unit_number,
+    info.entity,
+    info.home_spawner
+  )
 end
 
 local function set_waiting_biter_state(info, state)
@@ -524,13 +535,15 @@ local function capture_home_spawner(info, entity, should_release)
   local commandable = entity.commandable
   if not commandable then return end
 
-  local spawner = commandable.spawner
-  if not spawner or not spawner.valid or spawner.type ~= "unit-spawner" then return end
+  local spawner = commandable.spawner or spawner_population.get_home_spawner(entity.unit_number)
+  if not spawner or not spawner.valid or spawner.type ~= "unit-spawner" then return nil end
 
   remember_home_spawner(info, spawner)
+  spawner_population.detach_unit(entity, spawner)
   if should_release then
     commandable.release_from_spawner()
   end
+  return spawner
 end
 
 local function adopt_redirected_biter(info, entity, force_name)
@@ -554,11 +567,17 @@ local function adopt_redirected_biter(info, entity, force_name)
   end
   unit_ai_settings.apply_managed_unit_settings(replacement)
 
-  capture_home_spawner(info, entity, false)
+  local home_spawner = capture_home_spawner(info, entity, false)
   if entity.health and replacement.health then
     replacement.health = entity.health
   end
   remember_entity_tracking(info, replacement)
+  spawner_population.rekey_detached(
+    entity.unit_number,
+    replacement.unit_number,
+    replacement,
+    home_spawner
+  )
   entity.destroy()
   return replacement
 end
@@ -874,6 +893,11 @@ protest_system = biters_protests_factory.new({
   protest_target_types = PROTEST_TARGET_TYPES,
   remember_entity_tracking = remember_entity_tracking,
   remember_home_spawner = remember_home_spawner,
+  reserve_home_spawner_unit = function(info, entity, spawner)
+    if not info or not entity or not entity.valid or not spawner or not spawner.valid then return false end
+    remember_home_spawner(info, spawner)
+    return spawner_population.detach_unit(entity, spawner)
+  end,
   render = protest_rendering,
   apply_managed_unit_settings = unit_ai_settings.apply_managed_unit_settings,
   release_as_regular_enemy = unit_ai_settings.release_as_regular_enemy,

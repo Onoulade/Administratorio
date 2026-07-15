@@ -362,7 +362,11 @@ function M.new(deps)
     local commandable = entity.commandable
     local spawner = commandable and commandable.spawner or nil
     if spawner and spawner.valid and commandable.release_from_spawner then
-      deps.remember_home_spawner(info, spawner)
+      if deps.reserve_home_spawner_unit then
+        deps.reserve_home_spawner_unit(info, entity, spawner)
+      else
+        deps.remember_home_spawner(info, spawner)
+      end
       commandable.release_from_spawner()
     end
 
