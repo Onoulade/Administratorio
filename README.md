@@ -4,7 +4,7 @@
 
 Overhaul mod for Factorio 2.0 that replaces military conflict with corporate bureaucracy. No guns. No turrets. No military science. Every machine you build, every inserter you place, and every furnace you fire up requires the proper paperwork — and the biters you used to shoot now have HR representation and a grievance process.
 
-This is a **Beta**. The full progression arc is playable and the core systems are in place, but balance, compatibility, translations, and late-game polish are still being tuned. Bug reports and save-breaking edge cases are welcomed with the solemn gratitude of a man whose backlog is larger than his will to live.
+The base Factorio experience is in **Beta**. The full progression arc is playable and the core systems are in place, but balance, compatibility, translations, and late-game polish are still being tuned. The Space Age integration is in its **first Alpha** and is available for early playtesting.
 
 ## Full Documentation
 
@@ -77,9 +77,9 @@ Pneumatic hardware itself is Quality-neutral and cannot be produced at a Quality
 
 ## Current State
 
-Beta status means the mod is ready for broader playtesting, not that the paperwork has achieved enlightenment. Expect balance changes, UI/locale cleanup, and the occasional migration wart as the late-game systems get more miles on them.
+The base mod's Beta status means it is ready for broader playtesting, not that the paperwork has achieved enlightenment. Space Age is a separate **first-alpha** undertaking: broad systems are implemented and testable, while hands-on campaign coverage, balance, feasibility, migrations, UI/locale cleanup, and all original graphics remain outstanding or provisional.
 
-Compatible with base Factorio 2.0 and Space Age. Space Age adds planet-specific administrative economies, dry interplanetary fax logistics, and Fulgora archive recombination. Quality is an optional `? quality >= 2.0.0` integration; without it, base Administratorio behavior is unchanged.
+Compatible with base Factorio 2.0. Experimental first-alpha support is available when Space Age is enabled, adding planet-specific administrative economies, dry interplanetary fax logistics, specialist professions, colored paperwork, and Fulgora archive reassignment. Quality is an optional `? quality >= 2.0.0` integration; without it, base Administratorio behavior is unchanged.
 
 One caveat: the Working Hours shutdown is runtime logic, so planner mods like Factory Planner will mis-model those buildings unless you account for it manually. If you prefer planner accuracy over the day/night subplot, disable Working Hours in startup settings.
 
