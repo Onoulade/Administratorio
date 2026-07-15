@@ -769,7 +769,15 @@ union_hq.crafting_speed = UNION_HQ_SPEED
 union_hq.ingredient_count = 10
 union_hq.module_slots = 6
 union_hq.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
-union_hq.localised_description = disabled_entity_description("union-headquarters-no-working-hours")
+if space_age_enabled then
+  union_hq.localised_description = {
+    "entity-description." .. (working_hours_enabled
+      and "union-headquarters-space-age"
+      or "union-headquarters-space-age-no-working-hours")
+  }
+else
+  union_hq.localised_description = disabled_entity_description("union-headquarters-no-working-hours")
+end
 union_hq.collision_box = {{-3.25, -3.25}, {3.25, 3.25}}
 union_hq.selection_box = {{-3.5, -3.5}, {3.5, 3.5}}
 union_hq.energy_usage = "1MW"
@@ -916,6 +924,9 @@ local propaganda_distillery = table.deepcopy(data.raw["assembling-machine"]["oil
 propaganda_distillery.name = "propaganda-distillery"
 propaganda_distillery.minable.result = "propaganda-distillery"
 propaganda_distillery.placeable_by = placeable_by_item("propaganda-distillery")
+if space_age_enabled then
+  propaganda_distillery.localised_description = {"entity-description.propaganda-distillery-space-age"}
+end
 propaganda_distillery.next_upgrade = nil
 propaganda_distillery.icon = distillery_graphics .. "base/fuel-refinery-icon.png"
 propaganda_distillery.icon_size = 64

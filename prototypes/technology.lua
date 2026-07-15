@@ -4,6 +4,17 @@ local working_hours_enabled = feature_flags.working_hours_enabled()
 local space_age_enabled = feature_flags.space_age_enabled()
 local tech_icons = "__administratorio__/graphics/technology/"
 
+local function eminent_domain_zoning_effects()
+  local effects = {
+    { type = "unlock-recipe", recipe = "white-paper-production" },
+    { type = "unlock-recipe", recipe = "policy-production" },
+  }
+  if not space_age_enabled then
+    effects[#effects + 1] = { type = "unlock-recipe", recipe = "slush-fund-production" }
+  end
+  return effects
+end
+
 local function pneumatic_form_transport_effects()
   local effects = {
     { type = "unlock-recipe", recipe = "pneumatic-pipe" },
@@ -380,15 +391,12 @@ data:extend({
     unit = { count = 160, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
     order = "f-b"
   },
-  -- T7a: EMINENT DOMAIN & ZONING (policy drafting and slush-fund planning)
+  -- T7a: EMINENT DOMAIN & ZONING (policy drafting; base game also unlocks slush funds)
   {
     type = "technology", name = "eminent-domain-zoning",
     icon = tech_icons .. "eminent-domain-zoning.png", icon_size = 256,
-    effects = {
-      { type = "unlock-recipe", recipe = "white-paper-production" },
-      { type = "unlock-recipe", recipe = "policy-production" },
-      { type = "unlock-recipe", recipe = "slush-fund-production" }
-    },
+    localised_description = space_age_enabled and {"technology-description.eminent-domain-zoning-space-age"} or nil,
+    effects = eminent_domain_zoning_effects(),
     prerequisites = {"executive-review", "processing-unit"},
     unit = { count = 210, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "g-a"
@@ -447,16 +455,6 @@ data:extend({
     prerequisites = {"board-meetings"},
     unit = { count = 185, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"utility-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "g-e"
-  },
-  {
-    type = "technology", name = "creative-accounting",
-    icon = tech_icons .. "creative-accounting.png", icon_size = 256,
-    effects = {
-      { type = "unlock-recipe", recipe = "tax-audit" },
-    },
-    prerequisites = {"eminent-domain-zoning"},
-    unit = { count = 175, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
-    order = "f-y"
   },
   -- T8a: CONSTITUTIONAL LAW (unemployment resolution)
   {
@@ -695,6 +693,21 @@ data:extend({
     order = "f-i"
   },
 })
+
+if not space_age_enabled then
+  data:extend({
+    {
+      type = "technology", name = "creative-accounting",
+      icon = tech_icons .. "creative-accounting.png", icon_size = 256,
+      effects = {
+        { type = "unlock-recipe", recipe = "tax-audit" },
+      },
+      prerequisites = {"eminent-domain-zoning"},
+      unit = { count = 175, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+      order = "f-y"
+    },
+  })
+end
 
 -- PNEUMATIC CAPACITY UPGRADES (tube network max forms)
 local pneumatic_capacity_techs = {}
