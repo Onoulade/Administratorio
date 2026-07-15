@@ -34,7 +34,7 @@ Administratorio is an ambitious total-conversion mod that replaces Factorio's mi
 - **Severity:** **High** — Maintenance burden, cognitive load, bug surface
 - **Description:** This single file handles: recipe categories, character setup, military hiding, biter pacification, taxpayer money fuel injection, AM category reassignment, machine-family operating paperwork, factoriopedia merges, red-science detection, full recipe regulation (vanilla + admin buildings), oil-processing bulking, handcrafting visibility, admin recipe UI ordering, colored ink gating, space-platform permits, pneumatic tube notes, admin station collision masks, biterport fallback, rideable biter sounds, rocket silo finance, science pack stripping — **all in one linear pass**.
 - **Impact:** Changes to one system risk breaking others; no modular testing of individual final-fix passes; difficult to reason about order dependencies.
-- **Progress (2026-07-15):** Extracted the independent military-hiding, collision/module-mask, and science-pack stripping passes into `prototypes/final_fixes/`. The orchestrator is materially smaller, while recipe regulation and planet-gating passes remain to be separated.
+- **Progress (2026-07-15):** Extracted independent military-hiding, collision/module-mask, science-pack stripping, colored-ink gating, and space-platform permit passes into `prototypes/final_fixes/`. The orchestrator fell from 1,926 to 1,523 lines; the central recipe-regulation engine remains the next large seam.
 - **Solution:** Split into logical modules loaded from a thin orchestrator:
   - `final-fixes/recipe_regulation.lua`
   - `final-fixes/colored_ink_gating.lua`
