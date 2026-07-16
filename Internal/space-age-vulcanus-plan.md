@@ -29,12 +29,15 @@ This is why Vulcanus has dedicated bootstrap recipes for:
 
 - `paper-production-vulcanus`
 - `carbon-offset-certificate-basic-vulcanus`
-- `provisional-approval-vulcanus`
-- `compacted-rubble-production-vulcanus`
-- `research-grant-approval-vulcanus`
-- `administrative-science-pack-production-vulcanus`
+- `redundant-rubble-recovery-vulcanus`
 - `plastic-bar-vulcanus`
 - `refined-nonsense-production-vulcanus`
+
+The first three are input bridges. The canonical provisional approval,
+research-grant, and administrative-science recipes remain unchanged. The sole
+terminal exception is `government-grant-vulcanus`, which consumes a local
+notarial approval and industrial charter to feed the unchanged rocket-silo
+recipe.
 
 ### 2. The planet's easy administrative output is `lie`
 
@@ -79,11 +82,8 @@ The notarial family currently includes:
 - `embossed-seal`
 - `industrial-charter`
 - `good-excuse-vulcanus`
-- `safety-waiver-vulcanus`
-- `construction-permit-vulcanus`
-- `management-approval-verbal-vulcanus`
-- `heatproof-filler-documentation`
-- `form-27b-6-vulcanus`
+- `management-approval-written-vulcanus`
+- `government-grant-vulcanus`
 - `thermal-process-license`
 - `calcite-reagent-waiver`
 - `offworld-metallurgy-charter`
@@ -141,12 +141,13 @@ This is the basic local paper-color identity for Vulcanus.
 
 This exists specifically so Vulcanus can satisfy coffee-backed support work without requiring greenhouse farming.
 
-### Paper and filler chain
+### Paper and rubble chain
 
-- `heatproof-paper-production`
-- `heatproof-filler-documentation`
+- `paper-production-vulcanus`
+- `redundant-rubble-recovery-vulcanus`
 
-This makes local paperwork feedstock practical without recreating the Nauvis wood chain.
+This makes the generic paperwork feedstock practical without recreating a
+second set of finished forms.
 
 ### Draft and docket chain
 
@@ -165,15 +166,15 @@ This is the core bridge between the printer and the office.
 - `calcite-reagent-waiver`
 - `offworld-metallurgy-charter`
 
-### Launch-bypass chain
+### Narrow launch-gate chain
 
 - `good-excuse-vulcanus`
-- `safety-waiver-vulcanus`
-- `construction-permit-vulcanus`
-- `management-approval-verbal-vulcanus`
-- `form-27b-6-vulcanus`
+- `management-approval-written-vulcanus`
+- `government-grant-vulcanus`
 
-These are the targeted local shortcuts that make the escape path actually usable.
+These are the only finished-paperwork exceptions: one breaks the local
+coffee/gossip deadlock; the other two are the territorial launch authorization
+and grant. Everything else uses the canonical recipe or is an import/fax need.
 
 ## What Vulcanus Intentionally Does Not Do
 

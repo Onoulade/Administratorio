@@ -357,6 +357,20 @@ data:extend({
     results = {{type = "item", name = "conciliation-officer", amount = 1}},
     energy_required = 20
   },
+  surface_limited({
+    type = "recipe",
+    name = "conciliation-officer-formation-gleba",
+    category = "workforce-formation",
+    enabled = false,
+    localised_name = {"recipe-name.conciliation-officer-formation"},
+    ingredients = {
+      {type = "item", name = "clerical-trainee", amount = 1},
+      {type = "item", name = "symbiosis-record", amount = 1},
+      {type = "item", name = "jelly", amount = 20},
+    },
+    results = {{type = "item", name = "conciliation-officer", amount = 1}},
+    energy_required = 25,
+  }, "gleba"),
   {
     type = "recipe",
     name = "relay-clerk-formation",
@@ -1595,31 +1609,16 @@ data:extend({
   }, "vulcanus"),
   surface_limited({
     type = "recipe",
-    name = "provisional-approval-vulcanus",
-    category = "bureaucracy-registration",
-    enabled = false,
-    localised_name = {"item-name.provisional-approval"},
-    ingredients = {
-      {type = "item", name = "blank-form", amount = 1},
-      {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
-    },
-    results = {
-      {type = "item", name = "provisional-approval", amount = 1},
-    },
-    energy_required = 1,
-  }, "vulcanus"),
-  surface_limited({
-    type = "recipe",
-    name = "compacted-rubble-production-vulcanus",
+    name = "redundant-rubble-recovery-vulcanus",
     category = "smelting-basic",
     enabled = false,
-    localised_name = {"item-name.compacted-rubble"},
+    localised_name = {"item-name.redundant-rubble"},
     ingredients = {
       {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
       {type = "item", name = "calcite", amount = 5},
     },
     results = {
-      {type = "item", name = "compacted-rubble", amount = 5},
+      {type = "item", name = "redundant-rubble", amount = 5},
     },
     energy_required = 16,
   }, "vulcanus"),
@@ -1634,40 +1633,6 @@ data:extend({
     },
     results = {
       {type = "item", name = "dubious-data", amount = 4},
-    },
-    energy_required = 5,
-  }, "vulcanus"),
-  surface_limited({
-    type = "recipe",
-    name = "research-grant-approval-vulcanus",
-    category = "bureaucracy-registration",
-    enabled = false,
-    localised_name = {"item-name.research-grant-approval"},
-    ingredients = {
-      {type = "item", name = "blank-form", amount = 1},
-      {type = "item", name = "dubious-data", amount = 1},
-      {type = "item", name = "verdigris-crust", amount = 1},
-    },
-    results = {
-      {type = "item", name = "research-grant-approval", amount = 1},
-    },
-    energy_required = 2,
-  }, "vulcanus"),
-  surface_limited({
-    type = "recipe",
-    name = "administrative-science-pack-production-vulcanus",
-    category = "bureaucracy-registration",
-    enabled = false,
-    hide_from_player_crafting = false,
-    localised_name = {"recipe-name.administrative-science-pack-production"},
-    ingredients = {
-      {type = "item", name = "blank-form", amount = 2},
-      {type = "item", name = "basic-excuse", amount = 1},
-      {type = "item", name = "research-grant-approval", amount = 1},
-      {type = "item", name = "dubious-data", amount = 1},
-    },
-    results = {
-      {type = "item", name = "administrative-science-pack", amount = 1},
     },
     energy_required = 5,
   }, "vulcanus"),
@@ -1797,21 +1762,6 @@ data:extend({
       {type = "item", name = "plastic-bar", amount = 2},
     },
     energy_required = 3,
-  }, "vulcanus"),
-  surface_limited({
-    type = "recipe",
-    name = "heatproof-paper-production",
-    category = "chemistry",
-    enabled = false,
-    ingredients = {
-      {type = "item", name = "carbon", amount = 1},
-      {type = "item", name = "calcite", amount = 1},
-      {type = "fluid", name = "sulfuric-acid", amount = 20},
-    },
-    results = {
-      {type = "item", name = "paper", amount = 10},
-    },
-    energy_required = 4,
   }, "vulcanus"),
   surface_limited({
     type = "recipe",
@@ -1955,54 +1905,6 @@ data:extend({
   }, "vulcanus"),
   surface_limited({
     type = "recipe",
-    name = "safety-waiver-vulcanus",
-    category = "bureaucracy-certification",
-    enabled = false,
-    localised_name = {"item-name.safety-waiver"},
-    ingredients = {
-      {type = "item", name = "blank-cyan-form", amount = 1},
-      {type = "item", name = "basic-excuse", amount = 1},
-      {type = "item", name = "embossed-seal", amount = 1},
-    },
-    results = {
-      {type = "item", name = "safety-waiver", amount = 1},
-    },
-    energy_required = 5,
-  }, "vulcanus"),
-  surface_limited({
-    type = "recipe",
-    name = "construction-permit-vulcanus",
-    category = "bureaucracy-certification",
-    enabled = false,
-    localised_name = {"item-name.construction-permit"},
-    ingredients = {
-      {type = "item", name = "permit-draft", amount = 1},
-      {type = "item", name = "thermal-process-license", amount = 1},
-      {type = "item", name = "embossed-seal", amount = 1},
-    },
-    results = {
-      {type = "item", name = "construction-permit", amount = 1},
-    },
-    energy_required = 6,
-  }, "vulcanus"),
-  surface_limited({
-    type = "recipe",
-    name = "management-approval-verbal-vulcanus",
-    category = "bureaucracy-certification",
-    enabled = false,
-    localised_name = {"item-name.management-approval-verbal"},
-    ingredients = {
-      {type = "item", name = "blank-cyan-form", amount = 1},
-      {type = "item", name = "good-excuse", amount = 1},
-      {type = "fluid", name = "liquid-coffee", amount = 25},
-    },
-    results = {
-      {type = "item", name = "management-approval-verbal", amount = 1},
-    },
-    energy_required = 5,
-  }, "vulcanus"),
-  surface_limited({
-    type = "recipe",
     name = "management-approval-written-vulcanus",
     category = "bureaucracy-certification",
     enabled = false,
@@ -2019,36 +1921,24 @@ data:extend({
     },
     energy_required = 8,
   }, "vulcanus"),
+  -- A single industrial grant is the terminal Vulcanus launch exception. The
+  -- generic Nauvis grant chain remains unchanged for normal administration.
   surface_limited({
     type = "recipe",
-    name = "heatproof-filler-documentation",
+    name = "government-grant-vulcanus",
     category = "bureaucracy-certification",
     enabled = false,
-    localised_name = {"item-name.useless-documentation"},
+    localised_name = {"item-name.government-grant"},
     ingredients = {
-      {type = "item", name = "blank-cyan-form", amount = 1},
-      {type = "fluid", name = "cyan-slurry", amount = 20},
+      {type = "item", name = "management-approval-written", amount = 1},
+      {type = "item", name = "industrial-charter", amount = 1},
+      {type = "item", name = "dubious-data", amount = 6},
+      {type = "fluid", name = "lie", amount = 100},
     },
     results = {
-      {type = "item", name = "useless-documentation", amount = 3},
+      {type = "item", name = "government-grant", amount = 1},
     },
-    energy_required = 4,
-  }, "vulcanus"),
-  surface_limited({
-    type = "recipe",
-    name = "form-27b-6-vulcanus",
-    category = "bureaucracy-certification",
-    enabled = false,
-    localised_name = {"item-name.form-27b-6"},
-    ingredients = {
-      {type = "item", name = "blank-form", amount = 1},
-      {type = "item", name = "useless-documentation", amount = 1},
-      {type = "item", name = "embossed-seal", amount = 1},
-    },
-    results = {
-      {type = "item", name = "form-27b-6", amount = 1},
-    },
-    energy_required = 4,
+    energy_required = 36,
   }, "vulcanus"),
   surface_limited({
     type = "recipe",

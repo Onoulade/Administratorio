@@ -34,7 +34,6 @@ for _, recipe_name in ipairs({
   "electromagnetic-plant",
   "cryogenic-plant",
   "plastic-bar-vulcanus",
-  "heatproof-paper-production",
   "liquid-stimulant-production",
   "liquid-coffee-vulcanus",
   "notary-office",
