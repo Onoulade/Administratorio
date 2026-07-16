@@ -68,27 +68,17 @@ data:extend({
     place_result = "orbital-employment-cannon", stack_size = 10
   },
   { type = "item", name = "administrative-space-station",
-    icons = {
-      {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.82, g = 0.92, b = 1, a = 1}},
-      {icon = "__base__/graphics/icons/radar.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
-      {icon = item_icons .. "orbital-infrastructure-permit.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
-    },
+    icon = item_icons .. "space-age/administrative-space-station.png", icon_size = 64,
     subgroup = "admin-space-buildings", order = "a",
     place_result = "administrative-space-station", stack_size = 20
   },
   { type = "item", name = "interplanetary-fax-exchange",
-    icons = {
-      {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.88, g = 0.96, b = 1, a = 1}},
-      {icon = item_icons .. "data.png", icon_size = 64, scale = 0.3, shift = {8, 8}, tint = {r = 0.72, g = 0.9, b = 1, a = 1}},
-    },
+    icon = item_icons .. "space-age/interplanetary-fax-exchange.png", icon_size = 64,
     subgroup = "admin-space-buildings", order = "b",
     place_result = "interplanetary-fax-exchange", stack_size = 20
   },
   { type = "item", name = "fax-emitter",
-    icons = {
-      {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.92, g = 0.96, b = 1, a = 1}},
-      {icon = item_icons .. "blank-form.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
-    },
+    icon = item_icons .. "space-age/fax-emitter.png", icon_size = 64,
     subgroup = "admin-space-buildings", order = "c",
     place_result = "fax-emitter", stack_size = 20
   },

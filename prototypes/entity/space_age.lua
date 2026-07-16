@@ -3,6 +3,8 @@ local icon_layers = require("prototypes.shared.icon_layers")
 local entity_graphics = "__administratorio__/graphics/entities/"
 local item_icons = "__administratorio__/graphics/icons/"
 local sound_path = "__administratorio__/sound/buildings/"
+local space_age_graphics = entity_graphics .. "space-age/"
+local space_age_icons = item_icons .. "space-age/"
 
 local function placeable_by_item(name)
   return {
@@ -14,13 +16,27 @@ local function require_non_vacuum(entity)
   return planets.require_non_vacuum_surface(entity)
 end
 
-local function fax_picture(filename, width, height, scale, shift)
+local function space_age_sprite(name, width, height)
   return {
-    filename = filename,
+    filename = space_age_graphics .. name .. ".png",
+    priority = "high",
     width = width,
     height = height,
-    scale = scale,
-    shift = shift,
+    frame_count = 1,
+    scale = 0.5,
+  }
+end
+
+local function align_footprint(entity, collision_width, collision_height, selection_width, selection_height, offset)
+  local x = offset and offset[1] or 0
+  local y = offset and offset[2] or 0
+  entity.collision_box = {
+    {-collision_width / 2 + x, -collision_height / 2 + y},
+    {collision_width / 2 + x, collision_height / 2 + y},
+  }
+  entity.selection_box = {
+    {-selection_width / 2 + x, -selection_height / 2 + y},
+    {selection_width / 2 + x, selection_height / 2 + y},
   }
 end
 
@@ -63,7 +79,7 @@ formation_center.fluid_boxes_off_when_no_fluid_recipe = true
 
 local chromatic_printer = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
 chromatic_printer.name = "chromatic-printer"
-chromatic_printer.icon = "__administratorio__/graphics/icons/steel-forge-icon.png"
+chromatic_printer.icon = space_age_icons .. "chromatic-printer.png"
 chromatic_printer.icon_size = 64
 chromatic_printer.minable = {mining_time = 0.2, result = "chromatic-printer"}
 chromatic_printer.placeable_by = {{item = "chromatic-printer", count = 1}}
@@ -78,8 +94,7 @@ chromatic_printer.surface_conditions = {
     min = planets.BASIC_PLANET_PROPERTIES.aquilo.pressure + 1,
   },
 }
-chromatic_printer.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
-chromatic_printer.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+align_footprint(chromatic_printer, 2.4, 2.4, 3, 3)
 chromatic_printer.fluid_boxes_off_when_no_fluid_recipe = true
 chromatic_printer.fluid_boxes = {
   {
@@ -110,7 +125,7 @@ chromatic_printer.fluid_boxes = {
 chromatic_printer.graphics_set = {
   animation = {
     layers = {
-      {filename = entity_graphics .. "printer-t2/steel-forge.png", width = 256, height = 301, frame_count = 1, scale = 0.38, shift = {0, -0.15}},
+      space_age_sprite("chromatic-printer", 192, 192),
     }
   }
 }
@@ -121,7 +136,7 @@ chromatic_printer.working_sound = {
 
 local notary_office = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
 notary_office.name = "notary-office"
-notary_office.icon = "__administratorio__/graphics/icons/management-approval-written.png"
+notary_office.icon = space_age_icons .. "notary-office.png"
 notary_office.icon_size = 64
 notary_office.minable = {mining_time = 0.2, result = "notary-office"}
 notary_office.placeable_by = placeable_by_item("notary-office")
@@ -134,8 +149,7 @@ notary_office.energy_source = {type = "electric", usage_priority = "secondary-in
 notary_office.ingredient_count = 8
 notary_office.module_slots = 4
 notary_office.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
-notary_office.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
-notary_office.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+align_footprint(notary_office, 2.4, 2.4, 3, 3, {-0.5 / 32, 1 / 32})
 notary_office.fluid_boxes_off_when_no_fluid_recipe = true
 notary_office.fluid_boxes = {
   {
@@ -157,6 +171,13 @@ notary_office.fluid_boxes = {
     volume = 1000,
   },
 }
+notary_office.graphics_set = {
+  animation = {
+    layers = {
+      space_age_sprite("notary-office", 192, 192),
+    }
+  }
+}
 notary_office.working_sound = {
   sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.45},
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
@@ -164,7 +185,7 @@ notary_office.working_sound = {
 
 local territorial_arbitration_post = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
 territorial_arbitration_post.name = "territorial-arbitration-post"
-territorial_arbitration_post.icon = "__administratorio__/graphics/icons/construction-permit.png"
+territorial_arbitration_post.icon = space_age_icons .. "territorial-arbitration-post.png"
 territorial_arbitration_post.icon_size = 64
 territorial_arbitration_post.minable = {mining_time = 0.2, result = "territorial-arbitration-post"}
 territorial_arbitration_post.placeable_by = placeable_by_item("territorial-arbitration-post")
@@ -178,16 +199,22 @@ territorial_arbitration_post.energy_source = {type = "electric", usage_priority 
 territorial_arbitration_post.ingredient_count = 6
 territorial_arbitration_post.module_slots = 0
 territorial_arbitration_post.allowed_effects = {}
-territorial_arbitration_post.collision_box = {{-3.25, -3.25}, {3.25, 3.25}}
-territorial_arbitration_post.selection_box = {{-3.5, -3.5}, {3.5, 3.5}}
+align_footprint(territorial_arbitration_post, 6.5, 6.5, 7, 7, {-0.5 / 32, 23 / 32})
 territorial_arbitration_post.fluid_boxes_off_when_no_fluid_recipe = true
 territorial_arbitration_post.fluid_boxes = {
   {
     production_type = "input",
     pipe_covers = pipecoverspictures(),
-    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -3}}},
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -2.5}}},
     volume = 1000,
   },
+}
+territorial_arbitration_post.graphics_set = {
+  animation = {
+    layers = {
+      space_age_sprite("territorial-arbitration-post", 448, 448),
+    }
+  }
 }
 territorial_arbitration_post.working_sound = {
   sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.4},
@@ -196,7 +223,7 @@ territorial_arbitration_post.working_sound = {
 
 local conciliation_desk = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
 conciliation_desk.name = "conciliation-desk"
-conciliation_desk.icon = "__administratorio__/graphics/icons/promise.png"
+conciliation_desk.icon = space_age_icons .. "conciliation-desk.png"
 conciliation_desk.icon_size = 64
 conciliation_desk.minable = {mining_time = 0.2, result = "conciliation-desk"}
 conciliation_desk.placeable_by = placeable_by_item("conciliation-desk")
@@ -209,8 +236,7 @@ conciliation_desk.energy_source = {type = "electric", usage_priority = "secondar
 conciliation_desk.ingredient_count = 8
 conciliation_desk.module_slots = 4
 conciliation_desk.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
-conciliation_desk.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
-conciliation_desk.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+align_footprint(conciliation_desk, 2.4, 2.4, 3, 3, {0, 2 / 32})
 conciliation_desk.fluid_boxes_off_when_no_fluid_recipe = true
 conciliation_desk.fluid_boxes = {
   {
@@ -232,6 +258,13 @@ conciliation_desk.fluid_boxes = {
     volume = 1000,
   },
 }
+conciliation_desk.graphics_set = {
+  animation = {
+    layers = {
+      space_age_sprite("conciliation-desk", 192, 192),
+    }
+  }
+}
 conciliation_desk.working_sound = {
   sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.45},
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
@@ -239,7 +272,7 @@ conciliation_desk.working_sound = {
 
 local digital_services_bureau = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
 digital_services_bureau.name = "digital-services-bureau"
-digital_services_bureau.icon = "__administratorio__/graphics/icons/office-building.png"
+digital_services_bureau.icon = space_age_icons .. "digital-services-bureau.png"
 digital_services_bureau.icon_size = 64
 digital_services_bureau.minable = {mining_time = 0.2, result = "digital-services-bureau"}
 digital_services_bureau.placeable_by = placeable_by_item("digital-services-bureau")
@@ -252,8 +285,7 @@ digital_services_bureau.energy_source = {type = "electric", usage_priority = "se
 digital_services_bureau.ingredient_count = 10
 digital_services_bureau.module_slots = 6
 digital_services_bureau.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
-digital_services_bureau.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
-digital_services_bureau.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+align_footprint(digital_services_bureau, 2.4, 2.4, 3, 3, {-0.5 / 32, 1 / 32})
 digital_services_bureau.fluid_boxes_off_when_no_fluid_recipe = true
 digital_services_bureau.fluid_boxes = {
   {
@@ -269,6 +301,13 @@ digital_services_bureau.fluid_boxes = {
     volume = 1000,
   },
 }
+digital_services_bureau.graphics_set = {
+  animation = {
+    layers = {
+      space_age_sprite("digital-services-bureau", 192, 192),
+    }
+  }
+}
 digital_services_bureau.working_sound = {
   sound = {filename = sound_path .. "office-ambience-loop.ogg", volume = 0.5},
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
@@ -276,7 +315,7 @@ digital_services_bureau.working_sound = {
 
 local laser_printer = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
 laser_printer.name = "laser-printer"
-laser_printer.icon = "__administratorio__/graphics/icons/steel-forge-icon.png"
+laser_printer.icon = space_age_icons .. "laser-printer.png"
 laser_printer.icon_size = 64
 laser_printer.minable = {mining_time = 0.2, result = "laser-printer"}
 laser_printer.placeable_by = placeable_by_item("laser-printer")
@@ -289,14 +328,13 @@ laser_printer.energy_source = {type = "electric", usage_priority = "secondary-in
 laser_printer.ingredient_count = 10
 laser_printer.module_slots = 6
 laser_printer.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
-laser_printer.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
-laser_printer.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+align_footprint(laser_printer, 2.4, 2.4, 3, 3, {-3 / 32, 0})
 laser_printer.fluid_boxes_off_when_no_fluid_recipe = true
 laser_printer.fluid_boxes = {}
 laser_printer.graphics_set = {
   animation = {
     layers = {
-      {filename = entity_graphics .. "printer-t2/steel-forge.png", width = 256, height = 301, frame_count = 1, scale = 0.38, shift = {0, -0.15}},
+      space_age_sprite("laser-printer", 192, 192),
     }
   }
 }
@@ -307,12 +345,9 @@ laser_printer.working_sound = {
 
 local administrative_space_station = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
 administrative_space_station.name = "administrative-space-station"
-administrative_space_station.icon = nil
-administrative_space_station.icons = {
-  {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.82, g = 0.92, b = 1, a = 1}},
-  {icon = "__base__/graphics/icons/radar.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
-  icon_layers.orbital_infrastructure_permit_overlay(),
-}
+administrative_space_station.icon = space_age_icons .. "administrative-space-station.png"
+administrative_space_station.icon_size = 64
+administrative_space_station.icons = nil
 administrative_space_station.minable = {mining_time = 0.2, result = "administrative-space-station"}
 administrative_space_station.placeable_by = placeable_by_item("administrative-space-station")
 administrative_space_station.next_upgrade = nil
@@ -323,8 +358,7 @@ administrative_space_station.energy_source = {type = "electric", usage_priority 
 administrative_space_station.ingredient_count = 10
 administrative_space_station.module_slots = 4
 administrative_space_station.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
-administrative_space_station.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
-administrative_space_station.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+align_footprint(administrative_space_station, 2.4, 2.4, 3, 3, {-0.5 / 32, 2 / 32})
 administrative_space_station.surface_conditions = {
   {
     property = "pressure",
@@ -350,7 +384,7 @@ administrative_space_station.fluid_boxes = {
 administrative_space_station.graphics_set = {
   animation = {
     layers = {
-      {filename = entity_graphics .. "printer-t2/steel-forge.png", width = 256, height = 301, frame_count = 1, scale = 0.38, shift = {0, -0.15}},
+      space_age_sprite("administrative-space-station", 192, 192),
     }
   }
 }
@@ -362,32 +396,31 @@ administrative_space_station.working_sound = {
 local fax_emitter = {
   type = "container",
   name = "fax-emitter",
-  icon = "__administratorio__/graphics/icons/office-building.png",
+  icon = space_age_icons .. "fax-emitter.png",
   icon_size = 64,
   flags = {"placeable-neutral", "player-creation"},
   minable = {mining_time = 0.2, result = "fax-emitter"},
   max_health = 250,
   corpse = "medium-remnants",
   placeable_by = placeable_by_item("fax-emitter"),
-  collision_box = {{-0.7, -0.7}, {0.7, 0.7}},
-  selection_box = {{-1, -1}, {1, 1}},
   inventory_size = 1,
   circuit_wire_max_distance = 9,
   circuit_connector = circuit_connector_definitions.create_vector(
     universal_connector_template,
     {
-      {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
-      {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
-      {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
-      {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(14, 14), shadow_offset = util.by_pixel(18, 18), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(14, 14), shadow_offset = util.by_pixel(18, 18), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(14, 14), shadow_offset = util.by_pixel(18, 18), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(14, 14), shadow_offset = util.by_pixel(18, 18), show_shadow = true},
     }
   ),
-  picture = fax_picture(entity_graphics .. "printer-t1/mini-assembler.png", 227, 255, 0.28, {0, -0.1}),
+  picture = space_age_sprite("fax-emitter", 128, 128),
 }
+align_footprint(fax_emitter, 1.4, 1.4, 2, 2, {0, 1 / 32})
 
 local interplanetary_fax_exchange = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
 interplanetary_fax_exchange.name = "interplanetary-fax-exchange"
-interplanetary_fax_exchange.icon = "__administratorio__/graphics/icons/office-building.png"
+interplanetary_fax_exchange.icon = space_age_icons .. "interplanetary-fax-exchange.png"
 interplanetary_fax_exchange.icon_size = 64
 interplanetary_fax_exchange.flags = {"placeable-neutral", "player-creation"}
 interplanetary_fax_exchange.minable = {mining_time = 0.2, result = "interplanetary-fax-exchange"}
@@ -402,16 +435,15 @@ interplanetary_fax_exchange.energy_source = {type = "electric", usage_priority =
 interplanetary_fax_exchange.ingredient_count = 5
 interplanetary_fax_exchange.module_slots = 0
 interplanetary_fax_exchange.allowed_effects = {}
-interplanetary_fax_exchange.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
-interplanetary_fax_exchange.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+align_footprint(interplanetary_fax_exchange, 2.4, 2.4, 3, 3, {-1 / 32, 3 / 32})
 interplanetary_fax_exchange.circuit_wire_max_distance = 9
 interplanetary_fax_exchange.circuit_connector = circuit_connector_definitions.create_vector(
   universal_connector_template,
   {
-    {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
-    {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
-    {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
-    {variation = 18, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(107, 38), show_shadow = true},
+    {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+    {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+    {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+    {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
   }
 )
 interplanetary_fax_exchange.fluid_boxes_off_when_no_fluid_recipe = true
@@ -419,7 +451,7 @@ interplanetary_fax_exchange.fluid_boxes = {}
 interplanetary_fax_exchange.graphics_set = {
   animation = {
     layers = {
-      {filename = entity_graphics .. "printer-t2/steel-forge.png", width = 256, height = 301, frame_count = 1, scale = 0.38, shift = {0, -0.15}},
+      space_age_sprite("interplanetary-fax-exchange", 192, 192),
     }
   }
 }
