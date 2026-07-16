@@ -1,5 +1,4 @@
 local item_icons = "__administratorio__/graphics/icons/"
-local icon_layers = require("prototypes.shared.icon_layers")
 local manager_briefings = require("prototypes.shared.manager_briefings")
 
 local briefing_overlay_icons = {
@@ -212,7 +211,6 @@ data:extend({
     name = "trajectory-compliance-array",
     icons = {
       {icon = "__base__/graphics/icons/radar.png", icon_size = 64},
-      icon_layers.orbital_infrastructure_permit_overlay(),
     },
     subgroup = "admin-space-compliance",
     order = "i",
@@ -225,7 +223,6 @@ data:extend({
     icons = {
       {icon = "__base__/graphics/icons/radar.png", icon_size = 64, tint = {r = 0.72, g = 0.88, b = 1, a = 1}},
       {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
-      icon_layers.orbital_infrastructure_permit_overlay(),
     },
     subgroup = "admin-space-compliance",
     order = "i-b",
@@ -238,7 +235,6 @@ data:extend({
     icons = {
       {icon = "__base__/graphics/icons/radar.png", icon_size = 64, tint = {r = 1, g = 0.72, b = 0.34, a = 1}},
       {icon = "__space-age__/graphics/icons/quantum-processor.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
-      icon_layers.orbital_infrastructure_permit_overlay(),
     },
     subgroup = "admin-space-compliance",
     order = "i-c",
@@ -251,7 +247,6 @@ data:extend({
     icons = {
       {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
       {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
-      icon_layers.orbital_infrastructure_permit_overlay(),
     },
     subgroup = "admin-space-orbital",
     order = "i-d",

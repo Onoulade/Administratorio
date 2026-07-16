@@ -4,8 +4,6 @@
 local M = {}
 
 local ORBITAL_INFRASTRUCTURE_PERMIT = "orbital-infrastructure-permit"
-local ORBITAL_INFRASTRUCTURE_PERMIT_ICON =
-  "__administratorio__/graphics/icons/orbital-infrastructure-permit.png"
 
 function M.apply(data, shared, item_like_prototype_types, helpers)
   local space_platform_building_recipes = util.table.deepcopy(shared.SPACE_PLATFORM_BUILDING_RECIPES or {})
@@ -38,33 +36,10 @@ function M.apply(data, shared, item_like_prototype_types, helpers)
     replace_target_paperwork(recipe.expensive)
   end
 
-  -- Placement items may show their dedicated permit, but recipe icons should
-  -- show only their output (plus any bulk multiplier).  Requirements belong
-  -- in the ingredient list, not as decorative recipe badges.
-  local function apply_orbital_infrastructure_permit_badge(prototype)
-    if not prototype then return end
-    local icons = helpers.clone_icon_layers(prototype)
-    if not icons then return end
-    for _, layer in ipairs(icons) do
-      if layer.icon == ORBITAL_INFRASTRUCTURE_PERMIT_ICON then return end
-    end
-    icons[#icons + 1] = helpers.orbital_infrastructure_permit_overlay()
-    prototype.icons = icons
-    prototype.icon = nil
-    prototype.icon_size = nil
-    prototype.icon_mipmaps = nil
-  end
-
   for recipe_name in pairs(space_platform_building_recipes) do
     local regulated_name = recipe_name .. "-regulated"
     require_only_orbital_infrastructure_permit(data.raw.recipe[recipe_name])
     require_only_orbital_infrastructure_permit(data.raw.recipe[regulated_name])
-
-    for prototype_type, prototype_group in pairs(data.raw) do
-      if prototype_type ~= "recipe" and type(prototype_group) == "table" then
-        apply_orbital_infrastructure_permit_badge(prototype_group[recipe_name])
-      end
-    end
   end
 end
 

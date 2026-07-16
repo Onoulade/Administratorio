@@ -1,5 +1,4 @@
 local planets = require("prototypes.shared.space_age_planets")
-local icon_layers = require("prototypes.shared.icon_layers")
 local entity_graphics = "__administratorio__/graphics/entities/"
 local item_icons = "__administratorio__/graphics/icons/"
 local sound_path = "__administratorio__/sound/buildings/"
@@ -527,7 +526,6 @@ local function trajectory_array_icons(tint, overlay)
   if overlay then
     icons[#icons + 1] = {icon = overlay, icon_size = 64, scale = 0.38, shift = {8, 8}}
   end
-  icons[#icons + 1] = icon_layers.orbital_infrastructure_permit_overlay()
   return icons
 end
 
@@ -772,7 +770,6 @@ orbital_employment_cannon.icon = nil
 orbital_employment_cannon.icons = {
   {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
   {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
-  icon_layers.orbital_infrastructure_permit_overlay(),
 }
 orbital_employment_cannon.minable = {mining_time = 0.5, result = "orbital-employment-cannon"}
 orbital_employment_cannon.placeable_by = placeable_by_item("orbital-employment-cannon")

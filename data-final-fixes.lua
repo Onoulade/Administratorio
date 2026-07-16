@@ -23,7 +23,6 @@
 --     Keeps recipe identity and tech unlocks intact
 
 local shared = require("prototypes.shared")
-local icon_layers = require("prototypes.shared.icon_layers")
 local factoriopedia_merge = require("prototypes.factoriopedia_merge")
 local feature_flags = require("feature_flags")
 local space_age_planets = feature_flags.space_age_enabled() and require("prototypes.shared.space_age_planets") or nil
@@ -501,6 +500,15 @@ local function get_recipe_batch_multiplier(recipe_name, recipe)
   local multiplier = explicit_multiplier or shared.BATCH_MULTIPLIER_DEFAULT
   local r_proto = recipe.normal or recipe
   local results = r_proto.results or (r_proto.result and {{name = r_proto.result}}) or {}
+
+  -- Space-platform processing is deliberately one craft at a time.  Some
+  -- space recipes produce ordinary intermediate items, so checking only the
+  -- result item's subgroup would let them inherit the normal 5x batch badge.
+  -- The Space Age recipe subgroups use the `space-` prefix; keeping that whole
+  -- family unbatched also covers compatible space-platform recipes.
+  if recipe.subgroup and recipe.subgroup:sub(1, 6) == "space-" then
+    return 1
+  end
 
   for _, res in ipairs(results) do
     local res_name = res.name or res[1]
@@ -1350,8 +1358,6 @@ require("prototypes.final_fixes.colored_ink_gating").apply(
 require("prototypes.final_fixes.space_platform_permits").apply(data, shared, ITEM_LIKE_PROTOTYPE_TYPES, {
   ingredient_name = ingredient_name,
   append_or_merge_ingredient = append_or_merge_ingredient,
-  clone_icon_layers = clone_icon_layers,
-  orbital_infrastructure_permit_overlay = icon_layers.orbital_infrastructure_permit_overlay,
 })
 
 -------------------------------------------------------------------------------
