@@ -105,11 +105,17 @@ PLANET_PROFILE_TARGETS = {
     },
 }
 
+SPECIALIST_MANAGER_IMPORTS = {
+    "liaison-briefed-middle-management-managing-manager",
+    "staffing-briefed-middle-management-managing-manager",
+    "training-briefed-middle-management-managing-manager",
+    "compliance-briefed-middle-management-managing-manager",
+}
 STAFFING_IMPORTS = {
     "licensed-notary", "conciliation-officer", "relay-clerk", "cryoprint-technician",
     "chemical-operator", "nuclear-technician", "union-delegate", "biter-worker",
     "clerical-trainee", "management-trainee",
-}
+} | SPECIALIST_MANAGER_IMPORTS
 CONFLICT_IMPORTS = {"territorial-deed", "territorial-resettlement-order"}
 CAPSTONE_IMPORTS = {
     "unified-operations-charter", "promethium-research-charter", "hardened-data-vault",
@@ -122,9 +128,9 @@ PLANETARY_EXPORT_IMPORTS = {
     "conciliation-order", "electromagnetic-operating-license", "data-recovery-order",
 }
 EXPLICIT_IMPORT_ALLOWLISTS = {
-    "vulcanus": {"licensed-notary", "chemical-operator", "territorial-deed"},
-    "gleba": {"clerical-trainee", "conciliation-officer", "chemical-operator"},
-    "fulgora": {"relay-clerk", "clerical-trainee", "chemical-operator"},
+    "vulcanus": {"licensed-notary", "chemical-operator", "territorial-deed"} | SPECIALIST_MANAGER_IMPORTS,
+    "gleba": {"clerical-trainee", "conciliation-officer", "chemical-operator"} | SPECIALIST_MANAGER_IMPORTS,
+    "fulgora": {"relay-clerk", "clerical-trainee", "chemical-operator"} | SPECIALIST_MANAGER_IMPORTS,
     "aquilo": STAFFING_IMPORTS | PLANETARY_EXPORT_IMPORTS | CAPSTONE_IMPORTS,
 }
 
