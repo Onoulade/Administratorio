@@ -271,7 +271,7 @@ data:extend({
   {
     type = "item",
     name = "chromatic-printer",
-    icon = "__administratorio__/graphics/icons/steel-forge-icon.png",
+    icon = item_icons .. "space-age/chromatic-printer.png",
     icon_size = 64,
     subgroup = "admin-printers",
     order = "d",
@@ -659,7 +659,7 @@ data:extend({
   {
     type = "item",
     name = "conciliation-desk",
-    icon = "__administratorio__/graphics/icons/promise.png",
+    icon = item_icons .. "space-age/conciliation-desk.png",
     icon_size = 64,
     subgroup = "admin-biter-buildings",
     order = "k",
@@ -669,10 +669,8 @@ data:extend({
   {
     type = "item",
     name = "territorial-arbitration-post",
-    icons = {
-      {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.95, g = 0.76, b = 0.42, a = 1}},
-      {icon = item_icons .. "construction-permit.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
-    },
+    icon = item_icons .. "space-age/territorial-arbitration-post.png",
+    icon_size = 64,
     subgroup = "admin-buildings",
     order = "k1",
     place_result = "territorial-arbitration-post",
@@ -681,10 +679,8 @@ data:extend({
   {
     type = "item",
     name = "digital-services-bureau",
-    icons = {
-      {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.82, g = 0.9, b = 1, a = 1}},
-      {icon = item_icons .. "data.png", icon_size = 64, scale = 0.35, shift = {8, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
-    },
+    icon = item_icons .. "space-age/digital-services-bureau.png",
+    icon_size = 64,
     subgroup = "admin-buildings",
     order = "l",
     place_result = "digital-services-bureau",
@@ -693,10 +689,8 @@ data:extend({
   {
     type = "item",
     name = "laser-printer",
-    icons = {
-      {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, tint = {r = 0.86, g = 0.95, b = 1, a = 1}},
-      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.3, shift = {8, 8}, tint = {r = 0.72, g = 0.9, b = 1, a = 1}},
-    },
+    icon = item_icons .. "space-age/laser-printer.png",
+    icon_size = 64,
     subgroup = "admin-buildings",
     order = "m",
     place_result = "laser-printer",
@@ -705,11 +699,8 @@ data:extend({
   {
     type = "item",
     name = "administrative-space-station",
-    icons = {
-      {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.82, g = 0.92, b = 1, a = 1}},
-      {icon = "__base__/graphics/icons/radar.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
-      icon_layers.orbital_infrastructure_permit_overlay(),
-    },
+    icon = item_icons .. "space-age/administrative-space-station.png",
+    icon_size = 64,
     subgroup = "admin-space-buildings",
     order = "m1",
     place_result = "administrative-space-station",
@@ -718,10 +709,8 @@ data:extend({
   {
     type = "item",
     name = "interplanetary-fax-exchange",
-    icons = {
-      {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.88, g = 0.96, b = 1, a = 1}},
-      {icon = item_icons .. "data.png", icon_size = 64, scale = 0.3, shift = {8, 8}, tint = {r = 0.72, g = 0.9, b = 1, a = 1}},
-    },
+    icon = item_icons .. "space-age/interplanetary-fax-exchange.png",
+    icon_size = 64,
     subgroup = "admin-space-buildings",
     order = "n",
     place_result = "interplanetary-fax-exchange",
@@ -730,10 +719,8 @@ data:extend({
   {
     type = "item",
     name = "fax-emitter",
-    icons = {
-      {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.92, g = 0.96, b = 1, a = 1}},
-      {icon = item_icons .. "blank-form.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
-    },
+    icon = item_icons .. "space-age/fax-emitter.png",
+    icon_size = 64,
     subgroup = "admin-space-buildings",
     order = "n1",
     place_result = "fax-emitter",
@@ -742,7 +729,7 @@ data:extend({
   {
     type = "item",
     name = "notary-office",
-    icon = "__administratorio__/graphics/icons/management-approval-written.png",
+    icon = item_icons .. "space-age/notary-office.png",
     icon_size = 64,
     subgroup = "admin-buildings",
     order = "j",
