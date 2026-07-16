@@ -23,6 +23,7 @@
 --     Keeps recipe identity and tech unlocks intact
 
 local shared = require("prototypes.shared")
+local batch_rules = require("prototypes.shared.batch_rules")
 local factoriopedia_merge = require("prototypes.factoriopedia_merge")
 local feature_flags = require("feature_flags")
 local space_age_planets = feature_flags.space_age_enabled() and require("prototypes.shared.space_age_planets") or nil
@@ -367,7 +368,9 @@ for _, recipe in pairs(data.raw["recipe"]) do
   if not shared.is_admin_recipe(recipe.name) then
     local cat = recipe.category or "crafting"
     local operating_form = shared.get_operating_form(recipe)
-    if operating_form then
+    -- Oil refineries use biter-station dispatch as their per-cycle gate. Keep
+    -- their fluid-only recipes free of a second operating-paperwork gate.
+    if operating_form and cat ~= "oil-processing" then
       add_ingredient_to_recipe(recipe.name, operating_form, 1)
 
       -- Hazardous process families still create OSHA fallout.
@@ -484,49 +487,16 @@ local function find_item_like_prototype(name)
   return nil
 end
 
-local function get_max_stack_size(item_name)
-  local prototype = find_item_like_prototype(item_name)
-  if prototype then return prototype.stack_size or 1 end
-  return 100
-end
-
 local function get_recipe_batch_multiplier(recipe_name, recipe)
-  local explicit_multiplier = shared.BATCH_MULTIPLIERS[recipe_name]
-  local multiplier = explicit_multiplier or shared.BATCH_MULTIPLIER_DEFAULT
-  local r_proto = recipe.normal or recipe
-  local results = r_proto.results or (r_proto.result and {{name = r_proto.result}}) or {}
-
-  -- Space-platform processing is deliberately one craft at a time.  Some
-  -- space recipes produce ordinary intermediate items, so checking only the
-  -- result item's subgroup would let them inherit the normal 5x batch badge.
-  -- The Space Age recipe subgroups use the `space-` prefix; keeping that whole
-  -- family unbatched also covers compatible space-platform recipes.
-  if recipe.subgroup and recipe.subgroup:sub(1, 6) == "space-" then
-    return 1
-  end
-
-  for _, res in ipairs(results) do
-    local res_name = res.name or res[1]
-    if res_name then
-      local prototype = find_item_like_prototype(res_name)
-      if shared.UNBATCHED_RESULT_NAMES[res_name] then
-        return 1
-      end
-      if prototype and shared.UNBATCHED_RESULT_SUBGROUPS[prototype.subgroup] then
-        return 1
-      end
-      if get_max_stack_size(res_name) == 1 then
-        return 1
-      end
-      -- Equipment-grid items are always unbatched, even if a future explicit
-      -- multiplier override is accidentally added.
-      if prototype and prototype.placed_as_equipment_result then
-        return 1
-      end
-    end
-  end
-
-  return multiplier
+  return batch_rules.resolve(data.raw, recipe_name, recipe, {
+    default_multiplier = shared.BATCH_MULTIPLIER_DEFAULT,
+    building_multiplier = shared.BATCH_MULTIPLIER_BUILDING,
+    tool_multiplier = shared.BATCH_MULTIPLIER_TOOL,
+    multipliers = shared.BATCH_MULTIPLIERS,
+    unbatched_result_names = shared.UNBATCHED_RESULT_NAMES,
+    unbatched_result_subgroups = shared.UNBATCHED_RESULT_SUBGROUPS,
+    space_subgroup_prefixes = shared.UNBATCHED_RESULT_SUBGROUP_PREFIXES,
+  })
 end
 
 local function get_item_like_localisation(prototype, product_name)
@@ -540,8 +510,8 @@ local function get_item_like_localisation(prototype, product_name)
   if not localised_name then
     if prototype.place_result then
       localised_name = {"entity-name." .. prototype.place_result}
-    elseif prototype.placed_as_equipment_result then
-      localised_name = {"equipment-name." .. prototype.placed_as_equipment_result}
+    elseif prototype.place_as_equipment_result then
+      localised_name = {"equipment-name." .. prototype.place_as_equipment_result}
     elseif prototype.place_as_tile and prototype.place_as_tile.result then
       localised_name = {"tile-name." .. prototype.place_as_tile.result}
     else
@@ -552,8 +522,8 @@ local function get_item_like_localisation(prototype, product_name)
   if not localised_description then
     if prototype.place_result then
       localised_description = {"entity-description." .. prototype.place_result}
-    elseif prototype.placed_as_equipment_result then
-      localised_description = {"equipment-description." .. prototype.placed_as_equipment_result}
+    elseif prototype.place_as_equipment_result then
+      localised_description = {"equipment-description." .. prototype.place_as_equipment_result}
     elseif prototype.place_as_tile and prototype.place_as_tile.result then
       localised_description = {"tile-description." .. prototype.place_as_tile.result}
     else
@@ -915,6 +885,12 @@ end
 for name, recipe in pairs(data.raw["recipe"]) do
   if shared.is_admin_recipe(name) then goto next_operating_recipe end
 
+  -- Refineries are authorized by biter-station dispatch, not an operating
+  -- form. Their fluid-only processes retain native recipe quantities.
+  if (recipe.category or "crafting") == "oil-processing" then
+    goto next_operating_recipe
+  end
+
   local operating_form = shared.get_operating_form(recipe)
   if not operating_form then goto next_operating_recipe end
 
@@ -956,8 +932,10 @@ for name, recipe in pairs(data.raw["recipe"]) do
     goto continue
   end
 
-  -- Determine batch multiplier (force 1 for non-stackable outputs)
-  local multiplier = get_recipe_batch_multiplier(name, recipe)
+  -- Paperwork-free recipes still receive a regulated-category automation copy,
+  -- but preserve their native quantities.
+  local paperwork_free = shared.PAPERWORK_FREE_REGULATED_RECIPES[name] == true
+  local multiplier = paperwork_free and 1 or get_recipe_batch_multiplier(name, recipe)
   local primary_result_name = get_primary_item_like_result_name(recipe)
   if primary_result_name then
     regulated_factoriopedia_products[primary_result_name] = true
@@ -967,8 +945,12 @@ for name, recipe in pairs(data.raw["recipe"]) do
   local required_form = shared.get_required_form(name)
   local is_t0 = (required_form == "work-order")
 
-  local handcraft_paperwork = shared.get_paperwork_requirements(required_form, false)
-  local regulated_paperwork = shared.get_paperwork_requirements(required_form, true)
+  local handcraft_paperwork = paperwork_free
+    and {}
+    or shared.get_paperwork_requirements(required_form, false)
+  local regulated_paperwork = paperwork_free
+    and {}
+    or shared.get_paperwork_requirements(required_form, true)
 
   -- Determine regulated category
   local regulated_cat
@@ -1045,31 +1027,6 @@ for name, recipe in pairs(data.raw["recipe"]) do
   end
 
   ::continue::
-end
-
--------------------------------------------------------------------------------
--- OIL-PROCESSING BULKING
--- Oil refineries are biter-station-managed — each dispatched worker only
--- authorizes one craft cycle. Vanilla refinery recipe sizes would make
--- refineries craft absurdly fast under that model, so we bulk every
--- oil-processing recipe 5x (same multiplier as the regulated economy).
--- No operating paperwork is added — biter-station dispatch is the gate.
--------------------------------------------------------------------------------
-local OIL_REFINERY_BULK_MULTIPLIER = 5
-for name, recipe in pairs(data.raw["recipe"]) do
-  if REMOVED_VANILLA_RECIPES[name] then goto oil_continue end
-  if shared.is_admin_recipe(name) or shared.ADMIN_BUILDINGS[name]
-     or FORM_PRODUCTION_RECIPE_SET[name] then
-    goto oil_continue
-  end
-
-  local cat = recipe.category or "crafting"
-  if cat ~= "oil-processing" then goto oil_continue end
-
-  regulate_recipe(recipe, {}, OIL_REFINERY_BULK_MULTIPLIER)
-  apply_bulk_recipe_icon_overlay(recipe, OIL_REFINERY_BULK_MULTIPLIER)
-
-  ::oil_continue::
 end
 
 -- Register all regulated recipes

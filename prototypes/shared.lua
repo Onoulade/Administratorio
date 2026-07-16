@@ -334,6 +334,13 @@ shared.ADMIN_RECIPE_REGULATION_EXEMPTIONS = {
   ["paper-production"] = true,
   ["ink-production"] = true,
 }
+
+-- These ordinary recipes still need a copy on the regulated assembler
+-- category, but automation consumes no paperwork and preserves native recipe
+-- quantities. Underground pipe construction is intentionally not exempt.
+shared.PAPERWORK_FREE_REGULATED_RECIPES = {
+  ["pipe"] = true,
+}
 shared.ADMIN_RECIPE_NAMES = {}
 
 function shared.register_admin_recipe(name)
@@ -380,6 +387,14 @@ shared.UNBATCHED_RESULT_SUBGROUPS = {
   ["space-interactors"] = true,
 }
 
+-- Space Age recipes are conservative by default. Explicit multiplier entries
+-- may opt true intermediates into larger batches, while new orbital buildings
+-- and compatible platform content remain 1x without another name allowlist.
+shared.UNBATCHED_RESULT_SUBGROUP_PREFIXES = {
+  "space-",
+  "admin-space-",
+}
+
 -- Placeable structures whose construction is intrinsically tied to a space
 -- platform. data-final-fixes also discovers compatible placeable items in the
 -- vanilla "space-platform" subgroup so newly added platform buildings inherit
@@ -420,6 +435,18 @@ shared.UNBATCHED_RESULT_NAMES = {
   ["fusion-reactor"] = true,
   ["fusion-generator"] = true,
   ["cryogenic-plant"] = true,
+  ["rocket-turret"] = true,
+  ["tesla-turret"] = true,
+  ["railgun-turret"] = true,
+  ["capture-robot-rocket"] = true,
+  ["railgun-ammo"] = true,
+  ["foundation"] = true,
+  ["ice-platform"] = true,
+
+  -- Space Age editor/debug infrastructure also keeps its native quantities.
+  ["heat-interface"] = true,
+  ["infinity-chest"] = true,
+  ["infinity-pipe"] = true,
 
   -- Administratorio Space Age buildings.
   ["trajectory-compliance-array"] = true,
@@ -435,8 +462,17 @@ shared.UNBATCHED_RESULT_NAMES = {
   ["interplanetary-fax-exchange"] = true,
 }
 
+-- Platform construction policy is also a hard 1x batch policy. Derive the
+-- batch view from the permit-policy set so these two declarations cannot drift.
+for recipe_name in pairs(shared.SPACE_PLATFORM_BUILDING_RECIPES) do
+  shared.UNBATCHED_RESULT_NAMES[recipe_name] = true
+end
+
 -------------------------------------------------------------------------------
 -- BATCH MULTIPLIERS
+-- Semantic defaults classify production buildings at 2x, repeatable tool
+-- infrastructure at 5x, and ordinary items at 5x. This table contains only
+-- deliberate balance exceptions and high-volume intermediates.
 -- How many items are produced per regulated craft.
 -- Determines effective form cost per item:
 --   10x = 0.1 forms/item (bulk intermediates)
@@ -445,6 +481,8 @@ shared.UNBATCHED_RESULT_NAMES = {
 --    1x = 1.0 forms/item (megastructures)
 -------------------------------------------------------------------------------
 shared.BATCH_MULTIPLIER_DEFAULT = 5
+shared.BATCH_MULTIPLIER_BUILDING = 2
+shared.BATCH_MULTIPLIER_TOOL = 5
 shared.BATCH_MULTIPLIERS = {
   -- Megastructures (1x = 1 form each)
   ["rocket-silo"] = 1,
@@ -457,51 +495,9 @@ shared.BATCH_MULTIPLIERS = {
   ["electric-furnace"] = 1,
   ["heat-exchanger"] = 1,
   ["steam-turbine"] = 1,
-  -- Personal equipment (1x = 1 form each)
-  ["solar-panel-equipment"] = 1,
-  ["fission-reactor-equipment"] = 1,
-  ["fusion-reactor-equipment"] = 1,
-  ["battery-equipment"] = 1,
-  ["battery-mk2-equipment"] = 1,
-  ["belt-immunity-equipment"] = 1,
-  ["exoskeleton-equipment"] = 1,
-  ["personal-roboport-equipment"] = 1,
-  ["personal-roboport-mk2-equipment"] = 1,
-  ["night-vision-equipment"] = 1,
-  ["energy-shield-equipment"] = 1,
-  ["energy-shield-mk2-equipment"] = 1,
-  ["personal-laser-defense-equipment"] = 1,
-  ["discharge-defense-equipment"] = 1,
-  -- Machines & science (2x = 0.5 forms each)
-  ["lab"] = 2,
-  ["boiler"] = 2,
-  ["steam-engine"] = 2,
-  ["assembling-machine-1"] = 2,
-  ["assembling-machine-2"] = 2,
-  ["chemical-plant"] = 2,
+  -- Exceptional production buildings (1x = 1 form each)
   ["oil-refinery"] = 1,
-  ["pumpjack"] = 2,
-  ["roboport"] = 2,
-  ["radar"] = 2,
-  ["burner-mining-drill"] = 2,
-  ["electric-mining-drill"] = 2,
-  ["steel-furnace"] = 2,
-  -- Admin mod buildings (2x = 0.5 forms each)
-  ["field-office"] = 2,
-  ["office-desk"] = 2,
-  ["biter-station"] = 2,
-  ["corporate-breakroom"] = 2,
-  ["greenhouse"] = 2,
-  ["propaganda-distillery"] = 2,
-  ["printer-t2"] = 2,
-  ["admin-station"] = 2,
-  ["formation-center"] = 2,
-  ["resolution-office"] = 2,
-  ["solar-panel"] = 5,
-  ["accumulator"] = 5,
-  ["splitter"] = 5,
-  ["fast-splitter"] = 5,
-  ["express-splitter"] = 5,
+  -- Science remains an explicit economic progression.
   ["automation-science-pack"] = 5,
   ["logistic-science-pack"] = 5,
   ["chemical-science-pack"] = 2,
@@ -511,16 +507,31 @@ shared.BATCH_MULTIPLIERS = {
   -- High-volume intermediates (10x = 0.1 forms each)
   ["copper-cable"] = 10,
   ["iron-gear-wheel"] = 10,
-  ["pipe"] = 10,
-  ["heat-pipe"] = 10,
-  ["transport-belt"] = 10,
   ["electronic-circuit"] = 10,
   ["ink"] = 10,
   ["ink-production"] = 10,
-  ["pneumatic-pipe"] = 10,
-  ["pneumatic-pipe-to-ground"] = 10,
+  -- Repeatable tool infrastructure (5x = 0.2 forms each). These explicit
+  -- entries also document mod prototypes that may not expose a vanilla entity
+  -- type to compatibility-test fixtures.
+  -- Heat-pipe segments are consumed like intermediates despite being
+  -- placeable infrastructure, so their high-volume 10x economics are explicit.
+  ["heat-pipe"] = 10,
+  ["transport-belt"] = 5,
+  ["pipe-to-ground"] = 5,
+  ["pneumatic-pipe"] = 5,
+  ["pneumatic-pipe-to-ground"] = 5,
   ["tube-intake"] = 5,
   ["tube-outtake"] = 5,
+  -- High-end logistics are made in smaller installation lots.
+  ["express-transport-belt"] = 2,
+  ["express-underground-belt"] = 2,
+  ["express-splitter"] = 2,
+  ["stack-inserter"] = 2,
+  ["bulk-inserter"] = 2,
+  ["turbo-transport-belt"] = 2,
+  ["turbo-underground-belt"] = 2,
+  ["turbo-splitter"] = 2,
+  ["turbo-loader"] = 2,
   ["iron-plate"] = 20,
   ["copper-plate"] = 20,
   ["steel-plate"] = 20,
