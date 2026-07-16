@@ -16,6 +16,13 @@ data:extend({
     order = "zb",
     icon = item_icons .. "office-building.png",
     icon_size = 64
+  },
+  {
+    type = "item-group",
+    name = "admin-biter-group",
+    order = "zd",
+    icon = "__base__/graphics/icons/behemoth-biter.png",
+    icon_size = 64
   }
 })
 
@@ -27,7 +34,7 @@ if feature_flags.space_age_enabled() then
     {
       type = "item-group",
       name = "admin-recycling-group",
-      order = "zc",
+      order = "ze",
       icon = "__quality__/graphics/icons/recycler.png",
       icon_size = 64,
     },
@@ -52,9 +59,9 @@ if feature_flags.space_age_enabled() then
   })
 end
 
--- Subgroups (Paperwork Group)
+-- Subgroups (Paperwork Group) - Forms only, ordered by tier/category
 data:extend({
-  -- Forms & permits
+  -- Forms & permits (tiered: base -> permits -> work orders -> printed)
   { type = "item-subgroup", name = "forms-base",         group = "admin-paperwork-group", order = "a" },
   { type = "item-subgroup", name = "forms-permits",      group = "admin-paperwork-group", order = "b" },
   { type = "item-subgroup", name = "forms-work-orders",  group = "admin-paperwork-group", order = "c" },
@@ -71,6 +78,27 @@ data:extend({
   { type = "item-subgroup", name = "admin-infrastructure", group = "admin-logistics-group", order = "f" },
   { type = "item-subgroup", name = "admin-buildings",      group = "admin-logistics-group", order = "g" },
   { type = "item-subgroup", name = "admin-printers",       group = "admin-logistics-group", order = "h" },
+  { type = "item-subgroup", name = "admin-production",     group = "admin-logistics-group", order = "i" },
+  { type = "item-subgroup", name = "admin-recycling",      group = "admin-logistics-group", order = "j" },
+})
+
+-- Space Age owns the vanilla space item group. Do not register these
+-- subgroups without it: item-subgroups must always reference an existing
+-- item-group during Factorio's prototype ID assignment.
+if feature_flags.space_age_enabled() then
+  data:extend({
+    { type = "item-subgroup", name = "admin-space-compliance", group = "space", order = "za" },
+    { type = "item-subgroup", name = "admin-space-orbital",    group = "space", order = "zb" },
+    { type = "item-subgroup", name = "admin-space-buildings",  group = "space", order = "zc" },
+  })
+end
+
+-- Biter Group Subgroups
+data:extend({
+  { type = "item-subgroup", name = "admin-biter-buildings",      group = "admin-biter-group", order = "a" },
+  { type = "item-subgroup", name = "admin-biter-employees",      group = "admin-biter-group", order = "b" },
+  { type = "item-subgroup", name = "admin-biter-management",     group = "admin-biter-group", order = "c" },
+  { type = "item-subgroup", name = "admin-biter-operations",     group = "admin-biter-group", order = "d" },
 })
 
 -- Admin intermediate subgroup in vanilla intermediate-products group
@@ -80,15 +108,12 @@ data:extend({
 
 -- Biter complaint resolution subgroups (Military tab)
 data:extend({
-  { type = "item-subgroup", name = "admin-biter-buildings",       group = "combat", order = "za" },
-  -- Biter complaint tiers
-  { type = "item-subgroup", name = "resolution-landscape",        group = "combat", order = "zb" },
-  { type = "item-subgroup", name = "resolution-smog",             group = "combat", order = "zc" },
-  { type = "item-subgroup", name = "resolution-noise",            group = "combat", order = "zd" },
-  { type = "item-subgroup", name = "resolution-unemployment",     group = "combat", order = "ze" },
-  -- Spitter complaint tiers
-  { type = "item-subgroup", name = "resolution-littering",        group = "combat", order = "zf" },
-  { type = "item-subgroup", name = "resolution-hazmat",           group = "combat", order = "zg" },
-  { type = "item-subgroup", name = "resolution-loitering",        group = "combat", order = "zh" },
-  { type = "item-subgroup", name = "resolution-vagrancy",         group = "combat", order = "zi" },
+  { type = "item-subgroup", name = "resolution-landscape",        group = "combat", order = "za" },
+  { type = "item-subgroup", name = "resolution-smog",             group = "combat", order = "zb" },
+  { type = "item-subgroup", name = "resolution-noise",            group = "combat", order = "zc" },
+  { type = "item-subgroup", name = "resolution-unemployment",     group = "combat", order = "zd" },
+  { type = "item-subgroup", name = "resolution-littering",        group = "combat", order = "ze" },
+  { type = "item-subgroup", name = "resolution-hazmat",           group = "combat", order = "zf" },
+  { type = "item-subgroup", name = "resolution-loitering",        group = "combat", order = "zg" },
+  { type = "item-subgroup", name = "resolution-vagrancy",         group = "combat", order = "zh" },
 })

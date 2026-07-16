@@ -18,7 +18,7 @@ local manager_items = {
       {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64},
       {icon = item_icons .. "policy.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
     },
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-biter-management",
     order = "j-j",
     stack_size = 20,
   },
@@ -32,7 +32,7 @@ for _, briefing in ipairs(manager_briefings.BRIEFINGS) do
       {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64},
       {icon = briefing_overlay_icons[briefing.key], icon_size = 64, scale = 0.42, shift = {8, 8}},
     },
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-biter-management",
     order = briefing.order,
     stack_size = 5,
     spoil_ticks = manager_briefings.SPOIL_TICKS,
@@ -48,7 +48,7 @@ data:extend({
     name = "job-offer",
     icon = "__administratorio__/graphics/icons/management-written-proposal.png",
     icon_size = 64,
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-biter-employees",
     order = "j-0",
     stack_size = 20
   },
@@ -57,7 +57,7 @@ data:extend({
     name = "enrolled-biter",
     icon = "__base__/graphics/icons/small-biter.png",
     icon_size = 64,
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-biter-employees",
     order = "j-a",
     stack_size = 20
   },
@@ -66,7 +66,7 @@ data:extend({
     name = "worker-biter",
     icon = "__base__/graphics/icons/small-biter.png",
     icon_size = 64,
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-biter-employees",
     order = "j-a2",
     stack_size = 20
   },
@@ -75,7 +75,7 @@ data:extend({
     name = "clerical-trainee",
     icon = "__base__/graphics/icons/medium-biter.png",
     icon_size = 64,
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-biter-employees",
     order = "j-b",
     stack_size = 20
   },
@@ -84,7 +84,7 @@ data:extend({
     name = "management-trainee",
     icon = "__base__/graphics/icons/big-biter.png",
     icon_size = 64,
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-biter-employees",
     order = "j-c",
     stack_size = 20
   },
@@ -95,7 +95,7 @@ data:extend({
       {icon = "__base__/graphics/icons/big-biter.png", icon_size = 64},
       {icon = item_icons .. "transit-authorization.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
     },
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-biter-employees",
     order = "j-c1",
     stack_size = 20
   },
@@ -106,7 +106,7 @@ data:extend({
       {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64},
       {icon = item_icons .. "construction-permit.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
     },
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-biter-operations",
     order = "j-e",
     stack_size = 20
   },
@@ -117,7 +117,7 @@ data:extend({
       {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64},
       {icon = item_icons .. "promise.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
     },
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-biter-operations",
     order = "j-f",
     stack_size = 20
   },
@@ -128,7 +128,7 @@ data:extend({
       {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64},
       {icon = item_icons .. "data.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
     },
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-biter-operations",
     order = "j-g",
     stack_size = 20
   },
@@ -139,7 +139,7 @@ data:extend({
       {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64},
       {icon = item_icons .. "steel-forge-icon.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
     },
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-biter-operations",
     order = "j-h",
     stack_size = 20
   },
@@ -165,7 +165,7 @@ data:extend({
       },
     },
     magazine_size = 1,
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-space-compliance",
     order = "j-i",
     stack_size = 100
   },
@@ -203,7 +203,7 @@ data:extend({
       },
     },
     magazine_size = 1,
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-biter-management",
     order = "j-j",
     stack_size = 20
   },
@@ -214,7 +214,7 @@ data:extend({
       {icon = "__base__/graphics/icons/radar.png", icon_size = 64},
       icon_layers.orbital_infrastructure_permit_overlay(),
     },
-    subgroup = "admin-buildings",
+    subgroup = "admin-space-compliance",
     order = "i",
     place_result = "trajectory-compliance-array",
     stack_size = 20
@@ -227,7 +227,7 @@ data:extend({
       {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
       icon_layers.orbital_infrastructure_permit_overlay(),
     },
-    subgroup = "admin-buildings",
+    subgroup = "admin-space-compliance",
     order = "i-b",
     place_result = "senior-trajectory-compliance-array",
     stack_size = 20
@@ -240,7 +240,7 @@ data:extend({
       {icon = "__space-age__/graphics/icons/quantum-processor.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
       icon_layers.orbital_infrastructure_permit_overlay(),
     },
-    subgroup = "admin-buildings",
+    subgroup = "admin-space-compliance",
     order = "i-c",
     place_result = "executive-trajectory-compliance-array",
     stack_size = 20
@@ -253,7 +253,7 @@ data:extend({
       {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
       icon_layers.orbital_infrastructure_permit_overlay(),
     },
-    subgroup = "admin-buildings",
+    subgroup = "admin-space-orbital",
     order = "i-d",
     place_result = "orbital-employment-cannon",
     stack_size = 10
@@ -696,7 +696,7 @@ data:extend({
       {icon = "__base__/graphics/icons/radar.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
       icon_layers.orbital_infrastructure_permit_overlay(),
     },
-    subgroup = "admin-buildings",
+    subgroup = "admin-space-buildings",
     order = "m1",
     place_result = "administrative-space-station",
     stack_size = 20
@@ -708,7 +708,7 @@ data:extend({
       {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.88, g = 0.96, b = 1, a = 1}},
       {icon = item_icons .. "data.png", icon_size = 64, scale = 0.3, shift = {8, 8}, tint = {r = 0.72, g = 0.9, b = 1, a = 1}},
     },
-    subgroup = "admin-buildings",
+    subgroup = "admin-space-buildings",
     order = "n",
     place_result = "interplanetary-fax-exchange",
     stack_size = 20
@@ -720,7 +720,7 @@ data:extend({
       {icon = item_icons .. "office-building.png", icon_size = 64, tint = {r = 0.92, g = 0.96, b = 1, a = 1}},
       {icon = item_icons .. "blank-form.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
     },
-    subgroup = "admin-buildings",
+    subgroup = "admin-space-buildings",
     order = "n1",
     place_result = "fax-emitter",
     stack_size = 20

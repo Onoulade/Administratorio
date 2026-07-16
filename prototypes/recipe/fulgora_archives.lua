@@ -12,7 +12,7 @@ data:extend({
     type = "recipe",
     name = "old-archive-recycling",
     category = "recycling",
-    subgroup = "archive-recovery-recipes",
+    subgroup = "admin-recycling",
     order = "old-archive",
     icons = {
       {icon = "__administratorio__/graphics/icons/useless-documentation.png", icon_size = 64, tint = {r = 0.72, g = 0.62, b = 0.82, a = 1}},
