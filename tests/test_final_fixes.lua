@@ -120,6 +120,11 @@ mods = {
   ["space-age"] = "2.0.0",
 }
 
+-- Factorio exposes mass units as data-stage globals.
+grams = 1
+kg = 1000
+tons = 1000000
+
 data.raw.ammo["voluntary-exploration-space-miner"] = {
   type = "ammo",
   name = "voluntary-exploration-space-miner",
@@ -226,6 +231,7 @@ data.raw.item["boiler"] = {
   type = "item",
   name = "boiler",
   stack_size = 50,
+  place_result = "boiler",
   icon = "__base__/graphics/icons/boiler.png",
   icon_size = 64,
 }
@@ -233,6 +239,7 @@ data.raw.item["steam-engine"] = {
   type = "item",
   name = "steam-engine",
   stack_size = 10,
+  place_result = "steam-engine",
   icon = "__base__/graphics/icons/steam-engine.png",
   icon_size = 64,
 }
@@ -242,6 +249,22 @@ data.raw.item["transport-belt"] = {
   stack_size = 100,
   place_result = "transport-belt",
   icon = "__base__/graphics/icons/transport-belt.png",
+  icon_size = 64,
+}
+data.raw.item["pipe"] = {
+  type = "item",
+  name = "pipe",
+  stack_size = 100,
+  place_result = "pipe",
+  icon = "__base__/graphics/icons/pipe.png",
+  icon_size = 64,
+}
+data.raw.item["pipe-to-ground"] = {
+  type = "item",
+  name = "pipe-to-ground",
+  stack_size = 50,
+  place_result = "pipe-to-ground",
+  icon = "__base__/graphics/icons/pipe-to-ground.png",
   icon_size = 64,
 }
 data.raw.item["engine-unit"] = {
@@ -318,7 +341,7 @@ data.raw.item["solar-panel-equipment"] = {
   type = "item",
   name = "solar-panel-equipment",
   stack_size = 20,
-  placed_as_equipment_result = "solar-panel-equipment",
+  place_as_equipment_result = "solar-panel-equipment",
   icon = "__base__/graphics/icons/solar-panel-equipment.png",
   icon_size = 64,
 }
@@ -326,7 +349,7 @@ data.raw.item["battery-equipment"] = {
   type = "item",
   name = "battery-equipment",
   stack_size = 20,
-  placed_as_equipment_result = "battery-equipment",
+  place_as_equipment_result = "battery-equipment",
   icon = "__base__/graphics/icons/battery-equipment.png",
   icon_size = 64,
 }
@@ -334,7 +357,7 @@ data.raw.item["battery-mk2-equipment"] = {
   type = "item",
   name = "battery-mk2-equipment",
   stack_size = 20,
-  placed_as_equipment_result = "battery-mk2-equipment",
+  place_as_equipment_result = "battery-mk2-equipment",
   icon = "__base__/graphics/icons/battery-mk2-equipment.png",
   icon_size = 64,
 }
@@ -342,7 +365,7 @@ data.raw.item["exoskeleton-equipment"] = {
   type = "item",
   name = "exoskeleton-equipment",
   stack_size = 20,
-  placed_as_equipment_result = "exoskeleton-equipment",
+  place_as_equipment_result = "exoskeleton-equipment",
   icon = "__base__/graphics/icons/exoskeleton-equipment.png",
   icon_size = 64,
 }
@@ -523,6 +546,31 @@ recipes["transport-belt"] = {
   },
   results = {
     { type = "item", name = "transport-belt", amount = 2 },
+  },
+}
+
+recipes["pipe"] = {
+  type = "recipe",
+  name = "pipe",
+  enabled = true,
+  ingredients = {
+    {type = "item", name = "iron-plate", amount = 1},
+  },
+  results = {
+    {type = "item", name = "pipe", amount = 1},
+  },
+}
+
+recipes["pipe-to-ground"] = {
+  type = "recipe",
+  name = "pipe-to-ground",
+  enabled = true,
+  ingredients = {
+    {type = "item", name = "pipe", amount = 10},
+    {type = "item", name = "iron-plate", amount = 5},
+  },
+  results = {
+    {type = "item", name = "pipe-to-ground", amount = 2},
   },
 }
 
@@ -1707,7 +1755,7 @@ end)
 
 test("Factoriopedia has a dedicated administrative recycling tab", function()
   local group = assert(data.raw["item-group"]["admin-recycling-group"])
-  assert_eq(group.order, "zc")
+  assert_eq(group.order, "ze")
   for _, subgroup_name in ipairs({
     "archive-recovery-recipes",
     "form-reassignment-recipes",
@@ -1734,25 +1782,15 @@ test("printer-t1 gets a regulated AM recipe", function()
   assert_true(not has_ingredient(r, "provisional-approval"), "printer-t1-regulated should combine provisional-approval")
 end)
 
-test("regulated admin building outputs follow their declared batch economics", function()
-  for building_name in pairs(shared.ADMIN_BUILDINGS) do
-    local base = get_recipe(building_name)
-    if base then
-      local regulated = get_recipe(building_name .. "-regulated")
-      assert_true(regulated ~= nil, building_name .. " should have a regulated assembler recipe")
-
-      local base_amount = get_result_amount(base, building_name)
-      if base_amount then
-        local multiplier = shared.BATCH_MULTIPLIERS[building_name]
-          or shared.BATCH_MULTIPLIER_DEFAULT
-        assert_eq(
-          get_result_amount(regulated, building_name),
-          base_amount * multiplier,
-          building_name .. " regulated output should match its batch multiplier"
-        )
-      end
-    end
-  end
+test("regulated admin buildings follow semantic building and biter defaults", function()
+  assert_eq(get_result_amount(get_recipe("mechanical-printer-regulated"), "mechanical-printer"), 2,
+    "ordinary production buildings should batch at 2x")
+  assert_eq(get_result_amount(get_recipe("field-office-regulated"), "field-office"), 1,
+    "biter-subgroup buildings should stay at native 1x")
+  assert_eq(get_result_amount(get_recipe("office-desk-regulated"), "office-desk"), 2,
+    "recipes consuming biter workers should preserve their native output")
+  assert_eq(get_result_amount(get_recipe("formation-center-regulated"), "formation-center"), 1,
+    "Space Age biter buildings should stay at native 1x")
 end)
 
 test("printer-t2 gets a regulated AM recipe", function()
@@ -1804,13 +1842,46 @@ test("heat-pipe batches at 10x", function()
     "heat-pipe should show the 10x overlay")
 end)
 
-test("bulk fluid recipes do not display a bulk overlay", function()
+test("plain pipes are paperwork-free while underground pipes use 5x construction batches", function()
+  local pipe = get_recipe("pipe-regulated")
+  assert_true(pipe ~= nil, "pipe-regulated missing")
+  assert_eq(pipe.category, "crafting-regulated", "plain pipe should remain automatable")
+  assert_eq(get_ingredient_amount(pipe, "iron-plate"), 1,
+    "plain pipe should retain its native ingredient quantity")
+  assert_eq(get_result_amount(pipe, "pipe"), 1,
+    "plain pipe should retain its native result quantity")
+  for paperwork_name in pairs(shared.PAPERWORK_ITEMS) do
+    assert_true(not has_ingredient(pipe, paperwork_name),
+      "plain pipe should not consume paperwork: " .. paperwork_name)
+  end
+  assert_true(not has_icon_layer(pipe, "__base__/graphics/icons/signal/signal_5.png"),
+    "plain pipe should not show a bulk overlay")
+
+  local underground = get_recipe("pipe-to-ground-regulated")
+  assert_true(underground ~= nil, "pipe-to-ground-regulated missing")
+  assert_true(has_ingredient(underground, "construction-work-order"),
+    "underground pipe should consume construction paperwork")
+  assert_eq(get_ingredient_amount(underground, "pipe"), 50,
+    "underground pipe ingredients should use a 5x batch")
+  assert_eq(get_result_amount(underground, "pipe-to-ground"), 10,
+    "underground pipe results should use a 5x batch")
+  assert_true(has_icon_layer(underground, "__base__/graphics/icons/signal/signal_5.png"),
+    "underground pipe should show the 5x overlay")
+end)
+
+test("fluid-only recipes retain native quantities and do not display a bulk overlay", function()
   local oil = get_recipe("oil-processing")
   assert_true(oil ~= nil, "oil-processing missing")
-  assert_true((get_result_amount(oil, "heavy-oil") or 0) > 30,
-    "oil-processing should remain bulked")
+  assert_eq(get_ingredient_amount(oil, "crude-oil"), 100,
+    "oil-processing ingredients should retain native quantities")
+  assert_eq(get_result_amount(oil, "heavy-oil"), 30,
+    "oil-processing results should retain native quantities")
   assert_true(not has_icon_layer(oil, "__base__/graphics/icons/signal/signal_5.png"),
     "oil-processing should not display a bulk overlay for fluid output")
+
+  local sulfuric_acid = get_recipe("sulfuric-acid")
+  assert_eq(get_result_amount(sulfuric_acid, "sulfuric-acid"), 50,
+    "fluid-only chemistry should retain native output quantities")
 end)
 
 test("equipment recipes stay unbatched at 1x", function()
@@ -2325,19 +2396,17 @@ test("admin building regulated recipes batch and show overlays", function()
   local printer = get_recipe("printer-t1-regulated")
   assert_true(printer ~= nil, "printer-t1-regulated missing")
   assert_eq(get_ingredient_amount(printer, "provisional-work-order"), 1, "printer-t1-regulated should keep combined paperwork as a fixed cost")
-  assert_eq(get_result_amount(printer, "printer-t1"), 5, "printer-t1-regulated should batch to 5")
-  assert_true(has_icon_layer(printer, "__base__/graphics/icons/signal/signal_5.png"),
-    "printer-t1-regulated should show the 5x overlay")
+  assert_eq(get_result_amount(printer, "printer-t1"), 2, "printer-t1-regulated should use the 2x production-building default")
+  assert_true(has_icon_layer(printer, "__base__/graphics/icons/signal/signal_2.png"),
+    "printer-t1-regulated should show the 2x overlay")
   assert_true(not has_icon_layer(printer, "__administratorio__/graphics/icons/provisional-work-order.png"),
     "printer-t1-regulated should not display its paperwork ingredient as an icon overlay")
 
   local pipe = get_recipe("pneumatic-pipe-regulated")
   assert_true(pipe ~= nil, "pneumatic-pipe-regulated missing")
-  assert_eq(get_result_amount(pipe, "pneumatic-pipe"), 20, "pneumatic-pipe-regulated should batch to 20")
-  assert_true(has_icon_layer(pipe, "__base__/graphics/icons/signal/signal_1.png"),
-    "pneumatic-pipe-regulated should show the 10x overlay")
-  assert_true(has_icon_layer(pipe, "__base__/graphics/icons/signal/signal_0.png"),
-    "pneumatic-pipe-regulated should show the 10x overlay")
+  assert_eq(get_result_amount(pipe, "pneumatic-pipe"), 10, "pneumatic-pipe-regulated should use a 5x tool batch")
+  assert_true(has_icon_layer(pipe, "__base__/graphics/icons/signal/signal_5.png"),
+    "pneumatic-pipe-regulated should show the 5x overlay")
 
   local intake = get_recipe("tube-intake-regulated")
   assert_true(intake ~= nil, "tube-intake-regulated missing")
