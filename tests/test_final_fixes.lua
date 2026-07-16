@@ -383,6 +383,14 @@ data.raw.item["space-platform-foundation"] = {
   icon = "__space-age__/graphics/icons/space-platform-foundation.png",
   icon_size = 64,
 }
+data.raw.item["propeller"] = {
+  type = "item",
+  name = "propeller",
+  stack_size = 100,
+  subgroup = "intermediate-product",
+  icon = "__space-age__/graphics/icons/thruster.png",
+  icon_size = 64,
+}
 data.raw.item["fusion-reactor"] = {
   type = "item",
   name = "fusion-reactor",
@@ -909,6 +917,24 @@ recipes["thruster"] = {
   },
   results = {
     { type = "item", name = "thruster", amount = 1 },
+  },
+}
+
+-- Space-processing recipes are identified by their recipe subgroup, rather
+-- than the product subgroup. This mirrors compatible platform intermediates
+-- whose products otherwise look like normal crafting items.
+recipes["propeller"] = {
+  type = "recipe",
+  name = "propeller",
+  category = "crafting",
+  subgroup = "space-processing",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 10 },
+    { type = "item", name = "pipe", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "propeller", amount = 1 },
   },
 }
 
@@ -1809,6 +1835,19 @@ test("space platform structures stay unbatched at 1x", function()
     "cargo-bay should not show a 5x overlay")
 end)
 
+test("space recipe subgroups stay unbatched and badge-free", function()
+  local propeller = get_recipe("propeller")
+  assert_true(propeller ~= nil, "propeller missing")
+  assert_eq(get_result_amount(propeller, "propeller"), 1,
+    "space-processing propeller should stay 1x")
+  assert_eq(get_ingredient_amount(propeller, "steel-plate"), 10,
+    "space-processing propeller ingredients should stay unbatched")
+  assert_true(not has_icon_layer(propeller, "__base__/graphics/icons/signal/signal_5.png"),
+    "space-processing propeller should not show a 5x overlay")
+  assert_true(not has_icon_layer(propeller, "__base__/graphics/icons/signal/signal_1.png"),
+    "space-processing propeller should not show a 1x overlay")
+end)
+
 test("space platform buildings use the orbital permit as their only paperwork", function()
   local permit_name = "orbital-infrastructure-permit"
   local permit_icon = "__administratorio__/graphics/icons/orbital-infrastructure-permit.png"
@@ -1842,8 +1881,8 @@ test("space platform buildings use the orbital permit as their only paperwork", 
     end
 
     assert_true(saw_recipe, recipe_name .. " recipe missing")
-    assert_true(has_icon_layer(data.raw.item[recipe_name], permit_icon),
-      recipe_name .. " item icon should display the orbital permit badge")
+    assert_true(not has_icon_layer(data.raw.item[recipe_name], permit_icon),
+      recipe_name .. " item icon should not display the orbital permit badge")
   end
 
   for _, bootstrap_name in ipairs({"space-platform-foundation", "space-platform-starter-pack"}) do

@@ -382,8 +382,8 @@ test("vacuum infrastructure uses one dedicated orbital permit", function()
       assert_true(not has_ingredient(recipe, paperwork_name),
         recipe_name .. " should not require ordinary paperwork " .. paperwork_name)
     end
-    assert_true(has_icon_layer(items[recipe_name], permit_icon),
-      recipe_name .. " icon should display its orbital permit gate")
+    assert_true(not has_icon_layer(items[recipe_name], permit_icon),
+      recipe_name .. " icon should not display its orbital permit gate")
   end
 end)
 
