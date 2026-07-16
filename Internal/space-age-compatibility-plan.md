@@ -225,10 +225,7 @@ The first playable Vulcanus pass adds early bootstrap recipes so the planet can 
 
 - `paper-production-vulcanus`
 - `carbon-offset-certificate-basic-vulcanus`
-- `provisional-approval-vulcanus`
-- `compacted-rubble-production-vulcanus`
-- `research-grant-approval-vulcanus`
-- `administrative-science-pack-production-vulcanus`
+- `redundant-rubble-recovery-vulcanus`
 - `plastic-bar-vulcanus`
 - `refined-nonsense-production-vulcanus`
 
@@ -261,11 +258,9 @@ The notarial and chemical support layer handles the non-printer part of the plan
 - `liquid-coffee-vulcanus`
 - `molten-promises-production`
 - `vulcanus-lie-distillation`
-- `heatproof-filler-documentation`
 - `good-excuse-vulcanus`
-- `safety-waiver-vulcanus`
-- `construction-permit-vulcanus`
-- `management-approval-verbal-vulcanus`
+- `management-approval-written-vulcanus`
+- `government-grant-vulcanus`
 
 ### Vulcanus export paperwork
 

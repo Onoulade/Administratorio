@@ -130,6 +130,20 @@ Both `Capture Bureau` and `Conciliation Desk` require a `conciliation-officer` w
 
 Gleba recipes should not require `taxpayer-money`. The planet operates outside the Nauvis tax authority's reach. Local paperwork uses biological resources and yellow ink instead of cash.
 
+### 12. Escape exceptions are terminal, slow, and biological
+
+The implemented Gleba bridges are deliberately limited to what the unchanged
+native-machine and launch recipes consume:
+
+- `dubious-data-cultivation-gleba` and `provisional-approval-cultivation-gleba` are slow bootstrap inputs.
+- `composted-rubble-recovery-gleba` supplies the filler needed by the canonical environmental paperwork chain.
+- `conciliation-officer-formation-gleba` trains the native specialist from a symbiosis record instead of the generic political-excuse chain.
+- `management-approval-written-gleba` and `government-grant-gleba` are the two expensive terminal launch documents.
+
+Gleba does not cultivate credentials, justifications, excuses, refined
+nonsense, or useless documentation. Those remain canonical, imported, or faxed
+paths outside the escape gates.
+
 ## Planned Paperwork Family
 
 The family should stay compact and purposeful.

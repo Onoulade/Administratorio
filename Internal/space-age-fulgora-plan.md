@@ -105,6 +105,18 @@ On Fulgora, magenta forms are cheap and locally produced. Off-world, they must b
 
 Fulgora recipes should not require `taxpayer-money`. The planet operates outside the Nauvis tax authority's reach. Local paperwork uses electromagnetic resources and magenta ink instead of cash.
 
+### 10. Escape exceptions remain electromagnetic and archival
+
+Fulgora keeps only the material and terminal-document exceptions that the
+unchanged launch chain actually needs:
+
+- `salvage-electrolyte-fulgora`, `electromagnetic-rocket-fuel-fulgora`, and the deliberately expensive `electromagnetic-lubricant-fulgora` cover the local engine and fuel bottlenecks.
+- `management-approval-written-fulgora` and `government-grant-fulgora` turn completed magenta/archive paperwork into the final launch documents.
+
+Fulgora does not receive a local liquid-black-ink route, crude-oil processing,
+or a general petroleum economy. Those remain difficult or unavailable by
+design.
+
 ## Planned Paperwork Family
 
 The family should stay centered on archive recovery and electromagnetic processing.

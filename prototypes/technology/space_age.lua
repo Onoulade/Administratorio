@@ -108,12 +108,8 @@ data:extend({
       {type = "unlock-recipe", recipe = "industrial-charter"},
       {type = "unlock-recipe", recipe = "territorial-resettlement-order"},
       {type = "unlock-recipe", recipe = "good-excuse-vulcanus"},
-      {type = "unlock-recipe", recipe = "safety-waiver-vulcanus"},
-      {type = "unlock-recipe", recipe = "construction-permit-vulcanus"},
-      {type = "unlock-recipe", recipe = "management-approval-verbal-vulcanus"},
       {type = "unlock-recipe", recipe = "management-approval-written-vulcanus"},
-      {type = "unlock-recipe", recipe = "heatproof-filler-documentation"},
-      {type = "unlock-recipe", recipe = "form-27b-6-vulcanus"},
+      {type = "unlock-recipe", recipe = "government-grant-vulcanus"},
       {type = "unlock-recipe", recipe = "vulcanus-lie-distillation"},
     },
     prerequisites = {"chromatic-printing"},
@@ -170,6 +166,10 @@ data:extend({
       {type = "unlock-recipe", recipe = "blank-yellow-form-production"},
       {type = "unlock-recipe", recipe = "symbiosis-record"},
       {type = "unlock-recipe", recipe = "conciliation-order"},
+      {type = "unlock-recipe", recipe = "management-approval-written-gleba"},
+      {type = "unlock-recipe", recipe = "government-grant-gleba"},
+      {type = "unlock-recipe", recipe = "composted-rubble-recovery-gleba"},
+      {type = "unlock-recipe", recipe = "conciliation-officer-formation-gleba"},
     },
     prerequisites = {"executive-review"},
     research_trigger = {
@@ -190,6 +190,8 @@ data:extend({
       {type = "unlock-recipe", recipe = "digital-processing-certificate"},
       {type = "unlock-recipe", recipe = "electromagnetic-operating-license"},
       {type = "unlock-recipe", recipe = "data-recovery-order"},
+      {type = "unlock-recipe", recipe = "management-approval-written-fulgora"},
+      {type = "unlock-recipe", recipe = "government-grant-fulgora"},
     },
     prerequisites = {"chromatic-printing"},
     research_trigger = {
@@ -681,9 +683,6 @@ data:extend(orbital_employment_capacity_techs)
 -- are built, avoiding a circular dependency on space science.
 add_tech_unlock("space-platform", "orbital-infrastructure-permit")
 add_tech_unlock("workforce-formation", "licensed-notary-formation")
-add_tech_unlock("administrative-science-research", "research-grant-approval-vulcanus")
-add_tech_unlock("administrative-science-research", "administrative-science-pack-production-vulcanus")
-add_tech_unlock("administrative-science-research", "provisional-approval-vulcanus")
 add_tech_unlock("administrative-science-research", "administrative-science-pack-production-gleba")
 add_tech_unlock("calcite-processing", "dubious-data-analysis-vulcanus")
 add_tech_unlock("calcite-processing", "paper-production-vulcanus")
@@ -691,26 +690,18 @@ add_tech_unlock("calcite-processing", "carbon-offset-certificate-basic-vulcanus"
 add_tech_unlock("calcite-processing", "liquid-stimulant-production")
 add_tech_unlock("calcite-processing", "liquid-coffee-vulcanus")
 add_tech_unlock("calcite-processing", "plastic-bar-vulcanus")
-add_tech_unlock("calcite-processing", "heatproof-paper-production")
 add_tech_unlock("calcite-processing", "molten-promises-production")
-add_tech_unlock("industrial-propaganda", "compacted-rubble-production-vulcanus")
+add_tech_unlock("industrial-propaganda", "redundant-rubble-recovery-vulcanus")
 add_tech_unlock("industrial-propaganda", "refined-nonsense-production-vulcanus")
 add_tech_unlock("local-precedents", "useless-documentation-production-gleba")
 add_tech_unlock("discovery-bullshit", "dubious-data-cultivation-gleba")
-add_tech_unlock("discovery-bullshit", "basic-excuse-cultivation-gleba")
 add_tech_unlock("discovery-bullshit", "provisional-approval-cultivation-gleba")
-add_tech_unlock("local-precedents", "useless-documentation-cultivation-gleba")
-add_tech_unlock("corporate-hospitality", "good-excuse-cultivation-gleba")
-add_tech_unlock("gleba-conciliation", "refined-nonsense-cultivation-gleba")
-add_tech_unlock("gleba-conciliation", "credentials-cultivation-gleba")
-add_tech_unlock("gleba-conciliation", "justification-cultivation-gleba")
-add_tech_unlock("chromatic-printing", "liquid-black-ink-fulgora")
 add_tech_unlock("chromatic-printing", "ink-recovery-fulgora")
 add_tech_unlock("chromatic-printing", "salvaged-data-analysis-fulgora")
 add_tech_unlock("chromatic-printing", "basic-excuse-production")
 add_tech_unlock("chromatic-printing", "carbon-offset-certificate-basic-fulgora")
 add_tech_unlock("electromagnetic-plant", "salvage-electrolyte-fulgora")
-add_tech_unlock("electromagnetic-science-pack", "electromagnetic-lubricant-fulgora")
+add_tech_unlock("electromagnetic-plant", "electromagnetic-lubricant-fulgora")
 add_tech_unlock("rocket-fuel", "electromagnetic-rocket-fuel-fulgora")
 add_tech_unlock("agricultural-science-pack", "conciliation-officer-formation")
 add_tech_unlock("corporate-hospitality", "construction-permit-gleba")

@@ -138,13 +138,9 @@ Vulcanus:
   - direct planet map generation injection in `data-updates.lua`
 - Bootstrap and local admin:
   - `paper-production-vulcanus`
-  - `heatproof-paper-production`
   - `carbon-offset-certificate-basic-vulcanus`
-  - `provisional-approval-vulcanus`
-  - `compacted-rubble-production-vulcanus`
+  - `redundant-rubble-recovery-vulcanus`
   - `dubious-data-analysis-vulcanus`
-  - `research-grant-approval-vulcanus`
-  - `administrative-science-pack-production-vulcanus`
   - `plastic-bar-vulcanus`
   - `liquid-stimulant-production`
   - `liquid-coffee-vulcanus`
@@ -170,12 +166,8 @@ Vulcanus:
   - `calcite-reagent-waiver`
   - `offworld-metallurgy-charter`
   - `good-excuse-vulcanus`
-  - `safety-waiver-vulcanus`
-  - `construction-permit-vulcanus`
-  - `management-approval-verbal-vulcanus`
   - `management-approval-written-vulcanus`
-  - `heatproof-filler-documentation`
-  - `form-27b-6-vulcanus`
+  - `government-grant-vulcanus`
 - Vanilla Vulcanus process recipes retain their original surface conditions and have no Administratorio off-world clones.
 
 Gleba:

@@ -526,22 +526,19 @@ test("planet helper exposes exact basic-planet conditions and abundance outputs"
   assert_eq(planets.BASIC_PLANET_ABUNDANCE.fulgora, "useless-documentation", "fulgora abundance should be useless-documentation")
 end)
 
-test("vulcanus local inputs and notary split are present and surface-limited", function()
+test("vulcanus local inputs and narrow notary gates are present and surface-limited", function()
   local required = {
     "paper-production-vulcanus",
     "carbon-offset-certificate-basic-vulcanus",
-    "provisional-approval-vulcanus",
-    "compacted-rubble-production-vulcanus",
+    "redundant-rubble-recovery-vulcanus",
     "dubious-data-analysis-vulcanus",
-    "research-grant-approval-vulcanus",
-    "administrative-science-pack-production-vulcanus",
     "plastic-bar-vulcanus",
     "refined-nonsense-production-vulcanus",
     "blank-cyan-form-production",
-    "management-approval-verbal-vulcanus",
+    "good-excuse-vulcanus",
+    "management-approval-written-vulcanus",
+    "government-grant-vulcanus",
     "vulcanus-lie-distillation",
-    "heatproof-filler-documentation",
-    "form-27b-6-vulcanus",
     "territorial-resettlement-order",
     "territorial-arbitration-post",
   }
@@ -555,6 +552,19 @@ test("vulcanus local inputs and notary split are present and surface-limited", f
 
   assert_true(data.raw.recipe["management-written-approval-vulcanus"] == nil,
     "management-written-approval-vulcanus should stay import-seeded")
+  for _, recipe_name in ipairs({
+    "provisional-approval-vulcanus",
+    "research-grant-approval-vulcanus",
+    "administrative-science-pack-production-vulcanus",
+    "compacted-rubble-production-vulcanus",
+    "safety-waiver-vulcanus",
+    "construction-permit-vulcanus",
+    "management-approval-verbal-vulcanus",
+    "heatproof-filler-documentation",
+    "form-27b-6-vulcanus",
+  }) do
+    assert_true(data.raw.recipe[recipe_name] == nil, recipe_name .. " should defer to a canonical recipe")
+  end
 end)
 
 test("territorial arbitration post is a Vulcanus-only field office with scripted upkeep inputs", function()
@@ -585,10 +595,10 @@ end)
 test("chromatic recipes stay printer-only while support-heavy paperwork lives in the notary office", function()
   assert_eq(data.raw.recipe["blank-cyan-form-production"].category, "printing-chromatic", "blank-cyan-form should be printer-made")
   assert_eq(data.raw.recipe["inspection-docket"].category, "printing-chromatic", "inspection-docket should be printer-made")
-  assert_eq(data.raw.recipe["management-approval-verbal-vulcanus"].category, "bureaucracy-certification", "verbal approval shortcut should be notary-made")
+  assert_eq(data.raw.recipe["good-excuse-vulcanus"].category, "bureaucracy-certification", "good-excuse gateway should be notary-made")
   assert_eq(data.raw.recipe["offworld-metallurgy-charter"].category, "bureaucracy-certification", "offworld charter should be notary-made")
-  assert_true(not has_ingredient(data.raw.recipe["management-approval-verbal-vulcanus"], "cyan-ink"),
-    "notary verbal approval should consume support materials, not direct printer ink")
+  assert_true(not has_ingredient(data.raw.recipe["good-excuse-vulcanus"], "cyan-ink"),
+    "notary good-excuse gateway should consume support materials, not direct printer ink")
 end)
 
 test("chromatic printer and liquid black ink are excluded from Aquilo", function()
@@ -663,6 +673,10 @@ test("gleba ingredient routes are surface-limited and keep the yellow family com
     "blank-yellow-form-production",
     "symbiosis-record",
     "conciliation-order",
+    "management-approval-written-gleba",
+    "government-grant-gleba",
+    "composted-rubble-recovery-gleba",
+    "conciliation-officer-formation-gleba",
   }
 
   for _, recipe_name in ipairs(required) do
@@ -672,8 +686,6 @@ test("gleba ingredient routes are surface-limited and keep the yellow family com
     assert_eq(recipe.surface_conditions[2].min, 20, recipe_name .. " should target Gleba gravity")
   end
 
-  assert_true(data.raw.recipe["management-approval-written-gleba"] == nil,
-    "management-approval-written-gleba should stay absent")
   assert_true(data.raw.recipe["advanced-circuit-gleba"] == nil,
     "advanced-circuit-gleba should stay absent")
   assert_true(data.raw.recipe["low-density-structure-gleba"] == nil,
