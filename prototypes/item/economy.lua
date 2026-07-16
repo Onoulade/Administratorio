@@ -47,21 +47,21 @@ data:extend({
   { type = "item", name = "treasury-bond",    icon = item_icons .. "treasury-bond.png",    icon_size = 64, subgroup = "admin-money", order = "b", stack_size = 200 },
   { type = "item", name = "government-grant", icon = item_icons .. "government-grant.png", icon_size = 64, subgroup = "admin-money", order = "c", stack_size = 100 },
 
-  -- Biter Employment
+  -- Biter Employment - moved to admin-biter-group
   {
     type = "item", name = "job-offer",
     icons = {{icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r=0.4, g=0.9, b=0.4, a=1}}},
-    subgroup = "admin-biter-buildings", order = "c", stack_size = 20
+    subgroup = "admin-biter-employees", order = "a", stack_size = 20
   },
   {
     type = "item", name = "biter-worker",
     icons = biter_role_icons("__base__/graphics/icons/small-biter.png", {r=0.75, g=0.95, b=0.65, a=1}),
-    subgroup = "admin-biter-buildings", order = "d", stack_size = 1
+    subgroup = "admin-biter-employees", order = "b", stack_size = 1
   },
   {
     type = "item", name = "biter-logistics-formation",
     icons = biter_role_icons("__base__/graphics/icons/small-biter.png", {r=0.45, g=0.85, b=0.55, a=1}),
-    subgroup = "admin-biter-buildings", order = "d1", stack_size = 1
+    subgroup = "admin-biter-employees", order = "c", stack_size = 1
   },
   {
     type = "item", name = "rideable-biter",
@@ -72,21 +72,21 @@ data:extend({
   {
     type = "item", name = "biter-station",
     icon = item_icons .. "biter-station.png", icon_size = 64,
-    subgroup = "admin-buildings", order = "a1", place_result = "biter-station", stack_size = 40
+    subgroup = "admin-biter-buildings", order = "a1", place_result = "biter-station", stack_size = 40
   },
   {
     type = "item", name = "union-delegate",
     icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=0.45, g=0.55, b=1.0, a=1}),
-    subgroup = "admin-biter-buildings", order = "e1", stack_size = 10
+    subgroup = "admin-biter-management", order = "a", stack_size = 10
   },
   {
     type = "item", name = "chemical-operator",
     icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=1.0, g=0.75, b=0.25, a=1}),
-    subgroup = "admin-biter-buildings", order = "e2", stack_size = 10
+    subgroup = "admin-biter-operations", order = "a", stack_size = 10
   },
   {
     type = "item", name = "nuclear-technician",
     icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=0.35, g=1.0, b=0.85, a=1}),
-    subgroup = "admin-biter-buildings", order = "e3", stack_size = 10
+    subgroup = "admin-biter-operations", order = "b", stack_size = 10
   },
 })

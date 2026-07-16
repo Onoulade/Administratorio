@@ -181,6 +181,7 @@ data:extend({
   -- Biter Employment
   {
     type = "recipe", name = "rideable-biter",
+    subgroup = "admin-biter-employees",
     localised_name = {"item-name.rideable-biter"},
     localised_description = {"item-description.rideable-biter"},
     category = "biter-training", enabled = false,
@@ -194,7 +195,7 @@ data:extend({
     energy_required = 20
   },
   {
-    type = "recipe", name = "job-offer-production", category = "bureaucracy-registration", enabled = false,
+    type = "recipe", name = "job-offer-production", subgroup = "admin-biter-employees", category = "bureaucracy-registration", enabled = false,
     ingredients = {
       {type="item", name="taxpayer-money", amount=50},
       {type="item", name="blank-form", amount=5},
@@ -205,7 +206,7 @@ data:extend({
     energy_required = 15
   },
   {
-    type = "recipe", name = "biter-logistics-formation", category = "biter-training", enabled = false,
+    type = "recipe", name = "biter-logistics-formation", subgroup = "admin-biter-employees", category = "biter-training", enabled = false,
     ingredients = {
       {type="item", name="biter-worker", amount=1},
       {type="item", name="management-verbal-work-order", amount=1},
@@ -218,7 +219,7 @@ data:extend({
 
   -- Specialist Training
   {
-    type = "recipe", name = "union-delegate-training", category = "biter-training", enabled = false,
+    type = "recipe", name = "union-delegate-training", subgroup = "admin-biter-management", category = "biter-training", enabled = false,
     ingredients = {
       {type="item", name="biter-worker", amount=1},
       {type="item", name="management-verbal-work-order", amount=1},
@@ -229,7 +230,7 @@ data:extend({
     energy_required = 20
   },
   {
-    type = "recipe", name = "chemical-operator-training", category = "biter-training", enabled = false,
+    type = "recipe", name = "chemical-operator-training", subgroup = "admin-biter-operations", category = "biter-training", enabled = false,
     ingredients = {
       {type="item", name="biter-worker", amount=1},
       {type="item", name="chemical-handling-work-order", amount=1},
@@ -240,7 +241,7 @@ data:extend({
     energy_required = 30
   },
   {
-    type = "recipe", name = "nuclear-technician-training", category = "biter-training", enabled = false,
+    type = "recipe", name = "nuclear-technician-training", subgroup = "admin-biter-operations", category = "biter-training", enabled = false,
     ingredients = {
       {type="item", name="biter-worker", amount=1},
       {type="item", name="radiological-work-order", amount=1},
@@ -252,7 +253,7 @@ data:extend({
     energy_required = 30
   },
   {
-    type = "recipe", name = "hired-biter-capsule",
+    type = "recipe", name = "hired-biter-capsule", subgroup = "admin-biter-operations",
     localised_name = {"item-name.hired-biter-capsule"},
     localised_description = {"item-description.hired-biter-capsule"},
     category = "biter-training", enabled = false,
@@ -267,7 +268,7 @@ data:extend({
     energy_required = 120
   },
   {
-    type = "recipe", name = "hired-biter-command-capsule",
+    type = "recipe", name = "hired-biter-command-capsule", subgroup = "admin-biter-operations",
     localised_name = {"item-name.hired-biter-command-capsule"},
     localised_description = {"item-description.hired-biter-command-capsule"},
     category = "bureaucracy-registration", enabled = false,
