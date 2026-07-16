@@ -38,9 +38,12 @@ function M.apply(data, shared, item_like_prototype_types, helpers)
     replace_target_paperwork(recipe.expensive)
   end
 
-  local function apply_orbital_infrastructure_permit_badge(prototype, is_recipe)
+  -- Placement items may show their dedicated permit, but recipe icons should
+  -- show only their output (plus any bulk multiplier).  Requirements belong
+  -- in the ingredient list, not as decorative recipe badges.
+  local function apply_orbital_infrastructure_permit_badge(prototype)
     if not prototype then return end
-    local icons = is_recipe and helpers.get_recipe_base_icons(prototype) or helpers.clone_icon_layers(prototype)
+    local icons = helpers.clone_icon_layers(prototype)
     if not icons then return end
     for _, layer in ipairs(icons) do
       if layer.icon == ORBITAL_INFRASTRUCTURE_PERMIT_ICON then return end
@@ -62,8 +65,6 @@ function M.apply(data, shared, item_like_prototype_types, helpers)
         apply_orbital_infrastructure_permit_badge(prototype_group[recipe_name])
       end
     end
-    apply_orbital_infrastructure_permit_badge(data.raw.recipe[recipe_name], true)
-    apply_orbital_infrastructure_permit_badge(data.raw.recipe[regulated_name], true)
   end
 end
 
