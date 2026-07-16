@@ -1726,6 +1726,9 @@ test("repair-pack gets a bulked regulated AM recipe", function()
   assert_eq(get_result_amount(regulated, "repair-pack"), 5, "repair-pack-regulated should batch to 5")
   assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_5.png"),
     "repair-pack-regulated should show the 5x overlay")
+  local bulk_badge = get_icon_layer(regulated, "__base__/graphics/icons/signal/signal_5.png")
+  assert_eq(bulk_badge.shift[1], -14, "repair-pack-regulated bulk overlay should be top-left")
+  assert_eq(bulk_badge.shift[2], -12, "repair-pack-regulated bulk overlay should be top-left")
 end)
 
 test("heat-pipe batches at 10x", function()
@@ -1738,6 +1741,15 @@ test("heat-pipe batches at 10x", function()
     "heat-pipe should show the 10x overlay")
   assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_0.png"),
     "heat-pipe should show the 10x overlay")
+end)
+
+test("bulk fluid recipes do not display a bulk overlay", function()
+  local oil = get_recipe("oil-processing")
+  assert_true(oil ~= nil, "oil-processing missing")
+  assert_true((get_result_amount(oil, "heavy-oil") or 0) > 30,
+    "oil-processing should remain bulked")
+  assert_true(not has_icon_layer(oil, "__base__/graphics/icons/signal/signal_5.png"),
+    "oil-processing should not display a bulk overlay for fluid output")
 end)
 
 test("equipment recipes stay unbatched at 1x", function()
@@ -1810,8 +1822,8 @@ test("space platform buildings use the orbital permit as their only paperwork", 
         assert_eq(permit_count, 1, candidate_name .. " should use only the orbital infrastructure permit")
         assert_eq(get_ingredient_amount(target, permit_name), 1,
           candidate_name .. " should consume one orbital infrastructure permit")
-        assert_true(has_icon_layer(recipe, permit_icon),
-          candidate_name .. " recipe icon should display the orbital permit badge")
+        assert_true(not has_icon_layer(recipe, permit_icon),
+          candidate_name .. " recipe icon should not display its permit ingredient")
       end
     end
 
@@ -2260,6 +2272,8 @@ test("admin building regulated recipes batch and show overlays", function()
   assert_eq(get_result_amount(printer, "printer-t1"), 5, "printer-t1-regulated should batch to 5")
   assert_true(has_icon_layer(printer, "__base__/graphics/icons/signal/signal_5.png"),
     "printer-t1-regulated should show the 5x overlay")
+  assert_true(not has_icon_layer(printer, "__administratorio__/graphics/icons/provisional-work-order.png"),
+    "printer-t1-regulated should not display its paperwork ingredient as an icon overlay")
 
   local pipe = get_recipe("pneumatic-pipe-regulated")
   assert_true(pipe ~= nil, "pneumatic-pipe-regulated missing")

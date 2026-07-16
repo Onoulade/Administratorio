@@ -49,7 +49,6 @@ local PNEUMATIC_TRANSPORT_NOTE = {
   {"item-name.tube-intake"},
   " ([item=tube-intake]).",
 }
-local DEBUG_SHOW_PAPERWORK_ICON_OVERLAYS = false
 local TAXPAYER_MONEY_FUEL_CATEGORY = "administratorio-taxpayer-money"
 local REGULAR_FUEL_CATEGORY = "chemical"
 local HATCHED_PENTAPOD_UNITS = {
@@ -629,37 +628,14 @@ local function get_recipe_base_icons(recipe)
   return nil
 end
 
-local function shift_icon_layer(layer, offset, scale)
-  local shifted = util.table.deepcopy(layer)
-  local base_shift = shifted.shift or {0, 0}
+local function apply_bulk_recipe_icon_overlay(recipe, multiplier)
+  if not recipe then return end
 
-  shifted.shift = {
-    (base_shift[1] or 0) + offset[1],
-    (base_shift[2] or 0) + offset[2],
-  }
-  shifted.scale = (shifted.scale or 1) * scale
-
-  return shifted
-end
-
-local function apply_bulk_recipe_icon_overlay(recipe, multiplier, paperwork_name)
-  if not recipe or not paperwork_name then return end
+  local _, product_type = get_primary_result_name_and_type(recipe)
+  if product_type == "fluid" then return end
 
   local icons = get_recipe_base_icons(recipe)
   if not icons then return end
-
-  if DEBUG_SHOW_PAPERWORK_ICON_OVERLAYS and paperwork_name ~= "work-order" then
-    local paperwork = find_item_like_prototype(paperwork_name)
-    if not paperwork and data.raw["fluid"] then
-      paperwork = data.raw["fluid"][paperwork_name]
-    end
-    local paperwork_icons = clone_icon_layers(paperwork)
-    if paperwork_icons then
-      for _, layer in ipairs(paperwork_icons) do
-        table.insert(icons, shift_icon_layer(layer, {12, -12}, 0.24))
-      end
-    end
-  end
 
   if multiplier and multiplier > 1 then
     local multiplier_text = tostring(multiplier)
@@ -894,7 +870,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
 
   local multiplier = get_recipe_batch_multiplier(name, recipe)
   regulate_recipe(recipe, operating_form, multiplier)
-  apply_bulk_recipe_icon_overlay(recipe, multiplier, operating_form)
+  apply_bulk_recipe_icon_overlay(recipe, multiplier)
 
   ::next_operating_recipe::
 end
@@ -938,7 +914,6 @@ for name, recipe in pairs(data.raw["recipe"]) do
 
   local handcraft_paperwork = shared.get_paperwork_requirements(required_form, false)
   local regulated_paperwork = shared.get_paperwork_requirements(required_form, true)
-  local regulated_form = (regulated_paperwork[1] and regulated_paperwork[1].name) or required_form
 
   -- Determine regulated category
   local regulated_cat
@@ -966,7 +941,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     -------------------------------------------------------------------------
     recipe.category = regulated_cat
     regulate_recipe(recipe, regulated_paperwork, multiplier)
-    apply_bulk_recipe_icon_overlay(recipe, multiplier, regulated_form)
+    apply_bulk_recipe_icon_overlay(recipe, multiplier)
     recipe.hide_from_player_crafting = false
 
     -- Inject taxpayer-money for expensive late-game items
@@ -994,7 +969,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     regulated.category = regulated_cat
 
     regulate_recipe(regulated, regulated_paperwork, multiplier)
-    apply_bulk_recipe_icon_overlay(regulated, multiplier, regulated_form)
+    apply_bulk_recipe_icon_overlay(regulated, multiplier)
 
     -- Inject taxpayer-money for expensive late-game items
     local money_cost = shared.TAXPAYER_MONEY_COSTS[name]
@@ -1012,7 +987,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     -- Modify original for T1+ handcrafting (batch + tier form)
     if not is_t0 then
       batch_original_with_form(recipe, handcraft_paperwork, multiplier)
-      apply_bulk_recipe_icon_overlay(recipe, multiplier, required_form)
+      apply_bulk_recipe_icon_overlay(recipe, multiplier)
     end
 
   end
@@ -1039,6 +1014,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
   if cat ~= "oil-processing" then goto oil_continue end
 
   regulate_recipe(recipe, {}, OIL_REFINERY_BULK_MULTIPLIER)
+  apply_bulk_recipe_icon_overlay(recipe, OIL_REFINERY_BULK_MULTIPLIER)
 
   ::oil_continue::
 end
@@ -1074,23 +1050,6 @@ local function regulate_admin_building(recipe, multiplier, recipe_name)
   })
 end
 
-local function get_admin_building_icon_form(recipe)
-  local target = recipe.normal or recipe
-  if target.ingredients then
-    for _, ing in ipairs(target.ingredients) do
-      local name = ing.name or ing[1]
-      if shared.COMBINED_FORMS[name] then
-        return shared.COMBINED_FORMS[name]
-      end
-    end
-    for _, ing in ipairs(target.ingredients) do
-      local name = ing.name or ing[1]
-      if shared.PAPERWORK_ITEMS[name] then return name end
-    end
-  end
-  return "work-order"
-end
-
 local admin_building_regulated = {}
 for recipe_name, recipe in pairs(data.raw["recipe"]) do
   if recipe_name:find("%-regulated$") then goto next_admin_building end
@@ -1108,8 +1067,7 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
 
   local multiplier = get_recipe_batch_multiplier(recipe_name, recipe)
   regulate_admin_building(regulated, multiplier, recipe_name)
-  local regulated_form = get_admin_building_icon_form(regulated)
-  apply_bulk_recipe_icon_overlay(regulated, multiplier, regulated_form)
+  apply_bulk_recipe_icon_overlay(regulated, multiplier)
 
   table.insert(admin_building_regulated, regulated)
   regulated_factoriopedia_products[recipe_name] = true
@@ -1347,7 +1305,6 @@ require("prototypes.final_fixes.space_platform_permits").apply(data, shared, ITE
   ingredient_name = ingredient_name,
   append_or_merge_ingredient = append_or_merge_ingredient,
   clone_icon_layers = clone_icon_layers,
-  get_recipe_base_icons = get_recipe_base_icons,
   orbital_infrastructure_permit_overlay = icon_layers.orbital_infrastructure_permit_overlay,
 })
 
