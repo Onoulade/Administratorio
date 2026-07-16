@@ -469,6 +469,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "notary-office",
+    subgroup = "admin-buildings",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 2},
@@ -485,6 +486,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "territorial-arbitration-post",
+    subgroup = "admin-buildings",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 1},
@@ -518,6 +520,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "capture-bureau",
+    subgroup = "admin-biter-buildings",
     enabled = false,
     localised_name = {"item-name.capture-bureau"},
     localised_description = {"item-description.capture-bureau"},
@@ -627,6 +630,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "conciliation-desk",
+    subgroup = "admin-biter-buildings",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 2},
@@ -642,6 +646,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "digital-services-bureau",
+    subgroup = "admin-buildings",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 1},
@@ -671,6 +676,7 @@ data:extend({
   {
     type = "recipe",
     name = "trajectory-compliance-array",
+    subgroup = "admin-space-compliance",
     enabled = false,
     ingredients = {
       {type = "item", name = "radar", amount = 2},
@@ -685,6 +691,7 @@ data:extend({
   {
     type = "recipe",
     name = "senior-trajectory-compliance-array",
+    subgroup = "admin-space-compliance",
     enabled = false,
     ingredients = {
       {type = "item", name = "trajectory-compliance-array", amount = 1},
@@ -699,6 +706,7 @@ data:extend({
   {
     type = "recipe",
     name = "executive-trajectory-compliance-array",
+    subgroup = "admin-space-compliance",
     enabled = false,
     ingredients = {
       {type = "item", name = "senior-trajectory-compliance-array", amount = 1},
@@ -714,6 +722,7 @@ data:extend({
   {
     type = "recipe",
     name = "orbital-employment-cannon",
+    subgroup = "admin-space-orbital",
     enabled = false,
     ingredients = {
       {type = "item", name = "radar", amount = 4},
@@ -729,6 +738,7 @@ data:extend({
   {
     type = "recipe",
     name = "administrative-space-station",
+    subgroup = "admin-space-buildings",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 1},
@@ -1268,6 +1278,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "laser-printer",
+    subgroup = "admin-buildings",
     enabled = false,
     ingredients = {
       {type = "item", name = "chromatic-printer", amount = 1},
@@ -1284,6 +1295,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "fax-emitter",
+    subgroup = "admin-space-buildings",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 1},
@@ -1299,6 +1311,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "interplanetary-fax-exchange",
+    subgroup = "admin-space-buildings",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 2},
@@ -1520,6 +1533,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "public-train-stop-production",
+    subgroup = "admin-infrastructure",
     category = "bureaucracy-registration",
     enabled = false,
     localised_name = {"entity-name.public-train-stop"},
