@@ -1425,3 +1425,10 @@ end
 -- This runs last to prevent any earlier recipe mutation from reintroducing one.
 -------------------------------------------------------------------------------
 require("prototypes.final_fixes.science_pack_stripping").apply(data, ITEM_LIKE_PROTOTYPE_TYPES)
+
+-------------------------------------------------------------------------------
+-- 13. ROCKET CARGO WEIGHTS
+-- Apply after every item-producing integration has finished so all mod-owned
+-- cargo, including Space Age tourism items and generated forms, is covered.
+-------------------------------------------------------------------------------
+require("prototypes.final_fixes.rocket_weights").apply()
