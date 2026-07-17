@@ -12,6 +12,7 @@ Date: 2026-07-15
     - Add more stats to the win panel
     - add ru locale
   Bugfixes:
+    - distribute pneumatic deliveries fairly across available filtered outtakes
     - reconcile complaint signals
     - charge salary by assigned stops
     - preserve spawner population limits
