@@ -441,6 +441,11 @@ function M.rebuild_network_cache()
       storage.tube_signals[net_id] = nil
     end
   end
+  for net_id in pairs(storage.tube_outtake_cursor) do
+    if not active_nets[net_id] then
+      storage.tube_outtake_cursor[net_id] = nil
+    end
+  end
 
   storage.tube_network_dirty = false
 end
@@ -531,62 +536,90 @@ function M.on_pneumatic_tick()
     ::next_intake::
   end
 
-  -- Process outtakes: if container empty and signals available, insert item.
+  -- Group outtakes by network and process each group in a stable round-robin
+  -- order. Without a per-network cursor, a continuously emptied first
+  -- outtake can claim every item before later outtakes are considered.
+  local outtakes_by_network = {}
   for uid, entry in pairs(storage.tube_outtakes) do
     local entity = entry.entity
     if not entity or not entity.valid then
       storage.tube_outtakes[uid] = nil
       storage.tube_network_dirty = true
-      goto next_outtake
-    end
-
-    local net_id = storage.tube_network_cache[uid]
-    if not net_id then goto next_outtake end
-    if storage.tube_network_disabled[net_id] then goto next_outtake end
-
-    local inv = entity.get_inventory(defines.inventory.chest)
-    if not inv or not inv.is_empty() then goto next_outtake end
-
-    local pool = storage.tube_signals[net_id]
-    if not pool then goto next_outtake end
-
-    -- Check if the player set a filter on slot 1.
-    local slot_filter = nil
-    if inv.get_filter then
-      local ok, filter = pcall(inv.get_filter, 1)
-      if ok then slot_filter = filter end
-    end
-    local allowed_name = inventory_filter_name(slot_filter)
-
-    -- Pick item: if filtered, only that item; otherwise largest-count-first.
-    local best_name, best_count = nil, 0
-    if allowed_name then
-      local count = pool[allowed_name]
-      if count and count > 0 then
-        best_name = allowed_name
-        best_count = count
-      end
     else
-      for item_name, count in pairs(pool) do
-        if count > best_count then
-          best_name = item_name
-          best_count = count
+      local net_id = storage.tube_network_cache[uid]
+      if net_id and not storage.tube_network_disabled[net_id] then
+        local group = outtakes_by_network[net_id]
+        if not group then
+          group = {}
+          outtakes_by_network[net_id] = group
+        end
+        group[#group + 1] = {uid = uid, entity = entity}
+      end
+    end
+  end
+
+  for net_id, outtakes in pairs(outtakes_by_network) do
+    table.sort(outtakes, function(a, b) return a.uid < b.uid end)
+
+    local start_index = 1
+    local last_uid = storage.tube_outtake_cursor[net_id]
+    if last_uid then
+      -- Starting at the first greater uid also advances fairly if the
+      -- previously served outtake was removed between scans.
+      for i, outtake in ipairs(outtakes) do
+        if outtake.uid > last_uid then
+          start_index = i
+          break
         end
       end
     end
 
-    if best_name and best_count > 0 then
-      local inserted = inv.insert{name = best_name, count = 1}
-      if inserted > 0 then
-        pool[best_name] = best_count - inserted
-        if pool[best_name] <= 0 then
-          pool[best_name] = nil
+    for offset = 0, #outtakes - 1 do
+      local index = ((start_index + offset - 1) % #outtakes) + 1
+      local outtake = outtakes[index]
+      local inv = outtake.entity.get_inventory(defines.inventory.chest)
+      if inv and inv.is_empty() then
+        local pool = storage.tube_signals[net_id]
+        if pool then
+          -- Check if the player set a filter on slot 1.
+          local slot_filter = nil
+          if inv.get_filter then
+            local ok, filter = pcall(inv.get_filter, 1)
+            if ok then slot_filter = filter end
+          end
+          local allowed_name = inventory_filter_name(slot_filter)
+
+          -- Pick item: if filtered, only that item; otherwise largest-count-first.
+          local best_name, best_count = nil, 0
+          if allowed_name then
+            local count = pool[allowed_name]
+            if count and count > 0 then
+              best_name = allowed_name
+              best_count = count
+            end
+          else
+            for item_name, count in pairs(pool) do
+              if count > best_count then
+                best_name = item_name
+                best_count = count
+              end
+            end
+          end
+
+          if best_name and best_count > 0 then
+            local inserted = inv.insert{name = best_name, count = 1}
+            if inserted > 0 then
+              pool[best_name] = best_count - inserted
+              if pool[best_name] <= 0 then
+                pool[best_name] = nil
+              end
+              storage.tube_outtake_cursor[net_id] = outtake.uid
+              networks_changed[net_id] = true
+            end
+          end
         end
-        networks_changed[net_id] = true
       end
     end
-
-    ::next_outtake::
   end
 
   -- Update circuit combinator signals for changed networks.
@@ -713,6 +746,7 @@ function M.ensure_storage()
   storage.tube_signals = storage.tube_signals or {}
   storage.tube_network_cache = storage.tube_network_cache or {}
   storage.tube_network_disabled = storage.tube_network_disabled or {}
+  storage.tube_outtake_cursor = storage.tube_outtake_cursor or {}
   if storage.tube_network_dirty == nil then
     storage.tube_network_dirty = true
   end
