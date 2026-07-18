@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.8
+Date: 2026-07-18
+  Bugfixes:
+    - restore vanilla circuit unlocks
+  Changes:
+    - ci(changelog) Repair changelog
+    - fix(pneumatics) Distribute pneumatic deliveries across outtakes fairly
+---------------------------------------------------------------------------------------------------
 Version: 0.5.7
 Date: 2026-07-15
   Changes:
