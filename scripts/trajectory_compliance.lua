@@ -56,6 +56,7 @@ local CAPACITY_TECH_PREFIX = "orbital-employment-capacity-"
 local CAPACITY_TECH_LEVELS = 4
 local BASE_EMPLOYEE_CAPACITY = 1
 local CANNON_RANGE = 48
+local CANNON_TURN_RANGE = 0.10
 local BASE_BITER_DAMAGE = 125
 local ASSAULT_INTERVAL = 60
 local ASSIGNMENT_RESERVATION_LIFETIME = 600
@@ -117,8 +118,10 @@ M.CAPACITY_TECH_PREFIX = CAPACITY_TECH_PREFIX
 M.CAPACITY_TECH_LEVELS = CAPACITY_TECH_LEVELS
 M.BASE_EMPLOYEE_CAPACITY = BASE_EMPLOYEE_CAPACITY
 M.CANNON_RANGE = CANNON_RANGE
+M.CANNON_TURN_RANGE = CANNON_TURN_RANGE
 M.BASE_BITER_DAMAGE = BASE_BITER_DAMAGE
 M.ASSAULT_INTERVAL = ASSAULT_INTERVAL
+M.ASSIGNMENT_RESERVATION_LIFETIME = ASSIGNMENT_RESERVATION_LIFETIME
 M.DEVIATION_PUSH_LIFETIME = DEVIATION_PUSH_LIFETIME
 M.DEVIATION_FORCE_PER_PULSE = DEVIATION_FORCE_PER_PULSE
 M.DEVIATION_MAX_SPEED = DEVIATION_MAX_SPEED
@@ -271,6 +274,24 @@ local function destination_for(platform, fallback)
     return {x = hub.position.x, y = hub.position.y}
   end
   return {x = fallback.x, y = fallback.y}
+end
+
+local function release_pending_employee(assignment, position)
+  if not assignment then return false end
+  local platform = platform_by_index(assignment.platform_index)
+  if not platform or not platform.create_asteroid_chunks then return false end
+  position = position or assignment.target_position or assignment.source_position
+  if not position then return false end
+
+  local chunks = {}
+  append_employee_chunks(
+    chunks,
+    {true},
+    position,
+    destination_for(platform, assignment.source_position or position)
+  )
+  platform.create_asteroid_chunks(chunks)
+  return true
 end
 
 local function destroy_render_object(object)
@@ -475,6 +496,11 @@ local function pending_assignment_count(target)
   return count
 end
 
+local function target_has_assigned_workers(target)
+  return find_assault_for_target(target) ~= nil
+    or pending_assignment_count(target) > 0
+end
+
 local function consume_pending_assignment(target, source)
   ensure_storage()
   local pending = storage.trajectory_compliance.pending_assignments
@@ -489,23 +515,52 @@ local function consume_pending_assignment(target, source)
       end
     end
   end
-  if fallback_id then
+  -- Projectile cause identity is stable for cannon shots. Never let a second
+  -- cannon steal the first cannon's reservation merely because both selected
+  -- the same asteroid before native targeting reacted to the reroute.
+  if not source_unit_number and fallback_id then
     pending[fallback_id] = nil
     return true
   end
   return false
 end
 
-local function remove_pending_assignments_for_target(target)
+local function take_pending_assignments_for_target(target)
   ensure_storage()
-  local removed = false
+  local removed = {}
   for assignment_id, assignment in pairs(storage.trajectory_compliance.pending_assignments) do
     if assignment.target == target then
       storage.trajectory_compliance.pending_assignments[assignment_id] = nil
-      removed = true
+      removed[#removed + 1] = assignment
     end
   end
   return removed
+end
+
+local function atan2(y, x)
+  if math.atan2 then return math.atan2(y, x) end
+  if x > 0 then return math.atan(y / x) end
+  if x < 0 then
+    return math.atan(y / x) + (y >= 0 and math.pi or -math.pi)
+  end
+  if y > 0 then return math.pi / 2 end
+  if y < 0 then return -math.pi / 2 end
+  return 0
+end
+
+local function cannon_target_within_arc(source, target)
+  -- Direction is the placed railgun base direction (0..15 around a circle).
+  -- If an older mock or unusual integration cannot provide it, native turret
+  -- targeting still enforces the prototype's turn_range.
+  if not source or source.direction == nil then return true end
+  local dx = target.position.x - source.position.x
+  local dy = target.position.y - source.position.y
+  if math.abs(dx) < 0.001 and math.abs(dy) < 0.001 then return true end
+
+  local target_orientation = (atan2(dx, -dy) / (2 * math.pi)) % 1
+  local base_orientation = (source.direction / 16) % 1
+  local difference = math.abs(((target_orientation - base_orientation + 0.5) % 1) - 0.5)
+  return difference <= CANNON_TURN_RANGE / 2 + 1e-9
 end
 
 local function available_target_for(source, excluded_target)
@@ -521,7 +576,10 @@ local function available_target_for(source, excluded_target)
     position = source.position,
     radius = CANNON_RANGE,
   }) do
-    if candidate ~= excluded_target and valid_asteroid_target(source, candidate) then
+    if candidate ~= excluded_target
+      and valid_asteroid_target(source, candidate)
+      and cannon_target_within_arc(source, candidate)
+    then
       local assault = find_assault_for_target(candidate)
       local occupied = (assault and #assault.workers or 0)
         + pending_assignment_count(candidate)
@@ -616,7 +674,7 @@ local function available_deviation_target_for(source, excluded_target)
   }) do
     if candidate ~= excluded_target
       and valid_asteroid_target(source, candidate)
-      and not find_assault_for_target(candidate)
+      and not target_has_assigned_workers(candidate)
     then
       local dx = candidate.position.x - source.position.x
       local dy = candidate.position.y - source.position.y
@@ -691,7 +749,7 @@ end
 local function resolve_biter_launch(event)
   local source = source_from_event(event)
   if not source or source.name ~= CANNON_NAME then return false end
-  local target = source.shooting_target
+  local target = target_from_event(event, source)
   if not valid_asteroid_target(source, target) then return false end
 
   local assault = find_assault_for_target(target)
@@ -705,12 +763,23 @@ local function resolve_biter_launch(event)
 
   local state = storage.trajectory_compliance
   local assignment_id = state.next_assignment_id
+  local platform = platform_for_source(source)
   state.next_assignment_id = assignment_id + 1
   state.pending_assignments[assignment_id] = {
     target = target,
     source_unit_number = source.unit_number,
+    platform_index = platform and platform.index or nil,
+    source_position = {x = source.position.x, y = source.position.y},
+    target_position = {x = target.position.x, y = target.position.y},
     created_tick = event.tick or (game and game.tick) or 0,
   }
+
+  -- A launched employee owns the asteroid just as firmly as an attached one.
+  -- Stop any older push immediately and prevent arrays from issuing new
+  -- deviation orders while the projectile is in flight.
+  local deviation, deviation_id = find_deviation_for_target(target)
+  if deviation then remove_deviation(deviation_id) end
+  reroute_arrays_targeting(target)
 
   if occupied + 1 >= capacity then
     -- Reserve the slot at launch, before this or another cannon can dispatch a
@@ -726,7 +795,7 @@ local function resolve_deviation(event)
   local target = target_from_event(event, source)
   local size = valid_asteroid_target(source, target)
   if not size then return false end
-  if find_assault_for_target(target) then
+  if target_has_assigned_workers(target) then
     reroute_or_pause_array(source, target)
     return false
   end
@@ -766,17 +835,20 @@ local function resolve_biter_assault(event)
   local target = target_from_event(event, source)
   local target_size, target_family = valid_asteroid_target(source, target)
   if not target_size then return false end
-  consume_pending_assignment(target, source)
+  local consumed_reservation = consume_pending_assignment(target, source)
 
   local platform = platform_for_source(source)
   if not platform or not platform.create_asteroid_chunks then return false end
 
   local assault = find_assault_for_target(target)
   local capacity = M.employee_capacity(source.force)
-  if assault and #assault.workers >= capacity then
+  if (not consumed_reservation and pending_assignment_count(target) > 0)
+    or (assault and #assault.workers >= capacity)
+  then
     -- Another cannon may already have had a projectile in flight when this
-    -- asteroid filled its staffing allocation. The rejected employee becomes
-    -- a normal collectible return chunk instead of being silently consumed.
+    -- asteroid's staffing allocation was reserved or filled. The rejected
+    -- employee becomes a normal collectible return chunk instead of stealing
+    -- the other launch's reservation or being silently consumed.
     local chunks = {}
     append_employee_chunks(
       chunks,
@@ -862,7 +934,15 @@ function M.on_entity_died(event)
   if not target or target.type ~= "asteroid" then return false end
   local handled = false
 
-  if remove_pending_assignments_for_target(target) then
+  local pending_assignments = take_pending_assignments_for_target(target)
+  if #pending_assignments > 0 then
+    -- A projectile loses its native impact when the tracked asteroid dies.
+    -- Return every airborne employee as a collectible chunk at the death
+    -- position instead of silently deleting the ammunition.
+    local position = {x = target.position.x, y = target.position.y}
+    for _, assignment in ipairs(pending_assignments) do
+      release_pending_employee(assignment, position)
+    end
     handled = true
   end
 
@@ -889,8 +969,9 @@ local function process_deviations(tick)
     local target = deviation.target
     if not target or not target.valid then
       remove_deviation(deviation_id)
-    elseif find_assault_for_target(target) then
-      -- Covers projectiles already in flight when the first manager landed.
+    elseif target_has_assigned_workers(target) then
+      -- Covers projectiles already in flight when an employee claimed the
+      -- target, as well as employees that have already landed.
       remove_deviation(deviation_id)
     else
       local active_pushes = 0
@@ -936,11 +1017,14 @@ local function process_pending_assignments(tick)
   local state = storage.trajectory_compliance
   if not state or not state.pending_assignments then return end
   for assignment_id, assignment in pairs(state.pending_assignments) do
-    if not assignment.target
-      or not assignment.target.valid
-      or tick - (assignment.created_tick or 0) > ASSIGNMENT_RESERVATION_LIFETIME
-    then
+    local target = assignment.target
+    local expired = tick - (assignment.created_tick or 0) > ASSIGNMENT_RESERVATION_LIFETIME
+    if not target or not target.valid or expired then
       state.pending_assignments[assignment_id] = nil
+      release_pending_employee(
+        assignment,
+        target and target.valid and target.position or assignment.target_position
+      )
     end
   end
 end
@@ -983,7 +1067,16 @@ local function process_assaults(tick)
       end
       local damage = M.biter_damage(force) * active_workers
       local health = target.health or fallback_asteroid_health(assault.size, assault.family)
-      if damage > 0 and health and health <= damage then
+      if damage > 0
+        and health
+        and health <= damage
+        and pending_assignment_count(target) > 0
+      then
+        -- Do not destroy the projectile's tracked entity underneath an
+        -- employee that already owns a reserved slot. Hold it at the brink
+        -- until all launched coworkers have arrived.
+        target.health = math.min(health, 1)
+      elseif damage > 0 and health and health <= damage then
         local position = {x = target.position.x, y = target.position.y}
         local platform = platform_by_index(assault.platform_index)
         local destination = destination_for(platform, assault.source_position)

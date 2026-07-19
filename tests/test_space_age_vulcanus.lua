@@ -316,6 +316,7 @@ test("orbital employment cannon deploys powered voluntary space miners", functio
   assert_eq(cannon.attack_parameters.cooldown, 240)
   assert_eq(cannon.attack_parameters.range, 48)
   assert_eq(cannon.attack_parameters.min_range, 4)
+  assert_eq(cannon.attack_parameters.turn_range, 0.10)
   assert_eq(cannon.energy_per_shot, "5MJ")
   assert_eq(cannon.energy_source.buffer_capacity, "10MJ")
   assert_eq(cannon.surface_conditions[1].max, 0)
