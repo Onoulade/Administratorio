@@ -666,19 +666,27 @@ test("deviation paperwork and VESM cannon are distinct orbital systems", functio
   assert_eq(miner.type, "ammo")
   assert_eq(miner.ammo_category, "orbital-biter-ballistics", "VESM should feed the deployment cannon")
   assert_eq(miner.magazine_size, 1, "one VESM should power exactly one orbital sortie")
-  local delivery = miner.ammo_type.action.action_delivery
-  assert_eq(delivery.type, "projectile")
-  assert_eq(delivery.projectile, "orbital-biter-projectile")
+  local deliveries = miner.ammo_type.action.action_delivery
+  local projectile_delivery
   local has_launch_reservation = false
-  for _, effect in ipairs(delivery.source_effects or {}) do
-    if effect.type == "script"
-      and effect.effect_id == "administratorio-asteroid-biter-launched"
-    then
-      has_launch_reservation = true
+  for _, delivery in ipairs(deliveries) do
+    if delivery.type == "projectile" then
+      projectile_delivery = delivery
+    elseif delivery.type == "instant" then
+      for _, effect in ipairs(delivery.target_effects or {}) do
+        if effect.type == "script"
+          and effect.effect_id == "administratorio-asteroid-biter-launched"
+          and effect.affects_target == true
+        then
+          has_launch_reservation = true
+        end
+      end
     end
   end
+  assert_true(projectile_delivery ~= nil, "VESM projectile delivery missing")
+  assert_eq(projectile_delivery.projectile, "orbital-biter-projectile")
   assert_true(has_launch_reservation,
-    "miner deployment cannon should reserve asteroid capacity when the projectile launches")
+    "miner deployment cannon should reserve the exact asteroid when the projectile launches")
 
   local formation = assert(recipes["voluntary-exploration-space-miner-formation"], "VESM formation missing")
   assert_true(has_ingredient(formation, "astronaut"))
