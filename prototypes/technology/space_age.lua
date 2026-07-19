@@ -78,6 +78,10 @@ data:extend({
       {type = "unlock-recipe", recipe = "thermal-process-license-orbital"},
       {type = "unlock-recipe", recipe = "calcite-reagent-waiver-orbital"},
       {type = "unlock-recipe", recipe = "offworld-metallurgy-charter-orbital"},
+      {type = "unlock-recipe", recipe = "orbital-paper-production"},
+      {type = "unlock-recipe", recipe = "orbital-ink-production"},
+      {type = "unlock-recipe", recipe = "orbital-operations-form"},
+      {type = "unlock-recipe", recipe = "space-science-pack-orbital"},
       {type = "unlock-recipe", recipe = "orbital-deviation-order"},
       {type = "unlock-recipe", recipe = "asteroid-processing-docket"},
     },
@@ -712,11 +716,17 @@ add_tech_unlock("cyan-yellow-bureaucracy", "small-spitter-space-tourism")
 add_tech_unlock("cyan-yellow-bureaucracy", "medium-spitter-space-tourism")
 add_tech_unlock("cyan-yellow-bureaucracy", "big-spitter-space-tourism")
 add_tech_unlock("cyan-yellow-bureaucracy", "behemoth-spitter-space-tourism")
-add_tech_unlock("cyan-yellow-bureaucracy", "small-space-tourist-jettison")
-add_tech_unlock("cyan-yellow-bureaucracy", "medium-space-tourist-jettison")
-add_tech_unlock("cyan-yellow-bureaucracy", "big-space-tourist-jettison")
-add_tech_unlock("cyan-yellow-bureaucracy", "behemoth-space-tourist-jettison")
 add_tech_unlock("cyan-yellow-bureaucracy", "tourism-lure-spores-production")
+
+for _, recipe_name in ipairs({
+  "orbital-archival-paper-production",
+  "orbital-secure-ink-production",
+  "orbital-operations-form-copying",
+  "asteroid-processing-docket-copying",
+  "priority-orbital-deviation-order",
+}) do
+  add_tech_unlock("advanced-asteroid-processing", recipe_name)
+end
 
 -- Chromatic printing is landing preparation, like packing enough belts and
 -- power poles. Requiring it before each basic planet prevents an optional

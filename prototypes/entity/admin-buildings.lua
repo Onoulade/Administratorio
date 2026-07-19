@@ -1291,9 +1291,12 @@ add_entity(paperwork_requester_chest)
 if space_age_enabled then
   for _, entity in ipairs({
     admin_station,
+    biter_station,
+    biterport,
     capture_bureau,
     resolution_office,
     office_desk,
+    field_office,
     breakroom,
     union_hq,
     propaganda_distillery,

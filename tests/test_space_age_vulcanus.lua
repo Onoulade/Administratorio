@@ -128,6 +128,14 @@ data = {
       ["nest-expropriation"] = {type = "technology", name = "nest-expropriation", effects = {}},
     },
     ["assembling-machine"] = {
+      ["assembling-machine-1"] = {
+        type = "assembling-machine",
+        name = "assembling-machine-1",
+        minable = {result = "assembling-machine-1"},
+        placeable_by = {{item = "assembling-machine-1", count = 1}},
+        fluid_boxes = {},
+        graphics_set = {},
+      },
       ["assembling-machine-2"] = {
         type = "assembling-machine",
         name = "assembling-machine-2",
@@ -237,6 +245,7 @@ dofile(mod_root .. "prototypes/item/capsules-and-fluids.lua")
 dofile(mod_root .. "prototypes/item/space_age.lua")
 dofile(mod_root .. "prototypes/recipe/space_age.lua")
 dofile(mod_root .. "prototypes/recipe/planetary_abundance.lua")
+dofile(mod_root .. "prototypes/entity/printers.lua")
 dofile(mod_root .. "prototypes/entity/space_age.lua")
 dofile(mod_root .. "prototypes/technology/space_age.lua")
 
@@ -447,6 +456,7 @@ test("aquilo printer and exchange are specialized endgame bureaucracy machines",
   assert_true(laser_categories["printing-advanced"], "laser-printer should keep advanced printing")
   assert_true(laser_categories["printing-workorder"], "laser-printer should keep work-order printing")
   assert_true(laser_categories["printing-multicolor"], "laser-printer should expose multicolor printing")
+  assert_true(laser_categories["orbital-printing"], "laser-printer should expose advanced orbital printing")
   assert_true(not laser_categories["fax-reconstruction"],
     "laser-printer should leave fax reconstruction to the dedicated exchange")
   assert_eq(laser.crafting_speed, 5, "laser-printer should be the fastest printer")
@@ -470,6 +480,20 @@ test("aquilo printer and exchange are specialized endgame bureaucracy machines",
     "interplanetary-fax-exchange should have room for solid reconstruction media")
 end)
 
+test("industrial and laser printers are vacuum-approved while lower printers remain grounded", function()
+  local mechanical = assert(data.raw["assembling-machine"]["mechanical-printer"])
+  local t1 = assert(data.raw["assembling-machine"]["printer-t1"])
+  local t2 = assert(data.raw["assembling-machine"]["printer-t2"])
+  local laser = assert(data.raw["assembling-machine"]["laser-printer"])
+  assert_true(mechanical.surface_conditions and mechanical.surface_conditions[1].min >= 1)
+  assert_true(t1.surface_conditions and t1.surface_conditions[1].min >= 1)
+  assert_true(t2.surface_conditions == nil, "industrial printer should be placeable in vacuum")
+  assert_true(laser.surface_conditions == nil, "laser printer should be placeable in vacuum")
+  local t2_categories = {}
+  for _, category in ipairs(t2.crafting_categories or {}) do t2_categories[category] = true end
+  assert_true(t2_categories["orbital-printing"], "industrial printer should run tier-two orbital recipes")
+end)
+
 test("formation center supports coffee-fed batch meetings", function()
   local center = assert(data.raw["assembling-machine"]["formation-center"])
   assert_eq(center.crafting_speed, 1.5)
@@ -490,7 +514,6 @@ test("non-orbital space age admin machines stay out of vacuum", function()
     "formation-center",
     "notary-office",
     "digital-services-bureau",
-    "laser-printer",
   }) do
     local entity = assert(data.raw["assembling-machine"][entity_name], entity_name .. " missing")
     assert_true(entity.surface_conditions ~= nil and entity.surface_conditions[1] ~= nil,

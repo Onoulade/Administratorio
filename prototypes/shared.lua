@@ -266,6 +266,8 @@ if space_age_enabled then
   shared.PAPERWORK_ITEMS["hardened-data-vault"] = true
   shared.PAPERWORK_ITEMS["asteroid-processing-docket"] = true
   shared.PAPERWORK_ITEMS["orbital-deviation-order"] = true
+  shared.PAPERWORK_ITEMS["priority-orbital-deviation-order"] = true
+  shared.PAPERWORK_ITEMS["orbital-operations-form"] = true
   shared.PAPERWORK_ITEMS["orbital-infrastructure-permit"] = true
   shared.PAPERWORK_ITEMS["cyan-yellow-form"] = true
   shared.PAPERWORK_ITEMS["cyan-magenta-form"] = true
@@ -297,6 +299,8 @@ if space_age_enabled then
   shared.FORM_PRODUCTION_RECIPES["data-recovery-order"] = "data-recovery-order"
   shared.FORM_PRODUCTION_RECIPES["hardened-data-vault"] = "hardened-data-vault-production"
   shared.FORM_PRODUCTION_RECIPES["orbital-deviation-order"] = "orbital-deviation-order"
+  shared.FORM_PRODUCTION_RECIPES["priority-orbital-deviation-order"] = "priority-orbital-deviation-order"
+  shared.FORM_PRODUCTION_RECIPES["orbital-operations-form"] = "orbital-operations-form"
   shared.FORM_PRODUCTION_RECIPES["orbital-infrastructure-permit"] = "orbital-infrastructure-permit"
   shared.FORM_PRODUCTION_RECIPES["cyan-yellow-form"] = "cyan-yellow-form-production"
   shared.FORM_PRODUCTION_RECIPES["cyan-magenta-form"] = "cyan-magenta-form-production"

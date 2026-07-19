@@ -275,10 +275,10 @@ local function fire_biter_launch(source, target, tick)
   })
 end
 
-local function fire_deviation(source, target)
+local function fire_deviation(source, target, effect_id)
   source.shooting_target = target
   return module.on_script_trigger_effect({
-    effect_id = module.DEVIATION_EFFECT_ID,
+    effect_id = effect_id or module.DEVIATION_EFFECT_ID,
     source_entity = source,
     target_entity = target,
   })
@@ -287,6 +287,26 @@ end
 test("native ammo damage research scales per-second biter damage", function()
   local _, _, _, force = new_world(nil, 1.5)
   assert_near(module.biter_damage(force), 312.5, 1e-9)
+end)
+
+test("priority deviation orders apply twice the sustained push", function()
+  local _, _, surface, force = new_world()
+  local routine_array = new_source(surface, force, "normal", "trajectory-compliance-array")
+  local priority_array = new_source(surface, force, "normal", "trajectory-compliance-array")
+  local routine_target = new_target("asteroid", "medium-carbonic-asteroid", nil, surface)
+  local priority_target = new_target("asteroid", "medium-carbonic-asteroid", nil, surface)
+  routine_target.position = {x = 10, y = -2}
+  priority_target.position = {x = 10, y = 2}
+
+  fire_deviation(routine_array, routine_target)
+  fire_deviation(priority_array, priority_target, module.PRIORITY_DEVIATION_EFFECT_ID)
+  module.on_tick({tick = 1})
+
+  local routine_distance = math.sqrt((routine_target.position.x + 5) ^ 2 + routine_target.position.y ^ 2)
+  local priority_distance = math.sqrt((priority_target.position.x + 5) ^ 2 + priority_target.position.y ^ 2)
+  local initial_distance = math.sqrt(15 ^ 2 + 2 ^ 2)
+  assert_near(priority_distance - initial_distance, 2 * (routine_distance - initial_distance), 1e-9,
+    "priority paperwork should have exactly twice routine force before the speed cap")
 end)
 
 test("VESM quality never changes orbital performance", function()

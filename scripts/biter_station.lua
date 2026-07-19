@@ -7,8 +7,17 @@ local biters_module = nil
 
 local WORKER_FORCE_NAME = "administratorio-biters"
 local STATION_NAME = "biter-station"
+local ORBITAL_PRINTER_NAME = "printer-t2"
 local COFFEE_INPUT_NAME = "biter-station-coffee-input"
 local WALL_BLOCKER_NAME = "biter-station-wall-blocker"
+
+local function is_orbital_printer(entity)
+  return entity
+    and entity.valid
+    and entity.name == ORBITAL_PRINTER_NAME
+    and entity.surface
+    and entity.surface.platform ~= nil
+end
 local WORKER_ITEM_NAME = "biter-worker"
 local MONEY_ITEM_NAME = "taxpayer-money"
 local COFFEE_FLUID_NAME = "liquid-coffee"
@@ -1053,7 +1062,8 @@ local function build_building_queue(station)
     if building.valid
        and building.unit_number
        and building.force
-       and building.force == station.force then
+       and building.force == station.force
+       and not is_orbital_printer(building) then
       storage.managed_building_registry[building.unit_number] = building
 
       local run_state = storage.managed_building_run[building.unit_number]
@@ -1755,6 +1765,16 @@ function M.track_managed_building(entity)
     return
   end
 
+  if is_orbital_printer(entity) then
+    storage.managed_building_registry[entity.unit_number] = nil
+    storage.managed_building_run[entity.unit_number] = nil
+    -- The Administrative Space Station represents permanent onboard
+    -- authorization. Platform printers therefore do not wait for a walking
+    -- biter dispatched from a terrestrial Employment Office.
+    entity.active = true
+    return
+  end
+
   storage.managed_building_registry[entity.unit_number] = entity
   entity.active = false
 
@@ -1981,8 +2001,7 @@ function M.rebuild_registry()
 
     for _, building in ipairs(surface.find_entities_filtered{name = C.BITER_STATION_MANAGED_BUILDINGS}) do
       if building.valid and building.unit_number then
-        storage.managed_building_registry[building.unit_number] = building
-        building.active = false
+        M.track_managed_building(building)
       end
     end
   end
