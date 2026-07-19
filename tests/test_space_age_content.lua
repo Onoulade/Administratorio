@@ -596,18 +596,17 @@ test("workforce tech owns the workforce progression unlocks", function()
   assert_eq(workforce.prerequisites[1], "space-science-pack", "workforce-formation should unlock after space science")
 end)
 
-test("field agent recipes reuse the base hired biter instead of duplicate Space Age roles", function()
+test("obsolete field-agent paperwork recipes are removed with duplicate Space Age roles", function()
   assert_true(recipes["overtime-exemption-staffed"] == nil, "staffed overtime recipe should be removed")
   assert_true(recipes["night-shift-supervisor-formation"] == nil, "night-shift supervisor should be removed")
   assert_true(recipes["field-negotiator-formation"] == nil, "field negotiator should be removed")
 
-  assert_true(recipes["promise-production-negotiated"] ~= nil, "negotiated promise recipe missing")
-  assert_true(has_ingredient(recipes["promise-production-negotiated"], "hired-biter-capsule"), "negotiated promise should require hired-biter-capsule")
-  assert_true(tech_unlocks_recipe(technologies["hired-biter-fieldwork"], "promise-production-negotiated"), "hired-biter-fieldwork should unlock negotiated promise")
-
-  assert_true(recipes["eviction-notice-production-negotiated"] ~= nil, "negotiated eviction recipe missing")
-  assert_true(has_ingredient(recipes["eviction-notice-production-negotiated"], "hired-biter-capsule"), "negotiated eviction should require hired-biter-capsule")
-  assert_true(tech_unlocks_recipe(technologies["hired-biter-fieldwork"], "eviction-notice-production-negotiated"), "hired-biter-fieldwork should unlock negotiated eviction")
+  assert_true(recipes["promise-production-negotiated"] == nil, "negotiated promise recipe should be removed")
+  assert_true(recipes["eviction-notice-production-negotiated"] == nil, "negotiated eviction recipe should be removed")
+  assert_true(not tech_unlocks_recipe(technologies["hired-biter-fieldwork"], "promise-production-negotiated"),
+    "hired-biter-fieldwork should not unlock the removed negotiated promise")
+  assert_true(not tech_unlocks_recipe(technologies["hired-biter-fieldwork"], "eviction-notice-production-negotiated"),
+    "hired-biter-fieldwork should not unlock the removed negotiated eviction")
 end)
 
 test("MMMM meetings batch five temporary briefings and formations return regular managers", function()
