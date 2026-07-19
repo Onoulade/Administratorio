@@ -541,9 +541,6 @@ test("vulcanus local inputs and narrow notary gates are present and surface-limi
     "plastic-bar-vulcanus",
     "refined-nonsense-production-vulcanus",
     "blank-cyan-form-production",
-    "good-excuse-vulcanus",
-    "management-approval-written-vulcanus",
-    "government-grant-vulcanus",
     "vulcanus-lie-distillation",
     "territorial-resettlement-order",
     "territorial-arbitration-post",
@@ -601,10 +598,9 @@ end)
 test("chromatic recipes stay printer-only while support-heavy paperwork lives in the notary office", function()
   assert_eq(data.raw.recipe["blank-cyan-form-production"].category, "printing-chromatic", "blank-cyan-form should be printer-made")
   assert_eq(data.raw.recipe["inspection-docket"].category, "printing-chromatic", "inspection-docket should be printer-made")
-  assert_eq(data.raw.recipe["good-excuse-vulcanus"].category, "bureaucracy-certification", "good-excuse gateway should be notary-made")
   assert_eq(data.raw.recipe["offworld-metallurgy-charter"].category, "bureaucracy-certification", "offworld charter should be notary-made")
-  assert_true(not has_ingredient(data.raw.recipe["good-excuse-vulcanus"], "cyan-ink"),
-    "notary good-excuse gateway should consume support materials, not direct printer ink")
+  assert_eq(data.raw.recipe["good-excuse-vulcanus"], nil,
+    "Vulcanus should not receive a local generic good-excuse recipe")
 end)
 
 test("chromatic printer and liquid black ink are excluded from Aquilo", function()
@@ -671,7 +667,6 @@ end)
 test("gleba ingredient routes are surface-limited and keep the yellow family compact", function()
   local required = {
     "construction-permit-gleba",
-    "administrative-science-pack-production-gleba",
     "capture-bureau",
     "capture-bureau-pentapod-eggs",
     "yellow-ink-production",
@@ -680,7 +675,6 @@ test("gleba ingredient routes are surface-limited and keep the yellow family com
     "symbiosis-record",
     "conciliation-order",
     "management-approval-written-gleba",
-    "government-grant-gleba",
     "composted-rubble-recovery-gleba",
     "conciliation-officer-formation-gleba",
   }

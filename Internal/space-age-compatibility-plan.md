@@ -258,9 +258,6 @@ The notarial and chemical support layer handles the non-printer part of the plan
 - `liquid-coffee-vulcanus`
 - `molten-promises-production`
 - `vulcanus-lie-distillation`
-- `good-excuse-vulcanus`
-- `management-approval-written-vulcanus`
-- `government-grant-vulcanus`
 
 ### Vulcanus export paperwork
 
@@ -278,7 +275,7 @@ Additionally, cyan forms are required as ingredients in any recipe consuming tun
 
 The current implementation target has been reached:
 
-- Vulcanus can locally satisfy the planner path for `rocket-silo`
+- Vulcanus can locally satisfy the planner path for `rocket-silo` after receiving one `government-grant` and one `management-approval-written` from Nauvis
 - Vulcanus can locally satisfy the planner path for `100x rocket-part`
 - bulk imports of the old blocking administrative materials are no longer required for that escape target
 

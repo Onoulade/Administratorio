@@ -927,30 +927,13 @@ data:extend({
     localised_name = {"recipe-name.carbon-offset-certificate-basic"},
     ingredients = {
       {type = "item", name = "blank-form", amount = 1},
-      {type = "fluid", name = "amber-sap", amount = 20},
-      {type = "item", name = "nutrients", amount = 1},
+      {type = "fluid", name = "amber-sap", amount = 30},
+      {type = "item", name = "nutrients", amount = 2},
     },
     results = {
       {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
     },
-    energy_required = 3,
-  }, "gleba"),
-  surface_limited({
-    type = "recipe",
-    name = "administrative-science-pack-production-gleba",
-    category = "bureaucracy-registration",
-    enabled = false,
-    localised_name = {"item-name.administrative-science-pack"},
-    ingredients = {
-      {type = "item", name = "blank-form", amount = 2},
-      {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
-      {type = "item", name = "basic-excuse", amount = 1},
-      {type = "item", name = "dubious-data", amount = 1},
-    },
-    results = {
-      {type = "item", name = "administrative-science-pack", amount = 1},
-    },
-    energy_required = 2,
+    energy_required = 5,
   }, "gleba"),
   surface_limited({
     type = "recipe",
@@ -1544,13 +1527,14 @@ data:extend({
     enabled = false,
     localised_name = {"recipe-name.carbon-offset-certificate-basic"},
     ingredients = {
+      {type = "item", name = "blank-form", amount = 1},
       {type = "item", name = "calcite", amount = 1},
       {type = "item", name = "coal", amount = 1},
     },
     results = {
       {type = "item", name = "carbon-offset-certificate-basic", amount = 1},
     },
-    energy_required = 1,
+    energy_required = 3,
   }, "vulcanus"),
   surface_limited({
     type = "recipe",
@@ -1831,59 +1815,6 @@ data:extend({
       {type = "item", name = "offworld-metallurgy-charter", amount = 1},
     },
     energy_required = 6,
-  }, "vulcanus"),
-  surface_limited({
-    type = "recipe",
-    name = "good-excuse-vulcanus",
-    category = "bureaucracy-certification",
-    enabled = false,
-    localised_name = {"item-name.good-excuse"},
-    ingredients = {
-      {type = "item", name = "inspection-docket", amount = 1},
-      {type = "fluid", name = "lie", amount = 20},
-      {type = "item", name = "dubious-data", amount = 1},
-    },
-    results = {
-      {type = "item", name = "good-excuse", amount = 1},
-    },
-    energy_required = 4,
-  }, "vulcanus"),
-  surface_limited({
-    type = "recipe",
-    name = "management-approval-written-vulcanus",
-    category = "bureaucracy-certification",
-    enabled = false,
-    localised_name = {"item-name.management-approval-written"},
-    localised_description = {"item-description.management-approval-written"},
-    ingredients = {
-      {type = "item", name = "territorial-deed", amount = 1},
-      {type = "item", name = "embossed-seal", amount = 1},
-      {type = "item", name = "blank-cyan-form", amount = 1},
-      {type = "fluid", name = "lie", amount = 40},
-    },
-    results = {
-      {type = "item", name = "management-approval-written", amount = 1},
-    },
-    energy_required = 8,
-  }, "vulcanus"),
-  -- A single industrial grant is the terminal Vulcanus launch exception. The
-  -- generic Nauvis grant chain remains unchanged for normal administration.
-  surface_limited({
-    type = "recipe",
-    name = "government-grant-vulcanus",
-    category = "bureaucracy-certification",
-    enabled = false,
-    localised_name = {"item-name.government-grant"},
-    ingredients = {
-      {type = "item", name = "management-approval-written", amount = 1},
-      {type = "item", name = "industrial-charter", amount = 1},
-      {type = "item", name = "dubious-data", amount = 6},
-      {type = "fluid", name = "lie", amount = 100},
-    },
-    results = {
-      {type = "item", name = "government-grant", amount = 1},
-    },
-    energy_required = 36,
   }, "vulcanus"),
   surface_limited({
     type = "recipe",
