@@ -780,6 +780,7 @@ orbital_employment_cannon.attack_parameters.ammo_category = "orbital-biter-balli
 orbital_employment_cannon.attack_parameters.cooldown = 240
 orbital_employment_cannon.attack_parameters.range = 48
 orbital_employment_cannon.attack_parameters.min_range = 4
+orbital_employment_cannon.attack_parameters.turn_range = 0.10
 orbital_employment_cannon.energy_source = {
   type = "electric",
   buffer_capacity = "10MJ",
