@@ -876,43 +876,6 @@ data:extend({
       },
     },
   },
-  {
-    type = "recipe",
-    name = "promise-production-negotiated",
-    category = "union-negotiation",
-    enabled = false,
-    localised_name = {"recipe-name.promise-production"},
-    ingredients = {
-      {type = "item", name = "hired-biter-capsule", amount = 1},
-      {type = "item", name = "blank-form", amount = 4},
-      {type = "item", name = "good-excuse", amount = 1},
-      {type = "item", name = "management-approval-verbal", amount = 1},
-      {type = "fluid", name = "liquid-coffee", amount = 50},
-    },
-    results = {
-      {type = "item", name = "promise", amount = 3},
-    },
-    energy_required = 15,
-  },
-  surface_limited({
-    type = "recipe",
-    name = "eviction-notice-production-negotiated",
-    category = "bureaucracy-policy",
-    enabled = false,
-    localised_name = {"recipe-name.eviction-notice-production"},
-    ingredients = {
-      {type = "item", name = "hired-biter-capsule", amount = 1},
-      {type = "item", name = "good-excuse", amount = 1},
-      {type = "item", name = "credentials", amount = 1},
-      {type = "item", name = "management-approval-written", amount = 1},
-      {type = "fluid", name = "politician-fluid", amount = 50},
-      {type = "item", name = "taxpayer-money", amount = 60},
-    },
-    results = {
-      {type = "item", name = "eviction-notice", amount = 2},
-    },
-    energy_required = 25,
-  }, "nauvis"),
   not_on_planet({
     type = "recipe",
     name = "liquid-black-ink",
