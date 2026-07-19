@@ -743,7 +743,7 @@ data:extend(returning_employee_chunks)
 local orbital_biter_projectile = table.deepcopy(data.raw.projectile["rocket"])
 orbital_biter_projectile.name = "orbital-biter-projectile"
 orbital_biter_projectile.acceleration = 0
-orbital_biter_projectile.max_speed = 0.24
+orbital_biter_projectile.max_speed = 0.36
 orbital_biter_projectile.turn_speed = 0.08
 orbital_biter_projectile.turning_speed_increases_exponentially_with_projectile_speed = nil
 orbital_biter_projectile.animation = scale_animation_layers(manager_unit.run_animation, 0.46, 0.18)
@@ -783,9 +783,9 @@ orbital_employment_cannon.attack_target_mask = {
 }
 orbital_employment_cannon.attack_parameters.ammo_category = "orbital-biter-ballistics"
 orbital_employment_cannon.attack_parameters.cooldown = 240
-orbital_employment_cannon.attack_parameters.range = 48
+orbital_employment_cannon.attack_parameters.range = 56
 orbital_employment_cannon.attack_parameters.min_range = 4
-orbital_employment_cannon.attack_parameters.turn_range = 0.10
+orbital_employment_cannon.attack_parameters.turn_range = 0.05
 orbital_employment_cannon.energy_source = {
   type = "electric",
   buffer_capacity = "10MJ",

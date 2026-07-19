@@ -685,6 +685,8 @@ test("deviation paperwork and VESM cannon are distinct orbital systems", functio
   end
   assert_true(projectile_delivery ~= nil, "VESM projectile delivery missing")
   assert_eq(projectile_delivery.projectile, "orbital-biter-projectile")
+  assert_eq(projectile_delivery.starting_speed, 0.36,
+    "VESM projectiles should cross the catapult corridor promptly")
   assert_true(has_launch_reservation,
     "miner deployment cannon should reserve the exact asteroid when the projectile launches")
 
