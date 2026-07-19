@@ -187,7 +187,7 @@ data:extend({
           {
             type = "projectile",
             projectile = "orbital-biter-projectile",
-            starting_speed = 0.24,
+            starting_speed = 0.36,
             source_effects = {
               {
                 type = "create-explosion",

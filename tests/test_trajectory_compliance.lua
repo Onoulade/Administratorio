@@ -430,17 +430,17 @@ test("a full asteroid makes its cannon retarget another eligible asteroid", func
     "cannon should pause when every available asteroid is fully staffed")
 end)
 
-test("cannon target selection keeps 48-tile reach inside a narrow firing arc", function()
+test("cannon target selection keeps 56-tile reach inside a narrow firing arc", function()
   local _, _, surface, force = new_world(nil, nil, 0)
   local cannon = new_source(surface, force)
   local staffed = new_target("asteroid", "medium-metallic-asteroid", 400, surface)
   local outside_arc = new_target("asteroid", "medium-carbonic-asteroid", 400, surface)
   local downrange = new_target("asteroid", "medium-oxide-asteroid", 400, surface)
-  outside_arc.position = {x = 40, y = 20}
-  downrange.position = {x = 45, y = 0}
+  outside_arc.position = {x = 50, y = 10}
+  downrange.position = {x = 55, y = 0}
 
-  assert_eq(module.CANNON_RANGE, 48)
-  assert_near(module.CANNON_TURN_RANGE, 0.10, 1e-9)
+  assert_eq(module.CANNON_RANGE, 56)
+  assert_near(module.CANNON_TURN_RANGE, 0.05, 1e-9)
   fire_biter(cannon, staffed)
   assert_eq(cannon.shooting_target, downrange,
     "retargeting should skip a closer asteroid outside the narrow firing corridor")
