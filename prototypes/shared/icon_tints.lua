@@ -10,6 +10,7 @@ M.colors = {
   C_LIGHT_PURPLE = {220, 180, 255, 255},
   C_LIGHT_ORANGE = {255, 210, 140, 255},
   C_LIGHT_PINK = {255, 180, 210, 255},
+  C_LIGHT_CYAN = {170, 245, 245, 255},
   C_LIGHT_GRAY = {200, 200, 210, 255},
   C_MANILA = {235, 205, 150, 255},
   C_TAN = {210, 180, 140, 255},
@@ -78,6 +79,28 @@ M.recipe_tints = {
   ["overtime-exemption"] = tint(rgba_from_color("S_PINK", 1)),
 }
 
+M.document_tint_colors = {
+  ["blank-form"] = "C_WHITE",
+  ["blank-approval"] = "C_LIGHT_BLUE",
+  ["blank-directive"] = "C_LIGHT_PURPLE",
+  ["carbon-offset-certificate-basic"] = "C_LIGHT_GREEN",
+  ["form-27b-6"] = "C_LIGHT_RED",
+  ["environmental-impact-report"] = "C_LIGHT_GREEN",
+  ["work-order"] = "C_LIGHT_YELLOW",
+  ["safety-waiver"] = "C_LIGHT_BLUE",
+  ["construction-permit"] = "C_LIGHT_ORANGE",
+  ["management-approval-verbal"] = "C_LIGHT_YELLOW",
+  ["management-approval-written"] = "C_LIGHT_PURPLE",
+  ["safety-work-order"] = "C_LIGHT_BLUE",
+  ["construction-work-order"] = "C_LIGHT_ORANGE",
+  ["management-verbal-work-order"] = "C_LIGHT_YELLOW",
+  ["management-written-work-order"] = "C_LIGHT_PURPLE",
+  ["research-grant-work-order"] = "C_LIGHT_BLUE",
+  ["chemical-handling-work-order"] = "C_LIGHT_CYAN",
+  ["radiological-work-order"] = "C_LIGHT_RED",
+  ["thermal-transfer-sheet"] = "C_LIGHT_ORANGE",
+}
+
 local function copy_color(color)
   return {r = color.r, g = color.g, b = color.b, a = color.a}
 end
@@ -91,6 +114,11 @@ function M.recipe_tint(recipe_name)
     tertiary = copy_color(source.tertiary),
     quaternary = copy_color(source.quaternary),
   }
+end
+
+function M.document_tint(document_name)
+  local color_name = M.document_tint_colors[document_name] or "C_CREAM"
+  return tint(rgba_from_color(color_name, 1))
 end
 
 return M

@@ -161,6 +161,9 @@ dofile(mod_root .. "prototypes/recipe/economy.lua")
 dofile(mod_root .. "prototypes/recipe/resolution.lua")
 dofile(mod_root .. "prototypes/recipe/modules.lua")
 
+-- Mirror the recipe loader's post-pass that supplies the printer paper masks.
+require("prototypes.shared.printing_tints").apply(recipes)
+
 -- Load shared constants
 local shared = require("prototypes.shared")
 
@@ -244,6 +247,38 @@ end
 -- =========================================================================
 -- PRINCIPLE 1: FORMS ARE THE CURRENCY OF AUTOMATION
 -- =========================================================================
+
+test("every printer recipe supplies a crafting-machine tint", function()
+  local printing_categories = {
+    ["printing"] = true,
+    ["printing-advanced"] = true,
+    ["printing-workorder"] = true,
+  }
+
+  for recipe_name, recipe in pairs(recipes) do
+    if printing_categories[recipe.category] then
+      local tint = recipe.crafting_machine_tint
+      assert_true(tint and tint.primary,
+        recipe_name .. " is missing the primary printer-paper tint")
+    end
+  end
+end)
+
+test("selected document families use distinct printer-paper colors", function()
+  local function tint_key(recipe_name)
+    local color = recipes[recipe_name].crafting_machine_tint.primary
+    return string.format("%.4f/%.4f/%.4f", color.r, color.g, color.b)
+  end
+
+  local approval = tint_key("blank-approval-production")
+  local directive = tint_key("blank-directive-production")
+  local construction = tint_key("construction-permit-printing")
+  local environmental = tint_key("copy-environmental-impact-report")
+
+  assert_false(approval == directive, "approval and directive paper colors must differ")
+  assert_false(directive == construction, "directive and construction paper colors must differ")
+  assert_false(construction == environmental, "construction and environmental paper colors must differ")
+end)
 
 test("shared.PAPERWORK_ITEMS contains all core forms", function()
   local expected = {
