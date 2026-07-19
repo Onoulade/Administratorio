@@ -103,6 +103,7 @@ function M.apply()
   set_weight("capsule", "promise", 500 * grams)
   set_weight("capsule", "eviction-notice", 1 * kg)
   set_weight("ammo", "orbital-deviation-order", 1 * kg)
+  set_weight("ammo", "priority-orbital-deviation-order", 1 * kg)
   set_weight("selection-tool", "hired-biter-command-capsule", 1 * kg)
 end
 

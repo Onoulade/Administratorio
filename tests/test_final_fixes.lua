@@ -135,6 +135,11 @@ data.raw.ammo["orbital-deviation-order"] = {
   name = "orbital-deviation-order",
   ammo_category = "trajectory-compliance",
 }
+data.raw.ammo["priority-orbital-deviation-order"] = {
+  type = "ammo",
+  name = "priority-orbital-deviation-order",
+  ammo_category = "trajectory-compliance",
+}
 data.raw.ammo["firearm-magazine"] = {
   type = "ammo",
   name = "firearm-magazine",
@@ -1704,6 +1709,12 @@ test("orbital administration weapons survive the military hiding pass", function
     "VESM ammo should remain visible")
   assert_true(not data.raw.ammo["orbital-deviation-order"].hidden,
     "deviation order ammo should remain visible")
+  assert_true(not data.raw.ammo["priority-orbital-deviation-order"].hidden,
+    "priority deviation order ammo should remain visible")
+  assert_eq(data.raw.ammo["orbital-deviation-order"].weight, 1 * kg,
+    "routine deviation orders should weigh one kilogram")
+  assert_eq(data.raw.ammo["priority-orbital-deviation-order"].weight, 1 * kg,
+    "priority deviation orders should weigh one kilogram")
   assert_true(not data.raw["ammo-turret"]["trajectory-compliance-array"].hidden,
     "trajectory compliance array should remain visible")
   assert_true(not data.raw["ammo-turret"]["senior-trajectory-compliance-array"].hidden,
@@ -1765,6 +1776,17 @@ test("printer-t2 gets a regulated AM recipe", function()
   assert_true(has_ingredient(r, "construction-work-order"), "printer-t2-regulated missing construction-work-order")
   assert_true(has_ingredient(r, "printer-t1"), "printer-t2-regulated missing printer-t1")
   assert_true(not has_ingredient(r, "construction-permit"), "printer-t2-regulated should combine construction-permit")
+end)
+
+test("ordinary administrative construction stays grounded while printer-t2 remains platform-approved", function()
+  for _, recipe_name in ipairs({"field-office", "office-desk", "biter-station", "biterport"}) do
+    local recipe = assert(get_recipe(recipe_name), recipe_name .. " missing")
+    assert_true(recipe.surface_conditions and recipe.surface_conditions[1]
+      and (recipe.surface_conditions[1].min or 0) >= 1,
+      recipe_name .. " should not be craftable in vacuum")
+  end
+  assert_true(get_recipe("printer-t2").surface_conditions == nil,
+    "printer-t2 construction should remain available on a platform")
 end)
 
 test("paper and ink get regulated AM recipes", function()

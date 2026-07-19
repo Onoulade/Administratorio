@@ -24,8 +24,22 @@ for _, category in ipairs({
   "bureaucracy-certification",
   "bureaucracy-conciliation",
   "orbital-bureaucracy",
+  "orbital-printing",
 }) do
   rules.OPERATING_FORM_CONFIG.categories[category] = {exempt = true}
+end
+
+-- Platform life support uses locally printed operating forms. Ice melting is
+-- the paperwork-free bootstrap that makes water, and therefore those forms,
+-- available after a platform has exhausted every imported consumable.
+rules.OPERATING_FORM_CONFIG.recipes["ice-melting"] = {exempt = true}
+for _, recipe_name in ipairs({
+  "thruster-fuel",
+  "thruster-oxidizer",
+  "advanced-thruster-fuel",
+  "advanced-thruster-oxidizer",
+}) do
+  rules.OPERATING_FORM_CONFIG.recipes[recipe_name] = {form = "orbital-operations-form"}
 end
 
 for _, recipe_name in ipairs({

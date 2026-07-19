@@ -81,6 +81,7 @@ local technologies = {
   ["electromagnetic-plant"] = {type = "technology", name = "electromagnetic-plant", effects = {}},
   ["electromagnetic-science-pack"] = {type = "technology", name = "electromagnetic-science-pack", effects = {}},
   ["cryogenic-science-pack"] = {type = "technology", name = "cryogenic-science-pack", effects = {}},
+  ["advanced-asteroid-processing"] = {type = "technology", name = "advanced-asteroid-processing", effects = {}},
   ["after-hours-operations"] = {type = "technology", name = "after-hours-operations", effects = {}},
   ["discovery-redundant-rubble"] = {type = "technology", name = "discovery-redundant-rubble", effects = {}},
   ["nest-expropriation"] = {type = "technology", name = "nest-expropriation", effects = {}},
@@ -755,28 +756,84 @@ test("returning employees need no intermediate inventory item or burnout path", 
     "collector should mine the chunk straight into VESM ammo, not an intermediate item")
 end)
 
-test("orbital admin station recipes cover offworld metallurgy and asteroid paperwork", function()
+test("orbital admin station closes the basic asteroid paperwork loop without consuming staff", function()
   local workforce = technologies["workforce-formation"]
   for _, recipe_name in ipairs({
-    "thermal-process-license-orbital",
-    "calcite-reagent-waiver-orbital",
-    "offworld-metallurgy-charter-orbital",
+    "orbital-paper-production",
+    "orbital-ink-production",
+    "orbital-operations-form",
     "orbital-deviation-order",
     "asteroid-processing-docket",
+    "space-science-pack-orbital",
   }) do
     local recipe = assert(recipes[recipe_name], recipe_name .. " missing")
     assert_eq(recipe.category, "orbital-bureaucracy", recipe_name .. " should use orbital-bureaucracy")
     assert_eq(recipe.surface_conditions[1].max, 0, recipe_name .. " should stay vacuum-only")
-    assert_true(has_ingredient(recipe, "astronaut"), recipe_name .. " should require astronaut staffing")
-    assert_true(has_ingredient(recipe, "orbital-briefed-middle-management-managing-manager"),
-      recipe_name .. " should require a fresh orbital briefing")
-    assert_eq(get_result_amount(recipe, "middle-management-managing-manager"), 1,
-      recipe_name .. " should return its manager unbriefed")
+    assert_true(not has_ingredient(recipe, "astronaut"), recipe_name .. " should use the station's permanent astronaut")
+    assert_true(not has_ingredient(recipe, "orbital-briefed-middle-management-managing-manager"),
+      recipe_name .. " should not consume recurring staff")
     assert_true(tech_unlocks_recipe(workforce, recipe_name), "workforce-formation should unlock " .. recipe_name)
   end
+  assert_true(items["orbital-operations-form"] ~= nil, "orbital-operations-form missing")
   assert_true(items["asteroid-processing-docket"] ~= nil, "asteroid-processing-docket missing")
-  assert_eq(get_result_amount(recipes["orbital-deviation-order"], "orbital-deviation-order"), 4,
-    "one staffed review should issue four deviation orders")
+  assert_eq(get_result_amount(recipes["orbital-deviation-order"], "orbital-deviation-order"), 8,
+    "one local operations form should issue eight routine deviation orders")
+
+  local forbidden = {
+    ["bullshit-ore"] = true,
+    ["redundant-rubble"] = true,
+    ["compacted-rubble"] = true,
+    ["useless-documentation"] = true,
+    ["dubious-data"] = true,
+    ["blank-form"] = true,
+    ["blank-approval"] = true,
+    ["transit-authorization"] = true,
+    ["chemical-handling-work-order"] = true,
+  }
+  for _, recipe_name in ipairs({
+    "orbital-paper-production",
+    "orbital-ink-production",
+    "orbital-operations-form",
+    "orbital-deviation-order",
+    "asteroid-processing-docket",
+    "space-science-pack-orbital",
+    "thermal-process-license-orbital",
+    "calcite-reagent-waiver-orbital",
+    "offworld-metallurgy-charter-orbital",
+  }) do
+    for _, ingredient in ipairs(recipes[recipe_name].ingredients or {}) do
+      assert_true(not forbidden[ingredient.name or ingredient[1]],
+        recipe_name .. " should not inherit terrestrial rubble/nonsense paperwork")
+    end
+  end
+end)
+
+test("advanced asteroid outputs feed tier-two orbital administration", function()
+  local advanced = technologies["advanced-asteroid-processing"]
+  local expected = {
+    ["orbital-archival-paper-production"] = {"carbon", "calcite"},
+    ["orbital-secure-ink-production"] = {"carbon", "copper-ore", "sulfur"},
+    ["orbital-operations-form-copying"] = {"copper-ore"},
+    ["asteroid-processing-docket-copying"] = {"calcite"},
+    ["priority-orbital-deviation-order"] = {"copper-ore", "sulfur", "calcite"},
+  }
+  for recipe_name, ingredient_names in pairs(expected) do
+    local recipe = assert(recipes[recipe_name], recipe_name .. " missing")
+    assert_eq(recipe.surface_conditions[1].max, 0, recipe_name .. " should stay vacuum-only")
+    assert_true(tech_unlocks_recipe(advanced, recipe_name),
+      "advanced asteroid processing should unlock " .. recipe_name)
+    for _, ingredient_name in ipairs(ingredient_names) do
+      assert_true(has_ingredient(recipe, ingredient_name),
+        recipe_name .. " should consume advanced asteroid output " .. ingredient_name)
+    end
+  end
+  assert_eq(recipes["orbital-operations-form-copying"].category, "orbital-printing")
+  assert_eq(recipes["priority-orbital-deviation-order"].category, "orbital-printing")
+  assert_eq(get_result_amount(recipes["orbital-operations-form-copying"], "orbital-operations-form"), 16,
+    "tier-two form copying should substantially outperform direct printing")
+  assert_eq(get_result_amount(recipes["asteroid-processing-docket-copying"], "asteroid-processing-docket"), 10,
+    "tier-two docket copying should substantially outperform direct printing")
+  assert_true(ammos["priority-orbital-deviation-order"] ~= nil, "priority deviation ammo missing")
 end)
 
 test("trajectory compliance speed research reaches every exact cooldown", function()
@@ -944,8 +1001,9 @@ test("gleba conciliation also unlocks orbital spitter tourism", function()
     assert_eq(tourism_recipe.category, "orbital-bureaucracy", variant.tourism_recipe .. " should use orbital-bureaucracy")
     assert_eq(tourism_recipe.surface_conditions[1].max, 0, variant.tourism_recipe .. " should stay vacuum-only")
     assert_true(has_ingredient(tourism_recipe, variant.package_item), variant.tourism_recipe .. " should consume the packaged spitter")
-    assert_true(has_ingredient(tourism_recipe, "astronaut"), variant.tourism_recipe .. " should require astronaut staffing")
-    assert_true(has_ingredient(tourism_recipe, "transit-authorization"), variant.tourism_recipe .. " should require transit authorization")
+    assert_true(not has_ingredient(tourism_recipe, "astronaut"), variant.tourism_recipe .. " should use permanent station staff")
+    assert_true(has_ingredient(tourism_recipe, "orbital-operations-form"), variant.tourism_recipe .. " should use local orbital paperwork")
+    assert_true(not has_ingredient(tourism_recipe, "transit-authorization"), variant.tourism_recipe .. " should not import terrestrial paperwork")
     assert_true(not has_ingredient(tourism_recipe, "cyan-yellow-form"), variant.tourism_recipe .. " should not require cyan-yellow-form directly in orbit")
     assert_true(has_result(tourism_recipe, variant.tourist_item), variant.tourism_recipe .. " should emit a paid tourist")
     assert_eq(get_result_amount(tourism_recipe, "treasury-bond"), variant.bond_payout,
@@ -956,12 +1014,9 @@ test("gleba conciliation also unlocks orbital spitter tourism", function()
       variant.tourism_recipe .. " should not mint loose taxpayer money in orbit")
     assert_true(tech_unlocks_recipe(technologies["cyan-yellow-bureaucracy"], variant.tourism_recipe), "cyan-yellow-bureaucracy should unlock " .. variant.tourism_recipe)
 
-    local jettison_recipe = assert(recipes[variant.jettison_recipe], variant.jettison_recipe .. " missing")
-    assert_eq(jettison_recipe.category, "orbital-bureaucracy", variant.jettison_recipe .. " should use orbital-bureaucracy")
-    assert_eq(jettison_recipe.surface_conditions[1].max, 0, variant.jettison_recipe .. " should stay vacuum-only")
-    assert_true(has_ingredient(jettison_recipe, variant.tourist_item), variant.jettison_recipe .. " should consume the tourist")
-    assert_true(has_result(jettison_recipe, "useless-documentation"), variant.jettison_recipe .. " should leave liability paperwork behind")
-    assert_true(tech_unlocks_recipe(technologies["cyan-yellow-bureaucracy"], variant.jettison_recipe), "cyan-yellow-bureaucracy should unlock " .. variant.jettison_recipe)
+    assert_true(recipes[variant.jettison_recipe] == nil, variant.jettison_recipe .. " should be removed")
+    assert_true(not tech_unlocks_recipe(technologies["cyan-yellow-bureaucracy"], variant.jettison_recipe),
+      "cyan-yellow-bureaucracy should not unlock tourist conversion")
   end
 end)
 
