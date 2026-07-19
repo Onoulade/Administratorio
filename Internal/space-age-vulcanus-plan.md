@@ -34,10 +34,9 @@ This is why Vulcanus has dedicated bootstrap recipes for:
 - `refined-nonsense-production-vulcanus`
 
 The first three are input bridges. The canonical provisional approval,
-research-grant, and administrative-science recipes remain unchanged. The sole
-terminal exception is `government-grant-vulcanus`, which consumes a local
-notarial approval and industrial charter to feed the unchanged rocket-silo
-recipe.
+research-grant, administrative-science, public-finance, and executive-approval
+recipes remain unchanged. The rocket silo therefore needs one shipped
+`government-grant` and one shipped `management-approval-written`.
 
 ### 2. The planet's easy administrative output is `lie`
 
@@ -81,9 +80,6 @@ The notarial family currently includes:
 
 - `embossed-seal`
 - `industrial-charter`
-- `good-excuse-vulcanus`
-- `management-approval-written-vulcanus`
-- `government-grant-vulcanus`
 - `thermal-process-license`
 - `calcite-reagent-waiver`
 - `offworld-metallurgy-charter`
@@ -166,15 +162,13 @@ This is the core bridge between the printer and the office.
 - `calcite-reagent-waiver`
 - `offworld-metallurgy-charter`
 
-### Narrow launch-gate chain
+### Narrow launch-gate imports
 
-- `good-excuse-vulcanus`
-- `management-approval-written-vulcanus`
-- `government-grant-vulcanus`
-
-These are the only finished-paperwork exceptions: one breaks the local
-coffee/gossip deadlock; the other two are the territorial launch authorization
-and grant. Everything else uses the canonical recipe or is an import/fax need.
+`good-excuse`, `management-approval-written`, and the Nauvis-issued
+`government-grant` remain finished-document imports. The local notary chain
+creates Vulcanus-specific charters and resettlement paperwork, not generic
+executive approvals. Everything else uses the canonical recipe or is an
+import/fax need.
 
 ## What Vulcanus Intentionally Does Not Do
 

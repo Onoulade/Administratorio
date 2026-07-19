@@ -108,9 +108,6 @@ data:extend({
       {type = "unlock-recipe", recipe = "embossed-seal"},
       {type = "unlock-recipe", recipe = "industrial-charter"},
       {type = "unlock-recipe", recipe = "territorial-resettlement-order"},
-      {type = "unlock-recipe", recipe = "good-excuse-vulcanus"},
-      {type = "unlock-recipe", recipe = "management-approval-written-vulcanus"},
-      {type = "unlock-recipe", recipe = "government-grant-vulcanus"},
       {type = "unlock-recipe", recipe = "vulcanus-lie-distillation"},
     },
     prerequisites = {"chromatic-printing"},
@@ -168,7 +165,6 @@ data:extend({
       {type = "unlock-recipe", recipe = "symbiosis-record"},
       {type = "unlock-recipe", recipe = "conciliation-order"},
       {type = "unlock-recipe", recipe = "management-approval-written-gleba"},
-      {type = "unlock-recipe", recipe = "government-grant-gleba"},
       {type = "unlock-recipe", recipe = "composted-rubble-recovery-gleba"},
       {type = "unlock-recipe", recipe = "conciliation-officer-formation-gleba"},
     },
@@ -191,8 +187,6 @@ data:extend({
       {type = "unlock-recipe", recipe = "digital-processing-certificate"},
       {type = "unlock-recipe", recipe = "electromagnetic-operating-license"},
       {type = "unlock-recipe", recipe = "data-recovery-order"},
-      {type = "unlock-recipe", recipe = "management-approval-written-fulgora"},
-      {type = "unlock-recipe", recipe = "government-grant-fulgora"},
     },
     prerequisites = {"chromatic-printing"},
     research_trigger = {
@@ -895,7 +889,6 @@ data:extend(orbital_employment_capacity_techs)
 -- are built, avoiding a circular dependency on space science.
 add_tech_unlock("space-platform", "orbital-infrastructure-permit")
 add_tech_unlock("workforce-formation", "licensed-notary-formation")
-add_tech_unlock("administrative-science-research", "administrative-science-pack-production-gleba")
 add_tech_unlock("calcite-processing", "dubious-data-analysis-vulcanus")
 add_tech_unlock("calcite-processing", "paper-production-vulcanus")
 add_tech_unlock("calcite-processing", "carbon-offset-certificate-basic-vulcanus")

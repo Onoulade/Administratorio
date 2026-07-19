@@ -138,7 +138,7 @@ native-machine and launch recipes consume:
 - `dubious-data-cultivation-gleba` and `provisional-approval-cultivation-gleba` are slow bootstrap inputs.
 - `composted-rubble-recovery-gleba` supplies the filler needed by the canonical environmental paperwork chain.
 - `conciliation-officer-formation-gleba` trains the native specialist from a symbiosis record instead of the generic political-excuse chain.
-- `management-approval-written-gleba` and `government-grant-gleba` are the two expensive terminal launch documents.
+- The single `government-grant` for a silo remains an import. `management-approval-written-gleba` is the sole executive-paperwork exception because 100 rocket parts consume approvals in bulk; the slow biological route avoids a twenty-document import haul.
 
 Gleba does not cultivate credentials, justifications, excuses, refined
 nonsense, or useless documentation. Those remain canonical, imported, or faxed

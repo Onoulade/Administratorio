@@ -1460,10 +1460,10 @@ if space_age_planets and data.raw.recipe and data.raw.recipe["rocket-silo"] then
   })
   canonical.surface_conditions = nil
 
-  -- Taxpayer money is generated and securitized on Nauvis. Off-world finance
-  -- comes from shipping its much denser derivatives or earning bonds through
-  -- orbital tourism, never from minting loose taxpayer money on another world.
-  for _, source_recipe_name in ipairs({"treasury-bond-production", "tax-audit"}) do
+  -- Taxpayer money is generated, securitized, and allocated on Nauvis. Off-world
+  -- finance arrives as a finished grant, never from minting money, bonds, or
+  -- grants on another planet.
+  for _, source_recipe_name in ipairs({"treasury-bond-production", "government-grant-production", "tax-audit"}) do
     local recipe_name = factoriopedia_recipe_renames[source_recipe_name] or source_recipe_name
     space_age_planets.apply_planet_surface_conditions(data.raw.recipe[recipe_name], "nauvis")
   end

@@ -111,7 +111,7 @@ Fulgora keeps only the material and terminal-document exceptions that the
 unchanged launch chain actually needs:
 
 - `salvage-electrolyte-fulgora`, `electromagnetic-rocket-fuel-fulgora`, and the deliberately expensive `electromagnetic-lubricant-fulgora` cover the local engine and fuel bottlenecks.
-- `management-approval-written-fulgora` and `government-grant-fulgora` turn completed magenta/archive paperwork into the final launch documents.
+- Completed magenta/archive paperwork feeds Fulgora's recovery and operating loops. The final `management-approval-written` and one `government-grant` for a silo remain dense Nauvis imports.
 
 Fulgora does not receive a local liquid-black-ink route, crude-oil processing,
 or a general petroleum economy. Those remain difficult or unavailable by

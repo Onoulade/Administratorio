@@ -71,6 +71,8 @@ IMPORT_CLASSES = (
     "staffing",
     "conflict-resolution",
     "planetary-export",
+    "public-finance",
+    "terminal-paperwork",
     "capstone",
 )
 
@@ -127,10 +129,13 @@ PLANETARY_EXPORT_IMPORTS = {
     "industrial-charter", "offworld-metallurgy-charter",
     "conciliation-order", "electromagnetic-operating-license", "data-recovery-order",
 }
+PUBLIC_FINANCE_IMPORTS = {"government-grant"}
+EXECUTIVE_PAPERWORK_IMPORTS = {"management-approval-written"}
+VULCANUS_SUPPORT_IMPORTS = {"good-excuse"}
 EXPLICIT_IMPORT_ALLOWLISTS = {
-    "vulcanus": {"licensed-notary", "chemical-operator", "territorial-deed"} | SPECIALIST_MANAGER_IMPORTS,
-    "gleba": {"clerical-trainee", "conciliation-officer", "chemical-operator"} | SPECIALIST_MANAGER_IMPORTS,
-    "fulgora": {"relay-clerk", "clerical-trainee", "chemical-operator"} | SPECIALIST_MANAGER_IMPORTS,
+    "vulcanus": {"licensed-notary", "chemical-operator", "territorial-deed"} | SPECIALIST_MANAGER_IMPORTS | PUBLIC_FINANCE_IMPORTS | EXECUTIVE_PAPERWORK_IMPORTS | VULCANUS_SUPPORT_IMPORTS,
+    "gleba": {"clerical-trainee", "conciliation-officer", "chemical-operator"} | SPECIALIST_MANAGER_IMPORTS | PUBLIC_FINANCE_IMPORTS,
+    "fulgora": {"relay-clerk", "clerical-trainee", "chemical-operator"} | SPECIALIST_MANAGER_IMPORTS | PUBLIC_FINANCE_IMPORTS | EXECUTIVE_PAPERWORK_IMPORTS,
     "aquilo": STAFFING_IMPORTS | PLANETARY_EXPORT_IMPORTS | CAPSTONE_IMPORTS,
 }
 
@@ -164,7 +169,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--enforce-import-policy",
         action="store_true",
-        help="Fail when Vulcanus, Gleba, or Fulgora needs an import outside its explicit staffing/conflict allowlist.",
+        help="Fail when Vulcanus, Gleba, or Fulgora needs an import outside its explicit staffing, conflict, public-finance, and terminal-paperwork allowlist.",
     )
     parser.add_argument(
         "--keep-temp",
@@ -304,6 +309,10 @@ def classify_import(material_name: str, item_proto: Optional[Dict] = None) -> st
         return "capstone"
     if material_name in PLANETARY_EXPORT_IMPORTS:
         return "planetary-export"
+    if material_name in PUBLIC_FINANCE_IMPORTS:
+        return "public-finance"
+    if material_name in EXECUTIVE_PAPERWORK_IMPORTS or material_name in VULCANUS_SUPPORT_IMPORTS:
+        return "terminal-paperwork"
     subgroup = (item_proto or {}).get("subgroup", "")
     if subgroup.startswith("forms-") or "work-order" in material_name or material_name in {
         "blank-form", "blank-approval", "blank-directive", "paper", "ink",
@@ -819,10 +828,10 @@ class PlanetEscapeAnalyzer:
 
     @lru_cache(maxsize=None)
     def craftable_with_recipes(self, planet_name: str, material_name: str, available_key: Tuple[str, ...]) -> bool:
-        # Deliberate staffing/conflict seeds are part of the landing manifest.
-        # Treat them as available while deciding which local technologies can
-        # be researched; otherwise a single imported specialist makes every
-        # downstream native science pack look permanently impossible.
+        # Deliberate staffing, conflict, public-finance, and terminal-paperwork
+        # seeds are part of the landing manifest. Treat them as available while
+        # deciding which local technologies can be researched; otherwise one
+        # authorized import makes every downstream native science pack impossible.
         local_materials = set(self.local_resources_by_planet[planet_name])
         local_materials.update(EXPLICIT_IMPORT_ALLOWLISTS.get(planet_name, set()))
         available = set(available_key)
@@ -1006,6 +1015,18 @@ class PlanetEscapeAnalyzer:
 
             log.debug("[%s] rec depth=%d material=%s amount=%s",
                       planet_name, depth, material_name, format_fraction(required_amount))
+
+            # Authorized imports are intentionally consumed as imports even if
+            # an unavailable generic recipe could theoretically be expanded.
+            # This keeps the report honest about the finished document instead
+            # of misrepresenting its whole generic chain as local production.
+            if material_name in EXPLICIT_IMPORT_ALLOWLISTS.get(planet_name, set()):
+                result = _empty_plan(
+                    (f"import {format_fraction(required_amount)}x {material_name}",),
+                    imports=Counter({material_name: required_amount}),
+                )
+                _rec_memo[memo_key] = result
+                return _copy_plan(result)
 
             if material_name in locally_craftable:
                 result = _empty_plan(

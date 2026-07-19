@@ -166,9 +166,6 @@ Vulcanus:
   - `thermal-process-license`
   - `calcite-reagent-waiver`
   - `offworld-metallurgy-charter`
-  - `good-excuse-vulcanus`
-  - `management-approval-written-vulcanus`
-  - `government-grant-vulcanus`
 - Vanilla Vulcanus process recipes retain their original surface conditions and have no Administratorio off-world clones.
 
 Gleba:
@@ -184,7 +181,6 @@ Gleba:
   - `carbon-offset-certificate-basic-gleba`
   - `provisional-approval-cultivation-gleba`
   - `construction-permit-gleba`
-  - `administrative-science-pack-production-gleba`
 - Yellow paperwork:
   - `yellow-ink`
   - `mycelial-form-stock`
@@ -610,7 +606,6 @@ Implemented first pass:
   - `carbon-offset-certificate-basic-gleba`
   - `provisional-approval-cultivation-gleba`
   - `construction-permit-gleba`
-  - `administrative-science-pack-production-gleba`
 - Fulgora first pass now exists:
   - `digital-services-bureau`
   - `charged-toner`
@@ -735,7 +730,6 @@ Added:
 - `carbon-offset-certificate-basic-gleba`
 - `provisional-approval-cultivation-gleba`
 - `construction-permit-gleba`
-- `administrative-science-pack-production-gleba`
 
 Follow-up only if solver requires more:
 
