@@ -45,10 +45,12 @@ local ASTEROID_SALVAGE_RADII = {
   huge = 2.0,
 }
 local DEVIATION_AMMO = "orbital-deviation-order"
+local PRIORITY_DEVIATION_AMMO = "priority-orbital-deviation-order"
 local EXPLORER_ITEM = "voluntary-exploration-space-miner"
 local RETURNING_CHUNK = "returning-orbital-employee"
 local RETURNING_CHUNK_DIRECTIONS = 16
 local DEVIATION_EFFECT_ID = "administratorio-trajectory-deviation"
+local PRIORITY_DEVIATION_EFFECT_ID = "administratorio-priority-trajectory-deviation"
 local BITER_LAUNCH_EFFECT_ID = "administratorio-asteroid-biter-launched"
 local BITER_ASSAULT_EFFECT_ID = "administratorio-asteroid-biter-assault"
 local BITER_AMMO_CATEGORY = "orbital-biter-ballistics"
@@ -63,6 +65,7 @@ local ASSIGNMENT_RESERVATION_LIFETIME = 600
 local DEVIATION_PUSH_LIFETIME = 330
 local DEVIATION_FORCE_PER_PULSE = 0.025
 local DEVIATION_MAX_SPEED = 0.04
+local PRIORITY_DEVIATION_STRENGTH = 2
 -- Arrays otherwise retain their engine-selected target indefinitely. Recheck
 -- often enough to follow the nearest incoming threat, without scanning every
 -- tick on platforms with many arrays.
@@ -105,11 +108,13 @@ M.TARGET_TIERS = TARGET_TIERS
 M.ASTEROID_SIZE_RANKS = ASTEROID_SIZE_RANKS
 M.ASTEROID_CHUNK_YIELDS = ASTEROID_CHUNK_YIELDS
 M.DEVIATION_AMMO = DEVIATION_AMMO
+M.PRIORITY_DEVIATION_AMMO = PRIORITY_DEVIATION_AMMO
 M.EXPLORER_ITEM = EXPLORER_ITEM
 M.MANAGEMENT_ITEM = EXPLORER_ITEM -- Compatibility for older integrations.
 M.RETURNING_CHUNK = RETURNING_CHUNK
 M.RETURNING_CHUNK_DIRECTIONS = RETURNING_CHUNK_DIRECTIONS
 M.DEVIATION_EFFECT_ID = DEVIATION_EFFECT_ID
+M.PRIORITY_DEVIATION_EFFECT_ID = PRIORITY_DEVIATION_EFFECT_ID
 M.BITER_LAUNCH_EFFECT_ID = BITER_LAUNCH_EFFECT_ID
 M.BITER_ASSAULT_EFFECT_ID = BITER_ASSAULT_EFFECT_ID
 M.EFFECT_ID = DEVIATION_EFFECT_ID -- Compatibility for older integrations.
@@ -125,6 +130,7 @@ M.ASSIGNMENT_RESERVATION_LIFETIME = ASSIGNMENT_RESERVATION_LIFETIME
 M.DEVIATION_PUSH_LIFETIME = DEVIATION_PUSH_LIFETIME
 M.DEVIATION_FORCE_PER_PULSE = DEVIATION_FORCE_PER_PULSE
 M.DEVIATION_MAX_SPEED = DEVIATION_MAX_SPEED
+M.PRIORITY_DEVIATION_STRENGTH = PRIORITY_DEVIATION_STRENGTH
 M.ARRAY_RETARGET_INTERVAL = ARRAY_RETARGET_INTERVAL
 M.DEVIATION_MASS_FACTORS = DEVIATION_MASS_FACTORS
 M.ASTEROID_ROTATION_SPEEDS = ASTEROID_ROTATION_SPEEDS
@@ -789,7 +795,7 @@ local function resolve_biter_launch(event)
   return true
 end
 
-local function resolve_deviation(event)
+local function resolve_deviation(event, strength)
   local source = source_from_event(event)
   if not source or not ARRAY_TIERS[source.name] then return false end
   local target = target_from_event(event, source)
@@ -821,6 +827,7 @@ local function resolve_deviation(event)
   deviation.pushes[#deviation.pushes + 1] = {
     source = source,
     expires_tick = tick + DEVIATION_PUSH_LIFETIME,
+    strength = strength or 1,
   }
 
   -- Each order creates one fixed-duration outward push. Faster firing research
@@ -905,7 +912,9 @@ end
 function M.on_script_trigger_effect(event)
   if not event then return false end
   if event.effect_id == DEVIATION_EFFECT_ID then
-    return resolve_deviation(event)
+    return resolve_deviation(event, 1)
+  elseif event.effect_id == PRIORITY_DEVIATION_EFFECT_ID then
+    return resolve_deviation(event, PRIORITY_DEVIATION_STRENGTH)
   elseif event.effect_id == BITER_LAUNCH_EFFECT_ID then
     return resolve_biter_launch(event)
   elseif event.effect_id == BITER_ASSAULT_EFFECT_ID then
@@ -974,17 +983,18 @@ local function process_deviations(tick)
       -- target, as well as employees that have already landed.
       remove_deviation(deviation_id)
     else
-      local active_pushes = 0
+      local active_push_strength = 0
       for index = #deviation.pushes, 1, -1 do
         local push = deviation.pushes[index]
         if tick > (push.expires_tick or 0) or not push.source or not push.source.valid then
           table.remove(deviation.pushes, index)
         else
-          active_pushes = active_pushes + 1
+          -- Old saves predate weighted orders; their pushes remain routine.
+          active_push_strength = active_push_strength + (push.strength or 1)
         end
       end
 
-      if active_pushes == 0 then
+      if active_push_strength == 0 then
         remove_deviation(deviation_id)
       else
         local platform = target.surface and target.surface.platform
@@ -1001,7 +1011,7 @@ local function process_deviations(tick)
 
           local speed = math.min(
             DEVIATION_MAX_SPEED,
-            DEVIATION_FORCE_PER_PULSE * active_pushes / mass_factor
+            DEVIATION_FORCE_PER_PULSE * active_push_strength / mass_factor
           )
           target.teleport({
             x = target.position.x + away_x / distance * speed,

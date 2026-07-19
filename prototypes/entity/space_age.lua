@@ -319,7 +319,7 @@ laser_printer.icon_size = 64
 laser_printer.minable = {mining_time = 0.2, result = "laser-printer"}
 laser_printer.placeable_by = placeable_by_item("laser-printer")
 laser_printer.next_upgrade = nil
-laser_printer.crafting_categories = {"printing", "printing-advanced", "printing-workorder", "printing-multicolor"}
+laser_printer.crafting_categories = {"printing", "printing-advanced", "printing-workorder", "printing-multicolor", "orbital-printing"}
 laser_printer.crafting_speed = 5
 laser_printer.base_productivity = 0.5
 laser_printer.energy_usage = "600kW"
@@ -809,7 +809,6 @@ public_train_stop.placeable_by = placeable_by_item("public-train-stop")
 for _, entity in ipairs({
   formation_center,
   chromatic_printer,
-  laser_printer,
   notary_office,
   territorial_arbitration_post,
   conciliation_desk,

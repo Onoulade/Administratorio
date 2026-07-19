@@ -190,6 +190,32 @@ local function active_worker()
   return nil
 end
 
+test("platform industrial printers use onboard authorization instead of biter dispatch", function()
+  storage = {}
+  package.loaded["scripts.biter_station"] = nil
+  local surface = new_surface()
+  surface.platform = {valid = true}
+  local force = {name = "player", valid = true, technologies = {}, set_cease_fire = function() end}
+  game = {
+    tick = 0,
+    surfaces = {surface},
+    forces = {player = force},
+    create_force = function(name)
+      local created = {name = name, valid = true, technologies = {}, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  local building = new_managed_building(surface, force)
+  local biter_station = require("scripts.biter_station")
+
+  biter_station.track_managed_building(building)
+
+  assert_true(building.active, "platform industrial printer should remain active")
+  assert_true(storage.managed_building_registry[building.unit_number] == nil,
+    "platform industrial printer should not wait in the terrestrial dispatch registry")
+end)
+
 test("biter station restores active worker if its entity is invalid after load", function()
   storage = {}
   package.loaded["scripts.biter_station"] = nil

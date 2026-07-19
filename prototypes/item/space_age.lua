@@ -168,6 +168,32 @@ data:extend({
     order = "j-i",
     stack_size = 100
   },
+  {
+    type = "ammo",
+    name = "priority-orbital-deviation-order",
+    icons = {
+      {icon = item_icons .. "management-approval-written.png", icon_size = 64, tint = {r = 1, g = 0.35, b = 0.25, a = 1}},
+      {icon = "__base__/graphics/icons/radar.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    },
+    ammo_category = "trajectory-compliance",
+    ammo_type = {
+      target_type = "entity",
+      action = {
+        type = "direct",
+        action_delivery = {
+          type = "instant",
+          target_effects = {
+            {type = "script", effect_id = "administratorio-priority-trajectory-deviation", affects_target = true},
+            {type = "create-explosion", entity_name = "explosion-hit"},
+          },
+        },
+      },
+    },
+    magazine_size = 1,
+    subgroup = "admin-space-compliance",
+    order = "j-i2",
+    stack_size = 100
+  },
   -- Voluntary Exploration Space Miners inherit the former orbital employee
   -- deployment behavior. Managers now remain in the factory, where they can
   -- attend meetings and obstruct otherwise useful workforce processes.
@@ -631,6 +657,17 @@ data:extend({
   },
   {
     type = "item",
+    name = "orbital-operations-form",
+    icons = {
+      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.55, g = 0.8, b = 1, a = 1}},
+      {icon = "__space-age__/graphics/icons/space-platform-foundation.png", icon_size = 64, scale = 0.32, shift = {8, 8}},
+    },
+    subgroup = "forms-permits",
+    order = "dn1",
+    stack_size = 200
+  },
+  {
+    type = "item",
     name = "asteroid-processing-docket",
     icon = item_icons .. "asteroid-processing-docket.png",
     icon_size = 64,
@@ -842,7 +879,7 @@ for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
     localised_name = {"", {"entity-name." .. variant.spitter}, " Space Tourist"},
     localised_description = {
       "",
-      "Already paid up. Insert into a Nauvis admin desk to let it wander off, or jettison it in orbit for liability paperwork.",
+      "Already paid up. Return it to a Nauvis administrative desk so it can wander off and complete the tour.",
     },
     subgroup = "admin-bs-economy",
     order = variant.order .. "a",

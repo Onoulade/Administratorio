@@ -87,6 +87,20 @@ test("existing vanilla operating-paperwork mappings remain intact under Space Ag
   assert_eq(shared.get_operating_form({name = "uranium-processing", category = "centrifuging"}), "radiological-work-order")
 end)
 
+test("platform fuel uses local orbital forms while meltwater remains a bootstrap", function()
+  assert_nil(shared.get_operating_form({name = "ice-melting", category = "chemistry"}),
+    "ice melting must not deadlock orbital paper production")
+  for _, recipe_name in ipairs({
+    "thruster-fuel",
+    "thruster-oxidizer",
+    "advanced-thruster-fuel",
+    "advanced-thruster-oxidizer",
+  }) do
+    assert_eq(shared.get_operating_form({name = recipe_name, category = "chemistry"}),
+      "orbital-operations-form", recipe_name .. " should use locally renewable orbital paperwork")
+  end
+end)
+
 test("space age admin buildings stay out of vanilla recipe regulation", function()
   assert_true(shared.is_admin_recipe("chromatic-printer"), "chromatic-printer should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("laser-printer"), "laser-printer should be treated as an admin recipe")

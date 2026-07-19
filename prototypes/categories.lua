@@ -19,6 +19,7 @@
 -- printing                    | Printer T1 (ink-based documents)
 -- printing-advanced           | Printer T2 (document duplication/copying)
 -- printing-workorder          | Printer T1/T2 (direct draft-to-work-order printing)
+-- orbital-printing            | Printer T2/Laser Printer (advanced asteroid paperwork)
 -- propaganda-distillery        | Propaganda Distillery (admin fluid processing)
 -- pneumatic-intake            | Tube Intake (hidden no-output intake validation)
 -------------------------------------------------------------------------------
@@ -57,6 +58,7 @@ if space_age_enabled then
   categories[#categories + 1] = {type = "recipe-category", name = "territorial-arbitration"}
   categories[#categories + 1] = {type = "recipe-category", name = "workforce-formation"}
   categories[#categories + 1] = {type = "recipe-category", name = "orbital-bureaucracy"}
+  categories[#categories + 1] = {type = "recipe-category", name = "orbital-printing"}
 end
 
 if working_hours_enabled then

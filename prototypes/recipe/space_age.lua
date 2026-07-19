@@ -224,6 +224,13 @@ local function not_in_space(recipe)
   return planets.require_non_vacuum_surface(recipe)
 end
 
+local function vacuum_only(recipe)
+  recipe.surface_conditions = {
+    {property = "pressure", min = 0, max = 0},
+  }
+  return recipe
+end
+
 local manager_meeting_recipes = {}
 for _, briefing in ipairs(manager_briefings.BRIEFINGS) do
   manager_meeting_recipes[#manager_meeting_recipes + 1] = {
@@ -758,124 +765,219 @@ data:extend({
       },
     },
   },
-  {
+  vacuum_only({
+    type = "recipe",
+    name = "orbital-paper-production",
+    category = "orbital-bureaucracy",
+    subgroup = "admin-paper-supplies",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "carbon", amount = 1},
+      {type = "fluid", name = "water", amount = 20},
+    },
+    results = {{type = "item", name = "paper", amount = 5}},
+    energy_required = 2,
+    allow_productivity = true,
+  }),
+  vacuum_only({
+    type = "recipe",
+    name = "orbital-ink-production",
+    category = "orbital-bureaucracy",
+    subgroup = "admin-paper-supplies",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "carbon", amount = 1},
+      {type = "item", name = "iron-ore", amount = 1},
+      {type = "fluid", name = "water", amount = 10},
+    },
+    results = {{type = "item", name = "ink", amount = 4}},
+    energy_required = 2,
+    allow_productivity = true,
+  }),
+  vacuum_only({
+    type = "recipe",
+    name = "orbital-operations-form",
+    category = "orbital-bureaucracy",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "paper", amount = 4},
+      {type = "item", name = "ink", amount = 1},
+    },
+    results = {{type = "item", name = "orbital-operations-form", amount = 10}},
+    energy_required = 3,
+    allow_productivity = true,
+  }),
+  vacuum_only({
     type = "recipe",
     name = "thermal-process-license-orbital",
     category = "orbital-bureaucracy",
     enabled = false,
     localised_name = {"item-name.thermal-process-license"},
     ingredients = {
-      {type = "item", name = "blank-approval", amount = 1},
-      {type = "item", name = "astronaut", amount = 1},
+      {type = "item", name = "orbital-operations-form", amount = 1},
       {type = "item", name = "calcite", amount = 2},
-      {type = "item", name = "tungsten-carbide", amount = 2},
+      {type = "item", name = "sulfur", amount = 1},
     },
     results = {
-      {type = "item", name = "thermal-process-license", amount = 1},
+      {type = "item", name = "thermal-process-license", amount = 2},
     },
     energy_required = 6,
-    surface_conditions = {
-      {
-        property = "pressure",
-        min = 0,
-        max = 0,
-      },
-    },
-  },
-  {
+  }),
+  vacuum_only({
     type = "recipe",
     name = "calcite-reagent-waiver-orbital",
     category = "orbital-bureaucracy",
     enabled = false,
     localised_name = {"item-name.calcite-reagent-waiver"},
     ingredients = {
-      {type = "item", name = "blank-approval", amount = 1},
-      {type = "item", name = "astronaut", amount = 1},
+      {type = "item", name = "orbital-operations-form", amount = 1},
       {type = "item", name = "calcite", amount = 2},
-      {type = "item", name = "good-excuse", amount = 1},
+      {type = "item", name = "iron-ore", amount = 2},
     },
     results = {
-      {type = "item", name = "calcite-reagent-waiver", amount = 1},
+      {type = "item", name = "calcite-reagent-waiver", amount = 2},
     },
     energy_required = 2,
-    surface_conditions = {
-      {
-        property = "pressure",
-        min = 0,
-        max = 0,
-      },
-    },
-  },
-  {
+  }),
+  vacuum_only({
     type = "recipe",
     name = "offworld-metallurgy-charter-orbital",
     category = "orbital-bureaucracy",
     enabled = false,
     localised_name = {"item-name.offworld-metallurgy-charter"},
     ingredients = {
-      {type = "item", name = "astronaut", amount = 1},
       {type = "item", name = "thermal-process-license", amount = 1},
       {type = "item", name = "calcite-reagent-waiver", amount = 1},
-      {type = "item", name = "management-approval-written", amount = 1},
+      {type = "item", name = "orbital-operations-form", amount = 1},
+      {type = "item", name = "copper-ore", amount = 1},
     },
     results = {
       {type = "item", name = "offworld-metallurgy-charter", amount = 1},
     },
     energy_required = 6,
-    surface_conditions = {
-      {
-        property = "pressure",
-        min = 0,
-        max = 0,
-      },
-    },
-  },
-  {
+  }),
+  vacuum_only({
     type = "recipe",
     name = "orbital-deviation-order",
     category = "orbital-bureaucracy",
     enabled = false,
     ingredients = {
-      {type = "item", name = "astronaut", amount = 1},
-      {type = "item", name = "management-approval-written", amount = 1},
-      {type = "item", name = "radar", amount = 1},
-      {type = "item", name = "processing-unit", amount = 2},
+      {type = "item", name = "orbital-operations-form", amount = 1},
+      {type = "item", name = "iron-ore", amount = 1},
     },
     results = {
-      {type = "item", name = "orbital-deviation-order", amount = 4},
+      {type = "item", name = "orbital-deviation-order", amount = 8},
     },
-    energy_required = 8,
-    surface_conditions = {
-      {
-        property = "pressure",
-        min = 0,
-        max = 0,
-      },
-    },
-  },
-  {
+    energy_required = 6,
+  }),
+  vacuum_only({
     type = "recipe",
     name = "asteroid-processing-docket",
     category = "orbital-bureaucracy",
     enabled = false,
     ingredients = {
-      {type = "item", name = "astronaut", amount = 1},
-      {type = "item", name = "blank-form", amount = 2},
-      {type = "item", name = "data", amount = 1},
-      {type = "item", name = "processing-unit", amount = 1},
+      {type = "item", name = "orbital-operations-form", amount = 1},
+      {type = "item", name = "paper", amount = 2},
+      {type = "item", name = "ink", amount = 1},
     },
     results = {
-      {type = "item", name = "asteroid-processing-docket", amount = 2},
+      {type = "item", name = "asteroid-processing-docket", amount = 4},
     },
+    energy_required = 4,
+  }),
+  vacuum_only({
+    type = "recipe",
+    name = "space-science-pack-orbital",
+    category = "orbital-bureaucracy",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "iron-ore", amount = 2},
+      {type = "item", name = "carbon", amount = 1},
+      {type = "item", name = "ice", amount = 1},
+      {type = "item", name = "orbital-operations-form", amount = 1},
+    },
+    results = {{type = "item", name = "space-science-pack", amount = 5}},
+    energy_required = 5,
+    allow_productivity = true,
+  }),
+  vacuum_only({
+    type = "recipe",
+    name = "orbital-archival-paper-production",
+    category = "orbital-bureaucracy",
+    subgroup = "admin-paper-supplies",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "carbon", amount = 4},
+      {type = "item", name = "calcite", amount = 2},
+      {type = "fluid", name = "water", amount = 40},
+    },
+    results = {{type = "item", name = "paper", amount = 30}},
+    energy_required = 5,
+    allow_productivity = true,
+  }),
+  vacuum_only({
+    type = "recipe",
+    name = "orbital-secure-ink-production",
+    category = "orbital-bureaucracy",
+    subgroup = "admin-paper-supplies",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "carbon", amount = 2},
+      {type = "item", name = "copper-ore", amount = 1},
+      {type = "item", name = "sulfur", amount = 1},
+      {type = "fluid", name = "water", amount = 10},
+    },
+    results = {{type = "item", name = "ink", amount = 12}},
+    energy_required = 4,
+    allow_productivity = true,
+  }),
+  vacuum_only({
+    type = "recipe",
+    name = "orbital-operations-form-copying",
+    category = "orbital-printing",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "orbital-operations-form", amount = 1},
+      {type = "item", name = "paper", amount = 5},
+      {type = "item", name = "ink", amount = 1},
+      {type = "item", name = "copper-ore", amount = 1},
+    },
+    results = {{type = "item", name = "orbital-operations-form", amount = 16}},
+    main_product = "orbital-operations-form",
     energy_required = 6,
-    surface_conditions = {
-      {
-        property = "pressure",
-        min = 0,
-        max = 0,
-      },
+    allow_productivity = true,
+  }),
+  vacuum_only({
+    type = "recipe",
+    name = "asteroid-processing-docket-copying",
+    category = "orbital-printing",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "asteroid-processing-docket", amount = 1},
+      {type = "item", name = "paper", amount = 5},
+      {type = "item", name = "ink", amount = 1},
+      {type = "item", name = "calcite", amount = 1},
     },
-  },
+    results = {{type = "item", name = "asteroid-processing-docket", amount = 10}},
+    main_product = "asteroid-processing-docket",
+    energy_required = 6,
+    allow_productivity = true,
+  }),
+  vacuum_only({
+    type = "recipe",
+    name = "priority-orbital-deviation-order",
+    category = "orbital-printing",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "orbital-deviation-order", amount = 4},
+      {type = "item", name = "copper-ore", amount = 2},
+      {type = "item", name = "sulfur", amount = 1},
+      {type = "item", name = "calcite", amount = 1},
+    },
+    results = {{type = "item", name = "priority-orbital-deviation-order", amount = 4}},
+    energy_required = 8,
+    allow_productivity = true,
+  }),
   not_on_planet({
     type = "recipe",
     name = "liquid-black-ink",
@@ -1896,9 +1998,7 @@ local SPACE_TOURISM_VARIANTS = {
     package_item = "small-spitter-tourism-package",
     tourist_item = "small-space-tourist",
     tourism_recipe = "small-spitter-space-tourism",
-    jettison_recipe = "small-space-tourist-jettison",
     bond_payout = 2,
-    documentation = 1,
     energy_required = 8,
   },
   {
@@ -1906,9 +2006,7 @@ local SPACE_TOURISM_VARIANTS = {
     package_item = "medium-spitter-tourism-package",
     tourist_item = "medium-space-tourist",
     tourism_recipe = "medium-spitter-space-tourism",
-    jettison_recipe = "medium-space-tourist-jettison",
     bond_payout = 4,
-    documentation = 2,
     energy_required = 10,
   },
   {
@@ -1916,9 +2014,7 @@ local SPACE_TOURISM_VARIANTS = {
     package_item = "big-spitter-tourism-package",
     tourist_item = "big-space-tourist",
     tourism_recipe = "big-spitter-space-tourism",
-    jettison_recipe = "big-space-tourist-jettison",
     bond_payout = 9,
-    documentation = 4,
     energy_required = 12,
   },
   {
@@ -1926,9 +2022,7 @@ local SPACE_TOURISM_VARIANTS = {
     package_item = "behemoth-spitter-tourism-package",
     tourist_item = "behemoth-space-tourist",
     tourism_recipe = "behemoth-spitter-space-tourism",
-    jettison_recipe = "behemoth-space-tourist-jettison",
     bond_payout = 24,
-    documentation = 8,
     energy_required = 16,
   },
 }
@@ -1950,9 +2044,7 @@ for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
     },
     ingredients = {
       {type = "item", name = variant.package_item, amount = 1},
-      {type = "item", name = "astronaut", amount = 1},
-      {type = "item", name = "transit-authorization", amount = 1},
-      {type = "item", name = "blank-approval", amount = 1},
+      {type = "item", name = "orbital-operations-form", amount = 1},
     },
     results = {
       {type = "item", name = "treasury-bond", amount = variant.bond_payout},
@@ -1969,31 +2061,6 @@ for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
     },
   }
 
-  tourism_recipes[#tourism_recipes + 1] = {
-    type = "recipe",
-    name = variant.jettison_recipe,
-    category = "orbital-bureaucracy",
-    enabled = false,
-    localised_name = {"", "Jettison ", {"entity-name." .. variant.spitter}, " Tourist"},
-    localised_description = {
-      "",
-      "Airlock the already-paid tourist and retain only the liability paperwork.",
-    },
-    ingredients = {
-      {type = "item", name = variant.tourist_item, amount = 1},
-    },
-    results = {
-      {type = "item", name = "useless-documentation", amount = variant.documentation},
-    },
-    energy_required = math.max(2, variant.energy_required / 2),
-    surface_conditions = {
-      {
-        property = "pressure",
-        min = 0,
-        max = 0,
-      },
-    },
-  }
 end
 
 data:extend(tourism_recipes)
@@ -2027,23 +2094,9 @@ local staffed_building_manager_requirements = {
   ["administrative-space-station"] = {"staffing", "orbital"},
 }
 
-local orbital_manager_requirements = {
-  ["thermal-process-license-orbital"] = {"orbital"},
-  ["calcite-reagent-waiver-orbital"] = {"orbital"},
-  ["offworld-metallurgy-charter-orbital"] = {"orbital"},
-  ["orbital-deviation-order"] = {"orbital"},
-  ["asteroid-processing-docket"] = {"orbital"},
-}
-
 for recipe_name, briefing_keys in pairs(formation_manager_requirements) do
   add_manager_requirements(recipe_name, briefing_keys)
 end
 for recipe_name, briefing_keys in pairs(staffed_building_manager_requirements) do
   add_manager_requirements(recipe_name, briefing_keys)
-end
-for recipe_name, briefing_keys in pairs(orbital_manager_requirements) do
-  add_manager_requirements(recipe_name, briefing_keys)
-end
-for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
-  add_manager_requirements(variant.tourism_recipe, {"orbital"})
 end

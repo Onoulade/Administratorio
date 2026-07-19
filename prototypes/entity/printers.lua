@@ -7,6 +7,8 @@
 local entity_graphics = "__administratorio__/graphics/entities/"
 local sound_path = "__administratorio__/sound/buildings/"
 local icon_graphics = "__administratorio__/graphics/icons/"
+local feature_flags = require("feature_flags")
+local planets = require("prototypes.shared.space_age_planets")
 
 local function placeable_by_item(name)
   return {
@@ -121,6 +123,9 @@ printer_t2.icons = nil
 printer_t2.minable.result = "printer-t2"
 printer_t2.next_upgrade = nil
 printer_t2.crafting_categories = {"printing", "printing-advanced", "printing-workorder"}
+if feature_flags.space_age_enabled() then
+  printer_t2.crafting_categories[#printer_t2.crafting_categories + 1] = "orbital-printing"
+end
 printer_t2.crafting_speed = 2
 printer_t2.energy_usage = "200kW"
 printer_t2.energy_source = { type = "electric", usage_priority = "secondary-input" }
@@ -139,5 +144,10 @@ printer_t2.working_sound = {
   sound = { filename = sound_path .. "industrial-press-loop.ogg", volume = 0.58 },
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
+
+if feature_flags.space_age_enabled() then
+  planets.require_non_vacuum_surface(mechanical_printer)
+  planets.require_non_vacuum_surface(printer_t1)
+end
 
 data:extend({mechanical_printer, printer_t1, printer_t2})
