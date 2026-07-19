@@ -448,6 +448,10 @@ test("vulcanus early bootstrap supplies inputs, not duplicated finished paperwor
   assert_true(tech_unlocks_recipe(calcite, "dubious-data-analysis-vulcanus"), "calcite-processing should unlock dubious-data-analysis-vulcanus")
   assert_true(tech_unlocks_recipe(calcite, "paper-production-vulcanus"), "calcite-processing should unlock paper-production-vulcanus")
   assert_true(tech_unlocks_recipe(calcite, "carbon-offset-certificate-basic-vulcanus"), "calcite-processing should unlock carbon-offset-certificate-basic-vulcanus")
+  assert_true(has_ingredient(recipes["carbon-offset-certificate-basic-vulcanus"], "blank-form"),
+    "Vulcanus certificates should retain a real paperwork cost")
+  assert_eq(recipes["carbon-offset-certificate-basic-vulcanus"].energy_required, 3,
+    "Vulcanus certificates should be slower than the canonical bootstrap route")
   assert_true(tech_unlocks_recipe(propaganda, "redundant-rubble-recovery-vulcanus"), "industrial-propaganda should unlock the local rubble bridge")
   assert_eq(get_result_amount(recipes["redundant-rubble-recovery-vulcanus"], "redundant-rubble"), 5,
     "the rubble bridge should make the generic paperwork chain possible")
@@ -466,9 +470,6 @@ test("vulcanus certification unlocks local notary gates, not a second paperwork 
     "embossed-seal",
     "industrial-charter",
     "territorial-resettlement-order",
-    "good-excuse-vulcanus",
-    "management-approval-written-vulcanus",
-    "government-grant-vulcanus",
     "vulcanus-lie-distillation",
   }) do
     assert_true(tech_unlocks_recipe(certification, recipe_name), "vulcanus-certification should unlock " .. recipe_name)
@@ -526,7 +527,10 @@ test("vulcanus chromatic chain defines the expected fluids and fluid-fed recipes
   assert_true(has_fluid_ingredient(recipes["blank-cyan-form-production"], "cyan-ink"), "blank-cyan-form should consume cyan-ink")
   assert_true(has_fluid_ingredient(recipes["permit-draft"], "cyan-ink"), "permit-draft should consume cyan-ink")
   assert_true(has_fluid_ingredient(recipes["inspection-docket"], "cyan-ink"), "inspection-docket should consume cyan-ink")
-  assert_true(has_fluid_ingredient(recipes["management-approval-written-vulcanus"], "lie"), "written approval exception should consume locally distilled lie")
+  assert_eq(recipes["good-excuse-vulcanus"], nil, "Vulcanus should import finished good excuses")
+  assert_eq(recipes["management-approval-written-vulcanus"], nil,
+    "Vulcanus should import finished executive approvals")
+  assert_eq(recipes["government-grant-vulcanus"], nil, "Vulcanus must not mint Nauvis government grants")
   assert_true(has_fluid_ingredient(recipes["vulcanus-lie-distillation"], "molten-promises"), "lie distillation should consume molten-promises")
 end)
 
@@ -888,7 +892,6 @@ test("gleba conciliation unlocks the yellow chain and gleba specialist buildings
     "symbiosis-record",
     "conciliation-order",
     "management-approval-written-gleba",
-    "government-grant-gleba",
     "composted-rubble-recovery-gleba",
     "conciliation-officer-formation-gleba",
   }) do
@@ -1045,11 +1048,9 @@ test("gleba adds targeted ingredients instead of duplicate building recipes", fu
     "ink-production-gleba",
     "carbon-offset-certificate-basic-gleba",
     "construction-permit-gleba",
-    "administrative-science-pack-production-gleba",
     "dubious-data-cultivation-gleba",
     "provisional-approval-cultivation-gleba",
     "management-approval-written-gleba",
-    "government-grant-gleba",
     "composted-rubble-recovery-gleba",
     "conciliation-officer-formation-gleba",
     "capture-bureau",
@@ -1093,10 +1094,14 @@ test("gleba adds targeted ingredients instead of duplicate building recipes", fu
     "Gleba should receive only one provisional approval per cultivation")
   assert_eq(recipes["provisional-approval-cultivation-gleba"].energy_required, 4,
     "Gleba provisional approval should be deliberately slow")
+  assert_eq(recipes["carbon-offset-certificate-basic-gleba"].energy_required, 5,
+    "Gleba certificates should be a costly local material bridge")
+  assert_eq(recipes["administrative-science-pack-production-gleba"], nil,
+    "Gleba should use the canonical administrative science recipe")
   assert_eq(recipes["management-approval-written-gleba"].energy_required, 24,
-    "Gleba should pay a meaningful biological cost for the terminal approval")
-  assert_eq(recipes["government-grant-gleba"].energy_required, 36,
-    "Gleba should pay a meaningful biological cost for the terminal grant")
+    "Gleba's one bulk-escape approval bridge should stay deliberately slow")
+  assert_eq(recipes["government-grant-gleba"], nil,
+    "Gleba must not mint Nauvis government grants")
   assert_eq(recipes["composted-rubble-recovery-gleba"].energy_required, 12,
     "Gleba rubble recovery should stay slow")
 end)
@@ -1121,8 +1126,6 @@ test("fulgora digital services unlocks the bureau and finalized digital paperwor
     "digital-processing-certificate",
     "electromagnetic-operating-license",
     "data-recovery-order",
-    "management-approval-written-fulgora",
-    "government-grant-fulgora",
   }) do
     assert_true(tech_unlocks_recipe(fulgora, recipe_name), "fulgora-digital-services should unlock " .. recipe_name)
   end
@@ -1214,10 +1217,14 @@ test("fulgora archive and electrolyte bootstrap stays local", function()
     "Fulgora needs one expensive lubricant bridge for the unchanged electric-engine chain")
   assert_true(tech_unlocks_recipe(electromagnetic_plant, "electromagnetic-lubricant-fulgora"),
     "electromagnetic-plant should unlock the Fulgora lubricant bridge")
-  for _, recipe_name in ipairs({"management-approval-written-fulgora", "government-grant-fulgora"}) do
-    assert_true(recipes[recipe_name] ~= nil, recipe_name .. " should be a narrow Fulgora launch exception")
-    assert_eq(recipes[recipe_name].category, "bureaucracy-registration", recipe_name .. " should use the digital bureau")
-  end
+  assert_eq(get_result_amount(recipes["carbon-offset-certificate-basic-fulgora"], "carbon-offset-certificate-basic"), 1,
+    "Fulgora certificates should not create a bulk paperwork surplus")
+  assert_eq(recipes["carbon-offset-certificate-basic-fulgora"].energy_required, 8,
+    "Fulgora certificates should be an expensive salvage conversion")
+  assert_eq(recipes["management-approval-written-fulgora"], nil,
+    "Fulgora should import finished executive approvals")
+  assert_eq(recipes["government-grant-fulgora"], nil,
+    "Fulgora must not recover Nauvis government grants from archives")
 
   assert_true(archive_technology.unit == nil, "archive recombination should not require off-world science packs")
   assert_true(archive_technology.research_trigger ~= nil, "archive recombination should use a local craft trigger")
