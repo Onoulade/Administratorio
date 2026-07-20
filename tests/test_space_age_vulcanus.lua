@@ -152,6 +152,29 @@ data = {
         fluid_boxes = {},
         graphics_set = {},
       },
+      ["formation-center"] = {
+        type = "assembling-machine",
+        name = "formation-center",
+        icon = "__administratorio__/graphics/icons/formation-center.png",
+        icon_size = 64,
+        minable = {result = "formation-center"},
+        placeable_by = {{item = "formation-center", count = 1}},
+        crafting_categories = {"biter-training"},
+        fluid_boxes = {
+          {production_type = "input", pipe_connections = {}, volume = 100},
+          {production_type = "input", pipe_connections = {}, volume = 100},
+        },
+        graphics_set = {
+          animation = {
+            layers = {{
+              filename = "__administratorio__/graphics/entities/formation-center/formation-center.png",
+              width = 480,
+              height = 435,
+              scale = 1 / 3,
+            }},
+          },
+        },
+      },
     },
     ["container"] = {},
     ["ammo-turret"] = {
@@ -496,6 +519,11 @@ end)
 
 test("formation center supports coffee-fed batch meetings", function()
   local center = assert(data.raw["assembling-machine"]["formation-center"])
+  assert_eq(center.icon, "__administratorio__/graphics/icons/formation-center.png",
+    "Space Age should keep the custom formation center icon")
+  assert_eq(center.graphics_set.animation.layers[1].filename,
+    "__administratorio__/graphics/entities/formation-center/formation-center.png",
+    "Space Age should keep the custom formation center sprite")
   assert_eq(center.crafting_speed, 1.5)
   assert_eq(center.result_inventory_size, 4,
     "advanced formations need room for their employee and returned managers")
@@ -507,6 +535,10 @@ test("formation center supports coffee-fed batch meetings", function()
   local allowed = {}
   for _, effect in ipairs(center.allowed_effects or {}) do allowed[effect] = true end
   assert_true(allowed.speed, "Formation Center meetings should accept speed modules")
+  local categories = {}
+  for _, category in ipairs(center.crafting_categories or {}) do categories[category] = true end
+  assert_true(categories["biter-training"], "Formation Center should keep its base training recipes")
+  assert_true(categories["workforce-formation"], "Formation Center should accept Space Age formations")
 end)
 
 test("non-orbital space age admin machines stay out of vacuum", function()

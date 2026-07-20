@@ -753,7 +753,7 @@ breakroom.icon_size = 64
 breakroom.graphics_set = {
   animation = {
     layers = {
-      { filename = entity_graphics .. "corporate-breakroom/warehouse-1.png", priority = "high", width = 319, height = 328, frame_count = 1, scale = 0.5, shift = {0, -0.1} },
+      { filename = entity_graphics .. "corporate-breakroom/breakroom.png", priority = "high", width = 180, height = 185, frame_count = 1, scale = 0.9, shift = {0, -0.1} },
     }
   }
 }
