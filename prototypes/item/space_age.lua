@@ -289,16 +289,6 @@ data:extend({
   },
   {
     type = "item",
-    name = "formation-center",
-    icon = "__base__/graphics/icons/biter-spawner.png",
-    icon_size = 64,
-    subgroup = "admin-biter-buildings",
-    order = "h",
-    place_result = "formation-center",
-    stack_size = 20
-  },
-  {
-    type = "item",
     name = "chromatic-printer",
     icon = item_icons .. "space-age/chromatic-printer.png",
     icon_size = 64,
@@ -773,6 +763,24 @@ data:extend({
     stack_size = 10
   },
 })
+
+-- The base building loader owns this item. Keep a standalone fallback for
+-- isolated Space Age prototype tests without overwriting its custom icon in
+-- the real load order.
+if not (data.raw.item and data.raw.item["formation-center"]) then
+  data:extend({
+    {
+      type = "item",
+      name = "formation-center",
+      icon = item_icons .. "formation-center.png",
+      icon_size = 64,
+      subgroup = "admin-biter-buildings",
+      order = "d",
+      place_result = "formation-center",
+      stack_size = 20,
+    },
+  })
+end
 
 local SPACE_TOURISM_VARIANTS = {
   {spitter = "small-spitter", package_item = "small-spitter-tourism-package", tourist_item = "small-space-tourist", order = "j-k1"},
