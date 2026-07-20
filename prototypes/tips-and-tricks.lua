@@ -262,7 +262,7 @@ if space_age_enabled then
       order = "o",
       is_title = true,
       indent = 0,
-      trigger = {type = "research", technology = "workforce-formation"},
+      trigger = {type = "research", technology = "worker-formation"},
     },
 
     -- Workforce Formation overview
@@ -272,7 +272,7 @@ if space_age_enabled then
       category = "administratorio",
       order = "oa",
       indent = 1,
-      trigger = {type = "research", technology = "workforce-formation"},
+      trigger = {type = "research", technology = "worker-formation"},
     },
 
     -- Formation Center (covered by existing tip "administratorio-biter-workers" but we add orbital-specific note)
@@ -282,7 +282,7 @@ if space_age_enabled then
       category = "administratorio",
       order = "ob",
       indent = 1,
-      trigger = {type = "research", technology = "workforce-formation"},
+      trigger = {type = "research", technology = "worker-formation"},
     },
 
     -- Trajectory Compliance Arrays
@@ -292,7 +292,7 @@ if space_age_enabled then
       category = "administratorio",
       order = "oc",
       indent = 1,
-      trigger = {type = "research", technology = "workforce-formation"},
+      trigger = {type = "research", technology = "orbital-employment-infrastructure"},
     },
 
     -- Senior Trajectory Compliance Array
@@ -322,7 +322,7 @@ if space_age_enabled then
       category = "administratorio",
       order = "od",
       indent = 1,
-      trigger = {type = "research", technology = "workforce-formation"},
+      trigger = {type = "research", technology = "orbital-employment-infrastructure"},
     },
 
     -- Orbital Employment Damage upgrades
@@ -352,7 +352,7 @@ if space_age_enabled then
       category = "administratorio",
       order = "og",
       indent = 1,
-      trigger = {type = "research", technology = "workforce-formation"},
+      trigger = {type = "research", technology = "orbital-employment-infrastructure"},
     },
 
     -- Orbital Infrastructure Permit

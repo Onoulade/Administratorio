@@ -60,9 +60,13 @@ test("0.5.8 converts loaded cannon ammunition to VESMs", function()
     "migration should install replacement VESM ammunition")
 end)
 
-test("mod version is 0.5.8", function()
+test("0.6.0 reapplies technology effects after the workforce tree split", function()
+  local migration = read_file(mod_root .. "migrations/0.6.0.lua")
+  assert_true(migration:find("reset_technology_effects", 1, true) ~= nil,
+    "workforce-tree migration should reapply researched recipe unlocks")
+
   local info = read_file(mod_root .. "info.json")
-  assert_true(info:find('"version": "0.5.8"', 1, true) ~= nil, "info.json should advertise migration version")
+  assert_true(info:find('"version": "0.6.0"', 1, true) ~= nil, "info.json should advertise migration version")
 end)
 
 print(string.format("\n=== ADMINISTRATORIO TRAJECTORY COMPLIANCE MIGRATION TESTS ==="))

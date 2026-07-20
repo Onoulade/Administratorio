@@ -673,9 +673,9 @@ test("offworld variants cover materials, not Foundry construction", function()
     "foundry must not have a separate offworld construction recipe")
 end)
 
-test("licensed notary training moves earlier but stays Nauvis-only", function()
+test("licensed notary training is specialized but stays Nauvis-only", function()
   local formation = assert(data.raw.recipe["licensed-notary-formation"], "licensed-notary-formation missing")
-  local workforce = assert(data.raw.technology["workforce-formation"], "workforce-formation missing")
+  local specialized = assert(data.raw.technology["specialized-formation"], "specialized-formation missing")
   local metallurgy = assert(data.raw.technology["metallurgic-science-pack"], "metallurgic-science-pack missing")
   local export_charters = assert(data.raw.technology["vulcanus-export-charters"], "vulcanus-export-charters missing")
 
@@ -684,10 +684,10 @@ test("licensed notary training moves earlier but stays Nauvis-only", function()
   assert_eq(formation.surface_conditions[1].min, 1000, "licensed-notary-formation should target Nauvis pressure")
   assert_eq(formation.surface_conditions[2].min, 10, "licensed-notary-formation should target Nauvis gravity")
 
-  local workforce_unlocks = {}
-  for _, effect in ipairs(workforce.effects or {}) do
+  local specialized_unlocks = {}
+  for _, effect in ipairs(specialized.effects or {}) do
     if effect.type == "unlock-recipe" then
-      workforce_unlocks[effect.recipe] = true
+      specialized_unlocks[effect.recipe] = true
     end
   end
   local metallurgy_unlocks = {}
@@ -703,7 +703,7 @@ test("licensed notary training moves earlier but stays Nauvis-only", function()
     end
   end
 
-  assert_true(workforce_unlocks["licensed-notary-formation"], "workforce-formation should unlock licensed-notary-formation")
+  assert_true(specialized_unlocks["licensed-notary-formation"], "specialized-formation should unlock licensed-notary-formation")
   assert_true(not metallurgy_unlocks["licensed-notary-formation"],
     "metallurgic-science-pack should not unlock licensed-notary-formation")
   assert_true(export_unlocks["offworld-metallurgy-charter"], "vulcanus-export-charters should unlock offworld-metallurgy-charter")
