@@ -26,6 +26,9 @@ Strict mode:
   - always fails when a visible recipe-unlock technology has no unique recipe
     unlocks after prototype hooks run, because researching a hollow node gives
     the player nothing.
+
+All modes fail when a visible technology depends on a missing, disabled, or
+hidden technology, because Factorio cannot queue that research.
 """
 
 from __future__ import annotations
@@ -352,6 +355,24 @@ class ProgressionAnalyzer:
     def tech_visible(self, tech_name: str) -> bool:
         tech = self.technologies[tech_name]
         return tech.get("enabled", True) and not tech.get("hidden", False)
+
+    def unavailable_prerequisite_findings(self) -> List[Dict]:
+        """Return visible technologies with prerequisites the player cannot research."""
+        findings = []
+        for tech_name in sorted(self.technologies):
+            if not self.tech_visible(tech_name):
+                continue
+            for prerequisite in self.technologies[tech_name].get("prerequisites", []) or []:
+                parent = self.technologies.get(prerequisite)
+                if parent is None:
+                    findings.append(
+                        {"technology": tech_name, "prerequisite": prerequisite, "reason": "missing"}
+                    )
+                elif not self.tech_visible(prerequisite):
+                    findings.append(
+                        {"technology": tech_name, "prerequisite": prerequisite, "reason": "disabled or hidden"}
+                    )
+        return findings
 
     def is_target_item(self, item_name: str) -> bool:
         proto = self.item_index.get(item_name)
@@ -1268,6 +1289,7 @@ class ProgressionAnalyzer:
 def render_report(
     analyzer: ProgressionAnalyzer,
     missing_building_recipes: Sequence[str],
+    unavailable_prerequisites: Sequence[Dict],
     empty_recipe_unlock_techs: Sequence[Dict],
     direct_target_failures: Sequence[Dict],
     parent_pack_gaps: Sequence[Dict],
@@ -1315,8 +1337,19 @@ def render_report(
         f"Filtered recipes analyzed: {len(analyzer.recipes)}",
         f"Visible technologies with unlocks: {sum(1 for name in analyzer.technologies if analyzer.tech_visible(name) and analyzer.unlocks_by_tech.get(name))}",
         "",
-        f"Buildings without a recipe: {len(missing_building_recipes)}",
+        f"Visible technologies with unavailable prerequisites: {len(unavailable_prerequisites)}",
     ]
+    for finding in unavailable_prerequisites:
+        lines.append(
+            f"  - {finding['technology']} <- {finding['prerequisite']} ({finding['reason']})"
+        )
+
+    lines.extend(
+        [
+            "",
+        f"Buildings without a recipe: {len(missing_building_recipes)}",
+        ]
+    )
 
     if missing_building_recipes:
         for item_name in missing_building_recipes:
@@ -1504,6 +1537,7 @@ def main() -> int:
         analyzer = ProgressionAnalyzer(json.loads(dump_path.read_text()))
 
         missing_building_recipes = analyzer.buildings_without_recipes()
+        unavailable_prerequisites = analyzer.unavailable_prerequisite_findings()
         empty_recipe_unlock_techs = analyzer.technologies_without_unique_recipe_unlocks()
         direct_target_failures = analyzer.direct_target_findings()
         parent_pack_gaps = analyzer.parent_pack_gaps()
@@ -1527,6 +1561,7 @@ def main() -> int:
         report_text = render_report(
             analyzer=analyzer,
             missing_building_recipes=missing_building_recipes,
+            unavailable_prerequisites=unavailable_prerequisites,
             empty_recipe_unlock_techs=empty_recipe_unlock_techs,
             direct_target_failures=direct_target_failures,
             parent_pack_gaps=parent_pack_gaps,
@@ -1546,6 +1581,8 @@ def main() -> int:
         print(f"Report written to {report_path}")
 
         if missing_building_recipes:
+            return 1
+        if unavailable_prerequisites:
             return 1
         if empty_recipe_unlock_techs:
             return 1

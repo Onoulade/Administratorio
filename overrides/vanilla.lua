@@ -93,6 +93,15 @@ local tech_prerequisite_replacements = {
     military = "discovery-bullshit",
     ["military-2"] = "discovery-bullshit",
   },
+  -- Both technologies retain a vanilla combat prerequisite even though their
+  -- actual recipes are civilian.  Map it onto an existing prerequisite so the
+  -- replacement is deduplicated below rather than leaving an unreachable edge.
+  ["gate"] = {
+    ["military-2"] = "logistic-science-pack",
+  },
+  ["rocket-fuel"] = {
+    flammables = "advanced-oil-processing",
+  },
 }
 
 for tech_name, replacements in pairs(tech_prerequisite_replacements) do
