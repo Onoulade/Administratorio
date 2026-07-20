@@ -301,7 +301,7 @@ if feature_flags.space_age_enabled() then
     {
       type = "research-achievement",
       name = "workforce-formation-achievement",
-      technology = "workforce-formation",
+      technology = "worker-formation",
       icon = icons .. "formation-center.png",
       icon_size = 64,
       order = "h[orbital]-a",

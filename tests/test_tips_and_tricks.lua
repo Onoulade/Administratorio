@@ -130,18 +130,27 @@ test("Space Age planet manifests unlock with their planetary systems", function(
 end)
 
 test("orbital tips unlock with the feature they explain", function()
-  local workforce_tips = {
+  local worker_tips = {
     "administratorio-workforce-formation-title",
     "administratorio-workforce-formation",
     "administratorio-orbital-specialists",
+  }
+  for _, name in ipairs(worker_tips) do
+    assert_true(
+      trigger_contains(tip(name).trigger, "research", "technology", "worker-formation"),
+      name .. " should unlock from worker-formation"
+    )
+  end
+
+  local orbital_tips = {
     "administratorio-trajectory-compliance-arrays",
     "administratorio-orbital-employment-cannon",
     "administratorio-administrative-space-station",
   }
-  for _, name in ipairs(workforce_tips) do
+  for _, name in ipairs(orbital_tips) do
     assert_true(
-      trigger_contains(tip(name).trigger, "research", "technology", "workforce-formation"),
-      name .. " should unlock from workforce-formation"
+      trigger_contains(tip(name).trigger, "research", "technology", "orbital-employment-infrastructure"),
+      name .. " should unlock from orbital-employment-infrastructure"
     )
   end
 
