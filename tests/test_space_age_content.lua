@@ -65,7 +65,18 @@ local recipes = {
   ["scrap-recycling"] = {type = "recipe", name = "scrap-recycling", results = {{type = "item", name = "iron-gear-wheel", amount = 1, probability = 0.2}}},
 }
 
-local items = {}
+local items = {
+  ["formation-center"] = {
+    type = "item",
+    name = "formation-center",
+    icon = "__administratorio__/graphics/icons/formation-center.png",
+    icon_size = 64,
+    subgroup = "admin-biter-buildings",
+    order = "d",
+    place_result = "formation-center",
+    stack_size = 20,
+  },
+}
 local ammos = {}
 local fluids = {}
 local signals = {}
@@ -290,6 +301,12 @@ test("worker-biter exists as the enrolled-to-workforce intermediate", function()
   assert_true(has_ingredient(recipes["job-offer-production"], "narrative"), "job-offer should require narrative")
   assert_true(recipes["worker-biter-formation"] ~= nil, "worker-biter formation recipe missing")
   assert_true(has_ingredient(recipes["worker-biter-formation"], "enrolled-biter"), "worker-biter should come from enrolled-biter")
+end)
+
+test("space age keeps the formation center item icon", function()
+  assert_eq(items["formation-center"].icon,
+    "__administratorio__/graphics/icons/formation-center.png",
+    "Space Age should not replace the custom formation center icon")
 end)
 
 test("trainee formation consumes worker-biter instead of enrolled-biter directly", function()

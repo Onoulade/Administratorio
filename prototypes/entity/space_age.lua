@@ -39,14 +39,50 @@ local function align_footprint(entity, collision_width, collision_height, select
   }
 end
 
-local formation_center = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
-formation_center.name = "formation-center"
-formation_center.icon = "__base__/graphics/icons/biter-spawner.png"
+local formation_center = data.raw["assembling-machine"]["formation-center"]
+local extend_formation_center = formation_center == nil
+if not formation_center then
+  formation_center = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
+  formation_center.name = "formation-center"
+  formation_center.minable = {mining_time = 0.2, result = "formation-center"}
+  formation_center.placeable_by = placeable_by_item("formation-center")
+  formation_center.next_upgrade = nil
+  formation_center.fluid_boxes = {
+    {
+      production_type = "input",
+      pipe_connections = {{
+        flow_direction = "input",
+        direction = defines.direction.north,
+        position = {0, -1},
+      }},
+      volume = 100,
+    },
+    {
+      production_type = "input",
+      pipe_connections = {{
+        flow_direction = "input",
+        direction = defines.direction.south,
+        position = {0, 1},
+      }},
+      volume = 100,
+    },
+  }
+end
+
+formation_center.icon = item_icons .. "formation-center.png"
 formation_center.icon_size = 64
-formation_center.minable = {mining_time = 0.2, result = "formation-center"}
-formation_center.placeable_by = placeable_by_item("formation-center")
-formation_center.next_upgrade = nil
-formation_center.crafting_categories = {"workforce-formation"}
+formation_center.icons = nil
+formation_center.crafting_categories = formation_center.crafting_categories or {}
+local has_workforce_formation = false
+for _, category in ipairs(formation_center.crafting_categories) do
+  if category == "workforce-formation" then
+    has_workforce_formation = true
+    break
+  end
+end
+if not has_workforce_formation then
+  formation_center.crafting_categories[#formation_center.crafting_categories + 1] = "workforce-formation"
+end
 formation_center.crafting_speed = 1.5
 formation_center.energy_usage = "500kW"
 formation_center.energy_source = {type = "electric", usage_priority = "secondary-input"}
@@ -54,26 +90,6 @@ formation_center.ingredient_count = 6
 formation_center.result_inventory_size = 4
 formation_center.module_slots = 4
 formation_center.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
-formation_center.fluid_boxes = {
-  {
-    production_type = "input",
-    pipe_connections = {{
-      flow_direction = "input",
-      direction = defines.direction.north,
-      position = {0, -1},
-    }},
-    volume = 100,
-  },
-  {
-    production_type = "input",
-    pipe_connections = {{
-      flow_direction = "input",
-      direction = defines.direction.south,
-      position = {0, 1},
-    }},
-    volume = 100,
-  },
-}
 formation_center.fluid_boxes_off_when_no_fluid_recipe = true
 
 local chromatic_printer = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
@@ -819,8 +835,7 @@ for _, entity in ipairs({
   require_non_vacuum(entity)
 end
 
-data:extend({
-  formation_center,
+local space_age_entities = {
   chromatic_printer,
   laser_printer,
   administrative_space_station,
@@ -837,4 +852,10 @@ data:extend({
   executive_trajectory_compliance_array,
   orbital_employment_cannon,
   public_train_stop,
-})
+}
+
+if extend_formation_center then
+  table.insert(space_age_entities, 1, formation_center)
+end
+
+data:extend(space_age_entities)
