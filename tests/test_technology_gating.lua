@@ -656,7 +656,7 @@ test("late administrative branches are split into finance meetings and nuclear p
   assert_true(tech_has_prereq("radiological-compliance", "battery"), "radiological-compliance should require battery")
 end)
 
-test("delegate training and vanilla relocation hooks keep each tech meaningful", function()
+test("delegate training and vanilla unlock ownership keep each tech meaningful", function()
   assert_true(tech_has_prereq("union-delegate-training", "formation-center"), "union delegate training should require the formation center")
   assert_true(tech_has_prereq("union-delegate-training", "verbal-approvals"), "union delegate training should require verbal approvals")
   assert_true(tech_has_prereq("union-delegate-training", "local-precedents"), "union delegate training should require local precedents")
@@ -664,8 +664,17 @@ test("delegate training and vanilla relocation hooks keep each tech meaningful",
 
   assert_true(tech_unlocks_recipe("advanced-material-processing", "steel-furnace"), "advanced material processing should keep the steel furnace unlock")
   assert_true(not tech_unlocks_recipe("concrete", "steel-furnace"), "concrete should not duplicate the steel furnace unlock")
-  assert_true(not tech_unlocks_recipe("circuit-network", "arithmetic-combinator"), "circuit network should not unlock arithmetic combinators early")
-  assert_true(tech_unlocks_recipe("advanced-combinators", "arithmetic-combinator"), "advanced combinators should unlock arithmetic combinators")
+  for _, recipe_name in ipairs({
+    "arithmetic-combinator",
+    "decider-combinator",
+    "constant-combinator",
+    "power-switch",
+    "programmable-speaker",
+    "display-panel",
+  }) do
+    assert_true(tech_unlocks_recipe("circuit-network", recipe_name), "circuit network should keep its vanilla " .. recipe_name .. " unlock")
+    assert_true(not tech_unlocks_recipe("advanced-combinators", recipe_name), "advanced combinators should not duplicate the vanilla " .. recipe_name .. " unlock")
+  end
   assert_true(tech_unlocks_recipe("electric-energy-distribution-1", "medium-electric-pole"), "electric-energy-distribution-1 should keep the medium pole unlock")
   assert_true(tech_unlocks_recipe("electric-energy-distribution-1", "big-electric-pole"), "electric-energy-distribution-1 should keep the big pole unlock")
   assert_true(not tech_unlocks_recipe("electric-energy-distribution-2", "medium-electric-pole"), "electric-energy-distribution-2 should not duplicate the medium pole unlock")

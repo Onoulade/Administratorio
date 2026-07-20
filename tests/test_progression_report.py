@@ -14,10 +14,21 @@ Default behavior:
 Strict mode:
   - `--strict` also fails when a direct building/accessory unlock does not
     become immediately craftable at its unlocking technology.
+  - `--strict` fails when a recipe still cannot become machine-usable even with
+    the full visible tech graph, which indicates a permanent category/provider
+    cycle rather than a merely early unlock.
   - `--strict` fails when a building ingredient is only machine-reachable from
     the building itself or from a later provider in that building's branch.
   - `--strict` fails when a child technology drops a science pack already
     required by one of its prerequisite technologies.
+  - `--strict` fails when a technology uses a science pack in its research
+    ingredients but does not transitively depend on that pack's technology.
+  - always fails when a visible recipe-unlock technology has no unique recipe
+    unlocks after prototype hooks run, because researching a hollow node gives
+    the player nothing.
+
+All modes fail when a visible technology depends on a missing, disabled, or
+hidden technology, because Factorio cannot queue that research.
 """
 
 from __future__ import annotations
@@ -58,11 +69,12 @@ RESOURCE_ROOT_TYPES = (
     "simple-entity-with-force",
     "fish",
 )
-SECONDARY_RECIPE_CATEGORIES = {"pneumatic-liquify", "pneumatic-solidify"}
-RUNTIME_OBTAINABLE_ITEMS = {
-    # A resolved citizen consumes a job offer and is inserted into the desk as
-    # a worker by control-stage code; no prototype recipe is supposed to exist.
-    "biter-worker",
+SECONDARY_RECIPE_CATEGORIES = {"pneumatic-intake", "smelting"}
+STARTING_PROVIDER_ITEMS = ("mechanical-printer", "office-desk")
+STRUCTURAL_EMPTY_TECHS = {
+    # Vanilla parent node for the first module branches; it exists to organize
+    # prerequisites while speed/productivity/efficiency own the actual recipes.
+    "modules",
 }
 
 
@@ -193,8 +205,6 @@ def recipe_results(recipe: Dict) -> List[Tuple[str, str]]:
 def is_secondary_recipe(name: str, recipe: Dict) -> bool:
     if name.endswith("-regulated"):
         return True
-    if name.startswith("pneumatic-liquify-") or name.startswith("pneumatic-solidify-"):
-        return True
     if recipe_category(recipe) in SECONDARY_RECIPE_CATEGORIES:
         return True
     return False
@@ -219,16 +229,24 @@ class ProgressionAnalyzer:
         self.root_materials = self._build_root_materials()
         self.root_crafting_categories = self._build_root_crafting_categories()
         self.category_providers = self._build_category_providers()
+        self.provider_categories_by_item = self._build_provider_categories_by_item()
+        self.starting_provider_items = self._build_starting_provider_items()
+        self.starting_provider_categories = self._build_starting_provider_categories()
         self.producing_recipes: Dict[str, List[str]] = defaultdict(list)
         for recipe_name, recipe in self.recipes.items():
             for result_name, _ in recipe_results(recipe):
                 self.producing_recipes[result_name].append(recipe_name)
 
+        self.all_recipe_unlocks_by_tech: Dict[str, List[str]] = defaultdict(list)
         self.unlocks_by_tech: Dict[str, List[str]] = defaultdict(list)
         for tech_name, tech in self.technologies.items():
             for effect in tech.get("effects", []) or []:
-                if effect.get("type") == "unlock-recipe" and effect["recipe"] in self.recipes:
-                    self.unlocks_by_tech[tech_name].append(effect["recipe"])
+                if effect.get("type") == "unlock-recipe":
+                    recipe_name = effect["recipe"]
+                    if recipe_name in data_raw["recipe"]:
+                        self.all_recipe_unlocks_by_tech[tech_name].append(recipe_name)
+                    if recipe_name in self.recipes:
+                        self.unlocks_by_tech[tech_name].append(recipe_name)
 
         self.tech_dependents: Dict[str, List[str]] = defaultdict(list)
         for tech_name, tech in self.technologies.items():
@@ -236,20 +254,22 @@ class ProgressionAnalyzer:
                 if prerequisite in self.technologies:
                     self.tech_dependents[prerequisite].append(tech_name)
 
-        self.world_trigger_recipes = {
-            recipe_name
-            for tech_name, tech in self.technologies.items()
-            if self.tech_visible(tech_name)
-            and (tech.get("research_trigger") or {}).get("type") == "mine-entity"
-            for recipe_name in self.unlocks_by_tech.get(tech_name, [])
-        }
+        self.world_trigger_recipe_techs: Dict[str, List[str]] = defaultdict(list)
+        for tech_name, tech in self.technologies.items():
+            if (
+                self.tech_visible(tech_name)
+                and (tech.get("research_trigger") or {}).get("type") == "mine-entity"
+            ):
+                for recipe_name in self.unlocks_by_tech.get(tech_name, []):
+                    self.world_trigger_recipe_techs[recipe_name].append(tech_name)
+        self.world_trigger_recipes = set(self.world_trigger_recipe_techs)
         self.always_enabled_recipes = {
             name for name, recipe in self.recipes.items() if recipe_enabled_from_start(recipe)
         }
         self.start_enabled_recipes = set(self.always_enabled_recipes) | self.world_trigger_recipes
 
     def _build_root_materials(self) -> Set[str]:
-        roots = {"water", "taxpayer-money"} | RUNTIME_OBTAINABLE_ITEMS
+        roots = {"water", "taxpayer-money", "biter-worker"}
         for proto_type in RESOURCE_ROOT_TYPES:
             for proto in self.data_raw.get(proto_type, {}).values():
                 minable = proto.get("minable") or {}
@@ -307,9 +327,52 @@ class ProgressionAnalyzer:
             for category, item_names in providers.items()
         }
 
+    def _build_provider_categories_by_item(self) -> Dict[str, Tuple[str, ...]]:
+        categories_by_item: Dict[str, Set[str]] = defaultdict(set)
+        for category, item_names in self.category_providers.items():
+            for item_name in item_names:
+                categories_by_item[item_name].add(category)
+        return {
+            item_name: tuple(sorted(category_names))
+            for item_name, category_names in categories_by_item.items()
+        }
+
+    def _build_starting_provider_items(self) -> Tuple[str, ...]:
+        return tuple(
+            sorted(
+                item_name
+                for item_name in STARTING_PROVIDER_ITEMS
+                if item_name in self.item_index
+            )
+        )
+
+    def _build_starting_provider_categories(self) -> Tuple[str, ...]:
+        categories: Set[str] = set()
+        for item_name in self.starting_provider_items:
+            categories.update(self.provider_categories_by_item.get(item_name, ()))
+        return tuple(sorted(categories))
+
     def tech_visible(self, tech_name: str) -> bool:
         tech = self.technologies[tech_name]
         return tech.get("enabled", True) and not tech.get("hidden", False)
+
+    def unavailable_prerequisite_findings(self) -> List[Dict]:
+        """Return visible technologies with prerequisites the player cannot research."""
+        findings = []
+        for tech_name in sorted(self.technologies):
+            if not self.tech_visible(tech_name):
+                continue
+            for prerequisite in self.technologies[tech_name].get("prerequisites", []) or []:
+                parent = self.technologies.get(prerequisite)
+                if parent is None:
+                    findings.append(
+                        {"technology": tech_name, "prerequisite": prerequisite, "reason": "missing"}
+                    )
+                elif not self.tech_visible(prerequisite):
+                    findings.append(
+                        {"technology": tech_name, "prerequisite": prerequisite, "reason": "disabled or hidden"}
+                    )
+        return findings
 
     def is_target_item(self, item_name: str) -> bool:
         proto = self.item_index.get(item_name)
@@ -346,6 +409,63 @@ class ProgressionAnalyzer:
         return tuple(sorted(seen))
 
     @lru_cache(maxsize=None)
+    def reachable_trigger_key(
+        self,
+        tech_key: Tuple[str, ...],
+        excluded_techs: Tuple[str, ...] = (),
+    ) -> Tuple[str, ...]:
+        reachable = set(tech_key)
+        excluded = set(excluded_techs)
+
+        changed = True
+        while changed:
+            changed = False
+            current_key = tuple(sorted(reachable))
+            for tech_name, tech in sorted(self.technologies.items()):
+                if tech_name in reachable or tech_name in excluded:
+                    continue
+                if not self.tech_visible(tech_name):
+                    continue
+
+                prerequisites = set(tech.get("prerequisites", []) or [])
+                if not prerequisites.issubset(reachable):
+                    continue
+
+                trigger = tech.get("research_trigger") or {}
+                trigger_type = trigger.get("type")
+                if trigger_type == "mine-entity":
+                    reachable.add(tech_name)
+                    changed = True
+                elif trigger_type == "craft-item":
+                    item_name = trigger.get("item")
+                    if item_name and self.craftable(item_name, current_key):
+                        reachable.add(tech_name)
+                        changed = True
+
+        return tuple(sorted(reachable))
+
+    @lru_cache(maxsize=None)
+    def tech_eval_key(self, tech_name: str, include_self: bool = True) -> Tuple[str, ...]:
+        base = set(self.prereq_closure(tech_name))
+        excluded: Tuple[str, ...] = ()
+        if include_self:
+            base.add(tech_name)
+        else:
+            excluded = (tech_name,)
+        return self.reachable_trigger_key(tuple(sorted(base)), excluded)
+
+    @lru_cache(maxsize=None)
+    def combined_eval_key(
+        self,
+        base_key: Tuple[str, ...],
+        tech_name: str,
+    ) -> Tuple[str, ...]:
+        combined = set(base_key)
+        combined.update(self.prereq_closure(tech_name))
+        combined.add(tech_name)
+        return self.reachable_trigger_key(tuple(sorted(combined)))
+
+    @lru_cache(maxsize=None)
     def available_recipes(self, tech_key: Tuple[str, ...]) -> Set[str]:
         available = set(self.start_enabled_recipes)
         for tech_name in tech_key:
@@ -365,6 +485,16 @@ class ProgressionAnalyzer:
             ordered.append(current)
             queue.extend(self.tech_dependents.get(current, []))
         return tuple(ordered)
+
+    @lru_cache(maxsize=None)
+    def full_tech_key(self) -> Tuple[str, ...]:
+        return tuple(
+            sorted(
+                tech_name
+                for tech_name in self.technologies
+                if self.tech_visible(tech_name)
+            )
+        )
 
     @lru_cache(maxsize=None)
     def craftable(self, item_name: str, tech_key: Tuple[str, ...]) -> bool:
@@ -440,15 +570,64 @@ class ProgressionAnalyzer:
         return rec(item_name)
 
     @lru_cache(maxsize=None)
-    def available_provider_items(self, tech_key: Tuple[str, ...]) -> Tuple[str, ...]:
+    def machine_state(
+        self,
+        tech_key: Tuple[str, ...],
+        excluded_provider_items: Tuple[str, ...] = (),
+    ) -> Tuple[Tuple[str, ...], Tuple[str, ...], Tuple[str, ...]]:
         available = self.available_recipes(tech_key)
-        provider_items: Set[str] = set()
-        for item_names in self.category_providers.values():
-            for item_name in item_names:
-                producers = self.producing_recipes.get(item_name, ())
-                if any(recipe_name in available for recipe_name in producers):
-                    provider_items.add(item_name)
-        return tuple(sorted(provider_items))
+        excluded = set(excluded_provider_items)
+        craftable_items: Set[str] = set(self.root_materials)
+        craftable_recipes: Set[str] = set()
+        available_categories: Set[str] = set(self.root_crafting_categories)
+        for category_name in self.starting_provider_categories:
+            providers = [
+                provider_name
+                for provider_name in self.category_providers.get(category_name, ())
+                if provider_name not in excluded
+            ]
+            if providers:
+                available_categories.add(category_name)
+
+        changed = True
+        while changed:
+            changed = False
+            for recipe_name in sorted(available):
+                if recipe_name in craftable_recipes:
+                    continue
+
+                recipe = self.recipes[recipe_name]
+                category_name = recipe_category(recipe) or "crafting"
+                if category_name not in available_categories:
+                    continue
+
+                if any(
+                    ingredient_name not in craftable_items
+                    for ingredient_name, _ in recipe_ingredients(recipe)
+                ):
+                    continue
+
+                craftable_recipes.add(recipe_name)
+                changed = True
+
+                for result_name, _ in recipe_results(recipe):
+                    if result_name not in craftable_items:
+                        craftable_items.add(result_name)
+                        changed = True
+
+                    if result_name in excluded:
+                        continue
+
+                    for provided_category in self.provider_categories_by_item.get(result_name, ()):
+                        if provided_category not in available_categories:
+                            available_categories.add(provided_category)
+                            changed = True
+
+        return (
+            tuple(sorted(craftable_items)),
+            tuple(sorted(craftable_recipes)),
+            tuple(sorted(available_categories)),
+        )
 
     @lru_cache(maxsize=None)
     def machine_craftable(
@@ -457,50 +636,30 @@ class ProgressionAnalyzer:
         tech_key: Tuple[str, ...],
         excluded_provider_items: Tuple[str, ...] = (),
     ) -> bool:
-        available = self.available_recipes(tech_key)
-        provider_roots = set(self.available_provider_items(tech_key))
-        provider_roots.difference_update(excluded_provider_items)
-        visiting_items: Set[str] = set()
+        craftable_items, _, _ = self.machine_state(tech_key, excluded_provider_items)
+        return item_name in set(craftable_items)
 
-        def rec(name: str) -> bool:
-            if name in self.root_materials:
-                return True
-            if name in visiting_items:
-                return False
-            producers = self.producing_recipes.get(name)
-            if not producers:
-                return False
+    @lru_cache(maxsize=None)
+    def recipe_machine_usable(
+        self,
+        recipe_name: str,
+        tech_key: Tuple[str, ...],
+        excluded_provider_items: Tuple[str, ...] = (),
+    ) -> bool:
+        _, craftable_recipes, _ = self.machine_state(tech_key, excluded_provider_items)
+        return recipe_name in set(craftable_recipes)
 
-            visiting_items.add(name)
-            try:
-                for recipe_name in producers:
-                    if recipe_name not in available:
-                        continue
-                    recipe = self.recipes[recipe_name]
-                    category_name = recipe_category(recipe) or "crafting"
-                    if category_name not in self.root_crafting_categories and not any(
-                        provider_item in provider_roots
-                        for provider_item in self.category_providers.get(category_name, ())
-                    ):
-                        continue
-
-                    ok = True
-                    for ingredient_name, ingredient_type in recipe_ingredients(recipe):
-                        if ingredient_type == "item":
-                            if not rec(ingredient_name):
-                                ok = False
-                                break
-                        else:
-                            if ingredient_name not in self.root_materials and not rec(ingredient_name):
-                                ok = False
-                                break
-                    if ok:
-                        return True
-                return False
-            finally:
-                visiting_items.remove(name)
-
-        return rec(item_name)
+    def recipe_ingredients_machine_ready(
+        self,
+        recipe_name: str,
+        tech_key: Tuple[str, ...],
+        excluded_provider_items: Tuple[str, ...] = (),
+    ) -> bool:
+        return all(
+            ingredient_name in self.root_materials
+            or self.machine_craftable(ingredient_name, tech_key, excluded_provider_items)
+            for ingredient_name, _ in recipe_ingredients(self.recipes[recipe_name])
+        )
 
     def direct_target_findings(self) -> List[Dict]:
         findings: List[Dict] = []
@@ -508,8 +667,8 @@ class ProgressionAnalyzer:
             if not self.tech_visible(tech_name):
                 continue
 
-            before_key = self.prereq_closure(tech_name)
-            after_key = tuple(sorted(set(before_key) | {tech_name}))
+            before_key = self.tech_eval_key(tech_name, include_self=False)
+            after_key = self.tech_eval_key(tech_name, include_self=True)
             for recipe_name in self.unlocks_by_tech.get(tech_name, []):
                 output_targets = [
                     result_name
@@ -535,9 +694,13 @@ class ProgressionAnalyzer:
                 delayed_resolution = None
                 finding_type = "already_accessible_before_unlock" if before_targets else "blocked_after_unlock"
                 if not before_targets:
-                    delayed_resolution = self.find_descendant_resolution(tech_name, output_targets)
+                    delayed_resolution = self.find_reachable_resolution(
+                        after_key,
+                        tech_name,
+                        output_targets,
+                    )
                     if delayed_resolution is not None:
-                        finding_type = "delayed_until_descendant"
+                        finding_type = "delayed_until_reachable_tech"
                 findings.append(
                     {
                         "type": finding_type,
@@ -556,19 +719,22 @@ class ProgressionAnalyzer:
                 )
         return findings
 
-    def find_descendant_resolution(
-        self, tech_name: str, targets: Sequence[str]
+    def find_reachable_resolution(
+        self,
+        base_key: Tuple[str, ...],
+        source_tech_name: str,
+        targets: Sequence[str],
     ) -> Optional[Dict[str, Sequence[str]]]:
-        for descendant in self.descendants(tech_name):
-            if not self.tech_visible(descendant):
+        for candidate in sorted(self.technologies):
+            if candidate == source_tech_name or not self.tech_visible(candidate):
                 continue
-            descendant_after = tuple(sorted(set(self.prereq_closure(descendant)) | {descendant}))
+            candidate_after = self.combined_eval_key(base_key, candidate)
             craftable_targets = sorted(
-                target for target in targets if self.craftable(target, descendant_after)
+                target for target in targets if self.craftable(target, candidate_after)
             )
             if craftable_targets:
                 return {
-                    "technology": descendant,
+                    "technology": candidate,
                     "targets": craftable_targets,
                 }
         return None
@@ -687,6 +853,240 @@ class ProgressionAnalyzer:
             )
         return findings
 
+    def machine_missing_ingredient_paths(
+        self,
+        recipe_name: str,
+        tech_key: Tuple[str, ...],
+        excluded_provider_items: Tuple[str, ...] = (),
+    ) -> List[str]:
+        recipe = self.recipes[recipe_name]
+        paths: List[str] = []
+        for ingredient_name, ingredient_type in recipe_ingredients(recipe):
+            if ingredient_name in self.root_materials:
+                continue
+            if self.machine_craftable(ingredient_name, tech_key, excluded_provider_items):
+                continue
+            blocker = self.first_machine_missing_leaf(
+                ingredient_name,
+                tech_key,
+                excluded_provider_items,
+            )
+            if blocker:
+                paths.append(f"{ingredient_name} -> {blocker}")
+            else:
+                paths.append(ingredient_name)
+        return sorted(dict.fromkeys(paths))
+
+    @lru_cache(maxsize=None)
+    def first_machine_missing_leaf(
+        self,
+        item_name: str,
+        tech_key: Tuple[str, ...],
+        excluded_provider_items: Tuple[str, ...] = (),
+    ) -> Optional[str]:
+        available = self.available_recipes(tech_key)
+        _, _, available_categories = self.machine_state(tech_key, excluded_provider_items)
+        available_category_set = set(available_categories)
+        excluded = set(excluded_provider_items)
+        visiting: Set[str] = set()
+
+        def rec(name: str) -> Optional[str]:
+            if name in self.root_materials:
+                return None
+            if name in visiting:
+                return name
+
+            producers = [
+                recipe_name
+                for recipe_name in self.producing_recipes.get(name, ())
+                if recipe_name in available
+            ]
+            if not producers:
+                return name
+
+            visiting.add(name)
+            try:
+                first_category_blocker: Optional[str] = None
+                for recipe_name in producers:
+                    recipe = self.recipes[recipe_name]
+                    category_name = recipe_category(recipe) or "crafting"
+                    if category_name not in available_category_set:
+                        providers = [
+                            provider_name
+                            for provider_name in self.category_providers.get(category_name, ())
+                            if provider_name not in excluded
+                        ]
+                        if providers:
+                            first_category_blocker = (
+                                f"{name} needs {category_name} via {', '.join(providers)}"
+                            )
+                        else:
+                            first_category_blocker = (
+                                f"{name} needs unavailable category {category_name}"
+                            )
+                        continue
+
+                    bad_leaf = None
+                    for ingredient_name, _ in recipe_ingredients(recipe):
+                        if ingredient_name in self.root_materials:
+                            continue
+                        bad_leaf = rec(ingredient_name)
+                        if bad_leaf:
+                            break
+                    if bad_leaf is None:
+                        return None
+                    if first_category_blocker is None:
+                        first_category_blocker = bad_leaf
+
+                return first_category_blocker or name
+            finally:
+                visiting.remove(name)
+
+        return rec(item_name)
+
+    def recipe_machine_blockers(
+        self,
+        recipe_name: str,
+        tech_key: Tuple[str, ...],
+        excluded_provider_items: Tuple[str, ...] = (),
+    ) -> List[str]:
+        recipe = self.recipes[recipe_name]
+        category_name = recipe_category(recipe) or "crafting"
+        _, _, available_categories = self.machine_state(tech_key, excluded_provider_items)
+        available_category_set = set(available_categories)
+        blockers: List[str] = []
+
+        if category_name not in available_category_set:
+            providers = [
+                provider_name
+                for provider_name in self.category_providers.get(category_name, ())
+                if provider_name not in set(excluded_provider_items)
+            ]
+            if providers:
+                blockers.append(
+                    f"category {category_name} unavailable; providers not machine-craftable: {', '.join(providers)}"
+                )
+            else:
+                blockers.append(f"category {category_name} unavailable")
+
+        blockers.extend(
+            f"ingredient {path}"
+            for path in self.machine_missing_ingredient_paths(
+                recipe_name,
+                tech_key,
+                excluded_provider_items,
+            )
+        )
+        return blockers
+
+    def start_accessible_recipe_machine_findings(self) -> List[Dict]:
+        findings: List[Dict] = []
+        start_key: Tuple[str, ...] = ()
+        for recipe_name in sorted(self.start_enabled_recipes):
+            recipe = self.recipes[recipe_name]
+            if recipe.get("hidden"):
+                continue
+            if (recipe_category(recipe) or "crafting") == "parameters":
+                continue
+            if not self.recipe_ingredients_machine_ready(recipe_name, start_key):
+                continue
+            if self.recipe_machine_usable(recipe_name, start_key):
+                continue
+            if (
+                recipe_name in self.world_trigger_recipes
+                and self.find_world_trigger_recipe_machine_resolution(recipe_name)
+            ):
+                continue
+            findings.append(
+                {
+                    "recipe": recipe_name,
+                    "category": recipe_category(recipe) or "crafting",
+                    "machine_blockers": self.recipe_machine_blockers(recipe_name, start_key),
+                }
+            )
+        return findings
+
+    def find_world_trigger_recipe_machine_resolution(self, recipe_name: str) -> Optional[Dict[str, str]]:
+        for tech_name in sorted(self.world_trigger_recipe_techs.get(recipe_name, [])):
+            resolution = self.find_descendant_recipe_machine_resolution(tech_name, recipe_name)
+            if resolution is not None:
+                return resolution
+        return None
+
+    def find_descendant_recipe_machine_resolution(
+        self,
+        tech_name: str,
+        recipe_name: str,
+    ) -> Optional[Dict[str, str]]:
+        for descendant in self.descendants(tech_name):
+            if not self.tech_visible(descendant):
+                continue
+            descendant_after = self.tech_eval_key(descendant, include_self=True)
+            if self.recipe_machine_usable(recipe_name, descendant_after):
+                return {"technology": descendant}
+        return None
+
+    def unlocked_recipe_machine_findings(self) -> List[Dict]:
+        findings: List[Dict] = []
+        for tech_name in sorted(self.technologies):
+            if not self.tech_visible(tech_name):
+                continue
+
+            after_key = self.tech_eval_key(tech_name, include_self=True)
+            for recipe_name in sorted(self.unlocks_by_tech.get(tech_name, [])):
+                recipe = self.recipes[recipe_name]
+                if recipe.get("hidden"):
+                    continue
+                if not self.recipe_ingredients_machine_ready(recipe_name, after_key):
+                    continue
+                if self.recipe_machine_usable(recipe_name, after_key):
+                    continue
+
+                delayed_resolution = self.find_descendant_recipe_machine_resolution(
+                    tech_name,
+                    recipe_name,
+                )
+                findings.append(
+                    {
+                        "type": (
+                            "delayed_until_descendant"
+                            if delayed_resolution is not None
+                            else "blocked_after_unlock"
+                        ),
+                        "technology": tech_name,
+                        "recipe": recipe_name,
+                        "category": recipe_category(recipe) or "crafting",
+                        "machine_blockers": self.recipe_machine_blockers(
+                            recipe_name,
+                            after_key,
+                        ),
+                        "delayed_resolution": delayed_resolution,
+                    }
+                )
+        return findings
+
+    def permanent_recipe_machine_cycle_findings(self) -> List[Dict]:
+        findings: List[Dict] = []
+        full_key = self.full_tech_key()
+        for recipe_name in sorted(self.recipes):
+            recipe = self.recipes[recipe_name]
+            if recipe.get("hidden"):
+                continue
+            if (recipe_category(recipe) or "crafting") == "parameters":
+                continue
+            if not self.recipe_ingredients_machine_ready(recipe_name, full_key):
+                continue
+            if self.recipe_machine_usable(recipe_name, full_key):
+                continue
+            findings.append(
+                {
+                    "recipe": recipe_name,
+                    "category": recipe_category(recipe) or "crafting",
+                    "machine_blockers": self.recipe_machine_blockers(recipe_name, full_key),
+                }
+            )
+        return findings
+
     def find_descendant_machine_resolution(
         self,
         tech_name: str,
@@ -696,7 +1096,7 @@ class ProgressionAnalyzer:
         for descendant in self.descendants(tech_name):
             if not self.tech_visible(descendant):
                 continue
-            descendant_after = tuple(sorted(set(self.prereq_closure(descendant)) | {descendant}))
+            descendant_after = self.tech_eval_key(descendant, include_self=True)
             if self.machine_craftable(
                 ingredient_name,
                 descendant_after,
@@ -711,7 +1111,7 @@ class ProgressionAnalyzer:
             if not self.tech_visible(tech_name):
                 continue
 
-            after_key = tuple(sorted(set(self.prereq_closure(tech_name)) | {tech_name}))
+            after_key = self.tech_eval_key(tech_name, include_self=True)
             for recipe_name in self.unlocks_by_tech.get(tech_name, []):
                 recipe = self.recipes[recipe_name]
                 output_buildings = [
@@ -726,11 +1126,7 @@ class ProgressionAnalyzer:
                     for ingredient_name, ingredient_type in recipe_ingredients(recipe):
                         if ingredient_type != "item" or not self.is_mod_item(ingredient_name):
                             continue
-                        if self.machine_craftable(
-                            ingredient_name,
-                            after_key,
-                            (building_name,),
-                        ):
+                        if self.craftable(ingredient_name, after_key):
                             continue
 
                         if self.machine_craftable(ingredient_name, after_key):
@@ -771,6 +1167,46 @@ class ProgressionAnalyzer:
             if item_name not in self.producing_recipes:
                 missing.append(item_name)
         return missing
+
+    def technologies_without_unique_recipe_unlocks(self) -> List[Dict]:
+        recipe_unlock_counts: Dict[str, int] = defaultdict(int)
+        for tech_name in self.technologies:
+            if not self.tech_visible(tech_name):
+                continue
+            for recipe_name in set(self.all_recipe_unlocks_by_tech.get(tech_name, [])):
+                recipe_unlock_counts[recipe_name] += 1
+
+        empty = []
+        for tech_name in sorted(self.technologies):
+            if not self.tech_visible(tech_name):
+                continue
+            if tech_name in STRUCTURAL_EMPTY_TECHS:
+                continue
+            tech = self.technologies[tech_name]
+            if tech.get("unit") is None:
+                continue
+            effects = tech.get("effects", []) or []
+            has_non_recipe_effect = any(
+                effect.get("type") != "unlock-recipe"
+                for effect in effects
+            )
+            if has_non_recipe_effect:
+                continue
+
+            recipe_unlocks = sorted(set(self.all_recipe_unlocks_by_tech.get(tech_name, [])))
+            unique_unlocks = [
+                recipe_name
+                for recipe_name in recipe_unlocks
+                if recipe_unlock_counts[recipe_name] == 1
+            ]
+            if not unique_unlocks:
+                empty.append(
+                    {
+                        "technology": tech_name,
+                        "recipe_unlocks": recipe_unlocks,
+                    }
+                )
+        return empty
 
     def pipeline_only_technologies(self) -> List[str]:
         techs = []
@@ -818,13 +1254,50 @@ class ProgressionAnalyzer:
                     )
         return gaps
 
+    def pack_prereq_gaps(self) -> List[Dict]:
+        """Find techs that use a science pack without that pack's tech in their
+        transitive prerequisite closure.  For example, if a tech requires
+        logistic-science-pack in its unit ingredients but never depends on the
+        logistic-science-pack technology (directly or transitively), the player
+        sees no tech-tree arrow enforcing that ordering."""
+        # Only check packs that are also researchable technologies.
+        pack_techs = {
+            name for name in self.technologies if name.endswith("-science-pack")
+        }
+        # automation-science-pack is available from the start — no gating needed.
+        pack_techs.discard("automation-science-pack")
+
+        gaps = []
+        for tech_name in sorted(self.technologies):
+            if not self.tech_visible(tech_name):
+                continue
+            used_packs = self.tech_science_packs(tech_name)
+            if not used_packs:
+                continue
+            closure = set(self.prereq_closure(tech_name))
+            for pack_name in sorted(used_packs & pack_techs):
+                if pack_name not in closure and pack_name != tech_name:
+                    gaps.append(
+                        {
+                            "technology": tech_name,
+                            "pack": pack_name,
+                        }
+                    )
+        return gaps
+
 
 def render_report(
     analyzer: ProgressionAnalyzer,
     missing_building_recipes: Sequence[str],
+    unavailable_prerequisites: Sequence[Dict],
+    empty_recipe_unlock_techs: Sequence[Dict],
     direct_target_failures: Sequence[Dict],
     parent_pack_gaps: Sequence[Dict],
+    pack_prereq_gaps: Sequence[Dict],
     enabled_recipe_gating_failures: Sequence[Dict],
+    permanent_recipe_machine_cycle_failures: Sequence[Dict],
+    start_accessible_recipe_machine_failures: Sequence[Dict],
+    unlocked_recipe_machine_failures: Sequence[Dict],
     building_provider_dependency_failures: Sequence[Dict],
     pipeline_only_techs: Sequence[str],
     dump_path: Path,
@@ -837,12 +1310,22 @@ def render_report(
     delayed_failures = [
         finding
         for finding in direct_target_failures
-        if finding["type"] == "delayed_until_descendant"
+        if finding["type"].startswith("delayed_until_")
     ]
     premature_failures = [
         finding
         for finding in direct_target_failures
         if finding["type"] == "already_accessible_before_unlock"
+    ]
+    unresolved_recipe_machine_failures = [
+        finding
+        for finding in unlocked_recipe_machine_failures
+        if finding["type"] == "blocked_after_unlock"
+    ]
+    delayed_recipe_machine_failures = [
+        finding
+        for finding in unlocked_recipe_machine_failures
+        if finding["type"] == "delayed_until_descendant"
     ]
 
     lines = [
@@ -854,12 +1337,38 @@ def render_report(
         f"Filtered recipes analyzed: {len(analyzer.recipes)}",
         f"Visible technologies with unlocks: {sum(1 for name in analyzer.technologies if analyzer.tech_visible(name) and analyzer.unlocks_by_tech.get(name))}",
         "",
-        f"Buildings without a recipe: {len(missing_building_recipes)}",
+        f"Visible technologies with unavailable prerequisites: {len(unavailable_prerequisites)}",
     ]
+    for finding in unavailable_prerequisites:
+        lines.append(
+            f"  - {finding['technology']} <- {finding['prerequisite']} ({finding['reason']})"
+        )
+
+    lines.extend(
+        [
+            "",
+        f"Buildings without a recipe: {len(missing_building_recipes)}",
+        ]
+    )
 
     if missing_building_recipes:
         for item_name in missing_building_recipes:
             lines.append(f"  - {item_name}")
+
+    lines.extend(
+        [
+            "",
+            "Visible recipe-unlock technologies with no unique recipe unlocks: "
+            f"{len(empty_recipe_unlock_techs)}",
+        ]
+    )
+    for finding in empty_recipe_unlock_techs:
+        if finding["recipe_unlocks"]:
+            lines.append(
+                f"  - {finding['technology']} (duplicates: {', '.join(finding['recipe_unlocks'])})"
+            )
+        else:
+            lines.append(f"  - {finding['technology']} (no recipe unlocks)")
 
     lines.extend(
         [
@@ -875,12 +1384,75 @@ def render_report(
     lines.extend(
         [
             "",
+            f"Technologies using a science pack without that pack tech in prerequisites: {len(pack_prereq_gaps)}",
+        ]
+    )
+    for gap in pack_prereq_gaps:
+        lines.append(
+            f"  - {gap['technology']} uses {gap['pack']} but does not transitively depend on it"
+        )
+
+    lines.extend(
+        [
+            "",
             f"Enabled recipes blocked by tech-gated ingredients: {len(enabled_recipe_gating_failures)}",
         ]
     )
     for finding in enabled_recipe_gating_failures:
         lines.append(f"  - {finding['recipe']}")
         lines.append(f"    Missing from always-enabled graph: {', '.join(finding['missing_paths'])}")
+
+    lines.extend(
+        [
+            "",
+            "Recipes still blocked even with the full visible tech graph: "
+            f"{len(permanent_recipe_machine_cycle_failures)}",
+        ]
+    )
+    for finding in permanent_recipe_machine_cycle_failures:
+        lines.append(f"  - {finding['recipe']} [{finding['category']}]")
+        lines.append(f"    Blocked by: {', '.join(finding['machine_blockers'])}")
+
+    lines.extend(
+        [
+            "",
+            "Start-accessible recipes blocked by machine/category dependencies (informational): "
+            f"{len(start_accessible_recipe_machine_failures)}",
+        ]
+    )
+    for finding in start_accessible_recipe_machine_failures:
+        lines.append(f"  - {finding['recipe']} [{finding['category']}]")
+        lines.append(f"    Blocked by: {', '.join(finding['machine_blockers'])}")
+
+    lines.extend(
+        [
+            "",
+            "Unlocked recipes still blocked at their unlock by machine/category dependencies: "
+            f"{len(unresolved_recipe_machine_failures)}",
+        ]
+    )
+    for finding in unresolved_recipe_machine_failures:
+        lines.append(
+            f"  - {finding['technology']} -> {finding['recipe']} [{finding['category']}]"
+        )
+        lines.append(f"    Blocked by: {', '.join(finding['machine_blockers'])}")
+
+    lines.extend(
+        [
+            "",
+            "Unlocked recipes blocked at unlock but resolved by a dependent tech: "
+            f"{len(delayed_recipe_machine_failures)}",
+        ]
+    )
+    for finding in delayed_recipe_machine_failures:
+        lines.append(
+            f"  - {finding['technology']} -> {finding['recipe']} [{finding['category']}]"
+        )
+        lines.append(f"    Blocked by: {', '.join(finding['machine_blockers'])}")
+        lines.append(
+            "    First machine-usable from dependent tech: "
+            f"{finding['delayed_resolution']['technology']}"
+        )
 
     lines.extend(
         [
@@ -906,7 +1478,7 @@ def render_report(
     lines.extend(
         [
             "",
-            f"Direct target unlocks still blocked through all dependent techs: {len(unresolved_failures)}",
+            f"Direct target unlocks still blocked through reachable progression: {len(unresolved_failures)}",
         ]
     )
     for finding in unresolved_failures:
@@ -919,7 +1491,7 @@ def render_report(
     lines.extend(
         [
             "",
-            f"Direct target unlocks blocked at unlock but resolved by a dependent tech: {len(delayed_failures)}",
+            f"Direct target unlocks blocked at unlock but resolved by reachable progression: {len(delayed_failures)}",
         ]
     )
     for finding in delayed_failures:
@@ -928,7 +1500,7 @@ def render_report(
             f"  - {finding['technology']} -> {finding['recipe']} ({', '.join(finding['targets'])})"
         )
         lines.append(
-            f"    First resolved by dependent tech: {resolution['technology']} ({', '.join(resolution['targets'])})"
+            f"    First resolved by reachable tech: {resolution['technology']} ({', '.join(resolution['targets'])})"
         )
 
     lines.extend(
@@ -965,9 +1537,19 @@ def main() -> int:
         analyzer = ProgressionAnalyzer(json.loads(dump_path.read_text()))
 
         missing_building_recipes = analyzer.buildings_without_recipes()
+        unavailable_prerequisites = analyzer.unavailable_prerequisite_findings()
+        empty_recipe_unlock_techs = analyzer.technologies_without_unique_recipe_unlocks()
         direct_target_failures = analyzer.direct_target_findings()
         parent_pack_gaps = analyzer.parent_pack_gaps()
+        pack_prereq_gaps = analyzer.pack_prereq_gaps()
         enabled_recipe_gating_failures = analyzer.enabled_recipe_gating_findings()
+        permanent_recipe_machine_cycle_failures = (
+            analyzer.permanent_recipe_machine_cycle_findings()
+        )
+        start_accessible_recipe_machine_failures = (
+            analyzer.start_accessible_recipe_machine_findings()
+        )
+        unlocked_recipe_machine_failures = analyzer.unlocked_recipe_machine_findings()
         building_provider_dependency_failures = analyzer.building_provider_dependency_findings()
         pipeline_only_techs = analyzer.pipeline_only_technologies()
         hard_target_failures = [
@@ -979,9 +1561,15 @@ def main() -> int:
         report_text = render_report(
             analyzer=analyzer,
             missing_building_recipes=missing_building_recipes,
+            unavailable_prerequisites=unavailable_prerequisites,
+            empty_recipe_unlock_techs=empty_recipe_unlock_techs,
             direct_target_failures=direct_target_failures,
             parent_pack_gaps=parent_pack_gaps,
+            pack_prereq_gaps=pack_prereq_gaps,
             enabled_recipe_gating_failures=enabled_recipe_gating_failures,
+            permanent_recipe_machine_cycle_failures=permanent_recipe_machine_cycle_failures,
+            start_accessible_recipe_machine_failures=start_accessible_recipe_machine_failures,
+            unlocked_recipe_machine_failures=unlocked_recipe_machine_failures,
             building_provider_dependency_failures=building_provider_dependency_failures,
             pipeline_only_techs=pipeline_only_techs,
             dump_path=dump_path,
@@ -994,10 +1582,16 @@ def main() -> int:
 
         if missing_building_recipes:
             return 1
+        if unavailable_prerequisites:
+            return 1
+        if empty_recipe_unlock_techs:
+            return 1
         if args.strict and (
             hard_target_failures
             or parent_pack_gaps
+            or pack_prereq_gaps
             or enabled_recipe_gating_failures
+            or permanent_recipe_machine_cycle_failures
             or building_provider_dependency_failures
         ):
             return 1

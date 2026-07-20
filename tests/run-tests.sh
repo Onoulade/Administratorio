@@ -77,9 +77,8 @@ if [ ! -d "$TEST_DIR" ]; then
 fi
 
 run_lua_tests() {
-  find "$TEST_DIR" -maxdepth 1 -type f -name 'test_*.lua' | sort |
-  while IFS= read -r test_file; do
-    [ -n "$test_file" ] || continue
+  for test_file in "$TEST_DIR"/test_*.lua; do
+    [ -f "$test_file" ] || continue
     printf '==> %s\n' "$(basename "$test_file")"
     lua "$test_file"
   done
@@ -95,9 +94,8 @@ run_lua_syntax_checks() {
 }
 
 run_python_tests() {
-  find "$TEST_DIR" -maxdepth 1 -type f -name 'test_*.py' | sort |
-  while IFS= read -r test_file; do
-    [ -n "$test_file" ] || continue
+  for test_file in "$TEST_DIR"/test_*.py; do
+    [ -f "$test_file" ] || continue
     printf '==> %s\n' "$(basename "$test_file")"
     if [ "$(basename "$test_file")" = "test_progression_report.py" ] || [ "$(basename "$test_file")" = "test_planet_escape.py" ]; then
       if [ -z "$FACTORIO_BIN" ]; then

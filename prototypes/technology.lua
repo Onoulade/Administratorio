@@ -1089,18 +1089,6 @@ for _, tech_name in ipairs({"productivity-module-3", "speed-module-3"}) do
   add_tech_prerequisite(tech_name, "board-meetings")
 end
 
-for _, recipe_name in ipairs({
-  "arithmetic-combinator",
-  "decider-combinator",
-  "constant-combinator",
-  "power-switch",
-  "programmable-speaker",
-  "display-panel",
-}) do
-  remove_tech_unlock("circuit-network", recipe_name)
-  add_tech_unlock("advanced-combinators", recipe_name)
-end
-
 remove_tech_unlock("railway", "locomotive")
 add_tech_unlock("production-science-pack", "locomotive")
 

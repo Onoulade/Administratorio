@@ -49,6 +49,10 @@ local technologies = {
   ["heavy-armor"] = {name = "heavy-armor", prerequisites = {"military"}},
   ["power-armor-mk2"] = {name = "power-armor-mk2", prerequisites = {"military-4"}},
   ["cliff-explosives"] = {name = "cliff-explosives", prerequisites = {"explosives", "military-2"}},
+  ["gate"] = {name = "gate", prerequisites = {"automation", "military-2"}},
+  ["rocket-fuel"] = {name = "rocket-fuel", prerequisites = {"flammables", "advanced-oil-processing", "environmental-compliance"}},
+  ["flammables"] = {name = "flammables"},
+  ["military-2"] = {name = "military-2"},
   ["modules"] = {name = "modules", unit = {ingredients = {{"automation-science-pack", 1}}}},
   ["some-tech"] = {name = "some-tech", prerequisites = {"military-science-pack"}, unit = {ingredients = {{"military-science-pack", 1}}}},
   ["steel-processing"] = {name = "steel-processing", effects = {}},
@@ -168,6 +172,18 @@ test("cliff explosives research is rewired away from military prerequisites", fu
   assert_true(tech_has_prereq(tech, "discovery-bullshit"), "cliff-explosives should require discovery-bullshit")
   assert_true(not tech_has_prereq(tech, "military-2"), "cliff-explosives should no longer require military-2")
   assert_true(not tech_has_prereq(tech, "military"), "cliff-explosives should no longer require military")
+end)
+
+test("civilian technologies do not retain disabled military prerequisites", function()
+  local gate = technologies["gate"]
+  assert_true(tech_has_prereq(gate, "automation"), "gate should retain automation")
+  assert_true(tech_has_prereq(gate, "logistic-science-pack"), "gate should require logistic science")
+  assert_true(not tech_has_prereq(gate, "military-2"), "gate should not require military-2")
+
+  local rocket_fuel = technologies["rocket-fuel"]
+  assert_true(tech_has_prereq(rocket_fuel, "advanced-oil-processing"), "rocket-fuel should retain advanced oil processing")
+  assert_true(tech_has_prereq(rocket_fuel, "environmental-compliance"), "rocket-fuel should retain environmental compliance")
+  assert_true(not tech_has_prereq(rocket_fuel, "flammables"), "rocket-fuel should not require disabled flammables")
 end)
 
 test("steel processing unlocks batch steel smelting", function()
