@@ -26,7 +26,7 @@ data:extend({
       item = "digital-processing-certificate",
       count = 5,
     },
-    order = "h-e-a",
+    order = "h-d2",
   },
 })
 

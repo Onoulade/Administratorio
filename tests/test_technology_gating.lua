@@ -499,7 +499,8 @@ test("biterport capacity, transport, and logistics speed upgrades are tiered and
     end
   end
 
-  assert_true(not tech_uses_pack("biterport-transport-capacity-3", "chemical-science-pack"), "transport III should not use chemical science")
+  assert_true(not tech_uses_pack("biterport-transport-capacity-3", "chemical-science-pack"),
+    "transport III should remain below the chemical-science threshold")
   assert_true(tech_uses_pack("biterport-transport-capacity-4", "chemical-science-pack"), "transport IV should use chemical science")
   assert_true(tech_has_prereq("biterport-transport-capacity-4", "chemical-science-pack"), "transport IV should depend on chemical science")
   assert_true(tech_uses_pack("biterport-worker-speed-2", "chemical-science-pack"), "speed II should use chemical science")
@@ -629,11 +630,13 @@ test("environmental compliance is a single consolidated branch", function()
   assert_true(tech_has_prereq("environmental-compliance", "steel-processing"), "environmental-compliance should require steel-processing")
 end)
 
-test("environmental compliance stays below chemical tier lock-in", function()
-  assert_true(not tech_has_prereq("environmental-compliance", "chemical-science-pack"), "environmental-compliance should not require chemical science")
+test("environmental compliance stays before the oil and chemical bootstrap", function()
+  assert_true(not tech_has_prereq("environmental-compliance", "chemical-science-pack"),
+    "environmental-compliance must precede chemical science so oil-processing does not cycle")
   assert_true(not tech_has_prereq("environmental-compliance", "public-finance"), "environmental-compliance should not require public-finance")
   assert_true(not tech_has_prereq("environmental-compliance", "production-science-pack"), "environmental-compliance should not require production science")
-  assert_true(not tech_uses_pack("environmental-compliance", "chemical-science-pack"), "environmental-compliance should not use chemical science")
+  assert_true(not tech_uses_pack("environmental-compliance", "chemical-science-pack"),
+    "environmental-compliance must remain researchable before chemical science")
   assert_true(tech_uses_pack("environmental-compliance", "logistic-science-pack"), "environmental-compliance should use logistic science")
   assert_true(not tech_uses_pack("environmental-compliance", "production-science-pack"), "environmental-compliance should not use production science")
 end)
@@ -685,7 +688,7 @@ test("late complaint tiers are split by family and science tier", function()
   assert_true(tech_unlocks_recipe("constitutional-law", "unemployment-final"), "constitutional-law should unlock unemployment resolution")
   assert_true(tech_unlocks_recipe("vagrancy-ordinances", "vagrancy-final"), "vagrancy-ordinances should unlock vagrancy resolution")
   assert_true(tech_uses_pack("loitering-ordinances", "utility-science-pack"), "loitering-ordinances should use utility science")
-  assert_true(not tech_uses_pack("loitering-ordinances", "production-science-pack"), "loitering-ordinances should not use production science")
+  assert_true(tech_uses_pack("loitering-ordinances", "production-science-pack"), "loitering-ordinances should use production science")
   assert_true(tech_uses_pack("constitutional-law", "production-science-pack"), "constitutional-law should use production science")
   assert_true(not tech_uses_pack("constitutional-law", "utility-science-pack"), "constitutional-law should not use utility science")
   assert_true(tech_uses_pack("vagrancy-ordinances", "utility-science-pack"), "vagrancy-ordinances should use utility science")
@@ -708,7 +711,7 @@ test("science tier heads and inherited pack requirements are enforced", function
   assert_true(tech_has_prereq("eminent-domain-zoning", "production-science-pack"), "eminent-domain-zoning should require production science")
   assert_true(tech_has_prereq("constitutional-law", "production-science-pack"), "constitutional-law should require production science")
   assert_true(tech_has_prereq("loitering-ordinances", "utility-science-pack"), "loitering-ordinances should require utility science")
-  assert_true(not tech_has_prereq("loitering-ordinances", "production-science-pack"), "loitering-ordinances should not require production science")
+  assert_true(tech_has_prereq("loitering-ordinances", "production-science-pack"), "loitering-ordinances should require production science")
   assert_true(tech_has_prereq("vagrancy-ordinances", "utility-science-pack"), "vagrancy-ordinances should require utility science")
   assert_true(not tech_has_prereq("electric-mining-drill", "printing-technology"), "electric-mining-drill should not require printing-technology")
   assert_true(not tech_has_prereq("stone-wall", "printing-technology"), "stone-wall should not require printing-technology")

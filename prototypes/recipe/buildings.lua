@@ -68,8 +68,8 @@ if space_age_enabled then
     ingredients = {
       {type="item", name="office-desk", amount=2},
       {type="item", name="printer-t2", amount=1},
-      {type="item", name="processing-unit", amount=10},
-      {type="item", name="management-approval-written", amount=1},
+      {type="item", name="processing-unit", amount=15},
+      {type="item", name="construction-permit", amount=2},
       {type="item", name="refined-concrete", amount=20},
     },
     results = {{type="item", name="formation-center", amount=1}},

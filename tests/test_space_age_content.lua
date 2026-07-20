@@ -325,7 +325,8 @@ test("workforce surface policy keeps seed roles Nauvis-bound and specialists por
 end)
 
 test("astronaut training unlocks the orbital admin station chain", function()
-  local workforce = technologies["workforce-formation"]
+  local specialized = technologies["specialized-formation"]
+  local orbital = technologies["orbital-employment-infrastructure"]
   assert_true(items["astronaut"] ~= nil, "astronaut missing")
   assert_true(items["administrative-space-station"] ~= nil, "administrative-space-station missing")
   assert_true(recipes["astronaut-formation"] ~= nil, "astronaut formation recipe missing")
@@ -333,15 +334,15 @@ test("astronaut training unlocks the orbital admin station chain", function()
   assert_true(recipes["administrative-space-station"] ~= nil, "administrative-space-station recipe missing")
   assert_true(has_ingredient(recipes["administrative-space-station"], "astronaut"),
     "administrative-space-station should require astronaut staffing")
-  assert_true(tech_unlocks_recipe(workforce, "astronaut-formation"), "workforce-formation should unlock astronaut-formation")
-  assert_true(tech_unlocks_recipe(workforce, "administrative-space-station"),
-    "workforce-formation should unlock administrative-space-station")
+  assert_true(tech_unlocks_recipe(specialized, "astronaut-formation"), "specialized-formation should unlock astronaut-formation")
+  assert_true(tech_unlocks_recipe(orbital, "administrative-space-station"),
+    "orbital-employment-infrastructure should unlock administrative-space-station")
   assert_eq(recipes["administrative-space-station"].surface_conditions[1].max, 0,
     "administrative-space-station should be craftable only in vacuum")
 end)
 
 test("vacuum infrastructure uses one dedicated orbital permit", function()
-  local workforce = technologies["workforce-formation"]
+  local worker = technologies["worker-formation"]
   local platform = technologies["space-platform"]
   local permit_name = "orbital-infrastructure-permit"
   local permit_icon = "__administratorio__/graphics/icons/orbital-infrastructure-permit.png"
@@ -358,8 +359,8 @@ test("vacuum infrastructure uses one dedicated orbital permit", function()
     "orbital permit issuance must not depend on the first platform's science output")
   assert_true(tech_unlocks_recipe(platform, permit_name),
     "creating a space platform should unlock orbital permit issuance")
-  assert_true(not tech_unlocks_recipe(workforce, permit_name),
-    "workforce formation should not delay orbital permit issuance")
+  assert_true(not tech_unlocks_recipe(worker, permit_name),
+    "worker formation should not delay orbital permit issuance")
 
   local ordinary_paperwork = {
     "work-order",
@@ -419,25 +420,37 @@ end)
 
 test("chromatic printing unlocks the base chromatic chains across planets", function()
   local chromatic = technologies["chromatic-printing"]
+  local cyan_ink = technologies["cyan-ink-production"]
   assert_true(chromatic ~= nil, "chromatic-printing missing")
   for _, recipe_name in ipairs({
     "chromatic-printer",
     "liquid-black-ink",
-    "dubious-data-analysis-vulcanus",
-    "cyan-slurry-production",
-    "cyan-ink-production",
     "heatproof-form-stock",
     "blank-cyan-form-production",
-    "charged-toner",
-    "archive-rubble-recovery",
-    "archive-documentation-recovery",
+  }) do
+    assert_true(tech_unlocks_recipe(chromatic, recipe_name), "chromatic-printing should unlock " .. recipe_name)
+  end
+  for _, recipe_name in ipairs({
+    "cyan-slurry-production",
+    "cyan-ink-production",
     "magenta-ink-production",
     "signal-form-stock",
     "blank-magenta-form-production",
     "permit-draft",
     "inspection-docket",
+    "ink-recovery-fulgora",
+    "salvaged-data-analysis-fulgora",
+    "carbon-offset-certificate-basic-fulgora",
   }) do
-    assert_true(tech_unlocks_recipe(chromatic, recipe_name), "chromatic-printing should unlock " .. recipe_name)
+    assert_true(tech_unlocks_recipe(cyan_ink, recipe_name), "cyan-ink-production should unlock " .. recipe_name)
+  end
+  for _, recipe_name in ipairs({
+    "charged-toner",
+    "archive-rubble-recovery",
+    "archive-documentation-recovery",
+  }) do
+    assert_true(not tech_unlocks_recipe(chromatic, recipe_name),
+      "chromatic-printing should not bypass the planet-specific processing gate for " .. recipe_name)
   end
 end)
 
@@ -503,7 +516,8 @@ test("vulcanus export charters split the later metallurgy paperwork", function()
   end
 
   assert_true(prerequisite_set["vulcanus-certification"], "vulcanus-export-charters should depend on vulcanus-certification")
-  assert_true(prerequisite_set["metallurgic-science-pack"], "vulcanus-export-charters should depend on metallurgic-science-pack")
+  assert_true(not prerequisite_set["metallurgic-science-pack"],
+    "vulcanus-export-charters inherits metallurgic science through vulcanus-certification")
 
   for _, recipe_name in ipairs({
     "thermal-process-license",
@@ -587,18 +601,35 @@ test("vanilla Vulcanus process recipes and restrictions stay untouched", functio
     "acid-neutralisation must retain its vanilla Vulcanus isolation")
 end)
 
-test("workforce tech owns the workforce progression unlocks", function()
-  local workforce = technologies["workforce-formation"]
+test("workforce progression is split by role and orbital scope", function()
+  local worker = technologies["worker-formation"]
+  local management = technologies["management-formation"]
+  local specialized = technologies["specialized-formation"]
+  local orbital = technologies["orbital-employment-infrastructure"]
   local chromatic = technologies["chromatic-printing"]
   local metallurgy = technologies["metallurgic-science-pack"]
-  assert_true(workforce ~= nil, "workforce-formation missing")
-  assert_true(tech_unlocks_recipe(workforce, "job-offer-production"), "workforce-formation should unlock job-offer-production")
-  assert_true(tech_unlocks_recipe(workforce, "worker-biter-formation"), "workforce-formation should unlock worker-biter-formation")
-  assert_true(tech_unlocks_recipe(workforce, "licensed-notary-formation"), "workforce-formation should unlock licensed-notary-formation")
+  assert_true(worker ~= nil, "worker-formation missing")
+  assert_true(management ~= nil, "management-formation missing")
+  assert_true(specialized ~= nil, "specialized-formation missing")
+  assert_true(orbital ~= nil, "orbital-employment-infrastructure missing")
+  assert_true(tech_unlocks_recipe(worker, "job-offer-production"), "worker-formation should unlock job-offer-production")
+  assert_true(tech_unlocks_recipe(worker, "worker-biter-formation"), "worker-formation should unlock worker-biter-formation")
+  assert_true(tech_unlocks_recipe(worker, "clerical-trainee-formation"), "worker-formation should unlock clerical trainees")
+  assert_true(tech_unlocks_recipe(management, "management-trainee-formation"), "management-formation should unlock management trainees")
+  assert_true(tech_unlocks_recipe(management, "middle-management-training-briefing"),
+    "management-formation should unlock the briefings its staff consume")
+  assert_true(tech_unlocks_recipe(specialized, "licensed-notary-formation"),
+    "specialized-formation should unlock licensed-notary-formation")
+  assert_true(tech_unlocks_recipe(specialized, "astronaut-formation"), "specialized-formation should unlock astronaut-formation")
+  assert_true(tech_unlocks_recipe(orbital, "trajectory-compliance-array"),
+    "orbital infrastructure should unlock the base compliance array")
+  assert_true(tech_unlocks_recipe(orbital, "voluntary-exploration-space-miner-formation"),
+    "orbital infrastructure should unlock the VESM formation")
   assert_true(not tech_unlocks_recipe(chromatic, "worker-biter"), "chromatic-printing should not directly unlock worker-biter")
   assert_true(not tech_unlocks_recipe(metallurgy, "licensed-notary-formation"),
     "metallurgic-science-pack should no longer unlock licensed-notary-formation")
-  assert_eq(workforce.prerequisites[1], "space-science-pack", "workforce-formation should unlock after space science")
+  assert_eq(worker.prerequisites[1], "formation-center", "worker formation should require the formation center")
+  assert_eq(worker.prerequisites[2], "space-science-pack", "worker formation should require space science")
 end)
 
 test("obsolete field-agent paperwork recipes are removed with duplicate Space Age roles", function()
@@ -626,7 +657,7 @@ test("MMMM meetings batch five temporary briefings and formations return regular
     liaison = {material = "electronic-circuit", amount = 5},
     orbital = {material = "rocket-fuel", amount = 1},
   }
-  local workforce = technologies["workforce-formation"]
+  local management = technologies["management-formation"]
 
   for key, spec in pairs(briefing_specs) do
     local item_name = key .. "-briefed-middle-management-managing-manager"
@@ -643,7 +674,7 @@ test("MMMM meetings batch five temporary briefings and formations return regular
     assert_eq(get_item_ingredient_amount(meeting, spec.material), spec.amount)
     assert_eq(get_fluid_ingredient_amount(meeting, "liquid-coffee"), 50)
     assert_eq(get_result_amount(meeting, item_name), 5)
-    assert_true(tech_unlocks_recipe(workforce, recipe_name), recipe_name .. " should unlock with workforce formation")
+    assert_true(tech_unlocks_recipe(management, recipe_name), recipe_name .. " should unlock with management formation")
   end
 
   local expected_formations = {
@@ -702,7 +733,7 @@ test("deviation paperwork and VESM cannon are distinct orbital systems", functio
   assert_true(has_ingredient(formation, "orbital-briefed-middle-management-managing-manager"))
   assert_eq(get_result_amount(formation, "voluntary-exploration-space-miner"), 1)
   assert_eq(get_result_amount(formation, "middle-management-managing-manager"), 3)
-  assert_true(tech_unlocks_recipe(technologies["workforce-formation"], formation.name))
+  assert_true(tech_unlocks_recipe(technologies["orbital-employment-infrastructure"], formation.name))
 
   local deviation = assert(ammos["orbital-deviation-order"], "deviation order ammo missing")
   assert_eq(deviation.ammo_category, "trajectory-compliance")
@@ -714,11 +745,11 @@ test("deviation paperwork and VESM cannon are distinct orbital systems", functio
   assert_eq(deviation_delivery.target_effects[1].affects_target, true)
 
   assert_true(recipes["trajectory-compliance-array"] ~= nil, "trajectory compliance array recipe missing")
-  assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "trajectory-compliance-array"), "workforce formation should unlock the compliance array")
+  assert_true(tech_unlocks_recipe(technologies["orbital-employment-infrastructure"], "trajectory-compliance-array"), "orbital infrastructure should unlock the compliance array")
   assert_true(items["orbital-employment-cannon"] ~= nil, "orbital employment cannon item missing")
   assert_true(recipes["orbital-employment-cannon"] ~= nil, "orbital employment cannon recipe missing")
-  assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "orbital-employment-cannon"),
-    "workforce formation should unlock the employment cannon")
+  assert_true(tech_unlocks_recipe(technologies["orbital-employment-infrastructure"], "orbital-employment-cannon"),
+    "orbital infrastructure should unlock the employment cannon")
 
   local senior_recipe = assert(recipes["senior-trajectory-compliance-array"], "senior array recipe missing")
   local executive_recipe = assert(recipes["executive-trajectory-compliance-array"], "executive array recipe missing")
@@ -751,13 +782,13 @@ end)
 test("returning employees need no intermediate inventory item or burnout path", function()
   assert_true(items["burned-out-manager"] == nil, "random burnout item should be removed")
   assert_true(recipes["burned-out-manager-rehabilitation"] == nil, "burnout rehabilitation should be removed")
-  assert_true(not tech_unlocks_recipe(technologies["workforce-formation"], "burned-out-manager-rehabilitation"))
+  assert_true(not tech_unlocks_recipe(technologies["worker-formation"], "burned-out-manager-rehabilitation"))
   assert_true(items["returning-orbital-employee"] == nil,
     "collector should mine the chunk straight into VESM ammo, not an intermediate item")
 end)
 
 test("orbital admin station closes the basic asteroid paperwork loop without consuming staff", function()
-  local workforce = technologies["workforce-formation"]
+  local orbital = technologies["orbital-employment-infrastructure"]
   for _, recipe_name in ipairs({
     "orbital-paper-production",
     "orbital-ink-production",
@@ -772,7 +803,7 @@ test("orbital admin station closes the basic asteroid paperwork loop without con
     assert_true(not has_ingredient(recipe, "astronaut"), recipe_name .. " should use the station's permanent astronaut")
     assert_true(not has_ingredient(recipe, "orbital-briefed-middle-management-managing-manager"),
       recipe_name .. " should not consume recurring staff")
-    assert_true(tech_unlocks_recipe(workforce, recipe_name), "workforce-formation should unlock " .. recipe_name)
+    assert_true(tech_unlocks_recipe(orbital, recipe_name), "orbital infrastructure should unlock " .. recipe_name)
   end
   assert_true(items["orbital-operations-form"] ~= nil, "orbital-operations-form missing")
   assert_true(items["asteroid-processing-docket"] ~= nil, "asteroid-processing-docket missing")
@@ -938,10 +969,10 @@ end)
 
 test("gleba conciliation unlocks the yellow chain and gleba specialist buildings", function()
   local gleba = technologies["gleba-conciliation"]
+  local formations = technologies["gleba-pentapod-formations"]
   assert_true(gleba ~= nil, "gleba-conciliation missing")
   for _, recipe_name in ipairs({
     "capture-bureau",
-    "capture-bureau-pentapod-eggs",
     "conciliation-desk",
     "yellow-ink-production",
     "mycelial-form-stock",
@@ -950,14 +981,19 @@ test("gleba conciliation unlocks the yellow chain and gleba specialist buildings
     "conciliation-order",
     "management-approval-written-gleba",
     "composted-rubble-recovery-gleba",
-    "conciliation-officer-formation-gleba",
   }) do
     assert_true(tech_unlocks_recipe(gleba, recipe_name), "gleba-conciliation should unlock " .. recipe_name)
   end
-  for _, prerequisite in ipairs(gleba.prerequisites or {}) do
-    assert_true(prerequisite ~= "agricultural-science-pack",
-      "gleba-conciliation must bootstrap before agricultural science needs eggs")
+  for _, recipe_name in ipairs({"capture-bureau-pentapod-eggs", "conciliation-officer-formation-gleba"}) do
+    assert_true(tech_unlocks_recipe(formations, recipe_name),
+      "gleba-pentapod-formations should unlock " .. recipe_name)
   end
+  local has_agricultural_science = false
+  for _, prerequisite in ipairs(gleba.prerequisites or {}) do
+    has_agricultural_science = has_agricultural_science or prerequisite == "agricultural-science-pack"
+  end
+  assert_true(has_agricultural_science,
+    "gleba-conciliation should begin after agricultural science is established")
 end)
 
 test("gleba yellow paperwork gates orbital spitter tourism with two-color forms", function()
@@ -1065,18 +1101,18 @@ test("capture bureau mode recipes split by surface and role", function()
   assert_true(recipes["pentapod-egg-bounty"] == nil,
     "egg bootstrap should use loose taxpayer-money, not a dedicated crafted capsule")
 
-  assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "capture-bureau-workforce"),
-    "workforce-formation should unlock capture-bureau-workforce")
-  assert_true(tech_unlocks_recipe(technologies["workforce-formation"], "workforce-lure-spores-production"),
-    "workforce-formation should unlock workforce lure spores")
+  assert_true(tech_unlocks_recipe(technologies["worker-formation"], "capture-bureau-workforce"),
+    "worker-formation should unlock capture-bureau-workforce")
+  assert_true(tech_unlocks_recipe(technologies["worker-formation"], "workforce-lure-spores-production"),
+    "worker-formation should unlock workforce lure spores")
   assert_true(has_ingredient(tourism, "cyan-yellow-form"),
     "tourism mode should consume cyan-yellow-form")
   assert_true(tech_unlocks_recipe(cyan_yellow, "capture-bureau-tourism"),
     "cyan-yellow-bureaucracy should unlock capture-bureau-tourism")
   assert_true(tech_unlocks_recipe(cyan_yellow, "tourism-lure-spores-production"),
     "cyan-yellow-bureaucracy should unlock tourism lure spores")
-  assert_true(tech_unlocks_recipe(technologies["gleba-conciliation"], "capture-bureau-pentapod-eggs"),
-    "gleba-conciliation should unlock capture-bureau-pentapod-eggs")
+  assert_true(tech_unlocks_recipe(technologies["gleba-pentapod-formations"], "capture-bureau-pentapod-eggs"),
+    "gleba-pentapod-formations should unlock capture-bureau-pentapod-eggs")
   assert_true(tech_unlocks_recipe(technologies["gleba-conciliation"], "hostile-spore-culture-production"),
     "gleba-conciliation should unlock spore culture")
   assert_true(tech_unlocks_recipe(technologies["gleba-conciliation"], "oviposition-lure-spores-production"),

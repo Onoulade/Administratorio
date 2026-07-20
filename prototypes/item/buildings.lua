@@ -2,6 +2,7 @@ local item_icons = "__administratorio__/graphics/icons/"
 local entity_graphics = "__administratorio__/graphics/entities/"
 local feature_flags = require("feature_flags")
 local working_hours_enabled = feature_flags.working_hours_enabled()
+local space_age_enabled = feature_flags.space_age_enabled()
 
 local function disabled_item_description(key)
   if working_hours_enabled then
@@ -30,7 +31,10 @@ data:extend({
   { type = "item", name = "printer-t1",                icon = "__administratorio__/graphics/icons/printer-t1-v2.png", icon_size = 64, subgroup = "admin-printers", order = "b", place_result = "printer-t1", stack_size = 50 },
   { type = "item", name = "printer-t2",                icon = "__administratorio__/graphics/icons/printer-t2-v2.png", icon_size = 64, subgroup = "admin-printers", order = "c", place_result = "printer-t2", stack_size = 50 },
   { type = "item", name = "transit-permit-chest",      icon = "__base__/graphics/icons/steel-chest.png",                         icon_size = 64,  subgroup = "admin-infrastructure", order = "f1", stack_size = 50 },
+})
 
+if space_age_enabled then
+  data:extend({
   -- Space Buildings (Space tab)
   { type = "item", name = "trajectory-compliance-array",
     icons = {
@@ -82,7 +86,10 @@ data:extend({
     subgroup = "admin-space-buildings", order = "c",
     place_result = "fax-emitter", stack_size = 20
   },
+  })
+end
 
+data:extend({
   -- Biter buildings (Biter Employment tab) - field-office, biterport, admin-station, formation-center, resolution-office
   { type = "item", name = "field-office",              icons = {{icon = item_icons .. "office-building.png", icon_size = 64, tint = {r=0.75, g=0.65, b=0.45, a=1}}}, subgroup = "admin-biter-buildings", order = "a",  place_result = "field-office",              stack_size = 50 },
   { type = "item", name = "biterport",                 icon = item_icons .. "biterport.png", icon_size = 64, subgroup = "admin-biter-buildings", order = "b", place_result = "biterport-placement-preview", stack_size = 20 },
