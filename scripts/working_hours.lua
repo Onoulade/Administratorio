@@ -129,6 +129,11 @@ local function apply_entity_state(entity, reason)
 
   local state = ensure_entity_state(entity.unit_number)
   if state.reason == reason then
+    -- A protest is a hard shutdown. Reassert it because another script or
+    -- control state may have reactivated the entity since the prior refresh.
+    if reason == "protest" and entity.active then
+      entity.active = false
+    end
     return
   end
 

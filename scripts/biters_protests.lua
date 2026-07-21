@@ -375,9 +375,11 @@ function M.new(deps)
 
   local function disable_protest_target(target, protester_id)
     if not target or not target.valid then return end
-    if working_hours.claim_protest_target(target, protester_id) then
-      return
-    end
+    -- Keep the working-hours claim for coordinated release, but do not let its
+    -- bookkeeping stand in for the actual shutdown.  In particular, transport
+    -- belts need their active flag asserted again while a protest is ongoing:
+    -- other updates can reactivate a target between protest pacing passes.
+    working_hours.claim_protest_target(target, protester_id)
     target.active = false
   end
 
