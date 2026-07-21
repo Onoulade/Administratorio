@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.10
+Date: 2026-07-21
+  Bugfixes:
+    - deduplicate stale target cache
+    - handle debug target deaths
+    - restore target active state
+    - keep protested targets disabled
+    - enable installed module effects
+---------------------------------------------------------------------------------------------------
 Version: 0.5.9
 Date: 2026-07-20
   Bugfixes:
