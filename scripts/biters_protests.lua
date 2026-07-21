@@ -263,25 +263,22 @@ function M.new(deps)
       local cached_targets = protest_target_cache.targets
       local filtered_targets = nil
 
-      for index, target in ipairs(cached_targets) do
+      for _, target in ipairs(cached_targets) do
         if not is_eligible_protest_target(target) then
           filtered_targets = {}
-          for kept_index = 1, index - 1 do
-            filtered_targets[#filtered_targets + 1] = cached_targets[kept_index]
+          local seen = {}
+          for _, candidate in ipairs(cached_targets) do
+            local key = candidate and candidate.valid and candidate.unit_number or nil
+            if is_eligible_protest_target(candidate) and (not key or not seen[key]) then
+              if key then seen[key] = true end
+              filtered_targets[#filtered_targets + 1] = candidate
+            end
           end
           break
         end
       end
 
       if filtered_targets then
-        local seen = {}
-        for _, target in ipairs(cached_targets) do
-          local key = target and target.valid and target.unit_number or nil
-          if is_eligible_protest_target(target) and (not key or not seen[key]) then
-            if key then seen[key] = true end
-            filtered_targets[#filtered_targets + 1] = target
-          end
-        end
         protest_target_cache.targets = filtered_targets
       end
 
