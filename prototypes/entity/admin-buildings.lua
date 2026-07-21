@@ -34,6 +34,18 @@ local function placeable_by_item(name)
   }
 end
 
+-- These buildings inherit their base prototype from assembling-machine-1.
+-- In Factorio 2 that prototype explicitly opts out of module effects, so
+-- copied module slots alone are purely cosmetic. Keep its original beacon and
+-- surface-effect behavior intact.
+local function enable_machine_effects(machine)
+  machine.effect_receiver = {
+    uses_module_effects = true,
+    uses_beacon_effects = false,
+    uses_surface_effects = true,
+  }
+end
+
 local function tint_sprites(t, tint)
   if type(t) ~= "table" then return end
   if t.filename and not t.draw_as_shadow then
@@ -470,6 +482,7 @@ resolution_office.crafting_speed = 1.0
 resolution_office.energy_usage = "300kW"
 resolution_office.module_slots = 4
 resolution_office.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+enable_machine_effects(resolution_office)
 resolution_office.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
 resolution_office.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
 local resolution_tint = {r=0.5, g=0.3, b=0.3, a=1.0}
@@ -509,6 +522,7 @@ office_desk.crafting_speed = OFFICE_DESK_SPEED
 office_desk.ingredient_count = 10
 office_desk.module_slots = 4
 office_desk.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+enable_machine_effects(office_desk)
 office_desk.localised_description = disabled_entity_description("office-desk-no-working-hours")
 office_desk.collision_box = {{-2.25, -2.25}, {2.25, 2.25}}
 office_desk.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
@@ -556,6 +570,7 @@ formation_center.crafting_speed = 1.0
 formation_center.ingredient_count = 10
 formation_center.module_slots = 3
 formation_center.allowed_effects = {"speed", "consumption", "pollution"}
+enable_machine_effects(formation_center)
 formation_center.collision_box = {{-2.25, -2.25}, {2.25, 2.25}}
 formation_center.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
 formation_center.icon = biter_building_icons .. "formation-center.png"
@@ -605,6 +620,7 @@ greenhouse.icons = nil
 greenhouse.crafting_categories = {"admin-greenhouse"}
 greenhouse.module_slots = 2
 greenhouse.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+enable_machine_effects(greenhouse)
 greenhouse.collision_box = {{-3.25, -3.25}, {3.25, 3.25}}
 greenhouse.selection_box = {{-3.5, -3.5}, {3.5, 3.5}}
 greenhouse.fluid_boxes = {
@@ -651,6 +667,7 @@ breakroom.crafting_categories = {"watercooler-gossip"}
 breakroom.crafting_speed = BREAKROOM_SPEED
 breakroom.module_slots = 3
 breakroom.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+enable_machine_effects(breakroom)
 breakroom.localised_description = disabled_entity_description("corporate-breakroom-no-working-hours")
 breakroom.collision_box = {{-2.25, -2.25}, {2.25, 2.25}}
 breakroom.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
@@ -692,6 +709,7 @@ union_hq.crafting_speed = UNION_HQ_SPEED
 union_hq.ingredient_count = 10
 union_hq.module_slots = 6
 union_hq.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+enable_machine_effects(union_hq)
 union_hq.localised_description = disabled_entity_description("union-headquarters-no-working-hours")
 union_hq.collision_box = {{-3.25, -3.25}, {3.25, 3.25}}
 union_hq.selection_box = {{-3.5, -3.5}, {3.5, 3.5}}
@@ -848,6 +866,7 @@ propaganda_distillery.crafting_speed = 1.0
 propaganda_distillery.energy_usage = "250kW"
 propaganda_distillery.module_slots = 4
 propaganda_distillery.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+enable_machine_effects(propaganda_distillery)
 propaganda_distillery.collision_box = {{-2.4, -2.4}, {2.4, 2.4}}
 propaganda_distillery.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
 propaganda_distillery.fluid_boxes_off_when_no_fluid_recipe = true
@@ -952,8 +971,9 @@ field_office.icons = {
 field_office.crafting_categories = {"bureaucracy-registration", "bureaucratic-bootstrap", "resolution-handcraft"}
 field_office.crafting_speed = 0.5
 field_office.module_slots = 1
-field_office.allowed_effects = {"consumption"}
+field_office.allowed_effects = {"speed", "consumption", "pollution"}
 field_office.allowed_module_categories = {"night-work"}
+enable_machine_effects(field_office)
 field_office.localised_description = disabled_entity_description("field-office-no-working-hours")
 field_office.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
 field_office.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
