@@ -379,7 +379,13 @@ function M.new(deps)
     -- bookkeeping stand in for the actual shutdown.  In particular, transport
     -- belts need their active flag asserted again while a protest is ongoing:
     -- other updates can reactivate a target between protest pacing passes.
-    working_hours.claim_protest_target(target, protester_id)
+    local working_hours_claimed = working_hours.claim_protest_target(target, protester_id)
+    if not working_hours_claimed and target.unit_number then
+      storage.protest_target_active_states = storage.protest_target_active_states or {}
+      if storage.protest_target_active_states[target.unit_number] == nil then
+        storage.protest_target_active_states[target.unit_number] = target.active == true
+      end
+    end
     target.active = false
   end
 
@@ -389,7 +395,15 @@ function M.new(deps)
       return
     end
     if count_protesters_on_target(target, protester_id) == 0 then
-      target.active = true
+      local active_states = storage.protest_target_active_states
+      local initial_active = active_states and target.unit_number and active_states[target.unit_number]
+      if active_states and target.unit_number then
+        active_states[target.unit_number] = nil
+      end
+      -- Existing saves may already contain an active protest without a stored
+      -- initial state.  Keep the legacy re-enable behavior for those saves;
+      -- new protests always restore the state that they interrupted.
+      target.active = initial_active == nil and true or initial_active
     end
   end
 
@@ -1744,6 +1758,9 @@ function M.new(deps)
     local impacted = {}
     local removed_snapshot = snapshot_protest_target(target)
     local fallback_surface = target.surface
+    if target.unit_number and storage.protest_target_active_states then
+      storage.protest_target_active_states[target.unit_number] = nil
+    end
 
     for unit_number in pairs(deps.get_waiting_biter_state_set("protesting")) do
       local info = storage.waiting_biters and storage.waiting_biters[unit_number]
