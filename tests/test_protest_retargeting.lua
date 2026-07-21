@@ -580,6 +580,37 @@ test("removing a protested building ends the protest when no live biter remains"
   assert_true(storage.waiting_biter_state_index.protesting[12] == nil, "missing protesters should leave the protesting index when their target disappears")
 end)
 
+test("ending a protest preserves a target that was already disabled", function()
+  local ctx = new_test_context()
+  local target = new_target(ctx.surface, 101, 12, 12)
+  target.active = false
+
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 12, y = 12},
+    force = "neutral",
+  }
+  entity.unit_number = 13
+
+  local info = {
+    state = "protesting",
+    entity = entity,
+    entity_name = entity.name,
+    tracked_unit_number = 13,
+    target_building = target,
+    arrived_at_building = true,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[13] = info
+  storage.waiting_biter_state_index.protesting[13] = true
+
+  -- Process one protest tick so the target's pre-protest state is captured.
+  ctx.controller.process_frustration_and_protests(ctx.surface)
+  ctx.controller.reset_protest_targeting(info, 13)
+
+  assert_eq(target.active, false, "a protest must not reactivate a target that was already disabled")
+end)
+
 print(string.format("\n=== PROTEST RETARGETING TESTS ==="))
 print(string.format("Passed: %d  Failed: %d  Total: %d", passed, failed, passed + failed))
 
