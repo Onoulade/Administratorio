@@ -94,7 +94,7 @@ data:extend({
   -- PRINTING TECHNOLOGY (printer T1 + rubble derivatives for downstream use)
   {
     type = "technology", name = "printing-technology",
-    icon = "__administratorio__/graphics/icons/ink-cartridge.png", icon_size = 64,
+    icon = "__administratorio__/graphics/icons/printer-t1-v2.png", icon_size = 64,
     effects = {
       { type = "unlock-recipe", recipe = "printer-t1" }
     },
@@ -229,7 +229,7 @@ data:extend({
   -- T3c: CORPORATE HOSPITALITY (breakrooms, coffee, gossip, and office drama)
   {
     type = "technology", name = "corporate-hospitality",
-    icon = "__administratorio__/graphics/icons/warehouse-icon.png", icon_size = 64,
+    icon = "__administratorio__/graphics/icons/corporate-breakroom.png", icon_size = 64,
     effects = {
       { type = "unlock-recipe", recipe = "corporate-breakroom" },
       { type = "unlock-recipe", recipe = "greenhouse-discovery" },

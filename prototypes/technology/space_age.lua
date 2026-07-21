@@ -31,7 +31,7 @@ data:extend({
   {
     type = "technology",
     name = "chromatic-printing",
-    icon = "__administratorio__/graphics/icons/steel-forge-icon.png",
+    icon = "__administratorio__/graphics/icons/space-age/chromatic-printer.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "chromatic-printer"},
@@ -61,7 +61,7 @@ data:extend({
   {
     type = "technology",
     name = "vulcanus-certification",
-    icon = "__administratorio__/graphics/icons/management-approval-written.png",
+    icon = "__administratorio__/graphics/icons/space-age/notary-office.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "notary-office"},
@@ -89,7 +89,7 @@ data:extend({
   {
     type = "technology",
     name = "vulcanus-export-charters",
-    icon = "__administratorio__/graphics/icons/steel-forge-icon.png",
+    icon = "__administratorio__/graphics/icons/space-age/territorial-arbitration-post.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "thermal-process-license"},
@@ -117,7 +117,7 @@ data:extend({
   {
     type = "technology",
     name = "cyan-ink-production",
-    icon = "__administratorio__/graphics/icons/ink-cartridge.png",
+    icon = "__administratorio__/graphics/icons/signal-form-stock.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "cyan-slurry-production"},
@@ -150,7 +150,7 @@ data:extend({
   {
     type = "technology",
     name = "gleba-conciliation",
-    icon = "__administratorio__/graphics/icons/promise.png",
+    icon = "__administratorio__/graphics/icons/space-age/conciliation-desk.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "capture-bureau"},
@@ -180,7 +180,7 @@ data:extend({
   {
     type = "technology",
     name = "gleba-pentapod-formations",
-    icon = "__administratorio__/graphics/icons/office-building.png",
+    icon = "__administratorio__/graphics/icons/symbiosis-record.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "capture-bureau-pentapod-eggs"},
@@ -208,7 +208,7 @@ data:extend({
   {
     type = "technology",
     name = "fulgora-digital-services",
-    icon = "__administratorio__/graphics/icons/data.png",
+    icon = "__administratorio__/graphics/icons/space-age/digital-services-bureau.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "digital-services-bureau"},
@@ -232,7 +232,7 @@ data:extend({
   {
     type = "technology",
     name = "cyan-yellow-bureaucracy",
-    icon = "__administratorio__/graphics/icons/blank-form.png",
+    icon = "__administratorio__/graphics/icons/cyan-yellow-form.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "capture-bureau-tourism"},
@@ -255,7 +255,7 @@ data:extend({
   {
     type = "technology",
     name = "cyan-magenta-bureaucracy",
-    icon = "__administratorio__/graphics/icons/blank-form.png",
+    icon = "__administratorio__/graphics/icons/cyan-magenta-form.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "cyan-magenta-form-production"},
@@ -277,7 +277,7 @@ data:extend({
   {
     type = "technology",
     name = "yellow-magenta-bureaucracy",
-    icon = "__administratorio__/graphics/icons/blank-form.png",
+    icon = "__administratorio__/graphics/icons/yellow-magenta-form.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "yellow-magenta-form-production"},
@@ -302,7 +302,7 @@ data:extend({
   {
     type = "technology",
     name = "aquilo-fax-network",
-    icon = "__administratorio__/graphics/icons/steel-forge-icon.png",
+    icon = "__administratorio__/graphics/icons/space-age/interplanetary-fax-exchange.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "laser-printer"},
@@ -334,7 +334,7 @@ data:extend({
   {
     type = "technology",
     name = "color-faxing",
-    icon = "__administratorio__/graphics/icons/ink-cartridge.png",
+    icon = "__administratorio__/graphics/icons/space-age/fax-emitter.png",
     icon_size = 64,
     effects = {},
     prerequisites = {"aquilo-fax-network"},
@@ -358,7 +358,7 @@ data:extend({
   {
     type = "technology",
     name = "fax-queue-capacity-1",
-    icon = "__administratorio__/graphics/icons/office-building.png",
+    icon = "__administratorio__/graphics/icons/cryogenic-operations-license.png",
     icon_size = 64,
     effects = {
       {type = "nothing", effect_description = {"technology-effect.fax-queue-capacity", "5"}},
@@ -382,7 +382,7 @@ data:extend({
   {
     type = "technology",
     name = "fax-queue-capacity-2",
-    icon = "__administratorio__/graphics/icons/office-building.png",
+    icon = "__administratorio__/graphics/icons/trichromatic-permit.png",
     icon_size = 64,
     effects = {
       {type = "nothing", effect_description = {"technology-effect.fax-queue-capacity", "5"}},
@@ -406,7 +406,7 @@ data:extend({
   {
     type = "technology",
     name = "fax-queue-capacity-3",
-    icon = "__administratorio__/graphics/icons/office-building.png",
+    icon = "__administratorio__/graphics/icons/unified-operations-charter.png",
     icon_size = 64,
     effects = {
       {type = "nothing", effect_description = {"technology-effect.fax-queue-capacity", "5"}},
@@ -433,7 +433,7 @@ data:extend({
   {
     type = "technology",
     name = "bureaucratic-transcendence",
-    icon = "__base__/graphics/icons/train-stop.png",
+    icon = "__administratorio__/graphics/icons/public-transportation-contract.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "public-train-stop-production"},
@@ -547,10 +547,8 @@ data:extend({
   {
     type = "technology",
     name = "orbital-employment-infrastructure",
-    icons = {
-      {icon = "__administratorio__/graphics/icons/biter-station.png", icon_size = 64},
-      {icon = "__base__/graphics/icons/rocket-silo.png", icon_size = 64, scale = 0.4, shift = {8, 8}},
-    },
+    icon = "__administratorio__/graphics/icons/space-age/administrative-space-station.png",
+    icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "administrative-space-station"},
       {type = "unlock-recipe", recipe = "orbital-employment-cannon"},
