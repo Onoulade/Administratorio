@@ -105,6 +105,21 @@ test("worker station managed buildings can still be shut down by protests", func
   assert_eq(storage.working_hours_state[breakroom.unit_number].reason, "protest", "breakroom should keep the protest shutdown reason")
 end)
 
+test("protest refresh reasserts a shutdown after an external reactivation", function()
+  storage = {}
+  package.loaded["feature_flags"] = nil
+  package.loaded["scripts.working_hours"] = nil
+  local working_hours = require("scripts.working_hours")
+
+  local breakroom = new_entity("corporate-breakroom")
+  working_hours.claim_protest_target(breakroom, 99)
+  breakroom.active = true
+
+  working_hours.refresh_entity(breakroom)
+
+  assert_eq(breakroom.active, false, "active protest targets must remain shut down after refresh")
+end)
+
 test("hard mode attackers do not keep working-hours protest shutdown claims", function()
   storage = {
     waiting_biters = {

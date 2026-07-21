@@ -22,6 +22,7 @@ local control_event_router = require("scripts.control_event_router")
 local control_resolution_processing_factory = require("scripts.control_resolution_processing")
 local regulated_unlocks = require("scripts.regulated_unlocks")
 local feature_flags = require("feature_flags")
+local protest_targets = require("scripts.protest_targets")
 local hired_biter = require("scripts.hired_biter")
 local rideable_biter = require("scripts.rideable_biter")
 local spawner_population = require("scripts.spawner_population")
@@ -1880,10 +1881,6 @@ end
 local ON_ENTITY_DIED_FILTERS = {
   {filter = "type", type = "asteroid"},
   {filter = "type", type = "unit"},
-  {filter = "type", type = "assembling-machine"},
-  {filter = "type", type = "furnace"},
-  {filter = "type", type = "lab"},
-  {filter = "type", type = "mining-drill"},
   {filter = "type", type = "train-stop"},
   {filter = "name", name = "admin-station"},
   {filter = "name", name = "capture-bureau"},
@@ -1895,6 +1892,13 @@ local ON_ENTITY_DIED_FILTERS = {
   {filter = "name", name = "corporate-breakroom"},
   {filter = "name", name = "union-headquarters"},
 }
+
+-- Keep death-event coverage in lockstep with every configured protest target.
+-- In particular, the debug belt/inserter targets need immediate reassignment
+-- when they are destroyed rather than waiting for the background recovery pass.
+for _, target_type in ipairs(protest_targets.get_target_types()) do
+  ON_ENTITY_DIED_FILTERS[#ON_ENTITY_DIED_FILTERS + 1] = {filter = "type", type = target_type}
+end
 
 local function on_script_trigger_effect(event)
   biters.on_script_trigger_effect(event)

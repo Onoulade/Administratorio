@@ -66,7 +66,7 @@ test("0.6.0 reapplies technology effects after the workforce tree split", functi
     "workforce-tree migration should reapply researched recipe unlocks")
 
   local info = read_file(mod_root .. "info.json")
-  assert_true(info:find('"version": "0.6.0"', 1, true) ~= nil, "info.json should advertise migration version")
+  assert_true(info:find('"version": "0.6.1"', 1, true) ~= nil, "info.json should advertise current release version")
 end)
 
 print(string.format("\n=== ADMINISTRATORIO TRAJECTORY COMPLIANCE MIGRATION TESTS ==="))

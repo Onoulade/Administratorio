@@ -40,7 +40,7 @@ defines = {
 
 local protest_factory = dofile(mod_root .. "scripts/biters_protests.lua")
 
-local function new_test_context()
+local function new_test_context(hard_mode_enabled)
   local state_sets = {
     protesting = {},
     pacified = {},
@@ -148,6 +148,7 @@ local function new_test_context()
   local deps = {
     constants = {
       PROTEST_THRESHOLD = 600,
+      HARD_MODE_ENABLED = hard_mode_enabled == true,
       INVALIDATED_BITER_REVIVE_RETRY_TICKS = 60,
       PROTEST_TARGET_RETRY_TICKS = 5 * 60,
       PROTEST_TARGET_MAX_PROTESTERS = 5,
@@ -558,6 +559,74 @@ test("stale cached protest targets are filtered before selecting a new target", 
   assert_true(second_info.target_building == fallback_target, "stale cached protest targets should be ignored during reassignment")
 end)
 
+test("filtering a stale cached target does not duplicate earlier targets", function()
+  local ctx = new_test_context(true)
+  local retained_target = new_target(ctx.surface, 102, 1, 1)
+  local stale_target = new_target(ctx.surface, 103, 12, 12)
+  local fallback_target = new_target(ctx.surface, 104, 24, 24)
+  ctx.set_protest_targets({retained_target, stale_target, fallback_target})
+
+  local retained_position = retained_target.position
+  local retained_position_reads = 0
+  retained_target.position = nil
+  setmetatable(retained_target, {
+    __index = function(target, key)
+      if key == "position" then
+        retained_position_reads = retained_position_reads + 1
+        return retained_position
+      end
+      return rawget(target, key)
+    end,
+  })
+
+  local warmup_entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 0, y = 0},
+    force = "neutral",
+  }
+  warmup_entity.unit_number = 20
+  local warmup_info = {
+    state = "waiting",
+    entity = warmup_entity,
+    entity_name = warmup_entity.name,
+    tracked_unit_number = 20,
+    desk_id = 1,
+    frustration = 600,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[20] = warmup_info
+  storage.waiting_biter_state_index.waiting[20] = true
+  ctx.controller.process_frustration_and_protests(ctx.surface)
+
+  -- The next target lookup must prune the middle entry from the cached list.
+  storage.waiting_biters[20] = nil
+  storage.waiting_biter_state_index.waiting[20] = nil
+  storage.waiting_biter_state_index.protesting[20] = nil
+  stale_target.valid = false
+  retained_position_reads = 0
+
+  local attacker = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 24, y = 24},
+    force = "neutral",
+  }
+  attacker.unit_number = 21
+  local attacker_info = {
+    state = "protesting",
+    entity = attacker,
+    entity_name = attacker.name,
+    tracked_unit_number = 21,
+    hard_mode_attacking = true,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[21] = attacker_info
+  storage.waiting_biter_state_index.protesting[21] = true
+
+  ctx.controller.process_protest_pacing(ctx.surface)
+
+  assert_eq(retained_position_reads, 2, "cache pruning must not retain a duplicate of the first valid target")
+end)
+
 test("removing a protested building ends the protest when no live biter remains", function()
   local ctx = new_test_context()
   local old_target = new_target(ctx.surface, 97, 9, 9)
@@ -578,6 +647,37 @@ test("removing a protested building ends the protest when no live biter remains"
 
   assert_true(storage.waiting_biters[12] == nil, "missing protesters should be untracked when their protest target is removed")
   assert_true(storage.waiting_biter_state_index.protesting[12] == nil, "missing protesters should leave the protesting index when their target disappears")
+end)
+
+test("ending a protest preserves a target that was already disabled", function()
+  local ctx = new_test_context()
+  local target = new_target(ctx.surface, 101, 12, 12)
+  target.active = false
+
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 12, y = 12},
+    force = "neutral",
+  }
+  entity.unit_number = 13
+
+  local info = {
+    state = "protesting",
+    entity = entity,
+    entity_name = entity.name,
+    tracked_unit_number = 13,
+    target_building = target,
+    arrived_at_building = true,
+    complaints = {"ticket-landscape"},
+  }
+  storage.waiting_biters[13] = info
+  storage.waiting_biter_state_index.protesting[13] = true
+
+  -- Process one protest tick so the target's pre-protest state is captured.
+  ctx.controller.process_frustration_and_protests(ctx.surface)
+  ctx.controller.reset_protest_targeting(info, 13)
+
+  assert_eq(target.active, false, "a protest must not reactivate a target that was already disabled")
 end)
 
 print(string.format("\n=== PROTEST RETARGETING TESTS ==="))

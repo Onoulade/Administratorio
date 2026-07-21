@@ -263,25 +263,22 @@ function M.new(deps)
       local cached_targets = protest_target_cache.targets
       local filtered_targets = nil
 
-      for index, target in ipairs(cached_targets) do
+      for _, target in ipairs(cached_targets) do
         if not is_eligible_protest_target(target) then
           filtered_targets = {}
-          for kept_index = 1, index - 1 do
-            filtered_targets[#filtered_targets + 1] = cached_targets[kept_index]
+          local seen = {}
+          for _, candidate in ipairs(cached_targets) do
+            local key = candidate and candidate.valid and candidate.unit_number or nil
+            if is_eligible_protest_target(candidate) and (not key or not seen[key]) then
+              if key then seen[key] = true end
+              filtered_targets[#filtered_targets + 1] = candidate
+            end
           end
           break
         end
       end
 
       if filtered_targets then
-        local seen = {}
-        for _, target in ipairs(cached_targets) do
-          local key = target and target.valid and target.unit_number or nil
-          if is_eligible_protest_target(target) and (not key or not seen[key]) then
-            if key then seen[key] = true end
-            filtered_targets[#filtered_targets + 1] = target
-          end
-        end
         protest_target_cache.targets = filtered_targets
       end
 
@@ -375,8 +372,16 @@ function M.new(deps)
 
   local function disable_protest_target(target, protester_id)
     if not target or not target.valid then return end
-    if working_hours.claim_protest_target(target, protester_id) then
-      return
+    -- Keep the working-hours claim for coordinated release, but do not let its
+    -- bookkeeping stand in for the actual shutdown.  In particular, transport
+    -- belts need their active flag asserted again while a protest is ongoing:
+    -- other updates can reactivate a target between protest pacing passes.
+    local working_hours_claimed = working_hours.claim_protest_target(target, protester_id)
+    if not working_hours_claimed and target.unit_number then
+      storage.protest_target_active_states = storage.protest_target_active_states or {}
+      if storage.protest_target_active_states[target.unit_number] == nil then
+        storage.protest_target_active_states[target.unit_number] = target.active == true
+      end
     end
     target.active = false
   end
@@ -387,7 +392,15 @@ function M.new(deps)
       return
     end
     if count_protesters_on_target(target, protester_id) == 0 then
-      target.active = true
+      local active_states = storage.protest_target_active_states
+      local initial_active = active_states and target.unit_number and active_states[target.unit_number]
+      if active_states and target.unit_number then
+        active_states[target.unit_number] = nil
+      end
+      -- Existing saves may already contain an active protest without a stored
+      -- initial state.  Keep the legacy re-enable behavior for those saves;
+      -- new protests always restore the state that they interrupted.
+      target.active = initial_active == nil and true or initial_active
     end
   end
 
@@ -1742,6 +1755,9 @@ function M.new(deps)
     local impacted = {}
     local removed_snapshot = snapshot_protest_target(target)
     local fallback_surface = target.surface
+    if target.unit_number and storage.protest_target_active_states then
+      storage.protest_target_active_states[target.unit_number] = nil
+    end
 
     for unit_number in pairs(deps.get_waiting_biter_state_set("protesting")) do
       local info = storage.waiting_biters and storage.waiting_biters[unit_number]
