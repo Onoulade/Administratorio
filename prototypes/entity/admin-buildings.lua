@@ -301,6 +301,14 @@ biter_station.picture = {
       scale = 0.42,
       shift = util.by_pixel(0, -5),
     },
+    {
+      filename = entity_graphics .. "work-station/shadow.png",
+      width = 784,
+      height = 352,
+      scale = 0.42,
+      shift = util.by_pixel(45.6, 22.63),
+      draw_as_shadow = true,
+    },
   },
 }
 biter_station.stateless_visualisation = {
@@ -349,6 +357,14 @@ biterport.picture = {
       height = 454,
       scale = 0.4,
       shift = util.by_pixel(0, -5),
+    },
+    {
+      filename = entity_graphics .. "biterport/shadow-generated.png",
+      width = 814,
+      height = 320,
+      scale = 0.4,
+      shift = util.by_pixel(55.6, 43.8),
+      draw_as_shadow = true,
     },
   },
 }
@@ -657,6 +673,17 @@ formation_center.graphics_set = {
         scale = 1 / 3,
         shift = util.by_pixel(0, -8),
       },
+      {
+        filename = entity_graphics .. "formation-center/shadow.png",
+        priority = "high",
+        width = 850,
+        height = 298,
+        frame_count = 1,
+        repeat_count = 32,
+        scale = 1 / 3,
+        shift = util.by_pixel(61, 27.5),
+        draw_as_shadow = true,
+      },
     },
   },
 }
@@ -754,6 +781,7 @@ breakroom.graphics_set = {
   animation = {
     layers = {
       { filename = entity_graphics .. "corporate-breakroom/breakroom.png", priority = "high", width = 180, height = 185, frame_count = 1, scale = 0.9, shift = {0, -0.1} },
+      { filename = entity_graphics .. "corporate-breakroom/shadow.png", priority = "high", width = 326, height = 146, frame_count = 1, scale = 0.9, shift = util.by_pixel(62.1, 33.25), draw_as_shadow = true },
     }
   }
 }

@@ -28,13 +28,27 @@ local function printer_sprite(filename, width, height, scale, shift)
   }
 end
 
-local function printer_graphics(directory, base_filename, width, height, scale, shift)
+local function printer_graphics(directory, base_filename, width, height, scale, shift, shadow)
+  local base_animation = printer_sprite(directory .. base_filename, width, height, scale, shift)
+  local animation = base_animation
+  if shadow then
+    local shadow_animation = printer_sprite(
+      directory .. shadow.filename,
+      shadow.width,
+      shadow.height,
+      shadow.scale or scale,
+      shadow.shift
+    )
+    shadow_animation.draw_as_shadow = true
+    animation = {layers = {base_animation, shadow_animation}}
+  end
+
   local light_animation = printer_sprite(directory .. "light.png", width, height, scale, shift)
   light_animation.blend_mode = "additive"
   light_animation.draw_as_glow = true
 
   return {
-    animation = printer_sprite(directory .. base_filename, width, height, scale, shift),
+    animation = animation,
     working_visualisations = {
       {
         always_draw = true,
@@ -77,7 +91,14 @@ mechanical_printer.graphics_set = printer_graphics(
   134,
   128,
   0.46,
-  util.by_pixel(-3, 0)
+  util.by_pixel(-3, 0),
+  {
+    filename = "shadow.png",
+    width = 202,
+    height = 100,
+    scale = 0.46,
+    shift = util.by_pixel(18.62, 10.58),
+  }
 )
 mechanical_printer.working_sound = {
   sound = { filename = sound_path .. "industrial-printer-loop.ogg", volume = 0.55 },
@@ -106,7 +127,14 @@ printer_t1.graphics_set = printer_graphics(
   128,
   152,
   0.46,
-  {0, 0}
+  {0, 0},
+  {
+    filename = "shadow.png",
+    width = 194,
+    height = 110,
+    scale = 0.46,
+    shift = util.by_pixel(14.72, 9.66),
+  }
 )
 printer_t1.working_sound = {
   sound = { filename = sound_path .. "personal-printer-loop.ogg", volume = 0.5 },
@@ -138,7 +166,14 @@ printer_t2.graphics_set = printer_graphics(
   160,
   172,
   0.57,
-  util.by_pixel(0, -2)
+  util.by_pixel(0, -2),
+  {
+    filename = "shadow.png",
+    width = 248,
+    height = 132,
+    scale = 0.57,
+    shift = util.by_pixel(22.8, 16.81),
+  }
 )
 printer_t2.working_sound = {
   sound = { filename = sound_path .. "industrial-press-loop.ogg", volume = 0.58 },
