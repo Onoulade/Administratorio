@@ -26,6 +26,19 @@ local function space_age_sprite(name, width, height)
   }
 end
 
+local function space_age_shadow(name, width, height, shift_x, shift_y)
+  return {
+    filename = space_age_graphics .. name .. "-shadow.png",
+    priority = "high",
+    width = width,
+    height = height,
+    frame_count = 1,
+    scale = 0.5,
+    shift = util.by_pixel(shift_x, shift_y),
+    draw_as_shadow = true,
+  }
+end
+
 local function align_footprint(entity, collision_width, collision_height, selection_width, selection_height, offset)
   local x = offset and offset[1] or 0
   local y = offset and offset[2] or 0
@@ -141,6 +154,7 @@ chromatic_printer.graphics_set = {
   animation = {
     layers = {
       space_age_sprite("chromatic-printer", 192, 192),
+      space_age_shadow("chromatic-printer", 278, 144, 19.5, 18),
     }
   }
 }
@@ -189,6 +203,7 @@ notary_office.graphics_set = {
   animation = {
     layers = {
       space_age_sprite("notary-office", 192, 192),
+      space_age_shadow("notary-office", 272, 148, 19.5, 18),
     }
   }
 }
@@ -226,6 +241,7 @@ territorial_arbitration_post.graphics_set = {
   animation = {
     layers = {
       space_age_sprite("territorial-arbitration-post", 448, 448),
+      space_age_shadow("territorial-arbitration-post", 768, 348, 77.5, 38.5),
     }
   }
 }
@@ -274,6 +290,7 @@ conciliation_desk.graphics_set = {
   animation = {
     layers = {
       space_age_sprite("conciliation-desk", 192, 192),
+      space_age_shadow("conciliation-desk", 284, 144, 21, 19.5),
     }
   }
 }
@@ -316,6 +333,7 @@ digital_services_bureau.graphics_set = {
   animation = {
     layers = {
       space_age_sprite("digital-services-bureau", 192, 192),
+      space_age_shadow("digital-services-bureau", 304, 162, 26, 5),
     }
   }
 }
@@ -345,6 +363,7 @@ laser_printer.graphics_set = {
   animation = {
     layers = {
       space_age_sprite("laser-printer", 192, 192),
+      space_age_shadow("laser-printer", 304, 110, 32.5, 31),
     }
   }
 }
@@ -395,6 +414,7 @@ administrative_space_station.graphics_set = {
   animation = {
     layers = {
       space_age_sprite("administrative-space-station", 192, 192),
+      space_age_shadow("administrative-space-station", 248, 154, 12.5, 15.5),
     }
   }
 }
@@ -424,7 +444,12 @@ local fax_emitter = {
       {variation = 18, main_offset = util.by_pixel(14, 14), shadow_offset = util.by_pixel(18, 18), show_shadow = true},
     }
   ),
-  picture = space_age_sprite("fax-emitter", 128, 128),
+  picture = {
+    layers = {
+      space_age_sprite("fax-emitter", 128, 128),
+      space_age_shadow("fax-emitter", 192, 110, 15.5, 13.5),
+    },
+  },
 }
 align_footprint(fax_emitter, 1.4, 1.4, 2, 2, {0, 1 / 32})
 
@@ -462,6 +487,7 @@ interplanetary_fax_exchange.graphics_set = {
   animation = {
     layers = {
       space_age_sprite("interplanetary-fax-exchange", 192, 192),
+      space_age_shadow("interplanetary-fax-exchange", 248, 150, 13, 14.5),
     }
   }
 }
