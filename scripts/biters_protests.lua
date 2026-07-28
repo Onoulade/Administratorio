@@ -112,7 +112,7 @@ function M.new(deps)
   end
 
   local function hard_mode_log(info, entity, label, extra, opts)
-    if not hard_mode_enabled() or not log then return end
+    if deps.hard_mode_debug_logging ~= true or not hard_mode_enabled() or not log then return end
     opts = opts or {}
     if not opts.force and info then
       info.hard_mode_debug_next_log_tick = info.hard_mode_debug_next_log_tick or {}

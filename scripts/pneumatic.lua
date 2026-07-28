@@ -379,9 +379,137 @@ end
 -- NETWORK DETECTION
 -------------------------------------------------------------------------------
 
+local function merge_signal_pool(destination, source)
+  for item_name, count in pairs(source or {}) do
+    if count > 0 then
+      destination[item_name] = (destination[item_name] or 0) + count
+    end
+  end
+end
+
+local function choose_signal_destination(candidates, outtake_networks)
+  local best_with_outtake = nil
+  local best_any = nil
+  for net_id in pairs(candidates or {}) do
+    if not best_any or net_id < best_any then
+      best_any = net_id
+    end
+    if outtake_networks[net_id]
+        and (not best_with_outtake or net_id < best_with_outtake) then
+      best_with_outtake = net_id
+    end
+  end
+  return best_with_outtake or best_any
+end
+
+local function spill_signal_pool(anchor, pool)
+  if not anchor or not anchor.valid then return false end
+  for item_name, count in pairs(pool or {}) do
+    if count > 0 then
+      anchor.surface.spill_item_stack{
+        position = anchor.position,
+        stack = {name = item_name, count = count},
+        enable_looted = true,
+      }
+    end
+  end
+  return true
+end
+
+--- Move signal pools from the previous topology into the rebuilt topology.
+--- Network IDs are derived from entity unit numbers, so joining, splitting, or
+--- editing a tube component can change its ID. The shared item pool must follow
+--- the endpoints instead of being pruned under its now-stale numeric ID.
+function M.remap_network_state(old_cache, old_anchors)
+  local candidates_by_old_network = {}
+  for uid, old_net_id in pairs(old_cache or {}) do
+    local new_net_id = storage.tube_network_cache[uid]
+    if new_net_id then
+      local candidates = candidates_by_old_network[old_net_id]
+      if not candidates then
+        candidates = {}
+        candidates_by_old_network[old_net_id] = candidates
+      end
+      candidates[new_net_id] = true
+    end
+  end
+
+  local outtake_networks = {}
+  local active_networks = {}
+  for _, net_id in pairs(storage.tube_network_cache) do
+    active_networks[net_id] = true
+  end
+  for uid in pairs(storage.tube_outtakes) do
+    local net_id = storage.tube_network_cache[uid]
+    if net_id then outtake_networks[net_id] = true end
+  end
+
+  local remapped_signals = {}
+  local orphan_signals = storage.tube_orphan_signals or {}
+  for old_net_id, pool in pairs(storage.tube_signals or {}) do
+    local destination = choose_signal_destination(
+      candidates_by_old_network[old_net_id],
+      outtake_networks
+    )
+    -- Old saves can have a signal pool but no populated endpoint cache. If the
+    -- same network ID is active after rebuilding, it is the safest recovery
+    -- target and avoids treating a valid pool as an orphan.
+    if not destination and active_networks[old_net_id] then
+      destination = old_net_id
+    end
+    if destination then
+      local destination_pool = remapped_signals[destination]
+      if not destination_pool then
+        destination_pool = {}
+        remapped_signals[destination] = destination_pool
+      end
+      merge_signal_pool(destination_pool, pool)
+    elseif not spill_signal_pool(old_anchors and old_anchors[old_net_id], pool) then
+      -- This should only be reached for already-stale entries whose final
+      -- endpoint disappeared without an entity-removal event. Retain the items
+      -- for diagnostics/recovery instead of silently deleting them.
+      local orphan_pool = orphan_signals[old_net_id]
+      if not orphan_pool then
+        orphan_pool = {}
+        orphan_signals[old_net_id] = orphan_pool
+      end
+      merge_signal_pool(orphan_pool, pool)
+    end
+  end
+  storage.tube_signals = remapped_signals
+  storage.tube_orphan_signals = orphan_signals
+
+  local remapped_cursors = {}
+  for _, uid in pairs(storage.tube_outtake_cursor or {}) do
+    local new_net_id = storage.tube_network_cache[uid]
+    if new_net_id then
+      local current_uid = remapped_cursors[new_net_id]
+      if not current_uid or uid < current_uid then
+        remapped_cursors[new_net_id] = uid
+      end
+    end
+  end
+  storage.tube_outtake_cursor = remapped_cursors
+end
+
 --- Rebuild the network_id cache for all tracked intakes and outtakes.
 function M.rebuild_network_cache()
   M.ensure_storage()
+  local old_cache = storage.tube_network_cache or {}
+  local old_anchors = {}
+  for uid, entry in pairs(storage.tube_intakes) do
+    local old_net_id = old_cache[uid]
+    if old_net_id and entry.entity and entry.entity.valid then
+      old_anchors[old_net_id] = entry.entity
+    end
+  end
+  for uid, entry in pairs(storage.tube_outtakes) do
+    local old_net_id = old_cache[uid]
+    if old_net_id and entry.entity and entry.entity.valid then
+      old_anchors[old_net_id] = entry.entity
+    end
+  end
+
   storage.tube_network_cache = {}
   storage.tube_network_disabled = {} -- [network_id] = true if over-extended
 
@@ -431,20 +559,17 @@ function M.rebuild_network_cache()
     end
   end
 
-  -- Prune orphaned signal pools (networks with no intakes or outtakes).
-  local active_nets = {}
-  for _, net_id in pairs(storage.tube_network_cache) do
-    active_nets[net_id] = true
+  M.remap_network_state(old_cache, old_anchors)
+
+  -- A topology edit can move a pool without an intake or outtake transfer, so
+  -- refresh every endpoint's circuit view immediately after the remap.
+  for uid, entry in pairs(storage.tube_intakes) do
+    local net_id = storage.tube_network_cache[uid]
+    update_combinator_signals(entry.combinator, net_id and storage.tube_signals[net_id])
   end
-  for net_id in pairs(storage.tube_signals) do
-    if not active_nets[net_id] then
-      storage.tube_signals[net_id] = nil
-    end
-  end
-  for net_id in pairs(storage.tube_outtake_cursor) do
-    if not active_nets[net_id] then
-      storage.tube_outtake_cursor[net_id] = nil
-    end
+  for uid, entry in pairs(storage.tube_outtakes) do
+    local net_id = storage.tube_network_cache[uid]
+    update_combinator_signals(entry.combinator, net_id and storage.tube_signals[net_id])
   end
 
   storage.tube_network_dirty = false
@@ -747,6 +872,7 @@ function M.ensure_storage()
   storage.tube_network_cache = storage.tube_network_cache or {}
   storage.tube_network_disabled = storage.tube_network_disabled or {}
   storage.tube_outtake_cursor = storage.tube_outtake_cursor or {}
+  storage.tube_orphan_signals = storage.tube_orphan_signals or {}
   if storage.tube_network_dirty == nil then
     storage.tube_network_dirty = true
   end
