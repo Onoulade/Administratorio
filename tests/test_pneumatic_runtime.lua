@@ -124,6 +124,129 @@ test("round robin skips occupied and unsatisfied filtered outtakes", function()
   assert_eq(inventories[10].item, "resolved-landscape", "delivery should wrap to an eligible outtake")
 end)
 
+test("network merge combines every old signal pool", function()
+  storage = {
+    tube_intakes = {
+      [11] = {entity = {valid = true}},
+      [22] = {entity = {valid = true}},
+    },
+    tube_outtakes = {
+      [33] = {entity = {valid = true}},
+    },
+    tube_signals = {
+      [100] = {["blank-form"] = 7, paper = 3},
+      [200] = {["blank-form"] = 5, ink = 2},
+    },
+    tube_network_cache = {
+      [11] = 50,
+      [22] = 50,
+      [33] = 50,
+    },
+    tube_outtake_cursor = {
+      [100] = 33,
+      [200] = 33,
+    },
+  }
+
+  pneumatic.remap_network_state({
+    [11] = 100,
+    [22] = 200,
+    [33] = 100,
+  })
+
+  assert_eq(storage.tube_signals[50]["blank-form"], 12, "merged form count")
+  assert_eq(storage.tube_signals[50].paper, 3, "merged paper count")
+  assert_eq(storage.tube_signals[50].ink, 2, "merged ink count")
+  assert_eq(storage.tube_signals[100], nil, "stale first network pool")
+  assert_eq(storage.tube_signals[200], nil, "stale second network pool")
+  assert_eq(storage.tube_outtake_cursor[50], 33, "cursor should follow outtake")
+end)
+
+test("network split keeps the pool on a component with an outtake", function()
+  storage = {
+    tube_intakes = {
+      [11] = {entity = {valid = true}},
+    },
+    tube_outtakes = {
+      [22] = {entity = {valid = true}},
+    },
+    tube_signals = {
+      [100] = {["ticket-landscape"] = 9},
+    },
+    tube_network_cache = {
+      [11] = 10,
+      [22] = 20,
+    },
+    tube_outtake_cursor = {},
+  }
+
+  pneumatic.remap_network_state({
+    [11] = 100,
+    [22] = 100,
+  })
+
+  assert_eq(storage.tube_signals[10], nil, "intake-only component should not claim pool")
+  assert_eq(storage.tube_signals[20]["ticket-landscape"], 9, "outtake component should retain pool")
+end)
+
+test("network id change preserves the pool without an outtake", function()
+  storage = {
+    tube_intakes = {
+      [11] = {entity = {valid = true}},
+    },
+    tube_outtakes = {},
+    tube_signals = {
+      [100] = {["blank-form"] = 11, paper = 11},
+    },
+    tube_network_cache = {
+      [11] = 300,
+    },
+    tube_outtake_cursor = {},
+  }
+
+  pneumatic.remap_network_state({[11] = 100})
+
+  assert_eq(storage.tube_signals[300]["blank-form"], 11, "forms should follow renumbered network")
+  assert_eq(storage.tube_signals[300].paper, 11, "paper should follow renumbered network")
+end)
+
+test("active network retains a legacy pool when old endpoint cache is empty", function()
+  storage = {
+    tube_intakes = {
+      [11] = {entity = {valid = true}},
+    },
+    tube_outtakes = {},
+    tube_signals = {
+      [100] = {paper = 6},
+    },
+    tube_network_cache = {
+      [11] = 100,
+    },
+    tube_outtake_cursor = {},
+  }
+
+  pneumatic.remap_network_state({})
+
+  assert_eq(storage.tube_signals[100].paper, 6, "legacy pool should remain on active network id")
+end)
+
+test("pool with no surviving endpoint is retained for recovery", function()
+  storage = {
+    tube_intakes = {},
+    tube_outtakes = {},
+    tube_signals = {
+      [100] = {["blank-form"] = 4},
+    },
+    tube_network_cache = {},
+    tube_outtake_cursor = {},
+  }
+
+  pneumatic.remap_network_state({[11] = 100})
+
+  assert_eq(storage.tube_signals[100], nil, "orphan should leave active signal table")
+  assert_eq(storage.tube_orphan_signals[100]["blank-form"], 4, "orphaned forms should be retained")
+end)
+
 if failed > 0 then
   io.stderr:write(table.concat(errors, "\n") .. "\n")
   os.exit(1)
