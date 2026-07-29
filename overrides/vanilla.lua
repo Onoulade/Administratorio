@@ -392,7 +392,9 @@ dedupe_technology_ingredients()
 local furnace_categories = {
   ["stone-furnace"]    = {"smelting-basic"},
   ["steel-furnace"]    = {"smelting-basic"},
-  ["electric-furnace"] = {"smelting"},
+  -- Electric furnaces retain vanilla smelting and also run the certified
+  -- batch recipes used by the burner furnace tiers.
+  ["electric-furnace"] = {"smelting", "smelting-basic"},
 }
 
 for name, categories in pairs(furnace_categories) do
