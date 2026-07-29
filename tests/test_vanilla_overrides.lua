@@ -86,7 +86,11 @@ data = {
     unit = {},
     ["unit-spawner"] = {},
     lab = {},
-    furnace = {},
+    furnace = {
+      ["stone-furnace"] = {name = "stone-furnace", type = "furnace"},
+      ["steel-furnace"] = {name = "steel-furnace", type = "furnace"},
+      ["electric-furnace"] = {name = "electric-furnace", type = "furnace"},
+    },
     ["assembling-machine"] = {},
     locomotive = {},
     ["electric-pole"] = {
@@ -150,6 +154,20 @@ end)
 test("steel processing unlocks batch steel smelting", function()
   local tech = technologies["steel-processing"]
   assert_true(tech_unlocks_recipe(tech, "steel-plate-batch"), "steel-processing should unlock steel-plate-batch")
+end)
+
+test("electric furnaces support certified batch smelting", function()
+  local electric_furnace = data.raw["assembling-machine"]["electric-furnace"]
+  assert_true(electric_furnace ~= nil, "electric-furnace should be converted to an assembling machine")
+
+  local categories = {}
+  for _, category in ipairs(electric_furnace.crafting_categories) do
+    categories[category] = true
+  end
+
+  assert_true(categories["smelting"], "electric-furnace should retain vanilla smelting")
+  assert_true(categories["smelting-basic"],
+    "electric-furnace should support certified batch recipes such as compacted-rubble-production")
 end)
 
 test("vanilla module recipes use the dedicated admin module category", function()
