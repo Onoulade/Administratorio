@@ -23,9 +23,9 @@ Strict mode:
     required by one of its prerequisite technologies.
   - `--strict` fails when a technology uses a science pack in its research
     ingredients but does not transitively depend on that pack's technology.
-  - always fails when a visible recipe-unlock technology has no unique recipe
-    unlocks after prototype hooks run, because researching a hollow node gives
-    the player nothing.
+  - always fails when a visible, science-based technology has neither a unique
+    player-facing recipe unlock nor any other effect, because researching a
+    hollow node gives the player nothing.
 
 All modes fail when a visible technology depends on a missing, disabled, or
 hidden technology, because Factorio cannot queue that research.
@@ -237,14 +237,15 @@ class ProgressionAnalyzer:
             for result_name, _ in recipe_results(recipe):
                 self.producing_recipes[result_name].append(recipe_name)
 
-        self.all_recipe_unlocks_by_tech: Dict[str, List[str]] = defaultdict(list)
+        self.player_facing_recipe_unlocks_by_tech: Dict[str, List[str]] = defaultdict(list)
         self.unlocks_by_tech: Dict[str, List[str]] = defaultdict(list)
         for tech_name, tech in self.technologies.items():
             for effect in tech.get("effects", []) or []:
                 if effect.get("type") == "unlock-recipe":
                     recipe_name = effect["recipe"]
-                    if recipe_name in data_raw["recipe"]:
-                        self.all_recipe_unlocks_by_tech[tech_name].append(recipe_name)
+                    raw_recipe = data_raw["recipe"].get(recipe_name)
+                    if raw_recipe is not None and not raw_recipe.get("hidden", False):
+                        self.player_facing_recipe_unlocks_by_tech[tech_name].append(recipe_name)
                     if recipe_name in self.recipes:
                         self.unlocks_by_tech[tech_name].append(recipe_name)
 
@@ -1168,12 +1169,14 @@ class ProgressionAnalyzer:
                 missing.append(item_name)
         return missing
 
-    def technologies_without_unique_recipe_unlocks(self) -> List[Dict]:
+    def science_technologies_without_player_facing_unlocks(self) -> List[Dict]:
         recipe_unlock_counts: Dict[str, int] = defaultdict(int)
         for tech_name in self.technologies:
             if not self.tech_visible(tech_name):
                 continue
-            for recipe_name in set(self.all_recipe_unlocks_by_tech.get(tech_name, [])):
+            for recipe_name in set(
+                self.player_facing_recipe_unlocks_by_tech.get(tech_name, [])
+            ):
                 recipe_unlock_counts[recipe_name] += 1
 
         empty = []
@@ -1193,7 +1196,9 @@ class ProgressionAnalyzer:
             if has_non_recipe_effect:
                 continue
 
-            recipe_unlocks = sorted(set(self.all_recipe_unlocks_by_tech.get(tech_name, [])))
+            recipe_unlocks = sorted(
+                set(self.player_facing_recipe_unlocks_by_tech.get(tech_name, []))
+            )
             unique_unlocks = [
                 recipe_name
                 for recipe_name in recipe_unlocks
@@ -1290,7 +1295,7 @@ def render_report(
     analyzer: ProgressionAnalyzer,
     missing_building_recipes: Sequence[str],
     unavailable_prerequisites: Sequence[Dict],
-    empty_recipe_unlock_techs: Sequence[Dict],
+    hollow_science_techs: Sequence[Dict],
     direct_target_failures: Sequence[Dict],
     parent_pack_gaps: Sequence[Dict],
     pack_prereq_gaps: Sequence[Dict],
@@ -1358,11 +1363,11 @@ def render_report(
     lines.extend(
         [
             "",
-            "Visible recipe-unlock technologies with no unique recipe unlocks: "
-            f"{len(empty_recipe_unlock_techs)}",
+            "Science technologies with no unique player-facing recipe unlock or other effect: "
+            f"{len(hollow_science_techs)}",
         ]
     )
-    for finding in empty_recipe_unlock_techs:
+    for finding in hollow_science_techs:
         if finding["recipe_unlocks"]:
             lines.append(
                 f"  - {finding['technology']} (duplicates: {', '.join(finding['recipe_unlocks'])})"
@@ -1538,7 +1543,9 @@ def main() -> int:
 
         missing_building_recipes = analyzer.buildings_without_recipes()
         unavailable_prerequisites = analyzer.unavailable_prerequisite_findings()
-        empty_recipe_unlock_techs = analyzer.technologies_without_unique_recipe_unlocks()
+        hollow_science_techs = (
+            analyzer.science_technologies_without_player_facing_unlocks()
+        )
         direct_target_failures = analyzer.direct_target_findings()
         parent_pack_gaps = analyzer.parent_pack_gaps()
         pack_prereq_gaps = analyzer.pack_prereq_gaps()
@@ -1562,7 +1569,7 @@ def main() -> int:
             analyzer=analyzer,
             missing_building_recipes=missing_building_recipes,
             unavailable_prerequisites=unavailable_prerequisites,
-            empty_recipe_unlock_techs=empty_recipe_unlock_techs,
+            hollow_science_techs=hollow_science_techs,
             direct_target_failures=direct_target_failures,
             parent_pack_gaps=parent_pack_gaps,
             pack_prereq_gaps=pack_prereq_gaps,
@@ -1584,7 +1591,7 @@ def main() -> int:
             return 1
         if unavailable_prerequisites:
             return 1
-        if empty_recipe_unlock_techs:
+        if hollow_science_techs:
             return 1
         if args.strict and (
             hard_target_failures
