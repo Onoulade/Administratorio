@@ -123,14 +123,6 @@ data.raw.item["iron-plate"] = {
   icon = "__base__/graphics/icons/iron-plate.png",
   icon_size = 64,
 }
-data.raw.item["car"] = {
-  type = "item-with-entity-data",
-  name = "car",
-  place_result = "car",
-  stack_size = 1,
-  icon = "__base__/graphics/icons/car.png",
-  icon_size = 64,
-}
 data.raw.item["electric-furnace"] = {
   type = "item",
   name = "electric-furnace",
@@ -437,21 +429,6 @@ recipes["engine-unit"] = {
   },
   results = {
     { type = "item", name = "engine-unit", amount = 1 },
-  },
-}
-
-recipes["car"] = {
-  type = "recipe",
-  name = "car",
-  category = "crafting",
-  enabled = false,
-  ingredients = {
-    { type = "item", name = "engine-unit", amount = 8 },
-    { type = "item", name = "iron-plate", amount = 20 },
-    { type = "item", name = "steel-plate", amount = 5 },
-  },
-  results = {
-    { type = "item", name = "car", amount = 1 },
   },
 }
 
@@ -826,23 +803,6 @@ technologies["automation"] = {
   },
 }
 
-technologies["automobilism"] = {
-  type = "technology",
-  name = "automobilism",
-  effects = {
-    { type = "unlock-recipe", recipe = "car" },
-  },
-  unit = {
-    count = 220,
-    ingredients = {
-      {"automation-science-pack", 1},
-      {"logistic-science-pack", 1},
-      {"utility-science-pack", 1},
-    },
-    time = 30,
-  },
-}
-
 technologies["nuclear-power"] = {
   type = "technology",
   name = "nuclear-power",
@@ -1144,18 +1104,6 @@ test("engine units use baseline paperwork plus carbon offsets", function()
   assert_true(has_ingredient(r, "work-order"), "engine-unit missing work-order")
   assert_true(has_ingredient(r, "carbon-offset-certificate-basic"), "engine-unit missing carbon-offset-certificate-basic")
   assert_true(not has_ingredient(r, "management-verbal-work-order"), "engine-unit should not use management-verbal-work-order")
-end)
-
-test("automobilism keeps the automobile recipe available to its unlock", function()
-  local car = get_recipe("car")
-
-  assert_true(car ~= nil, "car recipe missing")
-  assert_eq(car.enabled, false, "car should remain technology-gated")
-  assert_true(not car.hidden, "car should not be hidden after automobilism unlocks it")
-  assert_true(not car.hide_from_player_crafting, "car should remain visible in the crafting UI")
-  assert_eq(car.category, "crafting-regulated", "car should use the regulated crafting path")
-  assert_true(has_ingredient(car, "work-order"), "car should require a work-order")
-  assert_true(tech_unlocks_recipe("automobilism", "car"), "automobilism should unlock the car recipe")
 end)
 
 test("regulated advanced assembler path stays available to both AM2 and AM3", function()
