@@ -778,6 +778,7 @@ end
 local function on_player_joined_game(event)
   local player = game.get_player(event.player_index)
   if player then
+    sync_force_regulated_recipe_unlocks(player.force)
     biters.refresh_protest_notifications(player)
     field_office.update_placement_preview(player, game.tick, true)
   end

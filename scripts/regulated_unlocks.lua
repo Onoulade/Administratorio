@@ -29,6 +29,11 @@ function M.enable_regulated_variants_for_technology(force, technology_ref)
 
   for _, effect in ipairs(technology.effects) do
     if effect.type == "unlock-recipe" and effect.recipe then
+      local original = force.recipes[effect.recipe]
+      if original then
+        original.enabled = true
+      end
+
       local regulated = force.recipes[effect.recipe .. "-regulated"]
       if regulated then
         regulated.enabled = true
