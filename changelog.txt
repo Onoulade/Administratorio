@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.11
+Date: 2026-07-30
+  Changes:
+    - Fix automobile recipe unlock
+    - Fix electric furnace batch smelting
+    - Fix pneumatic network item loss
+---------------------------------------------------------------------------------------------------
 Version: 0.5.10
 Date: 2026-07-21
   Bugfixes:
