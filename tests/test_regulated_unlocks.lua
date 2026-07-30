@@ -35,7 +35,9 @@ local regulated_unlocks = require("scripts.regulated_unlocks")
 local function new_force()
   return {
     recipes = {
+      ["transport-belt"] = {enabled = false},
       ["transport-belt-regulated"] = {enabled = false},
+      ["fast-inserter"] = {enabled = false},
       ["fast-inserter-regulated"] = {enabled = false},
     },
     technologies = {},
@@ -55,6 +57,7 @@ test("technology names resolve through force technologies", function()
 
   regulated_unlocks.enable_regulated_variants_for_technology(force, "logistics")
 
+  assert_true(force.recipes["transport-belt"].enabled, "logistics should unlock transport-belt")
   assert_true(force.recipes["transport-belt-regulated"].enabled, "logistics should unlock transport-belt-regulated")
 end)
 
@@ -70,6 +73,7 @@ test("research objects from on_research_finished use their prototype", function(
 
   regulated_unlocks.enable_regulated_variants_for_technology(force, research)
 
+  assert_true(force.recipes["fast-inserter"].enabled, "research should unlock fast-inserter")
   assert_true(force.recipes["fast-inserter-regulated"].enabled, "research objects should unlock regulated variants")
 end)
 

@@ -940,13 +940,8 @@ end
 
 local regulated_recipes = {}
 local regulated_factoriopedia_products = {}
-local REMOVED_VANILLA_RECIPES = {
-  car = true,
-}
 
 for name, recipe in pairs(data.raw["recipe"]) do
-  if REMOVED_VANILLA_RECIPES[name] then goto continue end
-
   -- Skip our mod's recipes
   if shared.is_admin_recipe(name) or shared.ADMIN_BUILDINGS[name]
      or FORM_PRODUCTION_RECIPE_SET[name] then
@@ -1062,7 +1057,6 @@ end
 -------------------------------------------------------------------------------
 local OIL_REFINERY_BULK_MULTIPLIER = 5
 for name, recipe in pairs(data.raw["recipe"]) do
-  if REMOVED_VANILLA_RECIPES[name] then goto oil_continue end
   if shared.is_admin_recipe(name) or shared.ADMIN_BUILDINGS[name]
      or FORM_PRODUCTION_RECIPE_SET[name] then
     goto oil_continue
@@ -1193,7 +1187,6 @@ end
 
 local admin_building_regulated = {}
 for recipe_name, recipe in pairs(data.raw["recipe"]) do
-  if REMOVED_VANILLA_RECIPES[recipe_name] then goto next_admin_building end
   if recipe_name:find("%-regulated$") then goto next_admin_building end
 
   local cat = recipe.category or "crafting"
@@ -1219,17 +1212,6 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
   ::next_admin_building::
 end
 data:extend(admin_building_regulated)
-
-for recipe_name in pairs(REMOVED_VANILLA_RECIPES) do
-  local recipe = data.raw["recipe"][recipe_name]
-  if recipe then
-    recipe.enabled = false
-    recipe.hidden = true
-    recipe.hidden_in_factoriopedia = true
-    recipe.hide_from_player_crafting = true
-  end
-  data.raw["recipe"][recipe_name .. "-regulated"] = nil
-end
 
 -- Demolition products need explicit construction paperwork on top of their
 -- normal process permits so cliff clearance and blasting stay on-theme.
