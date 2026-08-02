@@ -1,4 +1,5 @@
 local planets = require("prototypes.shared.space_age_planets")
+local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 
 local function on_planet(planet_name, recipe)
   return planets.apply_planet_surface_conditions(recipe, planet_name)
@@ -10,7 +11,7 @@ data:extend({
   on_planet("gleba", {
     type = "recipe",
     name = "construction-permit-gleba",
-    category = "bureaucracy-registration",
+    category = bureaucracy_categories.registration_for_planet("gleba"),
     enabled = false,
     localised_name = {"item-name.construction-permit"},
     ingredients = {
@@ -29,7 +30,7 @@ data:extend({
   on_planet("fulgora", {
     type = "recipe",
     name = "ink-recovery-fulgora",
-    category = "bureaucratic-bootstrap",
+    category = bureaucracy_categories.bootstrap_for_planet("fulgora"),
     enabled = false,
     ingredients = {
       {type = "item", name = "charged-toner", amount = 1},
@@ -41,7 +42,7 @@ data:extend({
   on_planet("fulgora", {
     type = "recipe",
     name = "salvaged-data-analysis-fulgora",
-    category = "bureaucratic-bootstrap",
+    category = bureaucracy_categories.bootstrap_for_planet("fulgora"),
     enabled = false,
     ingredients = {
       {type = "item", name = "redundant-rubble", amount = 6},
@@ -54,7 +55,7 @@ data:extend({
   on_planet("fulgora", {
     type = "recipe",
     name = "carbon-offset-certificate-basic-fulgora",
-    category = "bureaucracy-registration",
+    category = bureaucracy_categories.registration_for_planet("fulgora"),
     enabled = false,
     localised_name = {"recipe-name.carbon-offset-certificate-basic-fulgora"},
     ingredients = {
@@ -113,24 +114,12 @@ data:extend({
     allow_productivity = true,
   }),
   -- Gleba can grow the few administrative inputs that gate its own escape and
-  -- conciliation content. Higher generic paperwork remains an import or fax
-  -- concern, preserving the planet's biological-specialist identity.
-  on_planet("gleba", {
-    type = "recipe",
-    name = "dubious-data-cultivation-gleba",
-    category = "bureaucratic-bootstrap",
-    enabled = false,
-    ingredients = {
-      {type = "item", name = "bullshit-ore", amount = 4},
-      {type = "fluid", name = "amber-sap", amount = 10},
-    },
-    results = {{type = "item", name = "dubious-data", amount = 8}},
-    energy_required = 8,
-  }),
+  -- conciliation content. Bullshit ore already feeds the canonical smelting
+  -- route to dubious data, so the planet does not duplicate that conversion.
   on_planet("gleba", {
     type = "recipe",
     name = "provisional-approval-cultivation-gleba",
-    category = "bureaucratic-bootstrap",
+    category = bureaucracy_categories.bootstrap_for_planet("gleba"),
     enabled = false,
     ingredients = {
       {type = "item", name = "blank-form", amount = 1},
@@ -176,8 +165,3 @@ data:extend({
     energy_required = 12,
   }),
 })
-
-local seeding = data.raw.recipe and data.raw.recipe["amber-sap-nonsense-seeding"]
-if seeding and seeding.results and seeding.results[1] then
-  seeding.results[1].amount = 8
-end

@@ -11,6 +11,7 @@ local trains = require("scripts.trains")
 local fax = require("scripts.fax")
 local working_hours = require("scripts.working_hours")
 local field_office = require("scripts.field_office")
+local planetary_unlocks = require("scripts.planetary_unlocks")
 local biter_station = require("scripts.biter_station")
 local biter_station_hover = require("scripts.biter_station_hover")
 local biterport = require("scripts.biterport")
@@ -698,6 +699,7 @@ local function on_init()
   end
   sync_all_regulated_recipe_unlocks()
   pneumatic.sync_all_intake_recipe_unlocks()
+  planetary_unlocks.sync_all()
   storage.needs_startup_cleanup = true
   storage.needs_protest_refresh = true
   needs_unit_group_scan = true
@@ -793,6 +795,7 @@ local function on_configuration_changed(event)
   end
   sync_all_regulated_recipe_unlocks()
   pneumatic.sync_all_intake_recipe_unlocks()
+  planetary_unlocks.sync_all()
   storage.needs_protest_refresh = true
   needs_unit_group_scan = true
 
@@ -808,6 +811,7 @@ local function on_research_finished(event)
   local research = event and event.research
   if not research or not research.valid then return end
   enable_regulated_variants_for_technology(research.force, research)
+  planetary_unlocks.on_research_finished(research)
   biter_station.on_research_finished(research)
   biterport.on_research_finished(research)
   -- Invalidate tube capacity cache when a pneumatic capacity tech is researched.

@@ -1,4 +1,5 @@
 local planets = require("prototypes.shared.space_age_planets")
+local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 local entity_graphics = "__administratorio__/graphics/entities/"
 local item_icons = "__administratorio__/graphics/icons/"
 local sound_path = "__administratorio__/sound/buildings/"
@@ -309,7 +310,10 @@ digital_services_bureau.icon_size = 64
 digital_services_bureau.minable = {mining_time = 0.2, result = "digital-services-bureau"}
 digital_services_bureau.placeable_by = placeable_by_item("digital-services-bureau")
 digital_services_bureau.next_upgrade = nil
-digital_services_bureau.crafting_categories = {"bureaucracy-registration", "bureaucratic-bootstrap"}
+digital_services_bureau.crafting_categories = {
+  bureaucracy_categories.registration_for_planet("fulgora"),
+  bureaucracy_categories.bootstrap_for_planet("fulgora"),
+}
 digital_services_bureau.crafting_speed = 3
 digital_services_bureau.base_productivity = 0.5
 digital_services_bureau.energy_usage = "1MW"
