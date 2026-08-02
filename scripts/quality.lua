@@ -11,21 +11,30 @@ local FALLBACK_LEVELS = {
   legendary = 5,
 }
 
+local function safe_field(subject, field)
+  if subject == nil then return nil end
+  local ok, value = pcall(function() return subject[field] end)
+  return ok and value or nil
+end
+
 function M.name(subject)
   if not subject then return "normal" end
   if type(subject) == "string" then return subject end
-  local direct_quality = subject.quality
+  -- Factorio API objects throw when an unsupported property is read.  A
+  -- LuaQualityPrototype is already the quality, so probing .quality on it
+  -- must be guarded before falling back to its own name and level.
+  local direct_quality = safe_field(subject, "quality")
   local quality = direct_quality
   if quality == nil then
     -- Quality prototypes carry a level; ordinary entities and item stacks do
     -- not.  Treat those missing/legacy values as normal rather than mistaking
     -- an item name for a quality name.
-    local ok, level = pcall(function() return subject.level end)
-    if ok and type(level) == "number" then
+    local level = safe_field(subject, "level")
+    if type(level) == "number" then
       quality = subject
     else
-      local name_ok, name = pcall(function() return subject.name end)
-      if name_ok and (FALLBACK_LEVELS[name] ~= nil
+      local name = safe_field(subject, "name")
+      if name and (FALLBACK_LEVELS[name] ~= nil
           or (prototypes and prototypes.quality and prototypes.quality[name])) then
         quality = subject
       else
@@ -34,16 +43,14 @@ function M.name(subject)
     end
   end
   if type(quality) == "string" then return quality end
-  if type(quality) == "table" and quality.name then return quality.name end
-  local ok, name = pcall(function() return quality.name end)
-  return ok and name or "normal"
+  return safe_field(quality, "name") or "normal"
 end
 
 function M.level(subject)
-  local quality = subject and (subject.quality or subject) or nil
+  local quality = subject and (safe_field(subject, "quality") or subject) or nil
   if quality and type(quality) ~= "string" then
-    local ok, level = pcall(function() return quality.level end)
-    if ok and type(level) == "number" then return level end
+    local level = safe_field(quality, "level")
+    if type(level) == "number" then return level end
   end
 
   local name = M.name(subject)
