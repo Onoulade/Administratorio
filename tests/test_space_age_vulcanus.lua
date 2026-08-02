@@ -567,28 +567,6 @@ test("non-orbital space age admin machines stay out of vacuum", function()
   end
 end)
 
-test("non-orbital space age admin machines stay out of vacuum", function()
-  for _, entity_name in ipairs({
-    "formation-center",
-    "notary-office",
-    "digital-services-bureau",
-    "laser-printer",
-  }) do
-    local entity = assert(data.raw["assembling-machine"][entity_name], entity_name .. " missing")
-    assert_true(entity.surface_conditions ~= nil and entity.surface_conditions[1] ~= nil,
-      entity_name .. " should define a vacuum-blocking pressure rule")
-    assert_eq(entity.surface_conditions[1].property, "pressure", entity_name .. " should gate on pressure")
-    assert_true((entity.surface_conditions[1].min or 0) >= 1, entity_name .. " should require non-vacuum pressure")
-  end
-
-  for _, entity_name in ipairs({"fax-emitter", "interplanetary-fax-exchange"}) do
-    local entity = assert(data.raw.container[entity_name], entity_name .. " missing")
-    assert_true(entity.surface_conditions ~= nil and entity.surface_conditions[1] ~= nil,
-      entity_name .. " should define a vacuum-blocking pressure rule")
-    assert_true((entity.surface_conditions[1].min or 0) >= 1, entity_name .. " should require non-vacuum pressure")
-  end
-end)
-
 test("planet helper exposes exact basic-planet conditions and abundance outputs", function()
   local vulcanus = planets.surface_conditions_for_planet("vulcanus")
   local gleba = planets.surface_conditions_for_planet("gleba")
