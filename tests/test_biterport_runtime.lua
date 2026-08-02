@@ -136,6 +136,23 @@ local function new_inventory(size, initial_items)
   return inventory
 end
 
+local function make_invalid_for_read_stack()
+  return setmetatable({}, {
+    __index = function(_, key)
+      if key == "valid_for_read" then return false end
+      error("LuaItemStack API call when LuaItemStack was invalid for read", 2)
+    end,
+  })
+end
+
+local function use_factorio_empty_slot_semantics(inventory)
+  for index = 1, #inventory do
+    if inventory[index] == nil then
+      inventory[index] = make_invalid_for_read_stack()
+    end
+  end
+end
+
 local function stack_quality_name(stack)
   return stack and stack.quality and stack.quality.name or "normal"
 end
@@ -825,6 +842,7 @@ test("biterport empties player trash into network storage", function()
   local storage_chest = new_chest(surface, 31, {x = 7, y = 0}, "storage", {})
   storage_chest.force = force
   local player = new_player(surface, force, {}, {}, {["stone"] = 1})
+  use_factorio_empty_slot_semantics(player.trash_inventory)
   game.connected_players = {player}
 
   biterport.ensure_storage()

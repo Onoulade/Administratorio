@@ -89,7 +89,10 @@ local function item_identity_key(item_name, quality_name)
 end
 
 local function stack_identity(stack)
-  if not stack or not stack.name then return nil, "normal" end
+  -- Empty inventory slots are LuaItemStacks too, but Factorio forbids reading
+  -- fields such as name or quality until valid_for_read is true.
+  if not stack or not stack.valid_for_read then return nil, "normal" end
+  if not stack.name then return nil, "normal" end
   return stack.name, normalized_quality_name(stack)
 end
 
@@ -114,7 +117,7 @@ local function inventory_exact_count(inventory, item_name, quality_name)
     for index = 1, slots do
       local stack = inventory[index]
       local stack_name, stack_quality = stack_identity(stack)
-      if stack and stack.valid_for_read and stack_name == item_name and stack_quality == normalized then
+      if stack_name == item_name and stack_quality == normalized then
         count = count + (stack.count or 0)
       end
     end

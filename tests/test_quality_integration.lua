@@ -178,6 +178,20 @@ test("native and infrastructure certification curves match every tier", function
   assert_eq(fax_shared.get_queue_capacity(force, {quality = {name = "legendary"}}), 10)
 end)
 
+test("quality helpers accept strict LuaQualityPrototype objects", function()
+  local values = {name = "legendary", level = 5}
+  local quality_prototype = setmetatable({}, {
+    __index = function(_, key)
+      if values[key] ~= nil then return values[key] end
+      error("LuaQualityPrototype doesn't contain key " .. tostring(key), 2)
+    end,
+  })
+
+  assert_eq(quality.name(quality_prototype), "legendary")
+  assert_eq(quality.level(quality_prototype), 5)
+  assert_near(quality.infrastructure_multiplier(quality_prototype), 1.5)
+end)
+
 test("certification locale provides the administrative retheme", function()
   local file = assert(io.open(mod_root .. "locale/en/certification.cfg", "r"))
   local locale = file:read("*a")
