@@ -135,7 +135,8 @@ Gleba recipes should not require `taxpayer-money`. The planet operates outside t
 The implemented Gleba bridges are deliberately limited to what the unchanged
 native-machine and launch recipes consume:
 
-- `dubious-data-cultivation-gleba` and `provisional-approval-cultivation-gleba` are slow bootstrap inputs.
+- Amber Sap Processing unlocks local bullshit ore after the first seep is pumped; the canonical smelting recipe then turns that ore into dubious data.
+- `provisional-approval-cultivation-gleba` remains a slow bootstrap input.
 - `composted-rubble-recovery-gleba` supplies the filler needed by the canonical environmental paperwork chain.
 - `conciliation-officer-formation-gleba` trains the native specialist from a symbiosis record instead of the generic political-excuse chain.
 - The single `government-grant` for a silo remains an import. `management-approval-written-gleba` is the sole executive-paperwork exception because 100 rocket parts consume approvals in bulk; the slow biological route avoids a twenty-document import haul.

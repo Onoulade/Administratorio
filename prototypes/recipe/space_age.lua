@@ -1,4 +1,5 @@
 local planets = require("prototypes.shared.space_age_planets")
+local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 local fax_shared = require("scripts.fax_shared")
 local manager_briefings = require("prototypes.shared.manager_briefings")
 
@@ -994,8 +995,8 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "amber-sap-nonsense-seeding",
-    category = "bureaucratic-bootstrap",
-    enabled = true,
+    category = bureaucracy_categories.bootstrap_for_planet("gleba"),
+    enabled = false,
     localised_name = {"item-name.bullshit-ore"},
     ingredients = {
       {type = "fluid", name = "amber-sap", amount = 20},
@@ -1009,8 +1010,8 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "ink-production-gleba",
-    category = "bureaucratic-bootstrap",
-    enabled = true,
+    category = bureaucracy_categories.bootstrap_for_planet("gleba"),
+    enabled = false,
     localised_name = {"recipe-name.ink-production"},
     ingredients = {
       {type = "fluid", name = "amber-sap", amount = 10},
@@ -1024,8 +1025,8 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "carbon-offset-certificate-basic-gleba",
-    category = "bureaucratic-bootstrap",
-    enabled = true,
+    category = bureaucracy_categories.bootstrap_for_planet("gleba"),
+    enabled = false,
     localised_name = {"recipe-name.carbon-offset-certificate-basic"},
     ingredients = {
       {type = "item", name = "blank-form", amount = 1},
@@ -1040,7 +1041,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "yellow-ink-production",
-    category = "bureaucracy-registration",
+    category = bureaucracy_categories.registration_for_planet("gleba"),
     enabled = false,
     localised_name = {"fluid-name.yellow-ink"},
     ingredients = {
@@ -1178,7 +1179,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "charged-toner",
-    category = "bureaucratic-bootstrap",
+    category = bureaucracy_categories.bootstrap_for_planet("fulgora"),
     enabled = false,
     ingredients = {
       {type = "item", name = "scrap", amount = 4},
@@ -1191,7 +1192,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "archive-rubble-recovery",
-    category = "bureaucratic-bootstrap",
+    category = bureaucracy_categories.bootstrap_for_planet("fulgora"),
     enabled = false,
     localised_name = {"item-name.redundant-rubble"},
     ingredients = {
@@ -1205,7 +1206,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "archive-documentation-recovery",
-    category = "bureaucratic-bootstrap",
+    category = bureaucracy_categories.bootstrap_for_planet("fulgora"),
     enabled = false,
     localised_name = {"item-name.useless-documentation"},
     ingredients = {
@@ -1222,7 +1223,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "magenta-ink-production",
-    category = "bureaucracy-registration",
+    category = bureaucracy_categories.registration_for_planet("fulgora"),
     enabled = false,
     localised_name = {"fluid-name.magenta-ink"},
     ingredients = {
@@ -1266,7 +1267,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "archive-recovery-permit",
-    category = "bureaucracy-registration",
+    category = bureaucracy_categories.registration_for_planet("fulgora"),
     enabled = false,
     ingredients = {
       {type = "item", name = "blank-magenta-form", amount = 1},
@@ -1281,7 +1282,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "digital-processing-certificate",
-    category = "bureaucracy-registration",
+    category = bureaucracy_categories.registration_for_planet("fulgora"),
     enabled = false,
     ingredients = {
       {type = "item", name = "blank-magenta-form", amount = 1},
@@ -1296,7 +1297,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "electromagnetic-operating-license",
-    category = "bureaucracy-registration",
+    category = bureaucracy_categories.registration_for_planet("fulgora"),
     enabled = false,
     ingredients = {
       {type = "item", name = "blank-magenta-form", amount = 1},
@@ -1311,7 +1312,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "data-recovery-order",
-    category = "bureaucracy-registration",
+    category = bureaucracy_categories.registration_for_planet("fulgora"),
     enabled = false,
     ingredients = {
       {type = "item", name = "blank-magenta-form", amount = 1},
@@ -1639,7 +1640,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "dubious-data-analysis-vulcanus",
-    category = "bureaucracy-registration",
+    category = bureaucracy_categories.registration_for_planet("vulcanus"),
     enabled = false,
     ingredients = {
       {type = "item", name = "verdigris-crust", amount = 2},

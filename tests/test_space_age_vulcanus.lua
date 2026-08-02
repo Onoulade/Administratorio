@@ -442,9 +442,11 @@ test("digital services bureau is a staffed fulgora office upgrade", function()
   assert_eq(entity.placeable_by[1].item, "digital-services-bureau",
     "digital-services-bureau should build from the digital-services-bureau item")
   local categories = entity.crafting_categories or {}
-  assert_eq(#categories, 2, "digital-services-bureau should mirror office-desk categories")
-  assert_eq(categories[1], "bureaucracy-registration", "digital-services-bureau should handle registration work")
-  assert_eq(categories[2], "bureaucratic-bootstrap", "digital-services-bureau should handle bootstrap work")
+  assert_eq(#categories, 2, "digital-services-bureau should expose only Fulgora office categories")
+  assert_eq(categories[1], "bureaucracy-registration-fulgora",
+    "digital-services-bureau should handle Fulgora registration work")
+  assert_eq(categories[2], "bureaucratic-bootstrap-fulgora",
+    "digital-services-bureau should handle Fulgora bootstrap work")
   assert_eq(entity.crafting_speed, 3, "digital-services-bureau should be significantly faster than an office desk")
   assert_eq(#(entity.fluid_boxes or {}), 2, "digital-services-bureau should expose one input and one output")
   assert_eq(entity.fluid_boxes[1].production_type, "input", "digital-services-bureau should take fluid inputs")
@@ -792,10 +794,10 @@ test("fulgora bureau and magenta paperwork stay on fulgora", function()
 
   assert_eq(data.raw.recipe["blank-magenta-form-production"].category, "printing-chromatic",
     "blank-magenta-form should be printer-made")
-  assert_eq(data.raw.recipe["archive-rubble-recovery"].category, "bureaucratic-bootstrap",
-    "archive-rubble-recovery should stay a bootstrap salvage recipe")
-  assert_eq(data.raw.recipe["digital-processing-certificate"].category, "bureaucracy-registration",
-    "digital-processing-certificate should be office-made")
+  assert_eq(data.raw.recipe["archive-rubble-recovery"].category, "bureaucratic-bootstrap-fulgora",
+    "archive-rubble-recovery should stay a Fulgora bootstrap salvage recipe")
+  assert_eq(data.raw.recipe["digital-processing-certificate"].category, "bureaucracy-registration-fulgora",
+    "digital-processing-certificate should be Fulgora office work")
   assert_true(has_ingredient(data.raw.recipe["digital-services-bureau"], "relay-clerk"),
     "digital-services-bureau should require relay-clerk")
   assert_true(has_ingredient(data.raw.recipe["electromagnetic-operating-license"], "digital-processing-certificate"),

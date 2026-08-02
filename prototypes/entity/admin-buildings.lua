@@ -11,6 +11,7 @@
 local feature_flags = require("feature_flags")
 local unit_ai_settings = require("scripts.unit_ai_settings")
 local planets = require("prototypes.shared.space_age_planets")
+local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 local working_hours_enabled = feature_flags.working_hours_enabled()
 local space_age_enabled = feature_flags.space_age_enabled()
 local entity_graphics = "__administratorio__/graphics/entities/"
@@ -601,7 +602,7 @@ office_desk.next_upgrade = nil
 office_desk.icon = biter_building_icons .. "office-building.png"
 office_desk.icon_size = 64
 office_desk.icons = nil
-office_desk.crafting_categories = {"bureaucracy-registration", "bureaucracy-modules", "bureaucratic-bootstrap"}
+office_desk.crafting_categories = bureaucracy_categories.office_desk(space_age_enabled)
 office_desk.crafting_speed = OFFICE_DESK_SPEED
 office_desk.ingredient_count = 10
 office_desk.module_slots = 4
@@ -1084,7 +1085,7 @@ field_office.icon = nil
 field_office.icons = {
   { icon = biter_building_icons .. "office-building.png", icon_size = 64, tint = {r = 0.75, g = 0.65, b = 0.45, a = 1} },
 }
-field_office.crafting_categories = {"bureaucracy-registration", "bureaucratic-bootstrap", "resolution-handcraft"}
+field_office.crafting_categories = bureaucracy_categories.field_office()
 field_office.crafting_speed = 0.5
 field_office.module_slots = 0
 enable_machine_effects(field_office)
@@ -1338,6 +1339,11 @@ add_entity(paperwork_storage_chest)
 add_entity(paperwork_requester_chest)
 
 if space_age_enabled then
+  -- Field Offices borrow temporary labor from native enemy spawners, a workforce
+  -- that only exists on Nauvis. Do not allow placement where the office could
+  -- never authorize a craft.
+  planets.apply_planet_surface_conditions(field_office, "nauvis")
+
   for _, entity in ipairs({
     admin_station,
     biter_station,
@@ -1345,7 +1351,6 @@ if space_age_enabled then
     capture_bureau,
     resolution_office,
     office_desk,
-    field_office,
     breakroom,
     union_hq,
     propaganda_distillery,

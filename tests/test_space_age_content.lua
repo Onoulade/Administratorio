@@ -94,7 +94,9 @@ local technologies = {
   ["cryogenic-science-pack"] = {type = "technology", name = "cryogenic-science-pack", effects = {}},
   ["advanced-asteroid-processing"] = {type = "technology", name = "advanced-asteroid-processing", effects = {}},
   ["after-hours-operations"] = {type = "technology", name = "after-hours-operations", effects = {}},
+  ["discovery-bullshit"] = {type = "technology", name = "discovery-bullshit", effects = {}},
   ["discovery-redundant-rubble"] = {type = "technology", name = "discovery-redundant-rubble", effects = {}},
+  ["planet-discovery-gleba"] = {type = "technology", name = "planet-discovery-gleba", effects = {}},
   ["nest-expropriation"] = {type = "technology", name = "nest-expropriation", effects = {}},
   ["hired-biter-fieldwork"] = {type = "technology", name = "hired-biter-fieldwork", effects = {}},
 }
@@ -147,6 +149,7 @@ package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 
 package.loaded["scripts.fax_shared"] = nil
 local fax_shared = require("scripts.fax_shared")
+local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 
 dofile(mod_root .. "prototypes/item/space_age.lua")
 dofile(mod_root .. "prototypes/item/capsules-and-fluids.lua")
@@ -1006,11 +1009,85 @@ test("gleba conciliation unlocks the yellow chain and gleba specialist buildings
       "gleba-pentapod-formations should unlock " .. recipe_name)
   end
   local has_agricultural_science = false
+  local has_amber_sap_processing = false
   for _, prerequisite in ipairs(gleba.prerequisites or {}) do
     has_agricultural_science = has_agricultural_science or prerequisite == "agricultural-science-pack"
+    has_amber_sap_processing = has_amber_sap_processing or prerequisite == "amber-sap-processing"
   end
   assert_true(has_agricultural_science,
     "gleba-conciliation should begin after agricultural science is established")
+  assert_true(has_amber_sap_processing,
+    "gleba-conciliation should follow the local amber sap discovery")
+end)
+
+test("mining amber sap unlocks Gleba bootstrap recipes", function()
+  local technology = assert(technologies["amber-sap-processing"], "amber-sap-processing missing")
+  assert_eq(technology.research_trigger.type, "mine-entity",
+    "amber-sap-processing should use a resource discovery trigger")
+  assert_eq(technology.research_trigger.entity, "amber-sap-seep",
+    "amber-sap-processing should trigger from mining the amber sap seep")
+  assert_eq(technology.prerequisites[1], "planet-discovery-gleba",
+    "amber-sap-processing should remain behind arrival on Gleba")
+
+  for _, recipe_name in ipairs({
+    "amber-sap-nonsense-seeding",
+    "ink-production-gleba",
+    "carbon-offset-certificate-basic-gleba",
+    "provisional-approval-cultivation-gleba",
+    "construction-permit-gleba",
+  }) do
+    local recipe = assert(recipes[recipe_name], recipe_name .. " missing")
+    assert_eq(recipe.enabled, false, recipe_name .. " must not start unlocked")
+    assert_true(tech_unlocks_recipe(technology, recipe_name),
+      "amber-sap-processing should unlock " .. recipe_name)
+  end
+
+  assert_true(not tech_unlocks_recipe(technologies["discovery-bullshit"],
+    "provisional-approval-cultivation-gleba"),
+    "Nauvis bullshit discovery must not reveal Gleba cultivation")
+  assert_true(not tech_unlocks_recipe(technologies["corporate-hospitality"],
+    "construction-permit-gleba"),
+    "Nauvis hospitality research must not reveal Gleba construction permits")
+end)
+
+test("field office categories never claim planet-local recipes", function()
+  local field_office_categories = {}
+  for _, category in ipairs(bureaucracy_categories.field_office()) do
+    field_office_categories[category] = true
+  end
+
+  local office_desk_categories = {}
+  for _, category in ipairs(bureaucracy_categories.office_desk(true)) do
+    office_desk_categories[category] = true
+  end
+
+  local planet_category_owner = {}
+  for _, planet_name in ipairs(bureaucracy_categories.OFFWORLD_PLANETS) do
+    local bootstrap = bureaucracy_categories.bootstrap_for_planet(planet_name)
+    local registration = bureaucracy_categories.registration_for_planet(planet_name)
+    planet_category_owner[bootstrap] = planet_name
+    planet_category_owner[registration] = planet_name
+    assert_true(office_desk_categories[bootstrap], "office desk missing " .. bootstrap)
+    assert_true(office_desk_categories[registration], "office desk missing " .. registration)
+    assert_true(not field_office_categories[bootstrap], "field office must not support " .. bootstrap)
+    assert_true(not field_office_categories[registration], "field office must not support " .. registration)
+  end
+
+  for recipe_name, recipe in pairs(recipes) do
+    local planet_name = exact_surface_planet(recipe)
+    if planet_name and planet_name ~= "nauvis" then
+      assert_true(not field_office_categories[recipe.category or "crafting"],
+        recipe_name .. " on " .. planet_name .. " leaks into a Field Office category")
+
+      local category_owner = planet_category_owner[recipe.category]
+      if category_owner then
+        assert_eq(category_owner, planet_name,
+          recipe_name .. " uses a bureaucracy category belonging to another planet")
+        assert_eq(recipe.enabled, false,
+          recipe_name .. " is planet-local bureaucracy and must have an explicit discovery unlock")
+      end
+    end
+  end
 end)
 
 test("gleba conciliation also unlocks orbital spitter tourism", function()
@@ -1156,7 +1233,6 @@ test("gleba adds targeted ingredients instead of duplicate building recipes", fu
     "ink-production-gleba",
     "carbon-offset-certificate-basic-gleba",
     "construction-permit-gleba",
-    "dubious-data-cultivation-gleba",
     "provisional-approval-cultivation-gleba",
     "management-approval-written-gleba",
     "composted-rubble-recovery-gleba",
@@ -1194,10 +1270,8 @@ test("gleba adds targeted ingredients instead of duplicate building recipes", fu
   }) do
     assert_eq(recipes[recipe_name], nil, recipe_name .. " should remain a canonical or imported paperwork route")
   end
-  assert_eq(get_result_amount(recipes["dubious-data-cultivation-gleba"], "dubious-data"), 8,
-    "Gleba data cultivation should be a constrained bridge, not a generic upgrade")
-  assert_eq(recipes["dubious-data-cultivation-gleba"].energy_required, 8,
-    "Gleba data cultivation should be deliberately slow")
+  assert_eq(recipes["dubious-data-cultivation-gleba"], nil,
+    "Gleba should refine its seeded bullshit ore through the canonical dubious-data recipe")
   assert_eq(get_result_amount(recipes["provisional-approval-cultivation-gleba"], "provisional-approval"), 1,
     "Gleba should receive only one provisional approval per cultivation")
   assert_eq(recipes["provisional-approval-cultivation-gleba"].energy_required, 4,

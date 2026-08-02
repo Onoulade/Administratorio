@@ -1778,8 +1778,18 @@ test("printer-t2 gets a regulated AM recipe", function()
   assert_true(not has_ingredient(r, "construction-permit"), "printer-t2-regulated should combine construction-permit")
 end)
 
-test("ordinary administrative construction stays grounded while printer-t2 remains platform-approved", function()
-  for _, recipe_name in ipairs({"field-office", "office-desk", "biter-station", "biterport"}) do
+test("field office stays on Nauvis while ordinary administrative construction stays grounded", function()
+  for _, recipe_name in ipairs({"field-office", "field-office-regulated"}) do
+    local recipe = assert(get_recipe(recipe_name), recipe_name .. " missing")
+    assert_eq(recipe.surface_conditions[1].property, "pressure", recipe_name .. " should use Nauvis pressure")
+    assert_eq(recipe.surface_conditions[1].min, 1000, recipe_name .. " should require Nauvis pressure")
+    assert_eq(recipe.surface_conditions[1].max, 1000, recipe_name .. " should require Nauvis pressure")
+    assert_eq(recipe.surface_conditions[2].property, "gravity", recipe_name .. " should use Nauvis gravity")
+    assert_eq(recipe.surface_conditions[2].min, 10, recipe_name .. " should require Nauvis gravity")
+    assert_eq(recipe.surface_conditions[2].max, 10, recipe_name .. " should require Nauvis gravity")
+  end
+
+  for _, recipe_name in ipairs({"office-desk", "biter-station", "biterport"}) do
     local recipe = assert(get_recipe(recipe_name), recipe_name .. " missing")
     assert_true(recipe.surface_conditions and recipe.surface_conditions[1]
       and (recipe.surface_conditions[1].min or 0) >= 1,

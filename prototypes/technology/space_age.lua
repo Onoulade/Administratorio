@@ -144,8 +144,31 @@ data:extend({
   },
 
   -- ============================================================
-  -- TIER 2: GLEBA CONCILIATION (yellow bureaucracy, agricultural science)
-  -- Triggered by crafting bullshit ore on Gleba
+  -- TIER 2: GLEBA AMBER-SAP BOOTSTRAP
+  -- The local recipes remain unknown until the player pumps the native seep.
+  -- ============================================================
+  {
+    type = "technology",
+    name = "amber-sap-processing",
+    icon = "__administratorio__/graphics/icons/coffee.png",
+    icon_size = 64,
+    effects = {
+      {type = "unlock-recipe", recipe = "amber-sap-nonsense-seeding"},
+      {type = "unlock-recipe", recipe = "ink-production-gleba"},
+      {type = "unlock-recipe", recipe = "carbon-offset-certificate-basic-gleba"},
+      {type = "unlock-recipe", recipe = "provisional-approval-cultivation-gleba"},
+      {type = "unlock-recipe", recipe = "construction-permit-gleba"},
+    },
+    prerequisites = {"planet-discovery-gleba"},
+    research_trigger = {
+      type = "mine-entity",
+      entity = "amber-sap-seep",
+    },
+    order = "h-b4",
+  },
+
+  -- ============================================================
+  -- TIER 2a: GLEBA CONCILIATION (yellow bureaucracy, agricultural science)
   -- ============================================================
   {
     type = "technology",
@@ -165,7 +188,7 @@ data:extend({
       {type = "unlock-recipe", recipe = "management-approval-written-gleba"},
       {type = "unlock-recipe", recipe = "composted-rubble-recovery-gleba"},
     },
-    prerequisites = {"executive-review", "agricultural-science-pack"},
+    prerequisites = {"amber-sap-processing", "executive-review", "agricultural-science-pack"},
     research_trigger = {
       type = "craft-item",
       item = "pentapod-egg",
@@ -860,9 +883,6 @@ add_tech_unlock("calcite-processing", "plastic-bar-vulcanus")
 add_tech_unlock("calcite-processing", "molten-promises-production")
 add_tech_unlock("industrial-propaganda", "redundant-rubble-recovery-vulcanus")
 add_tech_unlock("industrial-propaganda", "refined-nonsense-production-vulcanus")
-add_tech_unlock("local-precedents", "useless-documentation-production-gleba")
-add_tech_unlock("discovery-bullshit", "dubious-data-cultivation-gleba")
-add_tech_unlock("discovery-bullshit", "provisional-approval-cultivation-gleba")
 add_tech_unlock("cyan-ink-production", "ink-recovery-fulgora")
 add_tech_unlock("cyan-ink-production", "salvaged-data-analysis-fulgora")
 add_tech_unlock("cyan-ink-production", "basic-excuse-production")
@@ -871,7 +891,6 @@ add_tech_unlock("electromagnetic-plant", "salvage-electrolyte-fulgora")
 add_tech_unlock("electromagnetic-plant", "electromagnetic-lubricant-fulgora")
 add_tech_unlock("rocket-fuel", "electromagnetic-rocket-fuel-fulgora")
 add_tech_unlock("agricultural-science-pack", "conciliation-officer-formation")
-add_tech_unlock("corporate-hospitality", "construction-permit-gleba")
 add_tech_unlock("electromagnetic-science-pack", "relay-clerk-formation")
 add_tech_unlock("cryogenic-science-pack", "cryoprint-technician-formation")
 add_tech_unlock("worker-formation", "capture-bureau-workforce")

@@ -170,7 +170,7 @@ Hover over the biterport for network summary: X port(s), Y worker(s). Status mes
 
 ## Field Office
 
-Early-game bureaucratic outpost that summons biters from nearby nests as one-per-craft-cycle workers.
+Nauvis-only early-game bureaucratic outpost that summons biters from nearby nests as one-per-craft-cycle workers.
 
 ### How It Works
 
@@ -184,6 +184,7 @@ Early-game bureaucratic outpost that summons biters from nearby nests as one-per
 ### Behavior
 
 - Only operates while a biter is physically present.
+- Can only be crafted and placed on Nauvis because its temporary workforce comes from native biter nests.
 - Completely inactive otherwise.
 - Does not call biters at night unless overtime-exemption.
 - Status messages: "No biter nest in range", "Calling biter worker...", "Biter worker on site", "Working" overlay on the biter.

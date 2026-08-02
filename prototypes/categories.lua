@@ -7,7 +7,8 @@
 -- ----------------------------|----------------------------------------
 -- bureaucracy-registration    | Office Desk + Field Office (filing, permits, work-orders)
 -- bureaucracy-modules         | Office Desk (subpoena/audit/embezzlement module drafting)
--- bureaucratic-bootstrap     | Player character + Office Desk (starter paperwork bridge)
+-- bureaucratic-bootstrap      | Player character + Office Desk + Field Office (Nauvis/shared bootstrap)
+-- *-<planet>                  | Office Desk; player character for bootstrap variants
 -- bureaucracy-resolution      | Resolution Office (all complaint processing: filing, case, brief, final)
 -- resolution-handcraft        | Player character + Resolution Office (landscape complaint only)
 -- bureaucracy-policy          | Union Headquarters (policies, regulations, audits, written approvals)
@@ -24,6 +25,7 @@
 -- pneumatic-intake            | Tube Intake (hidden no-output intake validation)
 -------------------------------------------------------------------------------
 local feature_flags = require("feature_flags")
+local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 local working_hours_enabled = feature_flags.working_hours_enabled()
 local space_age_enabled = feature_flags.space_age_enabled()
 
@@ -47,6 +49,17 @@ local categories = {
 }
 
 if space_age_enabled then
+  for _, planet_name in ipairs(bureaucracy_categories.OFFWORLD_PLANETS) do
+    categories[#categories + 1] = {
+      type = "recipe-category",
+      name = bureaucracy_categories.bootstrap_for_planet(planet_name),
+    }
+    categories[#categories + 1] = {
+      type = "recipe-category",
+      name = bureaucracy_categories.registration_for_planet(planet_name),
+    }
+  end
+
   categories[#categories + 1] = {type = "recipe-category", name = "printing-chromatic"}
   categories[#categories + 1] = {type = "recipe-category", name = "printing-multicolor"}
   categories[#categories + 1] = {type = "recipe-category", name = "fax-reconstruction"}
@@ -75,6 +88,12 @@ if character then
     ["bureaucratic-bootstrap"] = true,
     ["resolution-handcraft"] = true,
   }
+
+  if space_age_enabled then
+    for _, planet_name in ipairs(bureaucracy_categories.OFFWORLD_PLANETS) do
+      required_categories[bureaucracy_categories.bootstrap_for_planet(planet_name)] = true
+    end
+  end
 
   for _, category in ipairs(character.crafting_categories) do
     required_categories[category] = nil
