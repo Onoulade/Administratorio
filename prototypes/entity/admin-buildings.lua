@@ -23,6 +23,9 @@ local OFFICE_DESK_SPEED = working_hours_enabled and 1.0 or 0.75
 local BREAKROOM_SPEED = working_hours_enabled and 1.0 or 0.75
 local UNION_HQ_SPEED = working_hours_enabled and 1.0 or 0.75
 local SPRITTER_ANIMATION_SPEED = 1 / 3
+local GENERATED_FRAME_COUNT = 24
+local GENERATED_LINE_LENGTH = 6
+local GENERATED_ANIMATION_SPEED = 0.25
 
 local function disabled_entity_description(key)
   if working_hours_enabled then
@@ -315,10 +318,12 @@ biter_station.picture = {
 biter_station.stateless_visualisation = {
   render_layer = "higher-object-above",
   animation = {
-    filename = entity_graphics .. "work-station/work-station-roof.png",
+    filename = entity_graphics .. "work-station/work-station-roof-animation.png",
     width = 480,
     height = 419,
-    frame_count = 1,
+    frame_count = GENERATED_FRAME_COUNT,
+    line_length = GENERATED_LINE_LENGTH,
+    animation_speed = GENERATED_ANIMATION_SPEED,
     scale = 0.42,
     shift = util.by_pixel(0, -5),
   },
@@ -372,10 +377,12 @@ biterport.picture = {
 biterport.stateless_visualisation = {
   render_layer = "higher-object-above",
   animation = {
-    filename = entity_graphics .. "biterport/biterport-roof.png",
+    filename = entity_graphics .. "biterport/biterport-roof-animation.png",
     width = 480,
     height = 454,
-    frame_count = 1,
+    frame_count = GENERATED_FRAME_COUNT,
+    line_length = GENERATED_LINE_LENGTH,
+    animation_speed = GENERATED_ANIMATION_SPEED,
     scale = 0.4,
     shift = util.by_pixel(0, -5),
   },
@@ -665,12 +672,13 @@ formation_center.graphics_set = {
   animation = {
     layers = {
       {
-        filename = entity_graphics .. "formation-center/formation-center.png",
+        filename = entity_graphics .. "formation-center/formation-center-animation.png",
         priority = "high",
         width = 480,
         height = 435,
-        frame_count = 1,
-        repeat_count = 32,
+        frame_count = GENERATED_FRAME_COUNT,
+        line_length = GENERATED_LINE_LENGTH,
+        animation_speed = GENERATED_ANIMATION_SPEED,
         scale = 1 / 3,
         shift = util.by_pixel(0, -8),
       },
@@ -680,7 +688,7 @@ formation_center.graphics_set = {
         width = 850,
         height = 298,
         frame_count = 1,
-        repeat_count = 32,
+        repeat_count = GENERATED_FRAME_COUNT,
         scale = 1 / 3,
         shift = util.by_pixel(61, 27.5),
         draw_as_shadow = true,
@@ -781,8 +789,8 @@ breakroom.icon_size = 64
 breakroom.graphics_set = {
   animation = {
     layers = {
-      { filename = entity_graphics .. "corporate-breakroom/breakroom.png", priority = "high", width = 180, height = 185, frame_count = 1, scale = 0.9, shift = {0, -0.1} },
-      { filename = entity_graphics .. "corporate-breakroom/shadow.png", priority = "high", width = 326, height = 146, frame_count = 1, scale = 0.9, shift = util.by_pixel(62.1, 33.25), draw_as_shadow = true },
+      { filename = entity_graphics .. "corporate-breakroom/breakroom-animation.png", priority = "high", width = 180, height = 185, frame_count = GENERATED_FRAME_COUNT, line_length = GENERATED_LINE_LENGTH, animation_speed = GENERATED_ANIMATION_SPEED, scale = 0.9, shift = {0, -0.1} },
+      { filename = entity_graphics .. "corporate-breakroom/shadow.png", priority = "high", width = 326, height = 146, frame_count = 1, repeat_count = GENERATED_FRAME_COUNT, scale = 0.9, shift = util.by_pixel(62.1, 33.25), draw_as_shadow = true },
     }
   }
 }
@@ -835,11 +843,13 @@ union_hq.graphics_set = {
   animation = {
     layers = {
       {
-        filename = union_hq_graphics .. "union-hq.png",
+        filename = union_hq_graphics .. "union-hq-animation.png",
         priority = "high",
         width = 480,
         height = 495,
-        frame_count = 1,
+        frame_count = GENERATED_FRAME_COUNT,
+        line_length = GENERATED_LINE_LENGTH,
+        animation_speed = GENERATED_ANIMATION_SPEED,
         scale = union_hq_scale,
         shift = {0, 0.0},
       },
@@ -849,6 +859,7 @@ union_hq.graphics_set = {
         width = 683,
         height = 623,
         frame_count = 1,
+        repeat_count = GENERATED_FRAME_COUNT,
         draw_as_shadow = true,
         scale = 0.4,
         shift = {1.2, 1.2},

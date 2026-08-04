@@ -9,6 +9,9 @@ local sound_path = "__administratorio__/sound/buildings/"
 local icon_graphics = "__administratorio__/graphics/icons/"
 local feature_flags = require("feature_flags")
 local planets = require("prototypes.shared.space_age_planets")
+local GENERATED_FRAME_COUNT = 24
+local GENERATED_LINE_LENGTH = 6
+local GENERATED_ANIMATION_SPEED = 0.25
 
 local function placeable_by_item(name)
   return {
@@ -29,7 +32,11 @@ local function printer_sprite(filename, width, height, scale, shift)
 end
 
 local function printer_graphics(directory, base_filename, width, height, scale, shift, shadow)
-  local base_animation = printer_sprite(directory .. base_filename, width, height, scale, shift)
+  local animation_filename = base_filename:gsub("%.png$", "-animation.png")
+  local base_animation = printer_sprite(directory .. animation_filename, width, height, scale, shift)
+  base_animation.frame_count = GENERATED_FRAME_COUNT
+  base_animation.line_length = GENERATED_LINE_LENGTH
+  base_animation.animation_speed = GENERATED_ANIMATION_SPEED
   local animation = base_animation
   if shadow then
     local shadow_animation = printer_sprite(
@@ -40,6 +47,7 @@ local function printer_graphics(directory, base_filename, width, height, scale, 
       shadow.shift
     )
     shadow_animation.draw_as_shadow = true
+    shadow_animation.repeat_count = GENERATED_FRAME_COUNT
     animation = {layers = {base_animation, shadow_animation}}
   end
 

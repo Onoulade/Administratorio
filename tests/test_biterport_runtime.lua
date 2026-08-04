@@ -603,7 +603,7 @@ test("biter station sprite metrics match updated assets", function()
   local station_block = source:match("biter_station%.picture.-biter_station%.draw_stateless_visualisations_in_ghost")
   assert_true(station_block ~= nil, "biter station graphics block should exist")
   assert_true(station_block:find("work%-station%-floor%.png.-width%s*=%s*480.-height%s*=%s*419"), "floor sprite metrics should match 480x419 asset")
-  assert_true(station_block:find("work%-station%-roof%.png.-width%s*=%s*480.-height%s*=%s*419"), "roof sprite metrics should match 480x419 asset")
+  assert_true(station_block:find("work%-station%-roof%-animation%.png.-width%s*=%s*480.-height%s*=%s*419"), "animated roof sprite metrics should match 480x419 frames")
 end)
 
 test("biterport refills player personal logistics requests", function()
