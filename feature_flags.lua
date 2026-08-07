@@ -9,16 +9,27 @@ local function startup_bool(name, default)
   return setting.value
 end
 
+-- These two flags are runtime-global settings so hard mode and belt/inserter
+-- protests can be toggled mid-game rather than only at world creation.
+local function runtime_global_bool(name, default)
+  local global = settings and settings.global
+  local setting = global and global[name]
+  if setting == nil or setting.value == nil then
+    return default
+  end
+  return setting.value
+end
+
 function M.working_hours_enabled()
   return startup_bool("administratorio-enable-working-hours", true)
 end
 
 function M.debug_protest_belts_and_inserters_enabled()
-  return startup_bool("administratorio-debug-protest-belts-and-inserters", false)
+  return runtime_global_bool("administratorio-debug-protest-belts-and-inserters", false)
 end
 
 function M.debug_hard_mode_enabled()
-  return startup_bool("administratorio-debug-hard-mode", false)
+  return runtime_global_bool("administratorio-debug-hard-mode", false)
 end
 
 local function mod_enabled(mod_name)

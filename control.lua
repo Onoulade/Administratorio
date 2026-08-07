@@ -1276,6 +1276,18 @@ local function on_toggle_runtime_debug(event)
   runtime_debug.toggle(player)
 end
 
+local build_entity_died_filters
+
+-- Hard mode reads its feature flag fresh on every check, so no extra wiring is
+-- needed for it. Belt/inserter protest targets are cached in tables shared by
+-- reference across modules, so toggling them mid-game requires refreshing
+-- those tables in place and re-registering the on_entity_died event filter.
+local function on_runtime_mod_setting_changed(event)
+  if event.setting ~= "administratorio-debug-protest-belts-and-inserters" then return end
+  biters.refresh_protest_target_types()
+  script.set_event_filter(defines.events.on_entity_died, build_entity_died_filters())
+end
+
 -- ============================================================
 -- BITER EVENTS
 -- ============================================================
@@ -1888,7 +1900,7 @@ local function on_entity_died(event)
   trains.on_removed(entity)
 end
 
-local ON_ENTITY_DIED_FILTERS = {
+local ON_ENTITY_DIED_BASE_FILTERS = {
   {filter = "type", type = "asteroid"},
   {filter = "type", type = "unit"},
   {filter = "type", type = "pipe"},
@@ -1907,15 +1919,23 @@ local ON_ENTITY_DIED_FILTERS = {
 -- Keep death-event coverage in lockstep with every configured protest target.
 -- In particular, the debug belt/inserter targets need immediate reassignment
 -- when they are destroyed rather than waiting for the background recovery pass.
-for _, target_type in ipairs(protest_targets.get_target_types()) do
-  ON_ENTITY_DIED_FILTERS[#ON_ENTITY_DIED_FILTERS + 1] = {filter = "type", type = target_type}
+build_entity_died_filters = function()
+  local filters = {}
+  for _, base_filter in ipairs(ON_ENTITY_DIED_BASE_FILTERS) do
+    filters[#filters + 1] = base_filter
+  end
+  for _, target_type in ipairs(protest_targets.get_target_types()) do
+    filters[#filters + 1] = {filter = "type", type = target_type}
+  end
+  -- Explicit breach targets also need to wake their assigned attacker as soon
+  -- as they die. Transport infrastructure is absent from this list by design.
+  for _, building_type in ipairs(protest_targets.get_obstacle_building_types()) do
+    filters[#filters + 1] = {filter = "type", type = building_type}
+  end
+  return filters
 end
 
--- Explicit breach targets also need to wake their assigned attacker as soon as
--- they die. Transport infrastructure is absent from this list by design.
-for _, building_type in ipairs(protest_targets.get_obstacle_building_types()) do
-  ON_ENTITY_DIED_FILTERS[#ON_ENTITY_DIED_FILTERS + 1] = {filter = "type", type = building_type}
-end
+local ON_ENTITY_DIED_FILTERS = build_entity_died_filters()
 
 local function on_script_trigger_effect(event)
   biters.on_script_trigger_effect(event)
@@ -2293,6 +2313,7 @@ control_event_router.register({
   on_player_selected_area = on_player_selected_area,
   on_protest_pacing_tick = on_protest_pacing_tick,
   on_rocket_launched = on_rocket_launched,
+  on_runtime_mod_setting_changed = on_runtime_mod_setting_changed,
   on_script_path_request_finished = on_script_path_request_finished,
   on_script_trigger_effect = on_script_trigger_effect,
   on_selected_entity_changed = on_selected_entity_changed,
