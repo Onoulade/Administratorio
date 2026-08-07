@@ -61,15 +61,6 @@ data:extend({
     allowed_without_fight = true,
   },
   {
-    type = "research-achievement",
-    name = "safety-first",
-    technology = "administrative-bureaucracy",
-    icon = icons .. "safety-waiver.png",
-    icon_size = 64,
-    order = "b[bureaucracy-begins]-c",
-    allowed_without_fight = true,
-  },
-  {
     type = "use-item-achievement",
     name = "capsule-promise",
     to_use = "promise",
