@@ -9,9 +9,9 @@ local sound_path = "__administratorio__/sound/buildings/"
 local icon_graphics = "__administratorio__/graphics/icons/"
 local feature_flags = require("feature_flags")
 local planets = require("prototypes.shared.space_age_planets")
-local GENERATED_FRAME_COUNT = 24
-local GENERATED_LINE_LENGTH = 6
-local GENERATED_ANIMATION_SPEED = 0.25
+local generated_animation_speeds = require("prototypes.shared.generated_animation_speeds")
+local GENERATED_FRAME_COUNT = generated_animation_speeds.FRAME_COUNT
+local GENERATED_LINE_LENGTH = generated_animation_speeds.LINE_LENGTH
 
 local function placeable_by_item(name)
   return {
@@ -31,12 +31,12 @@ local function printer_sprite(filename, width, height, scale, shift)
   }
 end
 
-local function printer_graphics(directory, base_filename, width, height, scale, shift, shadow)
+local function printer_graphics(name, directory, base_filename, width, height, scale, shift, shadow)
   local animation_filename = base_filename:gsub("%.png$", "-animation.png")
   local base_animation = printer_sprite(directory .. animation_filename, width, height, scale, shift)
   base_animation.frame_count = GENERATED_FRAME_COUNT
   base_animation.line_length = GENERATED_LINE_LENGTH
-  base_animation.animation_speed = GENERATED_ANIMATION_SPEED
+  base_animation.animation_speed = generated_animation_speeds.speed(name)
   local animation = base_animation
   if shadow then
     local shadow_animation = printer_sprite(
@@ -94,12 +94,16 @@ mechanical_printer.energy_source = {
   emissions_per_minute = { pollution = 5 }
 }
 mechanical_printer.graphics_set = printer_graphics(
+  "mechanical-printer",
   entity_graphics .. "mechanical-printer/",
   "machanical-printer.png",
-  134,
+  116,
   128,
   0.46,
-  util.by_pixel(-3, 0),
+  -- Source art was cropped 18px off its left edge; Factorio centers a sprite
+  -- on its own width, so the shift is nudged right by half that crop (9px)
+  -- times scale (0.46) to keep the building in the same on-screen spot/size.
+  util.by_pixel(-3 + 9 * 0.46, 0),
   {
     filename = "shadow.png",
     width = 202,
@@ -130,6 +134,7 @@ printer_t1.fluid_boxes = nil
 printer_t1.collision_box = {{-0.7, -0.7}, {0.7, 0.7}}
 printer_t1.selection_box = {{-1, -1}, {1, 1}}
 printer_t1.graphics_set = printer_graphics(
+  "printer-t1",
   entity_graphics .. "printer-t1/",
   "printer-t1.png",
   128,
@@ -169,6 +174,7 @@ printer_t2.fluid_boxes = nil
 printer_t2.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
 printer_t2.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
 printer_t2.graphics_set = printer_graphics(
+  "printer-t2",
   entity_graphics .. "printer-t2/",
   "printer-t2.png",
   160,

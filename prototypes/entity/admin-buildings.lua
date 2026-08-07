@@ -12,6 +12,7 @@ local feature_flags = require("feature_flags")
 local unit_ai_settings = require("scripts.unit_ai_settings")
 local planets = require("prototypes.shared.space_age_planets")
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
+local generated_animation_speeds = require("prototypes.shared.generated_animation_speeds")
 local working_hours_enabled = feature_flags.working_hours_enabled()
 local space_age_enabled = feature_flags.space_age_enabled()
 local entity_graphics = "__administratorio__/graphics/entities/"
@@ -23,9 +24,8 @@ local OFFICE_DESK_SPEED = working_hours_enabled and 1.0 or 0.75
 local BREAKROOM_SPEED = working_hours_enabled and 1.0 or 0.75
 local UNION_HQ_SPEED = working_hours_enabled and 1.0 or 0.75
 local SPRITTER_ANIMATION_SPEED = 1 / 3
-local GENERATED_FRAME_COUNT = 24
-local GENERATED_LINE_LENGTH = 6
-local GENERATED_ANIMATION_SPEED = 0.25
+local GENERATED_FRAME_COUNT = generated_animation_speeds.FRAME_COUNT
+local GENERATED_LINE_LENGTH = generated_animation_speeds.LINE_LENGTH
 
 local function disabled_entity_description(key)
   if working_hours_enabled then
@@ -323,7 +323,7 @@ biter_station.stateless_visualisation = {
     height = 419,
     frame_count = GENERATED_FRAME_COUNT,
     line_length = GENERATED_LINE_LENGTH,
-    animation_speed = GENERATED_ANIMATION_SPEED,
+    animation_speed = generated_animation_speeds.speed("biter-station-roof"),
     scale = 0.42,
     shift = util.by_pixel(0, -5),
   },
@@ -382,7 +382,7 @@ biterport.stateless_visualisation = {
     height = 454,
     frame_count = GENERATED_FRAME_COUNT,
     line_length = GENERATED_LINE_LENGTH,
-    animation_speed = GENERATED_ANIMATION_SPEED,
+    animation_speed = generated_animation_speeds.speed("biterport-roof"),
     scale = 0.4,
     shift = util.by_pixel(0, -5),
   },
@@ -678,7 +678,7 @@ formation_center.graphics_set = {
         height = 435,
         frame_count = GENERATED_FRAME_COUNT,
         line_length = GENERATED_LINE_LENGTH,
-        animation_speed = GENERATED_ANIMATION_SPEED,
+        animation_speed = generated_animation_speeds.speed("formation-center"),
         scale = 1 / 3,
         shift = util.by_pixel(0, -8),
       },
@@ -789,7 +789,7 @@ breakroom.icon_size = 64
 breakroom.graphics_set = {
   animation = {
     layers = {
-      { filename = entity_graphics .. "corporate-breakroom/breakroom-animation.png", priority = "high", width = 180, height = 185, frame_count = GENERATED_FRAME_COUNT, line_length = GENERATED_LINE_LENGTH, animation_speed = GENERATED_ANIMATION_SPEED, scale = 0.9, shift = {0, -0.1} },
+      { filename = entity_graphics .. "corporate-breakroom/breakroom-animation.png", priority = "high", width = 180, height = 185, frame_count = GENERATED_FRAME_COUNT, line_length = GENERATED_LINE_LENGTH, animation_speed = generated_animation_speeds.speed("corporate-breakroom"), scale = 0.9, shift = {0, -0.1} },
       { filename = entity_graphics .. "corporate-breakroom/shadow.png", priority = "high", width = 326, height = 146, frame_count = 1, repeat_count = GENERATED_FRAME_COUNT, scale = 0.9, shift = util.by_pixel(62.1, 33.25), draw_as_shadow = true },
     }
   }
@@ -849,7 +849,7 @@ union_hq.graphics_set = {
         height = 495,
         frame_count = GENERATED_FRAME_COUNT,
         line_length = GENERATED_LINE_LENGTH,
-        animation_speed = GENERATED_ANIMATION_SPEED,
+        animation_speed = generated_animation_speeds.speed("union-headquarters"),
         scale = union_hq_scale,
         shift = {0, 0.0},
       },
