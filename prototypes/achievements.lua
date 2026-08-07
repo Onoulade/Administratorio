@@ -208,6 +208,14 @@ data:extend({
   },
   {
     type = "achievement",
+    name = "first-protest",
+    icon = icons .. "protest-cross.png",
+    icon_size = 64,
+    order = "f[scripted]-a2",
+    allowed_without_fight = true,
+  },
+  {
+    type = "achievement",
     name = "case-closed",
     icons = icon_layers.resolved_complaint_icons(icon_layers.ticket_icon("ticket-landscape")),
     icon_size = 64,
