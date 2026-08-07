@@ -267,4 +267,24 @@ hired_biter.on_remote_waypoint_input{
 }
 assert_eq(entry.waypoints[1].supply_entity, surface.notice_chest, "shift-right click on a chest should append a supply run")
 
+-- find_entities_filtered with limit=1 is not sorted by distance, so a naive
+-- "just take the first result" scan can send the agent past a nearer nest to
+-- reach whichever one the engine happened to return first.
+-- (The mock surface always assigns unit_number 42, so the old entry is
+-- cleared first to get a truly fresh agent instead of the reused one above.)
+storage.hired_biters[42] = nil
+local nearest_surface = new_surface()
+hired_biter.on_deploy(nearest_surface, {x = 0, y = 0})
+local nearest_entry = storage.hired_biters[42]
+nearest_entry.inventory.count = 1
+nearest_surface.nests = {
+  {valid = true, position = {x = 100, y = 0}},
+  {valid = true, position = {x = 10, y = 0}},
+}
+
+hired_biter.update(C.HIRED_BITER_SCAN_COOLDOWN)
+
+assert_eq(nearest_entry.state, "moving_to_nest", "agent should move toward a discovered nest")
+assert_eq(nearest_entry.target_nest.position.x, 10, "agent should target the nearer nest, not whichever the engine lists first")
+
 print("Hired biter tests: passed")
