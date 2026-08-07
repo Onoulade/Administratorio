@@ -1,13 +1,13 @@
 local planets = require("prototypes.shared.space_age_planets")
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
+local generated_animation_speeds = require("prototypes.shared.generated_animation_speeds")
 local entity_graphics = "__administratorio__/graphics/entities/"
 local item_icons = "__administratorio__/graphics/icons/"
 local sound_path = "__administratorio__/sound/buildings/"
 local space_age_graphics = entity_graphics .. "space-age/"
 local space_age_icons = item_icons .. "space-age/"
-local GENERATED_FRAME_COUNT = 24
-local GENERATED_LINE_LENGTH = 6
-local GENERATED_ANIMATION_SPEED = 0.25
+local GENERATED_FRAME_COUNT = generated_animation_speeds.FRAME_COUNT
+local GENERATED_LINE_LENGTH = generated_animation_speeds.LINE_LENGTH
 
 local function placeable_by_item(name)
   return {
@@ -38,7 +38,7 @@ local function space_age_animation(name, width, height)
     height = height,
     frame_count = GENERATED_FRAME_COUNT,
     line_length = GENERATED_LINE_LENGTH,
-    animation_speed = GENERATED_ANIMATION_SPEED,
+    animation_speed = generated_animation_speeds.speed(name),
     scale = 0.5,
   }
 end
