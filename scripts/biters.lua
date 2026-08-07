@@ -463,6 +463,16 @@ local function set_waiting_biter_state(info, state)
     new_state_set[unit_number] = true
   end
 
+  if state == "protesting" then
+    ensure_achievements()
+    if not storage.achievements.first_protest then
+      storage.achievements.first_protest = true
+      for _, p in pairs(game.connected_players) do
+        p.unlock_achievement("first-protest")
+      end
+    end
+  end
+
   if is_frustration_tracked_state(state) then
     if not is_frustration_tracked_state(old_state) then
       info.last_frustration_tick = game.tick
