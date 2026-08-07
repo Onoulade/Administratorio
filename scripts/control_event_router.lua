@@ -4,6 +4,7 @@ function M.register(deps)
   script.on_init(deps.on_init)
   script.on_configuration_changed(deps.on_configuration_changed)
   script.on_load(deps.on_load)
+  script.on_event(defines.events.on_runtime_mod_setting_changed, deps.on_runtime_mod_setting_changed)
 
   script.on_event(defines.events.on_player_created, deps.on_player_created)
   script.on_event(defines.events.on_player_respawned, deps.on_player_respawned)

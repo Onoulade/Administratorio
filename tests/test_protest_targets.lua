@@ -27,7 +27,7 @@ local function load_protest_targets(setting_value)
     settings = nil
   else
     settings = {
-      startup = {
+      global = {
         ["administratorio-debug-protest-belts-and-inserters"] = {value = setting_value},
       },
     }

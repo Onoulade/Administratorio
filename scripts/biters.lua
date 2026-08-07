@@ -21,6 +21,20 @@ local PROTEST_PROTECTED_NAMES = protest_targets.get_protected_names()
 local PROTEST_OBSTACLE_BUILDING_TYPES = protest_targets.get_obstacle_building_types
   and protest_targets.get_obstacle_building_types()
   or PROTEST_TARGET_TYPES
+
+-- Mutates PROTEST_TARGET_TYPES in place (rather than reassigning it) so every
+-- module that captured a reference to it via deps.protest_target_types picks
+-- up the change immediately when the belts/inserters setting is toggled mid-game.
+local function refresh_protest_target_types()
+  local updated = protest_targets.get_target_types()
+  for i = #PROTEST_TARGET_TYPES, 1, -1 do
+    PROTEST_TARGET_TYPES[i] = nil
+  end
+  for i, target_type in ipairs(updated) do
+    PROTEST_TARGET_TYPES[i] = target_type
+  end
+end
+
 local function protest_slogan(ticket, index)
   return {"gui.protest-slogan-" .. ticket .. "-" .. index}
 end
@@ -1348,6 +1362,8 @@ protest_system = biters_protests_factory.new({
 function M.refresh_protest_notifications(player)
   protest_system.refresh_protest_notifications(player)
 end
+
+M.refresh_protest_target_types = refresh_protest_target_types
 
 function M.on_protest_target_removed(entity)
   protest_system.on_protest_target_removed(entity)
