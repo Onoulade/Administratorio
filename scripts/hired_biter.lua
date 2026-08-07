@@ -530,17 +530,31 @@ function M._update_entry(entry, tick)
     if tick - entry.last_scan_tick >= C.HIRED_BITER_SCAN_COOLDOWN then
       entry.last_scan_tick = tick
       if get_notice_count(entry) > 0 then
+        -- find_entities_filtered with limit=1 is not sorted by distance (engine
+        -- scans chunks northwest-first), so scan every nest in range and keep
+        -- the closest valid one instead of an arbitrary one.
         local nests = entry.entity.surface.find_entities_filtered{
           type = "unit-spawner",
           force = "enemy",
           position = entry.entity.position,
           radius = C.HIRED_BITER_SCAN_RADIUS,
-          limit = 1,
         }
-        if nests[1] and nests[1].valid then
+        local nearest, nearest_dist_sq = nil, math.huge
+        for _, nest in ipairs(nests) do
+          if nest.valid then
+            local dx = nest.position.x - entry.entity.position.x
+            local dy = nest.position.y - entry.entity.position.y
+            local dist_sq = dx * dx + dy * dy
+            if dist_sq < nearest_dist_sq then
+              nearest = nest
+              nearest_dist_sq = dist_sq
+            end
+          end
+        end
+        if nearest then
           entry.state = "moving_to_nest"
-          entry.target_nest = nests[1]
-          M._set_destination(entry.entity, nests[1].position)
+          entry.target_nest = nearest
+          M._set_destination(entry.entity, nearest.position)
         end
       end
     end
