@@ -361,7 +361,22 @@ test("field offices share their home nest population limit across update shards"
   assert_eq(unavailable, 3, "excess offices should wait for a leased slot to return")
 end)
 
-test("returning field office worker is destroyed only after reaching its spawner", function()
+test("field office skips a full nest for a farther nest with available biters on the first attempt", function()
+  reset()
+  local full_spawner = {valid = true, position = {x = 12, y = 20}, prototype = {max_count_of_owned_units = 0}}
+  local available_spawner = {valid = true, position = {x = 100, y = 20}}
+  local surface = new_surface({full_spawner, available_spawner})
+  local office = new_office(surface, 6, 100)
+  office.position = {x = 10, y = 20}
+  field_office.track_entity(office)
+
+  field_office.update(0)
+
+  assert_eq(#surface.created_entities, 1, "the nearer full nest should not block spawning from the farther available nest")
+  assert_eq(office.custom_status.label[1], "gui.field-office-calling", "office should summon on the first attempt instead of reporting no workers available")
+end)
+
+test("released field office worker is not destroyed before reaching its spawner", function()
   reset()
   local spawner = {valid = true, position = {x = 40, y = 50}}
   local surface = new_surface({spawner})

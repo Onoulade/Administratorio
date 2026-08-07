@@ -150,6 +150,11 @@ end
 
 -- find_entities_filtered with limit=1 is not sorted by distance (engine scans chunks
 -- northwest-first), so scan candidates and keep the closest valid one.
+--
+-- Prefers the nearest spawner that still has biters available to lease. A nest
+-- with every biter already assigned should not stop the search: fall back to it
+-- only if no other nest within range has room, instead of failing outright when
+-- the single nearest nest happens to be full.
 local function find_nearest_spawner(surface, position, range)
   local spawners = surface.find_entities_filtered{
     type = SPAWNER_TYPES,
@@ -160,16 +165,23 @@ local function find_nearest_spawner(surface, position, range)
 
   local nearest = nil
   local nearest_distance = nil
+  local nearest_full = nil
+  local nearest_full_distance = nil
   for _, s in ipairs(spawners) do
     if s.valid then
       local distance = distance_squared(s.position, position)
-      if not nearest_distance or distance < nearest_distance then
-        nearest = s
-        nearest_distance = distance
+      if spawner_population.can_lease_new_unit(s) then
+        if not nearest_distance or distance < nearest_distance then
+          nearest = s
+          nearest_distance = distance
+        end
+      elseif not nearest_full_distance or distance < nearest_full_distance then
+        nearest_full = s
+        nearest_full_distance = distance
       end
     end
   end
-  return nearest
+  return nearest or nearest_full
 end
 
 local function add_placement_render(player_index, obj)
