@@ -75,6 +75,22 @@ test("enabled debug setting adds belts and inserters", function()
   assert_true(set["inserter"], "inserters should be protest targets when debug setting is true")
 end)
 
+test("obstruction attacks include buildings but permanently exclude transport infrastructure", function()
+  local protest_targets = load_protest_targets(true)
+  local set = {}
+  for _, target_type in ipairs(protest_targets.get_obstacle_building_types()) do
+    set[target_type] = true
+  end
+
+  assert_true(set["assembling-machine"], "assembling machines should be eligible blocking buildings")
+  assert_true(set["furnace"], "furnaces should be eligible blocking buildings")
+  assert_true(set["wall"], "walls should be eligible blocking buildings")
+  assert_true(not set["pipe"], "pipes should never be obstruction attack targets")
+  assert_true(not set["pipe-to-ground"], "underground pipes should never be obstruction attack targets")
+  assert_true(not set["transport-belt"], "belts should never be obstruction attack targets")
+  assert_true(not set["inserter"], "inserters should never be obstruction attack targets")
+end)
+
 print(("Protest target tests: %d passed, %d failed"):format(passed, failed))
 if failed > 0 then
   for _, err in ipairs(errors) do

@@ -468,7 +468,8 @@ end
 -- LIFECYCLE EVENTS
 -- ============================================================
 
--- Biters should never attack in Administratorio. They are processed via administrative desks.
+-- Managed biters normally remain on ceasefire. Hard-mode attackers and the small,
+-- bounded set of blocked protesters use the hostile force temporarily.
 local function set_biter_ceasefire()
   local enemy = game.forces["enemy"]
   local player = game.forces["player"]
@@ -1166,8 +1167,10 @@ local function queue_pending_group_redirect(members, reason, tick)
   local queue = storage.pending_group_redirects
   for _, member in ipairs(members) do
     if member and member.valid then
+      local prepared = biters.prepare_group_redirect(member)
       queue[#queue + 1] = {
         entity = member,
+        prepared = prepared,
         reason = reason,
         queued_tick = tick or game.tick,
       }
@@ -1210,11 +1213,13 @@ local function process_pending_group_redirects(tick)
        and biter.valid
        and biter.type == "unit"
        and biter.force
-       and biter.force.name == "enemy"
+       and (biter.force.name == "enemy" or entry.prepared == true)
        and not (storage.waiting_biters and storage.waiting_biters[biter.unit_number]) then
       targets = targets or get_cached_desks()
       if #targets > 0 then
-        biters.send_biter_to_station_with_targets(biter, targets)
+        biters.send_biter_to_station_with_targets(biter, targets, {
+          prepared_redirect = entry.prepared == true,
+        })
       else
         biters.trigger_immediate_protest(biter, biter.surface)
       end
@@ -1736,6 +1741,7 @@ end
 
 local ON_ENTITY_DIED_FILTERS = {
   {filter = "type", type = "unit"},
+  {filter = "type", type = "pipe"},
   {filter = "type", type = "train-stop"},
   {filter = "name", name = "admin-station"},
   {filter = "name", name = "biter-station"},
@@ -1752,6 +1758,12 @@ local ON_ENTITY_DIED_FILTERS = {
 -- when they are destroyed rather than waiting for the background recovery pass.
 for _, target_type in ipairs(protest_targets.get_target_types()) do
   ON_ENTITY_DIED_FILTERS[#ON_ENTITY_DIED_FILTERS + 1] = {filter = "type", type = target_type}
+end
+
+-- Explicit breach targets also need to wake their assigned attacker as soon as
+-- they die. Transport infrastructure is absent from this list by design.
+for _, building_type in ipairs(protest_targets.get_obstacle_building_types()) do
+  ON_ENTITY_DIED_FILTERS[#ON_ENTITY_DIED_FILTERS + 1] = {filter = "type", type = building_type}
 end
 
 local function on_script_trigger_effect(event)

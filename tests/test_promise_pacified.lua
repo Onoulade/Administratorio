@@ -1021,6 +1021,10 @@ test("hard mode parked protester escalates during protest pacing", function()
     arrived_at_building = true,
     last_frustration_tick = 0,
     protest_parked = true,
+    protest_pipe_gap_waypoint = {x = 4, y = 4},
+    protest_pipe_gap_goal = {x = 7, y = 7},
+    protest_route_hop_waypoint = {x = 5, y = 5},
+    protest_route_hop_goal = {x = 7, y = 7},
     complaints = {"ticket-landscape"},
   }
   storage.waiting_biters[42] = info
@@ -1036,6 +1040,22 @@ test("hard mode parked protester escalates during protest pacing", function()
   assert_eq(damage_calls, 1, "pacing escalation should damage the target when the biter is already in range")
   assert_true(ctx.get_last_attack_command() ~= nil, "pacing escalation should issue a real attack command")
   assert_true(ctx.get_last_attack_command().target == target, "pacing escalation should attack the target")
+  assert_true(info.protest_pipe_gap_waypoint == nil, "hard-mode escalation should clear a stale wall-gap command")
+  assert_true(info.protest_route_hop_waypoint == nil, "hard-mode escalation should clear a stale route-hop command")
+
+  info.protest_obstacle_attacking = true
+  info.protest_obstacle_target = target
+  info.protest_route_hop_waypoint = {x = 5, y = 5}
+  storage.protest_obstacle_attackers = {[entity.unit_number] = true}
+  ctx.controller.on_ai_command_completed{
+    unit_number = entity.unit_number,
+    result = defines.behavior_result.fail,
+  }
+
+  assert_true(ctx.get_last_attack_command().target == target, "a hard-mode completion should remain owned by the attack lifecycle")
+  assert_true(info.protest_obstacle_attacking ~= true, "hard-mode maintenance should clear a saved mixed breach state")
+  assert_true(info.protest_route_hop_waypoint == nil, "hard-mode maintenance should clear a saved mixed route hop")
+  assert_true(storage.protest_obstacle_attackers[entity.unit_number] == nil, "a saved mixed state should release its breach-attacker slot")
 end)
 
 test("promise sends hard mode attacking protesters back to a desk when capacity exists", function()
