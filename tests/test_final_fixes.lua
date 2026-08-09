@@ -123,6 +123,20 @@ data.raw.item["iron-plate"] = {
   icon = "__base__/graphics/icons/iron-plate.png",
   icon_size = 64,
 }
+data.raw.item["coal"] = {
+  type = "item",
+  name = "coal",
+  stack_size = 50,
+  icon = "__base__/graphics/icons/coal.png",
+  icon_size = 64,
+}
+data.raw.item["wood"] = {
+  type = "item",
+  name = "wood",
+  stack_size = 100,
+  icon = "__base__/graphics/icons/wood.png",
+  icon_size = 64,
+}
 data.raw.item["electric-furnace"] = {
   type = "item",
   name = "electric-furnace",
@@ -878,6 +892,13 @@ else
 end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 local shared = require("prototypes.shared")
+local factoriopedia_merge = require("prototypes.factoriopedia_merge")
+local generated_recipe_renames = {}
+local apply_recipe_renames = factoriopedia_merge.apply_recipe_renames
+factoriopedia_merge.apply_recipe_renames = function(data_raw, shared_constants, rename_map)
+  generated_recipe_renames = util.table.deepcopy(rename_map or {})
+  return apply_recipe_renames(data_raw, shared_constants, rename_map)
+end
 -- Regression guard: explicit equipment overrides must be ignored by final-fixes.
 shared.BATCH_MULTIPLIERS["battery-equipment"] = 99
 
@@ -1296,6 +1317,42 @@ test("admin building recipes redirect Factoriopedia to regulated copies", functi
   assert_eq(original.factoriopedia_alternative, "printer-t1-regulated", "printer-t1 should redirect Factoriopedia to the regulated recipe")
   assert_eq(original.hidden_in_factoriopedia, true, "printer-t1 should be hidden in Factoriopedia")
   assert_true(not regulated.hidden_in_factoriopedia, "printer-t1-regulated should remain visible in Factoriopedia")
+end)
+
+test("Factoriopedia recipe renames have prototype migrations", function()
+  local migration_path = mod_root .. "migrations/0.5.12-factoriopedia-recipe-renames.json"
+  local migration_file = assert(io.open(migration_path, "r"))
+  local migration_text = migration_file:read("*a")
+  migration_file:close()
+
+  local migrated_recipe_renames = {}
+  for old_name, new_name in migration_text:gmatch('%[%s*"([^"]+)"%s*,%s*"([^"]+)"%s*%]') do
+    assert_true(migrated_recipe_renames[old_name] == nil, "duplicate recipe migration for " .. old_name)
+    migrated_recipe_renames[old_name] = new_name
+  end
+
+  local generated_count = 0
+  for old_name, new_name in pairs(generated_recipe_renames) do
+    generated_count = generated_count + 1
+    assert_eq(
+      migrated_recipe_renames[old_name],
+      new_name,
+      old_name .. " should migrate to its generated canonical recipe name"
+    )
+  end
+
+  local migrated_count = 0
+  for old_name, new_name in pairs(migrated_recipe_renames) do
+    migrated_count = migrated_count + 1
+    assert_eq(
+      generated_recipe_renames[old_name],
+      new_name,
+      old_name .. " migration should correspond to a generated recipe rename"
+    )
+  end
+
+  assert_eq(migrated_count, generated_count, "recipe migration count should match generated rename count")
+  assert_eq(migrated_recipe_renames["charcoal-production"], "coal", "coal recipe rename must be migrated")
 end)
 
 test("all recipe ingredient lists are duplicate-free", function()
