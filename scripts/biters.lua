@@ -15,6 +15,9 @@ local protest_system
 local PROTEST_TARGET_TYPES = protest_targets.get_target_types()
 local PROTEST_TARGET_NAMES = protest_targets.get_target_names()
 local PROTEST_PROTECTED_NAMES = protest_targets.get_protected_names()
+local PROTEST_OBSTACLE_BUILDING_TYPES = protest_targets.get_obstacle_building_types
+  and protest_targets.get_obstacle_building_types()
+  or PROTEST_TARGET_TYPES
 local function protest_slogan(ticket, index)
   return {"gui.protest-slogan-" .. ticket .. "-" .. index}
 end
@@ -610,6 +613,9 @@ local function park_waiting_biter(info, entity)
 
   set_waiting_biter_state(info, "waiting")
   info.desk_dest = nil
+  info.desk_route_started_tick = nil
+  info.desk_route_last_progress_tick = nil
+  info.desk_route_best_distance_sq = nil
   entity.force = get_biter_force()
   unit_ai_settings.apply_managed_unit_settings(entity)
   entity.commandable.set_command({
@@ -846,6 +852,10 @@ local function route_biter_to_desk(info, entity, desk, opts)
     return false
   end
   info.desk_dest = dest
+  info.desk_route_started_tick = game.tick
+  info.desk_route_last_progress_tick = game.tick
+  info.desk_route_best_distance_sq = (entity.position.x - dest.x)^2
+    + (entity.position.y - dest.y)^2
   if issue_desk_route_command(entity, dest) then return true end
   zones.release_slot_by_index(desk.unit_number, slot)
   unindex_biter_from_desk(desk.unit_number, entity.unit_number)
@@ -889,6 +899,7 @@ protest_system = biters_protests_factory.new({
   issue_desk_route_command = issue_desk_route_command,
   mark_desk_circuit_dirty = mark_desk_circuit_dirty,
   normalize_case_progress = normalize_case_progress,
+  protest_obstacle_building_types = PROTEST_OBSTACLE_BUILDING_TYPES,
   protest_protected_names = PROTEST_PROTECTED_NAMES,
   protest_target_names = PROTEST_TARGET_NAMES,
   protest_target_types = PROTEST_TARGET_TYPES,
@@ -940,12 +951,34 @@ function M.is_hard_mode_attacker(unit_number)
   return info and (info.hard_mode_attacking == true or info.state == "attacking") or false
 end
 
+-- Once Commander has finished assembling a native pollution group, detach its
+-- members from enemy autonomy immediately. The heavier adoption/desk lookup is
+-- still budgeted by control.lua, but parked members can no longer form another
+-- attack group while they wait their turn in that queue.
+function M.prepare_group_redirect(entity)
+  if not entity or not entity.valid or entity.type ~= "unit" then return false end
+  entity.force = get_biter_force()
+  unit_ai_settings.apply_managed_unit_settings(entity)
+  entity.destructible = false
+  entity.active = false
+  if entity.commandable and entity.commandable.set_command then
+    entity.commandable.set_command({
+      type = defines.command.stop,
+      distraction = defines.distraction.none,
+    })
+  end
+  return true
+end
+
 function M.send_biter_to_station_with_targets(entity, targets, opts)
-  if not entity.valid or entity.type ~= "unit" or entity.force.name ~= "enemy" then return end
+  opts = opts or {}
+  if not entity or not entity.valid or entity.type ~= "unit" then return end
+  local prepared_redirect = opts.prepared_redirect == true
+    and entity.force == get_biter_force()
+  if entity.force.name ~= "enemy" and not prepared_redirect then return end
   if #targets == 0 then
     return
   end
-  opts = opts or {}
   local initial_frustration = opts.initial_frustration or 0
 
   local min_dist = math.huge

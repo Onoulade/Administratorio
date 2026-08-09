@@ -33,6 +33,47 @@ local PROTEST_PROTECTED_NAMES = {
   ["resolution-office"] = true,
 }
 
+-- Substantial structures that protesters may deliberately demolish after a
+-- protest-target path request proves that they are blocked. Small transport
+-- infrastructure is intentionally absent: belts, inserters, loaders, pipes,
+-- underground pipes, rails, poles, and combinators are never breach targets.
+local PROTEST_OBSTACLE_BUILDING_TYPES = {
+  "accumulator",
+  "agricultural-tower",
+  "ammo-turret",
+  "artillery-turret",
+  "assembling-machine",
+  "asteroid-collector",
+  "beacon",
+  "boiler",
+  "burner-generator",
+  "cargo-bay",
+  "cargo-landing-pad",
+  "container",
+  "electric-energy-interface",
+  "electric-turret",
+  "fluid-turret",
+  "furnace",
+  "fusion-generator",
+  "fusion-reactor",
+  "gate",
+  "generator",
+  "lab",
+  "lightning-attractor",
+  "logistic-container",
+  "market",
+  "mining-drill",
+  "offshore-pump",
+  "radar",
+  "reactor",
+  "roboport",
+  "rocket-silo",
+  "solar-panel",
+  "storage-tank",
+  "thruster",
+  "wall",
+}
+
 local function copy_array(source)
   local copy = {}
   for index, value in ipairs(source) do
@@ -65,6 +106,10 @@ end
 
 function M.get_protected_names()
   return copy_set(PROTEST_PROTECTED_NAMES)
+end
+
+function M.get_obstacle_building_types()
+  return copy_array(PROTEST_OBSTACLE_BUILDING_TYPES)
 end
 
 return M
