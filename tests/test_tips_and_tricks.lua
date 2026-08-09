@@ -114,6 +114,37 @@ test("biterport tip unlocks with biterport-logistics technology", function()
   )
 end)
 
+test("previously orphaned core mechanic tips unlock with their mechanics", function()
+  local expected = {
+    ["administratorio-bullshit-economy"] = "discovery-bullshit",
+    ["administratorio-admin-science"] = "administrative-science-research",
+    ["administratorio-propaganda-distillery"] = "industrial-propaganda",
+    ["administratorio-transit-authorization"] = "railway",
+    ["administratorio-pneumatic-transport"] = "pneumatic-form-transport",
+  }
+  for name, technology in pairs(expected) do
+    assert_true(
+      trigger_contains(tip(name).trigger, "research", "technology", technology),
+      name .. " should unlock from " .. technology
+    )
+  end
+end)
+
+test("every Administratorio tip has a native looping simulation", function()
+  local count = 0
+  for name, item in pairs(tips) do
+    count = count + 1
+    assert_true(type(item.simulation) == "table", name .. " should have a simulation")
+    assert_true(type(item.simulation.init) == "string" and item.simulation.init:find("administratorio_tip_scene", 1, true),
+      name .. " should initialize a declarative scene")
+    assert_true(item.simulation.update_file == "__administratorio__/prototypes/tips-and-tricks-simulation-update.lua",
+      name .. " should use the shared animation engine")
+    assert_true(item.simulation.length >= 5 * 60 and item.simulation.length <= 15 * 60,
+      name .. " should loop between 5 and 15 seconds")
+  end
+  assert_true(count >= 60, "expected complete core and Space Age tip coverage")
+end)
+
 test("Space Age planet manifests unlock with their planetary systems", function()
   local expected = {
     ["administratorio-vulcanus-manifest"] = "vulcanus-certification",
