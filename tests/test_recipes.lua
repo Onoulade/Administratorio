@@ -826,7 +826,8 @@ test("electric furnace compacts rubble without a carbon offset certificate", fun
   assert_eq(r.energy_required, 3.2)
   assert_eq(r.allow_decomposition, false)
   assert_eq(r.hidden_in_factoriopedia, true)
-  assert_eq(r.factoriopedia_alternative, "compacted-rubble")
+  assert_nil(r.factoriopedia_alternative,
+    "electric rubble should link to its Factoriopedia alternative only after canonical renaming")
 end)
 
 test("starter furnace recipes are enabled from start", function()

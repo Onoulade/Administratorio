@@ -58,7 +58,6 @@ data:extend({
     energy_required = 3.2,
     allow_decomposition = false,
     hidden_in_factoriopedia = true,
-    factoriopedia_alternative = "compacted-rubble",
   },
   { type = "recipe", name = "compacted-rubble-production", category = "smelting-basic", enabled = false, ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="redundant-rubble", amount=5}}, results = {{type="item", name="compacted-rubble", amount=5}}, energy_required = 16 },
 

@@ -2,6 +2,7 @@
 Version: 0.5.12
 Date: 2026-08-09
   Bugfixes:
+    - defer electric rubble's Factoriopedia link until its canonical recipe exists
     - order recipe rename for 0.5.12
     - allow certificate-free electric rubble compaction
     - stabilize canonical names with quality
