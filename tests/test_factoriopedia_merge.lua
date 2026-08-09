@@ -62,6 +62,11 @@ test("rename map only includes unique canonical product recipes", function()
           {type = "item", name = "office-drama", amount = 1, probability = 0.5},
         },
       },
+      ["good-excuse-recycling"] = {
+        type = "recipe",
+        name = "good-excuse-recycling",
+        results = {{type = "item", name = "good-excuse", amount = 1}},
+      },
     },
     technology = {},
     item = {
@@ -95,6 +100,7 @@ test("rename map only includes unique canonical product recipes", function()
 
   assert_eq(rename_map["paper-production"], "paper", "paper should merge into its item page")
   assert_eq(rename_map["good-excuse-production"], "good-excuse", "main-product recipe should merge")
+  assert_true(rename_map["good-excuse-recycling"] == nil, "Quality recycling must not veto or receive a canonical rename")
   assert_true(rename_map["blank-form-production"] == nil, "blank-form has alternate recipes, so skip rename")
   assert_true(rename_map["copy-blank-form"] == nil, "alternate blank-form recipe should stay separate")
 end)
