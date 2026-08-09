@@ -4,10 +4,20 @@
 -- becomes available to the player.
 
 local feature_flags = require("feature_flags")
+local simulations = require("prototypes.tips-and-tricks-simulations")
 local working_hours_enabled = feature_flags.working_hours_enabled()
 local space_age_enabled = feature_flags.space_age_enabled()
 
-data:extend({
+local function extend_with_simulations(prototypes)
+  for _, prototype in ipairs(prototypes) do
+    if prototype.type == "tips-and-tricks-item" then
+      prototype.simulation = assert(simulations[prototype.name], "missing simulation for " .. prototype.name)
+    end
+  end
+  data:extend(prototypes)
+end
+
+extend_with_simulations({
   -- Category
   {
     type = "tips-and-tricks-item-category",
@@ -40,6 +50,32 @@ data:extend({
     trigger = {
       type = "research",
       technology = "automation"
+    }
+  },
+
+  -- Bullshit ore, rubble derivatives, and public finance
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-bullshit-economy",
+    category = "administratorio",
+    order = "ac",
+    indent = 1,
+    trigger = {
+      type = "research",
+      technology = "discovery-bullshit"
+    }
+  },
+
+  -- Administrative science replaces military science
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-admin-science",
+    category = "administratorio",
+    order = "ad",
+    indent = 1,
+    trigger = {
+      type = "research",
+      technology = "administrative-science-research"
     }
   },
 
@@ -203,12 +239,51 @@ data:extend({
       technology = "hired-biter-fieldwork"
     }
   },
+
+  -- Propaganda fluids and industrial misinformation
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-propaganda-distillery",
+    category = "administratorio",
+    order = "g",
+    indent = 1,
+    trigger = {
+      type = "research",
+      technology = "industrial-propaganda"
+    }
+  },
+
+  -- Rail arrivals consume integrated transit paperwork
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-transit-authorization",
+    category = "administratorio",
+    order = "ga",
+    indent = 1,
+    trigger = {
+      type = "research",
+      technology = "railway"
+    }
+  },
+
+  -- Instant paperwork transfer through pneumatic networks
+  {
+    type = "tips-and-tricks-item",
+    name = "administratorio-pneumatic-transport",
+    category = "administratorio",
+    order = "ma",
+    indent = 1,
+    trigger = {
+      type = "research",
+      technology = "pneumatic-form-transport"
+    }
+  },
 })
 
 -- ===== NIGHT WORK (only if Working Hours feature is enabled) =====
 
 if working_hours_enabled then
-  data:extend({
+  extend_with_simulations({
     {
       type = "tips-and-tricks-item",
       name = "administratorio-working-hours",
@@ -249,11 +324,11 @@ if space_age_enabled then
       trigger = {type = "research", technology = tip.technology},
     }
   end
-  data:extend(prototypes_to_add)
+  extend_with_simulations(prototypes_to_add)
 
   -- ===== WORKFORCE FORMATION & ORBITAL OPERATIONS =====
 
-  data:extend({
+  extend_with_simulations({
     -- Workforce Formation (title section)
     {
       type = "tips-and-tricks-item",
