@@ -1594,7 +1594,7 @@ SPACE_AGE_FORM_ICON_DEFS = {
         "header_bands": [S_CYAN, S_YELLOW, S_MAGENTA],
         "symbol": SYM_ATOM, "symbol_color": SC_PURPLE, "symbol_pos": "center",
         "symbol2": SYM_FLASK, "symbol2_color": SC_BLUE, "symbol2_pos": "br",
-        "desc": "Bound CMY Promethium research charter",
+        "desc": "Bound CMY Administratorium expedition charter",
     },
     "embossed-seal": {
         "base": "form", "tint": (244, 229, 193, 255),
