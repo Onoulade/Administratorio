@@ -160,7 +160,8 @@ data:extend({
     type = "technology", name = "rubble-compaction",
     icon = "__administratorio__/graphics/icons/compacted-rubble.png", icon_size = 64,
     effects = {
-      { type = "unlock-recipe", recipe = "compacted-rubble-production" }
+      { type = "unlock-recipe", recipe = "compacted-rubble-production" },
+      { type = "unlock-recipe", recipe = "compacted-rubble-electric" }
     },
     prerequisites = {"printing-technology", "discovery-redundant-rubble"},
     unit = { count = 30, ingredients = {{"automation-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },

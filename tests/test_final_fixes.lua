@@ -1100,6 +1100,21 @@ test("smelting-basic keeps only explicit batch recipes", function()
   assert_true(certified == nil, "iron-plate-certified should not exist")
 end)
 
+test("electric compacted rubble remains an unlocked alternate to the canonical batch recipe", function()
+  local canonical = get_recipe("compacted-rubble")
+  assert_true(canonical ~= nil, "canonical compacted-rubble recipe missing")
+  assert_eq(canonical.category, "smelting-basic", "canonical compacted rubble should remain the certified batch")
+  assert_true(has_ingredient(canonical, "carbon-offset-certificate-basic"),
+    "canonical compacted rubble should require a carbon certificate")
+
+  local electric = get_recipe("compacted-rubble-electric")
+  assert_true(electric ~= nil, "electric compacted-rubble recipe missing")
+  assert_eq(electric.category, "smelting", "electric compacted rubble should use vanilla smelting")
+  assert_true(not has_ingredient(electric, "carbon-offset-certificate-basic"),
+    "electric compacted rubble should not require a carbon certificate")
+  assert_eq(electric.factoriopedia_alternative, "compacted-rubble")
+end)
+
 test("electric furnace recipe upgrades to management verbal paperwork", function()
   local r = get_recipe("electric-furnace")
   assert_true(r ~= nil, "electric-furnace missing")
