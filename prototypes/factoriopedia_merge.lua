@@ -83,7 +83,14 @@ function merge.build_recipe_rename_map(data_raw, shared)
   local candidate_names = {}
 
   for recipe_name, recipe in pairs(recipes) do
-    if shared.is_admin_recipe(recipe_name) or EXTRA_ALLOWED_RECIPES[recipe_name] then
+    -- Quality generates one "-recycling" recipe per recyclable product. Some
+    -- of those names match Administratorio's broad recipe patterns, but they
+    -- are alternate disposal paths rather than canonical production recipes.
+    -- Counting them here makes recipe identities depend on whether Quality is
+    -- enabled, which in turn removes recipes from existing saves.
+    local is_recycling_recipe = recipe_name:match("%-recycling$") ~= nil
+    if not is_recycling_recipe
+      and (shared.is_admin_recipe(recipe_name) or EXTRA_ALLOWED_RECIPES[recipe_name]) then
       local target_name = get_merge_target(recipe)
       if target_name
         and target_name ~= recipe_name
