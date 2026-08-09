@@ -1335,7 +1335,7 @@ test("admin building recipes redirect Factoriopedia to regulated copies", functi
 end)
 
 test("Factoriopedia recipe renames have prototype migrations", function()
-  local migration_path = mod_root .. "migrations/0.5.11-factoriopedia-recipe-renames.json"
+  local migration_path = mod_root .. "migrations/0.5.12-factoriopedia-recipe-renames.json"
   local migration_file = assert(io.open(migration_path, "r"))
   local migration_text = migration_file:read("*a")
   migration_file:close()
