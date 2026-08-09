@@ -46,6 +46,20 @@ data:extend({
   bulk_copy_recipe("copy-radiological-work-order", { type = "recipe", category = "printing-advanced", enabled = false, icon = "__administratorio__/graphics/icons/radiological-work-order.png", icon_size = 64, ingredients = {{type="item", name="radiological-work-order", amount=1}, {type="item", name="paper", amount=5}, {type="item", name="ink", amount=1}, {type="item", name="processing-unit", amount=1}}, results = {{type="item", name="radiological-work-order", amount=6}}, main_product = "radiological-work-order", energy_required = 25 }),
 
   -- Compacted Rubble (T0 derivative — industrially compressed rubble)
+  -- Electric furnaces can compact one unit at a time without burner-emissions
+  -- paperwork. The certified batch remains available to every furnace tier.
+  {
+    type = "recipe",
+    name = "compacted-rubble-electric",
+    category = "smelting",
+    enabled = false,
+    ingredients = {{type="item", name="redundant-rubble", amount=1}},
+    results = {{type="item", name="compacted-rubble", amount=1}},
+    energy_required = 3.2,
+    allow_decomposition = false,
+    hidden_in_factoriopedia = true,
+    factoriopedia_alternative = "compacted-rubble",
+  },
   { type = "recipe", name = "compacted-rubble-production", category = "smelting-basic", enabled = false, ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="redundant-rubble", amount=5}}, results = {{type="item", name="compacted-rubble", amount=5}}, energy_required = 16 },
 
   -- Charcoal Production (T3 — batch-burn wood into coal)

@@ -74,7 +74,7 @@ Administratorio is in beta: the full progression arc is expected to be playable,
 
 | Machine family | Operating document | Notes |
 | --- | --- | --- |
-| Furnaces | `carbon-offset-certificate-basic` / `carbon-offset-certificate-verified` | Smelting and rubble compression already run on certificates |
+| Furnaces | `carbon-offset-certificate-basic` / `carbon-offset-certificate-verified` | Burner-furnace smelting and rubble compression run on certificates; electric furnaces can compact rubble without one |
 | Oil processing | None | Refineries are gated by biter-station dispatch instead of operating paperwork |
 | Chemistry | `chemical-handling-work-order` | Chemical-plant operating document; no longer shares assembler `work-order` |
 | Centrifuging | `radiological-work-order` | Centrifuge operating document built from chemical paperwork and written approval |

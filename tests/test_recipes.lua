@@ -813,6 +813,22 @@ test("all smelting-basic recipes require carbon-offset-certificate-basic", funct
   end
 end)
 
+test("electric furnace compacts rubble without a carbon offset certificate", function()
+  local r = get_recipe("compacted-rubble-electric")
+  assert_true(r ~= nil, "compacted-rubble-electric missing")
+  assert_eq(r.category, "smelting", "electric rubble recipe should use electric furnace smelting")
+  assert_eq(r.enabled, false, "electric rubble recipe should be technology-gated")
+  assert_true(has_ingredient(r, "redundant-rubble"), "electric rubble recipe missing redundant rubble")
+  assert_eq(get_ingredient_amount(r, "redundant-rubble"), 1)
+  assert_true(not has_ingredient(r, "carbon-offset-certificate-basic"),
+    "electric rubble recipe should not require a carbon offset certificate")
+  assert_eq(get_result_amount(r, "compacted-rubble"), 1)
+  assert_eq(r.energy_required, 3.2)
+  assert_eq(r.allow_decomposition, false)
+  assert_eq(r.hidden_in_factoriopedia, true)
+  assert_eq(r.factoriopedia_alternative, "compacted-rubble")
+end)
+
 test("starter furnace recipes are enabled from start", function()
   local starter_smelting_recipes = {
     "iron-plate-batch", "copper-plate-batch", "stone-brick-batch",
