@@ -119,10 +119,13 @@ Colored paperwork gating:
   - three CMY requirements collapse to `trichromatic-permit`
 - Current explicit top-tier override:
   - `quantum-processor` consumes `unified-operations-charter`
-  - `promethium-science-pack` consumes `promethium-research-charter`, which is issued in vacuum from unified, cryogenic, hardened data custody, and asteroid-processing paperwork
+  - the visible Administratorium science tier (`promethium-science-pack` internally) consumes an Administratorium expedition charter (`promethium-research-charter` internally), issued in vacuum from unified, cryogenic, hardened data custody, and asteroid-processing paperwork
 - Current Aquilo native gates:
   - `lithium` and `lithium-plate` consume `cyan-yellow-form`
   - `fluoroketone`, `fluoroketone-cooling`, and `cryogenic-plant` consume `cryogenic-operations-license`
+- Current asteroid processing rule:
+  - first-platform infrastructure and basic asteroid crushing remain pre-planet/pre-space-science safe
+  - advanced asteroid crushing, asteroid reprocessing, and Administratorium-tier asteroid processing consume `asteroid-processing-docket`
 
 Important correction to older notes:
 
@@ -918,7 +921,9 @@ Current rule:
   - cyan + magenta -> `cyan-magenta-form`
   - yellow + magenta -> `yellow-magenta-form`
 - recipes that would have required 3 distinct CMY blank forms now consume `trichromatic-permit`
-- `quantum-processor` is the current top-tier override and consumes `unified-operations-charter`
+- explicit trichromatic gates now cover fusion reactor, fusion generator, and mech armor convergence
+- `quantum-processor` consumes `unified-operations-charter`
+- the visible Administratorium science tier (`promethium-science-pack` internally) consumes `promethium-research-charter` as the shattered-planet research authorization
 - first Aquilo-native cryogenic gates are in place:
   - `lithium` / `lithium-plate` -> `cyan-yellow-form`
   - `fluoroketone` / `fluoroketone-cooling` / `cryogenic-plant` -> `cryogenic-operations-license`

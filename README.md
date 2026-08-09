@@ -43,6 +43,8 @@ From there, the workforce branches out:
 
 Space Age adds five temporary MMMM briefings: Training, Staffing, Compliance, Liaison, and Orbital Operations. Relevant formations and staffed construction recipes consume the correct briefed managers and return them as regular MMMMs, forcing another meeting before the next use. The orbital cannon no longer launches managers; it deploys recoverable **Voluntary Exploration Space Miners**, trained from an Astronaut, an Electric Mining Drill, and three differently briefed MMMMs.
 
+The native Promethium endgame is presented as **Administratorium** while retaining Space Age's original prototype IDs for save and mod compatibility. Its expedition now completes the administrative progression: Aquilo's fax network is an explicit prerequisite, the technology consumes Administrative Science, and every final pack requires an Administratorium Expedition Charter assembled from the preceding planetary and orbital paperwork families.
+
 ### Labor relations
 
 Because the workforce is real, the paperwork is too. Your Union Headquarters negotiates **Union Approval** as a fluid, and neglected workplaces eventually produce **OSHA Violations** that have to be scrubbed away in union-brokered cleanup runs. You fund the workers, the workers file the forms, the forms cite you, you pay the workers to make the citation go away. The loop closes. The loop is the point.

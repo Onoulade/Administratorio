@@ -23,6 +23,17 @@ local function add_tech_prerequisite(technology_name, prerequisite_name)
   table.insert(technology.prerequisites, prerequisite_name)
 end
 
+local function add_tech_science_pack(technology_name, pack_name, amount)
+  local technology = data.raw.technology and data.raw.technology[technology_name]
+  if not technology or not technology.unit or not technology.unit.ingredients then return end
+
+  for _, ingredient in ipairs(technology.unit.ingredients) do
+    if (ingredient.name or ingredient[1]) == pack_name then return end
+  end
+
+  table.insert(technology.unit.ingredients, {pack_name, amount or 1})
+end
+
 data:extend({
   -- ============================================================
   -- TIER 0: CHROMATIC LANDING PREP (pre-planet, Nauvis research)
@@ -871,6 +882,13 @@ for level, count in ipairs(orbital_employment_capacity_counts) do
 end
 
 data:extend(orbital_employment_capacity_techs)
+
+-- Keep Space Age's native promethium prototype IDs for compatibility while
+-- making the visible Administratorium tier the culmination of Administratorio's
+-- interplanetary bureaucracy. The charter is issued by the Aquilo fax network,
+-- so the expedition technology must not bypass that administrative branch.
+add_tech_prerequisite("promethium-science-pack", "aquilo-fax-network")
+add_tech_science_pack("promethium-science-pack", "administrative-science-pack", 1)
 
 -- Unlock orbital permit with space platform
 add_tech_unlock("space-platform", "orbital-infrastructure-permit")

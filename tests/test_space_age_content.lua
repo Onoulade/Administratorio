@@ -99,6 +99,20 @@ local technologies = {
   ["planet-discovery-gleba"] = {type = "technology", name = "planet-discovery-gleba", effects = {}},
   ["nest-expropriation"] = {type = "technology", name = "nest-expropriation", effects = {}},
   ["hired-biter-fieldwork"] = {type = "technology", name = "hired-biter-fieldwork", effects = {}},
+  ["promethium-science-pack"] = {
+    type = "technology",
+    name = "promethium-science-pack",
+    effects = {},
+    prerequisites = {"biter-egg-handling", "fusion-reactor"},
+    unit = {
+      count = 2000,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"cryogenic-science-pack", 1},
+      },
+      time = 60,
+    },
+  },
 }
 
 mods = {
@@ -1435,6 +1449,25 @@ test("aquilo fax network unlocks the printer, exchange, and multicolor paperwork
   }) do
     assert_true(tech_unlocks_recipe(aquilo, recipe_name), "aquilo-fax-network should unlock " .. recipe_name)
   end
+end)
+
+test("Administratorium expedition closes the administrative progression loop", function()
+  local technology = assert(technologies["promethium-science-pack"], "promethium-science-pack missing")
+  local prerequisites = {}
+  for _, prerequisite in ipairs(technology.prerequisites or {}) do
+    prerequisites[prerequisite] = true
+  end
+
+  assert_true(prerequisites["aquilo-fax-network"],
+    "Administratorium expedition should require the Aquilo fax network")
+  local uses_administrative_science = false
+  for _, ingredient in ipairs(technology.unit.ingredients or {}) do
+    if (ingredient.name or ingredient[1]) == "administrative-science-pack" then
+      uses_administrative_science = true
+    end
+  end
+  assert_true(uses_administrative_science,
+    "Administratorium expedition should consume administrative science")
 end)
 
 test("fax reconstruction recipes use tiered dry media and split unlocks between basic and color faxing", function()
