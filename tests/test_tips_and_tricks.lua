@@ -23,6 +23,7 @@ local function assert_true(value, msg)
 end
 
 local tips = {}
+local categories = {}
 
 data = {
   raw = {},
@@ -32,6 +33,8 @@ function data:extend(prototypes)
   for _, proto in ipairs(prototypes) do
     if proto.type == "tips-and-tricks-item" then
       tips[proto.name] = proto
+    elseif proto.type == "tips-and-tricks-item-category" then
+      categories[proto.name] = proto
     end
   end
 end
@@ -130,19 +133,44 @@ test("previously orphaned core mechanic tips unlock with their mechanics", funct
   end
 end)
 
-test("every Administratorio tip has a native looping simulation", function()
+test("every Administratorio tip is text-only", function()
   local count = 0
   for name, item in pairs(tips) do
     count = count + 1
-    assert_true(type(item.simulation) == "table", name .. " should have a simulation")
-    assert_true(type(item.simulation.init) == "string" and item.simulation.init:find("administratorio_tip_scene", 1, true),
-      name .. " should initialize a declarative scene")
-    assert_true(item.simulation.update_file == "__administratorio__/prototypes/tips-and-tricks-simulation-update.lua",
-      name .. " should use the shared animation engine")
-    assert_true(item.simulation.length >= 5 * 60 and item.simulation.length <= 15 * 60,
-      name .. " should loop between 5 and 15 seconds")
+    assert_true(item.simulation == nil, name .. " should not attach an animation")
   end
-  assert_true(count >= 60, "expected complete core and Space Age tip coverage")
+  assert_true(count >= 69, "expected complete core and Space Age tip coverage")
+end)
+
+test("tips are divided into mechanic-focused categories", function()
+  local expected_categories = {
+    "administratorio-welcome",
+    "administratorio-biter-complaints",
+    "administratorio-biter-employment",
+    "administratorio-workforce-formation-title",
+    "administratorio-chromatic-printing",
+    "administratorio-vulcanus-certification",
+    "administratorio-gleba-conciliation",
+    "administratorio-cross-planet-bureaucracy",
+    "administratorio-fulgora-digital-services",
+    "administratorio-aquilo-fax-network",
+  }
+
+  for _, category_name in ipairs(expected_categories) do
+    assert_true(categories[category_name] ~= nil, "missing tips category " .. category_name)
+    local title = tip(category_name)
+    assert_true(title.category == category_name, category_name .. " title should belong to its own category")
+    assert_true(title.is_title == true, category_name .. " should be the category title")
+    assert_true(title.indent == 0, category_name .. " title should not be indented")
+  end
+
+  assert_true(categories.administratorio == nil, "the legacy catch-all category should be removed")
+  for name, item in pairs(tips) do
+    assert_true(categories[item.category] ~= nil, name .. " references missing category " .. tostring(item.category))
+    if not item.is_title then
+      assert_true(item.indent == 1, name .. " should be a category child")
+    end
+  end
 end)
 
 test("Space Age planet manifests unlock with their planetary systems", function()
@@ -161,17 +189,18 @@ test("Space Age planet manifests unlock with their planetary systems", function(
 end)
 
 test("orbital tips unlock with the feature they explain", function()
-  local worker_tips = {
-    "administratorio-workforce-formation-title",
-    "administratorio-workforce-formation",
-    "administratorio-orbital-specialists",
-  }
-  for _, name in ipairs(worker_tips) do
-    assert_true(
-      trigger_contains(tip(name).trigger, "research", "technology", "worker-formation"),
-      name .. " should unlock from worker-formation"
-    )
-  end
+  assert_true(
+    trigger_contains(tip("administratorio-workforce-formation-title").trigger, "research", "technology", "space-platform"),
+    "the orbital category should appear with space-platform"
+  )
+  assert_true(
+    trigger_contains(tip("administratorio-workforce-formation").trigger, "research", "technology", "worker-formation"),
+    "workforce overview should unlock from worker-formation"
+  )
+  assert_true(
+    trigger_contains(tip("administratorio-orbital-specialists").trigger, "research", "technology", "specialized-formation"),
+    "orbital specialists should unlock from specialized-formation"
+  )
 
   local orbital_tips = {
     "administratorio-trajectory-compliance-arrays",
@@ -190,6 +219,46 @@ test("orbital tips unlock with the feature they explain", function()
     trigger_contains(permit.trigger, "research", "technology", "space-platform"),
     "orbital-infrastructure-permit should unlock from space-platform"
   )
+end)
+
+test("previously undocumented Space Age mechanics have dedicated tips", function()
+  local expected = {
+    ["administratorio-space-age-enrollment"] = "worker-formation",
+    ["administratorio-offworld-economy"] = "space-platform",
+    ["administratorio-management-briefings"] = "management-formation",
+    ["administratorio-yellow-paperwork-spoilage"] = "gleba-conciliation",
+    ["administratorio-pentapod-bargaining"] = "gleba-pentapod-formations",
+    ["administratorio-space-tourism"] = "cyan-yellow-bureaucracy",
+    ["administratorio-promethium-administration"] = "promethium-science-pack",
+  }
+  for name, technology in pairs(expected) do
+    assert_true(
+      trigger_contains(tip(name).trigger, "research", "technology", technology),
+      name .. " should unlock from " .. technology
+    )
+  end
+end)
+
+test("every registered tip has an English name and description", function()
+  local locale = assert(io.open(mod_root .. "locale/en/config.cfg", "r"))
+  local section = nil
+  local names, descriptions = {}, {}
+  for line in locale:lines() do
+    local header = line:match("^%[([^%]]+)%]$")
+    if header then
+      section = header
+    else
+      local key = line:match("^([^=]+)=")
+      if key and section == "tips-and-tricks-item-name" then names[key] = true end
+      if key and section == "tips-and-tricks-item-description" then descriptions[key] = true end
+    end
+  end
+  locale:close()
+
+  for name in pairs(tips) do
+    assert_true(names[name], "missing English tip name " .. name)
+    assert_true(descriptions[name], "missing English tip description " .. name)
+  end
 end)
 
 test("advanced orbital tips wait for their first relevant research", function()
