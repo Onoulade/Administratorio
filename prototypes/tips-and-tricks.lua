@@ -1,707 +1,211 @@
 -- ADMINISTRATORIO: TIPS AND TRICKS
 -- In-game tutorial entries for the tips-and-tricks pane.
--- Ordered by mod progression: each tip unlocks when the matching mechanic
--- becomes available to the player.
+--
+-- Each major system owns a category instead of contributing to one enormous
+-- Administratorio drawer.  Category titles are real overview tips, and child
+-- entries unlock when the mechanic they explain first becomes available.
 
 local feature_flags = require("feature_flags")
-local simulations = require("prototypes.tips-and-tricks-simulations")
 local working_hours_enabled = feature_flags.working_hours_enabled()
 local space_age_enabled = feature_flags.space_age_enabled()
 
-local function extend_with_simulations(prototypes)
-  for _, prototype in ipairs(prototypes) do
-    if prototype.type == "tips-and-tricks-item" then
-      prototype.simulation = assert(simulations[prototype.name], "missing simulation for " .. prototype.name)
-    end
-  end
-  data:extend(prototypes)
+local function category(name, order)
+  return {
+    type = "tips-and-tricks-item-category",
+    name = name,
+    order = order,
+  }
 end
 
-extend_with_simulations({
-  -- Category
-  {
-    type = "tips-and-tricks-item-category",
-    name = "administratorio",
-    order = "z-a"
-  },
-
-  -- ===== TITLE =====
-
-  -- Welcome (title, unlocked from start)
-  {
+local function tip(name, category_name, order, fields)
+  local prototype = {
     type = "tips-and-tricks-item",
-    name = "administratorio-welcome",
-    category = "administratorio",
-    order = "a",
-    is_title = true,
-    starting_status = "unlocked",
-    indent = 0
-  },
-
-  -- ===== RECIPE PAPERWORK PIPELINE =====
-
-  -- Work Orders & Operating Paperwork
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-work-orders",
-    category = "administratorio",
-    order = "ab",
+    name = name,
+    category = category_name,
+    order = order,
     indent = 1,
-    trigger = {
-      type = "research",
-      technology = "automation"
-    }
-  },
+  }
+  for key, value in pairs(fields or {}) do prototype[key] = value end
+  if prototype.is_title then prototype.indent = 0 end
+  return prototype
+end
 
-  -- Bullshit ore, rubble derivatives, and public finance
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-bullshit-economy",
-    category = "administratorio",
-    order = "ac",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "discovery-bullshit"
-    }
-  },
+local function research_tip(name, category_name, order, technology, fields)
+  fields = fields or {}
+  fields.trigger = {type = "research", technology = technology}
+  return tip(name, category_name, order, fields)
+end
 
-  -- Administrative science replaces military science
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-admin-science",
-    category = "administratorio",
-    order = "ad",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "administrative-science-research"
-    }
-  },
+local foundations = "administratorio-welcome"
+local citizen_services = "administratorio-biter-complaints"
+local workforce = "administratorio-biter-employment"
 
-  -- ===== EARLY-GAME COMPLAINT LOOP (first admin station) =====
-
-  -- Complaints, Office Desk & Taxpayer Money
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-biter-complaints",
-    category = "administratorio",
-    order = "b",
-    indent = 1,
-    trigger = {
-      type = "build-entity",
-      entity = "admin-station"
-    }
-  },
-
-	  -- Frustration, Protests & Bureaucratic Promise
-	  {
-	    type = "tips-and-tricks-item",
-	    name = "administratorio-frustration",
-    category = "administratorio",
-    order = "c",
-    indent = 1,
-    trigger = {
-      type = "build-entity",
-	      entity = "admin-station"
-	    }
-	  },
-	  {
-	    type = "tips-and-tricks-item",
-	    name = "administratorio-complaint-chain",
-	    category = "administratorio",
-	    order = "cb",
-	    indent = 1,
-	    trigger = {
-	      type = "build-entity",
-	      entity = "admin-station"
-	    }
-	  },
-	  
-	   -- ===== FIELD OFFICE (early biter labor) =====
-
-	  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-field-office",
-    category = "administratorio",
-    order = "d",
-    indent = 1,
-    trigger = {
-      type = "build-entity",
-      entity = "field-office"
-    }
-  },
-
-  -- ===== TERRITORY TOOLS =====
-
-  -- Hush Money
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-hush-money",
-    category = "administratorio",
-    order = "e",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "nest-pacification"
-    }
-  },
-
-  -- Eviction Notices
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-nest-expropriation",
-    category = "administratorio",
-    order = "f",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "nest-expropriation"
-    }
-  },
-
-  -- ===== BITER EMPLOYMENT =====
-
-  -- Biter Employment Program
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-biter-employment",
-    category = "administratorio",
-    order = "h",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "biter-employment-office"
-    }
-  },
-
-	  -- Biter Workers & Specialists (covers Formation Center)
-	  {
-	    type = "tips-and-tricks-item",
-	    name = "administratorio-biter-workers",
-    category = "administratorio",
-    order = "i",
-    indent = 1,
-    trigger = {
-      type = "build-entity",
-	      entity = "formation-center"
-	    }
-	  },
-
-  -- Biter Station (covers labor efficiency upgrades)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-biter-station",
-    category = "administratorio",
-    order = "j",
-    indent = 1,
-    trigger = {
-      type = "build-entity",
-      entity = "biter-station"
-    }
-  },
-
-  -- Rideable Biter
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-rideable-biter",
-    category = "administratorio",
-    order = "k",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "rideable-biter"
-    }
-  },
-
-  -- Biterport
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-biterport",
-    category = "administratorio",
-    order = "l",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "biterport-logistics"
-    }
-  },
-
-  -- Field Agent Program (Hired Biter)
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-hired-biter",
-    category = "administratorio",
-    order = "m",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "hired-biter-fieldwork"
-    }
-  },
-
-  -- Propaganda fluids and industrial misinformation
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-propaganda-distillery",
-    category = "administratorio",
-    order = "g",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "industrial-propaganda"
-    }
-  },
-
-  -- Rail arrivals consume integrated transit paperwork
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-transit-authorization",
-    category = "administratorio",
-    order = "ga",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "railway"
-    }
-  },
-
-  -- Instant paperwork transfer through pneumatic networks
-  {
-    type = "tips-and-tricks-item",
-    name = "administratorio-pneumatic-transport",
-    category = "administratorio",
-    order = "ma",
-    indent = 1,
-    trigger = {
-      type = "research",
-      technology = "pneumatic-form-transport"
-    }
-  },
+data:extend({
+  category(foundations, "z-a[administratorio-foundations]"),
+  category(citizen_services, "z-b[administratorio-citizens]"),
+  category(workforce, "z-c[administratorio-workforce]"),
 })
 
--- ===== NIGHT WORK (only if Working Hours feature is enabled) =====
+data:extend({
+  -- Foundations
+  tip("administratorio-welcome", foundations, "a", {
+    is_title = true,
+    starting_status = "unlocked",
+  }),
+  research_tip("administratorio-work-orders", foundations, "b", "automation"),
+  research_tip("administratorio-bullshit-economy", foundations, "c", "discovery-bullshit"),
+  research_tip("administratorio-admin-science", foundations, "d", "administrative-science-research"),
+  research_tip("administratorio-propaganda-distillery", foundations, "e", "industrial-propaganda"),
+  research_tip("administratorio-transit-authorization", foundations, "f", "railway"),
+  research_tip("administratorio-pneumatic-transport", foundations, "g", "pneumatic-form-transport"),
+
+  -- Citizen services and territorial control
+  tip("administratorio-biter-complaints", citizen_services, "a", {
+    is_title = true,
+    trigger = {type = "build-entity", entity = "admin-station"},
+  }),
+  tip("administratorio-frustration", citizen_services, "b", {
+    trigger = {type = "build-entity", entity = "admin-station"},
+  }),
+  tip("administratorio-complaint-chain", citizen_services, "c", {
+    trigger = {type = "build-entity", entity = "admin-station"},
+  }),
+  tip("administratorio-field-office", citizen_services, "d", {
+    trigger = {type = "build-entity", entity = "field-office"},
+  }),
+  research_tip("administratorio-hush-money", citizen_services, "e", "nest-pacification"),
+  research_tip("administratorio-nest-expropriation", citizen_services, "f", "nest-expropriation"),
+
+  -- Workforce and logistics
+  research_tip("administratorio-biter-employment", workforce, "a", "biter-employment-office", {
+    is_title = true,
+  }),
+  tip("administratorio-biter-workers", workforce, "b", {
+    trigger = {type = "build-entity", entity = "formation-center"},
+  }),
+  tip("administratorio-biter-station", workforce, "c", {
+    trigger = {type = "build-entity", entity = "biter-station"},
+  }),
+  research_tip("administratorio-rideable-biter", workforce, "d", "rideable-biter"),
+  research_tip("administratorio-biterport", workforce, "e", "biterport-logistics"),
+  research_tip("administratorio-hired-biter", workforce, "f", "hired-biter-fieldwork"),
+})
 
 if working_hours_enabled then
-  extend_with_simulations({
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-working-hours",
-      category = "administratorio",
-      order = "d-a",
-      indent = 1,
+  data:extend({
+    tip("administratorio-working-hours", foundations, "h", {
       trigger = {
         type = "or",
         triggers = {
-          { type = "build-entity", entity = "office-desk" },
-          { type = "build-entity", entity = "union-headquarters" },
-          { type = "build-entity", entity = "biter-station" },
-          { type = "build-entity", entity = "biterport" },
-        }
-      }
-    },
+          {type = "build-entity", entity = "office-desk"},
+          {type = "build-entity", entity = "union-headquarters"},
+          {type = "build-entity", entity = "field-office"},
+          {type = "build-entity", entity = "biter-station"},
+          {type = "build-entity", entity = "biterport"},
+        },
+      },
+    }),
   })
 end
 
--- ===== SPACE AGE PLANET MANIFESTS =====
-
 if space_age_enabled then
-  local planet_tips = {
-    {name = "administratorio-vulcanus-manifest", order = "n-a", technology = "vulcanus-certification"},
-    {name = "administratorio-gleba-manifest", order = "n-b", technology = "gleba-conciliation"},
-    {name = "administratorio-fulgora-archives", order = "n-c", technology = "archive-recombination"},
-    {name = "administratorio-aquilo-manifest", order = "n-d", technology = "aquilo-fax-network"},
-  }
-  local prototypes_to_add = {}
-  for _, tip in ipairs(planet_tips) do
-    prototypes_to_add[#prototypes_to_add + 1] = {
-      type = "tips-and-tricks-item",
-      name = tip.name,
-      category = "administratorio",
-      order = tip.order,
-      indent = 1,
-      trigger = {type = "research", technology = tip.technology},
-    }
-  end
-  extend_with_simulations(prototypes_to_add)
+  local orbit = "administratorio-workforce-formation-title"
+  local chromatic = "administratorio-chromatic-printing"
+  local vulcanus = "administratorio-vulcanus-certification"
+  local gleba = "administratorio-gleba-conciliation"
+  local interplanetary = "administratorio-cross-planet-bureaucracy"
+  local fulgora = "administratorio-fulgora-digital-services"
+  local aquilo = "administratorio-aquilo-fax-network"
 
-  -- ===== WORKFORCE FORMATION & ORBITAL OPERATIONS =====
+  data:extend({
+    category(orbit, "z-d[administratorio-orbit]"),
+    category(chromatic, "z-e[administratorio-chromatic]"),
+    category(vulcanus, "z-f[administratorio-vulcanus]"),
+    category(gleba, "z-g[administratorio-gleba]"),
+    category(interplanetary, "z-h[administratorio-interplanetary]"),
+    category(fulgora, "z-i[administratorio-fulgora]"),
+    category(aquilo, "z-j[administratorio-aquilo]"),
+  })
 
-  extend_with_simulations({
-    -- Workforce Formation (title section)
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-workforce-formation-title",
-      category = "administratorio",
-      order = "o",
+  data:extend({
+    -- Space Age changes the desk-to-worker conversion before the dedicated
+    -- orbital category is relevant, so keep this beside the core hiring tips.
+    research_tip("administratorio-space-age-enrollment", workforce, "g", "worker-formation"),
+
+    -- Orbital administration
+    research_tip("administratorio-workforce-formation-title", orbit, "a", "space-platform", {
       is_title = true,
-      indent = 0,
-      trigger = {type = "research", technology = "worker-formation"},
-    },
+    }),
+    research_tip("administratorio-offworld-economy", orbit, "b", "space-platform"),
+    research_tip("administratorio-orbital-infrastructure-permit", orbit, "c", "space-platform"),
+    research_tip("administratorio-workforce-formation", orbit, "d", "worker-formation"),
+    research_tip("administratorio-management-briefings", orbit, "e", "management-formation"),
+    research_tip("administratorio-orbital-specialists", orbit, "f", "specialized-formation"),
+    research_tip("administratorio-administrative-space-station", orbit, "g", "orbital-employment-infrastructure"),
+    research_tip("administratorio-trajectory-compliance-arrays", orbit, "h", "orbital-employment-infrastructure"),
+    research_tip("administratorio-senior-trajectory-compliance-array", orbit, "i", "trajectory-compliance-jurisdiction-2"),
+    research_tip("administratorio-executive-trajectory-compliance-array", orbit, "j", "trajectory-compliance-jurisdiction-3"),
+    research_tip("administratorio-trajectory-compliance-speed", orbit, "k", "trajectory-compliance-speed-1"),
+    research_tip("administratorio-orbital-employment-cannon", orbit, "l", "orbital-employment-infrastructure"),
+    research_tip("administratorio-orbital-employment-damage", orbit, "m", "orbital-employment-damage-1"),
+    research_tip("administratorio-orbital-employment-capacity", orbit, "n", "orbital-employment-capacity-1"),
 
-    -- Workforce Formation overview
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-workforce-formation",
-      category = "administratorio",
-      order = "oa",
-      indent = 1,
-      trigger = {type = "research", technology = "worker-formation"},
-    },
-
-    -- Formation Center (covered by existing tip "administratorio-biter-workers" but we add orbital-specific note)
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-orbital-specialists",
-      category = "administratorio",
-      order = "ob",
-      indent = 1,
-      trigger = {type = "research", technology = "worker-formation"},
-    },
-
-    -- Trajectory Compliance Arrays
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-trajectory-compliance-arrays",
-      category = "administratorio",
-      order = "oc",
-      indent = 1,
-      trigger = {type = "research", technology = "orbital-employment-infrastructure"},
-    },
-
-    -- Senior Trajectory Compliance Array
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-senior-trajectory-compliance-array",
-      category = "administratorio",
-      order = "oc2",
-      indent = 1,
-      trigger = {type = "research", technology = "trajectory-compliance-jurisdiction-2"},
-    },
-
-    -- Executive Trajectory Compliance Array
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-executive-trajectory-compliance-array",
-      category = "administratorio",
-      order = "oc3",
-      indent = 1,
-      trigger = {type = "research", technology = "trajectory-compliance-jurisdiction-3"},
-    },
-
-    -- Orbital Employment Cannon & VESM
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-orbital-employment-cannon",
-      category = "administratorio",
-      order = "od",
-      indent = 1,
-      trigger = {type = "research", technology = "orbital-employment-infrastructure"},
-    },
-
-    -- Orbital Employment Damage upgrades
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-orbital-employment-damage",
-      category = "administratorio",
-      order = "oe",
-      indent = 1,
-      trigger = {type = "research", technology = "orbital-employment-damage-1"},
-    },
-
-    -- Orbital Employment Capacity upgrades
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-orbital-employment-capacity",
-      category = "administratorio",
-      order = "of",
-      indent = 1,
-      trigger = {type = "research", technology = "orbital-employment-capacity-1"},
-    },
-
-    -- Administrative Space Station
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-administrative-space-station",
-      category = "administratorio",
-      order = "og",
-      indent = 1,
-      trigger = {type = "research", technology = "orbital-employment-infrastructure"},
-    },
-
-    -- Orbital Infrastructure Permit
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-orbital-infrastructure-permit",
-      category = "administratorio",
-      order = "oh",
-      indent = 1,
-      trigger = {type = "research", technology = "space-platform"},
-    },
-
-    -- Trajectory Compliance Speed upgrades
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-trajectory-compliance-speed",
-      category = "administratorio",
-      order = "oi",
-      indent = 1,
-      trigger = {type = "research", technology = "trajectory-compliance-speed-1"},
-    },
-
-    -- ===== CHROMATIC PRINTING =====
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-chromatic-printing",
-      category = "administratorio",
-      order = "p",
+    -- Chromatic printing
+    research_tip("administratorio-chromatic-printing", chromatic, "a", "chromatic-printing", {
       is_title = true,
-      indent = 0,
-      trigger = {type = "research", technology = "chromatic-printing"},
-    },
+    }),
+    research_tip("administratorio-chromatic-printer", chromatic, "b", "chromatic-printing"),
+    research_tip("administratorio-chromatic-inks", chromatic, "c", "chromatic-printing"),
+    research_tip("administratorio-multicolor-forms", chromatic, "d", "cyan-yellow-bureaucracy"),
 
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-chromatic-printer",
-      category = "administratorio",
-      order = "pa",
-      indent = 1,
-      trigger = {type = "research", technology = "chromatic-printing"},
-    },
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-chromatic-inks",
-      category = "administratorio",
-      order = "pb",
-      indent = 1,
-      trigger = {type = "research", technology = "chromatic-printing"},
-    },
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-multicolor-forms",
-      category = "administratorio",
-      order = "pc",
-      indent = 1,
-      trigger = {type = "research", technology = "chromatic-printing"},
-    },
-
-    -- ===== VULCANUS CERTIFICATION =====
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-vulcanus-certification",
-      category = "administratorio",
-      order = "q",
+    -- Vulcanus
+    research_tip("administratorio-vulcanus-certification", vulcanus, "a", "vulcanus-certification", {
       is_title = true,
-      indent = 0,
-      trigger = {type = "research", technology = "vulcanus-certification"},
-    },
+    }),
+    research_tip("administratorio-vulcanus-manifest", vulcanus, "b", "vulcanus-certification"),
+    research_tip("administratorio-notary-office", vulcanus, "c", "vulcanus-certification"),
+    research_tip("administratorio-territorial-arbitration", vulcanus, "d", "vulcanus-certification"),
+    research_tip("administratorio-vulcanus-export-charters", vulcanus, "e", "vulcanus-export-charters"),
 
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-notary-office",
-      category = "administratorio",
-      order = "qa",
-      indent = 1,
-      trigger = {type = "research", technology = "vulcanus-certification"},
-    },
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-territorial-arbitration",
-      category = "administratorio",
-      order = "qb",
-      indent = 1,
-      trigger = {type = "research", technology = "vulcanus-certification"},
-    },
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-vulcanus-export-charters",
-      category = "administratorio",
-      order = "qc",
-      indent = 1,
-      trigger = {type = "research", technology = "vulcanus-export-charters"},
-    },
-
-    -- ===== GLEBA CONCILIATION =====
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-gleba-conciliation",
-      category = "administratorio",
-      order = "r",
+    -- Gleba
+    research_tip("administratorio-gleba-conciliation", gleba, "a", "gleba-conciliation", {
       is_title = true,
-      indent = 0,
-      trigger = {type = "research", technology = "gleba-conciliation"},
-    },
+    }),
+    research_tip("administratorio-gleba-manifest", gleba, "b", "gleba-conciliation"),
+    research_tip("administratorio-yellow-paperwork-spoilage", gleba, "c", "gleba-conciliation"),
+    research_tip("administratorio-conciliation-desk", gleba, "d", "gleba-conciliation"),
+    research_tip("administratorio-capture-bureau", gleba, "e", "gleba-conciliation"),
+    research_tip("administratorio-pentapod-bargaining", gleba, "f", "gleba-pentapod-formations"),
 
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-conciliation-desk",
-      category = "administratorio",
-      order = "ra",
-      indent = 1,
-      trigger = {type = "research", technology = "gleba-conciliation"},
-    },
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-capture-bureau",
-      category = "administratorio",
-      order = "rb",
-      indent = 1,
-      trigger = {type = "research", technology = "gleba-conciliation"},
-    },
-
-    -- ===== INTERPLANETARY BUREAUCRACY (CROSS-PLANET) =====
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-cross-planet-bureaucracy",
-      category = "administratorio",
-      order = "s",
+    -- Cross-planet paperwork and tourism
+    research_tip("administratorio-cross-planet-bureaucracy", interplanetary, "a", "cyan-yellow-bureaucracy", {
       is_title = true,
-      indent = 0,
-      trigger = {type = "research", technology = "cyan-yellow-bureaucracy"},
-    },
+    }),
+    research_tip("administratorio-cyan-yellow-bureaucracy", interplanetary, "b", "cyan-yellow-bureaucracy"),
+    research_tip("administratorio-space-tourism", interplanetary, "c", "cyan-yellow-bureaucracy"),
+    research_tip("administratorio-cyan-magenta-bureaucracy", interplanetary, "d", "cyan-magenta-bureaucracy"),
+    research_tip("administratorio-yellow-magenta-bureaucracy", interplanetary, "e", "yellow-magenta-bureaucracy"),
 
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-cyan-yellow-bureaucracy",
-      category = "administratorio",
-      order = "sa",
-      indent = 1,
-      trigger = {type = "research", technology = "cyan-yellow-bureaucracy"},
-    },
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-cyan-magenta-bureaucracy",
-      category = "administratorio",
-      order = "sb",
-      indent = 1,
-      trigger = {type = "research", technology = "cyan-magenta-bureaucracy"},
-    },
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-yellow-magenta-bureaucracy",
-      category = "administratorio",
-      order = "sc",
-      indent = 1,
-      trigger = {type = "research", technology = "yellow-magenta-bureaucracy"},
-    },
-
-    -- ===== FULGORA DIGITAL SERVICES =====
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-fulgora-digital-services",
-      category = "administratorio",
-      order = "t",
+    -- Fulgora
+    research_tip("administratorio-fulgora-digital-services", fulgora, "a", "fulgora-digital-services", {
       is_title = true,
-      indent = 0,
-      trigger = {type = "research", technology = "fulgora-digital-services"},
-    },
+    }),
+    research_tip("administratorio-fulgora-archives", fulgora, "b", "archive-recombination"),
+    research_tip("administratorio-digital-services-bureau", fulgora, "c", "fulgora-digital-services"),
+    research_tip("administratorio-archive-recombination", fulgora, "d", "archive-recombination"),
 
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-digital-services-bureau",
-      category = "administratorio",
-      order = "ta",
-      indent = 1,
-      trigger = {type = "research", technology = "fulgora-digital-services"},
-    },
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-archive-recombination",
-      category = "administratorio",
-      order = "tb",
-      indent = 1,
-      trigger = {type = "research", technology = "archive-recombination"},
-    },
-
-    -- ===== AQUILO FAX NETWORK =====
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-aquilo-fax-network",
-      category = "administratorio",
-      order = "u",
+    -- Aquilo, faxing, and the administrative endgame
+    research_tip("administratorio-aquilo-fax-network", aquilo, "a", "aquilo-fax-network", {
       is_title = true,
-      indent = 0,
-      trigger = {type = "research", technology = "aquilo-fax-network"},
-    },
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-fax-emitter",
-      category = "administratorio",
-      order = "ua",
-      indent = 1,
-      trigger = {type = "research", technology = "aquilo-fax-network"},
-    },
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-interplanetary-fax-exchange",
-      category = "administratorio",
-      order = "ub",
-      indent = 1,
-      trigger = {type = "research", technology = "aquilo-fax-network"},
-    },
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-laser-printer",
-      category = "administratorio",
-      order = "uc",
-      indent = 1,
-      trigger = {type = "research", technology = "aquilo-fax-network"},
-    },
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-color-faxing",
-      category = "administratorio",
-      order = "ud",
-      indent = 1,
-      trigger = {type = "research", technology = "color-faxing"},
-    },
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-fax-queue-capacity",
-      category = "administratorio",
-      order = "ue",
-      indent = 1,
-      trigger = {type = "research", technology = "fax-queue-capacity-1"},
-    },
-
-    -- ===== BUREAUCRATIC TRANSCENDENCE =====
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-bureaucratic-transcendence",
-      category = "administratorio",
-      order = "v",
-      is_title = true,
-      indent = 0,
-      trigger = {type = "research", technology = "bureaucratic-transcendence"},
-    },
-
-    {
-      type = "tips-and-tricks-item",
-      name = "administratorio-public-train-stop",
-      category = "administratorio",
-      order = "va",
-      indent = 1,
-      trigger = {type = "research", technology = "bureaucratic-transcendence"},
-    },
+    }),
+    research_tip("administratorio-aquilo-manifest", aquilo, "b", "aquilo-fax-network"),
+    research_tip("administratorio-laser-printer", aquilo, "c", "aquilo-fax-network"),
+    research_tip("administratorio-fax-emitter", aquilo, "d", "aquilo-fax-network"),
+    research_tip("administratorio-interplanetary-fax-exchange", aquilo, "e", "aquilo-fax-network"),
+    research_tip("administratorio-color-faxing", aquilo, "f", "color-faxing"),
+    research_tip("administratorio-fax-queue-capacity", aquilo, "g", "fax-queue-capacity-1"),
+    research_tip("administratorio-promethium-administration", aquilo, "h", "promethium-science-pack"),
+    research_tip("administratorio-bureaucratic-transcendence", aquilo, "i", "bureaucratic-transcendence"),
+    research_tip("administratorio-public-train-stop", aquilo, "j", "bureaucratic-transcendence"),
   })
 end
