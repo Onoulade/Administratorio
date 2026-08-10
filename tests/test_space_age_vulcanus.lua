@@ -687,7 +687,7 @@ end)
 
 test("licensed notary training is specialized but stays Nauvis-only", function()
   local formation = assert(data.raw.recipe["licensed-notary-formation"], "licensed-notary-formation missing")
-  local specialized = assert(data.raw.technology["specialized-formation"], "specialized-formation missing")
+  local certification = assert(data.raw.technology["vulcanus-certification"], "vulcanus-certification missing")
   local metallurgy = assert(data.raw.technology["metallurgic-science-pack"], "metallurgic-science-pack missing")
   local export_charters = assert(data.raw.technology["vulcanus-export-charters"], "vulcanus-export-charters missing")
 
@@ -696,10 +696,10 @@ test("licensed notary training is specialized but stays Nauvis-only", function()
   assert_eq(formation.surface_conditions[1].min, 1000, "licensed-notary-formation should target Nauvis pressure")
   assert_eq(formation.surface_conditions[2].min, 10, "licensed-notary-formation should target Nauvis gravity")
 
-  local specialized_unlocks = {}
-  for _, effect in ipairs(specialized.effects or {}) do
+  local certification_unlocks = {}
+  for _, effect in ipairs(certification.effects or {}) do
     if effect.type == "unlock-recipe" then
-      specialized_unlocks[effect.recipe] = true
+      certification_unlocks[effect.recipe] = true
     end
   end
   local metallurgy_unlocks = {}
@@ -715,7 +715,8 @@ test("licensed notary training is specialized but stays Nauvis-only", function()
     end
   end
 
-  assert_true(specialized_unlocks["licensed-notary-formation"], "specialized-formation should unlock licensed-notary-formation")
+  assert_true(certification_unlocks["licensed-notary-formation"],
+    "Vulcanus certification should unlock the notary needed for the first foundry")
   assert_true(not metallurgy_unlocks["licensed-notary-formation"],
     "metallurgic-science-pack should not unlock licensed-notary-formation")
   assert_true(export_unlocks["offworld-metallurgy-charter"], "vulcanus-export-charters should unlock offworld-metallurgy-charter")
@@ -733,7 +734,6 @@ test("gleba ingredient routes are surface-limited and keep the yellow family com
     "conciliation-order",
     "management-approval-written-gleba",
     "composted-rubble-recovery-gleba",
-    "conciliation-officer-formation-gleba",
   }
 
   for _, recipe_name in ipairs(required) do
@@ -828,8 +828,8 @@ test("aquilo fax and multicolor paperwork stay on Aquilo", function()
     assert_eq(recipe.surface_conditions[2].min, 15, recipe_name .. " should target Aquilo gravity")
   end
 
-  assert_eq(data.raw.recipe["transfer-emulsion-production"].category, "cryogenics",
-    "transfer-emulsion should be cryogenic chemistry")
+  assert_eq(data.raw.recipe["transfer-emulsion-production"].category, "chemistry-or-cryogenics",
+    "transfer-emulsion should be chemical-plant compatible before the first cryogenic plant")
   assert_eq(data.raw.recipe["composite-chroma-ribbon-production"].category, "printing-multicolor",
     "composite-chroma-ribbon should be laser-printer multicolor work")
   assert_eq(data.raw.recipe["cryogenic-operations-license-production"].category, "printing-multicolor",

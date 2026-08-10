@@ -202,17 +202,21 @@ test("orbital tips unlock with the feature they explain", function()
     "orbital specialists should unlock from specialized-formation"
   )
 
-  local orbital_tips = {
+  local compliance_tips = {
     "administratorio-trajectory-compliance-arrays",
     "administratorio-orbital-employment-cannon",
-    "administratorio-administrative-space-station",
   }
-  for _, name in ipairs(orbital_tips) do
+  for _, name in ipairs(compliance_tips) do
     assert_true(
-      trigger_contains(tip(name).trigger, "research", "technology", "orbital-employment-infrastructure"),
-      name .. " should unlock from orbital-employment-infrastructure"
+      trigger_contains(tip(name).trigger, "research", "technology", "orbital-compliance-systems"),
+      name .. " should unlock from orbital-compliance-systems"
     )
   end
+  assert_true(
+    trigger_contains(tip("administratorio-administrative-space-station").trigger,
+      "research", "technology", "orbital-employment-infrastructure"),
+    "the administrative station should unlock from orbital-employment-infrastructure"
+  )
 
   local permit = tip("administratorio-orbital-infrastructure-permit")
   assert_true(
@@ -227,7 +231,7 @@ test("previously undocumented Space Age mechanics have dedicated tips", function
     ["administratorio-offworld-economy"] = "space-platform",
     ["administratorio-management-briefings"] = "management-formation",
     ["administratorio-yellow-paperwork-spoilage"] = "gleba-conciliation",
-    ["administratorio-pentapod-bargaining"] = "gleba-pentapod-formations",
+    ["administratorio-pentapod-bargaining"] = "gleba-conciliation",
     ["administratorio-space-tourism"] = "cyan-yellow-bureaucracy",
     ["administratorio-promethium-administration"] = "promethium-science-pack",
   }

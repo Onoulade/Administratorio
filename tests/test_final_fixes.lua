@@ -1125,6 +1125,22 @@ recipes["promethium-science-pack"] = {
   },
 }
 
+recipes["space-science-pack"] = {
+  type = "recipe",
+  name = "space-science-pack",
+  category = "orbital-bureaucracy",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "iron-plate", amount = 2 },
+    { type = "item", name = "carbon", amount = 1 },
+    { type = "item", name = "ice", amount = 1 },
+    { type = "item", name = "research-grant-approval", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "space-science-pack", amount = 5 },
+  },
+}
+
 -- Deliberately invalid input fixture: final-fixes must preserve the material
 -- ingredients while removing every science pack from both difficulty levels.
 recipes["science-pack-smuggling"] = {
@@ -1737,6 +1753,20 @@ test("science packs are research-only and never recipe ingredients", function()
     "expensive material ingredients should survive science-pack cleanup")
   assert_true((get_result_amount(get_recipe("promethium-science-pack"), "promethium-science-pack") or 0) > 0,
     "science-pack production outputs should remain intact")
+end)
+
+test("native space science uses one imported research approval per five-pack batch", function()
+  local recipe = assert(get_recipe("space-science-pack"), "native space-science-pack recipe missing")
+  assert_true(has_ingredient(recipe, "research-grant-approval"),
+    "native space science should consume the ordinary imported grant")
+  assert_eq(get_ingredient_amount(recipe, "research-grant-approval"), 1,
+    "one ordinary research approval should authorize each batch")
+  assert_true(not has_ingredient(recipe, "research-grant-work-order"),
+    "space science should use the portable approval rather than assembler paperwork")
+  assert_eq(get_result_amount(recipe, "space-science-pack"), 5,
+    "the native Space Age science output should remain unchanged")
+  assert_true(get_recipe("space-science-pack-regulated") == nil,
+    "orbital space science should not receive a hidden regulated duplicate")
 end)
 
 test("orbital administration weapons survive the military hiding pass", function()
@@ -2368,7 +2398,7 @@ test("admin building recipes redirect Factoriopedia to regulated copies", functi
   assert_true(not regulated.hidden_in_factoriopedia, "printer-t1-regulated should remain visible in Factoriopedia")
 end)
 
-test("Factoriopedia recipe renames have prototype migrations", function()
+test("Factoriopedia recipe renames are covered by profile-independent prototype migrations", function()
   local migration_path = mod_root .. "migrations/0.5.12-factoriopedia-recipe-renames.json"
   local migration_file = assert(io.open(migration_path, "r"))
   local migration_text = migration_file:read("*a")
@@ -2393,14 +2423,24 @@ test("Factoriopedia recipe renames have prototype migrations", function()
   local migrated_count = 0
   for old_name, new_name in pairs(migrated_recipe_renames) do
     migrated_count = migrated_count + 1
-    assert_eq(
-      generated_recipe_renames[old_name],
-      new_name,
-      old_name .. " migration should correspond to a generated recipe rename"
-    )
+    local active_rename = generated_recipe_renames[old_name]
+    if active_rename ~= nil then
+      assert_eq(
+        active_rename,
+        new_name,
+        old_name .. " migration should correspond to its active generated recipe rename"
+      )
+    else
+      assert_eq(
+        get_recipe(old_name),
+        nil,
+        old_name .. " may be absent from the generated map only when this feature profile omits it"
+      )
+    end
   end
 
-  assert_eq(migrated_count, generated_count, "recipe migration count should match generated rename count")
+  assert_true(migrated_count >= generated_count,
+    "the profile-independent migration should cover every active rename")
   assert_eq(migrated_recipe_renames["charcoal-production"], "coal", "coal recipe rename must be migrated")
 end)
 

@@ -124,7 +124,7 @@ On Gleba, yellow forms are cheap and locally produced (but perishable). Off-worl
 
 ### 10. Buildings require workers but no operating paperwork
 
-Both `Capture Bureau` and `Conciliation Desk` require a `conciliation-officer` worker to craft but no operating paperwork. Current implementation makes the Nauvis workforce seed portable: once the player has worker/trainee stock, a Formation Center, and agricultural science, `conciliation-officer-formation` can happen anywhere rather than requiring a return trip to Nauvis.
+Both `Capture Bureau` and `Conciliation Desk` require a `conciliation-officer` worker to craft but no operating paperwork. The profession is unlocked by pre-agricultural `gleba-conciliation` but remains Nauvis-only, like every other biter profession. Players bring finished officers while reusable MMMMs can be re-briefed cheaply on Gleba.
 
 ### 11. Tax evasion applies — no taxpayer money
 
@@ -138,7 +138,7 @@ native-machine and launch recipes consume:
 - Amber Sap Processing unlocks local bullshit ore after the first seep is pumped; the canonical smelting recipe then turns that ore into dubious data.
 - `provisional-approval-cultivation-gleba` remains a slow bootstrap input.
 - `composted-rubble-recovery-gleba` supplies the filler needed by the canonical environmental paperwork chain.
-- `conciliation-officer-formation-gleba` trains the native specialist from a symbiosis record instead of the generic political-excuse chain.
+- `gleba-conciliation` unlocks the Nauvis officer formation before the Biochamber and agricultural science that consume the resulting specialist and eggs.
 - The single `government-grant` for a silo remains an import. `management-approval-written-gleba` is the sole executive-paperwork exception because 100 rocket parts consume approvals in bulk; the slow biological route avoids a twenty-document import haul.
 
 Gleba does not cultivate credentials, justifications, excuses, refined

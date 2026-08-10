@@ -35,7 +35,7 @@ Resolve a complaint with a **Job Offer** waiting in the desk, and the biter pick
 
 From there, the workforce branches out:
 
-- **Formation Center** — the only building that can train biters into specialists and conduct managerial briefings. Space Age meetings consume five MMMMs, Taxpayer Money, Liquid Coffee, and one thematic training material over 30 unmodified seconds; the five resulting briefed managers spoil back into regular MMMMs after three minutes.
+- **Formation Center** — the only building that can form biters into professions and conduct managerial briefings. Space Age profession formation is Nauvis-only, while a briefing can run on any planet for one reusable MMMM, one thematic material, and 5 Liquid Coffee with no Taxpayer Money; the briefed manager spoils back into a regular MMMM after three minutes.
 - **Biter Employment Office** — dispatches workers to nearby managed machines, one authorized craft per visit. Breakrooms, Union HQs, Propaganda Distilleries, oil refineries, centrifuges, and the industrial printer all run on biter visits. Which means the biters are now upstream of your own paperwork supply.
 - **Biterport** — a roboport, but staffed by walking biters instead of flying robots. Progress.
 - **Rideable Biter** — personal transport that runs on Taxpayer Money, available well before the vanilla car. Cannot be picked back up once placed, because the assignment is permanent by design. Run out of funding for 10 minutes and it reverts to a regular biter and files a complaint about you. Which is fair.
