@@ -395,6 +395,15 @@ end
 local factoriopedia_recipe_renames = factoriopedia_merge.build_recipe_rename_map(data.raw, shared)
 factoriopedia_merge.apply_recipe_renames(data.raw, shared, factoriopedia_recipe_renames)
 
+-- This alternate recipe is declared before the canonical batch receives the
+-- product's name. Link it only after the rename succeeds so Factorio never sees
+-- a dangling RecipeID during prototype validation.
+local compacted_rubble_electric = data.raw.recipe["compacted-rubble-electric"]
+if compacted_rubble_electric then
+  compacted_rubble_electric.factoriopedia_alternative =
+    data.raw.recipe["compacted-rubble"] and "compacted-rubble" or nil
+end
+
 -------------------------------------------------------------------------------
 -- 5a. BUILD RED-SCIENCE-ONLY RECIPE SET
 -- Scan all technologies to determine which recipes are unlocked by red science

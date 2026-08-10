@@ -1,4 +1,22 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.13
+Date: 2026-08-09
+  Bugfixes:
+    - defer compacted rubble Factoriopedia link
+---------------------------------------------------------------------------------------------------
+Version: 0.5.12
+Date: 2026-08-09
+  Bugfixes:
+    - defer electric rubble's Factoriopedia link until its canonical recipe exists
+    - order recipe rename for 0.5.12
+    - allow certificate-free electric rubble compaction
+    - stabilize canonical names with quality
+    - optimize routing and breach recovery
+    - preserve renamed recipe state
+  Changes:
+    - Merge branch 'main' of https://github.com/Onoulade/Administratorio
+    - Validate science technology unlocks generically
+---------------------------------------------------------------------------------------------------
 Version: 0.5.11
 Date: 2026-07-30
   Changes:

@@ -89,10 +89,12 @@ function merge.build_recipe_rename_map(data_raw, shared)
     -- Counting them here makes recipe identities depend on whether Quality is
     -- enabled, which in turn removes recipes from existing saves.
     local is_recycling_recipe = recipe_name:match("%-recycling$") ~= nil
-    -- Recipes that explicitly redirect Factoriopedia are also alternate
+    -- Recipes that explicitly redirect or hide from Factoriopedia are alternate
     -- production paths. They must not prevent the primary recipe from taking
-    -- the product's canonical name.
+    -- the product's canonical name. A hidden recipe can receive its alternative
+    -- only after that canonical recipe has been created.
     local is_factoriopedia_alternative = recipe.factoriopedia_alternative ~= nil
+      or recipe.hidden_in_factoriopedia == true
     if not is_recycling_recipe
       and not is_factoriopedia_alternative
       and (shared.is_admin_recipe(recipe_name) or EXTRA_ALLOWED_RECIPES[recipe_name]) then
