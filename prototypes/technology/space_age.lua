@@ -37,7 +37,9 @@ end
 data:extend({
   -- ============================================================
   -- TIER 0: CHROMATIC LANDING PREP (pre-planet, Nauvis research)
-  -- Unlocks the chromatic printer and basic ink/form infrastructure
+  -- Unlocks only the shared printer. Each colored chain belongs to the planet
+  -- that supplies its pigment and is deliberately bootstrapped before that
+  -- planet's science pack.
   -- ============================================================
   {
     type = "technology",
@@ -47,8 +49,6 @@ data:extend({
     effects = {
       {type = "unlock-recipe", recipe = "chromatic-printer"},
       {type = "unlock-recipe", recipe = "liquid-black-ink"},
-      {type = "unlock-recipe", recipe = "heatproof-form-stock"},
-      {type = "unlock-recipe", recipe = "blank-cyan-form-production"},
     },
     prerequisites = {"industrial-printing", "executive-review", "production-science-pack"},
     unit = {
@@ -66,8 +66,9 @@ data:extend({
   },
 
   -- ============================================================
-  -- TIER 1: VULCANUS CERTIFICATION (cyan/magenta bureaucracy)
-  -- Requires chromatic printing + metallurgic science
+  -- TIER 1: VULCANUS CERTIFICATION BOOTSTRAP
+  -- The notary is required to build the first foundry, so certification must
+  -- be completed with pre-planet science after the local cyan process exists.
   -- ============================================================
   {
     type = "technology",
@@ -77,19 +78,22 @@ data:extend({
     effects = {
       {type = "unlock-recipe", recipe = "notary-office"},
       {type = "unlock-recipe", recipe = "territorial-arbitration-post"},
+      {type = "unlock-recipe", recipe = "licensed-notary-formation"},
       {type = "unlock-recipe", recipe = "embossed-seal"},
       {type = "unlock-recipe", recipe = "industrial-charter"},
       {type = "unlock-recipe", recipe = "territorial-resettlement-order"},
       {type = "unlock-recipe", recipe = "vulcanus-lie-distillation"},
     },
-    prerequisites = {"chromatic-printing", "metallurgic-science-pack"},
+    prerequisites = {"cyan-ink-production", "tungsten-carbide", "management-formation"},
     unit = {
       count = 260,
       ingredients = {
         {"automation-science-pack", 1},
         {"logistic-science-pack", 1},
         {"chemical-science-pack", 1},
-        {"metallurgic-science-pack", 1},
+        {"production-science-pack", 1},
+        {"utility-science-pack", 1},
+        {"space-science-pack", 1},
         {"administrative-science-pack", 1},
       },
       time = 45,
@@ -106,8 +110,11 @@ data:extend({
       {type = "unlock-recipe", recipe = "thermal-process-license"},
       {type = "unlock-recipe", recipe = "calcite-reagent-waiver"},
       {type = "unlock-recipe", recipe = "offworld-metallurgy-charter"},
+      {type = "unlock-recipe", recipe = "thermal-process-license-orbital"},
+      {type = "unlock-recipe", recipe = "calcite-reagent-waiver-orbital"},
+      {type = "unlock-recipe", recipe = "offworld-metallurgy-charter-orbital"},
     },
-    prerequisites = {"vulcanus-certification"},
+    prerequisites = {"vulcanus-certification", "metallurgic-science-pack"},
     unit = {
       count = 320,
       ingredients = {
@@ -123,7 +130,10 @@ data:extend({
   },
 
   -- ============================================================
-  -- TIER 1b: CYAN/MAGENTA INK & FORMS (Vulcanus-specific printing)
+  -- TIER 1b: VULCANUS CYAN BOOTSTRAP
+  -- Mining the local pigment unlocks everything needed to certify tungsten.
+  -- This must precede metallurgic science because tungsten-consuming recipes
+  -- receive a cyan-form gate during final fixes.
   -- ============================================================
   {
     type = "technology",
@@ -133,23 +143,15 @@ data:extend({
     effects = {
       {type = "unlock-recipe", recipe = "cyan-slurry-production"},
       {type = "unlock-recipe", recipe = "cyan-ink-production"},
-      {type = "unlock-recipe", recipe = "magenta-ink-production"},
-      {type = "unlock-recipe", recipe = "signal-form-stock"},
-      {type = "unlock-recipe", recipe = "blank-magenta-form-production"},
+      {type = "unlock-recipe", recipe = "heatproof-form-stock"},
+      {type = "unlock-recipe", recipe = "blank-cyan-form-production"},
       {type = "unlock-recipe", recipe = "permit-draft"},
       {type = "unlock-recipe", recipe = "inspection-docket"},
     },
-    prerequisites = {"chromatic-printing", "metallurgic-science-pack"},
-    unit = {
-      count = 180,
-      ingredients = {
-        {"automation-science-pack", 1},
-        {"logistic-science-pack", 1},
-        {"chemical-science-pack", 1},
-        {"metallurgic-science-pack", 1},
-        {"administrative-science-pack", 1},
-      },
-      time = 40,
+    prerequisites = {"planet-discovery-vulcanus"},
+    research_trigger = {
+      type = "mine-entity",
+      entity = "verdigris-crust",
     },
     order = "h-b3",
   },
@@ -179,7 +181,9 @@ data:extend({
   },
 
   -- ============================================================
-  -- TIER 2a: GLEBA CONCILIATION (yellow bureaucracy, agricultural science)
+  -- TIER 2a: GLEBA CONCILIATION BOOTSTRAP
+  -- Capture Bureau egg harvesting, its lure, and its specialist must all exist
+  -- before agricultural science, whose recipe consumes pentapod eggs.
   -- ============================================================
   {
     type = "technology",
@@ -188,7 +192,9 @@ data:extend({
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "capture-bureau"},
+      {type = "unlock-recipe", recipe = "capture-bureau-pentapod-eggs"},
       {type = "unlock-recipe", recipe = "conciliation-desk"},
+      {type = "unlock-recipe", recipe = "conciliation-officer-formation"},
       {type = "unlock-recipe", recipe = "yellow-ink-production"},
       {type = "unlock-recipe", recipe = "hostile-spore-culture-production"},
       {type = "unlock-recipe", recipe = "oviposition-lure-spores-production"},
@@ -199,45 +205,57 @@ data:extend({
       {type = "unlock-recipe", recipe = "management-approval-written-gleba"},
       {type = "unlock-recipe", recipe = "composted-rubble-recovery-gleba"},
     },
-    prerequisites = {"amber-sap-processing", "executive-review", "agricultural-science-pack"},
-    research_trigger = {
-      type = "craft-item",
-      item = "pentapod-egg",
-      count = 10,
+    prerequisites = {"amber-sap-processing", "management-formation"},
+    unit = {
+      count = 220,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"production-science-pack", 1},
+        {"utility-science-pack", 1},
+        {"space-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 45,
     },
     order = "h-c",
   },
 
   -- ============================================================
-  -- TIER 2b: GLEBA PENTAPOD FORMATIONS (requires gleba-conciliation)
+  -- TIER 3a: FULGORA MAGENTA BOOTSTRAP
+  -- Scrap yields the first charged toner. The resulting magenta form must be
+  -- available before holmium infrastructure and electromagnetic science.
   -- ============================================================
   {
     type = "technology",
-    name = "gleba-pentapod-formations",
-    icon = "__administratorio__/graphics/icons/symbiosis-record.png",
+    name = "fulgora-salvage-administration",
+    icon = "__administratorio__/graphics/icons/blank-magenta-form.png",
     icon_size = 64,
     effects = {
-      {type = "unlock-recipe", recipe = "capture-bureau-pentapod-eggs"},
-      {type = "unlock-recipe", recipe = "conciliation-officer-formation-gleba"},
+      {type = "unlock-recipe", recipe = "charged-toner"},
+      {type = "unlock-recipe", recipe = "archive-rubble-recovery"},
+      {type = "unlock-recipe", recipe = "archive-documentation-recovery"},
+      {type = "unlock-recipe", recipe = "magenta-ink-production"},
+      {type = "unlock-recipe", recipe = "signal-form-stock"},
+      {type = "unlock-recipe", recipe = "blank-magenta-form-production"},
+      {type = "unlock-recipe", recipe = "archive-recovery-permit"},
+      {type = "unlock-recipe", recipe = "ink-recovery-fulgora"},
+      {type = "unlock-recipe", recipe = "salvaged-data-analysis-fulgora"},
+      {type = "unlock-recipe", recipe = "carbon-offset-certificate-basic-fulgora"},
+      {type = "unlock-recipe", recipe = "relay-clerk-formation"},
     },
-    prerequisites = {"gleba-conciliation", "worker-formation"},
-    unit = {
-      count = 200,
-      ingredients = {
-        {"automation-science-pack", 1},
-        {"logistic-science-pack", 1},
-        {"chemical-science-pack", 1},
-        {"agricultural-science-pack", 1},
-        {"administrative-science-pack", 1},
-      },
-      time = 45,
+    prerequisites = {"planet-discovery-fulgora", "management-formation"},
+    research_trigger = {
+      type = "craft-item",
+      item = "charged-toner",
+      count = 1,
     },
-    order = "h-c2",
+    order = "h-c3",
   },
 
   -- ============================================================
-  -- TIER 3: FULGORA DIGITAL SERVICES (electromagnetic science)
-  -- Triggered by crafting charged toner (from chromatic printing)
+  -- TIER 3b: FULGORA DIGITAL SERVICES (electromagnetic science)
   -- ============================================================
   {
     type = "technology",
@@ -246,16 +264,24 @@ data:extend({
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "digital-services-bureau"},
-      {type = "unlock-recipe", recipe = "archive-recovery-permit"},
       {type = "unlock-recipe", recipe = "digital-processing-certificate"},
       {type = "unlock-recipe", recipe = "electromagnetic-operating-license"},
       {type = "unlock-recipe", recipe = "data-recovery-order"},
     },
-    prerequisites = {"chromatic-printing", "electromagnetic-science-pack"},
-    research_trigger = {
-      type = "craft-item",
-      item = "charged-toner",
-      count = 20,
+    prerequisites = {"fulgora-salvage-administration", "electromagnetic-science-pack"},
+    unit = {
+      count = 260,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"production-science-pack", 1},
+        {"utility-science-pack", 1},
+        {"space-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 45,
     },
     order = "h-d",
   },
@@ -273,7 +299,7 @@ data:extend({
       {type = "unlock-recipe", recipe = "public-transportation-contract-production"},
       {type = "unlock-recipe", recipe = "cyan-yellow-form-production"},
     },
-    prerequisites = {"vulcanus-certification", "vulcanus-export-charters", "gleba-conciliation", "gleba-pentapod-formations", "cyan-ink-production", "metallurgic-science-pack", "agricultural-science-pack"},
+    prerequisites = {"vulcanus-certification", "vulcanus-export-charters", "gleba-conciliation", "cyan-ink-production", "metallurgic-science-pack", "agricultural-science-pack"},
     unit = {
       count = 380,
       ingredients = {
@@ -316,7 +342,7 @@ data:extend({
       {type = "unlock-recipe", recipe = "yellow-magenta-form-production"},
       {type = "unlock-recipe", recipe = "anecdotal-data-reprocessing"},
     },
-    prerequisites = {"gleba-conciliation", "gleba-pentapod-formations", "fulgora-digital-services", "archive-recombination", "agricultural-science-pack", "electromagnetic-science-pack"},
+    prerequisites = {"gleba-conciliation", "fulgora-digital-services", "archive-recombination", "agricultural-science-pack", "electromagnetic-science-pack"},
     unit = {
       count = 380,
       ingredients = {
@@ -330,7 +356,44 @@ data:extend({
   },
 
   -- ============================================================
-  -- TIER 5: AQUILO FAX NETWORK (cryogenic science, all 3 planet pairs)
+  -- TIER 5a: AQUILO CRYOGENIC ADMINISTRATION BOOTSTRAP
+  -- The laser printer, technician, transfer stock, and operating license are
+  -- prerequisites of the staffed Cryogenic Plant, so none may use its science.
+  -- ============================================================
+  {
+    type = "technology",
+    name = "aquilo-cryogenic-administration",
+    icon = "__administratorio__/graphics/icons/cryogenic-operations-license.png",
+    icon_size = 64,
+    effects = {
+      {type = "unlock-recipe", recipe = "laser-printer"},
+      {type = "unlock-recipe", recipe = "transfer-emulsion-production"},
+      {type = "unlock-recipe", recipe = "thermal-transfer-sheet-production"},
+      {type = "unlock-recipe", recipe = "cryogenic-operations-license-production"},
+      {type = "unlock-recipe", recipe = "cryoprint-technician-formation"},
+    },
+    prerequisites = {"lithium-processing", "cyan-yellow-bureaucracy", "management-formation"},
+    unit = {
+      count = 360,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"production-science-pack", 1},
+        {"utility-science-pack", 1},
+        {"space-science-pack", 1},
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 60,
+    },
+    order = "h-f0",
+  },
+
+  -- ============================================================
+  -- TIER 5b: AQUILO FAX NETWORK (cryogenic science, all 3 planet pairs)
   -- ============================================================
   {
     type = "technology",
@@ -338,17 +401,14 @@ data:extend({
     icon = "__administratorio__/graphics/icons/space-age/interplanetary-fax-exchange.png",
     icon_size = 64,
     effects = {
-      {type = "unlock-recipe", recipe = "laser-printer"},
       {type = "unlock-recipe", recipe = "fax-emitter"},
       {type = "unlock-recipe", recipe = "interplanetary-fax-exchange"},
-      {type = "unlock-recipe", recipe = "transfer-emulsion-production"},
-      {type = "unlock-recipe", recipe = "thermal-transfer-sheet-production"},
       {type = "unlock-recipe", recipe = "composite-chroma-ribbon-production"},
       {type = "unlock-recipe", recipe = "trichromatic-permit-production"},
       {type = "unlock-recipe", recipe = "unified-operations-charter-production"},
-      {type = "unlock-recipe", recipe = "cryogenic-operations-license-production"},
+      {type = "unlock-recipe", recipe = "promethium-research-charter-production"},
     },
-    prerequisites = {"cyan-yellow-bureaucracy", "cyan-magenta-bureaucracy", "yellow-magenta-bureaucracy", "cryogenic-science-pack"},
+    prerequisites = {"aquilo-cryogenic-administration", "cyan-magenta-bureaucracy", "yellow-magenta-bureaucracy", "cryogenic-science-pack"},
     unit = {
       count = 500,
       ingredients = {
@@ -368,7 +428,9 @@ data:extend({
     name = "color-faxing",
     icon = "__administratorio__/graphics/icons/space-age/fax-emitter.png",
     icon_size = 64,
-    effects = {},
+    effects = {
+      {type = "nothing", effect_description = {"technology-effect.color-faxing"}},
+    },
     prerequisites = {"aquilo-fax-network"},
     unit = {
       count = 400,
@@ -489,7 +551,7 @@ data:extend({
   -- WORKFORCE FORMATION SPLIT: workers, management, specialists, orbital
   -- ============================================================
 
-  -- T1: Basic Worker Formations (worker, clerical).  The existing
+  -- T1: Basic Worker Formation.  The existing
   -- formation-center technology remains the building gate: delaying it to
   -- executive review would cycle through union-delegate-training.
   {
@@ -500,17 +562,14 @@ data:extend({
     effects = {
       {type = "unlock-recipe", recipe = "job-offer-production"},
       {type = "unlock-recipe", recipe = "worker-biter-formation"},
-      {type = "unlock-recipe", recipe = "clerical-trainee-formation"},
     },
-    prerequisites = {"formation-center", "space-science-pack"},
+    prerequisites = {"formation-center", "space-platform", "health-and-safety"},
     unit = {
       count = 240,
       ingredients = {
         {"automation-science-pack", 1},
         {"logistic-science-pack", 1},
         {"chemical-science-pack", 1},
-        {"utility-science-pack", 1},
-        {"space-science-pack", 1},
         {"administrative-science-pack", 1},
       },
       time = 45,
@@ -527,18 +586,18 @@ data:extend({
       {icon = "__base__/graphics/icons/big-biter.png", icon_size = 64, scale = 0.4, shift = {8, 8}},
     },
     effects = {
+      {type = "unlock-recipe", recipe = "clerical-trainee-formation"},
       {type = "unlock-recipe", recipe = "management-trainee-formation"},
       {type = "unlock-recipe", recipe = "middle-management-managing-manager-formation"},
     },
-    prerequisites = {"worker-formation", "union-delegate-training"},
+    prerequisites = {"worker-formation", "union-delegate-training", "eminent-domain-zoning"},
     unit = {
       count = 280,
       ingredients = {
         {"automation-science-pack", 1},
         {"logistic-science-pack", 1},
         {"chemical-science-pack", 1},
-        {"utility-science-pack", 1},
-        {"space-science-pack", 1},
+        {"production-science-pack", 1},
         {"administrative-science-pack", 1},
       },
       time = 45,
@@ -546,7 +605,9 @@ data:extend({
     order = "h-j2",
   },
 
-  -- T3: Specialized Formations (astronaut, licensed notary)
+  -- T3: Orbital Specialist Formation. Planet specialists live with the
+  -- matching planet technology instead of making basic spaceflight depend on
+  -- a completed planetary branch.
   {
     type = "technology",
     name = "specialized-formation",
@@ -556,18 +617,15 @@ data:extend({
     },
     effects = {
       {type = "unlock-recipe", recipe = "astronaut-formation"},
-      {type = "unlock-recipe", recipe = "licensed-notary-formation"},
     },
-    prerequisites = {"management-formation", "vulcanus-certification"},
+    prerequisites = {"management-formation", "space-platform"},
     unit = {
       count = 320,
       ingredients = {
         {"automation-science-pack", 1},
         {"logistic-science-pack", 1},
         {"chemical-science-pack", 1},
-        {"utility-science-pack", 1},
-        {"space-science-pack", 1},
-        {"metallurgic-science-pack", 1},
+        {"production-science-pack", 1},
         {"administrative-science-pack", 1},
       },
       time = 45,
@@ -575,7 +633,9 @@ data:extend({
     order = "h-j3",
   },
 
-  -- T4: Orbital Infrastructure (station, cannon, orbital forms, orbital science)
+  -- T4: Orbital Administration. This is the first platform office and must
+  -- remain researchable before either utility or space science. Native space
+  -- science consumes research approvals imported from a planet.
   {
     type = "technology",
     name = "orbital-employment-infrastructure",
@@ -583,36 +643,52 @@ data:extend({
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "administrative-space-station"},
-      {type = "unlock-recipe", recipe = "orbital-employment-cannon"},
-      {type = "unlock-recipe", recipe = "trajectory-compliance-array"},
-      {type = "unlock-recipe", recipe = "voluntary-exploration-space-miner-formation"},
       {type = "unlock-recipe", recipe = "orbital-operations-form"},
       {type = "unlock-recipe", recipe = "orbital-paper-production"},
       {type = "unlock-recipe", recipe = "orbital-ink-production"},
-      {type = "unlock-recipe", recipe = "space-science-pack-orbital"},
-      {type = "unlock-recipe", recipe = "orbital-deviation-order"},
       {type = "unlock-recipe", recipe = "asteroid-processing-docket"},
-      {type = "unlock-recipe", recipe = "thermal-process-license-orbital"},
-      {type = "unlock-recipe", recipe = "calcite-reagent-waiver-orbital"},
-      {type = "unlock-recipe", recipe = "offworld-metallurgy-charter-orbital"},
     },
-    prerequisites = {"specialized-formation", "cyan-yellow-bureaucracy", "cyan-magenta-bureaucracy", "yellow-magenta-bureaucracy"},
+    prerequisites = {"specialized-formation"},
     unit = {
       count = 400,
       ingredients = {
         {"automation-science-pack", 1},
         {"logistic-science-pack", 1},
         {"chemical-science-pack", 1},
-        {"utility-science-pack", 1},
-        {"space-science-pack", 1},
-        {"metallurgic-science-pack", 1},
-        {"agricultural-science-pack", 1},
-        {"electromagnetic-science-pack", 1},
+        {"production-science-pack", 1},
         {"administrative-science-pack", 1},
       },
       time = 60,
     },
     order = "h-j4",
+  },
+
+  -- T5: Platform Compliance and Employment. These systems are deliberately
+  -- separate from the station bootstrap and are mandatory before propulsion.
+  {
+    type = "technology",
+    name = "orbital-compliance-systems",
+    icon = "__base__/graphics/icons/radar.png",
+    icon_size = 64,
+    effects = {
+      {type = "unlock-recipe", recipe = "trajectory-compliance-array"},
+      {type = "unlock-recipe", recipe = "orbital-deviation-order"},
+      {type = "unlock-recipe", recipe = "orbital-employment-cannon"},
+      {type = "unlock-recipe", recipe = "voluntary-exploration-space-miner-formation"},
+    },
+    prerequisites = {"orbital-employment-infrastructure"},
+    unit = {
+      count = 300,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"production-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 45,
+    },
+    order = "h-j5",
   },
 
   -- ============================================================
@@ -628,7 +704,7 @@ data:extend({
     effects = {
       {type = "unlock-recipe", recipe = "senior-trajectory-compliance-array"},
     },
-    prerequisites = {"orbital-employment-infrastructure", "metallurgic-science-pack", "agricultural-science-pack", "electromagnetic-science-pack"},
+    prerequisites = {"orbital-compliance-systems", "metallurgic-science-pack", "agricultural-science-pack", "electromagnetic-science-pack"},
     unit = {
       count = 1200,
       ingredients = {
@@ -688,6 +764,7 @@ local early_speed_packs = {
   {"automation-science-pack", 1},
   {"logistic-science-pack", 1},
   {"chemical-science-pack", 1},
+  {"production-science-pack", 1},
   {"utility-science-pack", 1},
   {"space-science-pack", 1},
   {"administrative-science-pack", 1},
@@ -719,7 +796,7 @@ for level, seconds in ipairs(trajectory_speed_seconds) do
   end
 
   local prerequisites = level == 1
-    and {"orbital-employment-infrastructure"}
+    and {"orbital-compliance-systems", "space-science-pack"}
     or {"trajectory-compliance-speed-" .. (level - 1)}
   if level == 5 then
     prerequisites[#prerequisites + 1] = "metallurgic-science-pack"
@@ -783,7 +860,7 @@ for level, count in ipairs(orbital_employment_damage_counts) do
   end
 
   local prerequisites = level == 1
-    and {"orbital-employment-infrastructure"}
+    and {"orbital-compliance-systems", "space-science-pack"}
     or {"orbital-employment-damage-" .. (level - 1)}
   if level == 3 then
     prerequisites[#prerequisites + 1] = "metallurgic-science-pack"
@@ -845,7 +922,7 @@ for level, count in ipairs(orbital_employment_capacity_counts) do
   end
 
   local prerequisites = level == 1
-    and {"orbital-employment-infrastructure"}
+    and {"orbital-compliance-systems", "space-science-pack"}
     or {"orbital-employment-capacity-" .. (level - 1)}
   if level == 2 then
     prerequisites[#prerequisites + 1] = "metallurgic-science-pack"
@@ -892,6 +969,20 @@ add_tech_science_pack("promethium-science-pack", "administrative-science-pack", 
 
 -- Unlock orbital permit with space platform
 add_tech_unlock("space-platform", "orbital-infrastructure-permit")
+add_tech_prerequisite("foundry", "vulcanus-certification")
+add_tech_prerequisite("big-mining-drill", "electric-engine")
+add_tech_prerequisite("biochamber", "gleba-conciliation")
+add_tech_prerequisite("electromagnetic-plant", "fulgora-salvage-administration")
+add_tech_prerequisite("space-platform", "electric-engine")
+add_tech_prerequisite("space-science-pack", "orbital-employment-infrastructure")
+add_tech_prerequisite("orbital-compliance-systems", "radar")
+add_tech_prerequisite("orbital-compliance-systems", "electric-mining-drill")
+add_tech_prerequisite("space-platform-thruster", "orbital-compliance-systems")
+add_tech_prerequisite("management-formation", "repair-pack")
+add_tech_prerequisite("metallurgic-science-pack", "cyan-ink-production")
+add_tech_prerequisite("agricultural-science-pack", "gleba-conciliation")
+add_tech_prerequisite("electromagnetic-science-pack", "fulgora-salvage-administration")
+add_tech_prerequisite("cryogenic-plant", "aquilo-cryogenic-administration")
 add_tech_unlock("calcite-processing", "dubious-data-analysis-vulcanus")
 add_tech_unlock("calcite-processing", "paper-production-vulcanus")
 add_tech_unlock("calcite-processing", "carbon-offset-certificate-basic-vulcanus")
@@ -901,18 +992,11 @@ add_tech_unlock("calcite-processing", "plastic-bar-vulcanus")
 add_tech_unlock("calcite-processing", "molten-promises-production")
 add_tech_unlock("industrial-propaganda", "redundant-rubble-recovery-vulcanus")
 add_tech_unlock("industrial-propaganda", "refined-nonsense-production-vulcanus")
-add_tech_unlock("cyan-ink-production", "ink-recovery-fulgora")
-add_tech_unlock("cyan-ink-production", "salvaged-data-analysis-fulgora")
-add_tech_unlock("cyan-ink-production", "basic-excuse-production")
-add_tech_unlock("cyan-ink-production", "carbon-offset-certificate-basic-fulgora")
 add_tech_unlock("electromagnetic-plant", "salvage-electrolyte-fulgora")
 add_tech_unlock("electromagnetic-plant", "electromagnetic-lubricant-fulgora")
 add_tech_unlock("rocket-fuel", "electromagnetic-rocket-fuel-fulgora")
-add_tech_unlock("agricultural-science-pack", "conciliation-officer-formation")
-add_tech_unlock("electromagnetic-science-pack", "relay-clerk-formation")
-add_tech_unlock("cryogenic-science-pack", "cryoprint-technician-formation")
-add_tech_unlock("worker-formation", "capture-bureau-workforce")
-add_tech_unlock("worker-formation", "workforce-lure-spores-production")
+add_tech_unlock("gleba-conciliation", "capture-bureau-workforce")
+add_tech_unlock("biochamber", "workforce-lure-spores-production")
 for _, briefing in ipairs(manager_briefings.BRIEFINGS) do
   add_tech_unlock("management-formation", briefing.recipe)
 end

@@ -305,7 +305,7 @@ data:extend({
       { type = "unlock-recipe", recipe = "case-hazmat" },
       { type = "unlock-recipe", recipe = "hazmat-final" }
     },
-    prerequisites = {"environmental-compliance", "chemical-operator-training"},
+    prerequisites = {"environmental-compliance", "chemical-operator-training", "chemical-science-pack"},
     unit = { count = 100, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "d-c"
   },
@@ -523,7 +523,7 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "formation-center" },
     },
-    prerequisites = {"biter-employment", "logistic-science-pack"},
+    prerequisites = {"biter-employment", "printing-technology", "steel-processing", "logistic-science-pack"},
     unit = { count = 100, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "c-h0"
   },
@@ -665,7 +665,7 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "chemical-operator-training" },
     },
-    prerequisites = {"formation-center", "environmental-compliance"},
+    prerequisites = {"formation-center", "environmental-compliance", "corporate-hospitality"},
     unit = { count = 120, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 35 },
     order = "d-h1"
   },

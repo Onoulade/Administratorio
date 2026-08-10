@@ -142,11 +142,11 @@ if space_age_enabled then
     research_tip("administratorio-management-briefings", orbit, "e", "management-formation"),
     research_tip("administratorio-orbital-specialists", orbit, "f", "specialized-formation"),
     research_tip("administratorio-administrative-space-station", orbit, "g", "orbital-employment-infrastructure"),
-    research_tip("administratorio-trajectory-compliance-arrays", orbit, "h", "orbital-employment-infrastructure"),
+    research_tip("administratorio-trajectory-compliance-arrays", orbit, "h", "orbital-compliance-systems"),
     research_tip("administratorio-senior-trajectory-compliance-array", orbit, "i", "trajectory-compliance-jurisdiction-2"),
     research_tip("administratorio-executive-trajectory-compliance-array", orbit, "j", "trajectory-compliance-jurisdiction-3"),
     research_tip("administratorio-trajectory-compliance-speed", orbit, "k", "trajectory-compliance-speed-1"),
-    research_tip("administratorio-orbital-employment-cannon", orbit, "l", "orbital-employment-infrastructure"),
+    research_tip("administratorio-orbital-employment-cannon", orbit, "l", "orbital-compliance-systems"),
     research_tip("administratorio-orbital-employment-damage", orbit, "m", "orbital-employment-damage-1"),
     research_tip("administratorio-orbital-employment-capacity", orbit, "n", "orbital-employment-capacity-1"),
 
@@ -175,7 +175,7 @@ if space_age_enabled then
     research_tip("administratorio-yellow-paperwork-spoilage", gleba, "c", "gleba-conciliation"),
     research_tip("administratorio-conciliation-desk", gleba, "d", "gleba-conciliation"),
     research_tip("administratorio-capture-bureau", gleba, "e", "gleba-conciliation"),
-    research_tip("administratorio-pentapod-bargaining", gleba, "f", "gleba-pentapod-formations"),
+    research_tip("administratorio-pentapod-bargaining", gleba, "f", "gleba-conciliation"),
 
     -- Cross-planet paperwork and tourism
     research_tip("administratorio-cross-planet-bureaucracy", interplanetary, "a", "cyan-yellow-bureaucracy", {

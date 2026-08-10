@@ -208,17 +208,42 @@ end
 
 -------------------------------------------------------------------------------
 -- 3. MACHINE CATEGORY SETUP
--- All AMs use only regulated categories. No original crafting categories.
+-- Standard recipes use regulated categories. Space Age also defines special
+-- "or-assembling" and electronics categories for the bootstrap recipes of
+-- each planet; removing those categories makes every specialist machine
+-- require itself (and makes processing units require Fulgora).
 -------------------------------------------------------------------------------
+local space_age_assembling_categories = {
+  "electronics",
+  "electronics-with-fluid",
+  "pressing",
+  "metallurgy-or-assembling",
+  "organic-or-hand-crafting",
+  "organic-or-assembling",
+  "electronics-or-assembling",
+  "cryogenics-or-assembling",
+  "crafting-with-fluid-or-metallurgy",
+}
+
+local function append_existing_categories(categories)
+  if not (mods and mods["space-age"]) then return categories end
+  for _, category in ipairs(space_age_assembling_categories) do
+    if data.raw["recipe-category"] and data.raw["recipe-category"][category] then
+      categories[#categories + 1] = category
+    end
+  end
+  return categories
+end
+
 if data.raw["assembling-machine"]["assembling-machine-1"] then
   data.raw["assembling-machine"]["assembling-machine-1"].crafting_categories = {"crafting-regulated"}
 end
 if data.raw["assembling-machine"]["assembling-machine-2"] then
-  data.raw["assembling-machine"]["assembling-machine-2"].crafting_categories = {"crafting-regulated", "advanced-crafting-regulated"}
+  data.raw["assembling-machine"]["assembling-machine-2"].crafting_categories = append_existing_categories({"crafting-regulated", "advanced-crafting-regulated"})
 end
 if data.raw["assembling-machine"]["assembling-machine-3"] then
   local am3 = data.raw["assembling-machine"]["assembling-machine-3"]
-  am3.crafting_categories = {"crafting-regulated", "advanced-crafting-regulated"}
+  am3.crafting_categories = append_existing_categories({"crafting-regulated", "advanced-crafting-regulated"})
   am3.ingredient_count = 12
 end
 
@@ -991,6 +1016,22 @@ for _, regulated in pairs(regulated_recipes) do
   table.insert(regulated_list, regulated)
 end
 data:extend(regulated_list)
+
+-------------------------------------------------------------------------------
+-- 5a1. IMPORTED RESEARCH APPROVAL FOR NATIVE SPACE SCIENCE
+-- Preserve Space Age's single five-pack native recipe and require exactly one
+-- ordinary research approval per batch. The approval must be produced on a
+-- planet and shipped to the Administrative Space Station.
+-------------------------------------------------------------------------------
+if feature_flags.space_age_enabled() then
+  for _, recipe_name in ipairs({"space-science-pack", "space-science-pack-regulated"}) do
+    if data.raw.recipe[recipe_name] then
+      remove_ingredient_from_recipe(recipe_name, "research-grant-approval")
+      remove_ingredient_from_recipe(recipe_name, "research-grant-work-order")
+      add_special_paperwork(recipe_name, "research-grant-approval", 1)
+    end
+  end
+end
 
 -------------------------------------------------------------------------------
 -- 5a2. FALLBACK REGULATION FOR REMAINING CRAFTING RECIPES

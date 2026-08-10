@@ -108,6 +108,23 @@ local function surface_limited(recipe, planet_name)
   return planets.apply_planet_surface_conditions(recipe, planet_name)
 end
 
+-- Keep Space Age's one canonical space-science recipe, but make the
+-- Administrative Space Station its machine. Besides matching the orbital
+-- paperwork theme, this keeps the generic regulated-assembler pass from
+-- generating a second hidden science recipe.
+local native_space_science_recipe = data.raw.recipe and data.raw.recipe["space-science-pack"]
+if native_space_science_recipe then
+  native_space_science_recipe.category = "orbital-bureaucracy"
+end
+
+-- Creating a new biter profession remains a Nauvis institution. Space Age
+-- only makes the short-lived MMMM briefing recipes portable between planets.
+for _, recipe in pairs(data.raw.recipe or {}) do
+  if recipe.category == "biter-training" then
+    surface_limited(recipe, "nauvis")
+  end
+end
+
 local function add_scrap_recycling_result(item_name, amount, probability)
   local recipe = data.raw.recipe and data.raw.recipe["scrap-recycling"]
   if not recipe then return end
@@ -234,7 +251,7 @@ end
 
 local manager_meeting_recipes = {}
 for _, briefing in ipairs(manager_briefings.BRIEFINGS) do
-  manager_meeting_recipes[#manager_meeting_recipes + 1] = {
+  manager_meeting_recipes[#manager_meeting_recipes + 1] = not_in_space({
     type = "recipe",
     name = briefing.recipe,
     category = "workforce-formation",
@@ -243,27 +260,26 @@ for _, briefing in ipairs(manager_briefings.BRIEFINGS) do
       {
         type = "item",
         name = manager_briefings.REGULAR_MANAGER,
-        amount = 5,
-        ignored_by_stats = 5,
+        amount = 1,
+        ignored_by_stats = 1,
       },
-      {type = "item", name = "taxpayer-money", amount = 25},
       {type = "item", name = briefing.material, amount = briefing.material_amount},
-      {type = "fluid", name = "liquid-coffee", amount = 50},
+      {type = "fluid", name = "liquid-coffee", amount = 5},
     },
     results = {
       {
         type = "item",
         name = briefing.item,
-        amount = 5,
-        ignored_by_productivity = 5,
-        ignored_by_stats = 5,
+        amount = 1,
+        ignored_by_productivity = 1,
+        ignored_by_stats = 1,
       },
     },
-    energy_required = 45,
+    energy_required = 5,
     allow_productivity = false,
     allow_decomposition = false,
     auto_recycle = false,
-  }
+  })
 end
 data:extend(manager_meeting_recipes)
 
@@ -293,12 +309,11 @@ data:extend({
       {type = "item", name = "enrolled-biter", amount = 1},
       {type = "item", name = "credentials", amount = 1},
       {type = "item", name = "good-excuse", amount = 1},
-      {type = "item", name = "taxpayer-money", amount = 5},
     },
     results = {{type = "item", name = "worker-biter", amount = 1}},
     energy_required = 10
   }, "nauvis"),
-  {
+  surface_limited({
     type = "recipe",
     name = "clerical-trainee-formation",
     category = "workforce-formation",
@@ -310,7 +325,7 @@ data:extend({
     },
     results = {{type = "item", name = "clerical-trainee", amount = 1}},
     energy_required = 15
-  },
+  }, "nauvis"),
   surface_limited({
     type = "recipe",
     name = "management-trainee-formation",
@@ -320,12 +335,11 @@ data:extend({
       {type = "item", name = "worker-biter", amount = 1},
       {type = "item", name = "narrative", amount = 1},
       {type = "item", name = "management-approval-verbal", amount = 1},
-      {type = "item", name = "taxpayer-money", amount = 10},
     },
     results = {{type = "item", name = "management-trainee", amount = 1}},
     energy_required = 20
   }, "nauvis"),
-  {
+  surface_limited({
     type = "recipe",
     name = "astronaut-formation",
     category = "workforce-formation",
@@ -338,7 +352,7 @@ data:extend({
     },
     results = {{type = "item", name = "astronaut", amount = 1}},
     energy_required = 25
-  },
+  }, "nauvis"),
   surface_limited({
     type = "recipe",
     name = "licensed-notary-formation",
@@ -352,7 +366,7 @@ data:extend({
     results = {{type = "item", name = "licensed-notary", amount = 1}},
     energy_required = 20
   }, "nauvis"),
-  {
+  surface_limited({
     type = "recipe",
     name = "conciliation-officer-formation",
     category = "workforce-formation",
@@ -364,22 +378,8 @@ data:extend({
     },
     results = {{type = "item", name = "conciliation-officer", amount = 1}},
     energy_required = 20
-  },
+  }, "nauvis"),
   surface_limited({
-    type = "recipe",
-    name = "conciliation-officer-formation-gleba",
-    category = "workforce-formation",
-    enabled = false,
-    localised_name = {"recipe-name.conciliation-officer-formation"},
-    ingredients = {
-      {type = "item", name = "clerical-trainee", amount = 1},
-      {type = "item", name = "symbiosis-record", amount = 1},
-      {type = "item", name = "jelly", amount = 20},
-    },
-    results = {{type = "item", name = "conciliation-officer", amount = 1}},
-    energy_required = 25,
-  }, "gleba"),
-  {
     type = "recipe",
     name = "relay-clerk-formation",
     category = "workforce-formation",
@@ -391,8 +391,8 @@ data:extend({
     },
     results = {{type = "item", name = "relay-clerk", amount = 1}},
     energy_required = 20
-  },
-  {
+  }, "nauvis"),
+  surface_limited({
     type = "recipe",
     name = "cryoprint-technician-formation",
     category = "workforce-formation",
@@ -404,8 +404,8 @@ data:extend({
     },
     results = {{type = "item", name = "cryoprint-technician", amount = 1}},
     energy_required = 25
-  },
-  {
+  }, "nauvis"),
+  surface_limited({
     type = "recipe",
     name = "middle-management-managing-manager-formation",
     category = "workforce-formation",
@@ -417,8 +417,8 @@ data:extend({
     },
     results = {{type = "item", name = "middle-management-managing-manager", amount = 1}},
     energy_required = 25
-  },
-  {
+  }, "nauvis"),
+  surface_limited({
     type = "recipe",
     name = "voluntary-exploration-space-miner-formation",
     category = "workforce-formation",
@@ -458,7 +458,7 @@ data:extend({
     main_product = manager_briefings.VESM,
     energy_required = 60,
     auto_recycle = false,
-  },
+  }, "nauvis"),
   not_on_planet({
     type = "recipe",
     name = "chromatic-printer",
@@ -888,21 +888,6 @@ data:extend({
   }),
   vacuum_only({
     type = "recipe",
-    name = "space-science-pack-orbital",
-    category = "orbital-bureaucracy",
-    enabled = false,
-    ingredients = {
-      {type = "item", name = "iron-ore", amount = 2},
-      {type = "item", name = "carbon", amount = 1},
-      {type = "item", name = "ice", amount = 1},
-      {type = "item", name = "orbital-operations-form", amount = 1},
-    },
-    results = {{type = "item", name = "space-science-pack", amount = 5}},
-    energy_required = 5,
-    allow_productivity = true,
-  }),
-  vacuum_only({
-    type = "recipe",
     name = "orbital-archival-paper-production",
     category = "orbital-bureaucracy",
     subgroup = "admin-paper-supplies",
@@ -1056,7 +1041,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "hostile-spore-culture-production",
-    category = "organic",
+    category = "organic-or-chemistry",
     enabled = false,
     localised_name = {"fluid-name.hostile-spore-culture"},
     ingredients = {
@@ -1104,7 +1089,7 @@ data:extend({
   {
     type = "recipe",
     name = "oviposition-lure-spores-production",
-    category = "organic",
+    category = "organic-or-chemistry",
     enabled = false,
     localised_name = {"fluid-name.oviposition-lure-spores"},
     ingredients = {
@@ -1377,7 +1362,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "transfer-emulsion-production",
-    category = "cryogenics",
+    category = "chemistry-or-cryogenics",
     enabled = false,
     localised_name = {"item-name.transfer-emulsion"},
     ingredients = {

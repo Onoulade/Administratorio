@@ -10,7 +10,7 @@ M.BRIEFINGS = {
     item = "training-briefed-middle-management-managing-manager",
     recipe = "middle-management-training-briefing",
     material = "iron-gear-wheel",
-    material_amount = 5,
+    material_amount = 1,
     order = "j-j1",
   },
   {
@@ -18,7 +18,7 @@ M.BRIEFINGS = {
     item = "staffing-briefed-middle-management-managing-manager",
     recipe = "middle-management-staffing-briefing",
     material = "repair-pack",
-    material_amount = 5,
+    material_amount = 1,
     order = "j-j2",
   },
   {
@@ -26,7 +26,7 @@ M.BRIEFINGS = {
     item = "compliance-briefed-middle-management-managing-manager",
     recipe = "middle-management-compliance-briefing",
     material = "blank-form",
-    material_amount = 5,
+    material_amount = 1,
     order = "j-j3",
   },
   {
@@ -34,7 +34,7 @@ M.BRIEFINGS = {
     item = "liaison-briefed-middle-management-managing-manager",
     recipe = "middle-management-liaison-briefing",
     material = "electronic-circuit",
-    material_amount = 5,
+    material_amount = 1,
     order = "j-j4",
   },
   {

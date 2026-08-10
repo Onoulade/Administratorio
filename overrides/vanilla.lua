@@ -39,6 +39,7 @@ end
 
 for _, name in ipairs(items_to_hide) do
   hide_prototype("item", name)
+  hide_prototype("item-with-entity-data", name)
   hide_prototype("gun", name)
   hide_prototype("tool", name)
   hide_prototype("ammo", name)
@@ -78,6 +79,8 @@ for tech_name, tech in pairs(data.raw["technology"]) do
      or tech_name:find("stronger%-explosives") or tech_name:find("refined%-flammables")
      or tech_name:find("energy%-weapons") or tech_name:find("laser%-weapons%-damage")
      or tech_name:find("weapon%-shooting%-speed")
+     or tech_name:find("electric%-weapons%-damage")
+     or tech_name:find("railgun%-shooting%-speed") or tech_name:find("railgun%-damage")
      or tech_name:find("follower%-robot%-count") or tech_name:find("combat%-robot")
      or tech_name:find("laser%-shooting%-speed") or tech_name:find("laser%-turret%-shooting")
      or tech_name:find("turret") then
@@ -106,6 +109,16 @@ local tech_prerequisite_replacements = {
   },
   ["rocket-fuel"] = {
     flammables = "advanced-oil-processing",
+  },
+  -- Space Age keeps civilian progression behind combat technologies. Since
+  -- Administratorio removes those weapons, fold the redundant combat edges
+  -- into prerequisites these technologies already have.
+  ["captivity"] = {
+    ["military-3"] = "agricultural-science-pack",
+    rocketry = "agricultural-science-pack",
+  },
+  ["planet-discovery-aquilo"] = {
+    ["rocket-turret"] = "advanced-asteroid-processing",
   },
 }
 
