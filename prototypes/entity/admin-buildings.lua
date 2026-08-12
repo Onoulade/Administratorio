@@ -13,6 +13,7 @@ local unit_ai_settings = require("scripts.unit_ai_settings")
 local planets = require("prototypes.shared.space_age_planets")
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 local generated_animation_speeds = require("prototypes.shared.generated_animation_speeds")
+local building_icons = require("prototypes.shared.building_icons")
 local working_hours_enabled = feature_flags.working_hours_enabled()
 local space_age_enabled = feature_flags.space_age_enabled()
 local entity_graphics = "__administratorio__/graphics/entities/"
@@ -784,7 +785,7 @@ enable_machine_effects(breakroom)
 breakroom.localised_description = disabled_entity_description("corporate-breakroom-no-working-hours")
 breakroom.collision_box = {{-2.25, -2.25}, {2.25, 2.25}}
 breakroom.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
-breakroom.icon = "__administratorio__/graphics/icons/warehouse-icon.png"
+breakroom.icon = biter_building_icons .. "corporate-breakroom-v2.png"
 breakroom.icon_size = 64
 breakroom.graphics_set = {
   animation = {
@@ -1093,9 +1094,7 @@ field_office.minable.result = "field-office"
 field_office.placeable_by = placeable_by_item("field-office")
 field_office.next_upgrade = nil
 field_office.icon = nil
-field_office.icons = {
-  { icon = biter_building_icons .. "office-building.png", icon_size = 64, tint = {r = 0.75, g = 0.65, b = 0.45, a = 1} },
-}
+field_office.icons = building_icons.field_office()
 field_office.crafting_categories = bureaucracy_categories.field_office()
 field_office.crafting_speed = 0.5
 field_office.module_slots = 0
@@ -1133,8 +1132,9 @@ field_office.working_sound = {
 -- Transit Permit Chest: visible 1x1 chest auto-placed next to train stops
 local transit_permit_chest = table.deepcopy(data.raw["container"]["steel-chest"])
 transit_permit_chest.name = "transit-permit-chest"
-transit_permit_chest.icon = "__base__/graphics/icons/steel-chest.png"
-transit_permit_chest.icon_size = 64
+transit_permit_chest.icon = nil
+transit_permit_chest.icons = building_icons.transit_permit_chest()
+transit_permit_chest.icon_size = nil
 transit_permit_chest.flags = {"placeable-neutral", "not-deconstructable", "not-blueprintable", "not-upgradable", "placeable-off-grid"}
 transit_permit_chest.minable = nil
 transit_permit_chest.inventory_size = 1

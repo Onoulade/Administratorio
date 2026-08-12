@@ -1,5 +1,6 @@
 local item_icons = "__administratorio__/graphics/icons/"
 local manager_briefings = require("prototypes.shared.manager_briefings")
+local building_icons = require("prototypes.shared.building_icons")
 
 local briefing_overlay_icons = {
   training = "__base__/graphics/icons/iron-gear-wheel.png",
@@ -45,8 +46,7 @@ data:extend({
   {
     type = "item",
     name = "job-offer",
-    icon = "__administratorio__/graphics/icons/management-written-proposal.png",
-    icon_size = 64,
+    icons = {{icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.4, g = 0.9, b = 0.4, a = 1}}},
     subgroup = "admin-biter-employees",
     order = "j-0",
     stack_size = 20
@@ -54,8 +54,10 @@ data:extend({
   {
     type = "item",
     name = "enrolled-biter",
-    icon = "__base__/graphics/icons/small-biter.png",
-    icon_size = 64,
+    icons = {
+      {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, tint = {r = 0.68, g = 0.82, b = 1, a = 1}},
+      {icon = item_icons .. "blank-approval.png", icon_size = 64, scale = 0.32, shift = {8, 8}},
+    },
     subgroup = "admin-biter-employees",
     order = "j-a",
     stack_size = 20
@@ -63,8 +65,10 @@ data:extend({
   {
     type = "item",
     name = "worker-biter",
-    icon = "__base__/graphics/icons/small-biter.png",
-    icon_size = 64,
+    icons = {
+      {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, tint = {r = 0.62, g = 1, b = 0.62, a = 1}},
+      {icon = item_icons .. "work-order.png", icon_size = 64, scale = 0.32, shift = {8, 8}},
+    },
     subgroup = "admin-biter-employees",
     order = "j-a2",
     stack_size = 20
@@ -72,8 +76,10 @@ data:extend({
   {
     type = "item",
     name = "clerical-trainee",
-    icon = "__base__/graphics/icons/medium-biter.png",
-    icon_size = 64,
+    icons = {
+      {icon = "__base__/graphics/icons/medium-biter.png", icon_size = 64, tint = {r = 0.72, g = 0.88, b = 1, a = 1}},
+      {icon = item_icons .. "paper.png", icon_size = 64, scale = 0.32, shift = {8, 8}},
+    },
     subgroup = "admin-biter-employees",
     order = "j-b",
     stack_size = 20
@@ -81,8 +87,10 @@ data:extend({
   {
     type = "item",
     name = "management-trainee",
-    icon = "__base__/graphics/icons/big-biter.png",
-    icon_size = 64,
+    icons = {
+      {icon = "__base__/graphics/icons/big-biter.png", icon_size = 64, tint = {r = 1, g = 0.72, b = 0.34, a = 1}},
+      {icon = item_icons .. "policy.png", icon_size = 64, scale = 0.32, shift = {8, 8}},
+    },
     subgroup = "admin-biter-employees",
     order = "j-c",
     stack_size = 20
@@ -243,9 +251,7 @@ data:extend({
   {
     type = "item",
     name = "trajectory-compliance-array",
-    icons = {
-      {icon = "__base__/graphics/icons/radar.png", icon_size = 64},
-    },
+    icons = building_icons.trajectory_array("junior"),
     subgroup = "admin-space-compliance",
     order = "i",
     place_result = "trajectory-compliance-array",
@@ -254,10 +260,7 @@ data:extend({
   {
     type = "item",
     name = "senior-trajectory-compliance-array",
-    icons = {
-      {icon = "__base__/graphics/icons/radar.png", icon_size = 64, tint = {r = 0.72, g = 0.88, b = 1, a = 1}},
-      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
-    },
+    icons = building_icons.trajectory_array("senior"),
     subgroup = "admin-space-compliance",
     order = "i-b",
     place_result = "senior-trajectory-compliance-array",
@@ -266,10 +269,7 @@ data:extend({
   {
     type = "item",
     name = "executive-trajectory-compliance-array",
-    icons = {
-      {icon = "__base__/graphics/icons/radar.png", icon_size = 64, tint = {r = 1, g = 0.72, b = 0.34, a = 1}},
-      {icon = "__space-age__/graphics/icons/quantum-processor.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
-    },
+    icons = building_icons.trajectory_array("executive"),
     subgroup = "admin-space-compliance",
     order = "i-c",
     place_result = "executive-trajectory-compliance-array",
@@ -755,8 +755,7 @@ data:extend({
   {
     type = "item",
     name = "public-train-stop",
-    icon = "__base__/graphics/icons/train-stop.png",
-    icon_size = 64,
+    icons = building_icons.public_train_stop(),
     subgroup = "admin-infrastructure",
     order = "z",
     place_result = "public-train-stop",
@@ -804,8 +803,9 @@ local tourism_items = {}
 tourism_items[#tourism_items + 1] = {
   type = "item",
   name = "capture-bureau-processing-token",
-  icon = item_icons .. "admin-desk.png",
-  icon_size = 64,
+  icons = {
+    {icon = item_icons .. "admin-desk.png", icon_size = 64, tint = {r = 1, g = 0.68, b = 0.46, a = 1}},
+  },
   hidden = true,
   hidden_in_factoriopedia = true,
   stack_size = 1,

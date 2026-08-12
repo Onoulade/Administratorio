@@ -1,6 +1,7 @@
 local planets = require("prototypes.shared.space_age_planets")
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 local generated_animation_speeds = require("prototypes.shared.generated_animation_speeds")
+local building_icons = require("prototypes.shared.building_icons")
 local entity_graphics = "__administratorio__/graphics/entities/"
 local item_icons = "__administratorio__/graphics/icons/"
 local sound_path = "__administratorio__/sound/buildings/"
@@ -582,16 +583,6 @@ for _, size in ipairs({"small", "medium", "big", "huge"}) do
   end
 end
 
-local function trajectory_array_icons(tint, overlay)
-  local icons = {
-    {icon = "__base__/graphics/icons/radar.png", icon_size = 64, tint = tint},
-  }
-  if overlay then
-    icons[#icons + 1] = {icon = overlay, icon_size = 64, scale = 0.38, shift = {8, 8}}
-  end
-  return icons
-end
-
 local function make_trajectory_compliance_array(spec)
   local array = table.deepcopy(data.raw["ammo-turret"]["gun-turret"])
   array.name = spec.name
@@ -625,7 +616,7 @@ end
 
 local trajectory_compliance_array = make_trajectory_compliance_array({
   name = "trajectory-compliance-array",
-  icons = trajectory_array_icons(),
+  icons = building_icons.trajectory_array("junior"),
   next_upgrade = "senior-trajectory-compliance-array",
   target_masks = {asteroid_size_masks.small, asteroid_size_masks.medium},
   range = 20,
@@ -635,10 +626,7 @@ local trajectory_compliance_array = make_trajectory_compliance_array({
 
 local senior_trajectory_compliance_array = make_trajectory_compliance_array({
   name = "senior-trajectory-compliance-array",
-  icons = trajectory_array_icons(
-    {r = 0.72, g = 0.88, b = 1, a = 1},
-    "__base__/graphics/icons/behemoth-biter.png"
-  ),
+  icons = building_icons.trajectory_array("senior"),
   next_upgrade = "executive-trajectory-compliance-array",
   target_masks = {asteroid_size_masks.small, asteroid_size_masks.medium, asteroid_size_masks.big},
   range = 30,
@@ -648,10 +636,7 @@ local senior_trajectory_compliance_array = make_trajectory_compliance_array({
 
 local executive_trajectory_compliance_array = make_trajectory_compliance_array({
   name = "executive-trajectory-compliance-array",
-  icons = trajectory_array_icons(
-    {r = 1, g = 0.72, b = 0.34, a = 1},
-    "__space-age__/graphics/icons/quantum-processor.png"
-  ),
+  icons = building_icons.trajectory_array("executive"),
   next_upgrade = nil,
   target_masks = {
     asteroid_size_masks.small,
@@ -866,6 +851,9 @@ orbital_employment_cannon.surface_conditions = {
 
 local public_train_stop = table.deepcopy(data.raw["train-stop"]["train-stop"])
 public_train_stop.name = "public-train-stop"
+public_train_stop.icon = nil
+public_train_stop.icon_size = nil
+public_train_stop.icons = building_icons.public_train_stop()
 public_train_stop.minable = {mining_time = 0.2, result = "public-train-stop"}
 public_train_stop.placeable_by = placeable_by_item("public-train-stop")
 

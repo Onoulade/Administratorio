@@ -16,13 +16,13 @@ data:extend({
   -- Raw Resources (admin group)
   { type = "item", name = "bullshit-ore",     icon = item_icons .. "bullshit-ore.png",  icon_size = 64, subgroup = "admin-raw", order = "a", stack_size = 100 },
   { type = "item", name = "redundant-rubble", icon = item_icons .. "redundant-rubble.png", icon_size = 64, subgroup = "admin-raw", order = "b", stack_size = 100 },
-  { type = "item", name = "compacted-rubble", icon = item_icons .. "compacted-rubble.png",    icon_size = 64, subgroup = "admin-raw", order = "b2", stack_size = 100, tint = {r=0.5, g=0.5, b=0.5} },
+  { type = "item", name = "compacted-rubble", icons = {{icon = item_icons .. "compacted-rubble.png", icon_size = 64, tint = {r=0.5, g=0.5, b=0.5, a=1}}}, subgroup = "admin-raw", order = "b2", stack_size = 100 },
   { type = "item", name = "useless-documentation", icon = item_icons .. "useless-documentation.png", icon_size = 64, subgroup = "admin-raw", order = "b3", stack_size = 100 },
-  { type = "item", name = "refined-nonsense", icon = item_icons .. "regulation.png",    icon_size = 64, subgroup = "admin-raw", order = "b4", stack_size = 100, tint = {r=0.7, g=0.3, b=0.6} },
+  { type = "item", name = "refined-nonsense", icons = {{icon = item_icons .. "regulation.png", icon_size = 64, tint = {r=0.7, g=0.3, b=0.6, a=1}}}, subgroup = "admin-raw", order = "b4", stack_size = 100 },
 
   -- Core administrative supplies
   { type = "item", name = "paper",            icon = item_icons .. "paper.png",         icon_size = 64, subgroup = "admin-paper-supplies", order = "a", stack_size = 200 },
-  { type = "item", name = "ink",              icon = item_icons .. "ink-cartridge.png",  icon_size = 64, subgroup = "admin-paper-supplies", order = "b", stack_size = 100, tint = {r=0.2, g=0.2, b=0.3} },
+  { type = "item", name = "ink",              icons = {{icon = item_icons .. "ink-cartridge.png", icon_size = 64, tint = {r=0.35, g=0.35, b=0.45, a=1}}}, subgroup = "admin-paper-supplies", order = "b", stack_size = 100 },
   { type = "item", name = "coffee-bean",      icon = item_icons .. "coffee-bean.png",   icon_size = 32, subgroup = "admin-paper-supplies", order = "c", stack_size = 50 },
   -- BS Economy Intermediaries
   { type = "item", name = "dubious-data",       icon = item_icons .. "dubious-data.png",       icon_size = 64, subgroup = "admin-bs-economy", order = "a", stack_size = 100 },
