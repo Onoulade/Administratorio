@@ -112,7 +112,7 @@ if space_age_enabled then
   data:extend({
     planets.apply_planet_surface_conditions({
       type = "resource", name = "amber-sap-seep",
-      icon = "__administratorio__/graphics/icons/coffee.png", icon_size = 64,
+      icon = "__administratorio__/graphics/icons/amber-sap.png", icon_size = 64,
       flags = {"placeable-neutral"}, category = "basic-fluid", order = "a-b-d",
       infinite = true, highlight = true,
       minimum = 60000, normal = 300000,

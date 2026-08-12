@@ -163,7 +163,7 @@ data:extend({
   {
     type = "technology",
     name = "amber-sap-processing",
-    icon = "__administratorio__/graphics/icons/coffee.png",
+    icon = "__administratorio__/graphics/icons/amber-sap.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "amber-sap-nonsense-seeding"},
@@ -453,8 +453,10 @@ data:extend({
   {
     type = "technology",
     name = "fax-queue-capacity-1",
-    icon = "__administratorio__/graphics/icons/cryogenic-operations-license.png",
-    icon_size = 64,
+    icons = {
+      {icon = "__administratorio__/graphics/icons/cryogenic-operations-license.png", icon_size = 64},
+      {icon = "__base__/graphics/icons/signal/signal_1.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    },
     effects = {
       {type = "nothing", effect_description = {"technology-effect.fax-queue-capacity", "5"}},
     },

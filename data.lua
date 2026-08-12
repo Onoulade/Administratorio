@@ -52,7 +52,7 @@ if feature_flags.space_age_enabled() then
       name = "gleba_amber_sap_seep",
       planet = "gleba",
       localised_name = {"", "[entity=amber-sap-seep] ", {"entity-name.amber-sap-seep"}},
-      icon = "__administratorio__/graphics/icons/coffee.png",
+      icon = "__administratorio__/graphics/icons/amber-sap.png",
       icon_size = 64,
       richness = true,
       order = "d-a",
@@ -63,8 +63,7 @@ if feature_flags.space_age_enabled() then
       name = "vulcanus_verdigris_crust",
       planet = "vulcanus",
       localised_name = {"", "[entity=verdigris-crust] ", {"entity-name.verdigris-crust"}},
-      icon = "__administratorio__/graphics/icons/bullshit-ore.png",
-      icon_size = 64,
+      icons = {{icon = "__administratorio__/graphics/icons/bullshit-ore.png", icon_size = 64, tint = {r=0.25, g=0.9, b=0.75, a=1}}},
       richness = true,
       order = "c-a",
       category = "resource"
