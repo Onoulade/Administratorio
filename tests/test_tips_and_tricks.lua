@@ -93,12 +93,16 @@ test("eviction and night-shift tips stay wired to the relevant unlocks", functio
   )
 
   local working_hours = tip("administratorio-working-hours")
-  for _, entity_name in ipairs({"office-desk", "union-headquarters", "field-office", "biter-station", "biterport"}) do
+  for _, entity_name in ipairs({"office-desk", "union-headquarters", "biter-station", "biterport"}) do
     assert_true(
       trigger_contains(working_hours.trigger, "build-entity", "entity", entity_name),
       "working-hours tip should unlock from building " .. entity_name
     )
   end
+  assert_true(
+    not trigger_contains(working_hours.trigger, "build-entity", "entity", "field-office"),
+    "working-hours tip should not treat the always-open field office as night-gated"
+  )
 end)
 
 test("rideable biter tip unlocks with its dedicated technology", function()

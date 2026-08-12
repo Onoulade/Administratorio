@@ -51,7 +51,7 @@ Install the `overtime-exemption` module in any building's module inventory to ke
 
 ### Impact on Other Systems
 - **Biter Employment Office** and **Biterport** keep working past sunset, but their night dispatches require `liquid-coffee` (5 per dispatch) piped into any side entrance.
-- **Field Office** releases its biter worker at night (unless overtime-exempted).
+- **Field Office** operates through the night and accepts no modules.
 - Night status is shown as a red diode and "Closed for the night" label on buildings, with a floating text overlay.
 
 ### Planner Compatibility

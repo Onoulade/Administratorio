@@ -70,7 +70,6 @@ local RUNTIME_DEBUG_TRANSLATED_KEYS = {
   "field_office_placement_preview",
   "field_office_releasing",
   "field_office_spawner_cache",
-  "field_office_night_check",
   "field_office_readiness",
   "field_office_spawner_lookup",
   "field_office_spawn_worker",
@@ -119,7 +118,6 @@ local RUNTIME_DEBUG_REGISTRATION_ROWS = {
 local RUNTIME_DEBUG_FIELD_OFFICE_ROWS = {
   {key = "field_office_releasing", label = {"gui.debug-field-office-releasing"}, export_label = "field_office_releasing"},
   {key = "field_office_spawner_cache", label = {"gui.debug-field-office-spawner-cache"}, export_label = "field_office_spawner_cache"},
-  {key = "field_office_night_check", label = {"gui.debug-field-office-night-check"}, export_label = "field_office_night_check"},
   {key = "field_office_readiness", label = {"gui.debug-field-office-readiness"}, export_label = "field_office_readiness"},
   {key = "field_office_spawner_lookup", label = {"gui.debug-field-office-spawner-lookup"}, export_label = "field_office_spawner_lookup"},
   {key = "field_office_spawn_worker", label = {"gui.debug-field-office-spawn-worker"}, export_label = "field_office_spawn_worker"},

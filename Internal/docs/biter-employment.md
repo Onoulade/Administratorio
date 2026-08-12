@@ -179,14 +179,14 @@ Nauvis-only early-game bureaucratic outpost that summons biters from nearby nest
 3. When a recipe is queued, it summons a biter worker from the nearest spawner.
 4. The biter walks to the office, stands on it, and the office produces at 1.0x speed with 0 pollution.
 5. Each biter works for 2 crafts, then walks back to the spawner and is replaced.
-6. At night, biters are released (unless overtime-exemption is installed).
+6. Day or night, the office continues cycling workers as long as it can craft.
 
 ### Behavior
 
 - Only operates while a biter is physically present.
 - Can only be crafted and placed on Nauvis because its temporary workforce comes from native biter nests.
 - Completely inactive otherwise.
-- Does not call biters at night unless overtime-exemption.
+- Operates through the night and has no module slots.
 - Status messages: "No biter nest in range", "Calling biter worker...", "Biter worker on site", "Working" overlay on the biter.
 - Workers despawn 5 minutes after release.
 

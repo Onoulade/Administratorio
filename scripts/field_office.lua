@@ -1,10 +1,9 @@
 -- Field Office: early-game bureaucratic outpost.
 -- Summons biters from nearby nests as one-per-craft-cycle workers.
 -- Only operates (1.0x, 0 pollution) while a biter is physically present and working.
--- Completely inactive otherwise. Does not call biters at night (unless overtime-exemption).
+-- Completely inactive otherwise. Field offices operate independently of working hours.
 local C = require("scripts.constants")
 local quality = require("scripts.quality")
-local working_hours = require("scripts.working_hours")
 local unit_ai_settings = require("scripts.unit_ai_settings")
 local spawner_population = require("scripts.spawner_population")
 
@@ -569,17 +568,6 @@ local function mark_worker_unreachable(state, office, tick)
   end
 end
 
---- Check if the field office is shut down for the night (working hours).
-local function is_night_shutdown(office, working_hours_enabled, night_by_surface)
-  if not working_hours_enabled then return false end
-  local surface_key = office.surface.index or office.surface.name
-  if night_by_surface[surface_key] == nil then
-    night_by_surface[surface_key] = working_hours.is_night(office.surface)
-  end
-  if not night_by_surface[surface_key] then return false end
-  return not working_hours.entity_has_overtime_exemption(office)
-end
-
 set_office_status = function(state, office, diode, label)
   if state.status_diode == diode and state.status_label == label then return end
   office.custom_status = {
@@ -697,8 +685,6 @@ function M.update(tick, runtime_profile)
     rebuild_field_office_shards()
   end
 
-  local working_hours_enabled = working_hours.is_enabled()
-  local night_by_surface = {}
   local update_ticks = C.FIELD_OFFICE_UPDATE_TICKS or 5
   local shards = C.FIELD_OFFICE_UPDATE_SHARDS or 1
   local shard = math.floor(tick / update_ticks) % shards
@@ -735,18 +721,7 @@ function M.update(tick, runtime_profile)
       state.office_id = office_id
     end
 
-    local night = run_profiled(runtime_profile, "field_office_night_check", function()
-      return is_night_shutdown(office, working_hours_enabled, night_by_surface)
-    end)
-
     if state.phase == "idle" then
-      -- Don't summon biters at night
-      if night then
-        office.active = false
-        set_office_status(state, office, defines.entity_status_diode.red, "gui.working-hours-night-status")
-        goto continue
-      end
-
       -- Only call for a biter if the building can actually craft. Surface a
       -- specific reason instead of the misleading native "disabled by script".
       local readiness = run_profiled(runtime_profile, "field_office_readiness", function()
@@ -811,16 +786,6 @@ function M.update(tick, runtime_profile)
 
       -- Building is inactive while biter is travelling
       office.active = false
-
-      -- If night falls while biter is en route, release it
-      if night then
-        release_biter(state, tick)
-        state.phase = "idle"
-        clear_calling_progress(state)
-        set_office_status(state, office, defines.entity_status_diode.red, "gui.working-hours-night-status")
-        record_runtime_profile(runtime_profile, "field_office_calling", phase_profiler)
-        goto continue
-      end
 
       -- Check if biter is still alive
       if not state.biter or not state.biter.valid then
@@ -913,16 +878,6 @@ function M.update(tick, runtime_profile)
         end
       end
       refresh_worker_snapshot(state, state.biter)
-
-      -- If night falls, release biter and shut down
-      if night then
-        release_biter(state, tick)
-        state.phase = "idle"
-        office.active = false
-        set_office_status(state, office, defines.entity_status_diode.red, "gui.working-hours-night-status")
-        record_runtime_profile(runtime_profile, "field_office_working", phase_profiler)
-        goto continue
-      end
 
       -- Release if the machine has nothing left to do (office is already active, check status directly)
       local status = office.status
