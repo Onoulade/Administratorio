@@ -8,7 +8,7 @@ local M = {}
 
 M.FRAME_COUNT = 24
 M.LINE_LENGTH = 6
-M.DEFAULT_ANIMATION_SPEED = 0.25
+M.DEFAULT_ANIMATION_SPEED = 1.0
 
 -- BEGIN GENERATED ANIMATION_SPEEDS
 M.ANIMATION_SPEEDS = {
@@ -16,17 +16,13 @@ M.ANIMATION_SPEEDS = {
   ["biter-station-roof"] = 0.2,
   ["biterport-roof"] = 0.19,
   ["chromatic-printer"] = 0.05,
-  ["conciliation-desk"] = 0.11,
-  ["corporate-breakroom"] = 0.2,
-  ["digital-services-bureau"] = 0.1,
+  ["digital-services-bureau"] = 0.3,
   ["fax-emitter"] = 0.18,
   ["formation-center"] = 0.25,
   ["interplanetary-fax-exchange"] = 0.22,
-  ["laser-printer"] = 0.04,
-  ["mechanical-printer"] = 0.25,
-  ["notary-office"] = 0.09,
-  ["printer-t1"] = 0.2,
-  ["printer-t2"] = 0.1,
+  ["laser-printer"] = 0.15,
+  ["notary-office"] = 0.4,
+  ["printer-t2"] = 0.5,
   ["territorial-arbitration-post"] = 0.25,
   ["union-headquarters"] = 0.6,
 }
