@@ -99,17 +99,14 @@ mechanical_printer.graphics_set = printer_graphics(
   "machanical-printer.png",
   116,
   128,
-  0.46,
-  -- Source art was cropped 18px off its left edge; Factorio centers a sprite
-  -- on its own width, so the shift is nudged right by half that crop (9px)
-  -- times scale (0.46) to keep the building in the same on-screen spot/size.
-  util.by_pixel(-3 + 9 * 0.46, 0),
+  0.55,
+  util.by_pixel(0, -5),
   {
     filename = "shadow.png",
     width = 202,
     height = 100,
-    scale = 0.46,
-    shift = util.by_pixel(18.62, 10.58),
+    scale = 0.55,
+    shift = util.by_pixel(18, 5),
   }
 )
 mechanical_printer.working_sound = {
@@ -139,14 +136,14 @@ printer_t1.graphics_set = printer_graphics(
   "printer-t1.png",
   128,
   152,
-  0.46,
-  {0, 0},
+  0.5,
+  util.by_pixel(0, -5),
   {
     filename = "shadow.png",
     width = 194,
     height = 110,
-    scale = 0.46,
-    shift = util.by_pixel(14.72, 9.66),
+    scale = 0.5,
+    shift = util.by_pixel(14.72, 4.66),
   }
 )
 printer_t1.working_sound = {
