@@ -245,22 +245,20 @@ scenes.field_office = scene(780, 0.88, {
   sprites = {
     item("provisional-approval", -0.6, 0.2, 0.44, {show = {{240, 360}}}),
     item("taxpayer-money", 0.6, 0.2, 0.44, {show = {{330, 450}}}),
-    item("overtime-exemption", 2.1, -2.6, 0.52, {show = {{600, 760}}, pulse = true}),
   },
   movers = {
     move_actor("small-biter", 0, 190, 5.3, 1.2, 1.7, 1.1, {hold_until = 470}),
     move_actor("small-biter", 470, 560, 1.7, 1.1, 5.3, 1.2),
-    move_item("overtime-exemption", 600, 670, 2.1, -2.6, 0.8, 0),
+    move_actor("small-biter", 560, 690, 5.3, 1.2, 1.7, 1.1, {hold_until = 760}),
   },
-  bars = {bar(0, 2.7, 3.4, colors.green, {{at = 190, value = 0}, {at = 320, value = 0.5}, {at = 450, value = 1}, {at = 500, value = 0}})},
+  bars = {bar(0, 2.7, 3.4, colors.green, {{at = 190, value = 0}, {at = 320, value = 0.5}, {at = 450, value = 1}, {at = 500, value = 0}, {at = 690, value = 0}, {at = 760, value = 0.5}})},
   overlays = {{start = 520, finish = 760, color = {r = 0.02, g = 0.05, b = 0.16, a = 0.58}}},
   texts = {
     label("CRAFT 1", -0.8, -1.8, colors.green, {show = {{240, 330}}, alignment = "center"}),
     label("CRAFT 2", 0.8, -1.8, colors.green, {show = {{330, 450}}, alignment = "center"}),
-    label("CLOSED", 0, -2.4, colors.red, {show = {{520, 650}}, alignment = "center"}),
-    label("OVERTIME: OPEN", 0, -2.4, colors.green, {show = {{670, 760}}, alignment = "center"}),
+    label("OPEN ALL NIGHT", 0, -2.4, colors.green, {show = {{520, 760}}, alignment = "center"}),
   },
-  stage = stages(0, "Citizen intake", 190, "Two field-office crafts", 470, "Citizen released", 520, "Night closure", 600, "Overtime exemption"),
+  stage = stages(0, "Citizen intake", 190, "Two field-office crafts", 470, "Citizen released", 520, "Night operations", 560, "Replacement intake"),
 })
 
 scenes.biter_employment = scene(720, 0.88, {
@@ -393,22 +391,21 @@ scenes.pneumatic = scene(660, 0.88, {
 
 scenes.working_hours = scene(840, 0.68, {
   entities = {
-    entity("office-desk", -8, 0, "DESK"), entity("union-headquarters", -4, 0, "UNION"), entity("biter-station", 0, 0, "STATION"),
-    entity("biterport", 4, 0, "PORT"), entity("field-office", 8, 0, "FIELD"), entity("electric-mining-drill", 0, 4, "PROTEST TARGET"),
+    entity("office-desk", -6, 0, "DESK"), entity("union-headquarters", -2, 0, "UNION"), entity("biter-station", 2, 0, "STATION"),
+    entity("biterport", 6, 0, "PORT"), entity("electric-mining-drill", 0, 4, "PROTEST TARGET"),
   },
   sprites = {
-    item("overtime-exemption", -8, 2.1, 0.42), item("overtime-exemption", -4, 2.1, 0.42), item("overtime-exemption", 8, 2.1, 0.42),
-    sprite("fluid/liquid-coffee", 0, 2.1, 0.42), sprite("fluid/liquid-coffee", 4, 2.1, 0.42),
+    item("overtime-exemption", -6, 2.1, 0.42), item("overtime-exemption", -2, 2.1, 0.42),
+    sprite("fluid/liquid-coffee", 2, 2.1, 0.42), sprite("fluid/liquid-coffee", 6, 2.1, 0.42),
     sprite("utility/status_not_working", 0, 4, 0.75, {show = {{650, 820}}, tint = colors.red}),
   },
   overlays = {{start = 250, finish = 820, color = {r = 0.01, g = 0.03, b = 0.12, a = 0.58}}},
   texts = {
     label("DAY: ACTIVE", 0, -4, colors.yellow, {show = {{0, 250}}, alignment = "center"}),
     label("NIGHT", 0, -4, colors.blue, {show = {{250, 820}}, alignment = "center"}),
-    label("OPEN", -8, -2, colors.green, {show = {{390, 820}}, alignment = "center"}), label("OPEN", -4, -2, colors.green, {show = {{390, 820}}, alignment = "center"}),
-    label("COFFEE", 0, -2, colors.cyan, {show = {{500, 820}}, alignment = "center"}), label("COFFEE", 4, -2, colors.cyan, {show = {{500, 820}}, alignment = "center"}),
-    label("OPEN", 8, -2, colors.green, {show = {{390, 820}}, alignment = "center"}),
-    label("CLOSED", -4, -2, colors.red, {show = {{250, 390}}, alignment = "center"}), label("CLOSED", 0, -2, colors.red, {show = {{250, 500}}, alignment = "center"}),
+    label("OPEN", -6, -2, colors.green, {show = {{390, 820}}, alignment = "center"}), label("OPEN", -2, -2, colors.green, {show = {{390, 820}}, alignment = "center"}),
+    label("COFFEE", 2, -2, colors.cyan, {show = {{500, 820}}, alignment = "center"}), label("COFFEE", 6, -2, colors.cyan, {show = {{500, 820}}, alignment = "center"}),
+    label("CLOSED", -2, -2, colors.red, {show = {{250, 390}}, alignment = "center"}), label("CLOSED", 2, -2, colors.red, {show = {{250, 500}}, alignment = "center"}),
     label("PROTEST OVERRIDES OVERTIME", 0, 5.2, colors.red, {show = {{650, 820}}, alignment = "center"}),
   },
   movers = {move_actor("small-biter", 580, 680, 6, 4, 1.3, 4, {hold_until = 820})},

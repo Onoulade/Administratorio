@@ -1099,12 +1099,10 @@ field_office.icons = {
 field_office.crafting_categories = bureaucracy_categories.field_office()
 field_office.crafting_speed = 0.5
 field_office.module_slots = 0
-enable_machine_effects(field_office)
-field_office.localised_description = {"entity-description.field-office-no-working-hours"}
--- Collision box is smaller than the 3x3 selection box (unlike the other admin
--- buildings) so a biter can path between two adjacent field offices instead
--- of always routing around the whole cluster.
-field_office.collision_box = {{-0.9, -0.9}, {0.9, 0.9}}
+field_office.quality_affects_module_slots = false
+field_office.allowed_effects = {}
+field_office.allowed_module_categories = nil
+field_office.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
 field_office.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
 field_office.energy_source = {
   type = "electric",

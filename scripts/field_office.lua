@@ -1,7 +1,7 @@
 -- Field Office: early-game bureaucratic outpost.
 -- Summons biters from nearby nests; each worker completes 3 crafts before heading home.
 -- Only operates (1.0x, 0 pollution) while a biter is physically present and working.
--- Completely inactive otherwise. Runs day and night — no working hours, no module slots.
+-- Completely inactive otherwise. Field offices operate independently of working hours.
 local C = require("scripts.constants")
 local quality = require("scripts.quality")
 local unit_ai_settings = require("scripts.unit_ai_settings")

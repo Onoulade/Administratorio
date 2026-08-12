@@ -99,6 +99,10 @@ test("eviction and night-shift tips stay wired to the relevant unlocks", functio
       "working-hours tip should unlock from building " .. entity_name
     )
   end
+  assert_true(
+    not trigger_contains(working_hours.trigger, "build-entity", "entity", "field-office"),
+    "working-hours tip should not treat the always-open field office as night-gated"
+  )
 end)
 
 test("rideable biter tip unlocks with its dedicated technology", function()

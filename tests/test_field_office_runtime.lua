@@ -52,6 +52,15 @@ defines = {
   },
 }
 
+package.loaded["scripts.working_hours"] = nil
+package.preload["scripts.working_hours"] = function()
+  return {
+    is_enabled = function() return true end,
+    is_night = function() return true end,
+    entity_has_overtime_exemption = function() return false end,
+  }
+end
+
 local drawn = {}
 local next_render_id = 0
 rendering = {}
@@ -210,6 +219,42 @@ local function new_office(surface, unit_number, energy)
   end
   return office
 end
+
+test("field office prototype has no module inventory", function()
+  local file = assert(io.open(mod_root .. "prototypes/entity/admin-buildings.lua", "r"))
+  local source = file:read("*a")
+  file:close()
+  local prototype = source:match("local field_office =.-%-%- Transit Permit Chest")
+
+  assert_true(prototype ~= nil, "field office prototype block should exist")
+  assert_true(prototype:find("field_office%.module_slots%s*=%s*0"),
+    "field office must explicitly expose zero module slots")
+  assert_true(prototype:find("field_office%.quality_affects_module_slots%s*=%s*false"),
+    "field office quality must never add module slots")
+  assert_true(prototype:find("field_office%.allowed_effects%s*=%s*{}"),
+    "field office must reject all installed module effects")
+  assert_true(prototype:find("field_office%.allowed_module_categories%s*=%s*nil"),
+    "field office must not advertise an accepted module category")
+  assert_true(not prototype:find("enable_machine_effects%(field_office%)"),
+    "field office must not opt into installed module effects")
+end)
+
+test("field office summons workers during the night", function()
+  reset()
+  local spawner = {valid = true, position = {x = 40, y = 50}}
+  local surface = new_surface({spawner})
+  surface.daytime = 0.5
+  local office = new_office(surface, 6, 100)
+  field_office.track_entity(office)
+
+  field_office.update(0)
+
+  assert_true(surface.created_entities[1] ~= nil, "nighttime office should summon a worker")
+  assert_eq(storage.field_office_state[office.unit_number].phase, "calling",
+    "nighttime office should enter the calling phase")
+  assert_eq(office.custom_status.label[1], "gui.field-office-calling",
+    "nighttime office should never report a working-hours closure")
+end)
 
 test("field office cursor draws office range and reachable nest markers", function()
   reset()
