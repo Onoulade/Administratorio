@@ -218,6 +218,7 @@ if space_age_enabled then
   shared.ADMIN_BUILDINGS["digital-services-bureau"] = true
   shared.ADMIN_BUILDINGS["interplanetary-terminus"] = true
   shared.ADMIN_BUILDINGS["ai-server"] = true
+  shared.ADMIN_BUILDINGS["slop-refinery"] = true
   shared.ADMIN_BUILDINGS["synthetic-personnel-bureau"] = true
   shared.ADMIN_BUILDINGS["involuntary-relocation-cannon"] = true
   shared.ADMIN_BUILDINGS["heat-exhaust"] = true
@@ -464,6 +465,7 @@ shared.UNBATCHED_RESULT_NAMES = {
   ["laser-printer"] = true,
   ["interplanetary-terminus"] = true,
   ["ai-server"] = true,
+  ["slop-refinery"] = true,
   ["synthetic-personnel-bureau"] = true,
   ["involuntary-relocation-cannon"] = true,
   ["heat-exhaust"] = true,

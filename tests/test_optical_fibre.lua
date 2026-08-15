@@ -116,7 +116,7 @@ test("every machine that touches tokens does so through a fibre port", function(
     ports = ports + 1
   end
   assert_true(ports >= 3,
-    "the AI Server needs an output and an input, and the Bureau needs an input")
+    "the AI Server emits, and the Slop Refinery and Bureau each draw")
   local filters = 0
   for _ in entities:gmatch('filter = "inference%-token"') do
     filters = filters + 1
@@ -142,6 +142,7 @@ test("every fibre port sits inside its own entity's collision box", function()
   -- entity it actually belongs to, not against whichever box is most generous.
   local entity_limits = {
     {variable = "ai_server", half_extent = 3.25},
+    {variable = "slop_refinery", half_extent = 3.25},
     {variable = "synthetic_personnel_bureau", half_extent = 2.25},
   }
 
@@ -164,7 +165,17 @@ test("every fibre port sits inside its own entity's collision box", function()
     assert_true(ports > 0, subject.variable .. " should have at least one fibre port")
   end
 
-  assert_true(checked >= 3, "all three fibre ports should be checked")
+  assert_true(checked >= 3, "every fibre port should be checked")
+end)
+
+test("the AI Server emits inference and consumes none", function()
+  local from = entities:find("ai_server.fluid_boxes = {", 1, true)
+  assert_true(from ~= nil, "the AI Server should declare fluid boxes")
+  local block = entities:sub(from, entities:find("\n}", from, true))
+  assert_true(block:find('production_type = "output"', 1, true) ~= nil,
+    "the server should emit tokens")
+  assert_true(block:find('production_type = "input"', 1, true) == nil,
+    "consuming tokens is the Slop Refinery's job, not the server's")
 end)
 
 test("the fibre ports avoid the AI Server heat connection tiles", function()

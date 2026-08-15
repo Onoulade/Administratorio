@@ -59,6 +59,55 @@ local function space_age_shadow(name, width, height, shift_x, shift_y, repeat_co
   return shadow
 end
 
+--- The building sheets used below all ship as one packed grid plus a single
+--- frame shadow. Frame size, count and line length differ per sheet.
+local function machine_sheet(folder, spec)
+  local base = entity_graphics .. folder .. "/"
+  local layers = {
+    {
+      filename = base .. "animation.png",
+      priority = "high",
+      width = spec.width,
+      height = spec.height,
+      frame_count = spec.frame_count,
+      line_length = spec.line_length,
+      animation_speed = spec.animation_speed or 0.5,
+      scale = spec.scale,
+      shift = spec.shift,
+    },
+  }
+
+  if spec.emission then
+    layers[#layers + 1] = {
+      filename = base .. "emission.png",
+      priority = "high",
+      width = spec.width,
+      height = spec.height,
+      frame_count = spec.frame_count,
+      line_length = spec.line_length,
+      animation_speed = spec.animation_speed or 0.5,
+      scale = spec.scale,
+      shift = spec.shift,
+      draw_as_glow = true,
+      blend_mode = "additive",
+    }
+  end
+
+  layers[#layers + 1] = {
+    filename = base .. "shadow.png",
+    priority = "high",
+    width = spec.shadow_width,
+    height = spec.shadow_height,
+    frame_count = 1,
+    repeat_count = spec.frame_count,
+    scale = spec.scale,
+    shift = spec.shadow_shift or spec.shift,
+    draw_as_shadow = true,
+  }
+
+  return {layers = layers}
+end
+
 local function align_footprint(entity, collision_width, collision_height, selection_width, selection_height, offset)
   local x = offset and offset[1] or 0
   local y = offset and offset[2] or 0
@@ -446,51 +495,6 @@ administrative_space_station.working_sound = {
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
--- Space Exploration's delivery cannon artwork is used when the player has that
--- graphics mod installed. Its licence forbids redistributing its files, so
--- nothing is vendored here: the sprites are referenced from the player's own
--- copy, and the mod falls back to its own artwork when it is absent.
--- See THIRD-PARTY-NOTICES.md.
-local SE_GRAPHICS = "space-exploration-graphics-5"
-local function relocation_cannon_animation()
-  if mods and mods[SE_GRAPHICS] then
-    local se = "__" .. SE_GRAPHICS .. "__/graphics/entity/delivery-cannon/"
-    return {
-      layers = {
-        {
-          filename = se .. "delivery-cannon.png",
-          priority = "high",
-          width = 320,
-          height = 640,
-          frame_count = 1,
-          scale = 0.5,
-          shift = util.by_pixel(0, -68),
-        },
-        {
-          filename = se .. "delivery-cannon-shadow.png",
-          priority = "high",
-          width = 470,
-          height = 306,
-          frame_count = 1,
-          scale = 0.5,
-          shift = util.by_pixel(58, 6),
-          draw_as_shadow = true,
-        },
-      },
-    }
-  end
-
-  return {
-    filename = entity_graphics .. "relocation-cannon/relocation-cannon.png",
-    priority = "high",
-    width = 256,
-    height = 301,
-    frame_count = 1,
-    scale = 0.5,
-    shift = {0, -0.35},
-  }
-end
-
 -- Involuntary Relocation Cannon: a regular building, not a turret.
 --
 -- No catapult prototype is involved. Biters and managers are reassigned across
@@ -505,10 +509,8 @@ end
 local involuntary_relocation_cannon = {
   type = "furnace",
   name = "involuntary-relocation-cannon",
-  icons = {
-    {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
-    {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
-  },
+  icon = item_icons .. "relocation-cannon.png",
+  icon_size = 64,
   flags = {"placeable-neutral", "player-creation"},
   minable = {mining_time = 0.4, result = "involuntary-relocation-cannon"},
   placeable_by = placeable_by_item("involuntary-relocation-cannon"),
@@ -538,13 +540,23 @@ local involuntary_relocation_cannon = {
       {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
     }
   ),
-  graphics_set = {animation = relocation_cannon_animation()},
+  graphics_set = {
+    animation = {
+      filename = entity_graphics .. "relocation-cannon/relocation-cannon.png",
+      priority = "high",
+      width = 1254,
+      height = 1254,
+      frame_count = 1,
+      scale = 160 / 1254,
+      shift = util.by_pixel(0, -4),
+    },
+  },
   working_sound = {
     sound = {filename = sound_path .. "industrial-press-loop.ogg", volume = 0.5},
     idle_sound = {filename = "__base__/sound/idle1.ogg"}
   },
 }
-align_footprint(involuntary_relocation_cannon, 2.4, 2.4, 3, 3)
+align_footprint(involuntary_relocation_cannon, 4.4, 4.4, 5, 5)
 
 -- Synthetic Personnel Bureau: manufactures professions, not buildings.
 --
@@ -553,15 +565,12 @@ align_footprint(involuntary_relocation_cannon, 2.4, 2.4, 3, 3)
 -- covers professions added later without further work. It solves the actual
 -- pain: worker-biter-formation is Nauvis-bound, so today every specialist means
 -- a Nauvis round trip.
-local BUREAU_TINT = {r = 0.55, g = 0.75, b = 1.0, a = 1}
-
 local synthetic_personnel_bureau = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
 synthetic_personnel_bureau.name = "synthetic-personnel-bureau"
 synthetic_personnel_bureau.icon = nil
 synthetic_personnel_bureau.icon_size = nil
-synthetic_personnel_bureau.icons = {
-  {icon = item_icons .. "formation-center.png", icon_size = 64, tint = BUREAU_TINT},
-}
+synthetic_personnel_bureau.icon = item_icons .. "synthetic-personnel-bureau.png"
+synthetic_personnel_bureau.icon_size = 64
 synthetic_personnel_bureau.minable = {mining_time = 0.3, result = "synthetic-personnel-bureau"}
 synthetic_personnel_bureau.placeable_by = placeable_by_item("synthetic-personnel-bureau")
 synthetic_personnel_bureau.next_upgrade = nil
@@ -598,37 +607,12 @@ synthetic_personnel_bureau.fluid_boxes = {
     volume = 1000,
   },
 }
--- Reuses the Formation Center artwork, tinted. The Bureau does the same job
--- for the same workforce, just synthetically and off Nauvis, so it should read
--- as the same building family rather than as an unrelated box.
 synthetic_personnel_bureau.graphics_set = {
-  animation = {
-    layers = {
-      {
-        filename = entity_graphics .. "formation-center/formation-center-animation.png",
-        priority = "high",
-        width = 480,
-        height = 435,
-        frame_count = GENERATED_FRAME_COUNT,
-        line_length = GENERATED_LINE_LENGTH,
-        animation_speed = generated_animation_speeds.speed("synthetic-personnel-bureau"),
-        scale = 1 / 3,
-        shift = util.by_pixel(0, -8),
-        tint = BUREAU_TINT,
-      },
-      {
-        filename = entity_graphics .. "formation-center/shadow.png",
-        priority = "high",
-        width = 850,
-        height = 298,
-        frame_count = 1,
-        repeat_count = GENERATED_FRAME_COUNT,
-        scale = 1 / 3,
-        shift = util.by_pixel(61, 27.5),
-        draw_as_shadow = true,
-      },
-    },
-  },
+  animation = machine_sheet("synthetic-personnel-bureau", {
+    width = 280, height = 320, frame_count = 60, line_length = 8,
+    scale = 160 / 280, shift = util.by_pixel(0, -12), emission = true,
+    shadow_width = 700, shadow_height = 500, shadow_shift = util.by_pixel(20, 6),
+  }),
 }
 synthetic_personnel_bureau.working_sound = {
   sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.5},
@@ -666,7 +650,10 @@ ai_server.placeable_by = placeable_by_item("ai-server")
 ai_server.next_upgrade = nil
 ai_server.max_health = 600
 ai_server.corpse = "big-remnants"
-ai_server.crafting_categories = {"ai-inference", "slop-refining", "citation-handling"}
+-- One job only: turn electricity into inference. Everything downstream of a
+-- token belongs to the Slop Refinery.
+ai_server.crafting_categories = {"ai-inference"}
+ai_server.fixed_recipe = "inference-token-production"
 ai_server.crafting_speed = 2
 ai_server.ingredient_count = 6
 ai_server.module_slots = 4
@@ -695,26 +682,13 @@ ai_server.fluid_boxes = {
     filter = "inference-token",
     volume = 1000,
   },
-  {
-    production_type = "input",
-    pipe_covers = pipecoverspictures(),
-    pipe_connections = {{
-      flow_direction = "input",
-      direction = defines.direction.west,
-      position = {-3, -3},
-      connection_category = "optical-data",
-    }},
-    filter = "inference-token",
-    volume = 1000,
-  },
 }
 ai_server.graphics_set = {
-  animation = {
-    layers = {
-      {filename = entity_graphics .. "ai-server/ai-server.png", width = 520, height = 500, frame_count = 1, scale = 0.45, shift = {0, -0.2}},
-      {filename = entity_graphics .. "ai-server/ai-server-shadow.png", width = 548, height = 482, frame_count = 1, scale = 0.45, shift = {0.3, 0.1}, draw_as_shadow = true},
-    }
-  }
+  animation = machine_sheet("ai-server", {
+    width = 400, height = 400, frame_count = 60, line_length = 8,
+    scale = 224 / 400, shift = util.by_pixel(0, -8), emission = true,
+    shadow_width = 700, shadow_height = 600, shadow_shift = util.by_pixel(24, 8),
+  }),
 }
 -- A building that plays escalating argument loops while consuming power and
 -- producing text nobody reads is already thematically an AI server.
@@ -792,6 +766,62 @@ local heat_exhaust = {
   },
 }
 
+-- Slop Refinery: everything downstream of a token.
+--
+-- The AI Server does one thing, turning electricity into inference. Refining
+-- that inference into slop, slop into fabricated paperwork, and handling the
+-- hallucinations that fall out is a separate building on the other end of the
+-- fibre, so compute and clerical output scale independently.
+local slop_refinery = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
+slop_refinery.name = "slop-refinery"
+slop_refinery.icon = item_icons .. "slop-refinery.png"
+slop_refinery.icon_size = 64
+slop_refinery.icons = nil
+slop_refinery.minable = {mining_time = 0.5, result = "slop-refinery"}
+slop_refinery.placeable_by = placeable_by_item("slop-refinery")
+slop_refinery.next_upgrade = nil
+slop_refinery.max_health = 550
+slop_refinery.corpse = "big-remnants"
+slop_refinery.crafting_categories = {"slop-refining", "citation-handling"}
+slop_refinery.crafting_speed = 2
+slop_refinery.ingredient_count = 6
+slop_refinery.module_slots = 4
+slop_refinery.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+slop_refinery.energy_usage = "1MW"
+slop_refinery.energy_source = {
+  type = "electric",
+  usage_priority = "secondary-input",
+  emissions_per_minute = {pollution = 8},
+}
+slop_refinery.collision_box = {{-3.25, -3.25}, {3.25, 3.25}}
+slop_refinery.selection_box = {{-3.5, -3.5}, {3.5, 3.5}}
+slop_refinery.fluid_boxes_off_when_no_fluid_recipe = true
+slop_refinery.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{
+      flow_direction = "input",
+      direction = defines.direction.west,
+      position = {-3, 0},
+      connection_category = "optical-data",
+    }},
+    filter = "inference-token",
+    volume = 1000,
+  },
+}
+slop_refinery.graphics_set = {
+  animation = machine_sheet("slop-refinery", {
+    width = 590, height = 640, frame_count = 80, line_length = 10,
+    scale = 224 / 590, shift = util.by_pixel(0, -24), emission = true,
+    shadow_width = 1200, shadow_height = 700, shadow_shift = util.by_pixel(40, 10),
+  }),
+}
+slop_refinery.working_sound = {
+  sound = {filename = sound_path .. "meeting-argument-1.ogg", volume = 0.4},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"},
+}
+
 -- Interplanetary Terminus: the trunk endpoint, one per planet.
 --
 -- A furnace shell, exactly like tube-intake, so inserters validate outbound
@@ -834,12 +864,11 @@ local interplanetary_terminus = {
     }
   ),
   graphics_set = {
-    animation = {
-      layers = {
-        space_age_animation("interplanetary-terminus", 192, 192),
-        space_age_shadow("interplanetary-terminus", 248, 150, 13, 14.5, GENERATED_FRAME_COUNT),
-      }
-    }
+    animation = machine_sheet("interplanetary-terminus", {
+      width = 160, height = 290, frame_count = 20, line_length = 8,
+      scale = 96 / 160, shift = util.by_pixel(0, -34), emission = true,
+      shadow_width = 400, shadow_height = 350, shadow_shift = util.by_pixel(14, 4),
+    }),
   },
   working_sound = {
     sound = {filename = sound_path .. "industrial-printer-loop.ogg", volume = 0.55},
@@ -1159,6 +1188,7 @@ for _, entity in ipairs({
   ai_server,
   heat_exhaust,
   synthetic_personnel_bureau,
+  slop_refinery,
   involuntary_relocation_cannon,
 }) do
   require_non_vacuum(entity)
@@ -1177,6 +1207,7 @@ local space_age_entities = {
   ai_server_heat_core,
   heat_exhaust,
   synthetic_personnel_bureau,
+  slop_refinery,
   involuntary_relocation_cannon,
   orbital_biter_projectile,
   trajectory_compliance_array,

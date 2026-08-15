@@ -1376,6 +1376,22 @@ data:extend({
   }, "aquilo"),
   surface_limited({
     type = "recipe",
+    name = "slop-refinery",
+    subgroup = "admin-space-buildings",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "office-desk", amount = 4},
+      {type = "item", name = "cryoprint-technician", amount = 1},
+      {type = "item", name = "processing-unit", amount = 40},
+      {type = "item", name = "lithium-plate", amount = 30},
+      {type = "item", name = "optical-fibre", amount = 20},
+      {type = "item", name = "construction-work-order", amount = 1},
+    },
+    results = {{type = "item", name = "slop-refinery", amount = 1}},
+    energy_required = 30,
+  }, "aquilo"),
+  surface_limited({
+    type = "recipe",
     name = "ai-server",
     subgroup = "admin-space-buildings",
     enabled = false,
@@ -1428,6 +1444,9 @@ data:extend({
     category = "ai-inference",
     subgroup = "admin-bs-economy",
     enabled = false,
+    -- The AI Server has exactly one job and takes no recipe choice, so the
+    -- recipe is fixed on the machine and kept out of the crafting menus.
+    hide_from_player_crafting = true,
     localised_name = {"fluid-name.inference-token"},
     -- Electricity is the only input. The AI Server's draw and its heat are the
     -- whole cost of inference; nothing is consumed but power.
@@ -1438,7 +1457,7 @@ data:extend({
   {
     type = "recipe",
     name = "administrative-slop-production",
-    category = "ai-inference",
+    category = "slop-refining",
     subgroup = "admin-bs-economy",
     enabled = false,
     localised_name = {"item-name.administrative-slop"},
@@ -2297,6 +2316,7 @@ local staffed_building_manager_requirements = {
   ["digital-services-bureau"] = {"staffing"},
   ["interplanetary-terminus"] = {"staffing", "liaison"},
   ["ai-server"] = {"staffing", "liaison"},
+  ["slop-refinery"] = {"staffing", "liaison"},
   ["synthetic-personnel-bureau"] = {"staffing", "liaison"},
   ["involuntary-relocation-cannon"] = {"staffing", "compliance"},
   ["laser-printer"] = {"staffing"},

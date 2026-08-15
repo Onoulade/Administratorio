@@ -10,7 +10,6 @@
   "dependencies": [
     "base >= 2.0.0",
     "? space-age >= 2.0.0",
-    "? space-exploration-graphics-5",
     "? quality >= 2.0.0"
   ],
   "quality_required": false,

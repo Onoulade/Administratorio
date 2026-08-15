@@ -1049,6 +1049,7 @@ end
 
 local ai_inference_effects = {
   {type = "unlock-recipe", recipe = "ai-server"},
+  {type = "unlock-recipe", recipe = "slop-refinery"},
   {type = "unlock-recipe", recipe = "heat-exhaust"},
   {type = "unlock-recipe", recipe = "optical-fibre"},
   {type = "unlock-recipe", recipe = "inference-token-production"},
@@ -1085,7 +1086,7 @@ data:extend({
   {
     type = "technology",
     name = "administratorium-slop-synthesis",
-    icon = "__administratorio__/graphics/icons/ai-server.png",
+    icon = "__administratorio__/graphics/icons/slop-refinery.png",
     icon_size = 64,
     effects = slop_unlocks("advanced"),
     prerequisites = {"aquilo-ai-inference", "promethium-science-pack"},
@@ -1160,10 +1161,8 @@ data:extend({
   {
     type = "technology",
     name = "synthetic-personnel",
-    icons = {
-      {icon = "__administratorio__/graphics/icons/formation-center.png", icon_size = 64,
-        tint = {r = 0.55, g = 0.75, b = 1.0, a = 1}},
-    },
+    icon = "__administratorio__/graphics/icons/synthetic-personnel-bureau.png",
+    icon_size = 64,
     effects = synthetic_personnel_effects,
     prerequisites = {"aquilo-ai-inference", "promethium-science-pack"},
     unit = {
@@ -1245,10 +1244,8 @@ data:extend({
   {
     type = "technology",
     name = "involuntary-relocation",
-    icons = {
-      {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
-      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
-    },
+    icon = "__administratorio__/graphics/icons/relocation-cannon.png",
+    icon_size = 64,
     effects = relocation_effects,
     prerequisites = {"egg-courier-formation", "vulcanus-certification"},
     unit = {

@@ -751,10 +751,8 @@ data:extend({
   {
     type = "item",
     name = "involuntary-relocation-cannon",
-    icons = {
-      {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
-      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
-    },
+    icon = item_icons .. "relocation-cannon.png",
+    icon_size = 64,
     subgroup = "admin-space-buildings",
     order = "o3",
     place_result = "involuntary-relocation-cannon",
@@ -771,7 +769,8 @@ data:extend({
   {
     type = "item",
     name = "synthetic-personnel-bureau",
-    icons = {{icon = item_icons .. "formation-center.png", icon_size = 64, tint = {r = 0.55, g = 0.75, b = 1.0, a = 1}}},
+    icon = item_icons .. "synthetic-personnel-bureau.png",
+    icon_size = 64,
     subgroup = "admin-biter-buildings",
     order = "z-synthetic",
     place_result = "synthetic-personnel-bureau",
@@ -785,6 +784,16 @@ data:extend({
     subgroup = "admin-space-buildings",
     order = "o",
     place_result = "ai-server",
+    stack_size = 10
+  },
+  {
+    type = "item",
+    name = "slop-refinery",
+    icon = item_icons .. "slop-refinery.png",
+    icon_size = 64,
+    subgroup = "admin-space-buildings",
+    order = "o0",
+    place_result = "slop-refinery",
     stack_size = 10
   },
   {
