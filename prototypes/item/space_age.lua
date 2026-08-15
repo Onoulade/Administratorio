@@ -771,10 +771,9 @@ data:extend({
   {
     type = "item",
     name = "synthetic-personnel-bureau",
-    icon = item_icons .. "space-age/synthetic-personnel-bureau.png",
-    icon_size = 64,
-    subgroup = "admin-space-buildings",
-    order = "o2",
+    icons = {{icon = item_icons .. "formation-center.png", icon_size = 64, tint = {r = 0.55, g = 0.75, b = 1.0, a = 1}}},
+    subgroup = "admin-biter-buildings",
+    order = "z-synthetic",
     place_result = "synthetic-personnel-bureau",
     stack_size = 20
   },

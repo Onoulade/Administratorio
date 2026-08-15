@@ -201,6 +201,7 @@ if space_age_enabled then
     research_tip("administratorio-laser-printer", aquilo, "c", "interplanetary-tube-chromatic"),
     research_tip("administratorio-interplanetary-terminus", interplanetary, "f", "interplanetary-tube-network"),
     research_tip("administratorio-interplanetary-trunk", interplanetary, "g", "interplanetary-tube-network"),
+    research_tip("administratorio-relocation-cannon", interplanetary, "h", "involuntary-relocation"),
     research_tip("administratorio-trunk-capacity", aquilo, "d", "interplanetary-tube-capacity-2"),
     research_tip("administratorio-chromatic-trunk", aquilo, "e", "interplanetary-tube-chromatic"),
     research_tip("administratorio-egg-couriers", aquilo, "f", "egg-courier-formation"),

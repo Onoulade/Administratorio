@@ -61,6 +61,33 @@ idea is credited here because it is a good one and it came from Moshine.
 
 ---
 
+## Space Exploration Graphics Part 5 — Earendel
+
+- Project: <https://mods.factorio.com/mod/space-exploration-graphics-5>
+- Author: **Earendel**
+- Licence: **FMLDOL** (Factorio Mod Limited Distribution Only Licence)
+
+**No files from this mod are vendored here, and none may be.** Its licence
+restricts modification to private personal use and forbids distributing any
+content from it, altered or otherwise, separately from the complete mod
+package.
+
+The Involuntary Relocation Cannon therefore *references* the delivery cannon
+sprites by path, under an optional dependency, so they load from the player's
+own installation:
+
+    __space-exploration-graphics-5__/graphics/entity/delivery-cannon/
+
+When that mod is absent the cannon falls back to Administratorio's own
+artwork, so the dependency is genuinely optional. Referencing a path in a mod
+the player installed is not distribution; copying the files into this
+repository would be, and must not be done.
+
+If Earendel's artwork is ever wanted as a hard requirement rather than an
+optional skin, ask Earendel first: <https://discord.gg/ymjUVMv>
+
+---
+
 ## Notes for future contributors
 
 Moshine's entity graphics live in a separate `Moshine-assets` mod and are **not**

@@ -7,7 +7,12 @@
   "homepage": "",
   "description": "Beta overhaul where the factory grows only with proper permits. Replace biters with complainers and weapons with bureaucracy.",
   "factorio_version": "2.0",
-  "dependencies": ["base >= 2.0.0", "? space-age >= 2.0.0", "? quality >= 2.0.0"],
+  "dependencies": [
+    "base >= 2.0.0",
+    "? space-age >= 2.0.0",
+    "? space-exploration-graphics-5",
+    "? quality >= 2.0.0"
+  ],
   "quality_required": false,
   "rail_bridges_required": false,
   "space_travel_required": false,

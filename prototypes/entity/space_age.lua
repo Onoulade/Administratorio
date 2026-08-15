@@ -446,6 +446,51 @@ administrative_space_station.working_sound = {
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
+-- Space Exploration's delivery cannon artwork is used when the player has that
+-- graphics mod installed. Its licence forbids redistributing its files, so
+-- nothing is vendored here: the sprites are referenced from the player's own
+-- copy, and the mod falls back to its own artwork when it is absent.
+-- See THIRD-PARTY-NOTICES.md.
+local SE_GRAPHICS = "space-exploration-graphics-5"
+local function relocation_cannon_animation()
+  if mods and mods[SE_GRAPHICS] then
+    local se = "__" .. SE_GRAPHICS .. "__/graphics/entity/delivery-cannon/"
+    return {
+      layers = {
+        {
+          filename = se .. "delivery-cannon.png",
+          priority = "high",
+          width = 320,
+          height = 640,
+          frame_count = 1,
+          scale = 0.5,
+          shift = util.by_pixel(0, -68),
+        },
+        {
+          filename = se .. "delivery-cannon-shadow.png",
+          priority = "high",
+          width = 470,
+          height = 306,
+          frame_count = 1,
+          scale = 0.5,
+          shift = util.by_pixel(58, 6),
+          draw_as_shadow = true,
+        },
+      },
+    }
+  end
+
+  return {
+    filename = entity_graphics .. "relocation-cannon/relocation-cannon.png",
+    priority = "high",
+    width = 256,
+    height = 301,
+    frame_count = 1,
+    scale = 0.5,
+    shift = {0, -0.35},
+  }
+end
+
 -- Involuntary Relocation Cannon: a regular building, not a turret.
 --
 -- No catapult prototype is involved. Biters and managers are reassigned across
@@ -493,17 +538,7 @@ local involuntary_relocation_cannon = {
       {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
     }
   ),
-  graphics_set = {
-    animation = {
-      filename = entity_graphics .. "relocation-cannon/relocation-cannon.png",
-      priority = "high",
-      width = 256,
-      height = 301,
-      frame_count = 1,
-      scale = 0.5,
-      shift = {0, -0.35},
-    },
-  },
+  graphics_set = {animation = relocation_cannon_animation()},
   working_sound = {
     sound = {filename = sound_path .. "industrial-press-loop.ogg", volume = 0.5},
     idle_sound = {filename = "__base__/sound/idle1.ogg"}
@@ -518,11 +553,15 @@ align_footprint(involuntary_relocation_cannon, 2.4, 2.4, 3, 3)
 -- covers professions added later without further work. It solves the actual
 -- pain: worker-biter-formation is Nauvis-bound, so today every specialist means
 -- a Nauvis round trip.
+local BUREAU_TINT = {r = 0.55, g = 0.75, b = 1.0, a = 1}
+
 local synthetic_personnel_bureau = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
 synthetic_personnel_bureau.name = "synthetic-personnel-bureau"
-synthetic_personnel_bureau.icon = space_age_icons .. "synthetic-personnel-bureau.png"
-synthetic_personnel_bureau.icon_size = 64
-synthetic_personnel_bureau.icons = nil
+synthetic_personnel_bureau.icon = nil
+synthetic_personnel_bureau.icon_size = nil
+synthetic_personnel_bureau.icons = {
+  {icon = item_icons .. "formation-center.png", icon_size = 64, tint = BUREAU_TINT},
+}
 synthetic_personnel_bureau.minable = {mining_time = 0.3, result = "synthetic-personnel-bureau"}
 synthetic_personnel_bureau.placeable_by = placeable_by_item("synthetic-personnel-bureau")
 synthetic_personnel_bureau.next_upgrade = nil
@@ -541,7 +580,9 @@ synthetic_personnel_bureau.energy_source = {
   usage_priority = "secondary-input",
   emissions_per_minute = {pollution = 6},
 }
-align_footprint(synthetic_personnel_bureau, 2.4, 2.4, 3, 3, {0, 1 / 32})
+-- 5x5, matching the Formation Center whose artwork it reuses.
+synthetic_personnel_bureau.collision_box = {{-2.25, -2.25}, {2.25, 2.25}}
+synthetic_personnel_bureau.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
 synthetic_personnel_bureau.fluid_boxes_off_when_no_fluid_recipe = true
 synthetic_personnel_bureau.fluid_boxes = {
   {
@@ -550,27 +591,44 @@ synthetic_personnel_bureau.fluid_boxes = {
     pipe_connections = {{
       flow_direction = "input",
       direction = defines.direction.north,
-      position = {0, -1},
+      position = {0, -2},
       connection_category = "optical-data",
     }},
     filter = "inference-token",
     volume = 1000,
   },
 }
--- 128px of art at the default half scale covers two tiles; the 3x3 footprint
--- the fibre port needs wants three.
-local bureau_animation = space_age_animation("synthetic-personnel-bureau", 128, 128)
-bureau_animation.scale = 0.75
-local bureau_shadow = space_age_shadow("synthetic-personnel-bureau", 192, 110, 15.5, 13.5, GENERATED_FRAME_COUNT)
-bureau_shadow.scale = 0.75
-
+-- Reuses the Formation Center artwork, tinted. The Bureau does the same job
+-- for the same workforce, just synthetically and off Nauvis, so it should read
+-- as the same building family rather than as an unrelated box.
 synthetic_personnel_bureau.graphics_set = {
   animation = {
     layers = {
-      bureau_animation,
-      bureau_shadow,
-    }
-  }
+      {
+        filename = entity_graphics .. "formation-center/formation-center-animation.png",
+        priority = "high",
+        width = 480,
+        height = 435,
+        frame_count = GENERATED_FRAME_COUNT,
+        line_length = GENERATED_LINE_LENGTH,
+        animation_speed = generated_animation_speeds.speed("synthetic-personnel-bureau"),
+        scale = 1 / 3,
+        shift = util.by_pixel(0, -8),
+        tint = BUREAU_TINT,
+      },
+      {
+        filename = entity_graphics .. "formation-center/shadow.png",
+        priority = "high",
+        width = 850,
+        height = 298,
+        frame_count = 1,
+        repeat_count = GENERATED_FRAME_COUNT,
+        scale = 1 / 3,
+        shift = util.by_pixel(61, 27.5),
+        draw_as_shadow = true,
+      },
+    },
+  },
 }
 synthetic_personnel_bureau.working_sound = {
   sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.5},
@@ -727,8 +785,10 @@ local heat_exhaust = {
     filename = entity_graphics .. "ai-server/heat-exhaust.png",
     width = 473,
     height = 459,
-    scale = 0.35,
-    shift = {0.4, 0},
+    -- 473px of art over a 3x3 footprint: 96 / 473 keeps the fan inside its
+    -- own tiles instead of overhanging them.
+    scale = 96 / 473,
+    shift = {0, 0},
   },
 }
 

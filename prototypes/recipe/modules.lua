@@ -6,15 +6,15 @@ data:extend({
     name = "unstaffed-operations-waiver",
     category = "union-negotiation",
     enabled = false,
-    energy_required = 45,
+    energy_required = 120,
     crafting_machine_tint = icon_tints.recipe_tint("unstaffed-operations-waiver"),
     ingredients = {
-      {type = "item", name = "processing-unit", amount = 15},
-      {type = "item", name = "tungsten-plate", amount = 10},
-      {type = "item", name = "bioflux", amount = 10},
-      {type = "item", name = "holmium-plate", amount = 10},
-      {type = "item", name = "trichromatic-permit", amount = 1},
-      {type = "fluid", name = "union-approval", amount = 100},
+      {type = "item", name = "quantum-processor", amount = 20},
+      {type = "item", name = "tungsten-plate", amount = 40},
+      {type = "item", name = "bioflux", amount = 40},
+      {type = "item", name = "holmium-plate", amount = 40},
+      {type = "item", name = "trichromatic-permit", amount = 4},
+      {type = "fluid", name = "union-approval", amount = 400},
     },
     results = {
       {type = "item", name = "unstaffed-operations-waiver", amount = 1},
@@ -23,22 +23,6 @@ data:extend({
   -- Reactivation is cheaper than a fresh craft, so renewing an expired waiver
   -- is the correct play. No new crafting category is needed: Union HQ already
   -- carries union-negotiation.
-  {
-    type = "recipe",
-    name = "unstaffed-operations-waiver-reactivation",
-    category = "union-negotiation",
-    enabled = false,
-    energy_required = 20,
-    crafting_machine_tint = icon_tints.recipe_tint("unstaffed-operations-waiver"),
-    ingredients = {
-      {type = "item", name = "expired-waiver", amount = 1},
-      {type = "item", name = "processing-unit", amount = 2},
-      {type = "fluid", name = "union-approval", amount = 50},
-    },
-    results = {
-      {type = "item", name = "unstaffed-operations-waiver", amount = 1},
-    },
-  },
   {
     type = "recipe",
     name = "overtime-exemption",

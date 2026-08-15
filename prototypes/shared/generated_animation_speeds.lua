@@ -22,7 +22,7 @@ M.ANIMATION_SPEEDS = {
   ["laser-printer"] = 0.15,
   ["notary-office"] = 0.4,
   ["printer-t2"] = 0.5,
-  ["synthetic-personnel-bureau"] = 0.18,
+  ["synthetic-personnel-bureau"] = 0.25,
   ["territorial-arbitration-post"] = 0.25,
   ["union-headquarters"] = 0.6,
 }

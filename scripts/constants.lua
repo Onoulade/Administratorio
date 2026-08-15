@@ -205,17 +205,8 @@ M.BITER_STATION_ARRIVAL_RADIUS = 2.5
 -- Buildings that idle without a biter dispatched from a biter-station.
 -- Note: union-headquarters is intentionally NOT here — it consumes a biter
 -- as a recipe ingredient, so it does not also need ongoing dispatch.
-M.BITER_STATION_MANAGED_BUILDINGS = {
-  "propaganda-distillery",
-  "corporate-breakroom",
-  "centrifuge",
-  "oil-refinery",
-  "printer-t2",
-}
-M.BITER_STATION_MANAGED_BUILDING_SET = {}
-for _, name in ipairs(M.BITER_STATION_MANAGED_BUILDINGS) do
-  M.BITER_STATION_MANAGED_BUILDING_SET[name] = true
-end
+M.BITER_STATION_MANAGED_BUILDINGS = require("prototypes.shared.biter_station_buildings").names
+M.BITER_STATION_MANAGED_BUILDING_SET = require("prototypes.shared.biter_station_buildings").as_set()
 
 -- Biterport: walking-worker construction/logistics network.
 M.BITERPORT_NAME = "biterport"

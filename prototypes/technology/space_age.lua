@@ -957,13 +957,20 @@ data:extend({
   {
     type = "technology",
     name = "interplanetary-tube-network",
-    icon = trunk_icon,
+    icon = "__administratorio__/graphics/icons/space-age/interplanetary-terminus.png",
     icon_size = 64,
     effects = base_trunk_effects,
     prerequisites = {"pneumatic-capacity-2", "cyan-yellow-bureaucracy"},
-    -- Crafting the bicolor form is what opens the trunk, so the unlock is felt
-    -- rather than merely listed on a research screen.
-    research_trigger = {type = "craft-item", item = "cyan-yellow-form", count = 5},
+    unit = {
+      count = 250,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 45,
+    },
     order = "h-t",
   },
 })
@@ -1044,7 +1051,6 @@ local ai_inference_effects = {
   {type = "unlock-recipe", recipe = "ai-server"},
   {type = "unlock-recipe", recipe = "heat-exhaust"},
   {type = "unlock-recipe", recipe = "optical-fibre"},
-  {type = "unlock-recipe", recipe = "optical-fibre-to-ground"},
   {type = "unlock-recipe", recipe = "inference-token-production"},
   {type = "unlock-recipe", recipe = "administrative-slop-production"},
   {type = "unlock-recipe", recipe = "fabricated-citations-venting"},
@@ -1114,7 +1120,6 @@ data:extend({
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "unstaffed-operations-waiver"},
-      {type = "unlock-recipe", recipe = "unstaffed-operations-waiver-reactivation"},
     },
     prerequisites = {"interplanetary-tube-chromatic", "public-finance"},
     unit = {
@@ -1155,8 +1160,10 @@ data:extend({
   {
     type = "technology",
     name = "synthetic-personnel",
-    icon = "__administratorio__/graphics/icons/space-age/synthetic-personnel-bureau.png",
-    icon_size = 64,
+    icons = {
+      {icon = "__administratorio__/graphics/icons/formation-center.png", icon_size = 64,
+        tint = {r = 0.55, g = 0.75, b = 1.0, a = 1}},
+    },
     effects = synthetic_personnel_effects,
     prerequisites = {"aquilo-ai-inference", "promethium-science-pack"},
     unit = {

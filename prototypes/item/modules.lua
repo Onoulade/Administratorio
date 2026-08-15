@@ -11,18 +11,11 @@ data:extend({
     stack_size = 50,
     category = "unstaffed-operations",
     tier = 1,
+    -- Deliberately does not spoil. Spoilage works in a module slot, but nothing
+    -- can feed or remove a module automatically, so an expiring waiver would be
+    -- a manual chore rather than a logistics problem. The cost carries the
+    -- weight instead.
     effect = {},
-    spoil_ticks = 60 * 60 * 60,
-    spoil_result = "expired-waiver",
-  },
-  {
-    type = "item",
-    name = "expired-waiver",
-    icon = "__administratorio__/graphics/icons/unstaffed-operations-waiver-expired.png",
-    icon_size = 64,
-    subgroup = "module",
-    order = "z[unstaffed-operations-waiver]-b",
-    stack_size = 50,
   },
   {
     type = "module",

@@ -1361,7 +1361,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "synthetic-personnel-bureau",
-    subgroup = "admin-space-buildings",
+    subgroup = "admin-biter-buildings",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 2},
@@ -1404,18 +1404,6 @@ data:extend({
     results = {{type = "item", name = "optical-fibre", amount = 4}},
     energy_required = 2,
   },
-  {
-    type = "recipe",
-    name = "optical-fibre-to-ground",
-    subgroup = "admin-infrastructure",
-    enabled = false,
-    ingredients = {
-      {type = "item", name = "optical-fibre", amount = 10},
-      {type = "item", name = "steel-plate", amount = 5},
-    },
-    results = {{type = "item", name = "optical-fibre-to-ground", amount = 2}},
-    energy_required = 2,
-  },
   surface_limited({
     type = "recipe",
     name = "heat-exhaust",
@@ -1441,11 +1429,9 @@ data:extend({
     subgroup = "admin-bs-economy",
     enabled = false,
     localised_name = {"fluid-name.inference-token"},
-    ingredients = {
-      {type = "item", name = "dubious-data", amount = 4},
-      {type = "item", name = "data", amount = 2},
-      {type = "item", name = "useless-documentation", amount = 4},
-    },
+    -- Electricity is the only input. The AI Server's draw and its heat are the
+    -- whole cost of inference; nothing is consumed but power.
+    ingredients = {},
     results = {{type = "fluid", name = "inference-token", amount = 10}},
     energy_required = 8,
   },

@@ -1302,6 +1302,19 @@ require("prototypes.final_fixes.colored_ink_gating").apply(
 )
 
 -------------------------------------------------------------------------------
+-- 7a1. UNSTAFFED OPERATIONS WAIVER FITMENT
+-- The waiver only belongs in machines that wait for a dispatched worker biter.
+-- Restrict every other machine to the module categories it already had, so a
+-- waiver cannot be parked somewhere it would do nothing.
+-------------------------------------------------------------------------------
+if feature_flags.space_age_enabled() then
+  require("prototypes.final_fixes.unstaffed_operations_gating").apply(
+    data,
+    require("prototypes.shared.biter_station_buildings").names
+  )
+end
+
+-------------------------------------------------------------------------------
 -- 7a2. EGG COURIERS
 -- Biter eggs never leave Nauvis. Reroute every vanilla recipe that consumed
 -- them offworld through a Nauvis-trained courier, preserving vanilla egg costs

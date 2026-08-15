@@ -93,14 +93,17 @@ test("the fibre is isolated from ordinary pipes and from pneumatic tubes", funct
   -- every fibre connection has to be categorised.
   assert_true(fibre:find("connection.connection_category = FIBRE_CONNECTION_CATEGORY", 1, true) ~= nil,
     "normal connections should be categorised")
-  assert_true(fibre:find("underground", 1, true) ~= nil,
-    "underground connections should be categorised too")
 end)
 
-test("both a surface and an underground fibre exist", function()
+test("fibre runs on the surface only", function()
   assert_true(fibre:find('optical_fibre.name = "optical-fibre"', 1, true) ~= nil, "surface fibre missing")
-  assert_true(fibre:find('optical_fibre_underground.name = "optical-fibre-to-ground"', 1, true) ~= nil,
-    "underground fibre missing")
+  assert_true(fibre:find("optical-fibre-to-ground", 1, true) == nil,
+    "there should be no underground fibre")
+end)
+
+test("the fibre draws no connection covers", function()
+  assert_true(fibre:find("pipe_covers", 1, true) == nil,
+    "a pipe-style collar at every junction is not wanted on fibre")
 end)
 
 -------------------------------------------------------------------------------
@@ -139,7 +142,7 @@ test("every fibre port sits inside its own entity's collision box", function()
   -- entity it actually belongs to, not against whichever box is most generous.
   local entity_limits = {
     {variable = "ai_server", half_extent = 3.25},
-    {variable = "synthetic_personnel_bureau", half_extent = 1.2},
+    {variable = "synthetic_personnel_bureau", half_extent = 2.25},
   }
 
   local checked = 0
