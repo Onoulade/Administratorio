@@ -4,7 +4,7 @@ This file records the design for the automation and interplanetary logistics pas
 
 It covers six connected systems that share one thesis: **the bureaucracy learns to run without biters, and the biters file about it.**
 
-Nothing here is implemented yet. This is a design record, not a status report.
+**Status: implemented.** All six systems are built. This file is retained as the design record; the notes below on verification gates and open questions record the decisions taken during implementation.
 
 ## Scope
 
@@ -27,14 +27,20 @@ No Space Age save exists yet. This pass assumes **no backwards compatibility bur
 
 Two engine behaviours are unmeasured and are load-bearing. Neither can be settled by reading the codebase. Both should be tested in a real save before the dependent systems are built.
 
-### Gate 1 — does spoilage tick inside a machine's module inventory?
+### Gate 1 — does spoilage tick inside a machine's module inventory? **UNVERIFIED**
+
+Implemented as designed, on the assumption that it does. If it does not, the waiver never expires and needs the scripted `unit_number` timer instead; nothing else in the pass depends on the answer. The runtime already re-checks waiver presence every station cycle rather than latching it at build time, so a scripted expiry would have one obvious place to live.
+
 
 The Unstaffed Operations Waiver is a module that spoils while installed. The existing spoilage precedent in this mod (briefed MMMMs, `prototypes/shared/manager_briefings.lua`) is an ordinary inventory, not a module slot.
 
 - **If yes**: the waiver works as designed below.
 - **If no**: the waiver needs a scripted expiry timer keyed on `unit_number`, which is a materially different build.
 
-### Gate 2 — does Quality natively extend spoil time?
+### Gate 2 — does Quality natively extend spoil time? **ASSUMED YES**
+
+Taken as native per the supporting evidence below. README and the courier/waiver descriptions are written on that basis. If it turns out to be false, the quality claims are the only thing that needs retracting; the Nauvis-to-Aquilo courier run is ~7.5 minutes against a 30-minute budget, so the design survives either way.
+
 
 `spoil_ticks` is a prototype-level field and Quality is per-stack, so there is **no reasonable mod path** to per-quality spoil duration. This is native-or-nothing.
 
@@ -362,13 +368,13 @@ This is data, not new systems. It is what makes six proposals one expansion rath
 Deleting the fax network invalidates written doctrine outside this file. These need correcting or they will contradict this plan in future sessions:
 
 - [space-age-aquilo-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-aquilo-plan.md) — **updated alongside this file**
-- [space-age-compatibility-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-compatibility-plan.md) — principle 9 ("Faxing is reconstruction, not teleportation"), principle 14, the "Planned Aquilo Principles" section, and the Aquilo line in "Current Status" all still describe the fax network as Aquilo's capstone. **Not yet updated.**
-- [README.md](~/Library/Application Support/factorio/mods/administratorio/README.md) — the Quality section promises "receivers also gain one queue slot per Quality level" and describes fax emitters and exchanges. **Not yet updated.**
+- [space-age-compatibility-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-compatibility-plan.md) — **updated.** Principle 9 is now "The trunk is narrow and slow, not teleportation"; the planet matrix, Planned Aquilo Principles, specialist list, and Current Status all describe the tube trunk.
+- [README.md](~/Library/Application Support/factorio/mods/administratorio/README.md) — **updated.** The fax queue-slot promise is gone; Quality now explicitly never widens the trunk, changes transit time, or grows a Terminus buffer.
 
-## Open Questions
+## Open Questions — resolved during implementation
 
-1. Does the AI Server export off Aquilo, or is it Aquilo-craftable only? Every other planet reward in this mod exports, but power draw would need to be brutal enough that Nauvis does not simply farm it.
-2. Are Inference Tokens spendable anywhere beyond slop? The Administratorium slop tier is the primary sink; the cannon's transfer form and waiver reactivation are candidate secondary sinks. Tube postage was rejected because the base tube tier is pre-Aquilo and cannot cost a post-Aquilo currency.
-3. Should synthesized specialists be identical to hired ones, or a distinct item that cannot be briefed as an MMMM?
-4. Does the Terminus need one-per-planet uniqueness, as the fax receiver had?
-5. What is the Heat Exhaust's dump rate relative to a server's output, and how many exhausts does one server need?
+1. **Does the AI Server export off Aquilo?** Aquilo-craftable only (`surface_limited(..., "aquilo")`), matching the Laser Printer. Its 4 MW draw plus a mandatory heat network is already brutal, but keeping the build Aquilo-local avoids relying on the power bill alone to stop Nauvis farming it.
+2. **Are Inference Tokens spendable beyond slop?** Yes, one secondary sink: the Synthetic Personnel Bureau consumes 4 per profession. The Administratorium slop tier remains the primary sink. Waiver reactivation was left on union-approval fluid, and tube postage stayed rejected because the base trunk tier is pre-Aquilo.
+3. **Are synthesised specialists identical to hired ones?** Identical — the synthesis recipes produce the same items the Nauvis formations do. A distinct item would have doubled every downstream check for no gameplay gain, and the Bureau's whole point is removing the Nauvis round trip rather than creating a parallel roster.
+4. **Does the Terminus need one-per-planet uniqueness?** Yes, enforced in `scripts/interplanetary_tube.lua`. One endpoint per world is what keeps the trunk a trunk rather than a mesh, and it gives the arrivals buffer one obvious home. Placement on a second is refused and the building returned.
+5. **What is the Heat Exhaust's dump rate?** 500 MW transfer against a server producing 0.5 degrees per tick into a 5 MJ/degree buffer. One exhaust comfortably covers one server, which is the intended ratio: the exhaust is a convenience for players who do not want the power generation, never a better option than using the heat.

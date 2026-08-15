@@ -10,11 +10,12 @@ It records the shared principles that all planet passes should follow, the curre
 - The current branch is a broad first-pass implementation, not a completed compatibility pass. The detailed completion backlog and 2026-04-18 assessment live in [space-age-implementation-steps.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-implementation-steps.md).
 - Vulcanus has a working first-pass implementation and the latest Space Age route analyzer run reports no aggregate imports or aggregate deadlocks for selected escape targets.
 - Gleba has a working first-pass implementation (yellow ink, conciliation paperwork, spoilage, and bootstrap variants).
-- Fulgora has a working first-pass implementation (Digital Services Bureau, salvage-backed magenta paperwork, and holmium gating).
-- Aquilo has a working first-pass implementation (Laser Printer, Interplanetary Fax Exchange runtime, frozen-ink restrictions, and multicolor paperwork).
-- Current automated validation status: all Lua tests pass, base-only strict progression passes, and Space Age route analysis passes on Factorio 2.0.76.
-- Current known blockers are design/completion issues rather than load-test failures: remaining planet-identity surface-rule cleanup, the bicolor-form versus Aquilo transfer-media decision, fax reconstruction economy decisions, faxability policy, and manual balance review of analyzer routes.
-- Latest validation note: Space Age remains optional; `amber-sap-seep`, `verdigris-crust`, and `capture-bureau` are now gated so base-only `--dump-data` no longer receives Space Age-only resources/entities.
+- Fulgora has a working first-pass implementation (static charge deposits, Digital Services Bureau, salvage-backed magenta paperwork, and holmium gating).
+- Aquilo has a working first-pass implementation (Laser Printer, frozen-ink restrictions, transfer media, multicolor paperwork, AI Servers and the slop economy, and the chromatic tier of the interplanetary tube trunk).
+- The fax network was deleted outright and replaced by the Interplanetary Tube Network. See [space-age-automation-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-automation-plan.md).
+- Current automated validation status: all local Lua/Python tests pass without a Factorio binary; dump-data route analysis still needs to be rerun with a local Factorio executable after the latest balance changes.
+- Current known blockers are design/completion issues rather than load-test failures: manual route-balance review, exported paperwork pressure tuning, and whether the new Fulgora toner deposit density is right in real maps.
+- Latest validation note: Space Age remains optional; `amber-sap-seep`, `verdigris-crust`, `static-charge-deposit`, and `capture-bureau` are gated so base-only `--dump-data` no longer receives Space Age-only resources/entities.
 - The shared rules below should be treated as the baseline for future planet work unless a later implementation proves they need revision.
 
 ## Shared Principles
@@ -27,7 +28,7 @@ For the three basic planets, "works as a first planet" means:
 - the planet does not need bulk imports of administrative raw materials just to become usable
 - the planet does not need full Nauvis paperwork parity
 
-It is acceptable for some later or niche forms to remain import-seeded or fax-targeted if localizing them would only add a dead-end subtree.
+It is acceptable for some later or niche forms to remain import-seeded or trunk-targeted if localizing them would only add a dead-end subtree.
 
 ### 2. Each base planet gets one easy administrative bottleneck indirectly
 
@@ -76,7 +77,7 @@ Future planets should follow the same pattern:
 
 - Gleba printer prints yellow stock and base blanks; `Conciliation Desk` handles the living or support-heavy conversions
 - Fulgora printer prints magenta stock and base blanks; `Digital Services Bureau` handles fast computerized processing
-- Aquilo `Laser Printer` owns fast final print and reconstruction; `Interplanetary Fax Exchange` owns routing and queue logic
+- Aquilo `Laser Printer` owns fast final print; the `Interplanetary Terminus` owns the trunk endpoint and its arrivals buffer
 
 ### 5. Black ink remains the general copy medium
 
@@ -115,15 +116,17 @@ That means:
 
 - local launch viability does not imply late-game self-sufficiency
 - some forms should remain natural exports
-- later faxing should solve transport friction without deleting planetary specialties
+- the later interplanetary trunk should ease transport friction without deleting planetary specialties
 - mall-scale and generic-factory-scale buildouts should still expose the costs of a planet's missing paperwork families
 
-### 9. Faxing is reconstruction, not teleportation
+### 9. The trunk is narrow and slow, not teleportation
 
-Fulgora and Aquilo should make it easier to move administrative value between planets, but the network should still feel like paperwork reconstruction:
+The Interplanetary Tube Network should make it easier to move administrative value between planets without ever competing with rockets:
 
-- source-side paperwork still matters
-- local receiver-side media or print capacity still matters
+- the trunk is a separate pool from the local pneumatic network and must never merge with it
+- capacity is small (3 to 20 items in flight) and transit is per item, not per batch
+- arrivals land in the Terminus inventory; moving them onward is the player's explicit step
+- source-side paperwork still matters, because the trunk moves the document rather than copying it
 - buildings, fluids, and bulk cargo still need shipping
 
 ### 10. Colored ink forms are required to use planet-specific intermediates anywhere
@@ -138,7 +141,7 @@ The gating rule is:
 
 This is the primary mechanism that makes the colored ink system essential rather than optional. Even on Nauvis, if you want to build turrets that use tungsten, you must import cyan forms from Vulcanus. This drives real interplanetary trade in paperwork and ensures every planet's ink production has lasting value.
 
-On the home planet, the forms are cheap and locally produced. Off-world, they must be shipped or (later) faxed, creating natural export pressure.
+On the home planet, the forms are cheap and locally produced. Off-world, they must be shipped, or later trickled across the interplanetary trunk, creating natural export pressure.
 
 Aquilo intermediates (lithium, fluoroketone) should require multicolor forms unlocked by Aquilo science, reinforcing the capstone convergence role.
 
@@ -165,7 +168,7 @@ The specialist workers are:
 - `licensed-notary` for Vulcanus buildings (Foundry, Notary Office, Territorial Arbitration Post)
 - `conciliation-officer` for Gleba buildings (Biochamber, Capture Bureau, Conciliation Desk)
 - `relay-clerk` for Fulgora buildings (Electromagnetic Plant, Digital Services Bureau)
-- `cryoprint-technician` for Aquilo buildings (Cryogenic Plant, Laser Printer, Fax Emitter, Interplanetary Fax Exchange)
+- `cryoprint-technician` for Aquilo buildings (Cryogenic Plant, Laser Printer, AI Server, Synthetic Personnel Bureau)
 
 The worker requirement compensates for the operating paperwork exemption: you pay upfront in workforce logistics instead of ongoing in bureaucratic overhead.
 
@@ -182,7 +185,7 @@ The Chromatic Printer uses liquid ink and cannot operate on Aquilo because the i
 This means:
 
 - Aquilo cannot locally produce cyan, yellow, or magenta ink
-- colored forms must be imported or faxed to Aquilo
+- colored forms must be imported, or carried on the Aquilo chromatic tube tier
 - the Laser Printer uses transfer media (toner-based) for its printing
 - this constraint naturally explains why Aquilo's identity is about transfer and reconstruction rather than ink production
 
@@ -203,8 +206,8 @@ This makes Aquilo the natural capstone where the separate planetary paperwork sy
 | --- | --- | --- | --- | --- | --- | --- |
 | Vulcanus | `lie` | `Notary Office` | Chromatic Printer (cyan) | industrial and metallurgical certification | cyan | Implemented first pass |
 | Gleba | `bullshit-ore` via `amber-sap`; easy `dubious-data` | `Capture Bureau` + `Conciliation Desk` | Chromatic Printer (yellow) | biosafety, pacification, hostile-intake, workforce paperwork | yellow | Implemented first pass |
-| Fulgora | `redundant-rubble` via salvage; easy `useless-documentation` | `Digital Services Bureau` | Chromatic Printer (magenta) | fast computerized processing, archive recovery, electromagnetic permits | magenta | Implemented first pass |
-| Aquilo | none; multi-planet convergence | `Interplanetary Fax Exchange` | Laser Printer only (ink freezes) | multicolor composite forms, fax routing, transfer media | none (uses imported CMY) | Implemented first pass |
+| Fulgora | `charged-toner` via static charge deposits; `redundant-rubble` via salvage; easy `useless-documentation` | `Digital Services Bureau` | Chromatic Printer (magenta) | fast computerized processing, archive recovery, electromagnetic permits | magenta | Implemented first pass |
+| Aquilo | none; multi-planet convergence | `Interplanetary Terminus`, `AI Server`, `Synthetic Personnel Bureau` | Laser Printer only (ink freezes) | multicolor composite forms, interplanetary trunk, transfer media, inference tokens and slop | none (uses imported CMY) | Implemented first pass |
 
 ## Implemented Vulcanus Principles
 
@@ -311,7 +314,7 @@ Key design principles:
 - make Fulgora the easy-`redundant-rubble` planet indirectly through salvage, archive teardown, and ruined-template recovery rather than through a direct paperwork ore patch
 - let `useless-documentation` become an easy derivative of that salvage economy, not the planet's only identity
 - the `Digital Services Bureau` is the planet's administrative reward: a computerized, electromagnetic-powered upgrade to the standard admin office that works faster and operates 24/7 (no night closure)
-- keep magenta work focused on archive recovery, electromagnetic processing permits, and digital certification rather than on fax routing (faxing belongs to Aquilo)
+- keep magenta work focused on archive recovery, electromagnetic processing permits, and digital certification rather than on interplanetary routing (the trunk's chromatic tier belongs to Aquilo)
 - avoid cloning vanilla end-product recipes; Fulgora should solve documentation throughput and archive bottlenecks, not become a second Nauvis production graph
 - keep first-planet escape viable, but make large generic buildouts still depend on shipped cargo, imported seed forms, and reconstruction capacity
 - the `Digital Services Bureau` requires a `relay-clerk` worker to craft but no operating paperwork
@@ -332,11 +335,12 @@ Key design principles:
 
 - Aquilo should not introduce a fourth ink; liquid ink freezes on Aquilo so the Chromatic Printer cannot operate there
 - only the `Laser Printer` works on Aquilo, using solid transfer media instead of liquid ink
-- the `Interplanetary Fax Exchange` is Aquilo's administrative building, owning routing, queuing, and cross-planet document reconstruction
+- the `Interplanetary Terminus` is the trunk endpoint, one per planet, owning the outbound buffer, circuit requests, and the arrivals buffer
+- the `AI Server` is Aquilo's compute building, feeding the vanilla heat network and stopping outright when under-cooled
 - Aquilo science unlocks multicolor form recipes that combine imported colored forms and inks from multiple planets into composite documents
 - multicolor forms gate late-game recipes that use intermediates from multiple planets
-- the `Laser Printer` should be the best machine for final print speed and fax reconstruction, not for dense office certification work
-- the `Interplanetary Fax Exchange` requires a `cryoprint-technician` worker to craft but no operating paperwork
+- the `Laser Printer` should be the best machine for final print speed, not for dense office certification work
+- the `Interplanetary Terminus` is pre-Aquilo and requires a `licensed-notary`; only the chromatic tier that widens it to colored paperwork is Aquilo work
 - mixed-planet paperwork should become normal on Aquilo rather than awkward
 
 Its export identity should center on:
@@ -344,7 +348,7 @@ Its export identity should center on:
 - multicolor composite forms
 - transfer media
 - high-speed reconstruction
-- fax routing and interplanetary document logistics
+- the chromatic tier of the interplanetary trunk
 - `cryogenic plant`-adjacent licensing
 
 ## Recommended Implementation Order
@@ -352,4 +356,4 @@ Its export identity should center on:
 1. Keep Vulcanus maintained as the reference implementation.
 2. Build Gleba next using the same machine-split and import-seed rules.
 3. Build Fulgora after that so the Digital Services Bureau and magenta ink family are established.
-4. Use Aquilo as the late-game capstone with faxing and multicolor forms.
+4. Use Aquilo as the late-game capstone with multicolor forms, AI servers, and the chromatic trunk tier.
