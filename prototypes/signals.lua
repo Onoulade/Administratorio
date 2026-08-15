@@ -9,6 +9,7 @@ local complaint_signals = {
   { name = "signal-complaint-h",  ticket = "ticket-hazmat",        order = "z[admin]-h[h]" },
   { name = "signal-complaint-lo", ticket = "ticket-loitering",     order = "z[admin]-i[lo]" },
   { name = "signal-complaint-v",  ticket = "ticket-vagrancy",      order = "z[admin]-j[v]" },
+  { name = "signal-complaint-a",  ticket = "ticket-automation",    order = "z[admin]-k[a]" },
 }
 
 local signals = {}

@@ -290,6 +290,19 @@ M.TRUNK_TIERS = {
 M.TRUNK_BASE_TECH = "interplanetary-tube-network"
 M.TRUNK_CHROMATIC_TECH = "interplanetary-tube-chromatic"
 
+-- Automation grievances. The union files against the machinery that replaced
+-- it, so automating the biter economy away generates more work for the biter
+-- economy. Pressure accumulates per automation check; the threshold converts it
+-- into one filed grievance.
+M.SYNTHETIC_PERSONNEL_BUREAU_NAME = "synthetic-personnel-bureau"
+M.AUTOMATION_GRIEVANCE_THRESHOLD = 600
+M.AUTOMATION_GRIEVANCE_MAX_PENDING = 50
+M.AUTOMATION_PRESSURE_PER_AI_SERVER = 1
+M.AUTOMATION_PRESSURE_PER_WAIVER = 2
+M.AUTOMATION_PRESSURE_PER_SYNTHETIC_PERSON = 150
+M.AUTOMATION_CITATION_BACKLOG = 200
+M.AUTOMATION_PRESSURE_PER_CITATION_BACKLOG = 4
+
 -- Involuntary Relocation Cannon: biter-family cargo only, moved a batch per
 -- shot rather than one timed item at a time. Restricting the cargo is what
 -- keeps rockets relevant for everything else.

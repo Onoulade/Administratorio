@@ -116,4 +116,5 @@ data:extend({
   { type = "item-subgroup", name = "resolution-hazmat",           group = "combat", order = "zf" },
   { type = "item-subgroup", name = "resolution-loitering",        group = "combat", order = "zg" },
   { type = "item-subgroup", name = "resolution-vagrancy",         group = "combat", order = "zh" },
+  { type = "item-subgroup", name = "resolution-automation",       group = "combat", order = "zi" },
 })

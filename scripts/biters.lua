@@ -9,6 +9,7 @@ local unit_ai_settings = require("scripts.unit_ai_settings")
 local protest_targets = require("scripts.protest_targets")
 local spawner_population = require("scripts.spawner_population")
 local pentapods = require("scripts.pentapods")
+local automation_grievances = require("scripts.automation_grievances")
 
 local M = {}
 local SPACE_AGE_ENABLED = feature_flags.space_age_enabled()
@@ -128,6 +129,17 @@ local PROTEST_SLOGANS = {
     protest_slogan("ticket-vagrancy", 8),
     protest_slogan("ticket-vagrancy", 9),
   },
+  ["ticket-automation"] = {
+    protest_slogan("ticket-automation", 1),
+    protest_slogan("ticket-automation", 2),
+    protest_slogan("ticket-automation", 3),
+    protest_slogan("ticket-automation", 4),
+    protest_slogan("ticket-automation", 5),
+    protest_slogan("ticket-automation", 6),
+    protest_slogan("ticket-automation", 7),
+    protest_slogan("ticket-automation", 8),
+    protest_slogan("ticket-automation", 9),
+  },
 }
 local PROTEST_TINTS = {
   ["ticket-landscape"] = {r = 0.45, g = 0.95, b = 0.45},
@@ -138,6 +150,7 @@ local PROTEST_TINTS = {
   ["ticket-hazmat"] = {r = 1, g = 0.55, b = 0.2},
   ["ticket-loitering"] = {r = 0.4, g = 0.95, b = 1},
   ["ticket-vagrancy"] = {r = 1, g = 0.45, b = 0.8},
+  ["ticket-automation"] = {r = 0.55, g = 0.85, b = 1},
 }
 local PROTEST_STOP_TINT = {r = 1, g = 0.1, b = 0.1}
 local PROTEST_STOP_TEXT_TINT = {r = 1, g = 0.95, b = 0.95}
@@ -1070,6 +1083,13 @@ local function finalize_pathfinding_biter_arrival(info, desk, source)
   local complaints_filed = info.complaints_filed == true
   if not complaints_filed and #complaints == 0 then
     complaints = C.generate_complaints(entity.name)
+    -- A grievance filed by the union against the machinery that replaced it
+    -- rides along with whatever this biter came to complain about. That is what
+    -- puts it through the untouched desk, resolution, frustration, protest and
+    -- payout pipeline rather than needing one of its own.
+    if automation_grievances.consume_pending(entity.force) then
+      complaints[#complaints + 1] = automation_grievances.TICKET
+    end
   end
   local complaints_total = info.complaints_total or #complaints
   local inv = desk.get_inventory(defines.inventory.chest)
