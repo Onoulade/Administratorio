@@ -1129,3 +1129,46 @@ data:extend({
     order = "h-v",
   },
 })
+
+-- ============================================================
+-- SYNTHETIC PERSONNEL BUREAU
+--
+-- Unlocks are derived from the same specialist table the planet buildings use,
+-- so a profession added there is covered here without touching this file.
+-- ============================================================
+local synthetic_personnel_effects = {
+  {type = "unlock-recipe", recipe = "synthetic-personnel-bureau"},
+}
+for _, specialist_name in ipairs({
+  "conciliation-officer",
+  "cryoprint-technician",
+  "licensed-notary",
+  "relay-clerk",
+}) do
+  synthetic_personnel_effects[#synthetic_personnel_effects + 1] =
+    {type = "unlock-recipe", recipe = specialist_name .. "-synthesis"}
+end
+
+data:extend({
+  {
+    type = "technology",
+    name = "synthetic-personnel",
+    icon = "__administratorio__/graphics/icons/space-age/synthetic-personnel-bureau.png",
+    icon_size = 64,
+    effects = synthetic_personnel_effects,
+    prerequisites = {"aquilo-ai-inference", "promethium-science-pack"},
+    unit = {
+      count = 900,
+      ingredients = {
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"cryogenic-science-pack", 1},
+        {"promethium-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 60,
+    },
+    order = "h-w",
+  },
+})

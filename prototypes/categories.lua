@@ -27,6 +27,7 @@
 -- ai-inference                | AI Server (tokens and slop from a training corpus)
 -- slop-refining               | AI Server (slop into fabricated paperwork)
 -- citation-handling           | AI Server (venting and fact-checking hallucinations)
+-- personnel-synthesis         | Synthetic Personnel Bureau (professions, not buildings)
 -------------------------------------------------------------------------------
 local feature_flags = require("feature_flags")
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
@@ -68,6 +69,7 @@ if space_age_enabled then
   categories[#categories + 1] = {type = "recipe-category", name = "ai-inference"}
   categories[#categories + 1] = {type = "recipe-category", name = "slop-refining"}
   categories[#categories + 1] = {type = "recipe-category", name = "citation-handling"}
+  categories[#categories + 1] = {type = "recipe-category", name = "personnel-synthesis"}
   categories[#categories + 1] = {type = "recipe-category", name = "printing-chromatic"}
   categories[#categories + 1] = {type = "recipe-category", name = "printing-multicolor"}
   categories[#categories + 1] = {type = "recipe-category", name = "archive-reassignment"}

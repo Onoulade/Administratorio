@@ -446,6 +446,52 @@ administrative_space_station.working_sound = {
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
+-- Synthetic Personnel Bureau: manufactures professions, not buildings.
+--
+-- Four small recipes rather than thirteen duplicated building recipes. That
+-- touches zero existing recipes, does not double Factoriopedia entries, and
+-- covers professions added later without further work. It solves the actual
+-- pain: worker-biter-formation is Nauvis-bound, so today every specialist means
+-- a Nauvis round trip.
+local synthetic_personnel_bureau = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
+synthetic_personnel_bureau.name = "synthetic-personnel-bureau"
+synthetic_personnel_bureau.icon = space_age_icons .. "synthetic-personnel-bureau.png"
+synthetic_personnel_bureau.icon_size = 64
+synthetic_personnel_bureau.icons = nil
+synthetic_personnel_bureau.minable = {mining_time = 0.3, result = "synthetic-personnel-bureau"}
+synthetic_personnel_bureau.placeable_by = placeable_by_item("synthetic-personnel-bureau")
+synthetic_personnel_bureau.next_upgrade = nil
+synthetic_personnel_bureau.max_health = 400
+synthetic_personnel_bureau.corpse = "medium-remnants"
+synthetic_personnel_bureau.crafting_categories = {"personnel-synthesis"}
+synthetic_personnel_bureau.crafting_speed = 1
+synthetic_personnel_bureau.ingredient_count = 6
+synthetic_personnel_bureau.module_slots = 3
+synthetic_personnel_bureau.allowed_effects = {"speed", "consumption", "pollution"}
+-- Electricity is the intended constraint, not ingredient rarity. This keeps the
+-- Bureau tethered to the AI server's power bill.
+synthetic_personnel_bureau.energy_usage = "6MW"
+synthetic_personnel_bureau.energy_source = {
+  type = "electric",
+  usage_priority = "secondary-input",
+  emissions_per_minute = {pollution = 6},
+}
+align_footprint(synthetic_personnel_bureau, 1.4, 1.4, 2, 2, {0, 1 / 32})
+synthetic_personnel_bureau.fluid_boxes_off_when_no_fluid_recipe = true
+synthetic_personnel_bureau.fluid_boxes = {}
+synthetic_personnel_bureau.graphics_set = {
+  animation = {
+    layers = {
+      space_age_animation("synthetic-personnel-bureau", 128, 128),
+      space_age_shadow("synthetic-personnel-bureau", 192, 110, 15.5, 13.5, GENERATED_FRAME_COUNT),
+    }
+  }
+}
+synthetic_personnel_bureau.working_sound = {
+  sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.5},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+}
+
 -- AI Server: a composite entity.
 --
 -- The engine will not let one entity both craft a recipe and emit heat:
@@ -938,6 +984,7 @@ for _, entity in ipairs({
   interplanetary_terminus,
   ai_server,
   heat_exhaust,
+  synthetic_personnel_bureau,
 }) do
   require_non_vacuum(entity)
 end
@@ -954,6 +1001,7 @@ local space_age_entities = {
   ai_server,
   ai_server_heat_core,
   heat_exhaust,
+  synthetic_personnel_bureau,
   orbital_biter_projectile,
   trajectory_compliance_array,
   senior_trajectory_compliance_array,

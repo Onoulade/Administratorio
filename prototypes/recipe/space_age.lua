@@ -1292,6 +1292,22 @@ data:extend({
   }, "aquilo"),
   surface_limited({
     type = "recipe",
+    name = "synthetic-personnel-bureau",
+    subgroup = "admin-space-buildings",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "office-desk", amount = 2},
+      {type = "item", name = "cryoprint-technician", amount = 1},
+      {type = "item", name = "quantum-processor", amount = 20},
+      {type = "item", name = "superconductor", amount = 20},
+      {type = "item", name = "biter-egg", amount = 20},
+      {type = "item", name = "construction-work-order", amount = 1},
+    },
+    results = {{type = "item", name = "synthetic-personnel-bureau", amount = 1}},
+    energy_required = 30,
+  }, "aquilo"),
+  surface_limited({
+    type = "recipe",
     name = "ai-server",
     subgroup = "admin-space-buildings",
     enabled = false,
@@ -1968,19 +1984,18 @@ data:extend({
 -- processes. Do not rewrite those restrictions or clone their recipes merely
 -- to make planet-native processes portable.
 
-for _, recipe_name in ipairs({
-  "foundry",
-  "biochamber",
-  "electromagnetic-plant",
-  "cryogenic-plant",
-}) do
-  local specialist_by_recipe = {
-    ["foundry"] = "licensed-notary",
-    ["biochamber"] = "conciliation-officer",
-    ["electromagnetic-plant"] = "relay-clerk",
-    ["cryogenic-plant"] = "cryoprint-technician",
-  }
-  add_item_ingredient(data.raw.recipe and data.raw.recipe[recipe_name], specialist_by_recipe[recipe_name], 1)
+-- The single source of truth for which profession each planet building demands.
+-- The Synthetic Personnel Bureau derives its synthesis recipes from this table,
+-- so a profession added here is covered there without further work.
+local specialist_by_recipe = {
+  ["foundry"] = "licensed-notary",
+  ["biochamber"] = "conciliation-officer",
+  ["electromagnetic-plant"] = "relay-clerk",
+  ["cryogenic-plant"] = "cryoprint-technician",
+}
+
+for recipe_name, specialist_name in pairs(specialist_by_recipe) do
+  add_item_ingredient(data.raw.recipe and data.raw.recipe[recipe_name], specialist_name, 1)
 end
 
 add_item_ingredient(data.raw.recipe and data.raw.recipe["foundry"], "tungsten-carbide", 4)
@@ -2117,6 +2132,36 @@ for _, tier in ipairs({"base", "advanced"}) do
 end
 data:extend(slop_recipes)
 
+-- The Synthetic Personnel Bureau manufactures professions, not buildings. Four
+-- small recipes rather than thirteen duplicated building recipes, derived from
+-- specialist_by_recipe so future professions are covered without further work.
+local synthesis_recipes = {}
+local synthesis_specialists = {}
+for _, specialist_name in pairs(specialist_by_recipe) do
+  synthesis_specialists[#synthesis_specialists + 1] = specialist_name
+end
+table.sort(synthesis_specialists)
+
+for _, specialist_name in ipairs(synthesis_specialists) do
+  synthesis_recipes[#synthesis_recipes + 1] = {
+    type = "recipe",
+    name = specialist_name .. "-synthesis",
+    category = "personnel-synthesis",
+    subgroup = "admin-biter-employees",
+    enabled = false,
+    localised_name = {"item-name." .. specialist_name},
+    ingredients = {
+      {type = "item", name = "biter-egg", amount = 10},
+      {type = "item", name = "inference-token", amount = 4},
+      {type = "item", name = "administrative-slop", amount = 8},
+    },
+    results = {{type = "item", name = specialist_name, amount = 1}},
+    allow_productivity = false,
+    energy_required = 30,
+  }
+end
+data:extend(synthesis_recipes)
+
 -- Briefed managers are single-use administrative catalysts. Every affected
 -- process returns the same number of regular managers, who must attend another
 -- meeting before they can obstruct useful work again.
@@ -2141,6 +2186,7 @@ local staffed_building_manager_requirements = {
   ["digital-services-bureau"] = {"staffing"},
   ["interplanetary-terminus"] = {"staffing", "liaison"},
   ["ai-server"] = {"staffing", "liaison"},
+  ["synthetic-personnel-bureau"] = {"staffing", "liaison"},
   ["laser-printer"] = {"staffing"},
   ["administrative-space-station"] = {"staffing", "orbital"},
 }

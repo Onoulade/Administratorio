@@ -724,6 +724,16 @@ data:extend({
   },
   {
     type = "item",
+    name = "synthetic-personnel-bureau",
+    icon = item_icons .. "space-age/synthetic-personnel-bureau.png",
+    icon_size = 64,
+    subgroup = "admin-space-buildings",
+    order = "o2",
+    place_result = "synthetic-personnel-bureau",
+    stack_size = 20
+  },
+  {
+    type = "item",
     name = "ai-server",
     icon = item_icons .. "ai-server.png",
     icon_size = 64,
