@@ -2227,15 +2227,19 @@ local function on_pneumatic_tick(_event)
   end)
 end
 
--- Every nth-tick interval may have exactly one handler, so the Space Age
--- automation systems share a single slot rather than each claiming their own.
-local function on_space_age_automation_tick(event)
+local function on_interplanetary_tube_tick(event)
   runtime_debug.run_profiled_external_sections("interplanetary_tube", function()
     interplanetary_tube.on_tick(event)
   end)
+end
+
+local function on_ai_server_tick(event)
   runtime_debug.run_profiled_external_sections("ai_server", function()
     ai_server.on_tick(event)
   end)
+end
+
+local function on_relocation_cannon_tick(event)
   runtime_debug.run_profiled_external_sections("relocation_cannon", function()
     relocation_cannon.on_tick(event)
   end)
@@ -2294,8 +2298,12 @@ control_event_router.register({
   on_main_tick = on_main_tick,
   on_trajectory_compliance_tick = on_trajectory_compliance_tick,
   on_pneumatic_tick = on_pneumatic_tick,
-  on_space_age_automation_tick = on_space_age_automation_tick,
-  space_age_automation_check_ticks = C.SPACE_AGE_AUTOMATION_CHECK_TICKS,
+  on_interplanetary_tube_tick = on_interplanetary_tube_tick,
+  terminus_check_ticks = C.TERMINUS_CHECK_TICKS,
+  on_ai_server_tick = on_ai_server_tick,
+  ai_server_check_ticks = C.AI_SERVER_CHECK_TICKS,
+  on_relocation_cannon_tick = on_relocation_cannon_tick,
+  relocation_cannon_check_ticks = C.RELOCATION_CANNON_CHECK_TICKS,
   on_player_created = on_player_created,
   on_player_cursor_stack_changed = on_player_cursor_stack_changed,
   on_player_joined_game = on_player_joined_game,

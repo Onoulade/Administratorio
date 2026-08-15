@@ -174,6 +174,52 @@ end
 
 local BASE = {C.TRUNK_BASE_TECH}
 
+local payloads = require("prototypes.shared.interplanetary_payloads")
+
+local function contains(list, value)
+  for _, entry in ipairs(list) do
+    if entry == value then return true end
+  end
+  return false
+end
+
+-------------------------------------------------------------------------------
+-- PAYLOAD TIERS
+-------------------------------------------------------------------------------
+
+test("the base trunk tier carries regular paperwork and no colored forms", function()
+  local chromatic = payloads.chromatic_set()
+  for _, name in ipairs(payloads.regular) do
+    assert_true(not chromatic[name], name .. " is a regular payload and must not be chromatic")
+  end
+  assert_true(contains(payloads.regular, "blank-form"), "regular payloads should carry blank forms")
+  assert_true(contains(payloads.regular, "taxpayer-money"), "regular payloads should carry taxpayer money")
+end)
+
+test("colored paperwork and Space Age charters are chromatic-tier only", function()
+  local regular = {}
+  for _, name in ipairs(payloads.regular) do regular[name] = true end
+  for _, name in ipairs({
+    "blank-cyan-form", "blank-yellow-form", "blank-magenta-form",
+    "cyan-yellow-form", "cyan-magenta-form", "yellow-magenta-form",
+    "trichromatic-permit", "unified-operations-charter", "promethium-research-charter",
+  }) do
+    assert_true(not regular[name], name .. " must not ride the base trunk tier")
+    assert_true(payloads.chromatic_set()[name], name .. " should be a chromatic payload")
+  end
+end)
+
+test("every trunk payload has a dispatch recipe name and the set covers both tiers", function()
+  local all = payloads.all()
+  assert_eq(#all, #payloads.regular + #payloads.chromatic, "all() should be the union of both tiers")
+  local set = payloads.as_set()
+  for _, name in ipairs(all) do
+    assert_true(set[name], name .. " should be in the payload set")
+  end
+  assert_eq(payloads.dispatch_recipe_name("blank-form"), "interplanetary-dispatch-blank-form",
+    "dispatch recipes should be prefixed per item")
+end)
+
 -------------------------------------------------------------------------------
 -- TIER LADDERS
 -------------------------------------------------------------------------------

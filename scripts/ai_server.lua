@@ -108,7 +108,7 @@ function M.on_tick(_event)
 
       if entity.status == defines.entity_status.working then
         local next_temperature = math.min(
-          core.temperature + C.AI_SERVER_HEAT_PER_TICK * C.SPACE_AGE_AUTOMATION_CHECK_TICKS,
+          core.temperature + C.AI_SERVER_HEAT_PER_TICK * C.AI_SERVER_CHECK_TICKS,
           C.AI_SERVER_MAX_TEMPERATURE
         )
         core.temperature = next_temperature

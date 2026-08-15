@@ -8,6 +8,20 @@ The original thesis ran "...and the biters file about it", carried by the automa
 
 **Status: implemented.** All six systems are built. This file is retained as the design record; the notes below on verification gates and open questions record the decisions taken during implementation.
 
+## Architecture
+
+These systems share this document and nothing else. Being planned together is
+not a reason to share code, constants, tick handlers, storage keys, or test
+files, and anything that ends up shared must be justified by a real dependency
+between the systems themselves.
+
+Each one owns its own runtime module, its own constants block, its own tick
+cadence chosen for its own behaviour, and its own tests. Where a module does
+depend on another, it is because it genuinely handles that other system's
+items -- the relocation cannon's cargo list reads the courier and briefing
+rosters because it ships them -- never because the two appear in the same
+section here.
+
 ## Scope
 
 | System | Planet gate | Replaces or extends |

@@ -1,5 +1,44 @@
 local M = {}
 
+--- script.on_nth_tick replaces any handler already registered for an interval,
+--- so two systems that happen to share a cadence silently evict each other.
+--- Collecting handlers per interval and registering one dispatcher each lets
+--- every system pick the cadence its own behaviour needs, independently of what
+--- any other system picked.
+local function register_nth_tick_handlers(registrations)
+  local handlers_by_interval = {}
+  local intervals = {}
+
+  for _, registration in ipairs(registrations) do
+    local interval, handler = registration[1], registration[2]
+    if interval and handler then
+      local handlers = handlers_by_interval[interval]
+      if not handlers then
+        handlers = {}
+        handlers_by_interval[interval] = handlers
+        intervals[#intervals + 1] = interval
+      end
+      handlers[#handlers + 1] = handler
+    end
+  end
+
+  -- Sorted so registration order is stable regardless of table iteration order.
+  table.sort(intervals)
+
+  for _, interval in ipairs(intervals) do
+    local handlers = handlers_by_interval[interval]
+    if #handlers == 1 then
+      script.on_nth_tick(interval, handlers[1])
+    else
+      script.on_nth_tick(interval, function(event)
+        for _, handler in ipairs(handlers) do
+          handler(event)
+        end
+      end)
+    end
+  end
+end
+
 function M.register(deps)
   script.on_init(deps.on_init)
   script.on_configuration_changed(deps.on_configuration_changed)
@@ -61,20 +100,20 @@ function M.register(deps)
   script.on_event(defines.events.on_gui_click, deps.on_gui_click)
   script.on_event(defines.events.on_research_finished, deps.on_research_finished)
 
-  script.on_nth_tick(15, deps.on_pneumatic_tick)
-  script.on_nth_tick(deps.space_age_automation_check_ticks, deps.on_space_age_automation_tick)
-  if deps.on_biter_station_tick then
-    script.on_nth_tick(deps.biter_station_check_ticks or 10, deps.on_biter_station_tick)
-  end
-  if deps.on_biterport_tick then
-    script.on_nth_tick(deps.biterport_check_ticks or 30, deps.on_biterport_tick)
-  end
-  if deps.on_field_office_tick then
-    script.on_nth_tick(deps.field_office_update_ticks or 5, deps.on_field_office_tick)
-  end
-  script.on_nth_tick(20, deps.on_protest_pacing_tick)
-  script.on_nth_tick(deps.unit_group_debug_scan_interval, deps.on_unit_group_debug_tick)
-  script.on_nth_tick(60, deps.on_main_tick)
+  -- Each system declares the cadence its own behaviour needs. Sharing an
+  -- interval with another system is allowed and has no effect on either.
+  register_nth_tick_handlers({
+    {15, deps.on_pneumatic_tick},
+    {deps.terminus_check_ticks, deps.on_interplanetary_tube_tick},
+    {deps.ai_server_check_ticks, deps.on_ai_server_tick},
+    {deps.relocation_cannon_check_ticks, deps.on_relocation_cannon_tick},
+    {deps.biter_station_check_ticks or 10, deps.on_biter_station_tick},
+    {deps.biterport_check_ticks or 30, deps.on_biterport_tick},
+    {deps.field_office_update_ticks or 5, deps.on_field_office_tick},
+    {20, deps.on_protest_pacing_tick},
+    {deps.unit_group_debug_scan_interval, deps.on_unit_group_debug_tick},
+    {60, deps.on_main_tick},
+  })
 end
 
 return M

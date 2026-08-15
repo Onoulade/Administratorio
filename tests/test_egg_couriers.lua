@@ -1,9 +1,7 @@
 -------------------------------------------------------------------------------
--- ADMINISTRATORIO SPACE AGE AUTOMATION TESTS
+-- EGG COURIER TESTS
 --
--- Covers the shared rule modules introduced by the automation pass: trunk
--- payloads, slop tiering, egg couriers, relocation cargo, and the egg reroute
--- applied in final fixes.
+-- Biter eggs never leave Nauvis: courier properties and the recipe reroute.
 -------------------------------------------------------------------------------
 
 local passed, failed, errors = 0, 0, {}
@@ -36,118 +34,8 @@ else
 end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 
-local payloads = require("prototypes.shared.interplanetary_payloads")
-local slop_rules = require("prototypes.shared.slop_rules")
-local taxonomy = require("prototypes.shared.paperwork_taxonomy")
 local couriers = require("prototypes.shared.manager_couriers")
-local relocation_cargo = require("prototypes.shared.relocation_cargo")
 local egg_couriers = require("prototypes.final_fixes.egg_couriers")
-
-local function contains(list, value)
-  for _, entry in ipairs(list) do
-    if entry == value then return true end
-  end
-  return false
-end
-
--------------------------------------------------------------------------------
--- TRUNK PAYLOADS
--------------------------------------------------------------------------------
-
-test("the base trunk tier carries regular paperwork and no colored forms", function()
-  local chromatic = payloads.chromatic_set()
-  for _, name in ipairs(payloads.regular) do
-    assert_true(not chromatic[name], name .. " is a regular payload and must not be chromatic")
-  end
-  assert_true(contains(payloads.regular, "blank-form"), "regular payloads should carry blank forms")
-  assert_true(contains(payloads.regular, "taxpayer-money"), "regular payloads should carry taxpayer money")
-end)
-
-test("colored paperwork and Space Age charters are chromatic-tier only", function()
-  local regular = {}
-  for _, name in ipairs(payloads.regular) do regular[name] = true end
-  for _, name in ipairs({
-    "blank-cyan-form", "blank-yellow-form", "blank-magenta-form",
-    "cyan-yellow-form", "cyan-magenta-form", "yellow-magenta-form",
-    "trichromatic-permit", "unified-operations-charter", "promethium-research-charter",
-  }) do
-    assert_true(not regular[name], name .. " must not ride the base trunk tier")
-    assert_true(payloads.chromatic_set()[name], name .. " should be a chromatic payload")
-  end
-end)
-
-test("every trunk payload has a dispatch recipe name and the set covers both tiers", function()
-  local all = payloads.all()
-  assert_eq(#all, #payloads.regular + #payloads.chromatic, "all() should be the union of both tiers")
-  local set = payloads.as_set()
-  for _, name in ipairs(all) do
-    assert_true(set[name], name .. " should be in the payload set")
-  end
-  assert_eq(payloads.dispatch_recipe_name("blank-form"), "interplanetary-dispatch-blank-form",
-    "dispatch recipes should be prefixed per item")
-end)
-
--------------------------------------------------------------------------------
--- SLOP TIERING
--------------------------------------------------------------------------------
-
-test("colored paperwork is never producible from slop at any tier", function()
-  for name, entry in pairs(taxonomy.documents) do
-    if entry.colors and next(entry.colors) ~= nil then
-      assert_eq(slop_rules.tier_for(name), nil, name .. " has colors and must never be sloppable")
-    end
-  end
-end)
-
-test("restricted documents are never producible from slop", function()
-  for name in pairs(taxonomy.restricted_documents) do
-    assert_eq(slop_rules.tier_for(name), nil, name .. " is restricted and must never be sloppable")
-  end
-end)
-
-test("slop tiers split on rank exactly as designed", function()
-  for _, name in ipairs(slop_rules.documents_for_tier("base")) do
-    assert_true(taxonomy.get(name).rank <= 1, name .. " should be rank 0-1 at the base tier")
-  end
-  for _, name in ipairs(slop_rules.documents_for_tier("advanced")) do
-    local rank = taxonomy.get(name).rank
-    assert_true(rank >= 2 and rank <= 3, name .. " should be rank 2-3 at the advanced tier")
-  end
-  assert_true(#slop_rules.documents_for_tier("base") > 0, "the base tier should produce something")
-  assert_true(#slop_rules.documents_for_tier("advanced") > 0, "the advanced tier should produce something")
-end)
-
-test("slop cost and hallucination volume both rise with rank", function()
-  local previous_cost, previous_citations = 0, 0
-  for rank = 0, 3 do
-    local sample
-    for name, entry in pairs(taxonomy.documents) do
-      if entry.rank == rank and slop_rules.tier_for(name) then sample = name break end
-    end
-    assert_true(sample ~= nil, "a sloppable rank " .. rank .. " document should exist")
-    local cost = slop_rules.slop_cost(sample)
-    local citations = slop_rules.citation_yield(sample)
-    assert_true(cost > previous_cost, "rank " .. rank .. " should cost more slop than rank " .. (rank - 1))
-    assert_true(citations > previous_citations, "rank " .. rank .. " should emit more citations")
-    previous_cost, previous_citations = cost, citations
-  end
-end)
-
-test("the Administratorium tier emits a flood rather than a trickle", function()
-  local base_max, advanced_min = 0, math.huge
-  for _, name in ipairs(slop_rules.documents_for_tier("base")) do
-    base_max = math.max(base_max, slop_rules.citation_yield(name))
-  end
-  for _, name in ipairs(slop_rules.documents_for_tier("advanced")) do
-    advanced_min = math.min(advanced_min, slop_rules.citation_yield(name))
-  end
-  assert_true(advanced_min > base_max,
-    "the worst advanced-tier hallucination volume should exceed the best base-tier one")
-end)
-
--------------------------------------------------------------------------------
--- EGG COURIERS
--------------------------------------------------------------------------------
 
 test("every courier spoils back into a regular manager after thirty minutes", function()
   assert_eq(couriers.SPOIL_TICKS, 30 * 60 * 60, "couriers should last 30 minutes")
@@ -162,10 +50,6 @@ test("only the Geotechnical courier is handed back", function()
   assert_eq(couriers.BY_KEY.missionary.fate, "consumed", "the Aquilo courier should be consumed")
   assert_eq(couriers.BY_KEY.cobaye.fate, "consumed", "the orbital courier should be consumed")
 end)
-
--------------------------------------------------------------------------------
--- EGG REROUTE
--------------------------------------------------------------------------------
 
 local function fake_recipes()
   return {
@@ -275,38 +159,7 @@ test("Cobaye rocket parity holds at two kilograms per science pack", function()
   assert_eq(cobaye_kg_per_pack, vanilla_kg_per_pack, "the Cobaye should land on exact vanilla parity")
 end)
 
--------------------------------------------------------------------------------
--- RELOCATION CARGO
--------------------------------------------------------------------------------
-
-test("the cannon never carries biter eggs", function()
-  assert_true(not relocation_cargo.as_set()["biter-egg"],
-    "a cannon that shipped eggs would reintroduce the problem the couriers solve")
-end)
-
-test("the cannon carries the courier traffic it exists for", function()
-  local cargo = relocation_cargo.as_set()
-  for _, courier in ipairs(couriers.COURIERS) do
-    assert_true(cargo[courier.item], courier.item .. " should be cannon cargo")
-  end
-  assert_true(cargo["middle-management-managing-manager"], "spent managers should ride home")
-end)
-
-test("the cannon refuses paperwork, which is what keeps rockets relevant", function()
-  local cargo = relocation_cargo.as_set()
-  for _, name in ipairs({"blank-form", "taxpayer-money", "trichromatic-permit", "paper"}) do
-    assert_true(not cargo[name], name .. " is not biter-family cargo")
-  end
-end)
-
-test("the cannon moves a batch per shot and bills one form per item", function()
-  assert_true(relocation_cargo.PAYLOAD_PER_SHOT > 1,
-    "the cannon should move a batch, unlike the trunk's per-item flow")
-  assert_eq(relocation_cargo.TRANSFER_FORM, "involuntary-transfer-order",
-    "the cannon should consume its dedicated form")
-end)
-
-print(string.format("\n=== ADMINISTRATORIO SPACE AGE AUTOMATION TESTS ==="))
+print(string.format("\n=== EGG COURIER TESTS ==="))
 print(string.format("Passed: %d  Failed: %d  Total: %d", passed, failed, passed + failed))
 
 if #errors > 0 then

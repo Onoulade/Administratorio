@@ -276,6 +276,9 @@ M.TRUNK_CHROMATIC_SET = require("prototypes.shared.interplanetary_payloads").chr
 M.TERMINUS_NAME = "interplanetary-terminus"
 M.TERMINUS_OUTBOUND_SLOTS = 4
 M.TERMINUS_ARRIVAL_SLOTS = 8
+-- Half a second. The fastest tier lands an item every second, so a finer
+-- cadence would only re-scan idle endpoints.
+M.TERMINUS_CHECK_TICKS = 30
 
 -- Capacity is the number of items in flight empire-wide; transit is per item,
 -- so many items may be crossing at once, each carrying its own timer.
@@ -298,16 +301,18 @@ M.RELOCATION_TRANSFER_FORM = require("prototypes.shared.relocation_cargo").TRANS
 M.RELOCATION_CARGO_SET = require("prototypes.shared.relocation_cargo").as_set()
 M.RELOCATION_PAYLOAD_PER_SHOT = require("prototypes.shared.relocation_cargo").PAYLOAD_PER_SHOT
 M.RELOCATION_SHOT_TICKS = require("prototypes.shared.relocation_cargo").SHOT_TICKS
+-- One second. Shots are already rate-limited by RELOCATION_SHOT_TICKS, so this
+-- only governs how promptly a newly signalled request is noticed.
+M.RELOCATION_CANNON_CHECK_TICKS = 60
 
 -- AI Server: an assembling-machine paired with a hidden reactor child that
 -- carries the heat connections, because no single entity can both craft and
 -- emit heat.
--- Shared cadence for the Space Age automation systems. Each nth-tick interval
--- may have only one handler, and 30 already belongs to the biterport.
-M.SPACE_AGE_AUTOMATION_CHECK_TICKS = 32
-
 M.AI_SERVER_NAME = "ai-server"
 M.AI_SERVER_HEAT_CORE_NAME = "ai-server-heat-core"
+-- A quarter second. Heat is integrated per check, so a coarser cadence would
+-- make the stall threshold overshoot in visible steps.
+M.AI_SERVER_CHECK_TICKS = 15
 M.AI_SERVER_AMBIENT_TEMPERATURE = 15
 M.AI_SERVER_MAX_TEMPERATURE = 1000
 -- Degrees added per tick while crafting. A single heat exchanger drains far
