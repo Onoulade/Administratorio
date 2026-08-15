@@ -1021,3 +1021,78 @@ for level = 2, 5 do
 end
 
 data:extend(trunk_capacity_techs)
+
+-- ============================================================
+-- AI SERVERS AND THE SLOP ECONOMY
+--
+-- Slop unlocks are read straight from the taxonomy so a document added there is
+-- covered without touching this file. Colored paperwork is never producible
+-- from slop at any tier: that is what preserves the ink economy, the chromatic
+-- printer chain, and the planetary import loop.
+-- ============================================================
+local slop_rules = require("prototypes.shared.slop_rules")
+
+local function slop_unlocks(tier)
+  local effects = {}
+  for _, item_name in ipairs(slop_rules.documents_for_tier(tier)) do
+    effects[#effects + 1] = {type = "unlock-recipe", recipe = slop_rules.recipe_name(item_name)}
+  end
+  return effects
+end
+
+local ai_inference_effects = {
+  {type = "unlock-recipe", recipe = "ai-server"},
+  {type = "unlock-recipe", recipe = "heat-exhaust"},
+  {type = "unlock-recipe", recipe = "inference-token-production"},
+  {type = "unlock-recipe", recipe = "administrative-slop-production"},
+  {type = "unlock-recipe", recipe = "fabricated-citations-venting"},
+  {type = "unlock-recipe", recipe = "fabricated-citations-fact-check-data"},
+  {type = "unlock-recipe", recipe = "fabricated-citations-fact-check-documentation"},
+}
+for _, effect in ipairs(slop_unlocks("base")) do
+  ai_inference_effects[#ai_inference_effects + 1] = effect
+end
+
+data:extend({
+  {
+    type = "technology",
+    name = "aquilo-ai-inference",
+    icon = "__administratorio__/graphics/icons/ai-server.png",
+    icon_size = 64,
+    effects = ai_inference_effects,
+    prerequisites = {"aquilo-cryogenic-administration", "cryogenic-science-pack"},
+    unit = {
+      count = 600,
+      ingredients = {
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"cryogenic-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 60,
+    },
+    order = "h-u",
+  },
+  {
+    type = "technology",
+    name = "administratorium-slop-synthesis",
+    icon = "__administratorio__/graphics/icons/ai-server.png",
+    icon_size = 64,
+    effects = slop_unlocks("advanced"),
+    prerequisites = {"aquilo-ai-inference", "promethium-science-pack"},
+    unit = {
+      count = 1000,
+      ingredients = {
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"cryogenic-science-pack", 1},
+        {"promethium-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 60,
+    },
+    order = "h-u[02]",
+  },
+})

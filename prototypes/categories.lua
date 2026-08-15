@@ -24,6 +24,9 @@
 -- propaganda-distillery        | Propaganda Distillery (admin fluid processing)
 -- pneumatic-intake            | Tube Intake (hidden no-output intake validation)
 -- interplanetary-dispatch     | Interplanetary Terminus (hidden outbound payload validation)
+-- ai-inference                | AI Server (tokens and slop from a training corpus)
+-- slop-refining               | AI Server (slop into fabricated paperwork)
+-- citation-handling           | AI Server (venting and fact-checking hallucinations)
 -------------------------------------------------------------------------------
 local feature_flags = require("feature_flags")
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
@@ -62,6 +65,9 @@ if space_age_enabled then
   end
 
   categories[#categories + 1] = {type = "recipe-category", name = "interplanetary-dispatch"}
+  categories[#categories + 1] = {type = "recipe-category", name = "ai-inference"}
+  categories[#categories + 1] = {type = "recipe-category", name = "slop-refining"}
+  categories[#categories + 1] = {type = "recipe-category", name = "citation-handling"}
   categories[#categories + 1] = {type = "recipe-category", name = "printing-chromatic"}
   categories[#categories + 1] = {type = "recipe-category", name = "printing-multicolor"}
   categories[#categories + 1] = {type = "recipe-category", name = "archive-reassignment"}

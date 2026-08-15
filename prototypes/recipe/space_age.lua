@@ -1290,6 +1290,113 @@ data:extend({
     results = {{type = "item", name = "laser-printer", amount = 1}},
     energy_required = 20,
   }, "aquilo"),
+  surface_limited({
+    type = "recipe",
+    name = "ai-server",
+    subgroup = "admin-space-buildings",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "office-desk", amount = 4},
+      {type = "item", name = "cryoprint-technician", amount = 1},
+      {type = "item", name = "processing-unit", amount = 60},
+      {type = "item", name = "lithium-plate", amount = 40},
+      {type = "item", name = "superconductor", amount = 30},
+      {type = "item", name = "heat-pipe", amount = 20},
+      {type = "item", name = "construction-work-order", amount = 1},
+    },
+    results = {{type = "item", name = "ai-server", amount = 1}},
+    energy_required = 40,
+  }, "aquilo"),
+  surface_limited({
+    type = "recipe",
+    name = "heat-exhaust",
+    subgroup = "admin-space-buildings",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "heat-pipe", amount = 8},
+      {type = "item", name = "steel-plate", amount = 20},
+      {type = "item", name = "electric-engine-unit", amount = 6},
+      {type = "item", name = "construction-work-order", amount = 1},
+    },
+    results = {{type = "item", name = "heat-exhaust", amount = 1}},
+    energy_required = 10,
+  }, "aquilo"),
+
+  -- The chain: corpus -> tokens (+ heat) -> slop -> paperwork (+ citations).
+  -- The training corpus is deliberately made of existing junk so the Nauvis and
+  -- Gleba nonsense economies feed Aquilo rather than being bypassed by it.
+  {
+    type = "recipe",
+    name = "inference-token-production",
+    category = "ai-inference",
+    subgroup = "admin-bs-economy",
+    enabled = false,
+    localised_name = {"item-name.inference-token"},
+    ingredients = {
+      {type = "item", name = "dubious-data", amount = 4},
+      {type = "item", name = "data", amount = 2},
+      {type = "item", name = "useless-documentation", amount = 4},
+    },
+    results = {{type = "item", name = "inference-token", amount = 1}},
+    energy_required = 8,
+  },
+  {
+    type = "recipe",
+    name = "administrative-slop-production",
+    category = "ai-inference",
+    subgroup = "admin-bs-economy",
+    enabled = false,
+    localised_name = {"item-name.administrative-slop"},
+    ingredients = {
+      {type = "item", name = "inference-token", amount = 1},
+      {type = "item", name = "paper", amount = 6},
+    },
+    results = {{type = "item", name = "administrative-slop", amount = 4}},
+    energy_required = 4,
+  },
+
+  -- Hallucination handling, three ways. All three exist so the player has a
+  -- choice; ignoring the byproduct is the third, and it stalls the server.
+  {
+    type = "recipe",
+    name = "fabricated-citations-venting",
+    category = "citation-handling",
+    subgroup = "admin-bs-economy",
+    enabled = false,
+    localised_name = {"recipe-name.fabricated-citations-venting"},
+    ingredients = {{type = "item", name = "fabricated-citations", amount = 20}},
+    results = {},
+    allow_productivity = false,
+    energy_required = 2,
+  },
+  {
+    type = "recipe",
+    name = "fabricated-citations-fact-check-data",
+    category = "citation-handling",
+    subgroup = "admin-bs-economy",
+    enabled = false,
+    localised_name = {"recipe-name.fabricated-citations-fact-check-data"},
+    ingredients = {
+      {type = "item", name = "fabricated-citations", amount = 10},
+      {type = "item", name = "white-paper", amount = 1},
+    },
+    results = {{type = "item", name = "dubious-data", amount = 6}},
+    energy_required = 6,
+  },
+  {
+    type = "recipe",
+    name = "fabricated-citations-fact-check-documentation",
+    category = "citation-handling",
+    subgroup = "admin-bs-economy",
+    enabled = false,
+    localised_name = {"recipe-name.fabricated-citations-fact-check-documentation"},
+    ingredients = {
+      {type = "item", name = "fabricated-citations", amount = 10},
+      {type = "item", name = "environmental-impact-report", amount = 1},
+    },
+    results = {{type = "item", name = "useless-documentation", amount = 6}},
+    energy_required = 6,
+  },
   not_in_space({
     type = "recipe",
     name = "interplanetary-terminus",
@@ -1976,6 +2083,40 @@ for _, item_name in ipairs(interplanetary_payloads.all()) do
 end
 data:extend(dispatch_recipes)
 
+-- Slop synthesis, generated straight from the paperwork taxonomy. Cost and
+-- hallucination volume both scale with the rank being slopped: rank 0-1 emits a
+-- trickle, the Administratorium rank 2-3 tier emits a flood. That is the
+-- balance governor for the late tier and thematically exact -- the harder the
+-- document, the more the machine invents.
+local slop_rules = require("prototypes.shared.slop_rules")
+
+local slop_recipes = {}
+for _, tier in ipairs({"base", "advanced"}) do
+  for _, item_name in ipairs(slop_rules.documents_for_tier(tier)) do
+    slop_recipes[#slop_recipes + 1] = {
+      type = "recipe",
+      name = slop_rules.recipe_name(item_name),
+      category = "slop-refining",
+      subgroup = "admin-bs-economy",
+      enabled = false,
+      localised_name = {"item-name." .. item_name},
+      ingredients = {
+        {type = "item", name = slop_rules.SLOP_ITEM, amount = slop_rules.slop_cost(item_name)},
+        {type = "item", name = "blank-form", amount = 1},
+      },
+      results = {
+        {type = "item", name = item_name, amount = 1},
+        {type = "item", name = slop_rules.CITATION_ITEM, amount = slop_rules.citation_yield(item_name),
+          ignored_by_productivity = slop_rules.citation_yield(item_name)},
+      },
+      main_product = item_name,
+      allow_decomposition = false,
+      energy_required = 4 + slop_rules.slop_cost(item_name) / 2,
+    }
+  end
+end
+data:extend(slop_recipes)
+
 -- Briefed managers are single-use administrative catalysts. Every affected
 -- process returns the same number of regular managers, who must attend another
 -- meeting before they can obstruct useful work again.
@@ -1999,6 +2140,7 @@ local staffed_building_manager_requirements = {
   ["conciliation-desk"] = {"staffing"},
   ["digital-services-bureau"] = {"staffing"},
   ["interplanetary-terminus"] = {"staffing", "liaison"},
+  ["ai-server"] = {"staffing", "liaison"},
   ["laser-printer"] = {"staffing"},
   ["administrative-space-station"] = {"staffing", "orbital"},
 }

@@ -724,6 +724,50 @@ data:extend({
   },
   {
     type = "item",
+    name = "ai-server",
+    icon = item_icons .. "ai-server.png",
+    icon_size = 64,
+    subgroup = "admin-space-buildings",
+    order = "o",
+    place_result = "ai-server",
+    stack_size = 10
+  },
+  {
+    type = "item",
+    name = "heat-exhaust",
+    icon = item_icons .. "heat-exhaust.png",
+    icon_size = 64,
+    subgroup = "admin-space-buildings",
+    order = "o1",
+    place_result = "heat-exhaust",
+    stack_size = 20
+  },
+  {
+    type = "item",
+    name = "inference-token",
+    icons = {{icon = item_icons .. "dubious-data.png", icon_size = 64, tint = {r = 0.45, g = 0.85, b = 1, a = 1}}},
+    subgroup = "admin-bs-economy",
+    order = "z1",
+    stack_size = 200
+  },
+  {
+    type = "item",
+    name = "administrative-slop",
+    icons = {{icon = item_icons .. "regulation.png", icon_size = 64, tint = {r = 0.55, g = 0.6, b = 0.4, a = 1}}},
+    subgroup = "admin-bs-economy",
+    order = "z2",
+    stack_size = 200
+  },
+  {
+    type = "item",
+    name = "fabricated-citations",
+    icons = {{icon = item_icons .. "useless-documentation.png", icon_size = 64, tint = {r = 1, g = 0.45, b = 0.4, a = 1}}},
+    subgroup = "admin-bs-economy",
+    order = "z3",
+    stack_size = 200
+  },
+  {
+    type = "item",
     name = "interplanetary-terminus",
     icon = item_icons .. "space-age/interplanetary-terminus.png",
     icon_size = 64,

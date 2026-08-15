@@ -446,6 +446,134 @@ administrative_space_station.working_sound = {
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
+-- AI Server: a composite entity.
+--
+-- The engine will not let one entity both craft a recipe and emit heat:
+-- assembling-machine has no heat output, reactor has no crafting. So the
+-- visible AI Server is an assembling-machine with a brutal electric draw, and
+-- a hidden reactor child at the same position carries the heat connections.
+-- scripts/ai_server.lua drives the child's temperature from the parent's
+-- crafting state. The child's connections are laid out on the visible 7x7
+-- footprint so heat pipes attach exactly where players expect them.
+local AI_SERVER_HEAT_CONNECTIONS = {}
+for _, offset in ipairs({-2, 0, 2}) do
+  AI_SERVER_HEAT_CONNECTIONS[#AI_SERVER_HEAT_CONNECTIONS + 1] =
+    {position = {offset, -4}, direction = defines.direction.north}
+  AI_SERVER_HEAT_CONNECTIONS[#AI_SERVER_HEAT_CONNECTIONS + 1] =
+    {position = {offset, 4}, direction = defines.direction.south}
+  AI_SERVER_HEAT_CONNECTIONS[#AI_SERVER_HEAT_CONNECTIONS + 1] =
+    {position = {4, offset}, direction = defines.direction.east}
+  AI_SERVER_HEAT_CONNECTIONS[#AI_SERVER_HEAT_CONNECTIONS + 1] =
+    {position = {-4, offset}, direction = defines.direction.west}
+end
+
+local ai_server = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
+ai_server.name = "ai-server"
+ai_server.icon = item_icons .. "ai-server.png"
+ai_server.icon_size = 64
+ai_server.icons = nil
+ai_server.minable = {mining_time = 0.5, result = "ai-server"}
+ai_server.placeable_by = placeable_by_item("ai-server")
+ai_server.next_upgrade = nil
+ai_server.max_health = 600
+ai_server.corpse = "big-remnants"
+ai_server.crafting_categories = {"ai-inference", "slop-refining", "citation-handling"}
+ai_server.crafting_speed = 2
+ai_server.ingredient_count = 6
+ai_server.module_slots = 4
+ai_server.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+ai_server.energy_usage = "4MW"
+ai_server.energy_source = {
+  type = "electric",
+  usage_priority = "secondary-input",
+  emissions_per_minute = {pollution = 12},
+}
+ai_server.collision_box = {{-3.25, -3.25}, {3.25, 3.25}}
+ai_server.selection_box = {{-3.5, -3.5}, {3.5, 3.5}}
+ai_server.fluid_boxes_off_when_no_fluid_recipe = true
+ai_server.fluid_boxes = {}
+ai_server.graphics_set = {
+  animation = {
+    layers = {
+      {filename = entity_graphics .. "ai-server/ai-server.png", width = 520, height = 500, frame_count = 1, scale = 0.45, shift = {0, -0.2}},
+      {filename = entity_graphics .. "ai-server/ai-server-shadow.png", width = 548, height = 482, frame_count = 1, scale = 0.45, shift = {0.3, 0.1}, draw_as_shadow = true},
+    }
+  }
+}
+-- A building that plays escalating argument loops while consuming power and
+-- producing text nobody reads is already thematically an AI server.
+ai_server.working_sound = {
+  sound = {filename = sound_path .. "meeting-debate.ogg", volume = 0.45},
+  idle_sound = {filename = sound_path .. "meeting-calm.ogg", volume = 0.3},
+}
+
+local ai_server_heat_core = {
+  type = "reactor",
+  name = "ai-server-heat-core",
+  icon = item_icons .. "ai-server.png",
+  icon_size = 64,
+  flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "placeable-off-grid", "no-automated-item-removal", "no-automated-item-insertion"},
+  hidden = true,
+  selectable_in_game = false,
+  collision_mask = {layers = {}},
+  collision_box = {{-0.1, -0.1}, {0.1, 0.1}},
+  selection_box = {{0, 0}, {0, 0}},
+  max_health = 1,
+  consumption = "1W",
+  energy_source = {type = "void"},
+  neighbour_bonus = 0,
+  heat_buffer = {
+    max_temperature = 1000,
+    specific_heat = "5MJ",
+    max_transfer = "2GW",
+    minimum_glow_temperature = 350,
+    connections = AI_SERVER_HEAT_CONNECTIONS,
+  },
+  picture = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+}
+
+-- Heat Exhaust: a genuine vanilla heat void.
+--
+-- "at-most" caps the network temperature, so surplus heat simply leaves. This
+-- exists for players who want the compute without the power generation, and it
+-- must never be more efficient than actually using the heat.
+--
+-- gui_mode is "none" on purpose: an editable heat interface could be flipped to
+-- "at-least" and become an infinite free heat source.
+local heat_exhaust = {
+  type = "heat-interface",
+  name = "heat-exhaust",
+  icon = item_icons .. "heat-exhaust.png",
+  icon_size = 64,
+  flags = {"placeable-neutral", "player-creation"},
+  minable = {mining_time = 0.2, result = "heat-exhaust"},
+  placeable_by = placeable_by_item("heat-exhaust"),
+  max_health = 200,
+  corpse = "medium-remnants",
+  collision_box = {{-1.35, -1.35}, {1.35, 1.35}},
+  selection_box = {{-1.5, -1.5}, {1.5, 1.5}},
+  gui_mode = "none",
+  heat_buffer = {
+    max_temperature = 1000,
+    specific_heat = "1MJ",
+    max_transfer = "500MW",
+    minimum_glow_temperature = 350,
+    connections = {
+      {position = {0, -2}, direction = defines.direction.north},
+      {position = {2, 0}, direction = defines.direction.east},
+      {position = {0, 2}, direction = defines.direction.south},
+      {position = {-2, 0}, direction = defines.direction.west},
+    },
+  },
+  picture = {
+    filename = entity_graphics .. "ai-server/heat-exhaust.png",
+    width = 473,
+    height = 459,
+    scale = 0.35,
+    shift = {0.4, 0},
+  },
+}
+
 -- Interplanetary Terminus: the trunk endpoint, one per planet.
 --
 -- A furnace shell, exactly like tube-intake, so inserters validate outbound
@@ -808,6 +936,8 @@ for _, entity in ipairs({
   conciliation_desk,
   digital_services_bureau,
   interplanetary_terminus,
+  ai_server,
+  heat_exhaust,
 }) do
   require_non_vacuum(entity)
 end
@@ -821,6 +951,9 @@ local space_age_entities = {
   conciliation_desk,
   digital_services_bureau,
   interplanetary_terminus,
+  ai_server,
+  ai_server_heat_core,
+  heat_exhaust,
   orbital_biter_projectile,
   trajectory_compliance_array,
   senior_trajectory_compliance_array,

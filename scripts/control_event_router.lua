@@ -62,7 +62,7 @@ function M.register(deps)
   script.on_event(defines.events.on_research_finished, deps.on_research_finished)
 
   script.on_nth_tick(15, deps.on_pneumatic_tick)
-  script.on_nth_tick(deps.interplanetary_tube_check_ticks, deps.on_interplanetary_tube_tick)
+  script.on_nth_tick(deps.space_age_automation_check_ticks, deps.on_space_age_automation_tick)
   if deps.on_biter_station_tick then
     script.on_nth_tick(deps.biter_station_check_ticks or 10, deps.on_biter_station_tick)
   end

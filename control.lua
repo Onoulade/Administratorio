@@ -4,6 +4,7 @@
 local C = require("scripts.constants")
 local pneumatic = require("scripts.pneumatic")
 local interplanetary_tube = require("scripts.interplanetary_tube")
+local ai_server = require("scripts.ai_server")
 local frustration = require("scripts.frustration")
 local zones = require("scripts.zones")
 local biters = require("scripts.biters")
@@ -501,6 +502,7 @@ local function init_storage()
   trajectory_compliance.configure_existing_arrays()
   territorial_arbitration.ensure_storage()
   interplanetary_tube.ensure_storage()
+  ai_server.ensure_storage()
   if WORKING_HOURS_ENABLED then
     working_hours.ensure_storage()
   end
@@ -675,6 +677,7 @@ local function on_init()
   rebuild_desk_cache()
   territorial_arbitration.rebuild_registry()
   interplanetary_tube.rebuild_registry()
+  ai_server.rebuild_registry()
   biters.rebuild_desk_index()
   biters.rebuild_capture_bureau_ports()
   biters.mark_all_desk_circuit_dirty()
@@ -728,6 +731,7 @@ local function on_configuration_changed(event)
   rebuild_desk_cache()
   territorial_arbitration.rebuild_registry()
   interplanetary_tube.rebuild_registry()
+  ai_server.rebuild_registry()
   trains.on_init()
   set_biter_ceasefire()
   
@@ -1127,6 +1131,7 @@ local function on_entity_built_inner(event)
     if interplanetary_tube.is_terminus(entity) and not interplanetary_tube.on_entity_built(entity, player) then
       return
     end
+    ai_server.on_entity_built(entity)
     if biterport.on_entity_built(event) then
       return
     end
@@ -1238,6 +1243,7 @@ local function on_entity_removed(event)
   rideable_biter.untrack(entity)
   territorial_arbitration.on_entity_removed(entity)
   interplanetary_tube.on_entity_removed(entity, event.buffer)
+  ai_server.on_entity_removed(entity)
 
   trains.on_removed(entity)
 
@@ -2213,9 +2219,14 @@ local function on_pneumatic_tick(_event)
   end)
 end
 
-local function on_interplanetary_tube_tick(event)
+-- Every nth-tick interval may have exactly one handler, so the Space Age
+-- automation systems share a single slot rather than each claiming their own.
+local function on_space_age_automation_tick(event)
   runtime_debug.run_profiled_external_sections("interplanetary_tube", function()
     interplanetary_tube.on_tick(event)
+  end)
+  runtime_debug.run_profiled_external_sections("ai_server", function()
+    ai_server.on_tick(event)
   end)
 end
 
@@ -2272,8 +2283,8 @@ control_event_router.register({
   on_main_tick = on_main_tick,
   on_trajectory_compliance_tick = on_trajectory_compliance_tick,
   on_pneumatic_tick = on_pneumatic_tick,
-  on_interplanetary_tube_tick = on_interplanetary_tube_tick,
-  interplanetary_tube_check_ticks = C.TERMINUS_CHECK_TICKS,
+  on_space_age_automation_tick = on_space_age_automation_tick,
+  space_age_automation_check_ticks = C.SPACE_AGE_AUTOMATION_CHECK_TICKS,
   on_player_created = on_player_created,
   on_player_cursor_stack_changed = on_player_cursor_stack_changed,
   on_player_joined_game = on_player_joined_game,

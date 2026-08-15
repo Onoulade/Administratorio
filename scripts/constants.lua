@@ -276,7 +276,6 @@ M.TRUNK_CHROMATIC_SET = require("prototypes.shared.interplanetary_payloads").chr
 M.TERMINUS_NAME = "interplanetary-terminus"
 M.TERMINUS_OUTBOUND_SLOTS = 4
 M.TERMINUS_ARRIVAL_SLOTS = 8
-M.TERMINUS_CHECK_TICKS = 30
 
 -- Capacity is the number of items in flight empire-wide; transit is per item,
 -- so many items may be crossing at once, each carrying its own timer.
@@ -290,6 +289,23 @@ M.TRUNK_TIERS = {
 }
 M.TRUNK_BASE_TECH = "interplanetary-tube-network"
 M.TRUNK_CHROMATIC_TECH = "interplanetary-tube-chromatic"
+
+-- AI Server: an assembling-machine paired with a hidden reactor child that
+-- carries the heat connections, because no single entity can both craft and
+-- emit heat.
+-- Shared cadence for the Space Age automation systems. Each nth-tick interval
+-- may have only one handler, and 30 already belongs to the biterport.
+M.SPACE_AGE_AUTOMATION_CHECK_TICKS = 32
+
+M.AI_SERVER_NAME = "ai-server"
+M.AI_SERVER_HEAT_CORE_NAME = "ai-server-heat-core"
+M.AI_SERVER_AMBIENT_TEMPERATURE = 15
+M.AI_SERVER_MAX_TEMPERATURE = 1000
+-- Degrees added per tick while crafting. A single heat exchanger drains far
+-- more than this, so one exchanger comfortably sustains one server.
+M.AI_SERVER_HEAT_PER_TICK = 0.5
+-- Reaching this stops the server outright rather than throttling it.
+M.AI_SERVER_STALL_TEMPERATURE = 950
 
 M.EVOLUTION_COMPLAINT_WARNINGS = {
   {
