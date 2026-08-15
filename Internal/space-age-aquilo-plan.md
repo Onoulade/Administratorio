@@ -2,30 +2,42 @@
 
 This file records the Aquilo principles and the current first-pass implementation under the shared rules in [space-age-compatibility-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-compatibility-plan.md).
 
+> **Superseded in part.** The fax network described in earlier revisions of this file is being **deleted outright** and replaced by the Interplanetary Tube Network, which unlocks *before* Aquilo. Aquilo's compute, heat, and colored-transport identity is designed in [space-age-automation-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-automation-plan.md). Sections below have been updated; treat that file as canonical where the two disagree.
+
 ## Planet Role
 
-Aquilo is the interplanetary convergence and multicolor paperwork planet.
+Aquilo is the compute, heat, and multicolor convergence planet.
 
 Its themes are:
 
 - cryogenic handling and transfer media
 - liquid ink freezes here — only solid transfer printing works
-- the Interplanetary Fax Exchange as the capstone of cross-planet logistics
+- electricity converted into compute, and compute's waste heat converted into survival
 - multicolor composite forms that combine the work of multiple planets
 - late-game paperwork unification rather than early bootstrap
 
-Its global rewards are the `Laser Printer` and the `Interplanetary Fax Exchange`.
+Its global rewards are the `Laser Printer`, the `AI Server`, and colored interplanetary transport.
+
+Aquilo is **no longer the gate for cross-planet paperwork logistics**. The Interplanetary Tube Network unlocks earlier, on `{pneumatic-capacity-2, cyan-yellow-bureaucracy}`, carrying regular forms only. Aquilo's remaining logistics role is unlocking the **colored tier** of that network.
 
 ## Current Implementation Snapshot
 
-The current codebase already ships a first Aquilo pass:
+The current codebase ships a first Aquilo pass, parts of which are now scheduled for deletion:
 
-- `laser-printer`, `fax-emitter`, and `interplanetary-fax-exchange` are in-game and Aquilo-limited to craft
+**Kept:**
+
+- `laser-printer` is in-game and Aquilo-limited to craft
 - `transfer-emulsion`, `thermal-transfer-sheet`, `composite-chroma-ribbon`, `cyan-yellow-form`, `cyan-magenta-form`, `yellow-magenta-form`, `trichromatic-permit`, `unified-operations-charter`, and `cryogenic-operations-license` are implemented
-- the runtime fax network already handles destination selection, per-planet receiver uniqueness, queue reservations, circuit reporting, quality-preserving reconstruction, and queue-safe stalling
-- the current runtime reconstructs faxed paperwork directly inside the exchange logic and consumes generic `paper` plus `ink`
-- the `Laser Printer` still carries the Aquilo print identity and `fax-reconstruction` category scaffolding, but the live fax runtime is not currently recipe-driven through it
-- `composite-form` is not present in the current implementation; older notes that mention it are stale
+
+**Scheduled for deletion** (no save compatibility burden — no Space Age save exists yet):
+
+- `fax-emitter`, `interplanetary-fax-exchange`, `fax-network-combinator`
+- `scripts/fax.lua`, `scripts/fax_shared.lua`, `tests/test_fax_runtime.lua`
+- technologies `aquilo-fax-network`, `color-faxing`, `fax-queue-capacity-1/2/3`
+- the `faxed-document-reconstruction-*` recipe family and the `fax-reconstruction` category scaffolding on the `Laser Printer`
+- the fax queue signals and associated locale
+
+**Not present:** `composite-form` was never implemented; older notes mentioning it are stale.
 
 ## Planned Design Principles
 
@@ -39,7 +51,7 @@ That means its plan is allowed to assume:
 - CMY paperwork and forms can be imported
 - multiple planet intermediates are already in the player's logistics network
 
-Aquilo should therefore solve late convergence, multicolor unification, and fax logistics — not early bootstrap.
+Aquilo should therefore solve late convergence, multicolor unification, compute, and heat — not early bootstrap.
 
 ### 2. Liquid ink freezes on Aquilo
 
@@ -83,23 +95,23 @@ It should not become the best machine for:
 
 The Laser Printer uses solid transfer media: `transfer-emulsion`, `thermal-transfer-sheet`, and `composite-chroma-ribbon` instead of liquid ink.
 
-### 5. The Interplanetary Fax Exchange is Aquilo's administrative building
+### 5. The AI Server is Aquilo's administrative building
 
-The `Interplanetary Fax Exchange` owns:
+The `AI Server` converts the one resource Aquilo genuinely punishes you for — electricity — into compute, and its waste heat into survival.
 
-- queuing and routing of cross-planet document transfers
-- first-pass runtime reconstruction of faxed documents
-- destination management and priority handling
-- coordination of paperwork flows between planets
+It owns:
 
-It requires a `cryoprint-technician` worker to craft and no operating paperwork.
+- Inference Tokens, and through them Administrative Slop and low-rank synthetic paperwork
+- **real vanilla heat**, fed into heat pipes and heat exchangers: unfreezing an Aquilo base, or driving steam power
+- Fabricated Citations as a byproduct that must be handled
 
-The fax network unlocking on Aquilo (not earlier) means:
+This is the correct Aquilo identity because the constraint is native to the planet. Aquilo power is expensive, imported, and freezes if unattended, so compute is self-governing here in a way it would not be on Nauvis.
 
-- before Aquilo, players must physically ship all paperwork between planets
-- this keeps the early game focused on local planet identity and real logistics
-- Aquilo becomes the reward for reaching the final planet: your bureaucracy goes interplanetary
-- faxing solves transport friction without deleting the value of each planet's specialization
+The server hard-stops when it cannot dump its heat. The recovered `lufter` fan becomes a Heat Exhaust for players who want compute without power generation, and must never be more efficient than actually using the heat.
+
+Full design in [space-age-automation-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-automation-plan.md), section 2.
+
+**Superseded rationale, recorded deliberately.** Earlier revisions argued that cross-planet paperwork logistics must unlock on Aquilo so that "before Aquilo, players must physically ship all paperwork between planets," making the network the reward for reaching the final planet. That decision has been reversed: the Interplanetary Tube Network now unlocks pre-Aquilo with regular forms only, and Aquilo unlocks the colored tier. The protection against trivialized logistics is no longer the unlock gate but the trunk's own design — a separate narrow pool, explicit hand-off, and per-item transit latency.
 
 ### 6. Aquilo science unlocks multicolor form recipes
 
@@ -130,23 +142,25 @@ Aquilo should intensify the value of the earlier planets:
 
 That makes Aquilo a capstone for the interplanetary paperwork economy instead of an independent replacement for it. Every planet's paperwork becomes more valuable because Aquilo can combine them.
 
-### 8. Faxing should make logistics better, not trivial
+### 8. Interplanetary transport should make logistics better, not trivial
 
-Before Aquilo, paperwork must be physically shipped.
+This principle survives the fax deletion unchanged. Only the mechanism protecting it has moved.
 
-After Aquilo, faxing should become attractive because:
-
-- reconstruction is automated and queue-aware
-- local destination supplies are cheaper than repeated physical shipping for many documents
-- the Fax Exchange handles routing and prioritization
-- multicolor forms are increasingly common in late recipes
-
-But faxing should not replace all shipping:
+The Interplanetary Tube Network must never replace shipping:
 
 - buildings still need physical shipping
 - fluids still need physical shipping
 - bulk cargo still needs physical shipping
-- faxing reconstructs form value by consuming destination-side supplies
+- biters, managers, and couriers move by rocket or by cannon, never by tube
+
+The protections are now structural rather than gated by planet order:
+
+- the trunk is a **separate pool** from the local pneumatic network and must never merge with it — merging would produce free 200-capacity teleportation
+- arrivals require **explicit hand-off** out of the Terminus inventory
+- transit is **per item** with real latency, from 30 s down to 1 s across the upgrade ladder
+- trunk capacity opens at 2–3 and reaches only 20, against a local network capacity of 200
+
+Aquilo's remaining contribution is the colored tier, which matters because multicolor forms are increasingly common in late recipes.
 
 ### 9. Tax evasion applies — no taxpayer money
 
@@ -167,23 +181,25 @@ Aquilo recipes should not require `taxpayer-money`. Like all off-world planets, 
 - `unified-operations-charter`: top-tier composite authorization — requires trichromatic-permit plus additional bureaucracy, gates the most advanced production
 - `cryogenic-operations-license`: Aquilo-specific operations permit — gates cryogenic plant usage and Aquilo-native recipes
 
-### Fax Infrastructure
+### Compute And Heat Infrastructure
 
-- `fax-emitter`: sender building with destination selection
-- `interplanetary-fax-exchange`: destination building with queue, routing, and reconstruction runtime
-- queue-capacity technologies and circuit signals for network visibility
+- `AI Server`: electricity plus a training corpus into Inference Tokens, with real heat as the byproduct
+- `Heat Exhaust`: optional heat sink for players who want compute without power generation
+- Inference Tokens, Administrative Slop, and Fabricated Citations as the Aquilo compute chain
 
-## Current Fax Loop
+Detailed in [space-age-automation-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-automation-plan.md), section 2.
 
-The implemented first-pass shape is:
+## Interplanetary Transport Loop
 
-1. source paperwork is created on its home planet
-2. the source is loaded into a `fax-emitter` and assigned a destination planet
-3. the destination planet's `interplanetary-fax-exchange` reserves queue space and receives the job
-4. the exchange reconstructs the document from its own inventory once `paper` and `ink` are available
-5. the reconstructed form is available in the exchange inventory for local use or further logistics
+The fax loop is gone. The replacement shape is:
 
-The current fax network is a throughput and convenience system, not free teleportation. Queue space is limited, quality is preserved, and the destination must provide reconstruction supplies.
+1. source paperwork is created on its home planet and placed into the local pneumatic network
+2. a Terminus hands it to the interplanetary trunk, addressed to another planet
+3. each item travels independently with its own transit timer, subject to trunk capacity
+4. arrivals land in the destination Terminus inventory
+5. moving them into the local pneumatic pool, onto a belt, or into a chest is an explicit player step
+
+Regular forms move from the pre-Aquilo base tier. **Colored forms require the Aquilo tier.** Fluids, buildings, bulk cargo, biters, and managers never move by tube.
 
 ## Export Identity
 
@@ -192,30 +208,36 @@ Aquilo's exported value should center on:
 - multicolor composite forms (the primary unique export)
 - transfer media for Aquilo printing and multicolor form production
 - the `Laser Printer` itself (fast printing on any planet)
-- the `Interplanetary Fax Exchange` itself (fax capability on any planet)
+- Inference Tokens and the low-rank synthetic paperwork they enable
 - `cryogenic plant`-adjacent licensing
-- high-speed reconstruction services
+- colored interplanetary transport capability
+
+Whether the `AI Server` itself exports off Aquilo is an open question. Every other planet reward in this mod exports, but Aquilo's power and cooling constraints are what make compute self-governing, and those constraints do not travel.
 
 ## Building Requirements
 
 - `Laser Printer`: requires 1x `cryoprint-technician` worker to craft, no operating paperwork
-- `Interplanetary Fax Exchange`: requires 1x `cryoprint-technician` worker to craft, no operating paperwork
+- `AI Server`: requires 1x `cryoprint-technician` worker to craft, no operating paperwork; hard-stops when it cannot dump heat
 - Both buildings should include cryogenic components (processing units, fluoroketone, lithium) in their crafting recipes
 - Surface-limited crafting to Aquilo only
+- The **Terminus** must *not* require a `cryoprint-technician` at base tier — it unlocks pre-Aquilo, and an unbuildable building behind a reachable technology is a bad first impression
 
 ## Constraints For Future Implementation
 
 - Do not add a fourth chromatic ink.
-- Keep the `Laser Printer` in the print/reconstruction lane, not the certification lane.
+- Keep the `Laser Printer` in the print lane, not the certification lane.
 - Make Aquilo depend on earlier planetary paperwork enough that the interplanetary network matters.
-- Use Aquilo to reward faxing and convergence logistics, not to erase the value of shipping entirely.
-- The Fax Exchange should feel like a capstone reward, not something the player needed three planets ago.
+- **Slop must never produce colored paperwork, at any tier.** This is what preserves the ink economy, the chromatic printer chain, and the planetary import loop the whole Space Age pass rests on.
+- Slop is capped at rank 0–1 until Administratorium, then rank 2–3 at a huge token cost, and never the 16 `restricted_documents`.
+- The interplanetary trunk must never merge with the local pneumatic pool.
 - Multicolor forms should feel like a real progression reward, not just "craft three colored forms together."
+- Aquilo's compute identity must not turn it into a paperwork replacement. Aquilo consumes imported bureaucracy; it does not make the other planets optional.
 
 ## Open Questions
 
 1. How much faster should the Laser Printer be than the Chromatic Printer?
 2. Which first late-game recipes should explicitly require multicolor forms?
-3. Should faxing have a per-planet relay cost or only a destination reconstruction cost?
-4. How should the fax network interact with existing logistics (trains, rockets, cargo pods)?
-5. Should bicolor forms stay as direct liquid-ink recipes, or should Aquilo replace them with processed transfer media derived from colored paperwork?
+3. Should bicolor forms stay as direct liquid-ink recipes, or should Aquilo replace them with processed transfer media derived from colored paperwork?
+4. Does the `AI Server` export off Aquilo, or is it Aquilo-craftable only?
+5. What is the Heat Exhaust's dump rate relative to a server's output, and how many exhausts does one server need?
+6. Does the Terminus need one-per-planet uniqueness, as the fax receiver had?
