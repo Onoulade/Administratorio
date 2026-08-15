@@ -478,6 +478,10 @@ test("every staffed recipe unlock follows the workforce recipe that supplies its
   local checked = 0
   for consumer_recipe_name, consumer_recipe in pairs(recipes) do
     local consumer_unlockers = recipe_unlockers[consumer_recipe_name]
+    -- Hidden payload-validation families exist only so inserters can check what
+    -- may enter a building. They are never crafted, so they carry no
+    -- progression order to audit.
+    if consumer_recipe.hidden then consumer_unlockers = nil end
     if consumer_unlockers then
       for _, ingredient in ipairs(consumer_recipe.ingredients or {}) do
         local ingredient_name = ingredient.name or ingredient[1]

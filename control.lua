@@ -5,6 +5,7 @@ local C = require("scripts.constants")
 local pneumatic = require("scripts.pneumatic")
 local interplanetary_tube = require("scripts.interplanetary_tube")
 local ai_server = require("scripts.ai_server")
+local relocation_cannon = require("scripts.relocation_cannon")
 local frustration = require("scripts.frustration")
 local zones = require("scripts.zones")
 local biters = require("scripts.biters")
@@ -503,6 +504,7 @@ local function init_storage()
   territorial_arbitration.ensure_storage()
   interplanetary_tube.ensure_storage()
   ai_server.ensure_storage()
+  relocation_cannon.ensure_storage()
   if WORKING_HOURS_ENABLED then
     working_hours.ensure_storage()
   end
@@ -678,6 +680,7 @@ local function on_init()
   territorial_arbitration.rebuild_registry()
   interplanetary_tube.rebuild_registry()
   ai_server.rebuild_registry()
+  relocation_cannon.rebuild_registry()
   biters.rebuild_desk_index()
   biters.rebuild_capture_bureau_ports()
   biters.mark_all_desk_circuit_dirty()
@@ -732,6 +735,7 @@ local function on_configuration_changed(event)
   territorial_arbitration.rebuild_registry()
   interplanetary_tube.rebuild_registry()
   ai_server.rebuild_registry()
+  relocation_cannon.rebuild_registry()
   trains.on_init()
   set_biter_ceasefire()
   
@@ -1132,6 +1136,9 @@ local function on_entity_built_inner(event)
       return
     end
     ai_server.on_entity_built(entity)
+    if relocation_cannon.is_cannon(entity) and not relocation_cannon.on_entity_built(entity, player) then
+      return
+    end
     if biterport.on_entity_built(event) then
       return
     end
@@ -1244,6 +1251,7 @@ local function on_entity_removed(event)
   territorial_arbitration.on_entity_removed(entity)
   interplanetary_tube.on_entity_removed(entity, event.buffer)
   ai_server.on_entity_removed(entity)
+  relocation_cannon.on_entity_removed(entity)
 
   trains.on_removed(entity)
 
@@ -2227,6 +2235,9 @@ local function on_space_age_automation_tick(event)
   end)
   runtime_debug.run_profiled_external_sections("ai_server", function()
     ai_server.on_tick(event)
+  end)
+  runtime_debug.run_profiled_external_sections("relocation_cannon", function()
+    relocation_cannon.on_tick(event)
   end)
 end
 

@@ -290,6 +290,15 @@ M.TRUNK_TIERS = {
 M.TRUNK_BASE_TECH = "interplanetary-tube-network"
 M.TRUNK_CHROMATIC_TECH = "interplanetary-tube-chromatic"
 
+-- Involuntary Relocation Cannon: biter-family cargo only, moved a batch per
+-- shot rather than one timed item at a time. Restricting the cargo is what
+-- keeps rockets relevant for everything else.
+M.RELOCATION_CANNON_NAME = "involuntary-relocation-cannon"
+M.RELOCATION_TRANSFER_FORM = require("prototypes.shared.relocation_cargo").TRANSFER_FORM
+M.RELOCATION_CARGO_SET = require("prototypes.shared.relocation_cargo").as_set()
+M.RELOCATION_PAYLOAD_PER_SHOT = require("prototypes.shared.relocation_cargo").PAYLOAD_PER_SHOT
+M.RELOCATION_SHOT_TICKS = require("prototypes.shared.relocation_cargo").SHOT_TICKS
+
 -- AI Server: an assembling-machine paired with a hidden reactor child that
 -- carries the heat connections, because no single entity can both craft and
 -- emit heat.

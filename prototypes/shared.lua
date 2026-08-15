@@ -219,6 +219,7 @@ if space_age_enabled then
   shared.ADMIN_BUILDINGS["interplanetary-terminus"] = true
   shared.ADMIN_BUILDINGS["ai-server"] = true
   shared.ADMIN_BUILDINGS["synthetic-personnel-bureau"] = true
+  shared.ADMIN_BUILDINGS["involuntary-relocation-cannon"] = true
   shared.ADMIN_BUILDINGS["heat-exhaust"] = true
 end
 
@@ -464,6 +465,7 @@ shared.UNBATCHED_RESULT_NAMES = {
   ["interplanetary-terminus"] = true,
   ["ai-server"] = true,
   ["synthetic-personnel-bureau"] = true,
+  ["involuntary-relocation-cannon"] = true,
   ["heat-exhaust"] = true,
 }
 

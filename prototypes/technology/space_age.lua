@@ -1212,3 +1212,59 @@ data:extend({
 -- The Administratorium expedition cannot be attempted before couriers exist:
 -- its science pack recipe consumes one.
 add_tech_prerequisite("promethium-science-pack", "egg-courier-formation")
+
+-- ============================================================
+-- INVOLUNTARY RELOCATION CANNON
+--
+-- Must be available before the captive biter spawner is buildable, so the
+-- 30-minute Missionary window is survivable by design rather than by luck.
+-- The prerequisite is discovered from whichever technology unlocks the spawner
+-- rather than hardcoded, so a vanilla retune cannot silently break the order.
+-- ============================================================
+local relocation_cargo = require("prototypes.shared.relocation_cargo")
+
+local relocation_effects = {
+  {type = "unlock-recipe", recipe = "involuntary-relocation-cannon"},
+  {type = "unlock-recipe", recipe = "involuntary-transfer-order-production"},
+}
+for _, item_name in ipairs(relocation_cargo.names) do
+  relocation_effects[#relocation_effects + 1] =
+    {type = "unlock-recipe", recipe = relocation_cargo.load_recipe_name(item_name)}
+end
+
+data:extend({
+  {
+    type = "technology",
+    name = "involuntary-relocation",
+    icons = {
+      {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
+      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
+    },
+    effects = relocation_effects,
+    prerequisites = {"egg-courier-formation", "vulcanus-certification"},
+    unit = {
+      count = 400,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 45,
+    },
+    order = "h-y",
+  },
+})
+
+for technology_name, technology in pairs(data.raw.technology or {}) do
+  if technology_name ~= "involuntary-relocation" then
+    for _, effect in ipairs(technology.effects or {}) do
+      if effect.type == "unlock-recipe" and effect.recipe == "captive-biter-spawner" then
+        add_tech_prerequisite(technology_name, "involuntary-relocation")
+        break
+      end
+    end
+  end
+end

@@ -446,6 +446,69 @@ administrative_space_station.working_sound = {
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
+-- Involuntary Relocation Cannon: a regular building, not a turret.
+--
+-- No catapult prototype is involved. Biters and managers are reassigned across
+-- the solar system because HR filed a transfer order, and the building that
+-- does it is bureaucratic infrastructure rather than artillery. Planets only:
+-- space platforms are out of scope, and the Cobaye reaches orbit by rocket at
+-- parity cost.
+--
+-- Same furnace shell as the Terminus, so inserters validate the payload against
+-- the relocation-payload recipe family and the engine enforces the
+-- biter-family-only rule without any runtime checking on the input side.
+local involuntary_relocation_cannon = {
+  type = "furnace",
+  name = "involuntary-relocation-cannon",
+  icons = {
+    {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
+    {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
+  },
+  flags = {"placeable-neutral", "player-creation"},
+  minable = {mining_time = 0.4, result = "involuntary-relocation-cannon"},
+  placeable_by = placeable_by_item("involuntary-relocation-cannon"),
+  max_health = 500,
+  corpse = "big-remnants",
+  crafting_categories = {"relocation-payload"},
+  crafting_speed = 0.001,
+  energy_usage = "1W",
+  energy_source = {type = "void"},
+  source_inventory_size = 6,
+  result_inventory_size = 8,
+  trash_inventory_size = 0,
+  module_slots = 0,
+  allowed_effects = {},
+  show_recipe_icon = false,
+  show_recipe_icon_on_map = false,
+  enable_logistic_control_behavior = false,
+  circuit_wire_max_distance = 9,
+  circuit_connector = circuit_connector_definitions.create_vector(
+    universal_connector_template,
+    {
+      {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+    }
+  ),
+  graphics_set = {
+    animation = {
+      filename = entity_graphics .. "relocation-cannon/relocation-cannon.png",
+      priority = "high",
+      width = 256,
+      height = 301,
+      frame_count = 1,
+      scale = 0.5,
+      shift = {0, -0.35},
+    },
+  },
+  working_sound = {
+    sound = {filename = sound_path .. "industrial-press-loop.ogg", volume = 0.5},
+    idle_sound = {filename = "__base__/sound/idle1.ogg"}
+  },
+}
+align_footprint(involuntary_relocation_cannon, 2.4, 2.4, 3, 3)
+
 -- Synthetic Personnel Bureau: manufactures professions, not buildings.
 --
 -- Four small recipes rather than thirteen duplicated building recipes. That
@@ -985,6 +1048,7 @@ for _, entity in ipairs({
   ai_server,
   heat_exhaust,
   synthetic_personnel_bureau,
+  involuntary_relocation_cannon,
 }) do
   require_non_vacuum(entity)
 end
@@ -1002,6 +1066,7 @@ local space_age_entities = {
   ai_server_heat_core,
   heat_exhaust,
   synthetic_personnel_bureau,
+  involuntary_relocation_cannon,
   orbital_biter_projectile,
   trajectory_compliance_array,
   senior_trajectory_compliance_array,

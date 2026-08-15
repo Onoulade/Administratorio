@@ -750,6 +750,26 @@ data:extend({
   },
   {
     type = "item",
+    name = "involuntary-relocation-cannon",
+    icons = {
+      {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
+      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
+    },
+    subgroup = "admin-space-buildings",
+    order = "o3",
+    place_result = "involuntary-relocation-cannon",
+    stack_size = 20
+  },
+  {
+    type = "item",
+    name = "involuntary-transfer-order",
+    icons = {{icon = item_icons .. "blank-directive.png", icon_size = 64, tint = {r = 1, g = 0.55, b = 0.3, a = 1}}},
+    subgroup = "admin-space-compliance",
+    order = "z-t",
+    stack_size = 200
+  },
+  {
+    type = "item",
     name = "synthetic-personnel-bureau",
     icon = item_icons .. "space-age/synthetic-personnel-bureau.png",
     icon_size = 64,

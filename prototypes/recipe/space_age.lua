@@ -1326,6 +1326,37 @@ data:extend({
     results = {{type = "item", name = "laser-printer", amount = 1}},
     energy_required = 20,
   }, "aquilo"),
+  not_in_space({
+    type = "recipe",
+    name = "involuntary-relocation-cannon",
+    subgroup = "admin-space-buildings",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "office-desk", amount = 2},
+      {type = "item", name = "licensed-notary", amount = 1},
+      {type = "item", name = "tungsten-plate", amount = 40},
+      {type = "item", name = "processing-unit", amount = 20},
+      {type = "item", name = "steel-plate", amount = 60},
+      {type = "item", name = "construction-work-order", amount = 1},
+    },
+    results = {{type = "item", name = "involuntary-relocation-cannon", amount = 1}},
+    energy_required = 25,
+  }),
+  {
+    type = "recipe",
+    name = "involuntary-transfer-order-production",
+    category = "printing-workorder",
+    subgroup = "admin-space-compliance",
+    enabled = false,
+    localised_name = {"item-name.involuntary-transfer-order"},
+    ingredients = {
+      {type = "item", name = "blank-directive", amount = 1},
+      {type = "item", name = "management-approval-written", amount = 1},
+      {type = "fluid", name = "liquid-black-ink", amount = 10},
+    },
+    results = {{type = "item", name = "involuntary-transfer-order", amount = 5}},
+    energy_required = 4,
+  },
   surface_limited({
     type = "recipe",
     name = "synthetic-personnel-bureau",
@@ -2198,6 +2229,31 @@ for _, specialist_name in ipairs(synthesis_specialists) do
 end
 data:extend(synthesis_recipes)
 
+local relocation_cargo = require("prototypes.shared.relocation_cargo")
+
+local relocation_payload_recipes = {}
+for _, item_name in ipairs(relocation_cargo.names) do
+  relocation_payload_recipes[#relocation_payload_recipes + 1] = {
+    type = "recipe",
+    name = relocation_cargo.load_recipe_name(item_name),
+    category = "relocation-payload",
+    enabled = false,
+    hidden = true,
+    hidden_in_factoriopedia = true,
+    hide_from_player_crafting = true,
+    allow_as_intermediate = false,
+    allow_decomposition = false,
+    allow_productivity = false,
+    -- Never completes; the runtime fires the batch itself. The recipe exists
+    -- only so inserters can validate biter-family cargo at the input.
+    energy_required = 3600,
+    ingredients = {{type = "item", name = item_name, amount = 1}},
+    results = {},
+    localised_name = {"item-name." .. item_name},
+  }
+end
+data:extend(relocation_payload_recipes)
+
 -- Briefed managers are single-use administrative catalysts. Every affected
 -- process returns the same number of regular managers, who must attend another
 -- meeting before they can obstruct useful work again.
@@ -2223,6 +2279,7 @@ local staffed_building_manager_requirements = {
   ["interplanetary-terminus"] = {"staffing", "liaison"},
   ["ai-server"] = {"staffing", "liaison"},
   ["synthetic-personnel-bureau"] = {"staffing", "liaison"},
+  ["involuntary-relocation-cannon"] = {"staffing", "compliance"},
   ["laser-printer"] = {"staffing"},
   ["administrative-space-station"] = {"staffing", "orbital"},
 }
