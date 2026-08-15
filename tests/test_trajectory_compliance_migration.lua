@@ -60,13 +60,31 @@ test("0.5.8 converts loaded cannon ammunition to VESMs", function()
     "migration should install replacement VESM ammunition")
 end)
 
+--- Returns -1, 0 or 1 comparing dotted version strings numerically.
+local function compare_versions(left, right)
+  local left_parts, right_parts = {}, {}
+  for part in left:gmatch("%d+") do left_parts[#left_parts + 1] = tonumber(part) end
+  for part in right:gmatch("%d+") do right_parts[#right_parts + 1] = tonumber(part) end
+  for index = 1, math.max(#left_parts, #right_parts) do
+    local a, b = left_parts[index] or 0, right_parts[index] or 0
+    if a ~= b then return a < b and -1 or 1 end
+  end
+  return 0
+end
+
 test("0.6.0 reapplies technology effects after the workforce tree split", function()
   local migration = read_file(mod_root .. "migrations/0.6.0.lua")
   assert_true(migration:find("reset_technology_effects", 1, true) ~= nil,
     "workforce-tree migration should reapply researched recipe unlocks")
 
+  -- Factorio only runs a migration when the save is older than the mod, so
+  -- info.json must be at or past the migration version. Pinning the exact
+  -- string here would break on every subsequent release instead.
   local info = read_file(mod_root .. "info.json")
-  assert_true(info:find('"version": "0.6.0"', 1, true) ~= nil, "info.json should advertise migration version")
+  local advertised = info:match('"version"%s*:%s*"([%d%.]+)"')
+  assert_true(advertised ~= nil, "info.json should advertise a version")
+  assert_true(compare_versions(advertised, "0.6.0") >= 0,
+    "info.json version " .. tostring(advertised) .. " should be at or past the 0.6.0 migration")
 end)
 
 print(string.format("\n=== ADMINISTRATORIO TRAJECTORY COMPLIANCE MIGRATION TESTS ==="))

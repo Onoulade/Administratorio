@@ -110,7 +110,7 @@ local function collect_requests(entity)
   end
 
   for _, connector in ipairs({defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green}) do
-    local ok, network = pcall(entity.get_circuit_network, entity, connector)
+    local ok, network = pcall(entity.get_circuit_network, connector)
     if ok and network and network.signals then
       for _, entry in ipairs(network.signals) do
         local signal = entry.signal

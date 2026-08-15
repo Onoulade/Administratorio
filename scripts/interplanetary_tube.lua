@@ -215,11 +215,11 @@ function M.collect_requests(entity)
     return requests
   end
 
-  local ok, behavior = pcall(entity.get_control_behavior, entity)
+  local ok, behavior = pcall(entity.get_control_behavior)
   if not ok or not behavior then return requests end
 
   for _, connector in ipairs({defines.wire_connector_id.circuit_red, defines.wire_connector_id.circuit_green}) do
-    local network_ok, network = pcall(entity.get_circuit_network, entity, connector)
+    local network_ok, network = pcall(entity.get_circuit_network, connector)
     if network_ok and network and network.signals then
       for _, entry in ipairs(network.signals) do
         local signal = entry.signal
