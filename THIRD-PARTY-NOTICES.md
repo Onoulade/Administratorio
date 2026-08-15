@@ -12,9 +12,12 @@ what was used, from whom, and under which licence.
 
 ### Artwork
 
-| File in this mod | Source file | Notes |
+| File in this mod | Source | Upstream licence |
 |---|---|---|
-| `graphics/icons/third-party/inference-token.png` | `Moshine/graphics/icons/ai-trainer.png` | Used as the Inference Token fluid icon. |
+| `graphics/icons/third-party/inference-token.png` | `Moshine/graphics/icons/ai-trainer.png` | GNU LGPLv3 + CC BY — see below |
+| `graphics/entities/third-party/optical-fibre/*.png` (31 files) | `Moshine-assets/graphics/entity/opticalfiber/` | **Not covered by a credited licence — see "Outstanding" below** |
+
+### AI Trainer icon
 
 Per Moshine's own credits, the AI Trainer artwork is a composite:
 
@@ -26,6 +29,19 @@ Both licences permit reuse and modification with attribution. The LGPLv3
 portions remain under LGPLv3; this notice is the required attribution and
 licence notice, and the unmodified source file is available from the Moshine
 project linked above. The CC BY portions are attributed to Hurricane046 here.
+
+### Optic fibre artwork — **Outstanding**
+
+Moshine's credits name the Neural Computer, Data Extractor, Indexer, AI
+Trainer, Data Processor and sand artwork as carrying the Krastorio (LGPLv3)
+and Hurricane046 (CC BY) licences. The **optical fibre sprites are not in that
+list**, and neither Moshine nor Moshine-assets ships a top-level `LICENSE`, so
+they are snouz's own work with no stated grant.
+
+They are used here on the mod author's instruction. Before any public release,
+**snouz's explicit permission should be obtained**, or the sprites replaced.
+Removing them is a single-file change: `prototypes/entity/optical_fiber.lua`
+falls back to tinted vanilla pipe art, which is what it used before.
 
 Licence texts:
 
