@@ -38,7 +38,7 @@ local QUALITY_MODULE_RECIPES = {
 }
 
 -- These craft paperwork or ordinary infrastructure, so their native Quality
--- speed and department-slot effects are useful.  Field offices and fax units
+-- speed and department-slot effects are useful.  Field offices and tube units
 -- have script-owned metrics; the other special systems stay cosmetic-only.
 local PRODUCTION_FACILITIES = {
   "resolution-office",

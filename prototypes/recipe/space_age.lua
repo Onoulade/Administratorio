@@ -1,6 +1,5 @@
 local planets = require("prototypes.shared.space_age_planets")
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
-local fax_shared = require("scripts.fax_shared")
 local manager_briefings = require("prototypes.shared.manager_briefings")
 
 local function add_item_ingredient(recipe, ingredient_name, amount)
@@ -202,41 +201,6 @@ add_scrap_recycling_result("redundant-rubble", 2, 0.35)
 add_scrap_recycling_result("useless-documentation", 1, 0.08)
 add_scrap_recycling_result("old-archive", 1, 0.06)
 sync_scrap_recycler_output_slots()
-
-local function make_fax_reconstruction_recipes()
-  local recipes = {}
-
-  for item_name in pairs(fax_shared.FAX_DOCUMENTS) do
-    local requirements = fax_shared.get_reconstruction_requirements(item_name)
-    local ingredients = {
-      {type = "item", name = fax_shared.RECONSTRUCTION_PAPER_ITEM, amount = requirements.sheets},
-    }
-    if requirements.ribbon > 0 then
-      ingredients[#ingredients + 1] = {
-        type = "item",
-        name = fax_shared.RECONSTRUCTION_RIBBON_ITEM,
-        amount = requirements.ribbon,
-      }
-    end
-
-    recipes[#recipes + 1] = {
-      type = "recipe",
-      name = fax_shared.reconstruction_recipe_name(item_name),
-      category = "fax-reconstruction",
-      enabled = false,
-      hidden = true,
-      allow_as_intermediate = false,
-      allow_decomposition = false,
-      ingredients = ingredients,
-      results = {
-        {type = "item", name = item_name, amount = 1},
-      },
-      energy_required = 2,
-    }
-  end
-
-  return recipes
-end
 
 local function not_in_space(recipe)
   return planets.require_non_vacuum_surface(recipe)
@@ -1328,39 +1292,6 @@ data:extend({
   }, "aquilo"),
   surface_limited({
     type = "recipe",
-    name = "fax-emitter",
-    subgroup = "admin-space-buildings",
-    enabled = false,
-    ingredients = {
-      {type = "item", name = "office-desk", amount = 1},
-      {type = "item", name = "cryoprint-technician", amount = 1},
-      {type = "item", name = "advanced-circuit", amount = 12},
-      {type = "item", name = "processing-unit", amount = 6},
-      {type = "item", name = "lithium-plate", amount = 8},
-      {type = "item", name = "construction-work-order", amount = 1},
-    },
-    results = {{type = "item", name = "fax-emitter", amount = 1}},
-    energy_required = 15,
-  }, "aquilo"),
-  surface_limited({
-    type = "recipe",
-    name = "interplanetary-fax-exchange",
-    subgroup = "admin-space-buildings",
-    enabled = false,
-    ingredients = {
-      {type = "item", name = "office-desk", amount = 2},
-      {type = "item", name = "cryoprint-technician", amount = 1},
-      {type = "item", name = "processing-unit", amount = 20},
-      {type = "item", name = "lithium-plate", amount = 15},
-      {type = "item", name = "superconductor", amount = 10},
-      {type = "item", name = "fax-emitter", amount = 1},
-      {type = "item", name = "construction-work-order", amount = 1},
-    },
-    results = {{type = "item", name = "interplanetary-fax-exchange", amount = 1}},
-    energy_required = 20,
-  }, "aquilo"),
-  surface_limited({
-    type = "recipe",
     name = "transfer-emulsion-production",
     category = "chemistry-or-cryogenics",
     enabled = false,
@@ -2001,7 +1932,6 @@ for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
 end
 
 data:extend(tourism_recipes)
-data:extend(make_fax_reconstruction_recipes())
 
 -- Briefed managers are single-use administrative catalysts. Every affected
 -- process returns the same number of regular managers, who must attend another
@@ -2026,8 +1956,6 @@ local staffed_building_manager_requirements = {
   ["conciliation-desk"] = {"staffing"},
   ["digital-services-bureau"] = {"staffing"},
   ["laser-printer"] = {"staffing"},
-  ["fax-emitter"] = {"staffing"},
-  ["interplanetary-fax-exchange"] = {"staffing", "liaison"},
   ["administrative-space-station"] = {"staffing", "orbital"},
 }
 

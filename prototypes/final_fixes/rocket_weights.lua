@@ -140,7 +140,7 @@ function M.apply()
   set_weights("item", {"office-desk", "field-office", "admin-station", "biter-station", "printer-t1", "printer-t2", "mechanical-printer"}, 50 * kg)
   set_weights("item", {"greenhouse", "formation-center", "resolution-office", "biterport", "propaganda-distillery", "corporate-breakroom", "union-headquarters"}, 200 * kg)
   set_weights("item", {"capture-bureau", "conciliation-desk", "territorial-arbitration-post", "digital-services-bureau", "chromatic-printer", "laser-printer", "notary-office", "public-train-stop", "archive-recombination-bureau"}, 100 * kg)
-  set_weights("item", {"trajectory-compliance-array", "senior-trajectory-compliance-array", "executive-trajectory-compliance-array", "orbital-employment-cannon", "administrative-space-station", "interplanetary-fax-exchange", "fax-emitter"}, 1 * tons)
+  set_weights("item", {"trajectory-compliance-array", "senior-trajectory-compliance-array", "executive-trajectory-compliance-array", "orbital-employment-cannon", "administrative-space-station"}, 1 * tons)
 
   -- A worker is a shipment of living biomass, not a stack of forms.  Weights
   -- follow the biter class shown in each prototype: small at 100kg, medium at

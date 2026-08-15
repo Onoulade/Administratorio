@@ -196,8 +196,6 @@ else
 end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 
-package.loaded["scripts.fax_shared"] = nil
-local fax_shared = require("scripts.fax_shared")
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 
 local preexisting_technology_names = {}
@@ -1683,11 +1681,11 @@ test("fulgora archive and electrolyte bootstrap stays local", function()
     "archive recombination should require a meaningful local paperwork batch")
 end)
 
-test("Aquilo bootstrap precedes cryogenic science and faxing follows it", function()
+test("Aquilo bootstrap precedes cryogenic science and the chromatic trunk follows it", function()
   local bootstrap = technologies["aquilo-cryogenic-administration"]
-  local aquilo = technologies["aquilo-fax-network"]
+  local aquilo = technologies["interplanetary-tube-chromatic"]
   assert_true(bootstrap ~= nil, "aquilo-cryogenic-administration missing")
-  assert_true(aquilo ~= nil, "aquilo-fax-network missing")
+  assert_true(aquilo ~= nil, "interplanetary-tube-chromatic missing")
   for _, recipe_name in ipairs({
     "laser-printer",
     "transfer-emulsion-production",
@@ -1698,11 +1696,9 @@ test("Aquilo bootstrap precedes cryogenic science and faxing follows it", functi
     assert_true(tech_unlocks_recipe(bootstrap, recipe_name),
       "aquilo-cryogenic-administration should unlock " .. recipe_name)
     assert_true(not tech_unlocks_recipe(aquilo, recipe_name),
-      "aquilo-fax-network should not duplicate bootstrap unlock " .. recipe_name)
+      "interplanetary-tube-chromatic should not duplicate bootstrap unlock " .. recipe_name)
   end
   for _, recipe_name in ipairs({
-    "fax-emitter",
-    "interplanetary-fax-exchange",
     "composite-chroma-ribbon-production",
     "composite-form-cyan-yellow-production",
     "composite-form-cyan-magenta-production",
@@ -1711,7 +1707,7 @@ test("Aquilo bootstrap precedes cryogenic science and faxing follows it", functi
     "unified-operations-charter-production",
     "promethium-research-charter-production",
   }) do
-    assert_true(tech_unlocks_recipe(aquilo, recipe_name), "aquilo-fax-network should unlock " .. recipe_name)
+    assert_true(tech_unlocks_recipe(aquilo, recipe_name), "interplanetary-tube-chromatic should unlock " .. recipe_name)
   end
   assert_true(not tech_uses_pack(bootstrap, "cryogenic-science-pack"),
     "Cryogenic Plant bootstrap must not consume cryogenic science")
@@ -1728,8 +1724,8 @@ test("Administratorium expedition closes the administrative progression loop", f
     prerequisites[prerequisite] = true
   end
 
-  assert_true(prerequisites["aquilo-fax-network"],
-    "Administratorium expedition should require the Aquilo fax network")
+  assert_true(prerequisites["interplanetary-tube-chromatic"],
+    "Administratorium expedition should require the Aquilo chromatic tube tier")
   local uses_administrative_science = false
   for _, ingredient in ipairs(technology.unit.ingredients or {}) do
     if (ingredient.name or ingredient[1]) == "administrative-science-pack" then
@@ -1738,40 +1734,6 @@ test("Administratorium expedition closes the administrative progression loop", f
   end
   assert_true(uses_administrative_science,
     "Administratorium expedition should consume administrative science")
-end)
-
-test("fax reconstruction recipes use tiered dry media and split unlocks between basic and color faxing", function()
-  local aquilo = assert(technologies["aquilo-fax-network"], "aquilo-fax-network missing")
-  local color_faxing = assert(technologies["color-faxing"], "color-faxing missing")
-
-  assert_eq(color_faxing.prerequisites[1], "aquilo-fax-network",
-    "color-faxing should follow the base fax network unlock")
-
-  for item_name in pairs(fax_shared.FAX_DOCUMENTS) do
-    local recipe_name = fax_shared.reconstruction_recipe_name(item_name)
-    local recipe = assert(recipes[recipe_name], recipe_name .. " missing")
-    local requirements = fax_shared.get_reconstruction_requirements(item_name)
-    local expected_tech = fax_shared.document_requires_color(item_name) and color_faxing or aquilo
-    local unexpected_tech = fax_shared.document_requires_color(item_name) and aquilo or color_faxing
-
-    assert_true(recipe.hidden == true, recipe_name .. " should stay hidden")
-    assert_true(recipe.enabled == false, recipe_name .. " should be tech-gated")
-    assert_true(has_ingredient(recipe, fax_shared.RECONSTRUCTION_PAPER_ITEM),
-      recipe_name .. " should require thermal transfer media")
-    assert_eq(get_item_ingredient_amount(recipe, fax_shared.RECONSTRUCTION_PAPER_ITEM), requirements.sheets,
-      recipe_name .. " should require the correct number of transfer sheets")
-    assert_eq(get_item_ingredient_amount(recipe, fax_shared.RECONSTRUCTION_RIBBON_ITEM) or 0, requirements.ribbon,
-      recipe_name .. " should require the correct number of ribbon charges")
-    for _, fluid in ipairs(fax_shared.RECONSTRUCTION_INK_FLUIDS) do
-      assert_true(not has_fluid_ingredient(recipe, fluid.name),
-        recipe_name .. " should not require liquid ink " .. fluid.name)
-    end
-
-    assert_true(tech_unlocks_recipe(expected_tech, recipe_name),
-      expected_tech.name .. " should unlock " .. recipe_name)
-    assert_true(not tech_unlocks_recipe(unexpected_tech, recipe_name),
-      unexpected_tech.name .. " should not unlock " .. recipe_name)
-  end
 end)
 
 test("bicolored paperwork technologies require the matching planet sciences", function()
@@ -1823,19 +1785,11 @@ test("aquilo transfer media and multicolor forms define the expected convergence
   assert_true(items["unified-operations-charter"] ~= nil, "unified-operations-charter missing")
   assert_true(items["cryogenic-operations-license"] ~= nil, "cryogenic-operations-license missing")
   assert_true(items["laser-printer"] ~= nil, "laser-printer missing")
-  assert_true(items["fax-emitter"] ~= nil, "fax-emitter missing")
-  assert_true(items["interplanetary-fax-exchange"] ~= nil, "interplanetary-fax-exchange missing")
 
   assert_true(has_ingredient(recipes["laser-printer"], "cryoprint-technician"),
     "laser-printer should require cryoprint-technician")
   assert_true(has_ingredient(recipes["laser-printer"], "lithium-plate"),
     "laser-printer should require lithium-plate")
-  assert_true(has_ingredient(recipes["fax-emitter"], "cryoprint-technician"),
-    "fax-emitter should require cryoprint-technician")
-  assert_true(has_ingredient(recipes["interplanetary-fax-exchange"], "cryoprint-technician"),
-    "interplanetary-fax-exchange should require cryoprint-technician")
-  assert_true(has_ingredient(recipes["interplanetary-fax-exchange"], "fax-emitter"),
-    "interplanetary-fax-exchange should require a fax-emitter as part of the receiver build")
   assert_true(has_ingredient(recipes["transfer-emulsion-production"], "plastic-bar"),
     "transfer-emulsion should require plastic-bar")
   assert_true(has_ingredient(recipes["thermal-transfer-sheet-production"], "transfer-emulsion"),
@@ -1902,25 +1856,6 @@ test("planet-local space age recipes stay free of raw taxpayer money off Nauvis"
         recipe_name .. " should not require taxpayer-money on " .. planet_name)
     end
   end
-end)
-
-test("fax queue capacity technologies form a dedicated Aquilo follow-up chain", function()
-  local capacity_1 = technologies["fax-queue-capacity-1"]
-  local capacity_2 = technologies["fax-queue-capacity-2"]
-  local capacity_3 = technologies["fax-queue-capacity-3"]
-
-  assert_true(capacity_1 ~= nil, "fax-queue-capacity-1 missing")
-  assert_true(capacity_2 ~= nil, "fax-queue-capacity-2 missing")
-  assert_true(capacity_3 ~= nil, "fax-queue-capacity-3 missing")
-  assert_eq(capacity_1.prerequisites[1], "aquilo-fax-network", "fax-queue-capacity-1 should follow Aquilo fax unlocks")
-  assert_eq(capacity_2.prerequisites[1], "fax-queue-capacity-1", "fax-queue-capacity-2 should chain from the first upgrade")
-  assert_eq(capacity_3.prerequisites[1], "fax-queue-capacity-2", "fax-queue-capacity-3 should chain from the second upgrade")
-end)
-
-test("fax virtual signals exist for queue visibility", function()
-  assert_true(signals["signal-fax-queue-size"] ~= nil, "signal-fax-queue-size missing")
-  assert_true(signals["signal-fax-free-slots"] ~= nil, "signal-fax-free-slots missing")
-  assert_true(signals["signal-fax-reserved-slots"] ~= nil, "signal-fax-reserved-slots missing")
 end)
 
 local function load_locale_section(locale_name, section_name)

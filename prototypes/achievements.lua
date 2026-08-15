@@ -293,7 +293,7 @@ if feature_flags.space_age_enabled() then
     {
       type = "research-achievement",
       name = "frozen-pdf",
-      technology = "aquilo-fax-network",
+      technology = "interplanetary-tube-chromatic",
       icon = icons .. "steel-forge-icon.png",
       icon_size = 64,
       order = "g[space-age]-d",
@@ -516,25 +516,6 @@ if feature_flags.space_age_enabled() then
       allowed_without_fight = true,
     },
 
-    -- Aquilo Fax Network
-    {
-      type = "build-entity-achievement",
-      name = "fax-machine",
-      to_build = "interplanetary-fax-exchange",
-      icon = icons .. "space-age/interplanetary-fax-exchange.png",
-      icon_size = 64,
-      order = "m[aquilo]-a",
-      allowed_without_fight = true,
-    },
-    {
-      type = "build-entity-achievement",
-      name = "fax-emitter-achievement",
-      to_build = "fax-emitter",
-      icon = icons .. "space-age/fax-emitter.png",
-      icon_size = 64,
-      order = "m[aquilo]-b",
-      allowed_without_fight = true,
-    },
     {
       type = "build-entity-achievement",
       name = "laser-printer-achievement",
@@ -683,20 +664,11 @@ if feature_flags.space_age_enabled() then
     },
     {
       type = "research-achievement",
-      name = "color-fax-enabled",
-      technology = "color-faxing",
+      name = "chromatic-trunk",
+      technology = "interplanetary-tube-chromatic",
       icon = icons .. "ink-cartridge.png",
       icon_size = 64,
       order = "p[orbital-upgrades]-e",
-      allowed_without_fight = true,
-    },
-    {
-      type = "research-achievement",
-      name = "fax-queue-maximizer",
-      technology = "fax-queue-capacity-3",
-      icon = icons .. "office-building.png",
-      icon_size = 64,
-      order = "p[orbital-upgrades]-f",
       allowed_without_fight = true,
     },
     {

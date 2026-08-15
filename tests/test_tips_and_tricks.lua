@@ -157,7 +157,7 @@ test("tips are divided into mechanic-focused categories", function()
     "administratorio-gleba-conciliation",
     "administratorio-cross-planet-bureaucracy",
     "administratorio-fulgora-digital-services",
-    "administratorio-aquilo-fax-network",
+    "administratorio-aquilo-tube-network",
   }
 
   for _, category_name in ipairs(expected_categories) do
@@ -182,7 +182,7 @@ test("Space Age planet manifests unlock with their planetary systems", function(
     ["administratorio-vulcanus-manifest"] = "vulcanus-certification",
     ["administratorio-gleba-manifest"] = "gleba-conciliation",
     ["administratorio-fulgora-archives"] = "archive-recombination",
-    ["administratorio-aquilo-manifest"] = "aquilo-fax-network",
+    ["administratorio-aquilo-manifest"] = "interplanetary-tube-chromatic",
   }
   for name, technology in pairs(expected) do
     assert_true(

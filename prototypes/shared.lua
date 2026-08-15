@@ -205,7 +205,6 @@ shared.ADMIN_BUILDINGS = {
 if space_age_enabled then
   shared.ADMIN_BUILDINGS["chromatic-printer"] = true
   shared.ADMIN_BUILDINGS["laser-printer"] = true
-  shared.ADMIN_BUILDINGS["fax-emitter"] = true
   shared.ADMIN_BUILDINGS["formation-center"] = true
   shared.ADMIN_BUILDINGS["administrative-space-station"] = true
   shared.ADMIN_BUILDINGS["trajectory-compliance-array"] = true
@@ -217,7 +216,6 @@ if space_age_enabled then
   shared.ADMIN_BUILDINGS["capture-bureau"] = true
   shared.ADMIN_BUILDINGS["conciliation-desk"] = true
   shared.ADMIN_BUILDINGS["digital-services-bureau"] = true
-  shared.ADMIN_BUILDINGS["interplanetary-fax-exchange"] = true
 end
 
 -------------------------------------------------------------------------------
@@ -459,8 +457,6 @@ shared.UNBATCHED_RESULT_NAMES = {
   ["conciliation-desk"] = true,
   ["digital-services-bureau"] = true,
   ["laser-printer"] = true,
-  ["fax-emitter"] = true,
-  ["interplanetary-fax-exchange"] = true,
 }
 
 -- Platform construction policy is also a hard 1x batch policy. Derive the

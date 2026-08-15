@@ -1,4 +1,3 @@
-local fax_shared = require("scripts.fax_shared")
 local manager_briefings = require("prototypes.shared.manager_briefings")
 
 local function add_tech_unlock(technology_name, recipe_name)
@@ -393,16 +392,14 @@ data:extend({
   },
 
   -- ============================================================
-  -- TIER 5b: AQUILO FAX NETWORK (cryogenic science, all 3 planet pairs)
+  -- TIER 5b: AQUILO CHROMATIC TUBE TIER (cryogenic science, all 3 planet pairs)
   -- ============================================================
   {
     type = "technology",
-    name = "aquilo-fax-network",
-    icon = "__administratorio__/graphics/icons/space-age/interplanetary-fax-exchange.png",
+    name = "interplanetary-tube-chromatic",
+    icon = "__administratorio__/graphics/icons/tube-outtake.png",
     icon_size = 64,
     effects = {
-      {type = "unlock-recipe", recipe = "fax-emitter"},
-      {type = "unlock-recipe", recipe = "interplanetary-fax-exchange"},
       {type = "unlock-recipe", recipe = "composite-chroma-ribbon-production"},
       {type = "unlock-recipe", recipe = "trichromatic-permit-production"},
       {type = "unlock-recipe", recipe = "unified-operations-charter-production"},
@@ -423,106 +420,6 @@ data:extend({
     order = "h-f",
   },
 
-  {
-    type = "technology",
-    name = "color-faxing",
-    icon = "__administratorio__/graphics/icons/space-age/fax-emitter.png",
-    icon_size = 64,
-    effects = {
-      {type = "nothing", effect_description = {"technology-effect.color-faxing"}},
-    },
-    prerequisites = {"aquilo-fax-network"},
-    unit = {
-      count = 400,
-      ingredients = {
-        {"metallurgic-science-pack", 1},
-        {"agricultural-science-pack", 1},
-        {"electromagnetic-science-pack", 1},
-        {"cryogenic-science-pack", 1},
-        {"administrative-science-pack", 1},
-      },
-      time = 60,
-    },
-    order = "h-f-b",
-  },
-
-  -- ============================================================
-  -- TIER 5b: FAX QUEUE CAPACITY UPGRADES
-  -- ============================================================
-  {
-    type = "technology",
-    name = "fax-queue-capacity-1",
-    icons = {
-      {icon = "__administratorio__/graphics/icons/cryogenic-operations-license.png", icon_size = 64},
-      {icon = "__base__/graphics/icons/signal/signal_1.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
-    },
-    effects = {
-      {type = "nothing", effect_description = {"technology-effect.fax-queue-capacity", "5"}},
-    },
-    prerequisites = {"aquilo-fax-network"},
-    unit = {
-      count = 300,
-      ingredients = {
-        {"metallurgic-science-pack", 1},
-        {"agricultural-science-pack", 1},
-        {"electromagnetic-science-pack", 1},
-        {"cryogenic-science-pack", 1},
-        {"administrative-science-pack", 1},
-      },
-      time = 60,
-    },
-    order = "h-g",
-    upgrade = true,
-  },
-
-  {
-    type = "technology",
-    name = "fax-queue-capacity-2",
-    icon = "__administratorio__/graphics/icons/trichromatic-permit.png",
-    icon_size = 64,
-    effects = {
-      {type = "nothing", effect_description = {"technology-effect.fax-queue-capacity", "5"}},
-    },
-    prerequisites = {"fax-queue-capacity-1"},
-    unit = {
-      count = 425,
-      ingredients = {
-        {"metallurgic-science-pack", 1},
-        {"agricultural-science-pack", 1},
-        {"electromagnetic-science-pack", 1},
-        {"cryogenic-science-pack", 1},
-        {"administrative-science-pack", 1},
-      },
-      time = 60,
-    },
-    order = "h-h",
-    upgrade = true,
-  },
-
-  {
-    type = "technology",
-    name = "fax-queue-capacity-3",
-    icon = "__administratorio__/graphics/icons/unified-operations-charter.png",
-    icon_size = 64,
-    effects = {
-      {type = "nothing", effect_description = {"technology-effect.fax-queue-capacity", "5"}},
-    },
-    prerequisites = {"fax-queue-capacity-2"},
-    unit = {
-      count = 550,
-      ingredients = {
-        {"metallurgic-science-pack", 1},
-        {"agricultural-science-pack", 1},
-        {"electromagnetic-science-pack", 1},
-        {"cryogenic-science-pack", 1},
-        {"administrative-science-pack", 1},
-      },
-      time = 60,
-    },
-    order = "h-i",
-    upgrade = true,
-  },
-
   -- ============================================================
   -- TIER 5c: BUREAUCRATIC TRANSCENDENCE (orbital train stops)
   -- ============================================================
@@ -534,7 +431,7 @@ data:extend({
     effects = {
       {type = "unlock-recipe", recipe = "public-train-stop-production"},
     },
-    prerequisites = {"aquilo-fax-network"},
+    prerequisites = {"interplanetary-tube-chromatic"},
     unit = {
       count = 400,
       ingredients = {
@@ -964,9 +861,9 @@ data:extend(orbital_employment_capacity_techs)
 
 -- Keep Space Age's native promethium prototype IDs for compatibility while
 -- making the visible Administratorium tier the culmination of Administratorio's
--- interplanetary bureaucracy. The charter is issued by the Aquilo fax network,
--- so the expedition technology must not bypass that administrative branch.
-add_tech_prerequisite("promethium-science-pack", "aquilo-fax-network")
+-- interplanetary bureaucracy. The charter travels the Aquilo chromatic tube
+-- tier, so the expedition technology must not bypass that administrative branch.
+add_tech_prerequisite("promethium-science-pack", "interplanetary-tube-chromatic")
 add_tech_science_pack("promethium-science-pack", "administrative-science-pack", 1)
 
 -- Unlock orbital permit with space platform
@@ -1021,13 +918,6 @@ end
 -- Chromatic printing is landing preparation — require it before each planet discovery
 for _, planet_name in ipairs({"vulcanus", "gleba", "fulgora"}) do
   add_tech_prerequisite("planet-discovery-" .. planet_name, "chromatic-printing")
-end
-
-for item_name in pairs(fax_shared.FAX_DOCUMENTS) do
-  add_tech_unlock(
-    fax_shared.reconstruction_unlock_technology(item_name),
-    fax_shared.reconstruction_recipe_name(item_name)
-  )
 end
 
 require("prototypes.technology.fulgora_archives")

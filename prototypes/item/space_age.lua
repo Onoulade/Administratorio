@@ -724,26 +724,6 @@ data:extend({
   },
   {
     type = "item",
-    name = "interplanetary-fax-exchange",
-    icon = item_icons .. "space-age/interplanetary-fax-exchange.png",
-    icon_size = 64,
-    subgroup = "admin-space-buildings",
-    order = "n",
-    place_result = "interplanetary-fax-exchange",
-    stack_size = 20
-  },
-  {
-    type = "item",
-    name = "fax-emitter",
-    icon = item_icons .. "space-age/fax-emitter.png",
-    icon_size = 64,
-    subgroup = "admin-space-buildings",
-    order = "n1",
-    place_result = "fax-emitter",
-    stack_size = 20
-  },
-  {
-    type = "item",
     name = "notary-office",
     icon = item_icons .. "space-age/notary-office.png",
     icon_size = 64,

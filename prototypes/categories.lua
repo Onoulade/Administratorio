@@ -62,7 +62,6 @@ if space_age_enabled then
 
   categories[#categories + 1] = {type = "recipe-category", name = "printing-chromatic"}
   categories[#categories + 1] = {type = "recipe-category", name = "printing-multicolor"}
-  categories[#categories + 1] = {type = "recipe-category", name = "fax-reconstruction"}
   categories[#categories + 1] = {type = "recipe-category", name = "archive-reassignment"}
   categories[#categories + 1] = {type = "recipe-category", name = "bureaucracy-certification"}
   categories[#categories + 1] = {type = "recipe-category", name = "bureaucracy-conciliation"}

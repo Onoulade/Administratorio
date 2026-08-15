@@ -114,7 +114,7 @@ if space_age_enabled then
   local gleba = "administratorio-gleba-conciliation"
   local interplanetary = "administratorio-cross-planet-bureaucracy"
   local fulgora = "administratorio-fulgora-digital-services"
-  local aquilo = "administratorio-aquilo-fax-network"
+  local aquilo = "administratorio-aquilo-tube-network"
 
   data:extend({
     category(orbit, "z-d[administratorio-orbit]"),
@@ -193,16 +193,12 @@ if space_age_enabled then
     research_tip("administratorio-digital-services-bureau", fulgora, "c", "fulgora-digital-services"),
     research_tip("administratorio-archive-recombination", fulgora, "d", "archive-recombination"),
 
-    -- Aquilo, faxing, and the administrative endgame
-    research_tip("administratorio-aquilo-fax-network", aquilo, "a", "aquilo-fax-network", {
+    -- Aquilo, the chromatic trunk, and the administrative endgame
+    research_tip("administratorio-aquilo-tube-network", aquilo, "a", "interplanetary-tube-chromatic", {
       is_title = true,
     }),
-    research_tip("administratorio-aquilo-manifest", aquilo, "b", "aquilo-fax-network"),
-    research_tip("administratorio-laser-printer", aquilo, "c", "aquilo-fax-network"),
-    research_tip("administratorio-fax-emitter", aquilo, "d", "aquilo-fax-network"),
-    research_tip("administratorio-interplanetary-fax-exchange", aquilo, "e", "aquilo-fax-network"),
-    research_tip("administratorio-color-faxing", aquilo, "f", "color-faxing"),
-    research_tip("administratorio-fax-queue-capacity", aquilo, "g", "fax-queue-capacity-1"),
+    research_tip("administratorio-aquilo-manifest", aquilo, "b", "interplanetary-tube-chromatic"),
+    research_tip("administratorio-laser-printer", aquilo, "c", "interplanetary-tube-chromatic"),
     research_tip("administratorio-promethium-administration", aquilo, "h", "promethium-science-pack"),
     research_tip("administratorio-bureaucratic-transcendence", aquilo, "i", "bureaucratic-transcendence"),
     research_tip("administratorio-public-train-stop", aquilo, "j", "bureaucratic-transcendence"),

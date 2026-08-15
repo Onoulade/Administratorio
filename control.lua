@@ -8,7 +8,6 @@ local zones = require("scripts.zones")
 local biters = require("scripts.biters")
 local pentapods = require("scripts.pentapods")
 local trains = require("scripts.trains")
-local fax = require("scripts.fax")
 local working_hours = require("scripts.working_hours")
 local field_office = require("scripts.field_office")
 local planetary_unlocks = require("scripts.planetary_unlocks")
@@ -500,7 +499,6 @@ local function init_storage()
   trajectory_compliance.ensure_storage()
   trajectory_compliance.configure_existing_arrays()
   territorial_arbitration.ensure_storage()
-  fax.ensure_storage()
   if WORKING_HOURS_ENABLED then
     working_hours.ensure_storage()
   end
@@ -673,7 +671,6 @@ end
 local function on_init()
   init_storage()
   rebuild_desk_cache()
-  fax.rebuild_registry()
   territorial_arbitration.rebuild_registry()
   biters.rebuild_desk_index()
   biters.rebuild_capture_bureau_ports()
@@ -726,7 +723,6 @@ local function on_configuration_changed(event)
   warn_about_pre_040_save(event)
   init_storage()
   rebuild_desk_cache()
-  fax.rebuild_registry()
   territorial_arbitration.rebuild_registry()
   trains.on_init()
   set_biter_ceasefire()
@@ -926,7 +922,6 @@ local function on_selected_entity_changed(event)
     end
     pneumatic.destroy_tube_info_gui(player)
   end
-  fax.on_selected_entity_changed(player, entity)
 end
 
 local function on_player_left_game(event)
@@ -946,18 +941,6 @@ local function refresh_selected_biter_info_guis()
       frustration.update_biter_info_gui(player, entity)
     end
   end
-end
-
-local function on_gui_opened(event)
-  local player = game.get_player(event.player_index)
-  if not player then return end
-  fax.on_gui_opened(player, event.entity)
-end
-
-local function on_gui_closed(event)
-  local player = game.get_player(event.player_index)
-  if not player then return end
-  fax.on_gui_closed(player)
 end
 
 -- ============================================================
@@ -1137,9 +1120,6 @@ local function on_entity_built_inner(event)
         return
       end
     end
-    if fax.is_fax_building(entity) and not fax.on_entity_built(entity, player) then
-      return
-    end
     if biterport.on_entity_built(event) then
       return
     end
@@ -1249,9 +1229,6 @@ local function on_entity_removed(event)
   biterport.on_entity_removed(event)
   biter_station.untrack_entity(entity, game.tick)
   rideable_biter.untrack(entity)
-  if fax.is_fax_building(entity) then
-    fax.on_entity_removed(entity, event.buffer)
-  end
   territorial_arbitration.on_entity_removed(entity)
 
   trains.on_removed(entity)
@@ -2167,24 +2144,11 @@ local function on_gui_click(event)
     if player.gui.screen["administratorio-win-screen"] then
       player.gui.screen["administratorio-win-screen"].destroy()
     end
-  elseif fax.on_gui_click(event) then
-    return
   elseif runtime_debug.handle_gui_click(player, event.element.name) then
     return
   end
 end
 
-local function on_gui_selection_state_changed(event)
-  fax.on_gui_selection_state_changed(event)
-end
-
-local function on_gui_checked_state_changed(event)
-  fax.on_gui_checked_state_changed(event)
-end
-
-local function on_gui_elem_changed(event)
-  fax.on_gui_elem_changed(event)
-end
 
 
 -- ============================================================
@@ -2265,7 +2229,6 @@ end
 resolution_processing = control_resolution_processing_factory.new({
   biters = biters,
   collect_runtime_debug_counts = collect_runtime_debug_counts,
-  fax = fax,
   field_office = field_office,
   get_cached_desks = get_cached_desks,
   process_pending_group_redirects = process_pending_group_redirects,
@@ -2290,11 +2253,6 @@ control_event_router.register({
   on_entity_removed = on_entity_removed,
   on_field_agent_waypoint_input = on_field_agent_waypoint_input,
   on_gui_click = on_gui_click,
-  on_gui_checked_state_changed = on_gui_checked_state_changed,
-  on_gui_elem_changed = on_gui_elem_changed,
-  on_gui_closed = on_gui_closed,
-  on_gui_opened = on_gui_opened,
-  on_gui_selection_state_changed = on_gui_selection_state_changed,
   on_init = on_init,
   on_load = on_load,
   on_main_tick = on_main_tick,

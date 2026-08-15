@@ -613,24 +613,6 @@ scenes.archive = scene(700, 0.86, {
   stage = stages(0, "One form enters", 180, "Three independent rolls", 300, "Candidate 1", 360, "Candidate 2", 430, "Candidate 3"),
 })
 
-scenes.fax = scene(720, 0.82, {
-  entities = {entity("fax-emitter", -4.5, 0.4, "FAX EMITTER"), entity("interplanetary-fax-exchange", 4.5, 0.4, "TARGET PLANET")},
-  sprites = {item("management-approval-written", -7.5, 2.6, 0.5), sprite("virtual-signal/signal-fax-queue-size", 0, -2.3, 0.48, {pulse = true})},
-  movers = {move_item("management-approval-written", 0, 130, -7.5, 2.6, -4.5, 0.5), move_item("management-approval-written", 250, 310, -3.8, 0.4, 3.8, 0.4)},
-  bars = {bar(-4.5, 2.2, 3.5, colors.cyan, {{at = 130, value = 0}, {at = 250, value = 1}, {at = 300, value = 0}}), bar(4.5, 2.2, 3.5, colors.yellow, {{at = 0, value = 0.2}, {at = 310, value = 0.4}, {at = 680, value = 0.4}}, {step = true})},
-  texts = {label("60 TICKS", -4.5, 2.9, colors.cyan, {alignment = "center"}), label("TARGET: VULCANUS", -4.5, -2.3, colors.yellow, {frames = {{at = 0, text = "TARGET: VULCANUS"}, {at = 420, text = "TARGET: GLEBA"}, {at = 560, text = "TARGET: FULGORA"}}, alignment = "center"}), label("QUEUE SLOT RESERVED", 4.5, 2.9, colors.green, {show = {{310, 680}}, alignment = "center"}), label("CIRCUIT SIGNALS", 0, -3.2, colors.green, {alignment = "center"})},
-  stage = stages(0, "Document inserted", 130, "Transmission bar", 250, "Fax crosses planets", 310, "Queue slot reserved", 420, "Destination selector cycles"),
-})
-
-scenes.fax_exchange = scene(720, 0.82, {
-  entities = {entity("interplanetary-fax-exchange", 0, 0.4, "FAX EXCHANGE")},
-  sprites = {item("thermal-transfer-sheet", -6, 2.5, 0.48), item("composite-chroma-ribbon", -4.5, 2.5, 0.48), item("cyan-yellow-form", 5.2, 0.3, 0.52, {show = {{430, 680}}, pulse = true}), sprite("virtual-signal/signal-R", -5.2, -1.8, 0.46)},
-  movers = {move_item("thermal-transfer-sheet", 220, 360, -6, 2.5, -1, 0.5), move_item("composite-chroma-ribbon", 270, 410, -4.5, 2.5, -0.6, 0.5), move_item("cyan-yellow-form", 430, 600, 0.8, 0.4, 5.2, 0.3)},
-  bars = {bar(0, -2.5, 7, colors.yellow, {{at = 0, value = 1}, {at = 430, value = 0.8}, {at = 700, value = 0.8}}, {step = true})},
-  texts = {label("QUEUE 5 + QUALITY + RESEARCH", 0, -3.2, colors.yellow, {alignment = "center"}), label("REQUEST SIGNAL", -5.2, -2.7, colors.green, {alignment = "center"}), label("SHEETS + RIBBON", -5.2, 3.4, colors.cyan, {alignment = "center"}), label("PRINTED DOCUMENT", 5.2, -1.1, colors.green, {show = {{430, 680}}, alignment = "center"})},
-  stage = stages(0, "Incoming queue full", 120, "Requested document selected", 220, "Solid media supplied", 430, "Document reconstructed", 600, "Queue slot released"),
-})
-
 scenes.laser = scene(640, 0.84, {
   entities = {entity("laser-printer", 0, 0.3, "LASER PRINTER")},
   sprites = {item("thermal-transfer-sheet", -6, 2.4, 0.5), item("composite-chroma-ribbon", -4.5, 2.4, 0.5), item("trichromatic-permit", 5.2, 0.3, 0.56, {show = {{350, 610}}, pulse = true}), sprite("fluid/cyan-ink", 0, -1.4, 0.45, {tint = {r = 0.3, g = 0.3, b = 0.3, a = 0.4}}), sprite("utility/status_not_working", 0, -1.4, 0.6, {tint = colors.red})},
@@ -639,28 +621,13 @@ scenes.laser = scene(640, 0.84, {
   stage = stages(0, "Thermal sheets supplied", 80, "Chroma ribbon supplied", 250, "Vacuum-safe printing", 350, "Color form output"),
 })
 
-scenes.color_fax = scene(620, 0.86, {
-  entities = {entity("fax-emitter", -3.8, 0.4, "COLOR FAX: OFF"), entity("interplanetary-fax-exchange", 4.5, 0.4, "RECEIVER")},
-  sprites = {item("cyan-yellow-form", -7, 2.6, 0.52), sprite("utility/status_not_working", -3.8, 0.4, 0.7, {show = {{0, 200}}, tint = colors.red}), item("composite-chroma-ribbon", 4.5, 2.5, 0.48, {show = {{330, 590}}, pulse = true})},
-  movers = {move_item("cyan-yellow-form", 220, 330, -7, 2.6, -3.8, 0.4), move_item("cyan-yellow-form", 330, 400, -3, 0.4, 3.8, 0.4)},
-  texts = {label("MULTICOLOR REJECTED", -3.8, -2.1, colors.red, {show = {{0, 200}}, alignment = "center"}), label("COLOR FAX: ON", -3.8, -2.1, colors.green, {show = {{200, 590}}, alignment = "center"}), label("RIBBON CHARGES / COLOR", 4.5, 3.3, colors.magenta, {show = {{330, 590}}, alignment = "center"})},
-  stage = stages(0, "Color document rejected", 200, "Color Faxing enabled", 220, "Multicolor accepted", 330, "Ribbon charges consumed"),
-})
-
-scenes.fax_capacity = scene(640, 0.88, {
-  entities = {entity("interplanetary-fax-exchange", 0, 0.5, "FAX QUEUE")},
-  bars = {bar(0, 2.8, 10, colors.cyan, {{at = 0, value = 0.25}, {at = 150, value = 0.5}, {at = 300, value = 0.75}, {at = 450, value = 1}, {at = 620, value = 1}}, {step = true})},
-  texts = {label("5 SLOTS", 0, 3.6, colors.cyan, {frames = {{at = 0, text = "5 SLOTS"}, {at = 150, text = "10 SLOTS"}, {at = 300, text = "15 SLOTS"}, {at = 450, text = "20 SLOTS"}}, alignment = "center"}), label("+ RECEIVER QUALITY", 0, -2.4, colors.yellow, {alignment = "center"}), label("CAPACITY I", -5, 1.8, colors.green, {show = {{150, 300}}, alignment = "center"}), label("CAPACITY II", 0, 1.8, colors.green, {show = {{300, 450}}, alignment = "center"}), label("CAPACITY III", 5, 1.8, colors.green, {show = {{450, 620}}, alignment = "center"})},
-  stage = stages(0, "Base queue", 150, "+5 capacity", 300, "+5 capacity", 450, "+5 capacity"),
-})
-
 scenes.transcendence = scene(720, 0.78, {
   entities = {entity("public-train-stop", 1.5, 0, "PUBLIC TRAIN STOP")},
   lines = {line(-9, -1.8, 9, -1.8, colors.muted, {width = 8})},
   sprites = {item("transit-authorization", -4.5, 2.4, 0.48, {tint = {r = 0.35, g = 0.35, b = 0.35, a = 0.45}}), sprite("utility/status_working", -4.5, 2.4, 0.65, {tint = colors.green}), item("blank-cyan-form", -4, -2.9, 0.34), item("blank-yellow-form", -2.7, -2.9, 0.34), item("blank-magenta-form", -1.4, -2.9, 0.34), item("composite-chroma-ribbon", -0.1, -2.9, 0.34)},
   movers = {move_item("locomotive", 100, 300, -9, -1.8, 1.5, -1.8), move_item("locomotive", 420, 650, 1.5, -1.8, 9, -1.8)},
-  texts = {label("NO CHEST", -4.5, 3.3, colors.green, {alignment = "center"}), label("NO FORM CONSUMED", 1.5, 2.7, colors.green, {show = {{300, 650}}, alignment = "center"}), label("TRAIN LIMIT: UNCHANGED", 1.5, 3.5, colors.green, {show = {{300, 650}}, alignment = "center"}), label("FAX NETWORK COMPLETE", -2.1, -3.7, colors.cyan, {alignment = "center"}), label("EXEMPTION GRANTED", 5.2, -3.1, colors.yellow, {show = {{300, 680}}, alignment = "center"})},
-  stage = stages(0, "Four-planet fax prerequisite complete", 100, "Train arrives", 300, "Standing exemption applies", 420, "Train departs without paperwork"),
+  texts = {label("NO CHEST", -4.5, 3.3, colors.green, {alignment = "center"}), label("NO FORM CONSUMED", 1.5, 2.7, colors.green, {show = {{300, 650}}, alignment = "center"}), label("TRAIN LIMIT: UNCHANGED", 1.5, 3.5, colors.green, {show = {{300, 650}}, alignment = "center"}), label("TUBE NETWORK COMPLETE", -2.1, -3.7, colors.cyan, {alignment = "center"}), label("EXEMPTION GRANTED", 5.2, -3.1, colors.yellow, {show = {{300, 680}}, alignment = "center"})},
+  stage = stages(0, "Four-planet tube prerequisite complete", 100, "Train arrives", 300, "Standing exemption applies", 420, "Train departs without paperwork"),
 })
 
 local tip_scene = {
@@ -718,12 +685,7 @@ local tip_scene = {
   ["administratorio-fulgora-digital-services"] = "digital",
   ["administratorio-digital-services-bureau"] = "digital",
   ["administratorio-archive-recombination"] = "archive",
-  ["administratorio-aquilo-fax-network"] = "fax",
-  ["administratorio-fax-emitter"] = "fax",
-  ["administratorio-interplanetary-fax-exchange"] = "fax_exchange",
   ["administratorio-laser-printer"] = "laser",
-  ["administratorio-color-faxing"] = "color_fax",
-  ["administratorio-fax-queue-capacity"] = "fax_capacity",
   ["administratorio-bureaucratic-transcendence"] = "transcendence",
   ["administratorio-public-train-stop"] = "transcendence",
 }

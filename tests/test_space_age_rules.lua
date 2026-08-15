@@ -77,8 +77,6 @@ test("space age admin and convergence categories stay free of recurring operatin
     "orbital-bureaucracy should stay exempt")
   assert_nil(shared.get_operating_form({name = "cyan-yellow-form-production", category = "printing-multicolor"}),
     "printing-multicolor should stay exempt")
-  assert_nil(shared.get_operating_form({name = "faxed-document-reconstruction", category = "fax-reconstruction"}),
-    "fax-reconstruction should stay exempt")
 end)
 
 test("existing vanilla operating-paperwork mappings remain intact under Space Age", function()
@@ -113,8 +111,6 @@ test("space age admin buildings stay out of vanilla recipe regulation", function
   assert_true(shared.is_admin_recipe("territorial-arbitration-post"), "territorial-arbitration-post should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("capture-bureau"), "capture-bureau should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("digital-services-bureau"), "digital-services-bureau should be treated as an admin recipe")
-  assert_true(shared.is_admin_recipe("fax-emitter"), "fax-emitter should be treated as an admin recipe")
-  assert_true(shared.is_admin_recipe("interplanetary-fax-exchange"), "interplanetary-fax-exchange should be treated as an admin recipe")
 end)
 
 test("orbital infrastructure permits participate in shared paperwork systems", function()

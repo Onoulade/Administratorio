@@ -39,7 +39,6 @@ package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 
 local integration = require("prototypes.final_fixes.quality_integration")
 local quality = require("scripts.quality")
-local fax_shared = require("scripts.fax_shared")
 
 local function contains(values, expected)
   for _, value in ipairs(values or {}) do
@@ -172,10 +171,6 @@ test("native and infrastructure certification curves match every tier", function
   end
   assert_eq(quality.scaled_ticks(60, {quality = {name = "legendary"}}), 24)
   assert_eq(quality.scaled_ticks(120, {quality = {name = "legendary"}}), 48)
-
-  local force = {valid = true, technologies = {}}
-  assert_eq(fax_shared.get_queue_capacity(force, {quality = {name = "normal"}}), 5)
-  assert_eq(fax_shared.get_queue_capacity(force, {quality = {name = "legendary"}}), 10)
 end)
 
 test("quality helpers accept strict LuaQualityPrototype objects", function()

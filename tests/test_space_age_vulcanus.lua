@@ -479,26 +479,9 @@ test("aquilo printer and exchange are specialized endgame bureaucracy machines",
   assert_true(laser_categories["printing-workorder"], "laser-printer should keep work-order printing")
   assert_true(laser_categories["printing-multicolor"], "laser-printer should expose multicolor printing")
   assert_true(laser_categories["orbital-printing"], "laser-printer should expose advanced orbital printing")
-  assert_true(not laser_categories["fax-reconstruction"],
-    "laser-printer should leave fax reconstruction to the dedicated exchange")
   assert_eq(laser.crafting_speed, 5, "laser-printer should be the fastest printer")
   assert_eq(#(laser.fluid_boxes or {}), 0, "laser-printer should use solid transfer media instead of fluid ports")
 
-  local emitter = data.raw.container["fax-emitter"]
-  assert_true(emitter ~= nil, "fax-emitter missing")
-  assert_eq(emitter.placeable_by[1].item, "fax-emitter", "fax-emitter should build from the fax-emitter item")
-  assert_eq(emitter.inventory_size, 1, "fax-emitter should hold a single source document")
-
-  local exchange = data.raw["assembling-machine"]["interplanetary-fax-exchange"]
-  assert_true(exchange ~= nil, "interplanetary-fax-exchange missing")
-  assert_eq(exchange.placeable_by[1].item, "interplanetary-fax-exchange",
-    "interplanetary-fax-exchange should build from the fax exchange item")
-  assert_eq(exchange.crafting_categories[1], "fax-reconstruction",
-    "interplanetary-fax-exchange should own fax reconstruction")
-  assert_eq(#(exchange.fluid_boxes or {}), 0,
-    "interplanetary-fax-exchange should use dry sheets and ribbon")
-  assert_eq(exchange.ingredient_count, 5,
-    "interplanetary-fax-exchange should have room for solid reconstruction media")
 end)
 
 test("industrial and laser printers are vacuum-approved while lower printers remain grounded", function()
@@ -552,17 +535,6 @@ test("non-orbital space age admin machines stay out of vacuum", function()
     assert_true((entity.surface_conditions[1].min or 0) >= 1, entity_name .. " should require non-vacuum pressure")
   end
 
-  local fax_entities = {
-    ["fax-emitter"] = data.raw.container,
-    ["interplanetary-fax-exchange"] = data.raw["assembling-machine"],
-  }
-
-  for _, entity_name in ipairs({"fax-emitter", "interplanetary-fax-exchange"}) do
-    local entity = assert(fax_entities[entity_name][entity_name], entity_name .. " missing")
-    assert_true(entity.surface_conditions ~= nil and entity.surface_conditions[1] ~= nil,
-      entity_name .. " should define a vacuum-blocking pressure rule")
-    assert_true((entity.surface_conditions[1].min or 0) >= 1, entity_name .. " should require non-vacuum pressure")
-  end
 end)
 
 test("planet helper exposes exact basic-planet conditions and abundance outputs", function()
@@ -804,11 +776,9 @@ test("fulgora bureau and magenta paperwork stay on fulgora", function()
     "electromagnetic-operating-license should build from digital-processing-certificate")
 end)
 
-test("aquilo fax and multicolor paperwork stay on Aquilo", function()
+test("aquilo chromatic trunk and multicolor paperwork stay on Aquilo", function()
   local required = {
     "laser-printer",
-    "fax-emitter",
-    "interplanetary-fax-exchange",
     "transfer-emulsion-production",
     "thermal-transfer-sheet-production",
     "composite-chroma-ribbon-production",
@@ -832,10 +802,6 @@ test("aquilo fax and multicolor paperwork stay on Aquilo", function()
     "cryogenic-operations-license should be multicolor printed")
   assert_true(has_ingredient(data.raw.recipe["laser-printer"], "cryoprint-technician"),
     "laser-printer should require cryoprint-technician")
-  assert_true(has_ingredient(data.raw.recipe["fax-emitter"], "cryoprint-technician"),
-    "fax-emitter should require cryoprint-technician")
-  assert_true(has_ingredient(data.raw.recipe["interplanetary-fax-exchange"], "cryoprint-technician"),
-    "interplanetary-fax-exchange should require cryoprint-technician")
 end)
 
 if failed > 0 then

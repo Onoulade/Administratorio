@@ -5,7 +5,6 @@ function M.new(deps)
   local needs_loaded_working_hours_refresh = false
 
   local runtime_debug = deps.runtime_debug
-  local fax = deps.fax or {on_tick = function() end}
   local process_pending_group_redirects = deps.process_pending_group_redirects or function() end
 
   local controller = {}
@@ -161,10 +160,6 @@ function M.new(deps)
 
     runtime_debug.run_profiled_section(runtime_snapshot, "circuit", function()
       deps.biters.update_circuit_signals(desks)
-    end)
-
-    runtime_debug.run_profiled_section(runtime_snapshot, "fax", function()
-      fax.on_tick(event)
     end)
 
     if runtime_snapshot and total_profiler then

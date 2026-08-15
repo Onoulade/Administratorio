@@ -446,117 +446,6 @@ administrative_space_station.working_sound = {
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
-local fax_emitter = {
-  type = "container",
-  name = "fax-emitter",
-  icon = space_age_icons .. "fax-emitter.png",
-  icon_size = 64,
-  flags = {"placeable-neutral", "player-creation"},
-  minable = {mining_time = 0.2, result = "fax-emitter"},
-  max_health = 250,
-  corpse = "medium-remnants",
-  placeable_by = placeable_by_item("fax-emitter"),
-  inventory_size = 1,
-  circuit_wire_max_distance = 9,
-  circuit_connector = circuit_connector_definitions.create_vector(
-    universal_connector_template,
-    {
-      {variation = 18, main_offset = util.by_pixel(14, 14), shadow_offset = util.by_pixel(18, 18), show_shadow = true},
-      {variation = 18, main_offset = util.by_pixel(14, 14), shadow_offset = util.by_pixel(18, 18), show_shadow = true},
-      {variation = 18, main_offset = util.by_pixel(14, 14), shadow_offset = util.by_pixel(18, 18), show_shadow = true},
-      {variation = 18, main_offset = util.by_pixel(14, 14), shadow_offset = util.by_pixel(18, 18), show_shadow = true},
-    }
-  ),
-  picture = {
-    layers = {
-      space_age_sprite("fax-emitter", 128, 128),
-      space_age_shadow("fax-emitter", 192, 110, 15.5, 13.5),
-    },
-  },
-  stateless_visualisation = {
-    animation = space_age_animation("fax-emitter", 128, 128),
-  },
-  draw_stateless_visualisations_in_ghost = true,
-}
-align_footprint(fax_emitter, 1.4, 1.4, 2, 2, {0, 1 / 32})
-
-local interplanetary_fax_exchange = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
-interplanetary_fax_exchange.name = "interplanetary-fax-exchange"
-interplanetary_fax_exchange.icon = space_age_icons .. "interplanetary-fax-exchange.png"
-interplanetary_fax_exchange.icon_size = 64
-interplanetary_fax_exchange.flags = {"placeable-neutral", "player-creation"}
-interplanetary_fax_exchange.minable = {mining_time = 0.2, result = "interplanetary-fax-exchange"}
-interplanetary_fax_exchange.max_health = 450
-interplanetary_fax_exchange.corpse = "big-remnants"
-interplanetary_fax_exchange.placeable_by = placeable_by_item("interplanetary-fax-exchange")
-interplanetary_fax_exchange.next_upgrade = nil
-interplanetary_fax_exchange.crafting_categories = {"fax-reconstruction"}
-interplanetary_fax_exchange.crafting_speed = 1
-interplanetary_fax_exchange.energy_usage = "450kW"
-interplanetary_fax_exchange.energy_source = {type = "electric", usage_priority = "secondary-input"}
-interplanetary_fax_exchange.ingredient_count = 5
-interplanetary_fax_exchange.module_slots = 0
-interplanetary_fax_exchange.allowed_effects = {}
-align_footprint(interplanetary_fax_exchange, 2.4, 2.4, 3, 3, {-1 / 32, 3 / 32})
-interplanetary_fax_exchange.circuit_wire_max_distance = 9
-interplanetary_fax_exchange.circuit_connector = circuit_connector_definitions.create_vector(
-  universal_connector_template,
-  {
-    {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
-    {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
-    {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
-    {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
-  }
-)
-interplanetary_fax_exchange.fluid_boxes_off_when_no_fluid_recipe = true
-interplanetary_fax_exchange.fluid_boxes = {}
-interplanetary_fax_exchange.graphics_set = {
-  animation = {
-    layers = {
-      space_age_animation("interplanetary-fax-exchange", 192, 192),
-      space_age_shadow("interplanetary-fax-exchange", 248, 150, 13, 14.5, GENERATED_FRAME_COUNT),
-    }
-  }
-}
-interplanetary_fax_exchange.working_sound = {
-  sound = {filename = sound_path .. "industrial-printer-loop.ogg", volume = 0.55},
-  idle_sound = {filename = "__base__/sound/idle1.ogg"}
-}
-
-local fax_network_combinator = {
-  type = "constant-combinator",
-  name = "fax-network-combinator",
-  icon = "__administratorio__/graphics/icons/office-building.png",
-  icon_size = 64,
-  flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "placeable-off-grid"},
-  collision_mask = {layers = {}},
-  collision_box = {{0, 0}, {0, 0}},
-  selection_box = {{0, 0}, {0, 0}},
-  selectable_in_game = false,
-  hidden = true,
-  item_slot_count = 12,
-  sprites = {
-    north = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
-    east  = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
-    south = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
-    west  = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
-  },
-  activity_led_sprites = {
-    north = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
-    east  = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
-    south = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
-    west  = { filename = "__core__/graphics/empty.png", width = 1, height = 1 },
-  },
-  activity_led_light_offsets = {{0, 0}, {0, 0}, {0, 0}, {0, 0}},
-  circuit_wire_connection_points = {
-    { wire = {red = util.by_pixel(0, 0), green = util.by_pixel(0, 0)}, shadow = {red = util.by_pixel(0, 0), green = util.by_pixel(0, 0)} },
-    { wire = {red = util.by_pixel(0, 0), green = util.by_pixel(0, 0)}, shadow = {red = util.by_pixel(0, 0), green = util.by_pixel(0, 0)} },
-    { wire = {red = util.by_pixel(0, 0), green = util.by_pixel(0, 0)}, shadow = {red = util.by_pixel(0, 0), green = util.by_pixel(0, 0)} },
-    { wire = {red = util.by_pixel(0, 0), green = util.by_pixel(0, 0)}, shadow = {red = util.by_pixel(0, 0), green = util.by_pixel(0, 0)} },
-  },
-  circuit_wire_max_distance = 9
-}
-
 local asteroid_size_masks = {
   small = "administratorio-asteroid-small",
   medium = "administratorio-asteroid-medium",
@@ -864,8 +753,6 @@ for _, entity in ipairs({
   territorial_arbitration_post,
   conciliation_desk,
   digital_services_bureau,
-  fax_emitter,
-  interplanetary_fax_exchange,
 }) do
   require_non_vacuum(entity)
 end
@@ -878,9 +765,6 @@ local space_age_entities = {
   territorial_arbitration_post,
   conciliation_desk,
   digital_services_bureau,
-  fax_emitter,
-  interplanetary_fax_exchange,
-  fax_network_combinator,
   orbital_biter_projectile,
   trajectory_compliance_array,
   senior_trajectory_compliance_array,
