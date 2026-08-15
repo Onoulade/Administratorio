@@ -1390,6 +1390,31 @@ data:extend({
     results = {{type = "item", name = "ai-server", amount = 1}},
     energy_required = 40,
   }, "aquilo"),
+  {
+    type = "recipe",
+    name = "optical-fibre",
+    subgroup = "admin-infrastructure",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "superconductor", amount = 1},
+      {type = "item", name = "plastic-bar", amount = 2},
+      {type = "item", name = "iron-plate", amount = 1},
+    },
+    results = {{type = "item", name = "optical-fibre", amount = 4}},
+    energy_required = 2,
+  },
+  {
+    type = "recipe",
+    name = "optical-fibre-to-ground",
+    subgroup = "admin-infrastructure",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "optical-fibre", amount = 10},
+      {type = "item", name = "steel-plate", amount = 5},
+    },
+    results = {{type = "item", name = "optical-fibre-to-ground", amount = 2}},
+    energy_required = 2,
+  },
   surface_limited({
     type = "recipe",
     name = "heat-exhaust",
@@ -1414,13 +1439,13 @@ data:extend({
     category = "ai-inference",
     subgroup = "admin-bs-economy",
     enabled = false,
-    localised_name = {"item-name.inference-token"},
+    localised_name = {"fluid-name.inference-token"},
     ingredients = {
       {type = "item", name = "dubious-data", amount = 4},
       {type = "item", name = "data", amount = 2},
       {type = "item", name = "useless-documentation", amount = 4},
     },
-    results = {{type = "item", name = "inference-token", amount = 1}},
+    results = {{type = "fluid", name = "inference-token", amount = 10}},
     energy_required = 8,
   },
   {
@@ -1431,7 +1456,7 @@ data:extend({
     enabled = false,
     localised_name = {"item-name.administrative-slop"},
     ingredients = {
-      {type = "item", name = "inference-token", amount = 1},
+      {type = "fluid", name = "inference-token", amount = 10},
       {type = "item", name = "paper", amount = 6},
     },
     results = {{type = "item", name = "administrative-slop", amount = 4}},
@@ -2219,7 +2244,7 @@ for _, specialist_name in ipairs(synthesis_specialists) do
     localised_name = {"item-name." .. specialist_name},
     ingredients = {
       {type = "item", name = "biter-egg", amount = 10},
-      {type = "item", name = "inference-token", amount = 4},
+      {type = "fluid", name = "inference-token", amount = 40},
       {type = "item", name = "administrative-slop", amount = 8},
     },
     results = {{type = "item", name = specialist_name, amount = 1}},

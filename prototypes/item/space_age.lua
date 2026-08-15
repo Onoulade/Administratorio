@@ -800,14 +800,6 @@ data:extend({
   },
   {
     type = "item",
-    name = "inference-token",
-    icons = {{icon = item_icons .. "dubious-data.png", icon_size = 64, tint = {r = 0.45, g = 0.85, b = 1, a = 1}}},
-    subgroup = "admin-bs-economy",
-    order = "z1",
-    stack_size = 200
-  },
-  {
-    type = "item",
     name = "administrative-slop",
     icons = {{icon = item_icons .. "regulation.png", icon_size = 64, tint = {r = 0.55, g = 0.6, b = 0.4, a = 1}}},
     subgroup = "admin-bs-economy",

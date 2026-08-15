@@ -251,6 +251,10 @@ data:extend({
   { type = "fluid", name = "misinformation",    icon = item_icons .. "misinformation.png",              icon_size = 64, subgroup = "admin-fluids", order = "d", default_temperature = 25, base_color = {r=0.5, g=0.5, b=0.5}, flow_color = {r=0.8, g=0.8, b=0.8} },
   { type = "fluid", name = "union-approval",    icon = item_icons .. "union-approval.png", icon_size = 64, subgroup = "admin-fluids", order = "e", default_temperature = 25, base_color = {r=0.2, g=0.4, b=1.0}, flow_color = {r=0.4, g=0.6, b=1.0} },
   { type = "fluid", name = "liquid-coffee",     icon = item_icons .. "coffee.png",                  icon_size = 64, subgroup = "admin-fluids", order = "f", default_temperature = 80, base_color = {r=0.3, g=0.2, b=0.1}, flow_color = {r=0.4, g=0.2, b=0.1} },
+  -- Inference is a stream, not a crate. auto_barrel is off so it cannot be
+  -- decanted into a barrel and carried by belt, chest or rocket: the only way
+  -- to move it is optic fibre.
+  { type = "fluid", name = "inference-token",   icon = item_icons .. "third-party/inference-token.png", icon_size = 64, subgroup = "admin-fluids", order = "g", default_temperature = 25, base_color = {r=0.25, g=0.65, b=0.95}, flow_color = {r=0.5, g=0.9, b=1.0}, auto_barrel = false },
 })
 
 if feature_flags.space_age_enabled() then

@@ -13,3 +13,7 @@ if space_age_enabled then
   require("prototypes.entity.archive_recombination")
 end
 require("prototypes.entity.pneumatic")
+
+if space_age_enabled then
+  require("prototypes.entity.optical_fiber")
+end

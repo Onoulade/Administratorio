@@ -539,14 +539,34 @@ synthetic_personnel_bureau.energy_source = {
   usage_priority = "secondary-input",
   emissions_per_minute = {pollution = 6},
 }
-align_footprint(synthetic_personnel_bureau, 1.4, 1.4, 2, 2, {0, 1 / 32})
+align_footprint(synthetic_personnel_bureau, 2.4, 2.4, 3, 3, {0, 1 / 32})
 synthetic_personnel_bureau.fluid_boxes_off_when_no_fluid_recipe = true
-synthetic_personnel_bureau.fluid_boxes = {}
+synthetic_personnel_bureau.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{
+      flow_direction = "input",
+      direction = defines.direction.north,
+      position = {0, -2},
+      connection_category = "optical-data",
+    }},
+    filter = "inference-token",
+    volume = 1000,
+  },
+}
+-- 128px of art at the default half scale covers two tiles; the 3x3 footprint
+-- the fibre port needs wants three.
+local bureau_animation = space_age_animation("synthetic-personnel-bureau", 128, 128)
+bureau_animation.scale = 0.75
+local bureau_shadow = space_age_shadow("synthetic-personnel-bureau", 192, 110, 15.5, 13.5, GENERATED_FRAME_COUNT)
+bureau_shadow.scale = 0.75
+
 synthetic_personnel_bureau.graphics_set = {
   animation = {
     layers = {
-      space_age_animation("synthetic-personnel-bureau", 128, 128),
-      space_age_shadow("synthetic-personnel-bureau", 192, 110, 15.5, 13.5, GENERATED_FRAME_COUNT),
+      bureau_animation,
+      bureau_shadow,
     }
   }
 }
@@ -600,7 +620,34 @@ ai_server.energy_source = {
 ai_server.collision_box = {{-3.25, -3.25}, {3.25, 3.25}}
 ai_server.selection_box = {{-3.5, -3.5}, {3.5, 3.5}}
 ai_server.fluid_boxes_off_when_no_fluid_recipe = true
-ai_server.fluid_boxes = {}
+-- Inference is piped, never carried. These sit on the perimeter tiles the heat
+-- connections leave free, so a heat pipe and a fibre never contest a tile.
+ai_server.fluid_boxes = {
+  {
+    production_type = "output",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{
+      flow_direction = "output",
+      direction = defines.direction.east,
+      position = {3, -3},
+      connection_category = "optical-data",
+    }},
+    filter = "inference-token",
+    volume = 1000,
+  },
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{
+      flow_direction = "input",
+      direction = defines.direction.west,
+      position = {-3, -3},
+      connection_category = "optical-data",
+    }},
+    filter = "inference-token",
+    volume = 1000,
+  },
+}
 ai_server.graphics_set = {
   animation = {
     layers = {

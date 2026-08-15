@@ -13,7 +13,8 @@ M.ADVANCED_TECH = "administratorium-slop-synthesis"
 
 M.CITATION_ITEM = "fabricated-citations"
 M.SLOP_ITEM = "administrative-slop"
-M.TOKEN_ITEM = "inference-token"
+-- A fluid, not an item: inference only moves through optic fibre.
+M.TOKEN_FLUID = "inference-token"
 
 --- Colored paperwork is never producible from slop, at any tier. This is what
 --- preserves the ink economy, the chromatic printer chain, and the planetary

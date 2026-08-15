@@ -1043,6 +1043,8 @@ end
 local ai_inference_effects = {
   {type = "unlock-recipe", recipe = "ai-server"},
   {type = "unlock-recipe", recipe = "heat-exhaust"},
+  {type = "unlock-recipe", recipe = "optical-fibre"},
+  {type = "unlock-recipe", recipe = "optical-fibre-to-ground"},
   {type = "unlock-recipe", recipe = "inference-token-production"},
   {type = "unlock-recipe", recipe = "administrative-slop-production"},
   {type = "unlock-recipe", recipe = "fabricated-citations-venting"},
