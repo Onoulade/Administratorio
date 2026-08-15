@@ -2,6 +2,7 @@ local planets = require("prototypes.shared.space_age_planets")
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 local manager_briefings = require("prototypes.shared.manager_briefings")
 local manager_couriers = require("prototypes.shared.manager_couriers")
+local recipe_icons = require("prototypes.shared.recipe_icons")
 
 local function add_item_ingredient(recipe, ingredient_name, amount)
   if not recipe then return end
@@ -1474,6 +1475,11 @@ data:extend({
     localised_name = {"recipe-name.fabricated-citations-venting"},
     ingredients = {{type = "item", name = "fabricated-citations", amount = 20}},
     results = {},
+    -- No results means no main product to infer an icon from, so one is set
+    -- explicitly. Without it the prototype fails to load outright.
+    icons = {
+      {icon = "__administratorio__/graphics/icons/useless-documentation.png", icon_size = 64, tint = {r = 0.55, g = 0.55, b = 0.6, a = 1}},
+    },
     allow_productivity = false,
     energy_required = 2,
   },
@@ -2187,6 +2193,7 @@ for _, item_name in ipairs(interplanetary_payloads.all()) do
     results = {},
     localised_name = {"item-name." .. item_name},
   }
+  recipe_icons.from_item(dispatch_recipes[#dispatch_recipes], item_name)
 end
 data:extend(dispatch_recipes)
 
@@ -2276,6 +2283,7 @@ for _, item_name in ipairs(relocation_cargo.names) do
     results = {},
     localised_name = {"item-name." .. item_name},
   }
+  recipe_icons.from_item(relocation_payload_recipes[#relocation_payload_recipes], item_name)
 end
 data:extend(relocation_payload_recipes)
 

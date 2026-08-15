@@ -11,23 +11,7 @@ end
 
 local shared = require("prototypes.shared")
 
-local function set_recipe_icon_from_item(recipe, item_name)
-  local item_proto = (data.raw.item and data.raw.item[item_name])
-    or (data.raw.tool and data.raw.tool[item_name])
-    or (data.raw.module and data.raw.module[item_name])
-    or (data.raw.capsule and data.raw.capsule[item_name])
-
-  if item_proto and item_proto.icons then
-    recipe.icons = table.deepcopy(item_proto.icons)
-  elseif item_proto and item_proto.icon then
-    recipe.icon = item_proto.icon
-    recipe.icon_size = item_proto.icon_size
-    recipe.icon_mipmaps = item_proto.icon_mipmaps
-  else
-    recipe.icon = "__core__/graphics/empty.png"
-    recipe.icon_size = 1
-  end
-end
+local recipe_icons = require("prototypes.shared.recipe_icons")
 
 local function not_on_vulcanus(recipe)
   if not space_age_enabled then
@@ -145,7 +129,7 @@ for _, item_name in ipairs(pneumatic_item_names) do
     ingredients = {{type = "item", name = item_name, amount = 1}},
     results = {},
   }
-  set_recipe_icon_from_item(recipe, item_name)
+  recipe_icons.from_item(recipe, item_name)
   pneumatic_intake_recipes[#pneumatic_intake_recipes + 1] = recipe
 end
 
