@@ -18,6 +18,7 @@ M.ANIMATION_SPEEDS = {
   ["chromatic-printer"] = 0.05,
   ["digital-services-bureau"] = 0.3,
   ["formation-center"] = 0.25,
+  ["interplanetary-terminus"] = 0.22,
   ["laser-printer"] = 0.15,
   ["notary-office"] = 0.4,
   ["printer-t2"] = 0.5,

@@ -1290,6 +1290,24 @@ data:extend({
     results = {{type = "item", name = "laser-printer", amount = 1}},
     energy_required = 20,
   }, "aquilo"),
+  not_in_space({
+    type = "recipe",
+    name = "interplanetary-terminus",
+    subgroup = "admin-space-buildings",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "office-desk", amount = 2},
+      -- Staffed by a notary, not a cryoprint technician: the base tier is
+      -- pre-Aquilo, and an unbuildable building is a bad first impression.
+      {type = "item", name = "licensed-notary", amount = 1},
+      {type = "item", name = "advanced-circuit", amount = 20},
+      {type = "item", name = "steel-plate", amount = 30},
+      {type = "item", name = "pneumatic-pipe", amount = 20},
+      {type = "item", name = "construction-work-order", amount = 1},
+    },
+    results = {{type = "item", name = "interplanetary-terminus", amount = 1}},
+    energy_required = 20,
+  }),
   surface_limited({
     type = "recipe",
     name = "transfer-emulsion-production",
@@ -1933,6 +1951,31 @@ end
 
 data:extend(tourism_recipes)
 
+local interplanetary_payloads = require("prototypes.shared.interplanetary_payloads")
+
+local dispatch_recipes = {}
+for _, item_name in ipairs(interplanetary_payloads.all()) do
+  dispatch_recipes[#dispatch_recipes + 1] = {
+    type = "recipe",
+    name = interplanetary_payloads.dispatch_recipe_name(item_name),
+    category = "interplanetary-dispatch",
+    enabled = false,
+    hidden = true,
+    hidden_in_factoriopedia = true,
+    hide_from_player_crafting = true,
+    allow_as_intermediate = false,
+    allow_decomposition = false,
+    allow_productivity = false,
+    -- Never completes; the Terminus is held inactive and the runtime moves the
+    -- item itself. The recipe exists only so inserters can validate the payload.
+    energy_required = 3600,
+    ingredients = {{type = "item", name = item_name, amount = 1}},
+    results = {},
+    localised_name = {"item-name." .. item_name},
+  }
+end
+data:extend(dispatch_recipes)
+
 -- Briefed managers are single-use administrative catalysts. Every affected
 -- process returns the same number of regular managers, who must attend another
 -- meeting before they can obstruct useful work again.
@@ -1955,6 +1998,7 @@ local staffed_building_manager_requirements = {
   ["capture-bureau"] = {"staffing", "liaison"},
   ["conciliation-desk"] = {"staffing"},
   ["digital-services-bureau"] = {"staffing"},
+  ["interplanetary-terminus"] = {"staffing", "liaison"},
   ["laser-printer"] = {"staffing"},
   ["administrative-space-station"] = {"staffing", "orbital"},
 }

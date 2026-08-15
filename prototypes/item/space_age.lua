@@ -724,6 +724,16 @@ data:extend({
   },
   {
     type = "item",
+    name = "interplanetary-terminus",
+    icon = item_icons .. "space-age/interplanetary-terminus.png",
+    icon_size = 64,
+    subgroup = "admin-space-buildings",
+    order = "n",
+    place_result = "interplanetary-terminus",
+    stack_size = 20
+  },
+  {
+    type = "item",
     name = "notary-office",
     icon = item_icons .. "space-age/notary-office.png",
     icon_size = 64,

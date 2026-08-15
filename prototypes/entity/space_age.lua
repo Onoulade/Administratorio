@@ -446,6 +446,60 @@ administrative_space_station.working_sound = {
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
+-- Interplanetary Terminus: the trunk endpoint, one per planet.
+--
+-- A furnace shell, exactly like tube-intake, so inserters validate outbound
+-- paperwork against the interplanetary-dispatch recipe family and the engine
+-- enforces the payload whitelist for free. The runtime keeps it deactivated;
+-- it never actually crafts. Source inventory is the outbound buffer, result
+-- inventory is the arrivals buffer that the player empties by hand.
+local interplanetary_terminus = {
+  type = "furnace",
+  name = "interplanetary-terminus",
+  icon = space_age_icons .. "interplanetary-terminus.png",
+  icon_size = 64,
+  flags = {"placeable-neutral", "player-creation"},
+  minable = {mining_time = 0.2, result = "interplanetary-terminus"},
+  placeable_by = placeable_by_item("interplanetary-terminus"),
+  max_health = 450,
+  corpse = "big-remnants",
+  crafting_categories = {"interplanetary-dispatch"},
+  crafting_speed = 0.001,
+  energy_usage = "1W",
+  energy_source = {type = "void"},
+  source_inventory_size = 4,
+  result_inventory_size = 8,
+  trash_inventory_size = 0,
+  module_slots = 0,
+  allowed_effects = {},
+  show_recipe_icon = false,
+  show_recipe_icon_on_map = false,
+  enable_logistic_control_behavior = false,
+  circuit_wire_max_distance = 9,
+  circuit_connector = circuit_connector_definitions.create_vector(
+    universal_connector_template,
+    {
+      {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+    }
+  ),
+  graphics_set = {
+    animation = {
+      layers = {
+        space_age_animation("interplanetary-terminus", 192, 192),
+        space_age_shadow("interplanetary-terminus", 248, 150, 13, 14.5, GENERATED_FRAME_COUNT),
+      }
+    }
+  },
+  working_sound = {
+    sound = {filename = sound_path .. "industrial-printer-loop.ogg", volume = 0.55},
+    idle_sound = {filename = "__base__/sound/idle1.ogg"}
+  },
+}
+align_footprint(interplanetary_terminus, 2.4, 2.4, 3, 3, {-1 / 32, 3 / 32})
+
 local asteroid_size_masks = {
   small = "administratorio-asteroid-small",
   medium = "administratorio-asteroid-medium",
@@ -753,6 +807,7 @@ for _, entity in ipairs({
   territorial_arbitration_post,
   conciliation_desk,
   digital_services_bureau,
+  interplanetary_terminus,
 }) do
   require_non_vacuum(entity)
 end
@@ -765,6 +820,7 @@ local space_age_entities = {
   territorial_arbitration_post,
   conciliation_desk,
   digital_services_bureau,
+  interplanetary_terminus,
   orbital_biter_projectile,
   trajectory_compliance_array,
   senior_trajectory_compliance_array,

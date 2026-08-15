@@ -216,6 +216,7 @@ if space_age_enabled then
   shared.ADMIN_BUILDINGS["capture-bureau"] = true
   shared.ADMIN_BUILDINGS["conciliation-desk"] = true
   shared.ADMIN_BUILDINGS["digital-services-bureau"] = true
+  shared.ADMIN_BUILDINGS["interplanetary-terminus"] = true
 end
 
 -------------------------------------------------------------------------------
@@ -457,6 +458,7 @@ shared.UNBATCHED_RESULT_NAMES = {
   ["conciliation-desk"] = true,
   ["digital-services-bureau"] = true,
   ["laser-printer"] = true,
+  ["interplanetary-terminus"] = true,
 }
 
 -- Platform construction policy is also a hard 1x batch policy. Derive the

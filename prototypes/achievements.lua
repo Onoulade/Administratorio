@@ -516,6 +516,16 @@ if feature_flags.space_age_enabled() then
       allowed_without_fight = true,
     },
 
+    -- Interplanetary Tube Network
+    {
+      type = "build-entity-achievement",
+      name = "tube-terminus",
+      to_build = "interplanetary-terminus",
+      icon = icons .. "space-age/interplanetary-terminus.png",
+      icon_size = 64,
+      order = "m[aquilo]-a",
+      allowed_without_fight = true,
+    },
     {
       type = "build-entity-achievement",
       name = "laser-printer-achievement",

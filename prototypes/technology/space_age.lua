@@ -397,7 +397,7 @@ data:extend({
   {
     type = "technology",
     name = "interplanetary-tube-chromatic",
-    icon = "__administratorio__/graphics/icons/tube-outtake.png",
+    icon = "__administratorio__/graphics/entities/pneumatic/outtake-icon.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "composite-chroma-ribbon-production"},
@@ -405,7 +405,7 @@ data:extend({
       {type = "unlock-recipe", recipe = "unified-operations-charter-production"},
       {type = "unlock-recipe", recipe = "promethium-research-charter-production"},
     },
-    prerequisites = {"aquilo-cryogenic-administration", "cyan-magenta-bureaucracy", "yellow-magenta-bureaucracy", "cryogenic-science-pack"},
+    prerequisites = {"aquilo-cryogenic-administration", "cyan-magenta-bureaucracy", "yellow-magenta-bureaucracy", "cryogenic-science-pack", "interplanetary-tube-network"},
     unit = {
       count = 500,
       ingredients = {
@@ -921,3 +921,103 @@ for _, planet_name in ipairs({"vulcanus", "gleba", "fulgora"}) do
 end
 
 require("prototypes.technology.fulgora_archives")
+
+-- ============================================================
+-- INTERPLANETARY TUBE TRUNK
+--
+-- A separate, narrow, slow pool from the local pneumatic network. Two ladders
+-- are read together: each tier raises capacity and cuts per-item transit.
+-- The base tier opens at capacity 3 rather than 1 on purpose — a single
+-- in-flight document empire-wide reads as a broken machine, not as scarcity.
+-- ============================================================
+local interplanetary_payloads = require("prototypes.shared.interplanetary_payloads")
+local trunk_tint = {r = 0.85, g = 0.75, b = 0.55, a = 1}
+local trunk_icon = "__administratorio__/graphics/entities/pneumatic/outtake-icon.png"
+
+local function dispatch_unlocks(item_names)
+  local effects = {}
+  local sorted = {}
+  for _, item_name in ipairs(item_names) do sorted[#sorted + 1] = item_name end
+  table.sort(sorted)
+  for _, item_name in ipairs(sorted) do
+    effects[#effects + 1] = {
+      type = "unlock-recipe",
+      recipe = interplanetary_payloads.dispatch_recipe_name(item_name),
+    }
+  end
+  return effects
+end
+
+local base_trunk_effects = {{type = "unlock-recipe", recipe = "interplanetary-terminus"}}
+for _, effect in ipairs(dispatch_unlocks(interplanetary_payloads.regular)) do
+  base_trunk_effects[#base_trunk_effects + 1] = effect
+end
+
+data:extend({
+  {
+    type = "technology",
+    name = "interplanetary-tube-network",
+    icon = trunk_icon,
+    icon_size = 64,
+    effects = base_trunk_effects,
+    prerequisites = {"pneumatic-capacity-2", "cyan-yellow-bureaucracy"},
+    -- Crafting the bicolor form is what opens the trunk, so the unlock is felt
+    -- rather than merely listed on a research screen.
+    research_trigger = {type = "craft-item", item = "cyan-yellow-form", count = 5},
+    order = "h-t",
+  },
+})
+
+-- The chromatic tier adds the colored set on Aquilo. Colored paperwork never
+-- crosses the base trunk.
+for _, effect in ipairs(dispatch_unlocks(interplanetary_payloads.chromatic)) do
+  add_tech_unlock("interplanetary-tube-chromatic", effect.recipe)
+end
+
+local trunk_capacity_packs = {
+  {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}},
+  {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"utility-science-pack", 1}, {"administrative-science-pack", 1}},
+  {{"metallurgic-science-pack", 1}, {"agricultural-science-pack", 1}, {"electromagnetic-science-pack", 1}, {"cryogenic-science-pack", 1}, {"administrative-science-pack", 1}},
+  {{"metallurgic-science-pack", 1}, {"agricultural-science-pack", 1}, {"electromagnetic-science-pack", 1}, {"cryogenic-science-pack", 1}, {"promethium-science-pack", 1}, {"administrative-science-pack", 1}},
+}
+local trunk_capacity_counts = {200, 350, 500, 750}
+local trunk_capacity_extra_prereqs = {
+  "production-science-pack",
+  "utility-science-pack",
+  "interplanetary-tube-chromatic",
+  "promethium-science-pack",
+}
+local trunk_capacity_values = {5, 10, 15, 20}
+local trunk_transit_seconds = {15, 5, 2, 1}
+
+local trunk_capacity_techs = {}
+for level = 2, 5 do
+  local index = level - 1
+  local prerequisites = {
+    level == 2 and "interplanetary-tube-network" or ("interplanetary-tube-capacity-" .. (level - 1)),
+    trunk_capacity_extra_prereqs[index],
+  }
+
+  trunk_capacity_techs[#trunk_capacity_techs + 1] = {
+    type = "technology",
+    name = "interplanetary-tube-capacity-" .. level,
+    icons = {
+      {icon = trunk_icon, icon_size = 64, tint = trunk_tint},
+      {icon = "__base__/graphics/icons/signal/signal_" .. level .. ".png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    },
+    effects = {
+      {type = "nothing", effect_description = {"technology-effect.interplanetary-tube-capacity",
+        tostring(trunk_capacity_values[index]), tostring(trunk_transit_seconds[index])}},
+    },
+    prerequisites = prerequisites,
+    unit = {
+      count = trunk_capacity_counts[index],
+      ingredients = trunk_capacity_packs[index],
+      time = 60,
+    },
+    order = "h-t[" .. string.format("%02d", level) .. "]",
+    upgrade = true,
+  }
+end
+
+data:extend(trunk_capacity_techs)

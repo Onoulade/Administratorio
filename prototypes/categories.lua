@@ -23,6 +23,7 @@
 -- orbital-printing            | Printer T2/Laser Printer (advanced asteroid paperwork)
 -- propaganda-distillery        | Propaganda Distillery (admin fluid processing)
 -- pneumatic-intake            | Tube Intake (hidden no-output intake validation)
+-- interplanetary-dispatch     | Interplanetary Terminus (hidden outbound payload validation)
 -------------------------------------------------------------------------------
 local feature_flags = require("feature_flags")
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
@@ -60,6 +61,7 @@ if space_age_enabled then
     }
   end
 
+  categories[#categories + 1] = {type = "recipe-category", name = "interplanetary-dispatch"}
   categories[#categories + 1] = {type = "recipe-category", name = "printing-chromatic"}
   categories[#categories + 1] = {type = "recipe-category", name = "printing-multicolor"}
   categories[#categories + 1] = {type = "recipe-category", name = "archive-reassignment"}

@@ -265,6 +265,32 @@ M.PNEUMATIC_BUILDINGS = {
 -- intake validation always agree.
 M.PNEUMATIC_ITEMS = require("prototypes.shared.pneumatic_items").names
 
+-- All items eligible for the interplanetary trunk, and the subset that only the
+-- Aquilo chromatic tier may carry.
+M.TRUNK_ITEM_SET = require("prototypes.shared.interplanetary_payloads").as_set()
+M.TRUNK_CHROMATIC_SET = require("prototypes.shared.interplanetary_payloads").chromatic_set()
+
+-- Interplanetary trunk: a deliberately narrow, slow, separate pool.
+-- It must never merge with the local pneumatic pool above. Merging would give
+-- free 200-capacity teleportation between planets and delete rocket logistics.
+M.TERMINUS_NAME = "interplanetary-terminus"
+M.TERMINUS_OUTBOUND_SLOTS = 4
+M.TERMINUS_ARRIVAL_SLOTS = 8
+M.TERMINUS_CHECK_TICKS = 30
+
+-- Capacity is the number of items in flight empire-wide; transit is per item,
+-- so many items may be crossing at once, each carrying its own timer.
+M.TRUNK_BASE_CAPACITY = 3
+M.TRUNK_BASE_TRANSIT_TICKS = 30 * 60
+M.TRUNK_TIERS = {
+  {technology = "interplanetary-tube-capacity-2", capacity = 5,  transit_ticks = 15 * 60},
+  {technology = "interplanetary-tube-capacity-3", capacity = 10, transit_ticks = 5 * 60},
+  {technology = "interplanetary-tube-capacity-4", capacity = 15, transit_ticks = 2 * 60},
+  {technology = "interplanetary-tube-capacity-5", capacity = 20, transit_ticks = 1 * 60},
+}
+M.TRUNK_BASE_TECH = "interplanetary-tube-network"
+M.TRUNK_CHROMATIC_TECH = "interplanetary-tube-chromatic"
+
 M.EVOLUTION_COMPLAINT_WARNINGS = {
   {
     id = "smog",

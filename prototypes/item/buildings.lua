@@ -66,6 +66,11 @@ if space_age_enabled then
     subgroup = "admin-space-buildings", order = "a",
     place_result = "administrative-space-station", stack_size = 20
   },
+  { type = "item", name = "interplanetary-terminus",
+    icon = item_icons .. "space-age/interplanetary-terminus.png", icon_size = 64,
+    subgroup = "admin-space-buildings", order = "b",
+    place_result = "interplanetary-terminus", stack_size = 20
+  },
   })
 end
 
