@@ -7,7 +7,7 @@ data:extend({
     category = "union-negotiation",
     enabled = false,
     energy_required = 45,
-    crafting_machine_tint = icon_tints.recipe_tint("overtime-exemption"),
+    crafting_machine_tint = icon_tints.recipe_tint("unstaffed-operations-waiver"),
     ingredients = {
       {type = "item", name = "processing-unit", amount = 15},
       {type = "item", name = "tungsten-plate", amount = 10},
@@ -29,7 +29,7 @@ data:extend({
     category = "union-negotiation",
     enabled = false,
     energy_required = 20,
-    crafting_machine_tint = icon_tints.recipe_tint("overtime-exemption"),
+    crafting_machine_tint = icon_tints.recipe_tint("unstaffed-operations-waiver"),
     ingredients = {
       {type = "item", name = "expired-waiver", amount = 1},
       {type = "item", name = "processing-unit", amount = 2},

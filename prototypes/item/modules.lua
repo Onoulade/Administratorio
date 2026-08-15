@@ -4,7 +4,7 @@ data:extend({
   {
     type = "module",
     name = "unstaffed-operations-waiver",
-    icon = "__administratorio__/graphics/icons/overtime-module.png",
+    icon = "__administratorio__/graphics/technology/unstaffed-operations-waiver.png",
     icon_size = 64,
     subgroup = "module",
     order = "z[unstaffed-operations-waiver]",
@@ -18,7 +18,8 @@ data:extend({
   {
     type = "item",
     name = "expired-waiver",
-    icons = {{icon = "__administratorio__/graphics/icons/overtime-module.png", icon_size = 64, tint = {r = 0.5, g = 0.5, b = 0.5, a = 1}}},
+    icon = "__administratorio__/graphics/icons/unstaffed-operations-waiver-expired.png",
+    icon_size = 64,
     subgroup = "module",
     order = "z[unstaffed-operations-waiver]-b",
     stack_size = 50,

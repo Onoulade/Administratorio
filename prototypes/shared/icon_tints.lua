@@ -77,6 +77,9 @@ M.recipe_tints = {
   ["osha-scrubbing"] = tint(rgba_from_color("S_DARK_RED", 1)),
   ["osha-violation-recycling"] = tint(rgba_from_color("SC_RED", 1)),
   ["overtime-exemption"] = tint(rgba_from_color("S_PINK", 1)),
+  -- The waiver is its own module with its own art, not a recolour of the
+  -- overtime exemption; it gets the violet-blue of its icon.
+  ["unstaffed-operations-waiver"] = tint(rgba_from_color("S_PURPLE", 1)),
 }
 
 M.document_tint_colors = {

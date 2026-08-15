@@ -1108,7 +1108,7 @@ data:extend({
   {
     type = "technology",
     name = "unstaffed-operations",
-    icon = "__administratorio__/graphics/icons/overtime-module.png",
+    icon = "__administratorio__/graphics/technology/unstaffed-operations-waiver.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "unstaffed-operations-waiver"},
