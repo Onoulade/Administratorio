@@ -60,13 +60,4 @@ data:extend({
   { type = "item", name = "case-v",               icon = item_icons .. "case-v.png",               icon_size = 64, subgroup = "resolution-vagrancy", order = "c", stack_size = 20 },
   { type = "item", name = "brief-v",              icons = {{icon = item_icons .. "case-v.png", icon_size = 64, tint = {r=1.0, g=0.78, b=0.35, a=1}}}, subgroup = "resolution-vagrancy", order = "d", stack_size = 10, hidden = true, hidden_in_factoriopedia = true },
   { type = "item", name = "resolved-vagrancy",    icons = resolved_icons("ticket-vagrancy"),      icon_size = 64, subgroup = "resolution-vagrancy", order = "e", stack_size = 50 },
-
-  -- Automation tier: filed by the union against the machinery that replaced it.
-  -- Reuses the complete pipeline, so the more of the biter economy is automated
-  -- away, the more biter grievances it generates.
-  { type = "item", name = "ticket-automation",    icons = {{icon = item_icons .. "ticket-unemployment.png", icon_size = 64, tint = {r = 0.55, g = 0.85, b = 1, a = 1}}}, subgroup = "resolution-automation", order = "a", stack_size = 50 },
-  { type = "item", name = "filing-a",             icons = {{icon = item_icons .. "filing-u.png", icon_size = 64, tint = {r = 0.55, g = 0.85, b = 1, a = 1}}}, subgroup = "resolution-automation", order = "b", stack_size = 50 },
-  { type = "item", name = "case-a",               icons = {{icon = item_icons .. "case-u.png", icon_size = 64, tint = {r = 0.55, g = 0.85, b = 1, a = 1}}}, subgroup = "resolution-automation", order = "c", stack_size = 20 },
-  { type = "item", name = "brief-a",              icons = {{icon = item_icons .. "case-u.png", icon_size = 64, tint = {r = 0.35, g = 0.65, b = 1, a = 1}}}, subgroup = "resolution-automation", order = "d", stack_size = 10, hidden = true, hidden_in_factoriopedia = true },
-  { type = "item", name = "resolved-automation",  icons = resolved_icons("ticket-automation"),    icon_size = 64, subgroup = "resolution-automation", order = "e", stack_size = 50 },
 })

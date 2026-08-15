@@ -1040,14 +1040,7 @@ local function slop_unlocks(tier)
   return effects
 end
 
--- The automation grievance chain unlocks with the machinery that causes it.
--- A player who can build an AI Server can always process the complaints about
--- having built one; the thesis is that the endgame is consumed by the mod, not
--- that it is punished by it.
 local ai_inference_effects = {
-  {type = "unlock-recipe", recipe = "filing-automation"},
-  {type = "unlock-recipe", recipe = "case-automation"},
-  {type = "unlock-recipe", recipe = "automation-final"},
   {type = "unlock-recipe", recipe = "ai-server"},
   {type = "unlock-recipe", recipe = "heat-exhaust"},
   {type = "unlock-recipe", recipe = "inference-token-production"},

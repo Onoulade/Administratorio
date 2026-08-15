@@ -1,9 +1,8 @@
 -------------------------------------------------------------------------------
--- AI SERVER AND AUTOMATION GRIEVANCE RUNTIME TESTS
+-- AI SERVER RUNTIME TESTS
 --
--- Two load-bearing behaviours: an under-cooled AI Server stops outright rather
--- than throttling, and the automation the pass introduces files its own biter
--- grievances through the existing complaint pipeline.
+-- The load-bearing behaviour: an under-cooled AI Server stops outright rather
+-- than throttling, and resumes once the heat network draws its core back down.
 -------------------------------------------------------------------------------
 
 local passed, failed, errors = 0, 0, {}
@@ -47,9 +46,7 @@ end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 
 package.loaded["scripts.ai_server"] = nil
-package.loaded["scripts.automation_grievances"] = nil
 local ai_server = require("scripts.ai_server")
-local grievances = require("scripts.automation_grievances")
 local C = require("scripts.constants")
 
 -------------------------------------------------------------------------------
@@ -70,18 +67,11 @@ local function new_server(status, temperature)
     status = status or defines.entity_status.working,
     custom_status = nil,
     force = {valid = true, index = 1},
-    output = {valid = true, citations = 0},
   }
   entity.surface = {
     valid = true,
     find_entities_filtered = function() return {core} end,
   }
-  function entity.get_output_inventory()
-    return {
-      valid = true,
-      get_item_count = function() return entity.output.citations end,
-    }
-  end
   storage.ai_servers[entity.unit_number] = {entity = entity, core = core}
   return entity, core
 end
@@ -90,7 +80,6 @@ local function reset()
   storage = {}
   next_unit_number = 0
   ai_server.ensure_storage()
-  grievances.ensure_storage()
   game.surfaces = {}
 end
 
@@ -157,106 +146,7 @@ test("a stalled server stops before it reaches the buffer maximum", function()
     "the hard stop must trigger below the buffer ceiling so the state is recoverable")
 end)
 
--------------------------------------------------------------------------------
--- GRIEVANCES
--------------------------------------------------------------------------------
-
-local function pressure_ticks_for(count)
-  return math.ceil((C.AUTOMATION_GRIEVANCE_THRESHOLD * count) / C.AUTOMATION_PRESSURE_PER_AI_SERVER)
-end
-
-test("running AI servers eventually file an automation grievance", function()
-  reset()
-  new_server(defines.entity_status.working)
-
-  local force = {valid = true, index = 1}
-  assert_eq(grievances.consume_pending(force), false, "nothing should be pending yet")
-
-  for tick = 1, pressure_ticks_for(1) do
-    grievances.on_tick{tick = tick}
-  end
-  assert_true(grievances.pending_count(1) >= 1, "a running server should generate grievances")
-  assert_eq(grievances.consume_pending(force), true, "a filed grievance should be consumable")
-end)
-
-test("an idle AI server files nothing", function()
-  reset()
-  new_server(defines.entity_status.no_power)
-
-  for tick = 1, pressure_ticks_for(2) do
-    grievances.on_tick{tick = tick}
-  end
-  assert_eq(grievances.pending_count(1), 0, "a server that is not running annoys nobody")
-end)
-
-test("unhandled citations feed the grievance thread", function()
-  reset()
-  local entity = new_server(defines.entity_status.no_power)
-  entity.output.citations = C.AUTOMATION_CITATION_BACKLOG
-
-  local ticks = math.ceil(C.AUTOMATION_GRIEVANCE_THRESHOLD / C.AUTOMATION_PRESSURE_PER_CITATION_BACKLOG)
-  for tick = 1, ticks do
-    grievances.on_tick{tick = tick}
-  end
-  assert_true(grievances.pending_count(1) >= 1, "ignoring hallucinations should annoy the union")
-end)
-
-test("citations below the backlog threshold are tolerated", function()
-  reset()
-  local entity = new_server(defines.entity_status.no_power)
-  entity.output.citations = C.AUTOMATION_CITATION_BACKLOG - 1
-
-  local ticks = math.ceil(C.AUTOMATION_GRIEVANCE_THRESHOLD / C.AUTOMATION_PRESSURE_PER_CITATION_BACKLOG)
-  for tick = 1, ticks do
-    grievances.on_tick{tick = tick}
-  end
-  assert_eq(grievances.pending_count(1), 0, "a handled citation stream should file nothing")
-end)
-
-test("installed waivers feed the grievance thread", function()
-  reset()
-  local entity = {
-    valid = true,
-    unit_number = 900,
-    force = {valid = true, index = 1},
-    get_module_inventory = function()
-      return {valid = true, get_item_count = function() return 1 end}
-    end,
-  }
-  storage.managed_building_registry = {[900] = entity}
-
-  local ticks = math.ceil(C.AUTOMATION_GRIEVANCE_THRESHOLD / C.AUTOMATION_PRESSURE_PER_WAIVER)
-  for tick = 1, ticks do
-    grievances.on_tick{tick = tick}
-  end
-  assert_true(grievances.pending_count(1) >= 1, "the union notices a building running unstaffed")
-end)
-
-test("the pending backlog is capped so it cannot leak", function()
-  reset()
-  new_server(defines.entity_status.working)
-
-  for tick = 1, pressure_ticks_for(C.AUTOMATION_GRIEVANCE_MAX_PENDING + 20) do
-    grievances.on_tick{tick = tick}
-  end
-  assert_true(grievances.pending_count(1) <= C.AUTOMATION_GRIEVANCE_MAX_PENDING,
-    "a backlog nobody can serve must not grow without bound")
-end)
-
-test("consuming a grievance decrements exactly one", function()
-  reset()
-  storage.automation_pending = {[1] = 3}
-  local force = {valid = true, index = 1}
-  assert_eq(grievances.consume_pending(force), true, "the first consume should succeed")
-  assert_eq(grievances.pending_count(1), 2, "exactly one grievance should be taken")
-end)
-
-test("the grievance rides the existing complaint pipeline", function()
-  assert_eq(grievances.TICKET, "ticket-automation",
-    "the thread should reuse the ordinary complaint item shape")
-end)
-
-print(string.format("\n=== AI SERVER AND AUTOMATION GRIEVANCE RUNTIME TESTS ==="))
+print(string.format("\n=== AI SERVER RUNTIME TESTS ==="))
 print(string.format("Passed: %d  Failed: %d  Total: %d", passed, failed, passed + failed))
 
 if #errors > 0 then

@@ -295,53 +295,10 @@ local PAIRED_PIPELINES = {
   },
 }
 
--- The automation grievance is filed by the union rather than carried in from a
--- nest, but it runs the identical four-stage chain. Its resolution costs the
--- outputs of the machinery it complains about, so automating the biter economy
--- away funds the complaints about having done so.
-local AUTOMATION_PIPELINE = {
-  filing_energy = 20,
-  stage = {
-    slug = "automation",
-    ticket = "ticket-automation",
-    filing = "filing-a",
-    case = {
-      result = "case-a",
-      ingredients = {
-        item("data", 1),
-        item("credentials", 1),
-        fluid("liquid-coffee", 25),
-      },
-      energy = 45,
-    },
-    brief = {
-      result = "brief-a",
-      ingredients = {
-        item("regulation", 1),
-        item("treasury-bond", 1),
-        item("refined-nonsense", 3),
-      },
-      energy = 75,
-    },
-    final = {
-      result = "resolved-automation",
-      ingredients = {
-        item("policy", 5),
-        item("treasury-bond", 1),
-        fluid("liquid-coffee", 200),
-        item("narrative", 1),
-      },
-      energy = 270,
-    },
-  },
-}
-
 local recipes = {}
 for _, pair in ipairs(PAIRED_PIPELINES) do
   append_all(recipes, build_stage_pipeline(pair.biter, pair.filing_energy))
   append_all(recipes, build_stage_pipeline(pair.spitter, pair.filing_energy))
 end
-
-append_all(recipes, build_stage_pipeline(AUTOMATION_PIPELINE.stage, AUTOMATION_PIPELINE.filing_energy))
 
 data:extend(recipes)

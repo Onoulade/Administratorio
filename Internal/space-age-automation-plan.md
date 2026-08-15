@@ -2,7 +2,9 @@
 
 This file records the design for the automation and interplanetary logistics pass, under the shared rules in [space-age-compatibility-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-compatibility-plan.md).
 
-It covers six connected systems that share one thesis: **the bureaucracy learns to run without biters, and the biters file about it.**
+It covers six connected systems that share one thesis: **the bureaucracy learns to run without biters.**
+
+The original thesis ran "...and the biters file about it", carried by the automation grievance thread in section 7. That thread was cut during implementation: no new complaint families.
 
 **Status: implemented.** All six systems are built. This file is retained as the design record; the notes below on verification gates and open questions record the decisions taken during implementation.
 
@@ -346,20 +348,20 @@ Its permanent job is the courier traffic: 1-tonne Missionary and Geotechnical ma
 
 ---
 
-## 7. The Automation Grievance Thread
+## 7. The Automation Grievance Thread — **CUT**
 
-A new complaint family, `ticket-automation` → `filing-a` → `case-a` → `brief-a` → `resolved-automation`, reusing the complete existing pipeline: Administration Desk queue, Resolution Office chain, frustration, protest retargeting, Taxpayer Money payout.
+Rejected during implementation: no new complaint families. `ticket-automation`,
+`filing-a`, `case-a`, `brief-a`, and `resolved-automation` do not exist, and the
+four feeders that would have filled them were removed with the family.
 
-Four feeders:
+The consequence is recorded honestly: without this thread the six systems are
+six independent additions rather than one expansion bound to the mod's thesis.
+Nothing else in the pass depends on it.
 
-- AI Servers running
-- Unstaffed Operations Waivers installed
-- Synthetic personnel manufactured
-- Fabricated Citations left unhandled
-
-The result: **the more of the biter economy is automated away, the more biter grievances are generated — and grievances can only be processed by the biter economy.** The endgame does not escape the mod's thesis; it is consumed by it.
-
-This is data, not new systems. It is what makes six proposals one expansion rather than six bolt-ons.
+If the binding is ever wanted back without new items, the four feeders could
+instead raise an existing complaint — `ticket-unemployment` is the thematically
+exact one — but that changes the balance of a complaint family that already
+exists, and was not adopted.
 
 ---
 
