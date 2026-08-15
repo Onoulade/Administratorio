@@ -550,7 +550,7 @@ synthetic_personnel_bureau.fluid_boxes = {
     pipe_connections = {{
       flow_direction = "input",
       direction = defines.direction.north,
-      position = {0, -2},
+      position = {0, -1},
       connection_category = "optical-data",
     }},
     filter = "inference-token",
@@ -674,7 +674,7 @@ local ai_server_heat_core = {
   hidden = true,
   selectable_in_game = false,
   collision_mask = {layers = {}},
-  collision_box = {{-0.1, -0.1}, {0.1, 0.1}},
+  collision_box = {{-3.25, -3.25}, {3.25, 3.25}},
   selection_box = {{0, 0}, {0, 0}},
   max_health = 1,
   consumption = "1W",

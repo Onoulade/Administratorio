@@ -132,6 +132,38 @@ test("token recipes move fluid rather than items", function()
     "no recipe should still treat tokens as an item")
 end)
 
+test("every fibre port sits inside its own entity's collision box", function()
+  -- Factorio rejects a PipeConnectionDefinition whose position falls outside
+  -- the bounding box: the position is the entity's own edge tile, and the pipe
+  -- lands on the tile beyond it. Each port is checked against the box of the
+  -- entity it actually belongs to, not against whichever box is most generous.
+  local entity_limits = {
+    {variable = "ai_server", half_extent = 3.25},
+    {variable = "synthetic_personnel_bureau", half_extent = 1.2},
+  }
+
+  local checked = 0
+  for _, subject in ipairs(entity_limits) do
+    local marker = subject.variable .. ".fluid_boxes = {"
+    local from = entities:find(marker, 1, true)
+    assert_true(from ~= nil, subject.variable .. " should declare fluid boxes")
+    local block = entities:sub(from, entities:find("\n}", from, true))
+
+    local ports = 0
+    for x, y in block:gmatch("position = {(-?[%d.]+), (-?[%d.]+)}") do
+      ports = ports + 1
+      checked = checked + 1
+      local magnitude = math.max(math.abs(tonumber(x)), math.abs(tonumber(y)))
+      assert_true(magnitude <= subject.half_extent,
+        subject.variable .. " port at (" .. x .. ", " .. y .. ") falls outside its collision box of "
+          .. subject.half_extent)
+    end
+    assert_true(ports > 0, subject.variable .. " should have at least one fibre port")
+  end
+
+  assert_true(checked >= 3, "all three fibre ports should be checked")
+end)
+
 test("the fibre ports avoid the AI Server heat connection tiles", function()
   -- Heat takes -2, 0 and +2 on every side of the 7x7 footprint. A fibre port on
   -- one of those tiles would contest it with a heat pipe.
