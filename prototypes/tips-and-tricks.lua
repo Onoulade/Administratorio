@@ -203,6 +203,7 @@ if space_age_enabled then
     research_tip("administratorio-interplanetary-trunk", interplanetary, "g", "interplanetary-tube-network"),
     research_tip("administratorio-trunk-capacity", aquilo, "d", "interplanetary-tube-capacity-2"),
     research_tip("administratorio-chromatic-trunk", aquilo, "e", "interplanetary-tube-chromatic"),
+    research_tip("administratorio-egg-couriers", aquilo, "f", "egg-courier-formation"),
     research_tip("administratorio-promethium-administration", aquilo, "h", "promethium-science-pack"),
     research_tip("administratorio-bureaucratic-transcendence", aquilo, "i", "bureaucratic-transcendence"),
     research_tip("administratorio-public-train-stop", aquilo, "j", "bureaucratic-transcendence"),

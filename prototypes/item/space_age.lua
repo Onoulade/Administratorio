@@ -1,5 +1,6 @@
 local item_icons = "__administratorio__/graphics/icons/"
 local manager_briefings = require("prototypes.shared.manager_briefings")
+local manager_couriers = require("prototypes.shared.manager_couriers")
 local building_icons = require("prototypes.shared.building_icons")
 
 local briefing_overlay_icons = {
@@ -37,6 +38,31 @@ for _, briefing in ipairs(manager_briefings.BRIEFINGS) do
     stack_size = 5,
     spoil_ticks = manager_briefings.SPOIL_TICKS,
     spoil_result = manager_briefings.REGULAR_MANAGER,
+  }
+end
+
+-- Egg couriers share a biter-egg overlay so players read them as one family,
+-- distinct from the briefed managers above.
+local courier_overlay_icons = {
+  missionary = item_icons .. "blank-directive.png",
+  cobaye = item_icons .. "data.png",
+  geotechnical = item_icons .. "environmental-impact-report.png",
+}
+
+for _, courier in ipairs(manager_couriers.COURIERS) do
+  manager_items[#manager_items + 1] = {
+    type = "item",
+    name = courier.item,
+    icons = {
+      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64},
+      {icon = "__space-age__/graphics/icons/biter-egg.png", icon_size = 64, scale = 0.42, shift = {-8, 8}},
+      {icon = courier_overlay_icons[courier.key], icon_size = 64, scale = 0.42, shift = {8, 8}},
+    },
+    subgroup = "admin-biter-management",
+    order = courier.order,
+    stack_size = 5,
+    spoil_ticks = manager_couriers.SPOIL_TICKS,
+    spoil_result = manager_couriers.SPOIL_RESULT,
   }
 end
 

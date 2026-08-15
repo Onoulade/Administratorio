@@ -147,9 +147,13 @@ function M.apply()
   -- 200kg, big at 400kg, and behemoth managers at a full tonne.
   set_weights("item", {"job-offer"}, 1 * kg)
   set_weights("item", {"biter-worker", "biter-logistics-formation", "enrolled-biter", "worker-biter", "licensed-notary", "conciliation-officer", "relay-clerk", "cryoprint-technician"}, 100 * kg)
-  set_weights("item", {"rideable-biter", "union-delegate", "chemical-operator", "nuclear-technician", "clerical-trainee"}, 200 * kg)
+  -- The Cobaye rides the existing trainee tier, which lands on exact vanilla
+  -- rocket parity: 10 eggs at 2 kg buy 10 packs, one 200 kg Cobaye buys 100.
+  -- Both are 2 kg per science pack, and one rocket still carries exactly one
+  -- full 500-count technology.
+  set_weights("item", {"rideable-biter", "union-delegate", "chemical-operator", "nuclear-technician", "clerical-trainee", "voluntary-research-subject"}, 200 * kg)
   set_weights("item", {"management-trainee", "astronaut"}, 400 * kg)
-  set_weights("item", {"middle-management-managing-manager", "training-briefed-middle-management-managing-manager", "staffing-briefed-middle-management-managing-manager", "compliance-briefed-middle-management-managing-manager", "liaison-briefed-middle-management-managing-manager", "orbital-briefed-middle-management-managing-manager", "hired-biter-capsule"}, 1 * tons)
+  set_weights("item", {"middle-management-managing-manager", "training-briefed-middle-management-managing-manager", "staffing-briefed-middle-management-managing-manager", "compliance-briefed-middle-management-managing-manager", "liaison-briefed-middle-management-managing-manager", "orbital-briefed-middle-management-managing-manager", "hired-biter-capsule", "missionary-manager", "geotechnical-assessment-manager"}, 1 * tons)
   set_weight("ammo", "voluntary-exploration-space-miner", 1 * tons)
 
   -- Live tourism cargo follows the same small-to-behemoth progression as the

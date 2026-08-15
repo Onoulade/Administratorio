@@ -1,6 +1,7 @@
 local planets = require("prototypes.shared.space_age_planets")
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 local manager_briefings = require("prototypes.shared.manager_briefings")
+local manager_couriers = require("prototypes.shared.manager_couriers")
 
 local function add_item_ingredient(recipe, ingredient_name, amount)
   if not recipe then return end
@@ -246,6 +247,41 @@ for _, briefing in ipairs(manager_briefings.BRIEFINGS) do
   })
 end
 data:extend(manager_meeting_recipes)
+
+local courier_recipes = {}
+for _, courier in ipairs(manager_couriers.COURIERS) do
+  courier_recipes[#courier_recipes + 1] = surface_limited({
+    type = "recipe",
+    name = courier.recipe,
+    category = "workforce-formation",
+    enabled = false,
+    localised_name = {"item-name." .. courier.item},
+    ingredients = {
+      {
+        type = "item",
+        name = manager_couriers.REGULAR_MANAGER,
+        amount = 1,
+        ignored_by_stats = 1,
+      },
+      {type = "item", name = manager_couriers.EGG_ITEM, amount = manager_couriers.EGGS_PER_COURIER},
+      {type = "fluid", name = "liquid-coffee", amount = 25},
+    },
+    results = {
+      {
+        type = "item",
+        name = courier.item,
+        amount = 1,
+        ignored_by_productivity = 1,
+        ignored_by_stats = 1,
+      },
+    },
+    energy_required = 15,
+    allow_productivity = false,
+    allow_decomposition = false,
+    auto_recycle = false,
+  }, "nauvis")
+end
+data:extend(courier_recipes)
 
 data:extend({
   surface_limited({

@@ -1172,3 +1172,43 @@ data:extend({
     order = "h-w",
   },
 })
+
+-- ============================================================
+-- EGG COURIERS
+--
+-- Biter eggs never leave Nauvis. Couriers are trained there and carry the
+-- authorisation offworld in their place.
+-- ============================================================
+local manager_couriers = require("prototypes.shared.manager_couriers")
+
+local courier_effects = {}
+for _, courier in ipairs(manager_couriers.COURIERS) do
+  courier_effects[#courier_effects + 1] = {type = "unlock-recipe", recipe = courier.recipe}
+end
+
+data:extend({
+  {
+    type = "technology",
+    name = "egg-courier-formation",
+    icon = "__space-age__/graphics/icons/biter-egg.png",
+    icon_size = 64,
+    effects = courier_effects,
+    prerequisites = {"management-formation", "planet-discovery-gleba"},
+    unit = {
+      count = 300,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 45,
+    },
+    order = "h-x",
+  },
+})
+
+-- The Administratorium expedition cannot be attempted before couriers exist:
+-- its science pack recipe consumes one.
+add_tech_prerequisite("promethium-science-pack", "egg-courier-formation")

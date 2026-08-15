@@ -197,6 +197,7 @@ end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
+local manager_couriers = require("prototypes.shared.manager_couriers")
 
 local preexisting_technology_names = {}
 for technology_name in pairs(technologies) do
@@ -423,7 +424,12 @@ test("workforce formation stays on Nauvis while MMMM briefings work on every pla
         primary_result = recipe.results[1].name or recipe.results[1][1]
       end
       local result_item = items[primary_result]
-      local is_manager_briefing = result_item
+      -- Egg couriers also spoil back into a regular manager, but they are a
+      -- distinct second class: sourced from eggs rather than meetings, and
+      -- trained only on Nauvis because biter eggs never leave it.
+      local is_egg_courier = primary_result ~= nil and manager_couriers.ITEM_SET[primary_result] == true
+      local is_manager_briefing = not is_egg_courier
+        and result_item
         and result_item.spoil_result == "middle-management-managing-manager"
 
       if is_manager_briefing then

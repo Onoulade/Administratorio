@@ -1302,6 +1302,17 @@ require("prototypes.final_fixes.colored_ink_gating").apply(
 )
 
 -------------------------------------------------------------------------------
+-- 7a2. EGG COURIERS
+-- Biter eggs never leave Nauvis. Reroute every vanilla recipe that consumed
+-- them offworld through a Nauvis-trained courier, preserving vanilla egg costs
+-- exactly. Runs after the ink gating so the promethium expedition charter is
+-- already present and scales with the batched recipe.
+-------------------------------------------------------------------------------
+if feature_flags.space_age_enabled() then
+  require("prototypes.final_fixes.egg_couriers").apply(data)
+end
+
+-------------------------------------------------------------------------------
 -- 7b. SPACE-PLATFORM BUILDING PERMITS
 -- Platform buildings consume exactly one orbital infrastructure permit as
 -- their sole paperwork ingredient. Run this after every general/special gate
