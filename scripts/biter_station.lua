@@ -18,6 +18,22 @@ local function is_orbital_printer(entity)
     and entity.surface
     and entity.surface.platform ~= nil
 end
+
+-- An Unstaffed Operations Waiver installed in a managed building's module
+-- inventory authorises it to run without a dispatched worker biter, mirroring
+-- has_overtime_exemption in scripts/working_hours.lua. The waiver occupies a
+-- module slot the player would otherwise spend on productivity, and it spoils,
+-- so the authorisation is rented rather than owned.
+local function has_unstaffed_operations_waiver(entity)
+  if not entity or not entity.valid or not entity.get_module_inventory then
+    return false
+  end
+  local inventory = entity.get_module_inventory()
+  return inventory
+    and inventory.valid
+    and inventory.get_item_count("unstaffed-operations-waiver") > 0
+    or false
+end
 local WORKER_ITEM_NAME = "biter-worker"
 local MONEY_ITEM_NAME = "taxpayer-money"
 local COFFEE_FLUID_NAME = "liquid-coffee"
@@ -1063,7 +1079,8 @@ local function build_building_queue(station)
        and building.unit_number
        and building.force
        and building.force == station.force
-       and not is_orbital_printer(building) then
+       and not is_orbital_printer(building)
+       and not has_unstaffed_operations_waiver(building) then
       storage.managed_building_registry[building.unit_number] = building
 
       local run_state = storage.managed_building_run[building.unit_number]
@@ -1419,7 +1436,12 @@ end
 local function advance_running_buildings()
   for unit_number, run_state in pairs(storage.managed_building_run) do
     local entity = run_state.entity
-    if not entity or not entity.valid then
+    if entity and entity.valid and has_unstaffed_operations_waiver(entity) then
+      -- A waiver installed mid-run takes over immediately: the building keeps
+      -- running rather than stopping when its dispatched crafts run out.
+      storage.managed_building_run[unit_number] = nil
+      entity.active = true
+    elseif not entity or not entity.valid then
       storage.managed_building_run[unit_number] = nil
     else
       local crafts_remaining = run_state.crafts_remaining or 0
@@ -1776,6 +1798,13 @@ function M.track_managed_building(entity)
   end
 
   storage.managed_building_registry[entity.unit_number] = entity
+
+  if has_unstaffed_operations_waiver(entity) then
+    storage.managed_building_run[entity.unit_number] = nil
+    entity.active = true
+    return
+  end
+
   entity.active = false
 
   local run_state = storage.managed_building_run[entity.unit_number]
@@ -2014,6 +2043,25 @@ function M.rebuild_registry()
   end
 end
 
+--- Waivers spoil in place, so authorisation is re-checked every cycle rather
+--- than latched when the building was registered. Without this a lapsed waiver
+--- would leave its building running unstaffed forever.
+local function reconcile_waivered_buildings()
+  for unit_number, entity in pairs(storage.managed_building_registry) do
+    if not entity or not entity.valid then
+      storage.managed_building_registry[unit_number] = nil
+    elseif has_unstaffed_operations_waiver(entity) then
+      if not entity.active then
+        entity.active = true
+      end
+      storage.managed_building_run[unit_number] = nil
+    elseif entity.active and not storage.managed_building_run[unit_number] then
+      -- The waiver lapsed: the building waits for a dispatched biter again.
+      entity.active = false
+    end
+  end
+end
+
 function M.update(tick)
   M.ensure_storage()
 
@@ -2021,6 +2069,7 @@ function M.update(tick)
     return
   end
 
+  reconcile_waivered_buildings()
   sanitize_station_worker_registry_links()
   advance_running_buildings()
   advance_active_biters(tick)

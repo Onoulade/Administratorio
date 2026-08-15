@@ -83,6 +83,7 @@ end
 
 if working_hours_enabled then
   categories[#categories + 1] = {type = "module-category", name = "night-work"}
+  categories[#categories + 1] = {type = "module-category", name = "unstaffed-operations"}
 end
 
 data:extend(categories)

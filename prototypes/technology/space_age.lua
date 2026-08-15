@@ -1096,3 +1096,36 @@ data:extend({
     order = "h-u[02]",
   },
 })
+
+-- ============================================================
+-- UNSTAFFED OPERATIONS WAIVER
+--
+-- Authorises the five biter-station managed buildings to run without a
+-- dispatched worker. Gated behind tricolor paperwork, so the authorisation
+-- costs one form from every planetary jurisdiction at once.
+-- ============================================================
+data:extend({
+  {
+    type = "technology",
+    name = "unstaffed-operations",
+    icon = "__administratorio__/graphics/icons/overtime-module.png",
+    icon_size = 64,
+    effects = {
+      {type = "unlock-recipe", recipe = "unstaffed-operations-waiver"},
+      {type = "unlock-recipe", recipe = "unstaffed-operations-waiver-reactivation"},
+    },
+    prerequisites = {"interplanetary-tube-chromatic", "public-finance"},
+    unit = {
+      count = 500,
+      ingredients = {
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"cryogenic-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 60,
+    },
+    order = "h-v",
+  },
+})
