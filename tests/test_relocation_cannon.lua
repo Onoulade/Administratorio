@@ -64,6 +64,24 @@ test("the cannon moves a batch per shot and bills one form per item", function()
     "the cannon should consume its dedicated form")
 end)
 
+test("transfer orders are loadable but never shippable", function()
+  local loadable = {}
+  for _, name in ipairs(relocation_cargo.loadable_names()) do loadable[name] = true end
+  assert_true(loadable[relocation_cargo.TRANSFER_FORM],
+    "a receiving cannon must be able to accept its own transfer orders")
+  assert_true(not relocation_cargo.as_set()[relocation_cargo.TRANSFER_FORM],
+    "transfer orders must never be fired at another planet as cargo")
+end)
+
+test("the cannon holds one kind of load at a time", function()
+  -- A furnace source inventory is a single slot, so cargo and paperwork cannot
+  -- share a cannon. That is why the receiving end files the order.
+  local entities = io.open(mod_root .. "prototypes/entity/space_age.lua"):read("*a")
+  for size in entities:gmatch("source_inventory_size = (%d+)") do
+    assert_eq(tonumber(size), 1, "a furnace source inventory may hold exactly one slot")
+  end
+end)
+
 print(string.format("\n=== RELOCATION CANNON CARGO TESTS ==="))
 print(string.format("Passed: %d  Failed: %d  Total: %d", passed, failed, passed + failed))
 

@@ -473,8 +473,10 @@ local involuntary_relocation_cannon = {
   crafting_speed = 0.001,
   energy_usage = "1W",
   energy_source = {type = "void"},
-  source_inventory_size = 6,
-  result_inventory_size = 8,
+  -- A furnace source inventory may hold exactly one slot. On a sending cannon
+  -- that slot is the cargo; on a receiving cannon it is the transfer orders.
+  source_inventory_size = 1,
+  result_inventory_size = 12,
   trash_inventory_size = 0,
   module_slots = 0,
   allowed_effects = {},
@@ -751,8 +753,10 @@ local interplanetary_terminus = {
   crafting_speed = 0.001,
   energy_usage = "1W",
   energy_source = {type = "void"},
-  source_inventory_size = 4,
-  result_inventory_size = 8,
+  -- A furnace source inventory may hold exactly one slot, so a Terminus exports
+  -- one form at a time. That suits a deliberately narrow trunk.
+  source_inventory_size = 1,
+  result_inventory_size = 12,
   trash_inventory_size = 0,
   module_slots = 0,
   allowed_effects = {},

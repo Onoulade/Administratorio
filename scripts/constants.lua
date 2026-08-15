@@ -274,8 +274,8 @@ M.TRUNK_CHROMATIC_SET = require("prototypes.shared.interplanetary_payloads").chr
 -- It must never merge with the local pneumatic pool above. Merging would give
 -- free 200-capacity teleportation between planets and delete rocket logistics.
 M.TERMINUS_NAME = "interplanetary-terminus"
-M.TERMINUS_OUTBOUND_SLOTS = 4
-M.TERMINUS_ARRIVAL_SLOTS = 8
+M.TERMINUS_OUTBOUND_SLOTS = 1
+M.TERMINUS_ARRIVAL_SLOTS = 12
 -- Half a second. The fastest tier lands an item every second, so a finer
 -- cadence would only re-scan idle endpoints.
 M.TERMINUS_CHECK_TICKS = 30

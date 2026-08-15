@@ -1229,7 +1229,7 @@ local relocation_effects = {
   {type = "unlock-recipe", recipe = "involuntary-relocation-cannon"},
   {type = "unlock-recipe", recipe = "involuntary-transfer-order-production"},
 }
-for _, item_name in ipairs(relocation_cargo.names) do
+for _, item_name in ipairs(relocation_cargo.loadable_names()) do
   relocation_effects[#relocation_effects + 1] =
     {type = "unlock-recipe", recipe = relocation_cargo.load_recipe_name(item_name)}
 end

@@ -136,8 +136,14 @@ end
 -- FIRING
 -------------------------------------------------------------------------------
 
---- One transfer order per item transferred. The form is spent at the sending
---- end, where the paperwork is filed.
+--- One transfer order per item transferred, filed at the receiving end.
+---
+--- A furnace source inventory is a single slot, so a cannon cannot hold cargo
+--- and paperwork at once. The receiving office files the order, which frees the
+--- sending cannon's slot for cargo and reads correctly anyway: HR at the
+--- destination is the one requesting the transfer. A planet that both sends and
+--- receives simply builds two cannons; unlike the Terminus they are not limited
+--- to one per planet.
 local function consume_transfer_orders(inventory, count)
   return inventory.remove{name = C.RELOCATION_TRANSFER_FORM, count = count} == count
 end
@@ -155,6 +161,9 @@ local function try_fire_to(destination, entry, tick)
     return false
   end
 
+  local orders = payload_inventory(destination)
+  if not orders then return false end
+
   for _, source_entry in pairs(storage.relocation_cannons) do
     local source = source_entry.entity
     if source and source.valid
@@ -166,7 +175,7 @@ local function try_fire_to(destination, entry, tick)
           local available = payload.get_item_count({name = request.name, quality = request.quality})
           local batch = math.min(available, request.count, C.RELOCATION_PAYLOAD_PER_SHOT)
           if batch > 0 then
-            if not consume_transfer_orders(payload, batch) then
+            if not consume_transfer_orders(orders, batch) then
               set_status(destination, "no-transfer-orders", defines.entity_status_diode.red)
               return false
             end

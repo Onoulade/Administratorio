@@ -2264,7 +2264,7 @@ data:extend(synthesis_recipes)
 local relocation_cargo = require("prototypes.shared.relocation_cargo")
 
 local relocation_payload_recipes = {}
-for _, item_name in ipairs(relocation_cargo.names) do
+for _, item_name in ipairs(relocation_cargo.loadable_names()) do
   relocation_payload_recipes[#relocation_payload_recipes + 1] = {
     type = "recipe",
     name = relocation_cargo.load_recipe_name(item_name),

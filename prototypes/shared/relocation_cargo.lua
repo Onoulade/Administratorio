@@ -60,6 +60,17 @@ function M.as_set()
   return set
 end
 
+--- What a cannon will accept into its single slot: the shippable cargo above,
+--- plus the transfer orders a receiving cannon files. The orders are loadable
+--- but never shippable, so they cannot be fired at another planet.
+function M.loadable_names()
+  local names = {}
+  for _, name in ipairs(M.names) do names[#names + 1] = name end
+  names[#names + 1] = M.TRANSFER_FORM
+  table.sort(names)
+  return names
+end
+
 function M.load_recipe_name(item_name)
   return "relocation-payload-" .. item_name
 end
