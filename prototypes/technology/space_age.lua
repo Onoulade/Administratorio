@@ -320,6 +320,7 @@ data:extend({
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "cyan-magenta-form-production"},
+      {type = "unlock-recipe", recipe = "hardened-data-vault-production"},
     },
     prerequisites = {"vulcanus-certification", "vulcanus-export-charters", "fulgora-digital-services", "cyan-ink-production", "metallurgic-science-pack", "electromagnetic-science-pack"},
     unit = {

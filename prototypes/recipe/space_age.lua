@@ -1631,6 +1631,23 @@ data:extend({
     },
     energy_required = 3,
   },
+  {
+    type = "recipe",
+    name = "hardened-data-vault-production",
+    category = "printing-multicolor",
+    enabled = false,
+    localised_name = {"item-name.hardened-data-vault"},
+    ingredients = {
+      {type = "item", name = "cyan-magenta-form", amount = 1},
+      {type = "item", name = "industrial-charter", amount = 1},
+      {type = "item", name = "data-recovery-order", amount = 1},
+      {type = "item", name = "processing-unit", amount = 2},
+    },
+    results = {
+      {type = "item", name = "hardened-data-vault", amount = 1},
+    },
+    energy_required = 6,
+  },
   surface_limited({
     type = "recipe",
     name = "trichromatic-permit-production",
@@ -1707,10 +1724,10 @@ data:extend({
       },
     },
   },
-  surface_limited({
+  {
     type = "recipe",
     name = "public-transportation-contract-production",
-    category = "printing-multicolor",
+    category = "printing-chromatic",
     enabled = false,
     localised_name = {"item-name.public-transportation-contract"},
     ingredients = {
@@ -1721,7 +1738,7 @@ data:extend({
       {type = "item", name = "public-transportation-contract", amount = 1},
     },
     energy_required = 4,
-  }, "nauvis"),
+  },
   surface_limited({
     type = "recipe",
     name = "public-train-stop-production",

@@ -87,6 +87,8 @@ local function load_biters_module()
     reserve_slot = reserve_slot,
     release_slot = release_slot,
     release_slot_by_index = release_slot,
+    increment_desk_occupants = noop,
+    decrement_desk_occupants = noop,
     get_queue_pos = function(desk)
       return {x = desk.position.x, y = desk.position.y + 2}
     end,

@@ -267,6 +267,7 @@ if space_age_enabled then
   shared.PAPERWORK_ITEMS["digital-processing-certificate"] = true
   shared.PAPERWORK_ITEMS["electromagnetic-operating-license"] = true
   shared.PAPERWORK_ITEMS["data-recovery-order"] = true
+  shared.PAPERWORK_ITEMS["hardened-data-vault"] = true
   shared.PAPERWORK_ITEMS["asteroid-processing-docket"] = true
   shared.PAPERWORK_ITEMS["orbital-deviation-order"] = true
   shared.PAPERWORK_ITEMS["priority-orbital-deviation-order"] = true
@@ -276,8 +277,10 @@ if space_age_enabled then
   shared.PAPERWORK_ITEMS["cyan-magenta-form"] = true
   shared.PAPERWORK_ITEMS["yellow-magenta-form"] = true
   shared.PAPERWORK_ITEMS["trichromatic-permit"] = true
+  shared.PAPERWORK_ITEMS["orbital-tourism-form"] = true
   shared.PAPERWORK_ITEMS["unified-operations-charter"] = true
   shared.PAPERWORK_ITEMS["cryogenic-operations-license"] = true
+  shared.PAPERWORK_ITEMS["promethium-research-charter"] = true
 
   shared.FORM_PRODUCTION_RECIPES["heatproof-form-stock"] = "heatproof-form-stock"
   shared.FORM_PRODUCTION_RECIPES["blank-cyan-form"] = "blank-cyan-form-production"
@@ -308,8 +311,10 @@ if space_age_enabled then
   shared.FORM_PRODUCTION_RECIPES["cyan-magenta-form"] = "cyan-magenta-form-production"
   shared.FORM_PRODUCTION_RECIPES["yellow-magenta-form"] = "yellow-magenta-form-production"
   shared.FORM_PRODUCTION_RECIPES["trichromatic-permit"] = "trichromatic-permit-production"
+  shared.FORM_PRODUCTION_RECIPES["orbital-tourism-form"] = "orbital-tourism-form-production"
   shared.FORM_PRODUCTION_RECIPES["unified-operations-charter"] = "unified-operations-charter-production"
   shared.FORM_PRODUCTION_RECIPES["cryogenic-operations-license"] = "cryogenic-operations-license-production"
+  shared.FORM_PRODUCTION_RECIPES["promethium-research-charter"] = "promethium-research-charter-production"
 end
 
 -------------------------------------------------------------------------------
@@ -514,7 +519,6 @@ shared.BATCH_MULTIPLIERS = {
   ["utility-science-pack"] = 1,
   ["space-science-pack"] = 1,
   -- High-volume intermediates (10x = 0.1 forms each)
-  ["medium-electric-pole"] = 10,
   ["copper-cable"] = 10,
   ["iron-gear-wheel"] = 10,
   ["electronic-circuit"] = 10,
@@ -554,16 +558,6 @@ shared.BATCH_MULTIPLIERS = {
   ["paper-production"] = 20,
 }
 
--- `mods` is a Factorio data-stage global; the standalone Lua test harness
--- doesn't define it, so fall back to an empty table there (mod treated as absent).
-local mods = mods or {}
-if mods["aai-loaders"] then
-  shared.BATCH_MULTIPLIERS["aai-loader"] = 2
-  shared.BATCH_MULTIPLIERS["aai-fast-loader"] = 1
-  shared.BATCH_MULTIPLIERS["aai-express-loader"] = 1
-end
-
--------------------------------------------------------------------------------
 -- COMPATIBILITY RULESET
 -- Non-Space-Age and Space-Age rules are split into separate files so each
 -- mode can evolve independently without mixing conditionals across this file.

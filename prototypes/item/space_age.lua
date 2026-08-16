@@ -560,6 +560,20 @@ data:extend({
   },
   {
     type = "item",
+    name = "orbital-tourism-form",
+    icons = {
+      {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.94, g = 0.97, b = 1, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {-10, 8}, tint = {r = 0.1, g = 0.75, b = 0.85, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {0, 8}, tint = {r = 0.8, g = 0.72, b = 0.1, a = 1}},
+      {icon = item_icons .. "ink-cartridge.png", icon_size = 64, scale = 0.22, shift = {10, 8}, tint = {r = 0.85, g = 0.18, b = 0.65, a = 1}},
+      {icon = item_icons .. "office-building.png", icon_size = 64, scale = 0.28, shift = {8, -8}},
+    },
+    subgroup = "forms-permits",
+    order = "diea",
+    stack_size = 100
+  },
+  {
+    type = "item",
     name = "unified-operations-charter",
     icon = item_icons .. "unified-operations-charter.png",
     icon_size = 64,

@@ -920,6 +920,20 @@ recipes["cargo-bay"] = {
   },
 }
 
+recipes["asteroid-collector"] = {
+  type = "recipe",
+  name = "asteroid-collector",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "low-density-structure", amount = 20 },
+    { type = "item", name = "processing-unit", amount = 8 },
+    { type = "item", name = "electric-engine-unit", amount = 8 },
+  },
+  results = {
+    { type = "item", name = "asteroid-collector", amount = 1 },
+  },
+}
+
 recipes["space-platform-starter-pack"] = {
   type = "recipe",
   name = "space-platform-starter-pack",
@@ -1632,6 +1646,27 @@ local function count_ingredient(recipe, item_name)
   return count
 end
 
+local planet_specific_paperwork = {
+  "blank-cyan-form",
+  "blank-yellow-form",
+  "blank-magenta-form",
+  "cyan-yellow-form",
+  "cyan-magenta-form",
+  "yellow-magenta-form",
+  "trichromatic-permit",
+  "unified-operations-charter",
+  "cryogenic-operations-license",
+  "promethium-research-charter",
+  "hardened-data-vault",
+}
+
+local function assert_no_planet_specific_paperwork(recipe, label)
+  for _, paperwork_name in ipairs(planet_specific_paperwork) do
+    assert_true(not has_ingredient(recipe, paperwork_name),
+      label .. " should not require " .. paperwork_name .. " before first planet discovery")
+  end
+end
+
 local function get_result_amount(recipe, item_name)
   if not recipe or not recipe.results then return nil end
   for _, res in ipairs(recipe.results) do
@@ -2084,49 +2119,31 @@ test("electric compacted rubble remains an unlocked alternate to the canonical b
   assert_eq(electric.factoriopedia_alternative, "compacted-rubble")
 end)
 
-test("electric furnace stays handcraftable; regulated copy uses management verbal work order", function()
-  local original = get_recipe("electric-furnace")
-  assert_true(original ~= nil, "electric-furnace missing")
-  assert_eq(original.category, "advanced-crafting", "electric-furnace should remain handcraftable, matching vanilla")
-  assert_true(has_ingredient(original, "management-approval-verbal"), "electric-furnace missing management-approval-verbal when handcrafted")
-  assert_true(not has_ingredient(original, "management-verbal-work-order"), "electric-furnace handcraft recipe should not use the regulated work-order form")
-
-  local regulated = get_recipe("electric-furnace-regulated")
-  assert_true(regulated ~= nil, "electric-furnace-regulated missing")
-  assert_eq(regulated.category, "advanced-crafting-regulated", "electric-furnace-regulated category")
-  assert_true(has_ingredient(regulated, "management-verbal-work-order"), "electric-furnace-regulated missing management-verbal-work-order")
-  assert_true(not has_ingredient(regulated, "construction-work-order"), "electric-furnace-regulated should not use construction-work-order")
+test("electric furnace recipe upgrades to management verbal paperwork", function()
+  local r = get_recipe("electric-furnace")
+  assert_true(r ~= nil, "electric-furnace missing")
+  assert_eq(r.category, "advanced-crafting-regulated", "electric-furnace category")
+  assert_true(has_ingredient(r, "management-verbal-work-order"), "electric-furnace missing management-verbal-work-order")
+  assert_true(not has_ingredient(r, "construction-work-order"), "electric-furnace should not use construction-work-order")
 end)
 
-test("oil refinery stays handcraftable and assembler-craftable, without specialist or operating paperwork", function()
-  local original = get_recipe("oil-refinery")
-  assert_true(original ~= nil, "oil-refinery missing")
-  assert_eq(original.category, "crafting", "oil-refinery should remain handcraftable, matching vanilla")
-  assert_true(has_ingredient(original, "construction-permit"), "oil-refinery missing construction-permit when handcrafted")
-  assert_true(not has_ingredient(original, "chemical-operator"), "oil-refinery should not require chemical-operator")
-  assert_true(not has_ingredient(original, "chemical-handling-work-order"), "oil-refinery should not require chemical-handling-work-order")
-
-  local regulated = get_recipe("oil-refinery-regulated")
-  assert_true(regulated ~= nil, "oil-refinery-regulated missing")
-  assert_eq(regulated.category, "crafting-regulated", "oil-refinery-regulated category")
-  assert_true(has_ingredient(regulated, "construction-work-order"), "oil-refinery-regulated missing construction-work-order")
-  assert_true(not has_ingredient(regulated, "chemical-operator"), "oil-refinery-regulated should not require chemical-operator")
-  assert_true(not has_ingredient(regulated, "chemical-handling-work-order"), "oil-refinery-regulated should not require chemical-handling-work-order")
+test("oil refinery is assembler-craftable without specialist or operating paperwork", function()
+  local r = get_recipe("oil-refinery")
+  assert_true(r ~= nil, "oil-refinery missing")
+  assert_eq(r.category, "crafting-regulated", "oil-refinery category")
+  assert_true(has_ingredient(r, "construction-work-order"), "oil-refinery missing construction-work-order")
+  assert_true(not has_ingredient(r, "chemical-operator"), "oil-refinery should not require chemical-operator")
+  assert_true(not has_ingredient(r, "chemical-handling-work-order"), "oil-refinery should not require chemical-handling-work-order")
+  assert_true(get_recipe("oil-refinery-regulated") == nil, "oil-refinery should use its canonical recipe as the regulated assembler recipe")
 end)
 
-test("engine units stay handcraftable at vanilla ingredients (plus carbon offset); regulated copy adds baseline paperwork", function()
-  local original = get_recipe("engine-unit")
-  assert_true(original ~= nil, "engine-unit missing")
-  assert_eq(original.category, "crafting", "engine-unit should remain handcraftable, matching vanilla")
-  assert_true(not has_ingredient(original, "work-order"), "engine-unit is T0 and should not require work-order when handcrafted")
-  assert_true(has_ingredient(original, "carbon-offset-certificate-basic"), "engine-unit missing carbon-offset-certificate-basic")
-
-  local regulated = get_recipe("engine-unit-regulated")
-  assert_true(regulated ~= nil, "engine-unit-regulated missing")
-  assert_eq(regulated.category, "crafting-regulated", "engine-unit-regulated category")
-  assert_true(has_ingredient(regulated, "work-order"), "engine-unit-regulated missing work-order")
-  assert_true(has_ingredient(regulated, "carbon-offset-certificate-basic"), "engine-unit-regulated missing carbon-offset-certificate-basic")
-  assert_true(not has_ingredient(regulated, "management-verbal-work-order"), "engine-unit-regulated should not use management-verbal-work-order")
+test("engine units use baseline paperwork plus carbon offsets", function()
+  local r = get_recipe("engine-unit")
+  assert_true(r ~= nil, "engine-unit missing")
+  assert_eq(r.category, "crafting-regulated", "engine-unit category")
+  assert_true(has_ingredient(r, "work-order"), "engine-unit missing work-order")
+  assert_true(has_ingredient(r, "carbon-offset-certificate-basic"), "engine-unit missing carbon-offset-certificate-basic")
+  assert_true(not has_ingredient(r, "management-verbal-work-order"), "engine-unit should not use management-verbal-work-order")
 end)
 
 test("regulated advanced assembler path stays available to both AM2 and AM3", function()
@@ -2476,6 +2493,16 @@ test("space age intermediate recipes gain the expected chromatic and aquilo gate
   assert_true(has_ingredient(electromagnetic, "blank-magenta-form"),
     "electromagnetic-plant should gain blank-magenta-form for holmium use")
 
+  local asteroid_collector = get_recipe("asteroid-collector")
+  assert_true(asteroid_collector ~= nil, "asteroid-collector missing")
+  assert_true(not has_ingredient(asteroid_collector, "cyan-magenta-form"),
+    "asteroid collectors should stay available before any planet-specific paperwork")
+
+  local cargo_bay = get_recipe("cargo-bay")
+  assert_true(cargo_bay ~= nil, "cargo-bay missing")
+  assert_true(not has_ingredient(cargo_bay, "cyan-magenta-form"),
+    "cargo bays should stay available before any planet-specific paperwork")
+
   local dual = get_recipe("dual-planet-widget")
   assert_true(dual ~= nil, "dual-planet-widget missing")
   assert_true(has_ingredient(dual, "cyan-yellow-form"),
@@ -2495,6 +2522,24 @@ test("space age intermediate recipes gain the expected chromatic and aquilo gate
     "quantum-processor should not keep separate blank-yellow-form once unified multicolor paperwork is used")
   assert_true(not has_ingredient(quantum, "blank-magenta-form"),
     "quantum-processor should not keep separate blank-magenta-form once unified multicolor paperwork is used")
+
+  for _, recipe_name in ipairs({"fusion-reactor", "fusion-generator", "mech-armor"}) do
+    local recipe = get_recipe(recipe_name)
+    assert_true(recipe ~= nil, recipe_name .. " missing")
+    assert_true(has_ingredient(recipe, "trichromatic-permit"),
+      recipe_name .. " should require trichromatic-permit as a three-planet convergence gate")
+    assert_true(not has_ingredient(recipe, "blank-cyan-form"),
+      recipe_name .. " should not keep separate blank-cyan-form once trichromatic paperwork is used")
+    assert_true(not has_ingredient(recipe, "blank-yellow-form"),
+      recipe_name .. " should not keep separate blank-yellow-form once trichromatic paperwork is used")
+    assert_true(not has_ingredient(recipe, "blank-magenta-form"),
+      recipe_name .. " should not keep separate blank-magenta-form once trichromatic paperwork is used")
+  end
+
+  local promethium = get_recipe("promethium-science-pack")
+  assert_true(promethium ~= nil, "promethium-science-pack missing")
+  assert_true(has_ingredient(promethium, "promethium-research-charter"),
+    "promethium science should require a shattered-planet research charter")
 
   local lithium = get_recipe("lithium")
   assert_true(has_ingredient(lithium, "cyan-yellow-form"),

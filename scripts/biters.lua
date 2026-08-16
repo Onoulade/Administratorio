@@ -1678,22 +1678,10 @@ function M.process_resolutions(desks)
                       zones.release_slot(desk_id, biter_unit)
                       unindex_biter_from_desk(desk_id, b_id)
 
-                      -- Try to hire the biter if a job-offer is in the desk
-                      local worker_yield = C.BITER_WORKER_YIELD[biter_name]
-                      local hired = false
-                      if worker_yield and inv.get_item_count("job-offer") > 0
-                         and inv.can_insert({name = "biter-worker", count = worker_yield}) then
-                        inv.remove({name = "job-offer", count = 1})
-                        inv.insert({name = "biter-worker", count = worker_yield})
-                        if info.entity and info.entity.valid then
-                          info.entity.destroy()
-                        end
-                        untrack_waiting_biter(b_id, info)
-                        hired = true
+                      local hired = maybe_attempt_nauvis_enrollment_offer(desk_id, info, inv)
+                      if hired then
                         if storage.stats then storage.stats.biters_hired = (storage.stats.biters_hired or 0) + 1 end
-                      end
-
-                      if not hired then
+                      else
                         start_return_home(info, info.entity)
                         local amount = C.BITER_PAYOUT[biter_name]
                         local payout_surface = info.entity and info.entity.surface

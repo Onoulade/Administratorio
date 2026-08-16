@@ -85,6 +85,9 @@ rules.OPERATING_FORM_CONFIG = {
   },
 }
 
+rules.OPERATING_FORM_EXEMPT_BY_CATEGORY = {}
+rules.OPERATING_FORM_EXEMPT_BY_RECIPE = {}
+
 rules.TAXPAYER_MONEY_COSTS = {
   ["roboport"] = 25,
   ["beacon"] = 30,

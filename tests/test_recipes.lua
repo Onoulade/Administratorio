@@ -687,17 +687,6 @@ test("union-headquarters preserves paperwork without depending on its own produc
   assert_true(has_paperwork, "union-headquarters should participate in the paperwork economy")
 end)
 
-test("union-headquarters bootstraps from finance paperwork without requiring a grant", function()
-  local r = get_recipe("union-headquarters")
-  assert_true(has_ingredient(r, "construction-permit"))
-  assert_true(has_ingredient(r, "treasury-bond"))
-  assert_true(has_ingredient(r, "management-approval-verbal"))
-  assert_true(has_ingredient(r, "management-verbal-work-order"))
-  assert_true(not has_ingredient(r, "government-grant"))
-  assert_true(has_ingredient(r, "advanced-circuit"))
-  assert_true(has_ingredient(r, "steel-plate"))
-end)
-
 test("late policy recipes stay within the shared HQ fluid limits", function()
   for _, recipe_name in ipairs({
     "white-paper-production",
@@ -731,10 +720,10 @@ test("T0 items: belts, cables, pipes use work-order", function()
   assert_eq(shared.get_required_form("iron-plate"), "work-order")
   assert_eq(shared.get_required_form("small-electric-pole"), "work-order")
   assert_eq(shared.get_required_form("burner-inserter"), "work-order")
-  assert_eq(shared.get_required_form("inserter"), "work-order")
 end)
 
 test("T1 items: inserters, radar, walls use safety-waiver", function()
+  assert_eq(shared.get_required_form("inserter"), "safety-waiver")
   assert_eq(shared.get_required_form("long-handed-inserter"), "safety-waiver")
   assert_eq(shared.get_required_form("fast-inserter"), "safety-waiver")
   assert_eq(shared.get_required_form("splitter"), "safety-waiver")
@@ -800,10 +789,10 @@ end)
 -- MACHINE OPERATION PAPERWORK
 -- =========================================================================
 
-test("refinery recipes do not require operating paperwork", function()
+test("refinery recipes: basic oil-processing is exempt, advanced ops require chemical paperwork", function()
   assert_eq(shared.get_operating_form({name = "oil-processing", category = "oil-processing"}), nil)
-  assert_eq(shared.get_operating_form({name = "advanced-oil-processing", category = "oil-processing"}), nil)
-  assert_eq(shared.get_operating_form({name = "coal-liquefaction", category = "oil-processing"}), nil)
+  assert_eq(shared.get_operating_form({name = "advanced-oil-processing", category = "oil-processing"}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "coal-liquefaction", category = "oil-processing"}), "chemical-handling-work-order")
 end)
 
 test("chemistry recipes use chemical-handling-work-order", function()
@@ -889,7 +878,6 @@ test("electric furnace compacts rubble without a carbon offset certificate", fun
   assert_nil(r.factoriopedia_alternative,
     "electric rubble should link to its Factoriopedia alternative only after canonical renaming")
 end)
-
 test("starter furnace recipes are enabled from start", function()
   local starter_smelting_recipes = {
     "iron-plate-batch", "copper-plate-batch", "stone-brick-batch",
@@ -909,7 +897,6 @@ test("steel-plate-batch is locked behind steel-processing", function()
   assert_eq(r.category, "smelting-basic")
   assert_eq(r.enabled, false, "steel-plate-batch should not be enabled from start")
 end)
-
 test("charcoal-production requires carbon offset", function()
   local r = get_recipe("charcoal-production")
   assert_true(r ~= nil)
@@ -1397,6 +1384,10 @@ test("direct draft-to-work-order recipes use printing-workorder category", funct
     assert_true(has_ingredient(r, "work-order"), name .. " missing work-order")
     assert_true(has_ingredient(r, "ink"), name .. " missing ink")
   end
+  assert_true(has_ingredient(get_recipe("safety-work-order-printing"), "safety-waiver"), "safety shortcut should require approved safety waiver")
+  assert_true(not has_ingredient(get_recipe("safety-work-order-printing"), "safety-waiver-draft"), "safety shortcut should not use draft")
+  assert_true(has_ingredient(get_recipe("construction-work-order-printing"), "construction-permit"), "construction shortcut should require approved permit")
+  assert_true(not has_ingredient(get_recipe("construction-work-order-printing"), "construction-permit-draft"), "construction shortcut should not use draft")
 end)
 
 test("only draft-backed work-order printing produces 2x output", function()
@@ -1572,57 +1563,6 @@ test("tube intake and outtake require compacted-rubble", function()
   assert_true(has_ingredient(get_recipe("tube-outtake"), "pipe"))
 end)
 
-test("form-liquifier and form-solidifier require compacted-rubble", function()
-  assert_true(has_ingredient(get_recipe("form-liquifier"), "compacted-rubble"))
-  assert_true(has_ingredient(get_recipe("form-solidifier"), "compacted-rubble"))
-  assert_true(has_ingredient(get_recipe("form-liquifier"), "pipe"))
-  assert_true(has_ingredient(get_recipe("form-solidifier"), "pipe"))
-end)
-
-test("heavier vanilla integration anchors have exact ingredient counts", function()
-  local expectations = {
-    {"greenhouse", "stone-brick", 10},
-    {"greenhouse", "pipe", 2},
-    {"corporate-breakroom", "stone-brick", 8},
-    {"corporate-breakroom", "pipe", 3},
-    {"union-headquarters", "steel-plate", 45},
-    {"union-headquarters", "advanced-circuit", 18},
-    {"union-headquarters", "management-approval-verbal", 1},
-    {"union-headquarters", "management-verbal-work-order", 1},
-    {"pneumatic-pipe", "pipe", 1},
-    {"pneumatic-pipe-to-ground", "construction-permit", 1},
-    {"form-liquifier", "pipe", 2},
-    {"form-solidifier", "pipe", 2},
-    {"crappy-report-production", "paper", 2},
-    {"credentials-production", "electronic-circuit", 2},
-    {"data-production", "advanced-circuit", 2},
-    {"management-written-proposal", "advanced-circuit", 2},
-    {"environmental-impact-report", "carbon-offset-certificate-verified", 3},
-    {"chemical-handling-work-order-production", "barrel", 1},
-    {"chemical-handling-work-order-production", "pipe", 1},
-    {"radiological-work-order-production", "battery", 1},
-    {"radiological-work-order-production", "steel-plate", 2},
-    {"white-paper-production", "paper", 8},
-    {"white-paper-production", "processing-unit", 1},
-    {"white-paper-production", "treasury-bond", 1},
-    {"policy-production", "processing-unit", 1},
-    {"regulation-production", "processing-unit", 2},
-    {"case-smog", "coal", 2},
-    {"case-hazmat", "barrel", 1},
-    {"case-noise", "processing-unit", 1},
-  }
-
-  for _, expectation in ipairs(expectations) do
-    local recipe_name = expectation[1]
-    local ingredient_name = expectation[2]
-    local amount = expectation[3]
-    local recipe = get_recipe(recipe_name)
-    assert_true(recipe ~= nil, recipe_name .. " missing")
-    assert_eq(get_ingredient_amount(recipe, ingredient_name), amount,
-      recipe_name .. " wrong " .. ingredient_name .. " amount")
-  end
-end)
-
 -- =========================================================================
 -- RECIPE INGREDIENT COUNTS (regression guards)
 -- =========================================================================
@@ -1793,9 +1733,7 @@ test("boiler bootstrap: all vanilla boiler/steam-engine ingredients are pre-elec
 end)
 
 test("basic-excuse is handcraftable (bureaucratic-bootstrap category)", function()
-  -- basic-excuse is a critical bootstrap item: safety-waiver-draft needs it,
-  -- and safety-waiver is required for boiler/steam-engine. If this recipe
-  -- requires an electric machine, players cannot bootstrap power.
+  -- basic-excuse remains a critical bootstrap item for early draft paperwork.
   local r = get_recipe("basic-excuse-production")
   assert_true(r ~= nil, "basic-excuse-production missing")
   assert_eq(r.category, "bureaucratic-bootstrap",

@@ -73,14 +73,10 @@ These should still be resolved before calling Space Age compatibility complete.
    - The detailed routes still include many bootstrap cycles and many required building categories; this proves graph reachability, not a polished gameplay curve.
    - Needed review: inspect the generated report for planet-by-planet weirdness, especially Aquilo bootstrapping, exported paperwork pressure, and whether the broad machine category requirements are intended.
 
-2. A few planet-identity surface rules remain unresolved.
-   - `admin-station-gleba` crafts an `admin-station` item even though Space Age restricts `admin-station` placement to Nauvis.
-   - `public-transportation-contract-production` is wrapped in `surface_limited(...)` without a planet argument, which is effectively a no-op.
-
-3. Fax reconstruction economy and faxability policy remain unresolved.
-   - Runtime currently reconstructs directly from `paper` plus required liquid inks.
-   - Older plan text points toward Aquilo transfer media / Laser Printer reconstruction.
-   - The intended faxable and intentionally non-faxable Space Age paperwork list needs to be explicit.
+2. Balance review still needs real map and route-analyzer validation.
+   - Specialist planet buildings now have 50% base productivity, so planet-specific paperwork may be substantially cheaper than older route notes suggest.
+   - Fulgora now has `static-charge-deposit` as a local raw shortcut to `charged-toner`; deposit richness and starting-area abundance need real-map review.
+   - Fax reconstruction now consumes `thermal-transfer-sheet` plus the exact required inks, so Aquilo transfer media is part of the live runtime economy instead of scaffolding only.
 
 ## Current Implemented Work
 
@@ -121,8 +117,10 @@ Colored paperwork gating:
   - cyan + yellow requirements collapse to `cyan-yellow-form`
   - cyan + magenta requirements collapse to `cyan-magenta-form`
   - yellow + magenta requirements collapse to `yellow-magenta-form`
+  - `hardened-data-vault` turns cyan-magenta Vulcanus-Fulgora paperwork into late orbital custody paperwork without blocking first platform logistics
 - Current three-color gate:
   - three CMY requirements collapse to `trichromatic-permit`
+  - explicit trichromatic convergence gates include `fusion-reactor`, `fusion-generator`, and `mech-armor`
 - Current explicit top-tier override:
   - `quantum-processor` consumes `unified-operations-charter`
   - the visible Administratorium science tier (`promethium-science-pack` internally) consumes an Administratorium expedition charter (`promethium-research-charter` internally), issued in vacuum from unified, cryogenic, hardened data custody, and asteroid-processing paperwork
@@ -382,7 +380,7 @@ Fax runtime:
   - no `composite-form` prototype exists
 - Align fax documentation:
   - current runtime allows colored faxing after `color-faxing`
-  - current runtime does not use transfer media for fax reconstruction
+  - current runtime uses `thermal-transfer-sheet` plus the exact inks required by the transmitted document
   - current runtime reconstructs directly inside the receiver script
 - Worker documentation now matches the portable specialist surface rule:
   - Nauvis-bound seed: `job-offer-production`, `worker-biter-formation`, `management-trainee-formation`, `licensed-notary-formation`
@@ -404,12 +402,13 @@ Fax runtime:
 
 - Base-only loading now passes strict progression validation.
 - Fixed leak points from the 2026-04-18 make-it-work pass:
-  - `prototypes/resources.lua` now only defines `amber-sap-seep` and `verdigris-crust` when `feature_flags.space_age_enabled()` is true
+  - `prototypes/resources.lua` now only defines `amber-sap-seep`, `verdigris-crust`, and `static-charge-deposit` when `feature_flags.space_age_enabled()` is true
   - `prototypes/entity/admin-buildings.lua` no longer extends the `capture-bureau` entity in base-only mode
   - `admin-station.additional_pastable_entities` no longer references `capture-bureau` in base-only mode
 - Keep confirming base-only mode does not receive:
   - `amber-sap-seep`
   - `verdigris-crust`
+  - `static-charge-deposit`
   - `capture-bureau`
   - pressure/gravity surface conditions that only make sense with Space Age planets
   - references to Space Age resource autoplace controls that are only registered under `feature_flags.space_age_enabled()`
@@ -436,10 +435,9 @@ Fax runtime:
 
 ### Fax System Completion
 
-- Decide the final reconstruction economy:
-  - current implementation: receiver consumes `paper` plus only the required liquid inks
-  - older plan direction: Aquilo-style transfer media / Laser Printer reconstruction
-  - hybrid option: black paperwork uses paper + black ink; colored paperwork uses paper + matching inks; premium or late faxing uses transfer media
+- Current reconstruction economy:
+  - receiver consumes `thermal-transfer-sheet` plus only the required liquid inks
+  - this makes Aquilo transfer media part of the live fax runtime while preserving the script-managed queue model
 - Decide whether `fax-reconstruction` hidden recipes are for UI/Factoriopedia scaffolding only or should become the real production path.
 - Audit all Space Age paperwork for faxability.
   - Current faxable list excludes many new Space Age forms:
@@ -519,8 +517,8 @@ Fax runtime:
   - contract is unlocked by `cyan-yellow-bureaucracy`
   - public train stop is unlocked by `bureaucratic-transcendence`
   - locale currently describes transcendence in a way that may not match the actual cyan-yellow contract dependency
-- Code cleanup question:
-  - `public-transportation-contract-production` is wrapped in `surface_limited(...)` without a planet argument, which is currently a no-op. Remove the wrapper if global crafting is intended, or add a real surface rule if it is not.
+- Code cleanup resolved:
+  - `public-transportation-contract-production` is intentionally global/category-gated and no longer wrapped in a no-op surface helper.
 
 ### Professions Completion
 
@@ -926,6 +924,7 @@ Current rule:
   - cyan + yellow -> `cyan-yellow-form`
   - cyan + magenta -> `cyan-magenta-form`
   - yellow + magenta -> `yellow-magenta-form`
+- `hardened-data-vault` uses cyan-magenta, Vulcanus industrial charters, and Fulgora recovery orders as a later custody packet, keeping `asteroid-collector` and `cargo-bay` available before any planet is discovered
 - recipes that would have required 3 distinct CMY blank forms now consume `trichromatic-permit`
 - explicit trichromatic gates now cover fusion reactor, fusion generator, and mech armor convergence
 - `quantum-processor` consumes `unified-operations-charter`
@@ -936,7 +935,6 @@ Current rule:
 
 Remaining follow-up:
 
-- expand the explicit top-tier override list if more late recipes should use `unified-operations-charter`
 - solver-check whether any Aquilo-native recipes need lighter or heavier paperwork than the first pass
 
 ### Step 5.7: Define fax network mechanics
@@ -956,13 +954,13 @@ Implemented:
 Current first-pass behavior:
 
 - the active fax runtime reconstructs documents directly inside the exchange logic rather than through recipe-driven `laser-printer` jobs
-- the current reconstruction cost is generic `paper` plus `ink`
-- Aquilo transfer media and `fax-reconstruction` category scaffolding exist alongside that runtime, but they are not the active gate for fax completion
+- the current reconstruction cost is `thermal-transfer-sheet` plus the exact required ink colors
+- Aquilo transfer media is now an active gate for fax completion; `fax-reconstruction` recipe scaffolding remains useful for Factoriopedia and future recipe-driven reconstruction experiments
 
 Remaining follow-up:
 
 - verify in real gameplay / planner usage that the current fax runtime feels correct before changing the model again
-- if the design changes later, revisit whether fax reconstruction should move onto Aquilo transfer media instead of the current generic supplies
+- if the design changes later, revisit whether fax reconstruction should become explicit machine recipes instead of script-managed receiver jobs
 
 ### Step 5.8: Verify all planet escape paths still work
 

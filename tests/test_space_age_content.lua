@@ -1370,7 +1370,7 @@ test("field office categories never claim planet-local recipes", function()
   end
 end)
 
-test("gleba conciliation also unlocks orbital spitter tourism", function()
+test("gleba yellow paperwork gates orbital spitter tourism with two-color forms", function()
   local gleba = technologies["gleba-conciliation"]
   local expected = {
     {
@@ -1734,9 +1734,6 @@ test("Aquilo bootstrap precedes cryogenic science and the chromatic trunk follow
   end
   for _, recipe_name in ipairs({
     "composite-chroma-ribbon-production",
-    "composite-form-cyan-yellow-production",
-    "composite-form-cyan-magenta-production",
-    "composite-form-yellow-magenta-production",
     "trichromatic-permit-production",
     "unified-operations-charter-production",
     "promethium-research-charter-production",
@@ -1798,6 +1795,7 @@ test("bicolored paperwork technologies require the matching planet sciences", fu
   assert_true(cyan_magenta_prereqs["metallurgic-science-pack"], "cyan-magenta-bureaucracy should depend on metallurgic-science-pack")
   assert_true(cyan_magenta_prereqs["electromagnetic-science-pack"], "cyan-magenta-bureaucracy should depend on electromagnetic-science-pack")
   assert_true(tech_unlocks_recipe(cyan_magenta, "cyan-magenta-form-production"), "cyan-magenta-bureaucracy should unlock cyan-magenta-form-production")
+  assert_true(tech_unlocks_recipe(cyan_magenta, "hardened-data-vault-production"), "cyan-magenta-bureaucracy should unlock hardened-data-vault-production")
 
   local yellow_magenta_prereqs = prerequisite_set(yellow_magenta)
   assert_true(yellow_magenta_prereqs["gleba-conciliation"], "yellow-magenta-bureaucracy should depend on gleba-conciliation")
@@ -1815,9 +1813,11 @@ test("aquilo transfer media and multicolor forms define the expected convergence
   assert_true(items["cyan-yellow-form"] ~= nil, "cyan-yellow-form missing")
   assert_true(items["cyan-magenta-form"] ~= nil, "cyan-magenta-form missing")
   assert_true(items["yellow-magenta-form"] ~= nil, "yellow-magenta-form missing")
+  assert_true(items["hardened-data-vault"] ~= nil, "hardened-data-vault missing")
   assert_true(items["trichromatic-permit"] ~= nil, "trichromatic-permit missing")
   assert_true(items["unified-operations-charter"] ~= nil, "unified-operations-charter missing")
   assert_true(items["cryogenic-operations-license"] ~= nil, "cryogenic-operations-license missing")
+  assert_true(items["promethium-research-charter"] ~= nil, "promethium-research-charter missing")
   assert_true(items["laser-printer"] ~= nil, "laser-printer missing")
 
   assert_true(has_ingredient(recipes["laser-printer"], "cryoprint-technician"),
@@ -1842,6 +1842,12 @@ test("aquilo transfer media and multicolor forms define the expected convergence
     "yellow-magenta-form should require yellow-ink")
   assert_true(has_fluid_ingredient(recipes["yellow-magenta-form-production"], "magenta-ink"),
     "yellow-magenta-form should require magenta-ink")
+  assert_true(has_ingredient(recipes["hardened-data-vault-production"], "cyan-magenta-form"),
+    "hardened-data-vault should require cyan-magenta-form")
+  assert_true(has_ingredient(recipes["hardened-data-vault-production"], "industrial-charter"),
+    "hardened-data-vault should require Vulcanus industrial-charter")
+  assert_true(has_ingredient(recipes["hardened-data-vault-production"], "data-recovery-order"),
+    "hardened-data-vault should require Fulgora data-recovery-order")
   assert_true(has_ingredient(recipes["trichromatic-permit-production"], "composite-chroma-ribbon"),
     "trichromatic-permit should require composite-chroma-ribbon")
   assert_true(has_ingredient(recipes["unified-operations-charter-production"], "electromagnetic-operating-license"),

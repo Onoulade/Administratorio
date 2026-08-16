@@ -1,5 +1,5 @@
 -- Field Office: early-game bureaucratic outpost.
--- Summons biters from nearby nests; each worker completes 3 crafts before heading home.
+-- Summons biters from nearby nests as one-per-craft-cycle workers.
 -- Only operates (1.0x, 0 pollution) while a biter is physically present and working.
 -- Completely inactive otherwise. Field offices operate independently of working hours.
 local C = require("scripts.constants")
@@ -12,14 +12,13 @@ local M = {}
 local BITER_FORCE_NAME = "administratorio-biters"
 local SPAWNER_TYPES = {"unit-spawner"}
 local ENTITY_NAME = "field-office"
-local CRAFTS_PER_BITER = 3
+local CRAFTS_PER_BITER = 2
 local PLACEMENT_RANGE_COLOR = {r = 0.25, g = 0.85, b = 0.35, a = 0.75}
 local PLACEMENT_NEST_COLOR = {r = 1.0, g = 0.45, b = 0.25, a = 0.9}
 local UNREACHABLE_RETRY_TICKS = 10 * 60
 local CALLING_PROGRESS_DISTANCE_SQUARED = 0.04
 local CALLING_STUCK_TICKS = 5 * 60
 local CALLING_TIMEOUT_TICKS = 45 * 60
-local MAX_RETURN_RETRIES = 3
 local release_biter
 local set_office_status
 
@@ -65,15 +64,29 @@ local function get_biter_force()
   return game.forces[BITER_FORCE_NAME] or game.forces["neutral"]
 end
 
--- The worker was created fresh by spawn_worker_biter (never borrowed from the
--- nest's existing population), so it must be destroyed on return rather than
--- released into the world as a new wild biter — otherwise every dispatch
--- cycle would permanently grow the biter population near the nest. Field
--- offices must be population-neutral: one created at dispatch, one destroyed
--- on return.
-local function destroy_returned_worker(unit)
+local function safe_unit_parent_group(unit)
+  if not unit or not unit.valid or not unit.commandable then return nil end
+  local ok, group = pcall(function() return unit.commandable.parent_group end)
+  if ok and group and group.valid then return group end
+  return nil
+end
+
+local function safe_unit_spawner(unit)
+  if not unit or not unit.valid or not unit.commandable then return nil end
+  local ok, spawner = pcall(function() return unit.commandable.spawner end)
+  if ok and spawner and spawner.valid then return spawner end
+  return nil
+end
+
+local function release_or_destroy_returned_worker(unit)
   if not unit or not unit.valid then return end
-  unit.destroy()
+  local group = safe_unit_parent_group(unit)
+  local spawner = safe_unit_spawner(unit)
+  if group or spawner then
+    unit_ai_settings.release_as_regular_enemy(unit)
+  else
+    unit.destroy()
+  end
 end
 
 function M.ensure_storage()
@@ -294,39 +307,9 @@ local function get_nearest_spawner(state, office, tick)
   return spawner
 end
 
--- find_non_colliding_position scans outward from its center in a fixed,
--- position-agnostic order, so searching from office.position always lands on
--- the same corner regardless of which side the worker is actually approaching
--- from. Bias the search center toward the worker instead, so it finds a spot
--- on the near side.
-local function find_worker_destination(surface, worker_name, office, from_position)
-  local search_center = office.position
-  if from_position then
-    local dx = from_position.x - office.position.x
-    local dy = from_position.y - office.position.y
-    local dist_sq = dx * dx + dy * dy
-    if dist_sq > 0.0001 then
-      local dist = math.sqrt(dist_sq)
-      local approach = math.min(dist, C.FIELD_OFFICE_APPROACH_OFFSET or 1.5)
-      search_center = {
-        x = office.position.x + (dx / dist) * approach,
-        y = office.position.y + (dy / dist) * approach,
-      }
-    end
-  end
-  return surface.find_non_colliding_position(worker_name, search_center, C.FIELD_OFFICE_ARRIVAL_RADIUS, 0.25)
+local function find_worker_destination(surface, worker_name, office)
+  return surface.find_non_colliding_position(worker_name, office.position, C.FIELD_OFFICE_ARRIVAL_RADIUS, 0.25)
     or office.position
-end
-
--- A spawner's own tile is solid collision, so a walking unit can never stand
--- at spawner.position itself. Without this, the return-trip arrival check
--- (distance to spawner.position) can never be satisfied, and the worker's
--- lease is held forever. Find an actual walkable spot near the spawner instead.
-local function find_return_destination(surface, worker_name, spawner)
-  local position = surface.find_non_colliding_position(
-    worker_name, spawner.position, C.FIELD_OFFICE_RETURN_SEARCH_RADIUS or 6, 0.5)
-    or spawner.position
-  return {x = position.x, y = position.y}
 end
 
 local function spawn_worker_biter(office, spawner)
@@ -351,7 +334,7 @@ local function spawn_worker_biter(office, spawner)
   end
   unit_ai_settings.apply_managed_unit_settings(biter)
 
-  local destination = find_worker_destination(surface, biter.name, office, biter.position)
+  local destination = find_worker_destination(surface, biter.name, office)
   biter.commandable.set_command({
     type = defines.command.go_to_location,
     destination = destination,
@@ -532,11 +515,11 @@ release_biter = function(state, tick)
   local return_destination = nil
   -- Command biter to walk back to spawner (or wander if spawner gone)
   if state.spawner and state.spawner.valid then
-    return_destination = find_return_destination(state.biter.surface, state.biter.name, state.spawner)
+    return_destination = {x = state.spawner.position.x, y = state.spawner.position.y}
     state.biter.commandable.set_command({
       type = defines.command.go_to_location,
       destination = return_destination,
-      radius = C.RETURN_ARRIVAL_DISTANCE or 2.5,
+      radius = 3,
       distraction = defines.distraction.none,
     })
   end
@@ -663,9 +646,8 @@ end
 function M.update(tick, runtime_profile)
   M.ensure_storage()
 
-  -- Every worker is a freshly created biter (spawn_worker_biter never borrows
-  -- an existing one), so it is always destroyed on return to keep the nest's
-  -- population net-neutral rather than growing without bound.
+  -- Field Office workers are only handed back when Factorio still recognizes
+  -- a real enemy AI owner. Script-created orphan workers are removed on return.
   run_profiled(runtime_profile, "field_office_releasing", function()
     for biter_id, info in pairs(storage.field_office_releasing) do
       if not info.entity or not info.entity.valid then
@@ -675,19 +657,10 @@ function M.update(tick, runtime_profile)
           and tick >= (info.arrival_check_tick or 0)
           and distance_squared(info.entity.position, info.return_destination) <= (C.RETURN_ARRIVAL_DISTANCE or 2.5) ^ 2 then
         spawner_population.untrack_unit(biter_id)
-        destroy_returned_worker(info.entity)
+        release_or_destroy_returned_worker(info.entity)
         storage.field_office_releasing[biter_id] = nil
       elseif tick >= info.despawn_tick then
-        -- Retrying but never arriving (spawner surrounded by obstacles, blocked
-        -- pathing, etc.) would otherwise hold this lease forever. Give up on
-        -- precise arrival after a few retries and destroy it anyway.
-        info.retry_count = (info.retry_count or 0) + 1
-        if info.return_destination and info.retry_count <= MAX_RETURN_RETRIES then
-          -- Re-pick a walkable spot in case the previous one is now blocked
-          -- (another unit standing there, etc).
-          if info.spawner and info.spawner.valid then
-            info.return_destination = find_return_destination(info.entity.surface, info.entity.name, info.spawner)
-          end
+        if info.return_destination then
           info.entity.force = get_biter_force()
           info.entity.active = true
           info.entity.destructible = false
@@ -700,7 +673,7 @@ function M.update(tick, runtime_profile)
           info.despawn_tick = tick + C.FIELD_OFFICE_BITER_DESPAWN_TICKS
         else
           spawner_population.untrack_unit(biter_id)
-          destroy_returned_worker(info.entity)
+          release_or_destroy_returned_worker(info.entity)
           storage.field_office_releasing[biter_id] = nil
         end
       end
@@ -818,7 +791,7 @@ function M.update(tick, runtime_profile)
       if not state.biter or not state.biter.valid then
         local biter = recreate_missing_worker(state, office, tick)
         if biter and biter.valid then
-          local destination = find_worker_destination(office.surface, biter.name, office, biter.position)
+          local destination = find_worker_destination(office.surface, biter.name, office)
           biter.commandable.set_command({
             type = defines.command.go_to_location,
             destination = destination,

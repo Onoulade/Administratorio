@@ -14,11 +14,11 @@
 --   10. Taxpayer money fuel compatibility
 --
 -- The regulation system:
---   No fluid ingredient (handcraftable, matches vanilla):
+--   Red science or below (handcraftable):
 --     Handcrafting -> original recipe (T0: no form, T1+: tier form added)
 --     AM1/AM2/AM3 and Factoriopedia -> separate "-regulated" copy
 --       (batched, form, consumed)
---   Fluid ingredient (not handcraftable, matches vanilla):
+--   Above green science (not handcraftable):
 --     Original recipe modified in-place -> regulated category, batched, form
 --     Keeps recipe identity and tech unlocks intact
 
@@ -427,6 +427,57 @@ local compacted_rubble_electric = data.raw.recipe["compacted-rubble-electric"]
 if compacted_rubble_electric then
   compacted_rubble_electric.factoriopedia_alternative =
     data.raw.recipe["compacted-rubble"] and "compacted-rubble" or nil
+end
+
+-------------------------------------------------------------------------------
+-- 5a. BUILD RED-SCIENCE-ONLY RECIPE SET
+-- Scan all technologies to determine which recipes are unlocked by red science
+-- (automation-science-pack + administrative-science-pack only).
+-- Recipes requiring green science or higher are hidden from handcrafting.
+-------------------------------------------------------------------------------
+local RED_SCIENCE_PACKS = {
+  ["automation-science-pack"] = true,
+  ["administrative-science-pack"] = true,
+}
+
+local red_science_recipes = {}
+
+for _, tech in pairs(data.raw.technology) do
+  local is_red_only = true
+  if tech.unit and tech.unit.ingredients then
+    for _, ing in ipairs(tech.unit.ingredients) do
+      local pack_name = ing[1] or ing.name
+      if not RED_SCIENCE_PACKS[pack_name] then
+        is_red_only = false
+        break
+      end
+    end
+  end
+  -- research_trigger techs (mine-entity) count as red-science-tier
+  if tech.research_trigger then
+    is_red_only = true
+  end
+
+  if is_red_only and tech.effects then
+    for _, effect in ipairs(tech.effects) do
+      if effect.type == "unlock-recipe" then
+        red_science_recipes[effect.recipe] = true
+      end
+    end
+  end
+end
+
+local function is_red_science_or_below(recipe_name)
+  local recipe = data.raw["recipe"][recipe_name]
+  if not recipe then return false end
+  -- Refineries are biter-station-managed industrial infrastructure. Keep their
+  -- canonical recipe on the regulated assembler path even if oil-processing is
+  -- represented as a trigger technology.
+  if recipe_name == "oil-refinery" then return false end
+  -- Enabled by default = available from start (no tech needed)
+  if recipe.enabled ~= false then return true end
+  -- Unlocked by a red-science-only tech
+  return red_science_recipes[recipe_name] == true
 end
 
 -------------------------------------------------------------------------------
@@ -938,21 +989,18 @@ for name, recipe in pairs(data.raw["recipe"]) do
     regulated_cat = "advanced-crafting-regulated"
   end
 
-  -- Fluid recipes can never be hand-crafted (matches vanilla: the character
-  -- has no "crafting-with-fluid" category), so leaving the original on that
-  -- category would orphan it after we repurpose AM2/AM3 onto regulated
-  -- categories. Every other vanilla-handcraftable recipe stays handcraftable
-  -- here, regardless of tech tier.
-  local fluid_only = (cat == "crafting-with-fluid")
+  -- Fluid recipes can never be hand-crafted, so leaving the original on
+  -- crafting-with-fluid would orphan it after we repurpose AM2/AM3 onto
+  -- regulated categories.
+  local above_green = not is_red_science_or_below(name) or cat == "crafting-with-fluid"
 
-  if fluid_only then
+  if above_green then
     -------------------------------------------------------------------------
-    -- FLUID INGREDIENT: Regulate original recipe in-place.
-    -- No handcrafting possible (not even in vanilla), so we convert the
-    -- original directly. This preserves the recipe's identity (name, tech
-    -- unlock, usage info) while showing the correct regulated
-    -- ingredients/machines. Keep the recipe visible in the player's
-    -- crafting UI as unavailable.
+    -- ABOVE GREEN SCIENCE: Regulate original recipe in-place.
+    -- No handcrafting possible, so we convert the original directly.
+    -- This preserves the recipe's identity (name, tech unlock, usage info)
+    -- while showing the correct regulated ingredients/machines.
+    -- Keep the recipe visible in the player's crafting UI as unavailable.
     -------------------------------------------------------------------------
     recipe.category = regulated_cat
     regulate_recipe(recipe, regulated_paperwork, multiplier)
@@ -972,7 +1020,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     -- Tech effects: keep original unlock as-is (recipe name unchanged)
   else
     -------------------------------------------------------------------------
-    -- NO FLUID INGREDIENT: Create separate regulated copy for AMs,
+    -- RED SCIENCE OR BELOW: Create separate regulated copy for AMs,
     -- keep original for handcrafting, but point Factoriopedia at the
     -- regulated version so machine info reflects the real automation path.
     -------------------------------------------------------------------------
@@ -1136,11 +1184,13 @@ add_special_paperwork("beacon", "treasury-bond", 1)
 add_special_paperwork("rocket-silo", "government-grant", 1)
 
 -- Space-platform asteroid cracking should also consume explicit orbital
--- processing paperwork instead of running as a free crusher side loop.
+-- processing paperwork for advanced/reprocessing loops. Basic asteroid
+-- crushing must stay available for the first platform and first space science.
 for recipe_name, recipe in pairs(data.raw["recipe"] or {}) do
   if recipe
     and not shared.is_admin_recipe(recipe_name)
     and recipe_name:find("asteroid")
+    and (recipe_name:find("advanced") or recipe_name:find("reprocessing") or recipe_name:find("promethium"))
     and (recipe_name:find("crushing") or recipe_name:find("processing") or recipe_name:find("reprocessing"))
   then
     add_special_paperwork(recipe_name, "asteroid-processing-docket", 1)

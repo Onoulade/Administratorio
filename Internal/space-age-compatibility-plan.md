@@ -139,7 +139,7 @@ The gating rule is:
 - **Carbon fiber** (Gleba): any recipe using carbon fiber requires a yellow form
 - **Holmium plate** (Fulgora): any recipe using holmium requires a magenta form
 
-This is the primary mechanism that makes the colored ink system essential rather than optional. Even on Nauvis, if you want to build turrets that use tungsten, you must import cyan forms from Vulcanus. This drives real interplanetary trade in paperwork and ensures every planet's ink production has lasting value.
+This is the primary mechanism that makes the colored ink system essential rather than optional. Even on Nauvis, if you want to build late infrastructure that uses tungsten, you must import cyan forms from Vulcanus. Asteroid and hostile-space problems remain paperwork-managed rather than weapon-managed, but first platform essentials such as asteroid collectors and cargo bays must remain available before planet discovery. Later paperwork gates should support trajectory compliance, research, custody, and logistics rather than conventional combat. This drives real interplanetary trade in paperwork and ensures every planet's ink production has lasting value.
 
 On the home planet, the forms are cheap and locally produced. Off-world, they must be shipped, or later trickled across the interplanetary trunk, creating natural export pressure.
 

@@ -45,15 +45,9 @@ function M.release_as_regular_enemy(unit)
   pcall(function() unit.destructible = true end)
   pcall(function() unit.active = true end)
   if unit.commandable and unit.commandable.set_command and defines and defines.command then
-    -- A `stop` command leaves the unit frozen forever: with no native spawner
-    -- or group ownership, Factorio's enemy AI planner (which builds attack
-    -- squads top-down from spawners) never revisits a standalone unit sitting
-    -- idle. `wander` gives it visible, ongoing autonomous behavior instead.
     pcall(function()
       unit.commandable.set_command({
-        type = defines.command.wander,
-        radius = 10,
-        ticks_to_wait = 10 * 60,
+        type = defines.command.stop,
         distraction = defines.distraction.by_enemy,
       })
     end)

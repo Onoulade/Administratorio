@@ -1120,8 +1120,8 @@ field_office.graphics_set = {
   }
 }
 field_office.fluid_boxes = {
-  { production_type = "input",  pipe_connections = {{ flow_direction = "input", direction = defines.direction.north, position = {0, -0.7} }}, volume = 100 },
-  { production_type = "output", pipe_connections = {{ flow_direction = "output", direction = defines.direction.south, position = {0, 0.7} }},  volume = 100 },
+  { production_type = "input",  pipe_connections = {{ flow_direction = "input", direction = defines.direction.north, position = {0, -1} }}, volume = 100 },
+  { production_type = "output", pipe_connections = {{ flow_direction = "output", direction = defines.direction.south, position = {0, 1} }},  volume = 100 },
 }
 field_office.fluid_boxes_off_when_no_fluid_recipe = true
 field_office.working_sound = {

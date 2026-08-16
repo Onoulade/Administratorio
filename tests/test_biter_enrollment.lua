@@ -66,6 +66,7 @@ local function load_biters_module(space_age_enabled)
     ensure_desk_runtime_state = noop,
     get_available_slots = function() return 0 end,
     release_slot = function() end,
+    decrement_desk_occupants = noop,
   }
   package.loaded["scripts.working_hours"] = {}
   package.loaded["scripts.biters_rendering"] = {

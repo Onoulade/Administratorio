@@ -241,6 +241,7 @@ notary_office.placeable_by = placeable_by_item("notary-office")
 notary_office.next_upgrade = nil
 notary_office.crafting_categories = {"bureaucracy-certification"}
 notary_office.crafting_speed = 2
+notary_office.base_productivity = 0.5
 notary_office.energy_usage = "450kW"
 notary_office.energy_source = {type = "electric", usage_priority = "secondary-input"}
 notary_office.ingredient_count = 8
@@ -291,6 +292,7 @@ territorial_arbitration_post.next_upgrade = nil
 territorial_arbitration_post.fixed_recipe = "territorial-arbitration-processing"
 territorial_arbitration_post.crafting_categories = {"territorial-arbitration"}
 territorial_arbitration_post.crafting_speed = 1
+territorial_arbitration_post.base_productivity = 0.5
 territorial_arbitration_post.energy_usage = "300kW"
 territorial_arbitration_post.energy_source = {type = "electric", usage_priority = "secondary-input"}
 territorial_arbitration_post.ingredient_count = 6
@@ -328,6 +330,7 @@ conciliation_desk.placeable_by = placeable_by_item("conciliation-desk")
 conciliation_desk.next_upgrade = nil
 conciliation_desk.crafting_categories = {"bureaucracy-conciliation"}
 conciliation_desk.crafting_speed = 1.75
+conciliation_desk.base_productivity = 0.5
 conciliation_desk.energy_usage = "450kW"
 conciliation_desk.energy_source = {type = "electric", usage_priority = "secondary-input"}
 conciliation_desk.ingredient_count = 8
@@ -380,6 +383,7 @@ digital_services_bureau.crafting_categories = {
   bureaucracy_categories.bootstrap_for_planet("fulgora"),
 }
 digital_services_bureau.crafting_speed = 3
+digital_services_bureau.base_productivity = 0.5
 digital_services_bureau.energy_usage = "1MW"
 digital_services_bureau.energy_source = {type = "electric", usage_priority = "secondary-input"}
 digital_services_bureau.ingredient_count = 10
@@ -423,6 +427,7 @@ laser_printer.placeable_by = placeable_by_item("laser-printer")
 laser_printer.next_upgrade = nil
 laser_printer.crafting_categories = {"printing", "printing-advanced", "printing-workorder", "printing-multicolor", "orbital-printing"}
 laser_printer.crafting_speed = 5
+laser_printer.base_productivity = 0.5
 laser_printer.energy_usage = "600kW"
 laser_printer.energy_source = {type = "electric", usage_priority = "secondary-input"}
 laser_printer.ingredient_count = 10
