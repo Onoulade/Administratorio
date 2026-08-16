@@ -16,7 +16,7 @@ data:extend({
   {
     type = "bool-setting",
     name = "administratorio-debug-hard-mode",
-    setting_type = "startup",
+    setting_type = "runtime-global",
     default_value = false,
     order = "z[administratorio]-c[debug-hard-mode]",
   },
