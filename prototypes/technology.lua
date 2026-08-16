@@ -65,6 +65,7 @@ data:extend({
       { type = "unlock-recipe", recipe = "promise-production" },
       { type = "unlock-recipe", recipe = "admin-station" },
     },
+    prerequisites = {"steam-power"},
     research_trigger = { type = "craft-item", item = "field-office", count = 1 },
     order = "z-d"
   },
@@ -1232,6 +1233,16 @@ for _, chest_recipe in ipairs({
   "requester-chest",
 }) do
   add_tech_unlock("logistic-robotics", chest_recipe)
+end
+
+-- With every chest recipe reassigned to logistic-robotics above, logistic-system
+-- has no unlock-recipe effects left. Its only remaining vanilla effect (letting
+-- vehicles carry logistic requests) only benefits the car here, since tank and
+-- spidertron are disabled in overrides/vanilla.lua -- not worth a 500-count
+-- research on its own. Hide the now-pointless tech.
+if data.raw["technology"]["logistic-system"] then
+  data.raw["technology"]["logistic-system"].enabled = false
+  data.raw["technology"]["logistic-system"].hidden = true
 end
 
 -- Buildings that require biter-workers or specialists need employment tech
