@@ -1,4 +1,15 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.14
+Date: 2026-08-16
+  Bugfixes:
+    - run 24/7, fix return-trip leaks, keep population neutral
+  Balancing:
+    - bulk regular power poles and red belts to 10x batching
+    - restore handcrafting for late-game vanilla items
+    - drop safety-waiver requirement for regular inserters
+  Compatibility:
+    - require safety waiver for AAI Loaders, bulk yellow 2x
+---------------------------------------------------------------------------------------------------
 Version: 0.5.13
 Date: 2026-08-09
   Bugfixes:
