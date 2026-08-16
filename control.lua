@@ -5,6 +5,7 @@ local C = require("scripts.constants")
 local pneumatic = require("scripts.pneumatic")
 local interplanetary_tube = require("scripts.interplanetary_tube")
 local ai_server = require("scripts.ai_server")
+local heat_exhaust = require("scripts.heat_exhaust")
 local relocation_cannon = require("scripts.relocation_cannon")
 local frustration = require("scripts.frustration")
 local zones = require("scripts.zones")
@@ -680,6 +681,7 @@ local function on_init()
   territorial_arbitration.rebuild_registry()
   interplanetary_tube.rebuild_registry()
   ai_server.rebuild_registry()
+  heat_exhaust.rebuild_registry()
   relocation_cannon.rebuild_registry()
   biters.rebuild_desk_index()
   biters.rebuild_capture_bureau_ports()
@@ -735,6 +737,7 @@ local function on_configuration_changed(event)
   territorial_arbitration.rebuild_registry()
   interplanetary_tube.rebuild_registry()
   ai_server.rebuild_registry()
+  heat_exhaust.rebuild_registry()
   relocation_cannon.rebuild_registry()
   trains.on_init()
   set_biter_ceasefire()
@@ -787,7 +790,9 @@ local function on_configuration_changed(event)
   rebuild_desk_cache()
   biters.rebuild_desk_index()
   biters.mark_all_desk_circuit_dirty()
-  working_hours.rebuild_registry()
+  if WORKING_HOURS_ENABLED then
+    working_hours.rebuild_registry()
+  end
   field_office.rebuild_registry()
   spawner_population.rebuild()
   biter_station.rebuild_registry()
@@ -1136,6 +1141,7 @@ local function on_entity_built_inner(event)
       return
     end
     ai_server.on_entity_built(entity)
+    heat_exhaust.on_entity_built(entity)
     if relocation_cannon.is_cannon(entity) and not relocation_cannon.on_entity_built(entity, player) then
       return
     end
@@ -1868,6 +1874,12 @@ local function on_entity_died(event)
   local entity = event.entity
   spawner_population.on_entity_died(entity)
   trajectory_compliance.on_entity_died(event)
+  -- These systems own hidden children, registries, or in-flight cargo. Death
+  -- events bypass the mined/raised-destroy handler, so route them through the
+  -- same cleanup while the entity is still a valid spill/refund anchor.
+  interplanetary_tube.on_entity_removed(entity, event.buffer)
+  ai_server.on_entity_removed(entity)
+  relocation_cannon.on_entity_removed(entity)
   if entity.name == C.HIRED_BITER_UNIT_NAME then
     hired_biter.untrack(entity, event)
   end

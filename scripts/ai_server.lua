@@ -39,6 +39,35 @@ local function find_heat_core(entity)
   return cores[1]
 end
 
+local function ensure_heat_core(entity)
+  local core = find_heat_core(entity)
+  if core and core.valid then
+    core.destructible = false
+    return core
+  end
+
+  core = entity.surface.create_entity{
+    name = C.AI_SERVER_HEAT_CORE_NAME,
+    position = entity.position,
+    force = entity.force,
+  }
+  if core then
+    core.destructible = false
+    -- Only a genuinely new child starts at ambient. Registry rebuilds must
+    -- preserve stored heat so a settings change cannot become a free reset.
+    core.temperature = C.AI_SERVER_AMBIENT_TEMPERATURE
+  end
+  return core
+end
+
+local function track_entity(entity)
+  M.ensure_storage()
+  local core = ensure_heat_core(entity)
+  storage.ai_servers[entity.unit_number] = {entity = entity, core = core}
+  set_status(entity, "idle", defines.entity_status_diode.yellow)
+  return core
+end
+
 -------------------------------------------------------------------------------
 -- LIFECYCLE
 -------------------------------------------------------------------------------
@@ -49,20 +78,7 @@ end
 
 function M.on_entity_built(entity)
   if not M.is_ai_server(entity) then return end
-  M.ensure_storage()
-
-  local core = find_heat_core(entity) or entity.surface.create_entity{
-    name = C.AI_SERVER_HEAT_CORE_NAME,
-    position = entity.position,
-    force = entity.force,
-  }
-  if core then
-    core.destructible = false
-    core.temperature = C.AI_SERVER_AMBIENT_TEMPERATURE
-  end
-
-  storage.ai_servers[entity.unit_number] = {entity = entity, core = core}
-  set_status(entity, "idle", defines.entity_status_diode.yellow)
+  track_entity(entity)
 end
 
 function M.on_entity_removed(entity)
@@ -133,7 +149,7 @@ function M.rebuild_registry()
   for _, surface in pairs(game.surfaces) do
     for _, entity in ipairs(surface.find_entities_filtered{name = C.AI_SERVER_NAME}) do
       if entity.valid then
-        M.on_entity_built(entity)
+        track_entity(entity)
       end
     end
   end

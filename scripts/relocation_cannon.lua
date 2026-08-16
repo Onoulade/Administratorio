@@ -144,8 +144,25 @@ end
 --- destination is the one requesting the transfer. A planet that both sends and
 --- receives simply builds two cannons; unlike the Terminus they are not limited
 --- to one per planet.
-local function consume_transfer_orders(inventory, count)
-  return inventory.remove{name = C.RELOCATION_TRANSFER_FORM, count = count} == count
+local function has_transfer_orders(inventory, count)
+  return inventory.get_item_count(C.RELOCATION_TRANSFER_FORM) >= count
+end
+
+local function return_unlanded_payload(source, inventory, request, count)
+  if count <= 0 then return end
+  local returned = inventory.insert{name = request.name, quality = request.quality, count = count}
+  if returned >= count then return end
+
+  -- The source slot was just freed by this transfer, so this is only a last
+  -- ditch safety net for an unexpected inventory mutation. Preserve personnel
+  -- on the ground rather than deleting them.
+  if source.surface and source.surface.spill_item_stack then
+    source.surface.spill_item_stack{
+      position = source.position,
+      stack = {name = request.name, quality = request.quality, count = count - returned},
+      enable_looted = true,
+    }
+  end
 end
 
 local function try_fire_to(destination, entry, tick)
@@ -168,14 +185,15 @@ local function try_fire_to(destination, entry, tick)
     local source = source_entry.entity
     if source and source.valid
         and source_entry.force_index == entry.force_index
-        and source_entry.planet ~= entry.planet then
+        and source_entry.planet ~= entry.planet
+        and tick >= (source_entry.next_shot_tick or 0) then
       local payload = payload_inventory(source)
       if payload then
         for _, request in pairs(requests) do
           local available = payload.get_item_count({name = request.name, quality = request.quality})
           local batch = math.min(available, request.count, C.RELOCATION_PAYLOAD_PER_SHOT)
           if batch > 0 then
-            if not consume_transfer_orders(orders, batch) then
+            if not has_transfer_orders(orders, batch) then
               set_status(destination, "no-transfer-orders", defines.entity_status_diode.red)
               return false
             end
@@ -184,12 +202,18 @@ local function try_fire_to(destination, entry, tick)
             if removed > 0 then
               local landed = arrivals.insert{name = request.name, quality = request.quality, count = removed}
               if landed < removed then
-                -- Put back whatever would not fit rather than voiding personnel.
-                payload.insert{name = request.name, quality = request.quality, count = removed - landed}
+                return_unlanded_payload(source, payload, request, removed - landed)
               end
-              set_status(destination, "transferred", defines.entity_status_diode.green)
-              entry.next_shot_tick = tick + C.RELOCATION_SHOT_TICKS
-              return true
+              if landed > 0 then
+                -- Bill only items that actually arrived. The order inventory
+                -- was preflighted above, so a single tick cannot underpay.
+                orders.remove{name = C.RELOCATION_TRANSFER_FORM, count = landed}
+                set_status(destination, "transferred", defines.entity_status_diode.green)
+                -- The sender fires the shot. A destination must not be able to
+                -- multiply one cannon's throughput by issuing more requests.
+                source_entry.next_shot_tick = tick + C.RELOCATION_SHOT_TICKS
+                return true
+              end
             end
           end
         end
@@ -208,7 +232,7 @@ function M.on_tick(event)
     local entity = entry.entity
     if not entity or not entity.valid then
       storage.relocation_cannons[unit_number] = nil
-    elseif tick >= (entry.next_shot_tick or 0) then
+    else
       try_fire_to(entity, entry, tick)
     end
   end
@@ -220,6 +244,7 @@ end
 
 function M.rebuild_registry()
   M.ensure_storage()
+  local previous_entries = storage.relocation_cannons
   storage.relocation_cannons = {}
 
   for _, surface in pairs(game.surfaces) do
@@ -232,7 +257,9 @@ function M.rebuild_registry()
             entity = entity,
             planet = planet_name,
             force_index = entity.force.index,
-            next_shot_tick = 0,
+            -- A configuration rebuild must not turn into a free extra shot.
+            next_shot_tick = previous_entries[entity.unit_number]
+              and previous_entries[entity.unit_number].next_shot_tick or 0,
           }
         end
       end

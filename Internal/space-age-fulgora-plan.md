@@ -180,7 +180,7 @@ This makes Fulgora the planet that modernizes your bureaucracy — same paperwor
 - Do not make magenta ink a universal better copier.
 - Use Fulgora's salvage and documentation abundance for archive recovery, not as a generic answer to every paperwork problem.
 - Preserve the import-seed rule for copyable dead-end forms.
-- The Digital Services Bureau is standalone valuable — it does not exist to serve Aquilo's fax network.
+- The Digital Services Bureau is standalone valuable — it does not exist to serve Aquilo's interplanetary tube trunk.
 
 ## Open Questions
 

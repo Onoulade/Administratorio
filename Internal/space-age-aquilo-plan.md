@@ -2,7 +2,7 @@
 
 This file records the Aquilo principles and the current first-pass implementation under the shared rules in [space-age-compatibility-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-compatibility-plan.md).
 
-> **Superseded in part.** The fax network described in earlier revisions of this file is being **deleted outright** and replaced by the Interplanetary Tube Network, which unlocks *before* Aquilo. Aquilo's compute, heat, and colored-transport identity is designed in [space-age-automation-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-automation-plan.md). Sections below have been updated; treat that file as canonical where the two disagree.
+> **Superseded in part.** The fax network described in earlier revisions of this file was **deleted outright** and replaced by the Interplanetary Tube Network, which unlocks *before* Aquilo. Aquilo's compute, heat, and colored-transport identity is designed in [space-age-automation-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-automation-plan.md). Sections below have been updated; treat that file as canonical where the two disagree.
 
 ## Planet Role
 
@@ -22,14 +22,14 @@ Aquilo is **no longer the gate for cross-planet paperwork logistics**. The Inter
 
 ## Current Implementation Snapshot
 
-The current codebase ships a first Aquilo pass, parts of which are now scheduled for deletion:
+The current codebase ships the first Aquilo pass:
 
 **Kept:**
 
 - `laser-printer` is in-game and Aquilo-limited to craft
 - `transfer-emulsion`, `thermal-transfer-sheet`, `composite-chroma-ribbon`, `cyan-yellow-form`, `cyan-magenta-form`, `yellow-magenta-form`, `trichromatic-permit`, `unified-operations-charter`, and `cryogenic-operations-license` are implemented
 
-**Scheduled for deletion** (no save compatibility burden — no Space Age save exists yet):
+**Removed in the automation pass** (no save compatibility burden):
 
 - `fax-emitter`, `interplanetary-fax-exchange`, `fax-network-combinator`
 - `scripts/fax.lua`, `scripts/fax_shared.lua`, `tests/test_fax_runtime.lua`
@@ -183,7 +183,7 @@ Aquilo recipes should not require `taxpayer-money`. Like all off-world planets, 
 
 ### Compute And Heat Infrastructure
 
-- `AI Server`: electricity plus a training corpus into Inference Tokens, with real heat as the byproduct
+- `AI Server`: electricity into Inference Tokens, with real heat as the byproduct
 - `Heat Exhaust`: optional heat sink for players who want compute without power generation
 - Inference Tokens, Administrative Slop, and Fabricated Citations as the Aquilo compute chain
 
@@ -240,4 +240,4 @@ Whether the `AI Server` itself exports off Aquilo is an open question. Every oth
 3. Should bicolor forms stay as direct liquid-ink recipes, or should Aquilo replace them with processed transfer media derived from colored paperwork?
 4. Does the `AI Server` export off Aquilo, or is it Aquilo-craftable only?
 5. What is the Heat Exhaust's dump rate relative to a server's output, and how many exhausts does one server need?
-6. Does the Terminus need one-per-planet uniqueness, as the fax receiver had?
+6. Does the Terminus need one-per-planet uniqueness?

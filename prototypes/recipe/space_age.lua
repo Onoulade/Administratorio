@@ -1435,9 +1435,9 @@ data:extend({
     energy_required = 10,
   }, "aquilo"),
 
-  -- The chain: corpus -> tokens (+ heat) -> slop -> paperwork (+ citations).
-  -- The training corpus is deliberately made of existing junk so the Nauvis and
-  -- Gleba nonsense economies feed Aquilo rather than being bypassed by it.
+  -- The chain: electricity -> tokens (+ heat) -> slop -> paperwork (+ citations).
+  -- The AI Server's power draw and heat output are the whole cost of inference;
+  -- existing material economies enter at the Slop Refinery instead.
   {
     type = "recipe",
     name = "inference-token-production",

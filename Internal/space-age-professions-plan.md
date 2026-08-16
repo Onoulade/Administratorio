@@ -168,10 +168,10 @@ Home identity:
 Best uses:
 
 - `Laser Printer`
-- `fax-emitter`
-- `Interplanetary Fax Exchange`
+- `AI Server`
+- `Slop Refinery`
 - `precision-duplicate-order`
-- premium fax reconstruction
+- premium duplicate work
 - `advanced-chemistry-license`
 
 Why it works:
@@ -313,7 +313,7 @@ Besides the night module, the best profession-backed content is:
 - `licensed-notary` in `Notary Office`, `Territorial Arbitration Post`, and high-tier Vulcanus certification
 - `relay-clerk` in `Digital Services Bureau` and Fulgora digital paperwork
 - `conciliation-officer` in `Conciliation Desk` and reassignment loops
-- `cryoprint-technician` in `Laser Printer`, `fax-emitter`, `Interplanetary Fax Exchange`, and premium duplicate work
+- `cryoprint-technician` in `Laser Printer`, `AI Server`, `Slop Refinery`, and premium duplicate work
 
 These are better hooks than scattering specialists across random paperwork recipes, because they attach personnel directly to the most important new buildings.
 

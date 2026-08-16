@@ -75,7 +75,7 @@ Ordinary administrative production facilities use native Quality speed and modul
 
 Paperwork may be high quality, but its permit strength, form cost, research value, and recipe yield never change. The interplanetary trunk, pneumatic tubes, and biterport logistics preserve a document's exact grade. In particular, unqualified biterport requester filters request normal stock only; an explicit Quality filter requests that exact grade, including for construction ghosts.
 
-Pneumatic hardware itself is Quality-neutral and cannot be produced at a Quality grade. Archive recombination, territorial arbitration, trajectory compliance, and orbital mining treat Quality as cosmetic only: no extra speed, range, damage, yield, staffing, payload, or module departments. MMMM quality never improves meeting output or the process they supervise; native Quality may only preserve a temporary briefing, an egg courier, or an Unstaffed Operations Waiver longer before it spoils. Quality never widens the interplanetary trunk, changes its transit time, or increases a Terminus's buffer.
+Pneumatic hardware itself is Quality-neutral and cannot be produced at a Quality grade. Archive recombination, territorial arbitration, trajectory compliance, and orbital mining treat Quality as cosmetic only: no extra speed, range, damage, yield, staffing, payload, or module departments. MMMM quality never improves meeting output or the process they supervise; native Quality may only preserve a temporary briefing or an egg courier longer before it spoils. The permanent Unstaffed Operations Waiver is unaffected. Quality never widens the interplanetary trunk, changes its transit time, or increases a Terminus's buffer.
 
 ## Current State
 

@@ -168,7 +168,7 @@ This is the core bridge between the printer and the office.
 `government-grant` remain finished-document imports. The local notary chain
 creates Vulcanus-specific charters and resettlement paperwork, not generic
 executive approvals. Everything else uses the canonical recipe or is an
-import/fax need.
+import/tube need.
 
 ## What Vulcanus Intentionally Does Not Do
 

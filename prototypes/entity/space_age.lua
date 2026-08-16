@@ -715,7 +715,10 @@ local ai_server_heat_core = {
   heat_buffer = {
     max_temperature = 1000,
     specific_heat = "5MJ",
-    max_transfer = "2GW",
+    -- One server supplies 4 MW of heat; the small margin permits a connected
+    -- heat network to absorb normal fluctuations without turning the hidden
+    -- buffer into a multi-gigawatt burst battery.
+    max_transfer = "5MW",
     minimum_glow_temperature = 350,
     connections = AI_SERVER_HEAT_CONNECTIONS,
   },
@@ -746,7 +749,10 @@ local heat_exhaust = {
   heat_buffer = {
     max_temperature = 1000,
     specific_heat = "1MJ",
-    max_transfer = "500MW",
+    -- A single exhaust keeps one 4 MW server cool with a little headroom.
+    -- Larger compute farms need proportional cooling rather than one fan
+    -- silently deleting an entire planet's heat economy.
+    max_transfer = "5MW",
     minimum_glow_temperature = 350,
     connections = {
       {position = {0, -2}, direction = defines.direction.north},

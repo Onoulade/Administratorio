@@ -24,9 +24,9 @@
 -- propaganda-distillery        | Propaganda Distillery (admin fluid processing)
 -- pneumatic-intake            | Tube Intake (hidden no-output intake validation)
 -- interplanetary-dispatch     | Interplanetary Terminus (hidden outbound payload validation)
--- ai-inference                | AI Server (tokens and slop from a training corpus)
--- slop-refining               | AI Server (slop into fabricated paperwork)
--- citation-handling           | AI Server (venting and fact-checking hallucinations)
+-- ai-inference                | AI Server (electricity into Inference Tokens)
+-- slop-refining               | Slop Refinery (tokens into slop and paperwork)
+-- citation-handling           | Slop Refinery (venting and fact-checking hallucinations)
 -- personnel-synthesis         | Synthetic Personnel Bureau (professions, not buildings)
 -- relocation-payload          | Involuntary Relocation Cannon (hidden biter-cargo validation)
 -------------------------------------------------------------------------------
@@ -87,7 +87,9 @@ end
 
 if working_hours_enabled then
   categories[#categories + 1] = {type = "module-category", name = "night-work"}
-  categories[#categories + 1] = {type = "module-category", name = "unstaffed-operations"}
+  if space_age_enabled then
+    categories[#categories + 1] = {type = "module-category", name = "unstaffed-operations"}
+  end
 end
 
 data:extend(categories)

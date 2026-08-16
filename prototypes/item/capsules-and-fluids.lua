@@ -251,14 +251,14 @@ data:extend({
   { type = "fluid", name = "misinformation",    icon = item_icons .. "misinformation.png",              icon_size = 64, subgroup = "admin-fluids", order = "d", default_temperature = 25, base_color = {r=0.5, g=0.5, b=0.5}, flow_color = {r=0.8, g=0.8, b=0.8} },
   { type = "fluid", name = "union-approval",    icon = item_icons .. "union-approval.png", icon_size = 64, subgroup = "admin-fluids", order = "e", default_temperature = 25, base_color = {r=0.2, g=0.4, b=1.0}, flow_color = {r=0.4, g=0.6, b=1.0} },
   { type = "fluid", name = "liquid-coffee",     icon = item_icons .. "coffee.png",                  icon_size = 64, subgroup = "admin-fluids", order = "f", default_temperature = 80, base_color = {r=0.3, g=0.2, b=0.1}, flow_color = {r=0.4, g=0.2, b=0.1} },
-  -- Inference is a stream, not a crate. auto_barrel is off so it cannot be
-  -- decanted into a barrel and carried by belt, chest or rocket: the only way
-  -- to move it is optic fibre.
-  { type = "fluid", name = "inference-token",   icon = item_icons .. "third-party/inference-token.png", icon_size = 64, subgroup = "admin-fluids", order = "g", default_temperature = 25, base_color = {r=0.25, g=0.65, b=0.95}, flow_color = {r=0.5, g=0.9, b=1.0}, auto_barrel = false },
 })
 
 if feature_flags.space_age_enabled() then
   data:extend({
+    -- Inference is a stream, not a crate. auto_barrel is off so it cannot be
+    -- decanted into a barrel and carried by belt, chest or rocket: the only way
+    -- to move it is optic fibre.
+    { type = "fluid", name = "inference-token", icon = item_icons .. "third-party/inference-token.png", icon_size = 64, subgroup = "admin-fluids", order = "g", default_temperature = 25, base_color = {r=0.25, g=0.65, b=0.95}, flow_color = {r=0.5, g=0.9, b=1.0}, auto_barrel = false },
     { type = "fluid", name = "amber-sap",        icon = item_icons .. "amber-sap.png", icon_size = 64, subgroup = "admin-fluids", order = "f5", default_temperature = 35, base_color = {r=0.65, g=0.4, b=0.05}, flow_color = {r=0.95, g=0.7, b=0.2} },
     { type = "fluid", name = "liquid-black-ink", icons = tinted_icon(item_icons .. "liquid-ink.png", {r=0.34, g=0.34, b=0.42, a=1}), subgroup = "admin-fluids", order = "g", default_temperature = 25, base_color = {r=0.08, g=0.08, b=0.12}, flow_color = {r=0.15, g=0.15, b=0.2} },
     { type = "fluid", name = "cyan-slurry",      icon = item_icons .. "cyan-slurry.png", icon_size = 64, subgroup = "admin-fluids", order = "h", default_temperature = 90, base_color = {r=0.05, g=0.55, b=0.55}, flow_color = {r=0.15, g=0.85, b=0.85} },

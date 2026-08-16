@@ -1,4 +1,6 @@
+local feature_flags = require("feature_flags")
 local manager_briefings = require("prototypes.shared.manager_briefings")
+local working_hours_enabled = feature_flags.working_hours_enabled()
 
 local function add_tech_unlock(technology_name, recipe_name)
   local technology = data.raw["technology"] and data.raw["technology"][technology_name]
@@ -1113,30 +1115,32 @@ data:extend({
 -- dispatched worker. Gated behind tricolor paperwork, so the authorisation
 -- costs one form from every planetary jurisdiction at once.
 -- ============================================================
-data:extend({
-  {
-    type = "technology",
-    name = "unstaffed-operations",
-    icon = "__administratorio__/graphics/technology/unstaffed-operations-waiver.png",
-    icon_size = 64,
-    effects = {
-      {type = "unlock-recipe", recipe = "unstaffed-operations-waiver"},
-    },
-    prerequisites = {"interplanetary-tube-chromatic", "public-finance"},
-    unit = {
-      count = 500,
-      ingredients = {
-        {"metallurgic-science-pack", 1},
-        {"agricultural-science-pack", 1},
-        {"electromagnetic-science-pack", 1},
-        {"cryogenic-science-pack", 1},
-        {"administrative-science-pack", 1},
+if working_hours_enabled then
+  data:extend({
+    {
+      type = "technology",
+      name = "unstaffed-operations",
+      icon = "__administratorio__/graphics/technology/unstaffed-operations-waiver.png",
+      icon_size = 64,
+      effects = {
+        {type = "unlock-recipe", recipe = "unstaffed-operations-waiver"},
       },
-      time = 60,
+      prerequisites = {"interplanetary-tube-chromatic", "public-finance", "quantum-processor"},
+      unit = {
+        count = 500,
+        ingredients = {
+          {"metallurgic-science-pack", 1},
+          {"agricultural-science-pack", 1},
+          {"electromagnetic-science-pack", 1},
+          {"cryogenic-science-pack", 1},
+          {"administrative-science-pack", 1},
+        },
+        time = 60,
+      },
+      order = "h-v",
     },
-    order = "h-v",
-  },
-})
+  })
+end
 
 -- ============================================================
 -- SYNTHETIC PERSONNEL BUREAU
@@ -1164,7 +1168,7 @@ data:extend({
     icon = "__administratorio__/graphics/icons/synthetic-personnel-bureau.png",
     icon_size = 64,
     effects = synthetic_personnel_effects,
-    prerequisites = {"aquilo-ai-inference", "promethium-science-pack"},
+    prerequisites = {"aquilo-ai-inference", "promethium-science-pack", "quantum-processor"},
     unit = {
       count = 900,
       ingredients = {
@@ -1201,7 +1205,12 @@ data:extend({
     icon = "__space-age__/graphics/icons/biter-egg.png",
     icon_size = 64,
     effects = courier_effects,
-    prerequisites = {"management-formation", "planet-discovery-gleba"},
+    prerequisites = {
+      "management-formation",
+      "planet-discovery-gleba",
+      "agricultural-science-pack",
+      "biter-egg-handling",
+    },
     unit = {
       count = 300,
       ingredients = {
@@ -1247,7 +1256,13 @@ data:extend({
     icon = "__administratorio__/graphics/icons/relocation-cannon.png",
     icon_size = 64,
     effects = relocation_effects,
-    prerequisites = {"egg-courier-formation", "vulcanus-certification"},
+    prerequisites = {
+      "egg-courier-formation",
+      "vulcanus-certification",
+      "tungsten-steel",
+      "metallurgic-science-pack",
+      "agricultural-science-pack",
+    },
     unit = {
       count = 400,
       ingredients = {

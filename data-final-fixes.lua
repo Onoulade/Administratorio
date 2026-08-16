@@ -1307,7 +1307,7 @@ require("prototypes.final_fixes.colored_ink_gating").apply(
 -- Restrict every other machine to the module categories it already had, so a
 -- waiver cannot be parked somewhere it would do nothing.
 -------------------------------------------------------------------------------
-if feature_flags.space_age_enabled() then
+if feature_flags.space_age_enabled() and feature_flags.working_hours_enabled() then
   require("prototypes.final_fixes.unstaffed_operations_gating").apply(
     data,
     require("prototypes.shared.biter_station_buildings").names

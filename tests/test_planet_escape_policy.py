@@ -42,7 +42,7 @@ check(
 
 fulgora_targets = planet_escape.add_profile_targets(
     [("rocket-part", Fraction(100))],
-    ["bootstrap", "native-machine", "colored-form", "aquilo-fax"],
+    ["bootstrap", "native-machine", "colored-form", "aquilo-automation"],
     ["fulgora"],
 )
 target_names = {name for name, _ in fulgora_targets}

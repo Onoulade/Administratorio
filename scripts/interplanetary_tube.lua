@@ -107,9 +107,9 @@ function M.ensure_storage()
   storage.terminus_flights = storage.terminus_flights or {}
 end
 
---- One Terminus per planet, mirroring the receiver uniqueness the fax network
---- established. A single endpoint per world is what keeps the trunk a trunk
---- rather than a mesh, and it gives the arrivals buffer one obvious home.
+--- One Terminus per planet. A single endpoint per world is what keeps the
+--- trunk a trunk rather than a mesh, and it gives the arrivals buffer one
+--- obvious home.
 function M.find_planet_terminus(force_index, planet_name, except_unit_number)
   M.ensure_storage()
   for unit_number, entry in pairs(storage.terminus_registry) do
@@ -206,9 +206,8 @@ end
 -- REQUESTS
 -------------------------------------------------------------------------------
 
---- Requested items are read from the Terminus's circuit condition, the same way
---- the fax receiver read its request signals. A request names what this planet
---- wants pulled from any other planet's outbound buffer.
+--- Requested items are read from the Terminus's circuit condition. A request
+--- names what this planet wants pulled from any other planet's outbound buffer.
 function M.collect_requests(entity)
   local requests = {}
   if not entity or not entity.valid or not entity.get_control_behavior then

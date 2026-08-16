@@ -384,6 +384,30 @@ local function tech_depends_on_or_equals(technology_name, prerequisite_name, see
   return false
 end
 
+test("couriers, cannon, waiver, and bureau unlock only after their real inputs", function()
+  local couriers = assert(technologies["egg-courier-formation"], "egg courier technology missing")
+  assert_true(tech_has_prerequisite(couriers, "agricultural-science-pack"),
+    "courier research must follow the agricultural science it consumes")
+  assert_true(tech_has_prerequisite(couriers, "biter-egg-handling"),
+    "courier recipes must not unlock before a real biter-egg source exists")
+
+  local cannon = assert(technologies["involuntary-relocation"], "relocation cannon technology missing")
+  assert_true(tech_has_prerequisite(cannon, "metallurgic-science-pack"),
+    "cannon research must follow the metallurgic science it consumes")
+  assert_true(tech_has_prerequisite(cannon, "agricultural-science-pack"),
+    "cannon research must follow the agricultural science it consumes")
+  assert_true(tech_has_prerequisite(cannon, "tungsten-steel"),
+    "the cannon must not unlock before its tungsten-plate recipe input")
+
+  local waiver = assert(technologies["unstaffed-operations"], "unstaffed operations technology missing")
+  assert_true(tech_has_prerequisite(waiver, "quantum-processor"),
+    "the waiver must not unlock before its quantum-processor recipe input")
+
+  local bureau = assert(technologies["synthetic-personnel"], "synthetic personnel technology missing")
+  assert_true(tech_has_prerequisite(bureau, "quantum-processor"),
+    "the bureau must not unlock before its quantum-processor recipe input")
+end)
+
 test("worker-biter exists as the enrolled-to-workforce intermediate", function()
   assert_true(items["job-offer"] ~= nil, "job-offer missing")
   assert_true(items["enrolled-biter"] ~= nil, "enrolled-biter missing")

@@ -22,8 +22,8 @@ end
 -- An Unstaffed Operations Waiver installed in a managed building's module
 -- inventory authorises it to run without a dispatched worker biter, mirroring
 -- has_overtime_exemption in scripts/working_hours.lua. The waiver occupies a
--- module slot the player would otherwise spend on productivity, and it spoils,
--- so the authorisation is rented rather than owned.
+-- module slot the player would otherwise spend on productivity. It is
+-- permanent, but removing it immediately returns the building to dispatch.
 local function has_unstaffed_operations_waiver(entity)
   if not entity or not entity.valid or not entity.get_module_inventory then
     return false
@@ -2043,9 +2043,8 @@ function M.rebuild_registry()
   end
 end
 
---- Waivers spoil in place, so authorisation is re-checked every cycle rather
---- than latched when the building was registered. Without this a lapsed waiver
---- would leave its building running unstaffed forever.
+--- Waivers can be inserted or removed at any time, so authorisation is
+--- re-checked every cycle rather than latched when the building is registered.
 local function reconcile_waivered_buildings()
   for unit_number, entity in pairs(storage.managed_building_registry) do
     if not entity or not entity.valid then
@@ -2056,7 +2055,7 @@ local function reconcile_waivered_buildings()
       end
       storage.managed_building_run[unit_number] = nil
     elseif entity.active and not storage.managed_building_run[unit_number] then
-      -- The waiver lapsed: the building waits for a dispatched biter again.
+      -- The waiver was removed: the building waits for a dispatched biter again.
       entity.active = false
     end
   end

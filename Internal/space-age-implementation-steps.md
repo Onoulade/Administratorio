@@ -2,6 +2,12 @@
 
 This file tracks the next concrete implementation steps for the Space Age expansion, in recommended order.
 
+> **Historical note — superseded fax design.** The fax implementation described
+> in older sections of this record was deleted on 2026-08-15 and replaced by
+> the Interplanetary Tube Network. Those entries remain as implementation
+> history only; use [space-age-automation-plan.md](space-age-automation-plan.md)
+> for the current tube, AI, waiver, courier, and cannon design.
+
 ## Assessment Snapshot — 2026-04-18
 
 Branch assessed: `space-age`.

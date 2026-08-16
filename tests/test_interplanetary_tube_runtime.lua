@@ -384,6 +384,31 @@ test("a buffer that fills mid-flight holds the item rather than voiding it", fun
     "a stalled trunk should signal the back-pressure")
 end)
 
+test("removing a Terminus refunds inbound flights before its anchor disappears", function()
+  reset()
+  local source = new_terminus("nauvis", BASE)
+  local destination = new_terminus("vulcanus", BASE)
+  register(source)
+  register(destination)
+  storage.terminus_flights = {
+    {
+      item = "blank-form",
+      quality = "normal",
+      count = 1,
+      force_index = source.force.index,
+      from_entity = source,
+      to_unit = destination.unit_number,
+      arrive_tick = C.TRUNK_BASE_TRANSIT_TICKS,
+    },
+  }
+
+  tube.on_entity_removed(destination, nil)
+
+  assert_eq(#storage.terminus_flights, 0, "removal should resolve inbound flights immediately")
+  assert_eq(source.arrivals.get_item_count("blank-form"), 1,
+    "the source should recover paperwork instead of losing it after destination destruction")
+end)
+
 test("arrivals are never auto-fed anywhere", function()
   reset()
   local nauvis = new_terminus("nauvis", BASE)

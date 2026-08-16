@@ -102,8 +102,8 @@ PLANET_PROFILE_TARGETS = {
         "gleba": (("blank-yellow-form", 1),),
         "fulgora": (("blank-magenta-form", 1),),
     },
-    "aquilo-fax": {
-        "aquilo": (("thermal-transfer-sheet", 1), ("interplanetary-fax-exchange", 1)),
+    "aquilo-automation": {
+        "aquilo": (("thermal-transfer-sheet", 1), ("ai-server", 1), ("heat-exhaust", 1)),
     },
 }
 

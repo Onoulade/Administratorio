@@ -6,7 +6,7 @@ It covers six connected systems that share one thesis: **the bureaucracy learns 
 
 The original thesis ran "...and the biters file about it", carried by the automation grievance thread in section 7. That thread was cut during implementation: no new complaint families.
 
-**Status: implemented.** All six systems are built. This file is retained as the design record; the notes below on verification gates and open questions record the decisions taken during implementation.
+**Status: implemented.** All six systems are built. This file is retained as the design record; the notes below record the implementation decisions that survived review.
 
 ## Architecture
 
@@ -39,31 +39,17 @@ No Space Age save exists yet. This pass assumes **no backwards compatibility bur
 
 ---
 
-## Verification Gates
+## Verification Notes
 
-Two engine behaviours are unmeasured and are load-bearing. Neither can be settled by reading the codebase. Both should be tested in a real save before the dependent systems are built.
+The early proposal gave the Unstaffed Operations Waiver a spoil timer inside a
+machine module inventory. The implemented waiver is deliberately permanent:
+it has no expiry, reactivation recipe, or hidden `unit_number` timer. That
+removes an unverified engine dependency and makes its price and occupied
+productivity slot the complete tradeoff.
 
-### Gate 1 — does spoilage tick inside a machine's module inventory? **UNVERIFIED**
-
-Implemented as designed, on the assumption that it does. If it does not, the waiver never expires and needs the scripted `unit_number` timer instead; nothing else in the pass depends on the answer. The runtime already re-checks waiver presence every station cycle rather than latching it at build time, so a scripted expiry would have one obvious place to live.
-
-
-The Unstaffed Operations Waiver is a module that spoils while installed. The existing spoilage precedent in this mod (briefed MMMMs, `prototypes/shared/manager_briefings.lua`) is an ordinary inventory, not a module slot.
-
-- **If yes**: the waiver works as designed below.
-- **If no**: the waiver needs a scripted expiry timer keyed on `unit_number`, which is a materially different build.
-
-### Gate 2 — does Quality natively extend spoil time? **ASSUMED YES**
-
-Taken as native per the supporting evidence below. README and the courier/waiver descriptions are written on that basis. If it turns out to be false, the quality claims are the only thing that needs retracting; the Nauvis-to-Aquilo courier run is ~7.5 minutes against a 30-minute budget, so the design survives either way.
-
-
-`spoil_ticks` is a prototype-level field and Quality is per-stack, so there is **no reasonable mod path** to per-quality spoil duration. This is native-or-nothing.
-
-Supporting evidence that it is native: [README.md](~/Library/Application Support/factorio/mods/administratorio/README.md) already asserts it for briefings, and `scripts/quality.lua` contains no spoilage code at all — only `native_speed_multiplier` and `infrastructure_multiplier`.
-
-- **If yes**: quality extends lifetime for all trained MMMMs (briefings and couriers alike), and the waiver runs 1h normal / 2.5h legendary.
-- **If no**: every spoiling item gets one flat duration. The design survives — the Nauvis→Aquilo courier run is ~7.5 minutes of flight against a 30-minute budget — but the quality rule is dropped from the README and from principle expectations.
+Quality has no custom automation behaviour in this pass. Temporary briefings
+and couriers retain their ordinary item behaviour; no balance rule here relies
+on Quality changing a lifetime.
 
 ---
 
@@ -123,9 +109,11 @@ The base tier deliberately opens at capacity 2–3 rather than 1. A single in-fl
 - **Colored tier**: unlocked on Aquilo, adds the chromatic set.
 - **Upgrade tiers**: scale through to Administratorium.
 
-### 1.6 Required follow-up
+### 1.6 Endgame prerequisite
 
-`add_tech_prerequisite("promethium-science-pack", "aquilo-fax-network")` at `prototypes/technology/space_age.lua:970` must be re-pointed at the Aquilo colored tube tier. Without this the endgame gate silently loosens when the base tier moves earlier.
+`promethium-science-pack` now requires `interplanetary-tube-chromatic`, the
+Aquilo colored tube tier. This preserves the endgame logistics gate after the
+base trunk moved before Aquilo.
 
 The Terminus building's staffing requirement must not be `cryoprint-technician` at base tier — that is an Aquilo-only profession, and a pre-Aquilo technology unlocking an unbuildable building is a bad first impression.
 
@@ -161,7 +149,9 @@ Chosen architecture:
 - a **hidden `reactor` child** at the same position carries the heat connections
 - the runtime drives the child's `temperature` from the parent's crafting state
 
-Precedents for hidden children in this codebase: `scripts/fax.lua:63` (combinator), the Biterport's hidden roboport (`scripts/constants.lua:225`), and `scripts/pneumatic.lua:308` (network pipe).
+Precedents for hidden children in this codebase: the Biterport's hidden
+roboport (`scripts/constants.lua:225`) and `scripts/pneumatic.lua:308`
+(network pipe).
 
 Known implementation cost: the hidden reactor's `heat_connections` must align with the visible footprint so heat pipes attach where players expect them.
 
@@ -171,19 +161,24 @@ An AI Server that cannot dump its heat stops. Not a throttle. Signalled through 
 
 ### 2.4 The fan is a heat sink
 
-The `lufter` becomes a **Heat Exhaust** using `type = "heat-interface"` with `mode = "at-most"`, which caps a heat network's temperature — a genuine vanilla heat void, no scripting.
+The `lufter` becomes a **Heat Exhaust** using `type = "heat-interface"`. Its
+hidden GUI cannot be edited, so runtime setup applies `mode = "at-most"` on
+placement and rebuild; this caps a heat network's temperature and makes it a
+genuine heat void rather than an accidental source.
 
 This exists for players who want the compute without the power generation. Its presence must never be more efficient than actually using the heat.
 
 ### 2.5 The chain
 
 ```
-electricity + training corpus  →  Inference Token  (+ heat)
+electricity                    →  Inference Token  (+ heat)
 Inference Token + substrate    →  Administrative Slop
 Administrative Slop + blank    →  paperwork  (+ Fabricated Citations)
 ```
 
-Training corpus should consume existing items — `dubious-data`, `data`, `useless-documentation` — so the Nauvis and Gleba nonsense economies feed Aquilo rather than being bypassed by it.
+Electricity is deliberately the whole inference cost. Existing materials enter
+at the Slop Refinery, where tokens combine with paper to form Administrative
+Slop and then paperwork.
 
 ### 2.6 Slop tiering, derived from the taxonomy
 
@@ -213,8 +208,6 @@ Volume scales with the **rank being slopped**. Rank 0–1 emits a trickle; the A
 
 ## 3. Unstaffed Operations Waiver
 
-*Blocked on Verification Gate 1.*
-
 ### 3.1 Scope is exactly five buildings
 
 `M.BITER_STATION_MANAGED_BUILDINGS` at `scripts/constants.lua:211`:
@@ -240,17 +233,14 @@ Volume scales with the **rank being slopped**. Rank 0–1 emits a trickle; the A
 
 The waiver **occupies a productivity slot**. That implicit trade is a real cost the player feels, at no design expense.
 
-### 3.3 Cost, spoilage, and reactivation
+### 3.3 Cost and permanence
 
 - Craft: all three base-planet specific ingredients plus tricolor paperwork
-- Spoils to an **Expired Waiver** at 1h normal, 2.5h legendary
-- Reactivated at Union HQ in the existing `union-negotiation` category, consuming `union-approval` fluid — cheaper than a fresh craft, so reactivation is the correct play
+- Permanent module: no spoilage and no reactivation path
+- The occupied productivity slot and expensive multiversal craft are the
+  continuing cost of automation
 
 No new crafting category is needed: Union HQ already carries `{"union-negotiation", "bureaucracy-policy"}`.
-
-### 3.4 The union notices
-
-A building running on a waiver periodically files an automation grievance. See section 7.
 
 ---
 
@@ -390,7 +380,7 @@ Deleting the fax network invalidates written doctrine outside this file. These n
 ## Open Questions — resolved during implementation
 
 1. **Does the AI Server export off Aquilo?** Aquilo-craftable only (`surface_limited(..., "aquilo")`), matching the Laser Printer. Its 4 MW draw plus a mandatory heat network is already brutal, but keeping the build Aquilo-local avoids relying on the power bill alone to stop Nauvis farming it.
-2. **Are Inference Tokens spendable beyond slop?** Yes, one secondary sink: the Synthetic Personnel Bureau consumes 4 per profession. The Administratorium slop tier remains the primary sink. Waiver reactivation was left on union-approval fluid, and tube postage stayed rejected because the base trunk tier is pre-Aquilo.
+2. **Are Inference Tokens spendable beyond slop?** Yes, one secondary sink: the Synthetic Personnel Bureau consumes 4 per profession. The Administratorium slop tier remains the primary sink. The waiver is an expensive permanent module, and tube postage stayed rejected because the base trunk tier is pre-Aquilo.
 3. **Are synthesised specialists identical to hired ones?** Identical — the synthesis recipes produce the same items the Nauvis formations do. A distinct item would have doubled every downstream check for no gameplay gain, and the Bureau's whole point is removing the Nauvis round trip rather than creating a parallel roster.
 4. **Does the Terminus need one-per-planet uniqueness?** Yes, enforced in `scripts/interplanetary_tube.lua`. One endpoint per world is what keeps the trunk a trunk rather than a mesh, and it gives the arrivals buffer one obvious home. Placement on a second is refused and the building returned.
-5. **What is the Heat Exhaust's dump rate?** 500 MW transfer against a server producing 0.5 degrees per tick into a 5 MJ/degree buffer. One exhaust comfortably covers one server, which is the intended ratio: the exhaust is a convenience for players who do not want the power generation, never a better option than using the heat.
+5. **What is the Heat Exhaust's dump rate?** 5 MW against a server producing 1/75 degree per tick into a 5 MJ/degree buffer: exactly 4 MW of heat at 60 ticks per second. One exhaust covers one server with modest headroom, so larger farms need proportional cooling rather than one fan deleting a planet's heat economy.

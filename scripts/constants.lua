@@ -301,14 +301,16 @@ M.RELOCATION_CANNON_CHECK_TICKS = 60
 -- emit heat.
 M.AI_SERVER_NAME = "ai-server"
 M.AI_SERVER_HEAT_CORE_NAME = "ai-server-heat-core"
+M.HEAT_EXHAUST_NAME = "heat-exhaust"
 -- A quarter second. Heat is integrated per check, so a coarser cadence would
 -- make the stall threshold overshoot in visible steps.
 M.AI_SERVER_CHECK_TICKS = 15
 M.AI_SERVER_AMBIENT_TEMPERATURE = 15
 M.AI_SERVER_MAX_TEMPERATURE = 1000
--- Degrees added per tick while crafting. A single heat exchanger drains far
--- more than this, so one exchanger comfortably sustains one server.
-M.AI_SERVER_HEAT_PER_TICK = 0.5
+-- Degrees added per tick while crafting. The core stores 5 MJ per degree, so
+-- 1 / 75 degrees per tick is exactly 4 MW at 60 ticks per second, matching
+-- the visible server's 4 MW electrical draw instead of creating free power.
+M.AI_SERVER_HEAT_PER_TICK = 1 / 75
 -- Reaching this stops the server outright rather than throttling it.
 M.AI_SERVER_STALL_TEMPERATURE = 950
 

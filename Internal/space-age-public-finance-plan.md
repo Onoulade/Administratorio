@@ -20,7 +20,7 @@ The key change is that Space Age should split public finance into two connected 
 The current first-pass code already follows the tax-evasion rule for the planet-local Space Age recipes that exist now:
 
 - Vulcanus, Gleba, Fulgora, and Aquilo local paperwork chains do not rely on raw `taxpayer-money`
-- Aquilo fax infrastructure currently exists as `fax-emitter` plus `interplanetary-fax-exchange`
+- the interplanetary paperwork layer is the narrow `interplanetary-terminus` tube trunk
 - derivative finance instruments such as `money-case`, `offworld-allocation`, `cargo-manifest`, and `customs-appraisal` remain design-stage rather than implemented content
 
 ## Core Direction
@@ -149,8 +149,8 @@ Suggested uses:
 
 - first platform departures
 - `space-office`
-- `fax-emitter`
-- `Interplanetary Fax Exchange`
+- `interplanetary-terminus`
+- the late `interplanetary-tube-chromatic` tier
 - platform reactor operating budget
 - `trajectory-compliance-array`
 - late offworld buildings or upgrades
@@ -383,7 +383,7 @@ This model solves several problems at once.
 - Raw `taxpayer-money` does not have to become the universal ingredient on every planet.
 - Offworld exploration can outscale complaint payouts in the late game.
 - Colored local paperwork can feel like a true local substitute instead of just a recolor tax.
-- The fax network becomes more valuable because expensive finished forms and finance paperwork are better transmitted than physically moved.
+- The interplanetary tube trunk becomes more valuable because expensive finished forms and finance paperwork are better transmitted than physically moved.
 
 ## Technical Fit
 
@@ -414,5 +414,5 @@ That is the cleanest way to make money central to interstellar bureaucracy witho
 1. Should `money-case` be a real item, or is it enough to keep raw `taxpayer-money` movable but useless offworld?
 2. Should `offworld-allocation` be crafted from `government-grant` only, or also require `management-approval-written` or `management-written-work-order`?
 3. Should `customs-appraisal` redeem directly into three different outputs, or should the player choose one specialization path?
-4. How early should import redemption begin: immediately after first planet return, or only once the fax and space-office layers exist?
+4. How early should import redemption begin: immediately after first planet return, or only once the tube and space-office layers exist?
 5. Which existing Nauvis buildings should own the new finance recipes: `meeting-room`, `union-headquarters`, `office-desk`, or a new treasury-specific office?
