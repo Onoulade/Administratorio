@@ -10,6 +10,7 @@ function rules.get_required_form(recipe_name)
     ["construction-robot"] = "management-approval-verbal",
     ["personal-roboport-equipment"] = "management-approval-verbal",
     ["personal-roboport-mk2-equipment"] = "management-approval-verbal",
+    ["inserter"] = "work-order",
     ["rail"] = "construction-permit",
     ["train-stop"] = "construction-permit",
     ["rail-signal"] = "construction-permit",
