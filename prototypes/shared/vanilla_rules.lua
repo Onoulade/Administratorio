@@ -1,5 +1,10 @@
 local rules = {}
 
+-- `mods` is a Factorio data-stage global; the standalone Lua test harness
+-- doesn't define it, so fall back to an empty table there (mod treated as absent).
+local mods = mods or {}
+local AAI_LOADERS_ACTIVE = mods["aai-loaders"] ~= nil
+
 function rules.get_required_form(recipe_name)
   local explicit_form_overrides = {
     ["advanced-circuit"] = "management-approval-verbal",
@@ -24,6 +29,13 @@ function rules.get_required_form(recipe_name)
     ["steam-turbine"] = "management-approval-written",
     ["fusion-reactor-equipment"] = "management-approval-written",
   }
+  if AAI_LOADERS_ACTIVE then
+    -- AAI Loaders' entities move items across belt junctions unattended,
+    -- same hazard class as inserters/poles — needs a safety waiver.
+    explicit_form_overrides["aai-loader"] = "safety-waiver"
+    explicit_form_overrides["aai-fast-loader"] = "safety-waiver"
+    explicit_form_overrides["aai-express-loader"] = "safety-waiver"
+  end
   if explicit_form_overrides[recipe_name] then
     return explicit_form_overrides[recipe_name]
   end

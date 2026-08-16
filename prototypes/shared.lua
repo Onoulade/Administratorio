@@ -433,6 +433,15 @@ shared.BATCH_MULTIPLIERS = {
   ["paper-production"] = 20,
 }
 
+-- `mods` is a Factorio data-stage global; the standalone Lua test harness
+-- doesn't define it, so fall back to an empty table there (mod treated as absent).
+local mods = mods or {}
+if mods["aai-loaders"] then
+  shared.BATCH_MULTIPLIERS["aai-loader"] = 2
+  shared.BATCH_MULTIPLIERS["aai-fast-loader"] = 1
+  shared.BATCH_MULTIPLIERS["aai-express-loader"] = 1
+end
+
 -------------------------------------------------------------------------------
 -- RULESET
 -- Main branch keeps baseline (vanilla) regulation rules in a dedicated file.
