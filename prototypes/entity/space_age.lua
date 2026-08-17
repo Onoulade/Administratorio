@@ -217,7 +217,14 @@ chromatic_printer.graphics_set = {
   }
 }
 chromatic_printer.working_sound = {
-  sound = {filename = sound_path .. "industrial-printer-loop.ogg", volume = 0.55},
+  sound = {
+    allow_random_repeat = true,
+    variations = {
+      {filename = sound_path .. "chromatic-printer.ogg", volume = 0.55},
+      {filename = sound_path .. "printer-alt-1.ogg", volume = 0.5},
+      {filename = sound_path .. "printer-alt-2.ogg", volume = 0.5},
+    },
+  },
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
@@ -434,7 +441,7 @@ laser_printer.graphics_set = {
   }
 }
 laser_printer.working_sound = {
-  sound = {filename = sound_path .. "industrial-printer-loop.ogg", volume = 0.6},
+  sound = {filename = sound_path .. "laser-printer.ogg", volume = 0.6},
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
@@ -485,7 +492,7 @@ administrative_space_station.graphics_set = {
   }
 }
 administrative_space_station.working_sound = {
-  sound = {filename = sound_path .. "office-ambience-loop.ogg", volume = 0.55},
+  sound = {filename = sound_path .. "admin-space-station.ogg", volume = 0.55},
   idle_sound = {filename = "__base__/sound/idle1.ogg"}
 }
 
@@ -546,7 +553,7 @@ local involuntary_relocation_cannon = {
     },
   },
   working_sound = {
-    sound = {filename = sound_path .. "industrial-press-loop.ogg", volume = 0.5},
+    sound = {filename = sound_path .. "relocation-cannon.ogg", volume = 0.5},
     idle_sound = {filename = "__base__/sound/idle1.ogg"}
   },
 }
@@ -751,11 +758,9 @@ ai_server.graphics_set = {
     shadow_width = 700, shadow_height = 600, shadow_shift = util.by_pixel(24, 8),
   }),
 }
--- A building that plays escalating argument loops while consuming power and
--- producing text nobody reads is already thematically an AI server.
 ai_server.working_sound = {
-  sound = {filename = sound_path .. "meeting-debate.ogg", volume = 0.45},
-  idle_sound = {filename = sound_path .. "meeting-calm.ogg", volume = 0.3},
+  sound = {filename = sound_path .. "ai-server.ogg", volume = 0.5},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"},
 }
 
 local ai_server_heat_core = {
@@ -885,7 +890,7 @@ slop_refinery.graphics_set = {
   }),
 }
 slop_refinery.working_sound = {
-  sound = {filename = sound_path .. "meeting-argument-1.ogg", volume = 0.4},
+  sound = {filename = sound_path .. "slop-machine.ogg", volume = 0.5},
   idle_sound = {filename = "__base__/sound/idle1.ogg"},
 }
 
@@ -938,7 +943,7 @@ local interplanetary_terminus = {
     }),
   },
   working_sound = {
-    sound = {filename = sound_path .. "industrial-printer-loop.ogg", volume = 0.55},
+    sound = {filename = sound_path .. "interplanetary-tube.ogg", volume = 0.5},
     idle_sound = {filename = "__base__/sound/idle1.ogg"}
   },
 }
@@ -1261,6 +1266,7 @@ orbital_employment_catapult.attack_parameters.cooldown = 240
 orbital_employment_catapult.attack_parameters.range = 56
 orbital_employment_catapult.attack_parameters.min_range = 4
 orbital_employment_catapult.attack_parameters.turn_range = 0.05
+orbital_employment_catapult.attack_parameters.sound = {filename = sound_path .. "orbital-catapult.ogg", volume = 0.6}
 orbital_employment_catapult.energy_source = {
   type = "electric",
   buffer_capacity = "10MJ",

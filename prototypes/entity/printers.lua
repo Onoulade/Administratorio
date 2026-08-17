@@ -187,7 +187,14 @@ printer_t2.graphics_set = printer_graphics(
   }
 )
 printer_t2.working_sound = {
-  sound = { filename = sound_path .. "industrial-press-loop.ogg", volume = 0.58 },
+  sound = {
+    allow_random_repeat = true,
+    variations = {
+      { filename = sound_path .. "industrial-press-loop.ogg", volume = 0.58 },
+      { filename = sound_path .. "printer-alt-1.ogg", volume = 0.5 },
+      { filename = sound_path .. "printer-alt-2.ogg", volume = 0.5 },
+    },
+  },
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
 
