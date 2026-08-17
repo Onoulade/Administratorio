@@ -15,7 +15,7 @@ what was used, from whom, and under which licence.
 | File in this mod | Source | Upstream licence |
 |---|---|---|
 | `graphics/icons/third-party/inference-token.png` | `Moshine/graphics/icons/ai-trainer.png` | GNU LGPLv3 + CC BY — see below |
-| `graphics/entities/third-party/optical-fibre/*.png` (31 files) | `Moshine-assets/graphics/entity/opticalfiber/` | **Not covered by a credited licence — see "Outstanding" below** |
+| `graphics/entities/third-party/optical-fibre/*.png` (27 files) | `Moshine-assets/graphics/entity/opticalfiber/` | **Not covered by a credited licence — see "Outstanding" below** |
 
 ### AI Trainer icon
 

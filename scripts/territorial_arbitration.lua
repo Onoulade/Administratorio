@@ -233,10 +233,6 @@ local function remove_fluid(fluidbox, fluid_name, amount)
   return removed
 end
 
-local function get_force(entity)
-  return entity and entity.valid and entity.force or nil
-end
-
 local function mark_starved(entity)
   if not entity or not entity.valid then return end
   if not defines or not defines.entity_status_diode then return end

@@ -245,18 +245,6 @@ get_station_inventory = function(station)
   return station.get_inventory(defines.inventory.chest)
 end
 
-local function rotate_local_offset(offset, direction)
-  direction = direction or defines.direction.north
-  if direction == defines.direction.east then
-    return {x = -offset.y, y = offset.x}
-  elseif direction == defines.direction.south then
-    return {x = -offset.x, y = -offset.y}
-  elseif direction == defines.direction.west then
-    return {x = offset.y, y = -offset.x}
-  end
-  return {x = offset.x, y = offset.y}
-end
-
 local function offset_position(entity, offset)
   local position = entity and entity.position or {x = 0, y = 0}
   return {x = position.x + offset.x, y = position.y + offset.y}
@@ -590,12 +578,6 @@ local function reassign_active_station(active_state, station)
   if storage.biter_station_worker_units and biter_unit_number then
     storage.biter_station_worker_units[biter_unit_number] = station.unit_number
   end
-end
-
-local function has_arrived(entity, target, radius)
-  if not entity or not entity.valid or not target or not target.valid then return false end
-  local threshold = (radius or 0) + 0.5
-  return distance_squared(entity.position, target.position) < threshold * threshold
 end
 
 local function has_arrived_position(entity, target_position, radius)

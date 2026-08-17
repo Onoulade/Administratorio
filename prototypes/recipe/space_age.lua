@@ -85,26 +85,6 @@ local function add_manager_requirements(recipe_name, briefing_keys)
   )
 end
 
-local function remove_ingredient(recipe, ingredient_name)
-  if not recipe then return end
-
-  local function apply_to_variant(target)
-    if not target or not target.ingredients then return end
-
-    local filtered = {}
-    for _, ingredient in ipairs(target.ingredients) do
-      if (ingredient.name or ingredient[1]) ~= ingredient_name then
-        filtered[#filtered + 1] = ingredient
-      end
-    end
-    target.ingredients = filtered
-  end
-
-  apply_to_variant(recipe)
-  apply_to_variant(recipe.normal)
-  apply_to_variant(recipe.expensive)
-end
-
 local function surface_limited(recipe, planet_name)
   return planets.apply_planet_surface_conditions(recipe, planet_name)
 end

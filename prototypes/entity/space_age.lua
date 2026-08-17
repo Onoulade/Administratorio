@@ -20,17 +20,6 @@ local function require_non_vacuum(entity)
   return planets.require_non_vacuum_surface(entity)
 end
 
-local function space_age_sprite(name, width, height)
-  return {
-    filename = space_age_graphics .. name .. ".png",
-    priority = "high",
-    width = width,
-    height = height,
-    frame_count = 1,
-    scale = 0.5,
-  }
-end
-
 local function space_age_animation(name, width, height)
   return {
     filename = space_age_graphics .. name .. "-animation.png",

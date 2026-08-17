@@ -155,18 +155,6 @@ local function radius_box(pos, radius)
   }
 end
 
-local function rotate_local_offset(offset, direction)
-  direction = direction or defines.direction.north
-  if direction == defines.direction.east then
-    return {x = -offset.y, y = offset.x}
-  elseif direction == defines.direction.south then
-    return {x = -offset.x, y = -offset.y}
-  elseif direction == defines.direction.west then
-    return {x = offset.y, y = -offset.x}
-  end
-  return {x = offset.x, y = offset.y}
-end
-
 local function offset_position(entity, offset)
   local position = entity and entity.position or {x = 0, y = 0}
   return {x = position.x + offset.x, y = position.y + offset.y}
@@ -1433,10 +1421,6 @@ local function get_player_trash_inventory(player)
   local ok, inv = pcall(player.get_inventory, trash_inventory)
   if ok and inv then return inv end
   return nil
-end
-
-local function player_delivery_destination(player)
-  return get_player_character(player) or player
 end
 
 local function make_player_tracking_key(player)
