@@ -28,7 +28,8 @@
 -- slop-refining               | Slop Refinery (tokens into slop and paperwork)
 -- citation-handling           | Slop Refinery (venting and fact-checking hallucinations)
 -- personnel-synthesis         | Synthetic Personnel Bureau (professions, not buildings)
--- relocation-payload          | Involuntary Relocation Cannon (hidden biter-cargo validation)
+-- relocation-payload-in       | Involuntary Relocation Cannon (hidden biter-cargo validation, sender)
+-- relocation-payload-out      | Involuntary Relocation Receiver (hidden transfer-order validation)
 -------------------------------------------------------------------------------
 local feature_flags = require("feature_flags")
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
@@ -71,7 +72,8 @@ if space_age_enabled then
   categories[#categories + 1] = {type = "recipe-category", name = "slop-refining"}
   categories[#categories + 1] = {type = "recipe-category", name = "citation-handling"}
   categories[#categories + 1] = {type = "recipe-category", name = "personnel-synthesis"}
-  categories[#categories + 1] = {type = "recipe-category", name = "relocation-payload"}
+  categories[#categories + 1] = {type = "recipe-category", name = "relocation-payload-in"}
+  categories[#categories + 1] = {type = "recipe-category", name = "relocation-payload-out"}
   categories[#categories + 1] = {type = "recipe-category", name = "printing-chromatic"}
   categories[#categories + 1] = {type = "recipe-category", name = "printing-multicolor"}
   categories[#categories + 1] = {type = "recipe-category", name = "archive-reassignment"}

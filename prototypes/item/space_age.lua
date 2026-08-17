@@ -774,6 +774,16 @@ data:extend({
   },
   {
     type = "item",
+    name = "involuntary-relocation-receiver",
+    icon = item_icons .. "relocation-receiver.png",
+    icon_size = 64,
+    subgroup = "admin-space-buildings",
+    order = "o4",
+    place_result = "involuntary-relocation-receiver",
+    stack_size = 20
+  },
+  {
+    type = "item",
     name = "involuntary-transfer-order",
     icons = {{icon = item_icons .. "blank-directive.png", icon_size = 64, tint = {r = 1, g = 0.55, b = 0.3, a = 1}}},
     subgroup = "admin-space-compliance",

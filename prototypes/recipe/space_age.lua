@@ -1343,6 +1343,22 @@ data:extend({
     results = {{type = "item", name = "involuntary-relocation-cannon", amount = 1}},
     energy_required = 25,
   }),
+  not_in_space({
+    type = "recipe",
+    name = "involuntary-relocation-receiver",
+    subgroup = "admin-space-buildings",
+    enabled = false,
+    ingredients = {
+      {type = "item", name = "office-desk", amount = 2},
+      {type = "item", name = "licensed-notary", amount = 1},
+      {type = "item", name = "tungsten-plate", amount = 40},
+      {type = "item", name = "processing-unit", amount = 20},
+      {type = "item", name = "steel-plate", amount = 60},
+      {type = "item", name = "construction-work-order", amount = 1},
+    },
+    results = {{type = "item", name = "involuntary-relocation-receiver", amount = 1}},
+    energy_required = 25,
+  }),
   {
     type = "recipe",
     name = "involuntary-transfer-order-production",
@@ -2287,10 +2303,12 @@ local relocation_cargo = require("prototypes.shared.relocation_cargo")
 
 local relocation_payload_recipes = {}
 for _, item_name in ipairs(relocation_cargo.loadable_names()) do
+  local category = (item_name == relocation_cargo.TRANSFER_FORM)
+    and "relocation-payload-out" or "relocation-payload-in"
   relocation_payload_recipes[#relocation_payload_recipes + 1] = {
     type = "recipe",
     name = relocation_cargo.load_recipe_name(item_name),
-    category = "relocation-payload",
+    category = category,
     enabled = false,
     hidden = true,
     hidden_in_factoriopedia = true,
@@ -2336,6 +2354,7 @@ local staffed_building_manager_requirements = {
   ["slop-refinery"] = {"staffing", "liaison"},
   ["synthetic-personnel-bureau"] = {"staffing", "liaison"},
   ["involuntary-relocation-cannon"] = {"staffing", "compliance"},
+  ["involuntary-relocation-receiver"] = {"staffing", "compliance"},
   ["laser-printer"] = {"staffing"},
   ["administrative-space-station"] = {"staffing", "orbital"},
 }

@@ -60,12 +60,26 @@ function M.as_set()
   return set
 end
 
---- What a cannon will accept into its single slot: the shippable cargo above,
---- plus the transfer orders a receiving cannon files. The orders are loadable
---- but never shippable, so they cannot be fired at another planet.
-function M.loadable_names()
+--- What the emitter will accept into its single slot: the shippable cargo
+--- above. Never the transfer orders -- an emitter never files a request.
+function M.emitter_loadable_names()
   local names = {}
   for _, name in ipairs(M.names) do names[#names + 1] = name end
+  table.sort(names)
+  return names
+end
+
+--- What the receiver will accept into its single slot: transfer orders only.
+--- Orders are loadable but never shippable, so they cannot be fired at
+--- another planet.
+function M.receiver_loadable_names()
+  return {M.TRANSFER_FORM}
+end
+
+--- The union of both, for callers (technology unlock loops) that don't care
+--- which building loads which name.
+function M.loadable_names()
+  local names = M.emitter_loadable_names()
   names[#names + 1] = M.TRANSFER_FORM
   table.sort(names)
   return names

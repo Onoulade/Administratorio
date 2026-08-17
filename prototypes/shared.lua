@@ -221,6 +221,7 @@ if space_age_enabled then
   shared.ADMIN_BUILDINGS["slop-refinery"] = true
   shared.ADMIN_BUILDINGS["synthetic-personnel-bureau"] = true
   shared.ADMIN_BUILDINGS["involuntary-relocation-cannon"] = true
+  shared.ADMIN_BUILDINGS["involuntary-relocation-receiver"] = true
   shared.ADMIN_BUILDINGS["heat-exhaust"] = true
 end
 
@@ -473,6 +474,7 @@ shared.UNBATCHED_RESULT_NAMES = {
   ["slop-refinery"] = true,
   ["synthetic-personnel-bureau"] = true,
   ["involuntary-relocation-cannon"] = true,
+  ["involuntary-relocation-receiver"] = true,
   ["heat-exhaust"] = true,
 }
 
