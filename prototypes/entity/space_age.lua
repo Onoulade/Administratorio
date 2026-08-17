@@ -945,7 +945,7 @@ local interplanetary_terminus = {
     animation = machine_sheet("interplanetary-terminus", {
       width = 160, height = 290, frame_count = 20, line_length = 8,
       scale = 96 / 160, shift = util.by_pixel(0, -34), emission = true,
-      shadow_width = 400, shadow_height = 350, shadow_shift = util.by_pixel(14, 4),
+      shadow_width = 400, shadow_height = 350, shadow_shift = util.by_pixel(0, -34),
     }),
   },
   working_sound = {
