@@ -99,7 +99,10 @@ function M.apply()
   -- BS-economy paperwork scales with the tier of the lie: raw dubious data is
   -- the lightest real document, and a polished regulation is a hefty file.
   for _, item in pairs(data.raw.item or {}) do
-    if item.subgroup == "admin-bs-economy" then item.weight = 1 * kg end
+    if item.subgroup == "admin-data-economy" or item.subgroup == "admin-gossip-economy"
+      or item.subgroup == "admin-policy-economy" then
+      item.weight = 1 * kg
+    end
   end
   set_weights("item", {"basic-excuse", "crappy-report", "watercooler-gossip", "office-drama", "dubious-data"}, 1 * kg)
   set_weights("item", {"good-excuse", "data"}, 2 * kg)

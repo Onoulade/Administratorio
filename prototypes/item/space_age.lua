@@ -68,15 +68,8 @@ end
 
 data:extend(manager_items)
 
+-- "job-offer" lives in prototypes/item/economy.lua; do not redefine it here.
 data:extend({
-  {
-    type = "item",
-    name = "job-offer",
-    icons = {{icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.4, g = 0.9, b = 0.4, a = 1}}},
-    subgroup = "admin-biter-employees",
-    order = "j-0",
-    stack_size = 20
-  },
   {
     type = "item",
     name = "enrolled-biter",
@@ -84,7 +77,7 @@ data:extend({
       {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, tint = {r = 0.68, g = 0.82, b = 1, a = 1}},
       {icon = item_icons .. "blank-approval.png", icon_size = 64, scale = 0.32, shift = {8, 8}},
     },
-    subgroup = "admin-biter-employees",
+    subgroup = "admin-biter-training",
     order = "j-a",
     stack_size = 20
   },
@@ -95,7 +88,7 @@ data:extend({
       {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, tint = {r = 0.62, g = 1, b = 0.62, a = 1}},
       {icon = item_icons .. "work-order.png", icon_size = 64, scale = 0.32, shift = {8, 8}},
     },
-    subgroup = "admin-biter-employees",
+    subgroup = "admin-biter-training",
     order = "j-a2",
     stack_size = 20
   },
@@ -106,7 +99,7 @@ data:extend({
       {icon = "__base__/graphics/icons/medium-biter.png", icon_size = 64, tint = {r = 0.72, g = 0.88, b = 1, a = 1}},
       {icon = item_icons .. "paper.png", icon_size = 64, scale = 0.32, shift = {8, 8}},
     },
-    subgroup = "admin-biter-employees",
+    subgroup = "admin-biter-training",
     order = "j-b",
     stack_size = 20
   },
@@ -117,7 +110,7 @@ data:extend({
       {icon = "__base__/graphics/icons/big-biter.png", icon_size = 64, tint = {r = 1, g = 0.72, b = 0.34, a = 1}},
       {icon = item_icons .. "policy.png", icon_size = 64, scale = 0.32, shift = {8, 8}},
     },
-    subgroup = "admin-biter-employees",
+    subgroup = "admin-biter-training",
     order = "j-c",
     stack_size = 20
   },
@@ -128,7 +121,7 @@ data:extend({
       {icon = "__base__/graphics/icons/big-biter.png", icon_size = 64},
       {icon = item_icons .. "transit-authorization.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
     },
-    subgroup = "admin-biter-employees",
+    subgroup = "admin-biter-training",
     order = "j-c1",
     stack_size = 20
   },
@@ -678,8 +671,8 @@ data:extend({
       {icon = item_icons .. "blank-form.png", icon_size = 64, tint = {r = 0.55, g = 0.8, b = 1, a = 1}},
       {icon = "__space-age__/graphics/icons/space-platform-foundation.png", icon_size = 64, scale = 0.32, shift = {8, 8}},
     },
-    subgroup = "forms-permits",
-    order = "dn1",
+    subgroup = "admin-orbital",
+    order = "le-c",
     stack_size = 200
   },
   {
@@ -687,8 +680,8 @@ data:extend({
     name = "asteroid-processing-docket",
     icon = item_icons .. "asteroid-processing-docket.png",
     icon_size = 64,
-    subgroup = "forms-permits",
-    order = "do",
+    subgroup = "admin-orbital",
+    order = "le-h",
     stack_size = 100
   },
   {
@@ -767,8 +760,8 @@ data:extend({
     name = "involuntary-relocation-cannon",
     icon = item_icons .. "relocation-cannon.png",
     icon_size = 64,
-    subgroup = "admin-space-buildings",
-    order = "o3",
+    subgroup = "admin-relocation",
+    order = "a",
     place_result = "involuntary-relocation-cannon",
     stack_size = 20
   },
@@ -777,8 +770,8 @@ data:extend({
     name = "involuntary-relocation-receiver",
     icon = item_icons .. "relocation-receiver.png",
     icon_size = 64,
-    subgroup = "admin-space-buildings",
-    order = "o4",
+    subgroup = "admin-relocation",
+    order = "b",
     place_result = "involuntary-relocation-receiver",
     stack_size = 20
   },
@@ -786,8 +779,8 @@ data:extend({
     type = "item",
     name = "involuntary-transfer-order",
     icons = {{icon = item_icons .. "blank-directive.png", icon_size = 64, tint = {r = 1, g = 0.55, b = 0.3, a = 1}}},
-    subgroup = "admin-space-compliance",
-    order = "z-t",
+    subgroup = "admin-relocation",
+    order = "c",
     stack_size = 200
   },
   {
@@ -805,8 +798,8 @@ data:extend({
     name = "ai-server",
     icon = item_icons .. "ai-server.png",
     icon_size = 64,
-    subgroup = "admin-space-buildings",
-    order = "o",
+    subgroup = "admin-ai",
+    order = "b",
     place_result = "ai-server",
     stack_size = 10
   },
@@ -815,8 +808,8 @@ data:extend({
     name = "slop-refinery",
     icon = item_icons .. "slop-refinery.png",
     icon_size = 64,
-    subgroup = "admin-space-buildings",
-    order = "o0",
+    subgroup = "admin-ai",
+    order = "c",
     place_result = "slop-refinery",
     stack_size = 10
   },
@@ -825,8 +818,8 @@ data:extend({
     name = "heat-exhaust",
     icon = item_icons .. "heat-exhaust.png",
     icon_size = 64,
-    subgroup = "admin-space-buildings",
-    order = "o1",
+    subgroup = "admin-ai",
+    order = "d",
     place_result = "heat-exhaust",
     stack_size = 20
   },
@@ -834,16 +827,16 @@ data:extend({
     type = "item",
     name = "administrative-slop",
     icons = {{icon = item_icons .. "regulation.png", icon_size = 64, tint = {r = 0.55, g = 0.6, b = 0.4, a = 1}}},
-    subgroup = "admin-bs-economy",
-    order = "z2",
+    subgroup = "admin-data-economy",
+    order = "a-h",
     stack_size = 200
   },
   {
     type = "item",
     name = "fabricated-citations",
     icons = {{icon = item_icons .. "useless-documentation.png", icon_size = 64, tint = {r = 1, g = 0.45, b = 0.4, a = 1}}},
-    subgroup = "admin-bs-economy",
-    order = "z3",
+    subgroup = "admin-data-economy",
+    order = "a-i",
     stack_size = 200
   },
   {
@@ -870,8 +863,8 @@ data:extend({
     type = "item",
     name = "public-train-stop",
     icons = building_icons.public_train_stop(),
-    subgroup = "admin-infrastructure",
-    order = "z",
+    subgroup = "admin-transit",
+    order = "b",
     place_result = "public-train-stop",
     stack_size = 10
   },
@@ -959,7 +952,7 @@ for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
       {"entity-name.administrative-space-station"},
       " before it hatches back into an angry spitter.",
     },
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-biter-training",
     order = variant.order,
     stack_size = 20,
     spoil_ticks = 18000,
@@ -989,7 +982,7 @@ for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
       "",
       "Already paid up. Return it to a Nauvis administrative desk so it can wander off and complete the tour.",
     },
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-biter-training",
     order = variant.order .. "a",
     stack_size = 20,
   }

@@ -17,7 +17,7 @@ data:extend({
   { type = "item", name = "management-approval-verbal", icon = item_icons .. "management-approval-verbal.png", icon_size = 64, subgroup = "forms-permits", order = "c-b", stack_size = 20 },
   { type = "item", name = "management-written-proposal",icon = item_icons .. "management-written-proposal.png",icon_size = 64, subgroup = "forms-permits", order = "d-a", stack_size = 10 },
   { type = "item", name = "management-approval-written",icon = item_icons .. "management-approval-written.png",icon_size = 64, subgroup = "forms-permits", order = "d-c", stack_size = 10 },
-  { type = "item", name = "transit-authorization",      icon = item_icons .. "transit-authorization.png",      icon_size = 64, subgroup = "forms-permits", order = "f", stack_size = 50 },
+  { type = "item", name = "transit-authorization",      icon = item_icons .. "transit-authorization.png",      icon_size = 64, subgroup = "admin-transit", order = "c", stack_size = 50 },
   { type = "item", name = "research-grant-approval",    icon = item_icons .. "research-grant-approval.png",    icon_size = 64, subgroup = "forms-permits", order = "g", stack_size = 50 },
 
   -- Line 3: Work Orders & Machinery Forms

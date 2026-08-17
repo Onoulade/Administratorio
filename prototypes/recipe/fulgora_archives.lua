@@ -12,8 +12,8 @@ data:extend({
     type = "recipe",
     name = "old-archive-recycling",
     category = "recycling",
-    subgroup = "admin-recycling",
-    order = "old-archive",
+    subgroup = "archive-recovery-recipes",
+    order = "a",
     icons = {
       {icon = "__administratorio__/graphics/icons/useless-documentation.png", icon_size = 64, tint = {r = 0.72, g = 0.62, b = 0.82, a = 1}},
       {icon = "__administratorio__/graphics/icons/redundant-rubble.png", icon_size = 64, scale = 0.34, shift = {8, 8}},
@@ -39,6 +39,7 @@ data:extend({
   on_fulgora({
     type = "recipe",
     name = "archive-recombination-bureau",
+    subgroup = "admin-planet-fulgora", order = "lb-k",
     enabled = false,
     ingredients = {
       {type = "item", name = "recycler", amount = 1},

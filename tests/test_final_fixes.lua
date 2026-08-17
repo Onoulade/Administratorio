@@ -1794,16 +1794,16 @@ test("orbital administration weapons survive the military hiding pass", function
     "conventional ammo turrets should remain hidden")
 end)
 
-test("Factoriopedia has a dedicated administrative recycling tab", function()
-  local group = assert(data.raw["item-group"]["admin-recycling-group"])
-  assert_eq(group.order, "ze")
+test("Recycling recipes are browsable rows in the Administrative tab, not their own tab", function()
+  assert_true(data.raw["item-group"]["admin-recycling-group"] == nil,
+    "admin-recycling-group should no longer exist as a standalone tab")
   for _, subgroup_name in ipairs({
     "archive-recovery-recipes",
     "form-reassignment-recipes",
     "form-paper-recycling-recipes",
   }) do
     local subgroup = assert(data.raw["item-subgroup"][subgroup_name], subgroup_name .. " missing")
-    assert_eq(subgroup.group, "admin-recycling-group")
+    assert_eq(subgroup.group, "admin-infrastructure-group")
   end
 end)
 

@@ -13,12 +13,35 @@ local function append_all(target, values)
   end
 end
 
-local function make_resolution_recipe(name, ingredients, result_name, energy_required, category)
+local function subgroup_for_slug(slug)
+  if slug == "landscape" then return "resolution-landscape" end
+  if slug == "smog" then return "resolution-smog" end
+  if slug == "noise" then return "resolution-noise" end
+  if slug == "unemployment" then return "resolution-unemployment" end
+  if slug == "littering" then return "resolution-littering" end
+  if slug == "hazmat" then return "resolution-hazmat" end
+  if slug == "loitering" then return "resolution-loitering" end
+  if slug == "vagrancy" then return "resolution-vagrancy" end
+  return "resolution-landscape"
+end
+
+local function order_for_stage(stage_type)
+  -- stage_type: "filing", "case", "brief", "final"
+  if stage_type == "filing" then return "a" end
+  if stage_type == "case" then return "b" end
+  if stage_type == "brief" then return "c" end
+  if stage_type == "final" then return "d" end
+  return "z"
+end
+
+local function make_resolution_recipe(name, ingredients, result_name, energy_required, category, slug, stage_type)
   return {
     type = "recipe",
     name = name,
     category = category or "bureaucracy-resolution",
     enabled = false,
+    subgroup = subgroup_for_slug(slug),
+    order = order_for_stage(stage_type),
     ingredients = ingredients,
     results = {{type = "item", name = result_name, amount = 1}},
     energy_required = energy_required,
@@ -28,14 +51,17 @@ end
 local function build_stage_pipeline(stage, filing_energy)
   local recipes = {}
   local category = stage.category or "bureaucracy-resolution"
+  local slug = stage.slug
 
   -- Filing
   recipes[#recipes + 1] = make_resolution_recipe(
-    "filing-" .. stage.slug,
+    "filing-" .. slug,
     {item(stage.ticket, 1), item("blank-form", 1)},
     stage.filing,
     filing_energy,
-    category
+    category,
+    slug,
+    "filing"
   )
 
   -- Case (optional)
@@ -43,11 +69,13 @@ local function build_stage_pipeline(stage, filing_energy)
     local case_ingredients = {item(stage.filing, 1)}
     append_all(case_ingredients, stage.case.ingredients)
     recipes[#recipes + 1] = make_resolution_recipe(
-      "case-" .. stage.slug,
+      "case-" .. slug,
       case_ingredients,
       stage.case.result,
       stage.case.energy,
-      category
+      category,
+      slug,
+      "case"
     )
   end
 
@@ -56,11 +84,13 @@ local function build_stage_pipeline(stage, filing_energy)
     local brief_ingredients = {item(stage.case.result, 1)}
     append_all(brief_ingredients, stage.brief.ingredients)
     recipes[#recipes + 1] = make_resolution_recipe(
-      "brief-" .. stage.slug,
+      "brief-" .. slug,
       brief_ingredients,
       stage.brief.result,
       stage.brief.energy,
-      category
+      category,
+      slug,
+      "brief"
     )
   end
 
@@ -69,11 +99,13 @@ local function build_stage_pipeline(stage, filing_energy)
   local final_ingredients = {item(final_source, 1)}
   append_all(final_ingredients, stage.final.ingredients)
   recipes[#recipes + 1] = make_resolution_recipe(
-    stage.slug .. "-final",
+    slug .. "-final",
     final_ingredients,
     stage.final.result,
     stage.final.energy,
-    category
+    category,
+    slug,
+    "final"
   )
 
   return recipes

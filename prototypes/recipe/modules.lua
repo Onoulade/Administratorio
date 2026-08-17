@@ -9,6 +9,7 @@ local recipes = {
     name = "overtime-exemption",
     category = "union-negotiation",
     enabled = false,
+    subgroup = "admin-policy-economy", order = "e-d",
     energy_required = 30,
     crafting_machine_tint = icon_tints.recipe_tint("overtime-exemption"),
     ingredients = {
@@ -30,6 +31,7 @@ if feature_flags.space_age_enabled() then
     name = "unstaffed-operations-waiver",
     category = "union-negotiation",
     enabled = false,
+    subgroup = "admin-policy-economy", order = "e-e",
     energy_required = 120,
     crafting_machine_tint = icon_tints.recipe_tint("unstaffed-operations-waiver"),
     ingredients = {

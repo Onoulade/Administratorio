@@ -204,6 +204,10 @@ for technology_name in pairs(technologies) do
   preexisting_technology_names[technology_name] = true
 end
 
+-- job-offer / job-offer-production live in economy.lua (loaded before space_age.lua,
+-- matching prototypes/item.lua and prototypes/recipe.lua's real require order).
+dofile(mod_root .. "prototypes/item/economy.lua")
+dofile(mod_root .. "prototypes/recipe/economy.lua")
 dofile(mod_root .. "prototypes/item/space_age.lua")
 dofile(mod_root .. "prototypes/item/capsules-and-fluids.lua")
 dofile(mod_root .. "prototypes/recipe/space_age.lua")
@@ -413,10 +417,10 @@ test("worker-biter exists as the enrolled-to-workforce intermediate", function()
   assert_true(items["enrolled-biter"] ~= nil, "enrolled-biter missing")
   assert_true(items["worker-biter"] ~= nil, "worker-biter missing")
   assert_true(recipes["job-offer-production"] ~= nil, "job-offer recipe missing")
-  assert_eq(recipes["job-offer-production"].category, "bureaucracy-policy", "job-offer should be drafted through policy bureaucracy")
-  assert_true(has_ingredient(recipes["job-offer-production"], "treasury-bond"), "job-offer should require treasury-bonds")
+  assert_eq(recipes["job-offer-production"].category, "bureaucracy-registration", "job-offer should be drafted through registration bureaucracy")
   assert_true(has_ingredient(recipes["job-offer-production"], "taxpayer-money"), "job-offer should require taxpayer-money")
-  assert_true(has_ingredient(recipes["job-offer-production"], "narrative"), "job-offer should require narrative")
+  assert_true(has_ingredient(recipes["job-offer-production"], "blank-form"), "job-offer should require a blank form")
+  assert_true(has_ingredient(recipes["job-offer-production"], "provisional-approval"), "job-offer should require provisional approval")
   assert_true(recipes["worker-biter-formation"] ~= nil, "worker-biter formation recipe missing")
   assert_true(has_ingredient(recipes["worker-biter-formation"], "enrolled-biter"), "worker-biter should come from enrolled-biter")
 end)

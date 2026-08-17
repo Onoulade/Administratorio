@@ -222,6 +222,7 @@ for _, briefing in ipairs(manager_briefings.BRIEFINGS) do
     name = briefing.recipe,
     category = "workforce-formation",
     enabled = false,
+    subgroup = "admin-biter-training", order = "b-m",
     ingredients = {
       {
         type = "item",
@@ -256,6 +257,7 @@ for _, courier in ipairs(manager_couriers.COURIERS) do
     name = courier.recipe,
     category = "workforce-formation",
     enabled = false,
+    subgroup = "admin-biter-training", order = "b-n",
     localised_name = {"item-name." .. courier.item},
     ingredients = {
       {
@@ -284,28 +286,14 @@ for _, courier in ipairs(manager_couriers.COURIERS) do
 end
 data:extend(courier_recipes)
 
+-- "job-offer-production" lives in prototypes/recipe/economy.lua; do not redefine it here.
 data:extend({
-  surface_limited({
-    type = "recipe",
-    name = "job-offer-production",
-    category = "bureaucracy-policy",
-    enabled = false,
-    ingredients = {
-      {type = "item", name = "treasury-bond", amount = 2},
-      {type = "item", name = "taxpayer-money", amount = 50},
-      {type = "item", name = "credentials", amount = 1},
-      {type = "item", name = "good-excuse", amount = 1},
-      {type = "item", name = "narrative", amount = 1},
-      {type = "item", name = "paper", amount = 10},
-    },
-    results = {{type = "item", name = "job-offer", amount = 1}},
-    energy_required = 30
-  }, "nauvis"),
   surface_limited({
     type = "recipe",
     name = "worker-biter-formation",
     category = "workforce-formation",
     enabled = false,
+    subgroup = "admin-biter-training", order = "b-a",
     ingredients = {
       {type = "item", name = "enrolled-biter", amount = 1},
       {type = "item", name = "credentials", amount = 1},
@@ -319,6 +307,7 @@ data:extend({
     name = "clerical-trainee-formation",
     category = "workforce-formation",
     enabled = false,
+    subgroup = "admin-biter-training", order = "b-b",
     ingredients = {
       {type = "item", name = "worker-biter", amount = 1},
       {type = "item", name = "credentials", amount = 1},
@@ -332,6 +321,7 @@ data:extend({
     name = "management-trainee-formation",
     category = "workforce-formation",
     enabled = false,
+    subgroup = "admin-biter-training", order = "b-c",
     ingredients = {
       {type = "item", name = "worker-biter", amount = 1},
       {type = "item", name = "narrative", amount = 1},
@@ -345,6 +335,7 @@ data:extend({
     name = "astronaut-formation",
     category = "workforce-formation",
     enabled = false,
+    subgroup = "admin-biter-training", order = "b-d",
     ingredients = {
       {type = "item", name = "management-trainee", amount = 1},
       {type = "item", name = "transit-authorization", amount = 1},
@@ -359,6 +350,7 @@ data:extend({
     name = "licensed-notary-formation",
     category = "workforce-formation",
     enabled = false,
+    subgroup = "admin-biter-management", order = "c-a",
     ingredients = {
       {type = "item", name = "clerical-trainee", amount = 1},
       {type = "item", name = "construction-permit", amount = 1},
@@ -372,6 +364,7 @@ data:extend({
     name = "conciliation-officer-formation",
     category = "workforce-formation",
     enabled = false,
+    subgroup = "admin-biter-management", order = "c-b",
     ingredients = {
       {type = "item", name = "clerical-trainee", amount = 1},
       {type = "item", name = "good-excuse", amount = 1},
@@ -385,6 +378,7 @@ data:extend({
     name = "relay-clerk-formation",
     category = "workforce-formation",
     enabled = false,
+    subgroup = "admin-biter-management", order = "c-c",
     ingredients = {
       {type = "item", name = "clerical-trainee", amount = 1},
       {type = "item", name = "data", amount = 1},
@@ -398,6 +392,7 @@ data:extend({
     name = "cryoprint-technician-formation",
     category = "workforce-formation",
     enabled = false,
+    subgroup = "admin-biter-management", order = "c-d",
     ingredients = {
       {type = "item", name = "clerical-trainee", amount = 1},
       {type = "item", name = "processing-unit", amount = 2},
@@ -411,6 +406,7 @@ data:extend({
     name = "middle-management-managing-manager-formation",
     category = "workforce-formation",
     enabled = false,
+    subgroup = "admin-biter-management", order = "c-e",
     ingredients = {
       {type = "item", name = "management-trainee", amount = 1},
       {type = "item", name = "policy", amount = 1},
@@ -424,6 +420,7 @@ data:extend({
     name = "voluntary-exploration-space-miner-formation",
     category = "workforce-formation",
     enabled = false,
+    subgroup = "admin-biter-management", order = "c-f",
     ingredients = {
       {type = "item", name = "astronaut", amount = 1},
       {type = "item", name = "electric-mining-drill", amount = 1},
@@ -478,7 +475,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "notary-office",
-    subgroup = "admin-buildings",
+    subgroup = "admin-buildings", order = "h-d",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 2},
@@ -495,7 +492,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "territorial-arbitration-post",
-    subgroup = "admin-buildings",
+    subgroup = "admin-buildings", order = "h-e",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 1},
@@ -529,7 +526,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "capture-bureau",
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-biter-buildings", order = "a-h",
     enabled = false,
     localised_name = {"item-name.capture-bureau"},
     localised_description = {"item-description.capture-bureau"},
@@ -639,7 +636,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "conciliation-desk",
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-biter-buildings", order = "a-i",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 2},
@@ -655,7 +652,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "digital-services-bureau",
-    subgroup = "admin-buildings",
+    subgroup = "admin-buildings", order = "h-f",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 1},
@@ -673,6 +670,7 @@ data:extend({
     name = "orbital-infrastructure-permit",
     category = "bureaucracy-registration",
     enabled = false,
+    subgroup = "admin-space-compliance", order = "za-a",
     ingredients = {
       {type = "item", name = "blank-directive", amount = 1},
       {type = "item", name = "transit-authorization", amount = 1},
@@ -685,7 +683,7 @@ data:extend({
   {
     type = "recipe",
     name = "trajectory-compliance-array",
-    subgroup = "admin-space-compliance",
+    subgroup = "admin-space-compliance", order = "za-b",
     enabled = false,
     ingredients = {
       {type = "item", name = "radar", amount = 2},
@@ -700,7 +698,7 @@ data:extend({
   {
     type = "recipe",
     name = "senior-trajectory-compliance-array",
-    subgroup = "admin-space-compliance",
+    subgroup = "admin-space-compliance", order = "za-c",
     enabled = false,
     ingredients = {
       {type = "item", name = "trajectory-compliance-array", amount = 1},
@@ -715,7 +713,7 @@ data:extend({
   {
     type = "recipe",
     name = "executive-trajectory-compliance-array",
-    subgroup = "admin-space-compliance",
+    subgroup = "admin-space-compliance", order = "za-d",
     enabled = false,
     ingredients = {
       {type = "item", name = "senior-trajectory-compliance-array", amount = 1},
@@ -731,7 +729,7 @@ data:extend({
   {
     type = "recipe",
     name = "orbital-employment-cannon",
-    subgroup = "admin-space-orbital",
+    subgroup = "admin-space-orbital", order = "zb-a",
     enabled = false,
     ingredients = {
       {type = "item", name = "radar", amount = 4},
@@ -747,7 +745,7 @@ data:extend({
   {
     type = "recipe",
     name = "administrative-space-station",
-    subgroup = "admin-space-buildings",
+    subgroup = "admin-space-buildings", order = "zc-e",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 1},
@@ -771,7 +769,7 @@ data:extend({
     type = "recipe",
     name = "orbital-paper-production",
     category = "orbital-bureaucracy",
-    subgroup = "admin-paper-supplies",
+    subgroup = "admin-orbital", order = "le-a",
     enabled = false,
     ingredients = {
       {type = "item", name = "carbon", amount = 1},
@@ -785,7 +783,7 @@ data:extend({
     type = "recipe",
     name = "orbital-ink-production",
     category = "orbital-bureaucracy",
-    subgroup = "admin-paper-supplies",
+    subgroup = "admin-orbital", order = "le-b",
     enabled = false,
     ingredients = {
       {type = "item", name = "carbon", amount = 1},
@@ -800,6 +798,7 @@ data:extend({
     type = "recipe",
     name = "orbital-operations-form",
     category = "orbital-bureaucracy",
+    subgroup = "admin-orbital", order = "le-c",
     enabled = false,
     ingredients = {
       {type = "item", name = "paper", amount = 4},
@@ -813,6 +812,7 @@ data:extend({
     type = "recipe",
     name = "thermal-process-license-orbital",
     category = "orbital-bureaucracy",
+    subgroup = "admin-orbital", order = "le-d",
     enabled = false,
     localised_name = {"item-name.thermal-process-license"},
     ingredients = {
@@ -829,6 +829,7 @@ data:extend({
     type = "recipe",
     name = "calcite-reagent-waiver-orbital",
     category = "orbital-bureaucracy",
+    subgroup = "admin-orbital", order = "le-e",
     enabled = false,
     localised_name = {"item-name.calcite-reagent-waiver"},
     ingredients = {
@@ -845,6 +846,7 @@ data:extend({
     type = "recipe",
     name = "offworld-metallurgy-charter-orbital",
     category = "orbital-bureaucracy",
+    subgroup = "admin-orbital", order = "le-f",
     enabled = false,
     localised_name = {"item-name.offworld-metallurgy-charter"},
     ingredients = {
@@ -862,6 +864,7 @@ data:extend({
     type = "recipe",
     name = "orbital-deviation-order",
     category = "orbital-bureaucracy",
+    subgroup = "admin-orbital", order = "le-g",
     enabled = false,
     ingredients = {
       {type = "item", name = "orbital-operations-form", amount = 1},
@@ -876,6 +879,7 @@ data:extend({
     type = "recipe",
     name = "asteroid-processing-docket",
     category = "orbital-bureaucracy",
+    subgroup = "admin-orbital", order = "le-h",
     enabled = false,
     ingredients = {
       {type = "item", name = "orbital-operations-form", amount = 1},
@@ -891,7 +895,7 @@ data:extend({
     type = "recipe",
     name = "orbital-archival-paper-production",
     category = "orbital-bureaucracy",
-    subgroup = "admin-paper-supplies",
+    subgroup = "admin-orbital", order = "le-i",
     enabled = false,
     ingredients = {
       {type = "item", name = "carbon", amount = 4},
@@ -906,7 +910,7 @@ data:extend({
     type = "recipe",
     name = "orbital-secure-ink-production",
     category = "orbital-bureaucracy",
-    subgroup = "admin-paper-supplies",
+    subgroup = "admin-orbital", order = "le-j",
     enabled = false,
     ingredients = {
       {type = "item", name = "carbon", amount = 2},
@@ -922,6 +926,7 @@ data:extend({
     type = "recipe",
     name = "orbital-operations-form-copying",
     category = "orbital-printing",
+    subgroup = "admin-orbital", order = "le-k",
     enabled = false,
     ingredients = {
       {type = "item", name = "orbital-operations-form", amount = 1},
@@ -938,6 +943,7 @@ data:extend({
     type = "recipe",
     name = "asteroid-processing-docket-copying",
     category = "orbital-printing",
+    subgroup = "admin-orbital", order = "le-l",
     enabled = false,
     ingredients = {
       {type = "item", name = "asteroid-processing-docket", amount = 1},
@@ -954,6 +960,7 @@ data:extend({
     type = "recipe",
     name = "priority-orbital-deviation-order",
     category = "orbital-printing",
+    subgroup = "admin-orbital", order = "le-m",
     enabled = false,
     ingredients = {
       {type = "item", name = "orbital-deviation-order", amount = 4},
@@ -970,6 +977,7 @@ data:extend({
     name = "liquid-black-ink",
     category = "bureaucracy-registration",
     enabled = false,
+    subgroup = "admin-planet-aquilo", order = "ld-a",
     ingredients = {
       {type = "item", name = "ink", amount = 1},
     },
@@ -983,6 +991,7 @@ data:extend({
     name = "amber-sap-nonsense-seeding",
     category = bureaucracy_categories.bootstrap_for_planet("gleba"),
     enabled = false,
+    subgroup = "admin-planet-gleba", order = "la-a",
     localised_name = {"item-name.bullshit-ore"},
     ingredients = {
       {type = "fluid", name = "amber-sap", amount = 20},
@@ -998,6 +1007,7 @@ data:extend({
     name = "ink-production-gleba",
     category = bureaucracy_categories.bootstrap_for_planet("gleba"),
     enabled = false,
+    subgroup = "admin-planet-gleba", order = "la-b",
     localised_name = {"recipe-name.ink-production"},
     ingredients = {
       {type = "fluid", name = "amber-sap", amount = 10},
@@ -1029,6 +1039,7 @@ data:extend({
     name = "yellow-ink-production",
     category = bureaucracy_categories.registration_for_planet("gleba"),
     enabled = false,
+    subgroup = "admin-planet-gleba", order = "la-d",
     localised_name = {"fluid-name.yellow-ink"},
     ingredients = {
       {type = "fluid", name = "amber-sap", amount = 30},
@@ -1044,6 +1055,7 @@ data:extend({
     name = "hostile-spore-culture-production",
     category = "organic-or-chemistry",
     enabled = false,
+    subgroup = "admin-planet-gleba", order = "la-e",
     localised_name = {"fluid-name.hostile-spore-culture"},
     ingredients = {
       {type = "fluid", name = "amber-sap", amount = 40},
@@ -1060,6 +1072,7 @@ data:extend({
     name = "workforce-lure-spores-production",
     category = "organic",
     enabled = false,
+    subgroup = "admin-planet-gleba", order = "la-f",
     localised_name = {"fluid-name.workforce-lure-spores"},
     ingredients = {
       {type = "fluid", name = "hostile-spore-culture", amount = 20},
@@ -1076,6 +1089,7 @@ data:extend({
     name = "tourism-lure-spores-production",
     category = "organic",
     enabled = false,
+    subgroup = "admin-planet-gleba", order = "la-g",
     localised_name = {"fluid-name.tourism-lure-spores"},
     ingredients = {
       {type = "fluid", name = "hostile-spore-culture", amount = 20},
@@ -1092,6 +1106,7 @@ data:extend({
     name = "oviposition-lure-spores-production",
     category = "organic-or-chemistry",
     enabled = false,
+    subgroup = "admin-planet-gleba", order = "la-h",
     localised_name = {"fluid-name.oviposition-lure-spores"},
     ingredients = {
       {type = "fluid", name = "hostile-spore-culture", amount = 20},
@@ -1167,6 +1182,7 @@ data:extend({
     name = "charged-toner",
     category = bureaucracy_categories.bootstrap_for_planet("fulgora"),
     enabled = false,
+    subgroup = "admin-planet-fulgora", order = "lb-a",
     ingredients = {
       {type = "item", name = "scrap", amount = 4},
     },
@@ -1180,6 +1196,7 @@ data:extend({
     name = "archive-rubble-recovery",
     category = bureaucracy_categories.bootstrap_for_planet("fulgora"),
     enabled = false,
+    subgroup = "admin-planet-fulgora", order = "lb-b",
     localised_name = {"item-name.redundant-rubble"},
     ingredients = {
       {type = "item", name = "scrap", amount = 4},
@@ -1194,6 +1211,7 @@ data:extend({
     name = "archive-documentation-recovery",
     category = bureaucracy_categories.bootstrap_for_planet("fulgora"),
     enabled = false,
+    subgroup = "admin-planet-fulgora", order = "lb-c",
     localised_name = {"item-name.useless-documentation"},
     ingredients = {
       {type = "item", name = "scrap", amount = 4},
@@ -1211,6 +1229,7 @@ data:extend({
     name = "magenta-ink-production",
     category = bureaucracy_categories.registration_for_planet("fulgora"),
     enabled = false,
+    subgroup = "admin-planet-fulgora", order = "lb-d",
     localised_name = {"fluid-name.magenta-ink"},
     ingredients = {
       {type = "item", name = "charged-toner", amount = 2},
@@ -1313,7 +1332,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "laser-printer",
-    subgroup = "admin-buildings",
+    subgroup = "admin-buildings", order = "h-g",
     enabled = false,
     ingredients = {
       {type = "item", name = "chromatic-printer", amount = 1},
@@ -1330,7 +1349,7 @@ data:extend({
   not_in_space({
     type = "recipe",
     name = "involuntary-relocation-cannon",
-    subgroup = "admin-space-buildings",
+    subgroup = "admin-relocation", order = "a",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 2},
@@ -1346,7 +1365,7 @@ data:extend({
   not_in_space({
     type = "recipe",
     name = "involuntary-relocation-receiver",
-    subgroup = "admin-space-buildings",
+    subgroup = "admin-relocation", order = "b",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 2},
@@ -1363,7 +1382,8 @@ data:extend({
     type = "recipe",
     name = "involuntary-transfer-order-production",
     category = "printing-workorder",
-    subgroup = "admin-space-compliance",
+    subgroup = "admin-relocation",
+    order = "c",
     enabled = false,
     localised_name = {"item-name.involuntary-transfer-order"},
     ingredients = {
@@ -1377,7 +1397,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "synthetic-personnel-bureau",
-    subgroup = "admin-biter-buildings",
+    subgroup = "admin-biter-buildings", order = "a-j",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 2},
@@ -1393,7 +1413,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "slop-refinery",
-    subgroup = "admin-space-buildings",
+    subgroup = "admin-ai", order = "c",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 4},
@@ -1409,7 +1429,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "ai-server",
-    subgroup = "admin-space-buildings",
+    subgroup = "admin-ai", order = "b",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 4},
@@ -1426,7 +1446,8 @@ data:extend({
   {
     type = "recipe",
     name = "optical-fibre",
-    subgroup = "admin-infrastructure",
+    subgroup = "admin-ai",
+    order = "a",
     enabled = false,
     ingredients = {
       {type = "item", name = "superconductor", amount = 1},
@@ -1439,7 +1460,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "heat-exhaust",
-    subgroup = "admin-space-buildings",
+    subgroup = "admin-ai", order = "d",
     enabled = false,
     ingredients = {
       {type = "item", name = "heat-pipe", amount = 8},
@@ -1458,7 +1479,7 @@ data:extend({
     type = "recipe",
     name = "inference-token-production",
     category = "ai-inference",
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-data-economy", order = "a-a",
     enabled = false,
     -- The AI Server has exactly one job and takes no recipe choice, so the
     -- recipe is fixed on the machine and kept out of the crafting menus.
@@ -1474,7 +1495,7 @@ data:extend({
     type = "recipe",
     name = "administrative-slop-production",
     category = "slop-refining",
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-data-economy", order = "a-b",
     enabled = false,
     localised_name = {"item-name.administrative-slop"},
     ingredients = {
@@ -1491,7 +1512,7 @@ data:extend({
     type = "recipe",
     name = "fabricated-citations-venting",
     category = "citation-handling",
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-data-economy", order = "a-c",
     enabled = false,
     localised_name = {"recipe-name.fabricated-citations-venting"},
     ingredients = {{type = "item", name = "fabricated-citations", amount = 20}},
@@ -1508,7 +1529,7 @@ data:extend({
     type = "recipe",
     name = "fabricated-citations-fact-check-data",
     category = "citation-handling",
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-data-economy", order = "a-d",
     enabled = false,
     localised_name = {"recipe-name.fabricated-citations-fact-check-data"},
     ingredients = {
@@ -1522,7 +1543,7 @@ data:extend({
     type = "recipe",
     name = "fabricated-citations-fact-check-documentation",
     category = "citation-handling",
-    subgroup = "admin-bs-economy",
+    subgroup = "admin-data-economy", order = "a-e",
     enabled = false,
     localised_name = {"recipe-name.fabricated-citations-fact-check-documentation"},
     ingredients = {
@@ -1535,7 +1556,7 @@ data:extend({
   not_in_space({
     type = "recipe",
     name = "interplanetary-terminus",
-    subgroup = "admin-space-buildings",
+    subgroup = "admin-space-buildings", order = "zc-e",
     enabled = false,
     ingredients = {
       {type = "item", name = "office-desk", amount = 2},
@@ -1556,6 +1577,7 @@ data:extend({
     category = "chemistry-or-cryogenics",
     enabled = false,
     localised_name = {"item-name.transfer-emulsion"},
+    subgroup = "admin-planet-aquilo", order = "ld-a",
     ingredients = {
       {type = "fluid", name = "ammonia", amount = 40},
       {type = "item", name = "plastic-bar", amount = 2},
@@ -1572,6 +1594,7 @@ data:extend({
     category = "printing-advanced",
     enabled = false,
     localised_name = {"item-name.thermal-transfer-sheet"},
+    subgroup = "admin-planet-aquilo", order = "ld-b",
     ingredients = {
       {type = "item", name = "paper", amount = 2},
       {type = "item", name = "transfer-emulsion", amount = 1},
@@ -1588,6 +1611,7 @@ data:extend({
     category = "printing-multicolor",
     enabled = false,
     localised_name = {"item-name.composite-chroma-ribbon"},
+    subgroup = "admin-planet-aquilo", order = "ld-c",
     ingredients = {
       {type = "item", name = "blank-cyan-form", amount = 1},
       {type = "item", name = "blank-yellow-form", amount = 1},
@@ -1605,6 +1629,7 @@ data:extend({
     category = "printing-multicolor",
     enabled = false,
     localised_name = {"item-name.cyan-yellow-form"},
+    subgroup = "admin-printed-forms", order = "f-a",
     ingredients = {
       {type = "item", name = "paper", amount = 2},
       {type = "fluid", name = "cyan-ink", amount = 10},
@@ -1621,6 +1646,7 @@ data:extend({
     category = "printing-multicolor",
     enabled = false,
     localised_name = {"item-name.cyan-magenta-form"},
+    subgroup = "admin-printed-forms", order = "f-b",
     ingredients = {
       {type = "item", name = "paper", amount = 2},
       {type = "fluid", name = "cyan-ink", amount = 10},
@@ -1637,6 +1663,7 @@ data:extend({
     category = "printing-multicolor",
     enabled = false,
     localised_name = {"item-name.yellow-magenta-form"},
+    subgroup = "admin-printed-forms", order = "f-c",
     ingredients = {
       {type = "item", name = "paper", amount = 2},
       {type = "fluid", name = "yellow-ink", amount = 10},
@@ -1653,6 +1680,7 @@ data:extend({
     category = "printing-multicolor",
     enabled = false,
     localised_name = {"item-name.hardened-data-vault"},
+    subgroup = "admin-printed-forms", order = "f-d",
     ingredients = {
       {type = "item", name = "cyan-magenta-form", amount = 1},
       {type = "item", name = "industrial-charter", amount = 1},
@@ -1746,6 +1774,7 @@ data:extend({
     category = "printing-chromatic",
     enabled = false,
     localised_name = {"item-name.public-transportation-contract"},
+    subgroup = "admin-printed-forms", order = "f-e",
     ingredients = {
       {type = "item", name = "cyan-yellow-form", amount = 1},
       {type = "item", name = "transit-authorization", amount = 1},
@@ -1758,7 +1787,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "public-train-stop-production",
-    subgroup = "admin-infrastructure",
+    subgroup = "admin-transit", order = "b",
     category = "bureaucracy-registration",
     enabled = false,
     localised_name = {"entity-name.public-train-stop"},
@@ -1776,6 +1805,7 @@ data:extend({
     type = "recipe",
     name = "anecdotal-data-reprocessing",
     category = "bureaucracy-registration",
+    subgroup = "admin-data-economy", order = "a-f",
     enabled = false,
     ingredients = {
       {type = "item", name = "spoilage", amount = 4},
@@ -1789,6 +1819,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "paper-production-vulcanus",
+    subgroup = "admin-planet-vulcanus", order = "lc-a",
     enabled = false,
     localised_name = {"recipe-name.paper-production"},
     ingredients = {
@@ -1819,6 +1850,7 @@ data:extend({
     type = "recipe",
     name = "redundant-rubble-recovery-vulcanus",
     category = "smelting-basic",
+    subgroup = "admin-planet-vulcanus", order = "lc-c",
     enabled = false,
     localised_name = {"item-name.redundant-rubble"},
     ingredients = {
@@ -1834,6 +1866,7 @@ data:extend({
     type = "recipe",
     name = "dubious-data-analysis-vulcanus",
     category = bureaucracy_categories.registration_for_planet("vulcanus"),
+    subgroup = "admin-planet-vulcanus", order = "lc-d",
     enabled = false,
     ingredients = {
       {type = "item", name = "verdigris-crust", amount = 2},
@@ -1848,6 +1881,7 @@ data:extend({
     type = "recipe",
     name = "cyan-slurry-production",
     category = "propaganda-distillery",
+    subgroup = "admin-planet-vulcanus", order = "lc-e",
     enabled = false,
     ingredients = {
       {type = "item", name = "verdigris-crust", amount = 4},
@@ -1861,6 +1895,7 @@ data:extend({
     type = "recipe",
     name = "cyan-ink-production",
     category = "propaganda-distillery",
+    subgroup = "admin-planet-vulcanus", order = "lc-f",
     enabled = false,
     ingredients = {
       {type = "fluid", name = "cyan-slurry", amount = 40},
@@ -1932,6 +1967,7 @@ data:extend({
     type = "recipe",
     name = "liquid-stimulant-production",
     category = "chemistry",
+    subgroup = "admin-planet-vulcanus", order = "lc-k",
     enabled = false,
     ingredients = {
       {type = "fluid", name = "cyan-slurry", amount = 30},
@@ -1946,6 +1982,7 @@ data:extend({
     type = "recipe",
     name = "liquid-coffee-vulcanus",
     category = "chemistry",
+    subgroup = "admin-planet-vulcanus", order = "lc-l",
     enabled = false,
     ingredients = {
       {type = "fluid", name = "liquid-stimulant", amount = 40},
@@ -1960,6 +1997,7 @@ data:extend({
     type = "recipe",
     name = "plastic-bar-vulcanus",
     category = "chemistry",
+    subgroup = "admin-planet-vulcanus", order = "lc-m",
     enabled = false,
     localised_name = {"item-name.plastic-bar"},
     ingredients = {
@@ -1975,6 +2013,7 @@ data:extend({
     type = "recipe",
     name = "molten-promises-production",
     category = "propaganda-distillery",
+    subgroup = "admin-planet-vulcanus", order = "lc-n",
     enabled = false,
     ingredients = {
       {type = "fluid", name = "lava", amount = 100},
@@ -1989,6 +2028,7 @@ data:extend({
     type = "recipe",
     name = "refined-nonsense-production-vulcanus",
     category = "propaganda-distillery",
+    subgroup = "admin-planet-vulcanus", order = "lc-o",
     enabled = false,
     localised_name = {"recipe-name.refined-nonsense-production"},
     ingredients = {
@@ -2099,6 +2139,7 @@ data:extend({
     type = "recipe",
     name = "vulcanus-lie-distillation",
     category = "bureaucracy-certification",
+    subgroup = "admin-planet-vulcanus", order = "lc-v",
     enabled = false,
     icon = "__administratorio__/graphics/icons/lie.png",
     icon_size = 64,
@@ -2173,11 +2214,12 @@ local SPACE_TOURISM_VARIANTS = {
 
 local tourism_recipes = {}
 
-for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
+for i, variant in ipairs(SPACE_TOURISM_VARIANTS) do
   tourism_recipes[#tourism_recipes + 1] = {
     type = "recipe",
     name = variant.tourism_recipe,
     category = "orbital-bureaucracy",
+    subgroup = "admin-biter-training", order = string.format("b-%c", string.byte("o") + i - 1),
     enabled = false,
     localised_name = {"", "Monetize ", {"entity-name." .. variant.spitter}, " Space Tourism"},
     localised_description = {
@@ -2249,7 +2291,12 @@ for _, tier in ipairs({"base", "advanced"}) do
       type = "recipe",
       name = slop_rules.recipe_name(item_name),
       category = "slop-refining",
-      subgroup = "admin-bs-economy",
+      -- No explicit subgroup: inherits the produced document's own subgroup,
+      -- so this alternate recipe shows up wherever that form already lives
+      -- instead of piling every AI-fabricated document into one Administrative row.
+      -- Machine-only like the rest of the AI Server chain; keep it out of the
+      -- player's own crafting menu.
+      hide_from_player_crafting = true,
       enabled = false,
       localised_name = {"item-name." .. item_name},
       ingredients = {
@@ -2284,7 +2331,7 @@ for _, specialist_name in ipairs(synthesis_specialists) do
     type = "recipe",
     name = specialist_name .. "-synthesis",
     category = "personnel-synthesis",
-    subgroup = "admin-biter-employees",
+      subgroup = "admin-biter-management", order = "c-g",
     enabled = false,
     localised_name = {"item-name." .. specialist_name},
     ingredients = {

@@ -31,6 +31,7 @@ data:extend({
     type = "recipe",
     name = "ink-recovery-fulgora",
     category = bureaucracy_categories.bootstrap_for_planet("fulgora"),
+    subgroup = "admin-planet-fulgora", order = "lb-l",
     enabled = false,
     ingredients = {
       {type = "item", name = "charged-toner", amount = 1},
@@ -43,6 +44,7 @@ data:extend({
     type = "recipe",
     name = "salvaged-data-analysis-fulgora",
     category = bureaucracy_categories.bootstrap_for_planet("fulgora"),
+    subgroup = "admin-planet-fulgora", order = "lb-m",
     enabled = false,
     ingredients = {
       {type = "item", name = "redundant-rubble", amount = 6},
@@ -70,6 +72,7 @@ data:extend({
     type = "recipe",
     name = "salvage-electrolyte-fulgora",
     category = "electromagnetics",
+    subgroup = "admin-planet-fulgora", order = "lb-o",
     enabled = false,
     ingredients = {
       {type = "fluid", name = "holmium-solution", amount = 20},
@@ -85,6 +88,7 @@ data:extend({
     type = "recipe",
     name = "electromagnetic-rocket-fuel-fulgora",
     category = "electromagnetics",
+    subgroup = "admin-planet-fulgora", order = "lb-p",
     enabled = false,
     ingredients = {
       {type = "item", name = "solid-fuel", amount = 10},
@@ -103,6 +107,7 @@ data:extend({
     type = "recipe",
     name = "electromagnetic-lubricant-fulgora",
     category = "electromagnetics",
+    subgroup = "admin-planet-fulgora", order = "lb-q",
     enabled = false,
     ingredients = {
       {type = "fluid", name = "electrolyte", amount = 30},
@@ -154,6 +159,7 @@ data:extend({
     type = "recipe",
     name = "composted-rubble-recovery-gleba",
     category = "bureaucracy-conciliation",
+    subgroup = "admin-planet-gleba", order = "la-p",
     enabled = false,
     localised_name = {"item-name.redundant-rubble"},
     ingredients = {
