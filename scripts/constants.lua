@@ -270,6 +270,9 @@ M.TRUNK_CHROMATIC_SET = require("prototypes.shared.interplanetary_payloads").chr
 M.TERMINUS_NAME = "interplanetary-terminus"
 M.TERMINUS_OUTBOUND_SLOTS = 1
 M.TERMINUS_ARRIVAL_SLOTS = 12
+-- Hidden combinator broadcasting the trunk pool's contents, wired to a
+-- Terminus's own RED wire only -- see M.collect_requests.
+M.TERMINUS_COMBINATOR_NAME = "terminus-pool-combinator"
 -- Half a second. The fastest tier lands an item every second, so a finer
 -- cadence would only re-scan idle endpoints.
 M.TERMINUS_CHECK_TICKS = 30
@@ -287,10 +290,25 @@ M.TRUNK_TIERS = {
 M.TRUNK_BASE_TECH = "interplanetary-tube-network"
 M.TRUNK_CHROMATIC_TECH = "interplanetary-tube-chromatic"
 
+-- One Terminus per planet by default. A three-tier climb --
+-- interplanetary-tube-additional-terminus-1 and -2 are finite gates; -3 is
+-- the infinite technology whose name suffix seeds its starting LEVEL at 3
+-- (Factorio reads an infinite tech's starting level off its own name
+-- suffix), so its .level already reads 3 the moment it is first researched --
+-- one for each of the three steps -- and keeps climbing by one per level
+-- after that. Only -3 is ever read at runtime; -1 and -2 are pure
+-- prerequisite gates.
+M.TERMINUS_BASE_PER_PLANET = 1
+M.TERMINUS_ADDITIONAL_TECH = "interplanetary-tube-additional-terminus-3"
+
 -- Involuntary Relocation Cannon: biter-family cargo only, moved a batch per
 -- shot rather than one timed item at a time. Restricting the cargo is what
 -- keeps rockets relevant for everything else.
 M.RELOCATION_CANNON_NAME = "involuntary-relocation-cannon"
+-- The emitter's counterpart: holds the arrivals buffer and files requests.
+-- Kept as a separate building so a sender never scans its own connector for
+-- requests it will never act on.
+M.RELOCATION_RECEIVER_NAME = "involuntary-relocation-receiver"
 M.RELOCATION_TRANSFER_FORM = require("prototypes.shared.relocation_cargo").TRANSFER_FORM
 M.RELOCATION_CARGO_SET = require("prototypes.shared.relocation_cargo").as_set()
 M.RELOCATION_PAYLOAD_PER_SHOT = require("prototypes.shared.relocation_cargo").PAYLOAD_PER_SHOT
@@ -298,6 +316,10 @@ M.RELOCATION_SHOT_TICKS = require("prototypes.shared.relocation_cargo").SHOT_TIC
 -- One second. Shots are already rate-limited by RELOCATION_SHOT_TICKS, so this
 -- only governs how promptly a newly signalled request is noticed.
 M.RELOCATION_CANNON_CHECK_TICKS = 60
+-- Hidden combinator broadcasting a building's current inventory contents.
+-- Shared by both roles; never wired to either building's own connector, for
+-- the same reason as C.TERMINUS_COMBINATOR_NAME.
+M.RELOCATION_STATUS_COMBINATOR_NAME = "relocation-status-combinator"
 
 -- AI Server: an assembling-machine paired with a hidden reactor child that
 -- carries the heat connections, because no single entity can both craft and

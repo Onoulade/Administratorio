@@ -1032,6 +1032,87 @@ end
 
 data:extend(trunk_capacity_techs)
 
+-- One additional Terminus per planet per step, for players who want more
+-- parallel throughput on a single world instead of a wider empire. A three-
+-- tier climb -- the three base planet sciences, then all four, then an
+-- infinite Administratorium-scale indulgence -- ending in an unbounded tech
+-- so the ceiling is deliberately never fixed.
+local terminus_additional_tint = trunk_tint
+local terminus_additional_icon = trunk_icon
+
+data:extend({
+  {
+    type = "technology",
+    name = "interplanetary-tube-additional-terminus-1",
+    icons = {
+      {icon = terminus_additional_icon, icon_size = 64, tint = terminus_additional_tint},
+      {icon = "__base__/graphics/icons/signal/signal_1.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    },
+    effects = {
+      {type = "nothing", effect_description = {"technology-effect.interplanetary-tube-additional-terminus"}},
+    },
+    prerequisites = {"interplanetary-tube-capacity-5"},
+    unit = {
+      count = 2000,
+      ingredients = {
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+      },
+      time = 90,
+    },
+    upgrade = true,
+    order = "h-t[06]",
+  },
+  {
+    type = "technology",
+    name = "interplanetary-tube-additional-terminus-2",
+    icons = {
+      {icon = terminus_additional_icon, icon_size = 64, tint = terminus_additional_tint},
+      {icon = "__base__/graphics/icons/signal/signal_2.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
+    },
+    effects = {
+      {type = "nothing", effect_description = {"technology-effect.interplanetary-tube-additional-terminus"}},
+    },
+    prerequisites = {"interplanetary-tube-additional-terminus-1"},
+    unit = {
+      count = 4000,
+      ingredients = {
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"cryogenic-science-pack", 1},
+      },
+      time = 90,
+    },
+    upgrade = true,
+    order = "h-t[07]",
+  },
+  {
+    type = "technology",
+    name = "interplanetary-tube-additional-terminus-3",
+    icons = {{icon = terminus_additional_icon, icon_size = 64, tint = terminus_additional_tint}},
+    effects = {
+      {type = "nothing", effect_description = {"technology-effect.interplanetary-tube-additional-terminus"}},
+    },
+    prerequisites = {"interplanetary-tube-additional-terminus-2"},
+    unit = {
+      count_formula = "4000*2^(L-3)",
+      ingredients = {
+        {"metallurgic-science-pack", 1},
+        {"agricultural-science-pack", 1},
+        {"electromagnetic-science-pack", 1},
+        {"cryogenic-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 90,
+    },
+    max_level = "infinite",
+    upgrade = true,
+    order = "h-t[08]",
+  },
+})
+
 -- ============================================================
 -- AI SERVERS AND THE SLOP ECONOMY
 --
@@ -1243,6 +1324,7 @@ local relocation_cargo = require("prototypes.shared.relocation_cargo")
 
 local relocation_effects = {
   {type = "unlock-recipe", recipe = "involuntary-relocation-cannon"},
+  {type = "unlock-recipe", recipe = "involuntary-relocation-receiver"},
   {type = "unlock-recipe", recipe = "involuntary-transfer-order-production"},
 }
 for _, item_name in ipairs(relocation_cargo.loadable_names()) do
