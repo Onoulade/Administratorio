@@ -361,6 +361,40 @@ test("field office path check does not target the occupied office center", funct
   assert_near(surface.created_entities[1].commands[1].destination.y, request.goal.y, "worker command and path check should use the same goal")
 end)
 
+test("field office falls back to an unbiased search when the hive-facing side is blocked", function()
+  reset()
+  local spawner = {valid = true, position = {x = 40, y = 50}}
+  local surface = new_surface({spawner})
+  local office = new_office(surface, 6, 100)
+  field_office.track_entity(office)
+
+  -- Simulate a office boxed in on the hive-facing side: the biased near-side
+  -- search (radius = FIELD_OFFICE_ARRIVAL_RADIUS) finds nothing, but the
+  -- unbiased fallback search centered on the office (radius =
+  -- FIELD_OFFICE_FALLBACK_SEARCH_RADIUS) finds an open spot on another face.
+  function surface.find_non_colliding_position(name, position, radius)
+    surface.last_non_colliding_name = name
+    if radius == C.FIELD_OFFICE_ARRIVAL_RADIUS then
+      return nil
+    end
+    if radius == C.FIELD_OFFICE_FALLBACK_SEARCH_RADIUS and position.x == office.position.x and position.y == office.position.y then
+      return {x = office.position.x - 1, y = office.position.y}
+    end
+    return {x = position.x + 1, y = position.y}
+  end
+
+  field_office.update(0)
+
+  local biter = surface.created_entities[1]
+  assert_true(biter ~= nil, "ready office should summon a worker despite the blocked near side")
+  assert_near(biter.commands[1].destination.x, office.position.x - 1,
+    "worker should fall back to the unbiased standing spot on the open face")
+  assert_near(biter.commands[1].destination.y, office.position.y,
+    "worker should fall back to the unbiased standing spot on the open face")
+  assert_eq(office.custom_status.label[1], "gui.field-office-calling",
+    "office should still be able to call a worker via the far, open face")
+end)
+
 test("field offices share their home nest population limit across update shards", function()
   reset()
   local spawner = {valid = true, position = {x = 40, y = 50}}

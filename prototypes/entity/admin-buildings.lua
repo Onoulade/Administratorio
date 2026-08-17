@@ -42,13 +42,14 @@ local function placeable_by_item(name)
 end
 
 -- These buildings inherit their base prototype from assembling-machine-1.
--- In Factorio 2 that prototype explicitly opts out of module effects, so
--- copied module slots alone are purely cosmetic. Keep its original beacon and
--- surface-effect behavior intact.
+-- In Factorio 2 that prototype explicitly opts out of module AND beacon
+-- effects, so copied module/beacon slots alone are purely cosmetic. Opt
+-- these buildings back into both instead of matching machine-1's tier-1
+-- beacon-less balance.
 local function enable_machine_effects(machine)
   machine.effect_receiver = {
     uses_module_effects = true,
-    uses_beacon_effects = false,
+    uses_beacon_effects = true,
     uses_surface_effects = true,
   }
 end

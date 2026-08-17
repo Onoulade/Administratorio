@@ -307,8 +307,36 @@ local function get_nearest_spawner(state, office, tick)
   return spawner
 end
 
-local function find_worker_destination(surface, worker_name, office)
-  return surface.find_non_colliding_position(worker_name, office.position, C.FIELD_OFFICE_ARRIVAL_RADIUS, 0.25)
+-- find_non_colliding_position scans outward from its center in a fixed,
+-- position-agnostic order, so searching from office.position always lands on
+-- the same corner regardless of which side the worker is actually approaching
+-- from. Bias the search center toward the worker instead, so it finds a spot
+-- on the near side.
+local function find_worker_destination(surface, worker_name, office, from_position)
+  local search_center = office.position
+  if from_position then
+    local dx = from_position.x - office.position.x
+    local dy = from_position.y - office.position.y
+    local dist_sq = dx * dx + dy * dy
+    if dist_sq > 0.0001 then
+      local dist = math.sqrt(dist_sq)
+      local approach = math.min(dist, C.FIELD_OFFICE_APPROACH_OFFSET or 1.5)
+      search_center = {
+        x = office.position.x + (dx / dist) * approach,
+        y = office.position.y + (dy / dist) * approach,
+      }
+    end
+  end
+  local destination = surface.find_non_colliding_position(worker_name, search_center, C.FIELD_OFFICE_ARRIVAL_RADIUS, 0.25)
+  if destination then return destination end
+
+  -- The biased near-side search comes up empty when that face is fully
+  -- blocked (other buildings, rocks, cliffs...), even though a different
+  -- face of the office may be perfectly walkable. Fall back to an unbiased,
+  -- wider search centered on the office itself so a worker can still find a
+  -- standing spot on whichever face is actually open; request_worker_path_check
+  -- (a real pathfind) is what ultimately decides reachability, not this bias.
+  return surface.find_non_colliding_position(worker_name, office.position, C.FIELD_OFFICE_FALLBACK_SEARCH_RADIUS or 5, 0.25)
     or office.position
 end
 

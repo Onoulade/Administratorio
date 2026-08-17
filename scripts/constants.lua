@@ -193,6 +193,8 @@ M.FIELD_OFFICE_CHECK_TICKS = 30       -- how often to check state (arrival, craf
 M.FIELD_OFFICE_UPDATE_TICKS = 5       -- scheduler cadence for sharded field-office checks
 M.FIELD_OFFICE_BITER_DESPAWN_TICKS = 30 * 60 -- stale return command retry cadence
 M.FIELD_OFFICE_ARRIVAL_RADIUS = 2.5   -- distance threshold for "biter has arrived"
+M.FIELD_OFFICE_APPROACH_OFFSET = 1.5  -- roughly the office's footprint half-width; biases the arrival search toward the side actually facing the worker
+M.FIELD_OFFICE_FALLBACK_SEARCH_RADIUS = 5 -- unbiased search radius (from office center) used when the hive-facing side is fully blocked, so a worker can still approach from whichever face is actually open
 M.FIELD_OFFICE_SPAWNER_CACHE_TTL = 30 * 60 -- ticks between background spawner cache refreshes
 M.FIELD_OFFICE_UPDATE_SHARDS = 6      -- each office is checked once per 30 ticks at a 5-tick cadence
 
