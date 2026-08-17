@@ -21,7 +21,7 @@ if feature_flags.space_age_enabled() then
     -- cost the player feels, at no design expense.
     type = "module",
     name = "unstaffed-operations-waiver",
-    icon = "__administratorio__/graphics/technology/unstaffed-operations-waiver.png",
+    icon = "__administratorio__/graphics/icons/unstaffed-operations-waiver.png",
     icon_size = 64,
     subgroup = "module",
     order = "z[unstaffed-operations-waiver]",
