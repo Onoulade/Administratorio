@@ -95,6 +95,8 @@ The **Resolution Office** scrubber art and **Propaganda Distillery** art are by 
 
 The **Inference Token** icon, the **optic fibre** artwork, and the **optic fibre** mechanic come from **[Moshine](https://github.com/snouz/Moshine)** and **[Moshine-assets](https://github.com/snouz/Moshine-assets)** by **snouz**. The icon is Moshine's AI Trainer art, itself a composite including material from **Krastorio 1 and 2** (GNU LGPLv3) and **Hurricane046** (CC BY). The idea that machine reasoning travels only down a dedicated fibre — a pipe on its own connection category, so it never joins the ordinary fluid network — is Moshine's; the implementation here is Administratorio's own code built on the same pattern its pneumatic tubes already use. Full attribution and licence notices are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
+The **Involuntary Relocation Receiver** sprite and icon are a repurposed **[Long range delivery drones](https://mods.factorio.com/mod/Long_Range_Delivery_Drones)** (GNU LGPLv3) asset by **Sacredanarchy** and **Klonan**. Full attribution is in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
 ---
 
 *Disclaimer: This mod was vibecoded by a real programmer who does not have enough free time to code himself, but it's still made with love and attention.*

@@ -61,6 +61,26 @@ idea is credited here because it is a good one and it came from Moshine.
 
 ---
 
+## Long range delivery drones — Sacredanarchy, Klonan
+
+- Project: <https://mods.factorio.com/mod/Long_Range_Delivery_Drones>
+- Authors: **Sacredanarchy**, **Klonan**
+- Licence: **GNU LGPLv3**
+
+### Artwork
+
+| File in this mod | Source | Upstream licence |
+|---|---|---|
+| `graphics/entities/relocation-cannon/relocation-receiver.png` | Long range delivery drones `request-depot.png` | GNU LGPLv3 |
+| `graphics/icons/relocation-receiver.png` | Same source, padded square and resized to a 64×64 icon | GNU LGPLv3 |
+
+Used as the [entity=involuntary-relocation-receiver] building's sprite and
+inventory icon. The LGPLv3 licence permits reuse and modification with
+attribution; this notice is that attribution, and the unmodified source file
+is available from the project linked above.
+
+---
+
 ## Notes for future contributors
 
 Moshine's entity graphics live in a separate `Moshine-assets` mod and are **not**

@@ -549,11 +549,11 @@ local involuntary_relocation_cannon = {
     animation = {
       filename = entity_graphics .. "relocation-cannon/relocation-cannon.png",
       priority = "high",
-      width = 1254,
-      height = 1254,
+      width = 360,
+      height = 432,
       frame_count = 1,
-      scale = 160 / 1254,
-      shift = util.by_pixel(0, -4),
+      scale = 0.42,
+      shift = util.by_pixel(0, -13),
     },
   },
   working_sound = {
@@ -561,7 +561,74 @@ local involuntary_relocation_cannon = {
     idle_sound = {filename = "__base__/sound/idle1.ogg"}
   },
 }
+involuntary_relocation_cannon.crafting_categories = {"relocation-payload-in"}
 align_footprint(involuntary_relocation_cannon, 4.4, 4.4, 5, 5)
+
+-- Involuntary Relocation Receiver: the emitter's counterpart. Holds the
+-- arrivals buffer and files requests; never carries cargo of its own. A
+-- deepcopy of the emitter shell (inventory sizes, circuit connector) with a
+-- narrower recipe category, a smaller 2x2 footprint, its own name, and its
+-- own art -- a repurposed Long range delivery drones asset (GNU LGPLv3,
+-- Sacredanarchy & Klonan; see THIRD-PARTY-NOTICES.md).
+local involuntary_relocation_receiver = table.deepcopy(involuntary_relocation_cannon)
+involuntary_relocation_receiver.name = "involuntary-relocation-receiver"
+involuntary_relocation_receiver.icon = item_icons .. "relocation-receiver.png"
+involuntary_relocation_receiver.icon_size = 64
+involuntary_relocation_receiver.minable = {mining_time = 0.4, result = "involuntary-relocation-receiver"}
+involuntary_relocation_receiver.placeable_by = placeable_by_item("involuntary-relocation-receiver")
+involuntary_relocation_receiver.crafting_categories = {"relocation-payload-out"}
+involuntary_relocation_receiver.graphics_set = {
+  animation = {
+    filename = entity_graphics .. "relocation-cannon/relocation-receiver.png",
+    priority = "high",
+    width = 125,
+    height = 167,
+    frame_count = 1,
+    scale = 64 / 125,
+    shift = util.by_pixel(0, -12),
+  },
+}
+align_footprint(involuntary_relocation_receiver, 1.8, 1.8, 2, 2)
+
+-- Relocation status combinator: a hidden constant-combinator broadcasting a
+-- building's current inventory contents (cargo for an emitter, transfer-order
+-- count for a receiver). Shared by both roles. Wired to the real building's
+-- own RED wire only -- the player connects red to the emitter/receiver
+-- itself, same connector as everything else, never to this hidden entity
+-- directly -- see C.RELOCATION_STATUS_COMBINATOR_NAME.
+local relocation_status_combinator = {
+  type = "constant-combinator",
+  name = "relocation-status-combinator",
+  icon = item_icons .. "relocation-cannon.png",
+  icon_size = 64,
+  flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "placeable-off-grid"},
+  collision_mask = {layers = {}},
+  collision_box = {{0, 0}, {0, 0}},
+  selection_box = {{0, 0}, {0, 0}},
+  selectable_in_game = false,
+  hidden = true,
+  item_slot_count = 32,
+  sprites = {
+    north = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    east = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    south = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    west = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+  },
+  activity_led_sprites = {
+    north = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    east = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    south = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    west = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+  },
+  activity_led_light_offsets = {{0, 0}, {0, 0}, {0, 0}, {0, 0}},
+  circuit_wire_connection_points = {
+    {wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}}},
+    {wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}}},
+    {wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}}},
+    {wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}}},
+  },
+  circuit_wire_max_distance = 9,
+}
 
 -- Synthetic Personnel Bureau: manufactures professions, not buildings.
 --
@@ -888,6 +955,46 @@ local interplanetary_terminus = {
 }
 align_footprint(interplanetary_terminus, 2.4, 2.4, 3, 3, {-1 / 32, 3 / 32})
 
+-- Terminus pool combinator: a hidden constant-combinator broadcasting the
+-- force-wide trunk pool's current contents. Wired to the Terminus's own RED
+-- wire only; requests are read from GREEN only (scripts/interplanetary_tube.lua
+-- M.collect_requests), so the two directions never mix on the shared
+-- connector. The player wires red to the real, visible Terminus itself --
+-- never to this hidden entity directly.
+local terminus_pool_combinator = {
+  type = "constant-combinator",
+  name = "terminus-pool-combinator",
+  icon = space_age_icons .. "interplanetary-terminus.png",
+  icon_size = 64,
+  flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "placeable-off-grid"},
+  collision_mask = {layers = {}},
+  collision_box = {{0, 0}, {0, 0}},
+  selection_box = {{0, 0}, {0, 0}},
+  selectable_in_game = false,
+  hidden = true,
+  item_slot_count = 128,
+  sprites = {
+    north = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    east = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    south = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    west = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+  },
+  activity_led_sprites = {
+    north = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    east = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    south = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    west = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+  },
+  activity_led_light_offsets = {{0, 0}, {0, 0}, {0, 0}, {0, 0}},
+  circuit_wire_connection_points = {
+    {wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}}},
+    {wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}}},
+    {wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}}},
+    {wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}}},
+  },
+  circuit_wire_max_distance = 9,
+}
+
 local asteroid_size_masks = {
   small = "administratorio-asteroid-small",
   medium = "administratorio-asteroid-medium",
@@ -1201,6 +1308,7 @@ for _, entity in ipairs({
   synthetic_personnel_bureau,
   slop_refinery,
   involuntary_relocation_cannon,
+  involuntary_relocation_receiver,
 }) do
   require_non_vacuum(entity)
 end
@@ -1214,12 +1322,15 @@ local space_age_entities = {
   conciliation_desk,
   digital_services_bureau,
   interplanetary_terminus,
+  terminus_pool_combinator,
   ai_server,
   ai_server_heat_core,
   heat_exhaust,
   synthetic_personnel_bureau,
   slop_refinery,
   involuntary_relocation_cannon,
+  involuntary_relocation_receiver,
+  relocation_status_combinator,
   orbital_biter_projectile,
   trajectory_compliance_array,
   senior_trajectory_compliance_array,
