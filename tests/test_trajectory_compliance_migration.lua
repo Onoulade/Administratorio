@@ -60,6 +60,20 @@ test("0.5.8 converts loaded cannon ammunition to VESMs", function()
     "migration should install replacement VESM ammunition")
 end)
 
+test("0.6.3 renames the deployment cannon to the deployment catapult", function()
+  local migration = read_file(mod_root .. "migrations/0.6.3-catapult-renames.json")
+  assert_true(migration:find('"orbital-employment-cannon"', 1, true) ~= nil, "old entity/item/recipe name missing")
+  assert_true(migration:find('"orbital-employment-catapult"', 1, true) ~= nil, "new entity/item/recipe name missing")
+  assert_true(migration:find('"orbital-employment-cannon-achievement"', 1, true) ~= nil, "old achievement name missing")
+  assert_true(migration:find('"orbital-employment-catapult-achievement"', 1, true) ~= nil, "new achievement name missing")
+end)
+
+test("0.6.3 carries paused deployment catapults over to the renamed storage key", function()
+  local migration = read_file(mod_root .. "migrations/0.6.3-catapult-storage.lua")
+  assert_true(migration:find("blocked_cannons", 1, true) ~= nil, "migration should read the legacy storage key")
+  assert_true(migration:find("blocked_catapults", 1, true) ~= nil, "migration should populate the renamed storage key")
+end)
+
 --- Returns -1, 0 or 1 comparing dotted version strings numerically.
 local function compare_versions(left, right)
   local left_parts, right_parts = {}, {}

@@ -208,7 +208,7 @@ test("orbital tips unlock with the feature they explain", function()
 
   local compliance_tips = {
     "administratorio-trajectory-compliance-arrays",
-    "administratorio-orbital-employment-cannon",
+    "administratorio-orbital-employment-catapult",
   }
   for _, name in ipairs(compliance_tips) do
     assert_true(

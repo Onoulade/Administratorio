@@ -1,7 +1,7 @@
 local M = {}
 
 local ARRAY_NAME = "trajectory-compliance-array"
-local CANNON_NAME = "orbital-employment-cannon"
+local CATAPULT_NAME = "orbital-employment-catapult"
 local ARRAY_TIERS = {
   ["trajectory-compliance-array"] = 2,
   ["senior-trajectory-compliance-array"] = 3,
@@ -16,7 +16,7 @@ local TARGET_TIERS = {
   ["trajectory-compliance-array"] = 2,
   ["senior-trajectory-compliance-array"] = 3,
   ["executive-trajectory-compliance-array"] = 4,
-  [CANNON_NAME] = 4,
+  [CATAPULT_NAME] = 4,
 }
 local ASTEROID_SIZE_RANKS = {
   small = 1,
@@ -57,8 +57,8 @@ local BITER_AMMO_CATEGORY = "orbital-biter-ballistics"
 local CAPACITY_TECH_PREFIX = "orbital-employment-capacity-"
 local CAPACITY_TECH_LEVELS = 4
 local BASE_EMPLOYEE_CAPACITY = 1
-local CANNON_RANGE = 56
-local CANNON_TURN_RANGE = 0.05
+local CATAPULT_RANGE = 56
+local CATAPULT_TURN_RANGE = 0.05
 local BASE_BITER_DAMAGE = 125
 local ASSAULT_INTERVAL = 60
 local ASSIGNMENT_RESERVATION_LIFETIME = 600
@@ -102,7 +102,7 @@ local OUTCOME_DEVIATED = "deviated"
 local OUTCOME_AT_CAPACITY = "at-capacity"
 
 M.ARRAY_NAME = ARRAY_NAME
-M.CANNON_NAME = CANNON_NAME
+M.CATAPULT_NAME = CATAPULT_NAME
 M.ARRAY_TIERS = ARRAY_TIERS
 M.TARGET_TIERS = TARGET_TIERS
 M.ASTEROID_SIZE_RANKS = ASTEROID_SIZE_RANKS
@@ -122,8 +122,8 @@ M.BITER_AMMO_CATEGORY = BITER_AMMO_CATEGORY
 M.CAPACITY_TECH_PREFIX = CAPACITY_TECH_PREFIX
 M.CAPACITY_TECH_LEVELS = CAPACITY_TECH_LEVELS
 M.BASE_EMPLOYEE_CAPACITY = BASE_EMPLOYEE_CAPACITY
-M.CANNON_RANGE = CANNON_RANGE
-M.CANNON_TURN_RANGE = CANNON_TURN_RANGE
+M.CATAPULT_RANGE = CATAPULT_RANGE
+M.CATAPULT_TURN_RANGE = CATAPULT_TURN_RANGE
 M.BASE_BITER_DAMAGE = BASE_BITER_DAMAGE
 M.ASSAULT_INTERVAL = ASSAULT_INTERVAL
 M.ASSIGNMENT_RESERVATION_LIFETIME = ASSIGNMENT_RESERVATION_LIFETIME
@@ -145,7 +145,7 @@ local function ensure_storage()
   local state = storage.trajectory_compliance
   state.assaults = state.assaults or {}
   state.next_assault_id = state.next_assault_id or 1
-  state.blocked_cannons = state.blocked_cannons or {}
+  state.blocked_catapults = state.blocked_catapults or {}
   state.pending_assignments = state.pending_assignments or {}
   state.next_assignment_id = state.next_assignment_id or 1
   state.blocked_arrays = state.blocked_arrays or {}
@@ -521,8 +521,8 @@ local function consume_pending_assignment(target, source)
       end
     end
   end
-  -- Projectile cause identity is stable for cannon shots. Never let a second
-  -- cannon steal the first cannon's reservation merely because both selected
+  -- Projectile cause identity is stable for catapult shots. Never let a second
+  -- catapult steal the first catapult's reservation merely because both selected
   -- the same asteroid before native targeting reacted to the reroute.
   if not source_unit_number and fallback_id then
     pending[fallback_id] = nil
@@ -554,7 +554,7 @@ local function atan2(y, x)
   return 0
 end
 
-local function cannon_target_within_arc(source, target)
+local function catapult_target_within_arc(source, target)
   -- Direction is the placed railgun base direction (0..15 around a circle).
   -- If an older mock or unusual integration cannot provide it, native turret
   -- targeting still enforces the prototype's turn_range.
@@ -566,7 +566,7 @@ local function cannon_target_within_arc(source, target)
   local target_orientation = (atan2(dx, -dy) / (2 * math.pi)) % 1
   local base_orientation = (source.direction / 16) % 1
   local difference = math.abs(((target_orientation - base_orientation + 0.5) % 1) - 0.5)
-  return difference <= CANNON_TURN_RANGE / 2 + 1e-9
+  return difference <= CATAPULT_TURN_RANGE / 2 + 1e-9
 end
 
 local function available_target_for(source, excluded_target)
@@ -580,11 +580,11 @@ local function available_target_for(source, excluded_target)
   for _, candidate in ipairs(surface.find_entities_filtered{
     type = "asteroid",
     position = source.position,
-    radius = CANNON_RANGE,
+    radius = CATAPULT_RANGE,
   }) do
     if candidate ~= excluded_target
       and valid_asteroid_target(source, candidate)
-      and cannon_target_within_arc(source, candidate)
+      and catapult_target_within_arc(source, candidate)
     then
       local assault = find_assault_for_target(candidate)
       local occupied = (assault and #assault.workers or 0)
@@ -603,8 +603,8 @@ local function available_target_for(source, excluded_target)
   return best_target
 end
 
-local function reroute_or_pause_cannon(source, excluded_target)
-  if not source or not source.valid or source.name ~= CANNON_NAME then return false end
+local function reroute_or_pause_catapult(source, excluded_target)
+  if not source or not source.valid or source.name ~= CATAPULT_NAME then return false end
   ensure_storage()
   local state = storage.trajectory_compliance
   local unit_number = source.unit_number
@@ -613,33 +613,33 @@ local function reroute_or_pause_cannon(source, excluded_target)
   if target then
     source.shooting_target = target
     source.disabled_by_script = false
-    if unit_number then state.blocked_cannons[unit_number] = nil end
+    if unit_number then state.blocked_catapults[unit_number] = nil end
     return true
   end
 
   source.disabled_by_script = true
-  if unit_number then state.blocked_cannons[unit_number] = source end
+  if unit_number then state.blocked_catapults[unit_number] = source end
   return false
 end
 
-local function refresh_blocked_cannons()
+local function refresh_blocked_catapults()
   ensure_storage()
-  local blocked = storage.trajectory_compliance.blocked_cannons
-  for unit_number, cannon in pairs(blocked) do
-    if not cannon or not cannon.valid then
+  local blocked = storage.trajectory_compliance.blocked_catapults
+  for unit_number, catapult in pairs(blocked) do
+    if not catapult or not catapult.valid then
       blocked[unit_number] = nil
     else
-      reroute_or_pause_cannon(cannon)
+      reroute_or_pause_catapult(catapult)
     end
   end
 end
 
-local function reroute_cannons_targeting(target)
+local function reroute_catapults_targeting(target)
   local surface = target and target.valid and target.surface
   if not surface or not surface.valid or not surface.find_entities_filtered then return end
-  for _, cannon in ipairs(surface.find_entities_filtered{name = CANNON_NAME}) do
-    if cannon.shooting_target == target then
-      reroute_or_pause_cannon(cannon, target)
+  for _, catapult in ipairs(surface.find_entities_filtered{name = CATAPULT_NAME}) do
+    if catapult.shooting_target == target then
+      reroute_or_pause_catapult(catapult, target)
     end
   end
 end
@@ -754,7 +754,7 @@ end
 
 local function resolve_biter_launch(event)
   local source = source_from_event(event)
-  if not source or source.name ~= CANNON_NAME then return false end
+  if not source or source.name ~= CATAPULT_NAME then return false end
   local target = target_from_event(event, source)
   if not valid_asteroid_target(source, target) then return false end
 
@@ -763,7 +763,7 @@ local function resolve_biter_launch(event)
     + pending_assignment_count(target)
   local capacity = M.employee_capacity(source.force)
   if occupied >= capacity then
-    reroute_or_pause_cannon(source, target)
+    reroute_or_pause_catapult(source, target)
     return false
   end
 
@@ -788,9 +788,9 @@ local function resolve_biter_launch(event)
   reroute_arrays_targeting(target)
 
   if occupied + 1 >= capacity then
-    -- Reserve the slot at launch, before this or another cannon can dispatch a
+    -- Reserve the slot at launch, before this or another catapult can dispatch a
     -- second manager that would merely be rejected and drift home on impact.
-    reroute_cannons_targeting(target)
+    reroute_catapults_targeting(target)
   end
   return true
 end
@@ -838,7 +838,7 @@ end
 
 local function resolve_biter_assault(event)
   local source = source_from_event(event)
-  if not source or source.name ~= CANNON_NAME then return false end
+  if not source or source.name ~= CATAPULT_NAME then return false end
   local target = target_from_event(event, source)
   local target_size, target_family = valid_asteroid_target(source, target)
   if not target_size then return false end
@@ -852,7 +852,7 @@ local function resolve_biter_assault(event)
   if (not consumed_reservation and pending_assignment_count(target) > 0)
     or (assault and #assault.workers >= capacity)
   then
-    -- Another cannon may already have had a projectile in flight when this
+    -- Another catapult may already have had a projectile in flight when this
     -- asteroid's staffing allocation was reserved or filled. The rejected
     -- employee becomes a normal collectible return chunk instead of stealing
     -- the other launch's reservation or being silently consumed.
@@ -864,7 +864,7 @@ local function resolve_biter_assault(event)
       destination_for(platform, source.position)
     )
     platform.create_asteroid_chunks(chunks)
-    reroute_or_pause_cannon(source, target)
+    reroute_or_pause_catapult(source, target)
     return true, OUTCOME_AT_CAPACITY, 0, false
   end
 
@@ -901,11 +901,11 @@ local function resolve_biter_assault(event)
   assault.deviation_exclusion_version = 1
 
   if #assault.workers >= capacity then
-    reroute_or_pause_cannon(source, target)
+    reroute_or_pause_catapult(source, target)
   end
 
   -- Impact only attaches the worker. Damage begins on the next one-second work
-  -- cycle and stacks linearly when the cannon assigns colleagues to the rock.
+  -- cycle and stacks linearly when the catapult assigns colleagues to the rock.
   return true, OUTCOME_ATTACHED, M.biter_damage(source.force), false
 end
 
@@ -1119,7 +1119,7 @@ function M.on_tick(event)
   end
   if event.tick % ASSAULT_INTERVAL ~= 0 then return end
   process_assaults(event.tick)
-  refresh_blocked_cannons()
+  refresh_blocked_catapults()
   refresh_blocked_arrays()
 end
 

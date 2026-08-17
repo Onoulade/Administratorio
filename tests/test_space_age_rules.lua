@@ -105,7 +105,7 @@ test("space age admin buildings stay out of vanilla recipe regulation", function
   assert_true(shared.is_admin_recipe("formation-center"), "formation-center should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("administrative-space-station"), "administrative-space-station should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("trajectory-compliance-array"), "trajectory-compliance-array should be treated as an admin recipe")
-  assert_true(shared.is_admin_recipe("orbital-employment-cannon"), "orbital-employment-cannon should be treated as an admin recipe")
+  assert_true(shared.is_admin_recipe("orbital-employment-catapult"), "orbital-employment-catapult should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("orbital-deviation-order"), "orbital-deviation-order should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("orbital-infrastructure-permit"), "orbital-infrastructure-permit should be treated as an admin recipe")
   assert_true(shared.is_admin_recipe("territorial-arbitration-post"), "territorial-arbitration-post should be treated as an admin recipe")
@@ -130,7 +130,7 @@ test("every current space-platform building is registered for its dedicated perm
     "trajectory-compliance-array",
     "senior-trajectory-compliance-array",
     "executive-trajectory-compliance-array",
-    "orbital-employment-cannon",
+    "orbital-employment-catapult",
   }) do
     assert_true(shared.SPACE_PLATFORM_BUILDING_RECIPES[recipe_name] == true,
       recipe_name .. " should be registered as space-platform infrastructure")

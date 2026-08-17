@@ -40,7 +40,7 @@ if space_age_enabled then
   { type = "item", name = "optical-fibre",              icons = {{icon = "__base__/graphics/icons/pipe.png", icon_size = 64, tint = {r = 0.35, g = 0.8, b = 1.0, a = 1}}}, subgroup = "admin-ai", order = "a", place_result = "optical-fibre",           stack_size = 100 },
   })
 end
--- Space Buildings (trajectory-compliance-array x3, orbital-employment-cannon,
+-- Space Buildings (trajectory-compliance-array x3, orbital-employment-catapult,
 -- administrative-space-station, interplanetary-terminus) live in
 -- prototypes/item/space_age.lua; do not redefine them here.
 

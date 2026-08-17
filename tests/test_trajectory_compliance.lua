@@ -200,7 +200,7 @@ local function new_source(surface, force, quality, name)
   }
   local entity = {
     valid = true,
-    name = name or module.CANNON_NAME,
+    name = name or module.CATAPULT_NAME,
     quality = {name = quality or "normal"},
     unit_number = next_unit_number,
     surface = surface,
@@ -311,13 +311,13 @@ end)
 
 test("VESM quality never changes orbital performance", function()
   local _, _, surface, force = new_world()
-  local normal_cannon = new_source(surface, force, "normal")
-  local legendary_cannon = new_source(surface, force, "legendary")
+  local normal_catapult = new_source(surface, force, "normal")
+  local legendary_catapult = new_source(surface, force, "legendary")
   local normal_target = new_target("asteroid", "medium-metallic-asteroid")
   local legendary_target = new_target("asteroid", "medium-metallic-asteroid")
 
-  local normal_handled, _, normal_damage = fire_biter(normal_cannon, normal_target)
-  local legendary_handled, _, legendary_damage = fire_biter(legendary_cannon, legendary_target)
+  local normal_handled, _, normal_damage = fire_biter(normal_catapult, normal_target)
+  local legendary_handled, _, legendary_damage = fire_biter(legendary_catapult, legendary_target)
 
   assert_true(normal_handled and legendary_handled)
   assert_eq(normal_damage, module.BASE_BITER_DAMAGE)
@@ -332,22 +332,22 @@ end)
 
 test("staffing research raises the hard per-asteroid employee cap", function()
   local platform, _, surface, force = new_world(nil, nil, 0)
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local asteroid = new_target("asteroid", "medium-metallic-asteroid", 400, surface)
 
   assert_eq(module.employee_capacity(force), 1)
-  local handled, outcome = fire_biter(cannon, asteroid)
+  local handled, outcome = fire_biter(catapult, asteroid)
   assert_true(handled)
   assert_eq(outcome, module.OUTCOME_ATTACHED)
-  assert_true(cannon.disabled_by_script, "cannon should pause when its only target reaches capacity")
+  assert_true(catapult.disabled_by_script, "catapult should pause when its only target reaches capacity")
 
   local assault
   for _, candidate in pairs(storage.trajectory_compliance.assaults) do assault = candidate end
   assert_eq(#assault.workers, 1)
 
-  -- Simulate another cannon's projectile already being in flight when the
+  -- Simulate another catapult's projectile already being in flight when the
   -- first worker filled the allocation.
-  local overflow_handled, overflow_outcome = fire_biter(cannon, asteroid)
+  local overflow_handled, overflow_outcome = fire_biter(catapult, asteroid)
   assert_true(overflow_handled)
   assert_eq(overflow_outcome, module.OUTCOME_AT_CAPACITY)
   assert_eq(#assault.workers, 1, "overflow must not exceed the researched cap")
@@ -358,13 +358,13 @@ test("staffing research raises the hard per-asteroid employee cap", function()
   force.technologies[module.CAPACITY_TECH_PREFIX .. 1].researched = true
   assert_eq(module.employee_capacity(force), 2)
   module.on_tick({tick = 60})
-  assert_true(not cannon.disabled_by_script,
-    "capacity research should wake a cannon whose current asteroid gained a vacancy")
-  assert_eq(cannon.shooting_target, asteroid)
+  assert_true(not catapult.disabled_by_script,
+    "capacity research should wake a catapult whose current asteroid gained a vacancy")
+  assert_eq(catapult.shooting_target, asteroid)
 
-  fire_biter(cannon, asteroid)
+  fire_biter(catapult, asteroid)
   assert_eq(#assault.workers, 2)
-  assert_true(cannon.disabled_by_script, "the researched cap must remain hard")
+  assert_true(catapult.disabled_by_script, "the researched cap must remain hard")
 
   for level = 2, module.CAPACITY_TECH_LEVELS do
     force.technologies[module.CAPACITY_TECH_PREFIX .. level].researched = true
@@ -374,41 +374,41 @@ end)
 
 test("launch reservations prevent unresearched duplicate managers", function()
   local platform, _, surface, force = new_world(nil, nil, 0)
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local asteroid = new_target("asteroid", "huge-metallic-asteroid", nil, surface)
 
-  assert_true(fire_biter_launch(cannon, asteroid, 10))
+  assert_true(fire_biter_launch(catapult, asteroid, 10))
   assert_eq(table_count(storage.trajectory_compliance.pending_assignments), 1)
-  assert_true(cannon.disabled_by_script,
-    "base-capacity cannon must pause as soon as its only slot is in flight")
+  assert_true(catapult.disabled_by_script,
+    "base-capacity catapult must pause as soon as its only slot is in flight")
 
-  fire_biter(cannon, asteroid, {tick = 100})
+  fire_biter(catapult, asteroid, {tick = 100})
   assert_eq(table_count(storage.trajectory_compliance.pending_assignments), 0)
   assert_eq(table_count(storage.trajectory_compliance.assaults), 1)
   assert_eq(#platform.created_chunks, 0,
     "the reserved manager should attach instead of spawning a drifting rejection")
 end)
 
-test("two cannons cannot reserve the same single-capacity asteroid", function()
+test("two catapults cannot reserve the same single-capacity asteroid", function()
   local platform, _, surface, force = new_world(nil, nil, 0)
-  local first_cannon = new_source(surface, force)
-  local second_cannon = new_source(surface, force)
+  local first_catapult = new_source(surface, force)
+  local second_catapult = new_source(surface, force)
   local asteroid = new_target("asteroid", "huge-metallic-asteroid", nil, surface)
 
-  assert_true(fire_biter_launch(first_cannon, asteroid, 10))
-  assert_true(not fire_biter_launch(second_cannon, asteroid, 10),
-    "the second cannon must observe the first cannon's launch reservation")
+  assert_true(fire_biter_launch(first_catapult, asteroid, 10))
+  assert_true(not fire_biter_launch(second_catapult, asteroid, 10),
+    "the second catapult must observe the first catapult's launch reservation")
   assert_eq(table_count(storage.trajectory_compliance.pending_assignments), 1)
 
-  local rejected_handled, rejected_outcome = fire_biter(second_cannon, asteroid, {tick = 50})
+  local rejected_handled, rejected_outcome = fire_biter(second_catapult, asteroid, {tick = 50})
   assert_true(rejected_handled)
   assert_eq(rejected_outcome, module.OUTCOME_AT_CAPACITY)
   assert_eq(table_count(storage.trajectory_compliance.pending_assignments), 1,
-    "a rejected projectile must not steal another cannon's reservation")
+    "a rejected projectile must not steal another catapult's reservation")
   assert_eq(#platform.created_chunks, 1,
     "a native projectile already spawned during the race should return as a chunk")
 
-  fire_biter(first_cannon, asteroid, {tick = 100})
+  fire_biter(first_catapult, asteroid, {tick = 100})
   local assault
   for _, candidate in pairs(storage.trajectory_compliance.assaults) do assault = candidate end
   assert_eq(#assault.workers, 1)
@@ -416,71 +416,71 @@ end)
 
 test("staffing research reserves exactly its additional in-flight slots", function()
   local _, _, surface, force = new_world(nil, nil, 1)
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local asteroid = new_target("asteroid", "huge-metallic-asteroid", nil, surface)
 
-  assert_true(fire_biter_launch(cannon, asteroid, 10))
-  assert_true(not cannon.disabled_by_script)
-  assert_true(fire_biter_launch(cannon, asteroid, 20))
-  assert_true(cannon.disabled_by_script)
+  assert_true(fire_biter_launch(catapult, asteroid, 10))
+  assert_true(not catapult.disabled_by_script)
+  assert_true(fire_biter_launch(catapult, asteroid, 20))
+  assert_true(catapult.disabled_by_script)
   assert_eq(table_count(storage.trajectory_compliance.pending_assignments), 2)
 
-  fire_biter(cannon, asteroid, {tick = 100})
-  fire_biter(cannon, asteroid, {tick = 110})
+  fire_biter(catapult, asteroid, {tick = 100})
+  fire_biter(catapult, asteroid, {tick = 110})
   assert_eq(table_count(storage.trajectory_compliance.pending_assignments), 0)
   local assault
   for _, candidate in pairs(storage.trajectory_compliance.assaults) do assault = candidate end
   assert_eq(#assault.workers, 2)
 end)
 
-test("a full asteroid makes its cannon retarget another eligible asteroid", function()
+test("a full asteroid makes its catapult retarget another eligible asteroid", function()
   local _, _, surface, force = new_world(nil, nil, 0)
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local first = new_target("asteroid", "medium-metallic-asteroid", 400, surface)
   local second = new_target("asteroid", "big-carbonic-asteroid", 2000, surface)
 
-  fire_biter(cannon, first)
+  fire_biter(catapult, first)
 
-  assert_true(not cannon.disabled_by_script)
-  assert_eq(cannon.shooting_target, second,
-    "a cannon should use another asteroid instead of wasting shots on a full one")
+  assert_true(not catapult.disabled_by_script)
+  assert_eq(catapult.shooting_target, second,
+    "a catapult should use another asteroid instead of wasting shots on a full one")
 
-  fire_biter(cannon, second)
-  assert_true(cannon.disabled_by_script,
-    "cannon should pause when every available asteroid is fully staffed")
+  fire_biter(catapult, second)
+  assert_true(catapult.disabled_by_script,
+    "catapult should pause when every available asteroid is fully staffed")
 end)
 
-test("cannon target selection keeps 56-tile reach inside a narrow firing arc", function()
+test("catapult target selection keeps 56-tile reach inside a narrow firing arc", function()
   local _, _, surface, force = new_world(nil, nil, 0)
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local staffed = new_target("asteroid", "medium-metallic-asteroid", 400, surface)
   local outside_arc = new_target("asteroid", "medium-carbonic-asteroid", 400, surface)
   local downrange = new_target("asteroid", "medium-oxide-asteroid", 400, surface)
   outside_arc.position = {x = 50, y = 10}
   downrange.position = {x = 55, y = 0}
 
-  assert_eq(module.CANNON_RANGE, 56)
-  assert_near(module.CANNON_TURN_RANGE, 0.05, 1e-9)
-  fire_biter(cannon, staffed)
-  assert_eq(cannon.shooting_target, downrange,
+  assert_eq(module.CATAPULT_RANGE, 56)
+  assert_near(module.CATAPULT_TURN_RANGE, 0.05, 1e-9)
+  fire_biter(catapult, staffed)
+  assert_eq(catapult.shooting_target, downrange,
     "retargeting should skip a closer asteroid outside the narrow firing corridor")
 end)
 
-test("array and cannon configuration install strict native priorities", function()
+test("array and catapult configuration install strict native priorities", function()
   local _, _, surface, force = new_world()
   local junior = new_source(surface, force, "normal", "trajectory-compliance-array")
   local senior = new_source(surface, force, "normal", "senior-trajectory-compliance-array")
   local executive = new_source(surface, force, "normal", "executive-trajectory-compliance-array")
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
 
-  for _, entity in ipairs({junior, senior, executive, cannon}) do
+  for _, entity in ipairs({junior, senior, executive, catapult}) do
     assert_true(module.configure_array(entity))
     assert_true(entity.ignore_unprioritised_targets)
   end
   assert_eq(#junior.priority_targets, 8)
   assert_eq(#senior.priority_targets, 12)
   assert_eq(#executive.priority_targets, 16)
-  assert_eq(#cannon.priority_targets, 16)
+  assert_eq(#catapult.priority_targets, 16)
 end)
 
 test("deviation pushes threats outward without deleting or salvaging them", function()
@@ -555,10 +555,10 @@ end)
 
 test("impact attaches a worker and damage begins on the next work cycle", function()
   local platform, hub, surface, force = new_world()
-  local cannon = new_source(surface, force, "rare")
+  local catapult = new_source(surface, force, "rare")
   local asteroid = new_target("asteroid", "big-metallic-asteroid")
 
-  local handled, outcome, damage, destroyed = fire_biter(cannon, asteroid)
+  local handled, outcome, damage, destroyed = fire_biter(catapult, asteroid)
 
   assert_true(handled)
   assert_eq(outcome, module.OUTCOME_ATTACHED)
@@ -577,7 +577,7 @@ end)
 
 test("attached manager visuals arrive randomly rotated and render above their asteroid", function()
   local _, _, surface, force = new_world()
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local asteroid = new_target("asteroid", "big-metallic-asteroid", nil, surface)
   local captured
   rendering = {
@@ -587,7 +587,7 @@ test("attached manager visuals arrive randomly rotated and render above their as
     end,
   }
 
-  fire_biter(cannon, asteroid)
+  fire_biter(catapult, asteroid)
   rendering = nil
 
   assert_true(captured ~= nil, "manager attack animation should be rendered")
@@ -606,7 +606,7 @@ end)
 
 test("attached manager visual accumulates the asteroid sprite rotation", function()
   local _, _, surface, force = new_world()
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local asteroid = new_target("asteroid", "big-metallic-asteroid", nil, surface)
   local visual
   rendering = {
@@ -620,7 +620,7 @@ test("attached manager visual accumulates the asteroid sprite rotation", functio
     end,
   }
 
-  fire_biter(cannon, asteroid, {tick = 100})
+  fire_biter(catapult, asteroid, {tick = 100})
   local initial_orientation = visual.orientation
   module.on_tick({tick = 104})
   rendering = nil
@@ -633,7 +633,7 @@ end)
 
 test("multiple managers receive distinct animated positions and phases", function()
   local _, _, surface, force = new_world()
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local asteroid = new_target("asteroid", "huge-promethium-asteroid", nil, surface)
   local captured = {}
   rendering = {
@@ -643,9 +643,9 @@ test("multiple managers receive distinct animated positions and phases", functio
     end,
   }
 
-  fire_biter(cannon, asteroid)
-  fire_biter(cannon, asteroid)
-  fire_biter(cannon, asteroid)
+  fire_biter(catapult, asteroid)
+  fire_biter(catapult, asteroid)
+  fire_biter(catapult, asteroid)
   rendering = nil
 
   assert_eq(#captured, 3, "every attached manager needs its own animation render")
@@ -666,9 +666,9 @@ end)
 
 test("a late-cycle impact waits a full second before its first damage", function()
   local _, _, surface, force = new_world()
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local asteroid = new_target("asteroid", "medium-metallic-asteroid")
-  fire_biter(cannon, asteroid, {tick = 59})
+  fire_biter(catapult, asteroid, {tick = 59})
 
   module.on_tick({tick = 60})
   assert_eq(asteroid.health, 400)
@@ -678,11 +678,11 @@ end)
 
 test("multiple attached workers stack damage and each becomes a chunk", function()
   local platform, _, surface, force = new_world()
-  local cannon = new_source(surface, force, "epic")
+  local catapult = new_source(surface, force, "epic")
   local asteroid = new_target("asteroid", "medium-carbonic-asteroid", 200)
 
-  fire_biter(cannon, asteroid)
-  fire_biter(cannon, asteroid)
+  fire_biter(catapult, asteroid)
+  fire_biter(catapult, asteroid)
   module.on_tick({tick = 60})
 
   assert_true(asteroid.destroyed)
@@ -701,9 +701,9 @@ test("completed demolition creates full salvage plus the employee chunk", functi
 
   for _, case in ipairs(cases) do
     local platform, _, surface, force = new_world()
-    local cannon = new_source(surface, force)
+    local catapult = new_source(surface, force)
     local asteroid = new_target("asteroid", case.name, 1)
-    fire_biter(cannon, asteroid)
+    fire_biter(catapult, asteroid)
     module.on_tick({tick = 60})
 
     assert_true(asteroid.destroyed)
@@ -718,9 +718,9 @@ end)
 
 test("released manager preserves arrival angle plus accumulated asteroid rotation", function()
   local platform, _, surface, force = new_world()
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local asteroid = new_target("asteroid", "medium-metallic-asteroid", 1, surface)
-  fire_biter(cannon, asteroid)
+  fire_biter(catapult, asteroid)
   local assault
   for _, candidate in pairs(storage.trajectory_compliance.assaults) do assault = candidate end
   local worker = assault.workers[1]
@@ -739,13 +739,13 @@ end)
 
 test("projectile cause lookup still attaches the fired employee", function()
   local platform, _, surface, force = new_world()
-  local cannon = new_source(surface, force, "normal")
+  local catapult = new_source(surface, force, "normal")
   local projectile = {valid = true, name = "orbital-biter-projectile"}
   local asteroid = new_target("asteroid", "small-metallic-asteroid", 1)
 
-  assert_true(fire_biter(cannon, asteroid, {
+  assert_true(fire_biter(catapult, asteroid, {
     source_entity = projectile,
-    cause_entity = cannon,
+    cause_entity = catapult,
     quality = "legendary",
   }))
   module.on_tick({tick = 60})
@@ -755,9 +755,9 @@ end)
 
 test("external asteroid death releases attached employees alongside native debris", function()
   local platform, _, surface, force = new_world()
-  local cannon = new_source(surface, force, "rare")
+  local catapult = new_source(surface, force, "rare")
   local asteroid = new_target("asteroid", "big-oxide-asteroid")
-  fire_biter(cannon, asteroid)
+  fire_biter(catapult, asteroid)
 
   assert_true(module.on_entity_died({entity = asteroid}))
   assert_eq(#platform.created_chunks, 1)
@@ -767,9 +767,9 @@ end)
 
 test("an invalidated asteroid loses its attached workers in space", function()
   local platform, _, surface, force = new_world()
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local asteroid = new_target()
-  fire_biter(cannon, asteroid)
+  fire_biter(catapult, asteroid)
   asteroid.valid = false
 
   module.on_tick({tick = 60})
@@ -779,10 +779,10 @@ end)
 
 test("deviators ignore manager-occupied asteroids", function()
   local platform, _, surface, force = new_world()
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local array = new_source(surface, force, "normal", "executive-trajectory-compliance-array")
   local asteroid = new_target("asteroid", "small-metallic-asteroid")
-  fire_biter(cannon, asteroid)
+  fire_biter(catapult, asteroid)
 
   assert_true(not fire_deviation(array, asteroid))
   assert_eq(#platform.created_chunks, 0)
@@ -795,13 +795,13 @@ end)
 
 test("deviators ignore asteroids reserved by airborne employees", function()
   local _, _, surface, force = new_world(nil, nil, 0)
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local array = new_source(surface, force, "normal", "executive-trajectory-compliance-array")
   local asteroid = new_target("asteroid", "small-metallic-asteroid", nil, surface)
 
   assert_true(fire_deviation(array, asteroid))
   assert_eq(table_count(storage.trajectory_compliance.deviations), 1)
-  assert_true(fire_biter_launch(cannon, asteroid, 10))
+  assert_true(fire_biter_launch(catapult, asteroid, 10))
 
   assert_eq(table_count(storage.trajectory_compliance.deviations), 0,
     "launching an employee should cancel an older deviation push")
@@ -812,20 +812,20 @@ end)
 
 test("attached employees cannot destroy an asteroid beneath an airborne coworker", function()
   local platform, _, surface, force = new_world(nil, nil, 1)
-  local first_cannon = new_source(surface, force)
-  local second_cannon = new_source(surface, force)
+  local first_catapult = new_source(surface, force)
+  local second_catapult = new_source(surface, force)
   local asteroid = new_target("asteroid", "small-metallic-asteroid", 1, surface)
 
-  assert_true(fire_biter_launch(first_cannon, asteroid, 0))
-  fire_biter(first_cannon, asteroid, {tick = 10})
-  assert_true(fire_biter_launch(second_cannon, asteroid, 20))
+  assert_true(fire_biter_launch(first_catapult, asteroid, 0))
+  fire_biter(first_catapult, asteroid, {tick = 10})
+  assert_true(fire_biter_launch(second_catapult, asteroid, 20))
 
   module.on_tick({tick = 60})
   assert_true(asteroid.valid,
     "lethal work must wait while another reserved employee is still traveling")
   assert_eq(table_count(storage.trajectory_compliance.pending_assignments), 1)
 
-  fire_biter(second_cannon, asteroid, {tick = 80})
+  fire_biter(second_catapult, asteroid, {tick = 80})
   module.on_tick({tick = 120})
   assert_true(asteroid.destroyed)
   assert_eq(#platform.created_chunks, 4,
@@ -834,10 +834,10 @@ end)
 
 test("external asteroid death returns airborne employees as collectible chunks", function()
   local platform, _, surface, force = new_world(nil, nil, 0)
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local asteroid = new_target("asteroid", "medium-metallic-asteroid", nil, surface)
 
-  assert_true(fire_biter_launch(cannon, asteroid, 10))
+  assert_true(fire_biter_launch(catapult, asteroid, 10))
   assert_true(module.on_entity_died({entity = asteroid, tick = 20}))
   assert_eq(table_count(storage.trajectory_compliance.pending_assignments), 0)
   assert_eq(#platform.created_chunks, 1)
@@ -847,10 +847,10 @@ end)
 
 test("an expired flight reservation returns its employee instead of deleting it", function()
   local platform, _, surface, force = new_world(nil, nil, 0)
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local asteroid = new_target("asteroid", "medium-metallic-asteroid", nil, surface)
 
-  assert_true(fire_biter_launch(cannon, asteroid, 10))
+  assert_true(fire_biter_launch(catapult, asteroid, 10))
   module.on_tick({tick = 10 + module.ASSIGNMENT_RESERVATION_LIFETIME + 1})
 
   assert_eq(table_count(storage.trajectory_compliance.pending_assignments), 0)
@@ -860,9 +860,9 @@ end)
 
 test("new arrays pause before firing when every asteroid is occupied", function()
   local _, _, surface, force = new_world()
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local asteroid = new_target("asteroid", "medium-metallic-asteroid", nil, surface)
-  fire_biter(cannon, asteroid)
+  fire_biter(catapult, asteroid)
 
   local array = new_source(surface, force, "normal", "trajectory-compliance-array")
   assert_true(module.configure_array(array))
@@ -874,7 +874,7 @@ end)
 test("a manager landing cancels active deviation and reroutes its array", function()
   local _, _, surface, force = new_world()
   local array = new_source(surface, force, "normal", "executive-trajectory-compliance-array")
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local occupied = new_target("asteroid", "medium-metallic-asteroid", nil, surface)
   local available = new_target("asteroid", "big-carbonic-asteroid", nil, surface)
 
@@ -883,7 +883,7 @@ test("a manager landing cancels active deviation and reroutes its array", functi
   local position_after_push = occupied.position.x
   assert_true(position_after_push > 10)
 
-  fire_biter(cannon, occupied)
+  fire_biter(catapult, occupied)
 
   assert_eq(table_count(storage.trajectory_compliance.deviations), 0,
     "landing manager should terminate an existing push immediately")
@@ -897,13 +897,13 @@ end)
 
 test("collectible chunks and unrelated effects are ignored", function()
   local _, hub, surface, force = new_world()
-  local cannon = new_source(surface, force)
+  local catapult = new_source(surface, force)
   local chunk = new_target("asteroid-chunk")
   local asteroid = new_target("asteroid")
 
-  assert_true(not fire_biter(cannon, chunk))
+  assert_true(not fire_biter(catapult, chunk))
   assert_true(not chunk.destroyed)
-  assert_true(not fire_biter(cannon, asteroid, {effect_id = "some-other-effect"}))
+  assert_true(not fire_biter(catapult, asteroid, {effect_id = "some-other-effect"}))
   assert_true(not asteroid.destroyed)
   assert_eq(#hub.inserted, 0)
 end)

@@ -512,14 +512,14 @@ scenes.trajectory = scene(720, 0.7, {
   stage = stages(0, "Junior array pushes small asteroid", 160, "Senior priority order doubles arc", 320, "Executive array handles large target", 420, "VESM retargets arrays", 560, "Speed research reduces cooldown"),
 })
 
-scenes.cannon = scene(780, 0.75, {
-  entities = {entity("orbital-employment-cannon", -6, 1, "18 DEGREE CONE"), entity("asteroid-collector", 6.5, 2.6, "COLLECTOR")},
+scenes.catapult = scene(780, 0.75, {
+  entities = {entity("orbital-employment-catapult", -6, 1, "18 DEGREE CONE"), entity("asteroid-collector", 6.5, 2.6, "COLLECTOR")},
   sprites = {sprite("entity/big-metallic-asteroid", 5, -1.2, 1.0), item("voluntary-exploration-space-miner", -5.7, 0.7, 0.46), item("metallic-asteroid-chunk", 5.2, 0.1, 0.42, {show = {{570, 750}}}), item("worker-biter", 6, 0.1, 0.42, {show = {{570, 750}}})},
   lines = {line(-5, 0.3, 5, -1.2, colors.red, {width = 3}), line(-5, 0.3, 4, -3, {r = 1, g = 0.3, b = 0.2, a = 0.45}), line(-5, 0.3, 5, 1.1, {r = 1, g = 0.3, b = 0.2, a = 0.45})},
   movers = {move_item("voluntary-exploration-space-miner", 80, 260, -5.7, 0.7, 4.3, -1.2), move_item("worker-biter", 260, 430, -2, 3.5, 4.6, -0.7), move_item("worker-biter", 310, 480, -1, 3.5, 4.8, -0.9), move_item("worker-biter", 360, 530, 0, 3.5, 5, -1.1), move_item("voluntary-exploration-space-miner", 610, 750, 5, -1.2, -5.7, 0.7)},
   bars = {bar(5, -2.8, 4.8, colors.red, {{at = 260, value = 1}, {at = 570, value = 0}, {at = 750, value = 0}})},
   texts = {label("MINING DAMAGE", 5, -3.5, colors.red, {show = {{260, 570}}, alignment = "center"}), label("1 > 5 MINERS", 0, 4.2, colors.yellow, {show = {{260, 570}}, alignment = "center"}), label("CHUNKS + EMPLOYEE CHUNKS", 5.5, 0.8, colors.green, {show = {{570, 750}}, alignment = "center"}), label("AMMO RETURNED", -4, -2, colors.cyan, {show = {{650, 770}}, alignment = "center"})},
-  stage = stages(0, "Cannon acquires asteroid", 80, "VESM fired", 260, "Mining beam attaches workers", 570, "Asteroid yields chunks", 610, "Collector returns VESM"),
+  stage = stages(0, "Catapult acquires asteroid", 80, "VESM fired", 260, "Mining beam attaches workers", 570, "Asteroid yields chunks", 610, "Collector returns VESM"),
 })
 
 scenes.space_station = scene(720, 0.76, {
@@ -662,9 +662,9 @@ local tip_scene = {
   ["administratorio-senior-trajectory-compliance-array"] = "trajectory",
   ["administratorio-executive-trajectory-compliance-array"] = "trajectory",
   ["administratorio-trajectory-compliance-speed"] = "trajectory",
-  ["administratorio-orbital-employment-cannon"] = "cannon",
-  ["administratorio-orbital-employment-damage"] = "cannon",
-  ["administratorio-orbital-employment-capacity"] = "cannon",
+  ["administratorio-orbital-employment-catapult"] = "catapult",
+  ["administratorio-orbital-employment-damage"] = "catapult",
+  ["administratorio-orbital-employment-capacity"] = "catapult",
   ["administratorio-administrative-space-station"] = "space_station",
   ["administratorio-orbital-infrastructure-permit"] = "space_station",
   ["administratorio-chromatic-printing"] = "chromatic",

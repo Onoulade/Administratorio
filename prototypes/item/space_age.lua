@@ -296,14 +296,14 @@ data:extend({
   },
   {
     type = "item",
-    name = "orbital-employment-cannon",
+    name = "orbital-employment-catapult",
     icons = {
       {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
       {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
     },
     subgroup = "admin-space-orbital",
     order = "i-d",
-    place_result = "orbital-employment-cannon",
+    place_result = "orbital-employment-catapult",
     stack_size = 10
   },
   {

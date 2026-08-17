@@ -708,7 +708,7 @@ data:extend({
   },
   {
     type = "recipe",
-    name = "orbital-employment-cannon",
+    name = "orbital-employment-catapult",
     subgroup = "admin-space-orbital", order = "zb-a",
     enabled = false,
     ingredients = {
@@ -719,7 +719,7 @@ data:extend({
       {type = "item", name = "steel-plate", amount = 25},
       {type = "item", name = "orbital-infrastructure-permit", amount = 1},
     },
-    results = {{type = "item", name = "orbital-employment-cannon", amount = 1}},
+    results = {{type = "item", name = "orbital-employment-catapult", amount = 1}},
     energy_required = 45
   },
   {

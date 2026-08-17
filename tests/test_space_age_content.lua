@@ -588,7 +588,7 @@ test("vacuum infrastructure uses one dedicated orbital permit", function()
     "trajectory-compliance-array",
     "senior-trajectory-compliance-array",
     "executive-trajectory-compliance-array",
-    "orbital-employment-cannon",
+    "orbital-employment-catapult",
   }) do
     local recipe = assert(recipes[recipe_name], recipe_name .. " missing")
     assert_true(has_ingredient(recipe, permit_name), recipe_name .. " should require the orbital permit")
@@ -985,10 +985,10 @@ test("MMMM meetings cheaply brief one reusable manager on any planet", function(
   end
 end)
 
-test("deviation paperwork and VESM cannon are distinct orbital systems", function()
+test("deviation paperwork and VESM catapult are distinct orbital systems", function()
   local miner = assert(ammos["voluntary-exploration-space-miner"], "VESM ammo missing")
   assert_eq(miner.type, "ammo")
-  assert_eq(miner.ammo_category, "orbital-biter-ballistics", "VESM should feed the deployment cannon")
+  assert_eq(miner.ammo_category, "orbital-biter-ballistics", "VESM should feed the deployment catapult")
   assert_eq(miner.magazine_size, 1, "one VESM should power exactly one orbital sortie")
   local deliveries = miner.ammo_type.action.action_delivery
   local projectile_delivery
@@ -1012,7 +1012,7 @@ test("deviation paperwork and VESM cannon are distinct orbital systems", functio
   assert_eq(projectile_delivery.starting_speed, 0.36,
     "VESM projectiles should cross the catapult corridor promptly")
   assert_true(has_launch_reservation,
-    "miner deployment cannon should reserve the exact asteroid when the projectile launches")
+    "miner deployment catapult should reserve the exact asteroid when the projectile launches")
 
   local formation = assert(recipes["voluntary-exploration-space-miner-formation"], "VESM formation missing")
   assert_true(has_ingredient(formation, "astronaut"))
@@ -1036,10 +1036,10 @@ test("deviation paperwork and VESM cannon are distinct orbital systems", functio
   assert_true(recipes["trajectory-compliance-array"] ~= nil, "trajectory compliance array recipe missing")
   assert_true(tech_unlocks_recipe(technologies["orbital-compliance-systems"], "trajectory-compliance-array"),
     "orbital compliance systems should unlock the compliance array")
-  assert_true(items["orbital-employment-cannon"] ~= nil, "orbital employment cannon item missing")
-  assert_true(recipes["orbital-employment-cannon"] ~= nil, "orbital employment cannon recipe missing")
-  assert_true(tech_unlocks_recipe(technologies["orbital-compliance-systems"], "orbital-employment-cannon"),
-    "orbital compliance systems should unlock the employment cannon")
+  assert_true(items["orbital-employment-catapult"] ~= nil, "orbital employment catapult item missing")
+  assert_true(recipes["orbital-employment-catapult"] ~= nil, "orbital employment catapult recipe missing")
+  assert_true(tech_unlocks_recipe(technologies["orbital-compliance-systems"], "orbital-employment-catapult"),
+    "orbital compliance systems should unlock the employment catapult")
 
   local senior_recipe = assert(recipes["senior-trajectory-compliance-array"], "senior array recipe missing")
   local executive_recipe = assert(recipes["executive-trajectory-compliance-array"], "executive array recipe missing")

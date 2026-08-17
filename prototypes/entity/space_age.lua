@@ -1239,36 +1239,36 @@ orbital_biter_projectile.action = {
   },
 }
 
-local orbital_employment_cannon = table.deepcopy(data.raw["ammo-turret"]["railgun-turret"])
-orbital_employment_cannon.name = "orbital-employment-cannon"
-orbital_employment_cannon.icon = nil
-orbital_employment_cannon.icons = {
+local orbital_employment_catapult = table.deepcopy(data.raw["ammo-turret"]["railgun-turret"])
+orbital_employment_catapult.name = "orbital-employment-catapult"
+orbital_employment_catapult.icon = nil
+orbital_employment_catapult.icons = {
   {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
   {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
 }
-orbital_employment_cannon.minable = {mining_time = 0.5, result = "orbital-employment-cannon"}
-orbital_employment_cannon.placeable_by = placeable_by_item("orbital-employment-cannon")
-orbital_employment_cannon.next_upgrade = nil
-orbital_employment_cannon.fast_replaceable_group = nil
-orbital_employment_cannon.attack_target_mask = {
+orbital_employment_catapult.minable = {mining_time = 0.5, result = "orbital-employment-catapult"}
+orbital_employment_catapult.placeable_by = placeable_by_item("orbital-employment-catapult")
+orbital_employment_catapult.next_upgrade = nil
+orbital_employment_catapult.fast_replaceable_group = nil
+orbital_employment_catapult.attack_target_mask = {
   asteroid_size_masks.small,
   asteroid_size_masks.medium,
   asteroid_size_masks.big,
   asteroid_size_masks.huge,
 }
-orbital_employment_cannon.attack_parameters.ammo_category = "orbital-biter-ballistics"
-orbital_employment_cannon.attack_parameters.cooldown = 240
-orbital_employment_cannon.attack_parameters.range = 56
-orbital_employment_cannon.attack_parameters.min_range = 4
-orbital_employment_cannon.attack_parameters.turn_range = 0.05
-orbital_employment_cannon.energy_source = {
+orbital_employment_catapult.attack_parameters.ammo_category = "orbital-biter-ballistics"
+orbital_employment_catapult.attack_parameters.cooldown = 240
+orbital_employment_catapult.attack_parameters.range = 56
+orbital_employment_catapult.attack_parameters.min_range = 4
+orbital_employment_catapult.attack_parameters.turn_range = 0.05
+orbital_employment_catapult.energy_source = {
   type = "electric",
   buffer_capacity = "10MJ",
   input_flow_limit = "5MW",
   usage_priority = "primary-input",
 }
-orbital_employment_cannon.energy_per_shot = "5MJ"
-orbital_employment_cannon.surface_conditions = {
+orbital_employment_catapult.energy_per_shot = "5MJ"
+orbital_employment_catapult.surface_conditions = {
   {
     property = "pressure",
     min = 0,
@@ -1324,7 +1324,7 @@ local space_age_entities = {
   trajectory_compliance_array,
   senior_trajectory_compliance_array,
   executive_trajectory_compliance_array,
-  orbital_employment_cannon,
+  orbital_employment_catapult,
   public_train_stop,
 }
 

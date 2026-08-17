@@ -145,7 +145,7 @@ if space_age_enabled then
     research_tip("administratorio-senior-trajectory-compliance-array", orbit, "i", "trajectory-compliance-jurisdiction-2"),
     research_tip("administratorio-executive-trajectory-compliance-array", orbit, "j", "trajectory-compliance-jurisdiction-3"),
     research_tip("administratorio-trajectory-compliance-speed", orbit, "k", "trajectory-compliance-speed-1"),
-    research_tip("administratorio-orbital-employment-cannon", orbit, "l", "orbital-compliance-systems"),
+    research_tip("administratorio-orbital-employment-catapult", orbit, "l", "orbital-compliance-systems"),
     research_tip("administratorio-orbital-employment-damage", orbit, "m", "orbital-employment-damage-1"),
     research_tip("administratorio-orbital-employment-capacity", orbit, "n", "orbital-employment-capacity-1"),
 

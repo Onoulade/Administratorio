@@ -13,7 +13,7 @@ local visibility_exceptions = {
     ["trajectory-compliance-array"] = true,
     ["senior-trajectory-compliance-array"] = true,
     ["executive-trajectory-compliance-array"] = true,
-    ["orbital-employment-cannon"] = true,
+    ["orbital-employment-catapult"] = true,
   },
 }
 

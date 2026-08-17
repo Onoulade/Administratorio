@@ -157,9 +157,9 @@ data.raw["ammo-turret"]["executive-trajectory-compliance-array"] = {
   type = "ammo-turret",
   name = "executive-trajectory-compliance-array",
 }
-data.raw["ammo-turret"]["orbital-employment-cannon"] = {
+data.raw["ammo-turret"]["orbital-employment-catapult"] = {
   type = "ammo-turret",
-  name = "orbital-employment-cannon",
+  name = "orbital-employment-catapult",
 }
 data.raw["ammo-turret"]["gun-turret"] = {
   type = "ammo-turret",
@@ -1786,8 +1786,8 @@ test("orbital administration weapons survive the military hiding pass", function
     "senior trajectory compliance array should remain visible")
   assert_true(not data.raw["ammo-turret"]["executive-trajectory-compliance-array"].hidden,
     "executive trajectory compliance array should remain visible")
-  assert_true(not data.raw["ammo-turret"]["orbital-employment-cannon"].hidden,
-    "orbital employment cannon should remain visible")
+  assert_true(not data.raw["ammo-turret"]["orbital-employment-catapult"].hidden,
+    "orbital employment catapult should remain visible")
   assert_eq(data.raw.ammo["firearm-magazine"].hidden, true,
     "conventional ammunition should remain hidden")
   assert_eq(data.raw["ammo-turret"]["gun-turret"].hidden, true,

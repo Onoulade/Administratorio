@@ -210,7 +210,7 @@ if space_age_enabled then
   shared.ADMIN_BUILDINGS["trajectory-compliance-array"] = true
   shared.ADMIN_BUILDINGS["senior-trajectory-compliance-array"] = true
   shared.ADMIN_BUILDINGS["executive-trajectory-compliance-array"] = true
-  shared.ADMIN_BUILDINGS["orbital-employment-cannon"] = true
+  shared.ADMIN_BUILDINGS["orbital-employment-catapult"] = true
   shared.ADMIN_BUILDINGS["notary-office"] = true
   shared.ADMIN_BUILDINGS["territorial-arbitration-post"] = true
   shared.ADMIN_BUILDINGS["capture-bureau"] = true
@@ -420,7 +420,7 @@ shared.SPACE_PLATFORM_BUILDING_RECIPES = {
   ["trajectory-compliance-array"] = true,
   ["senior-trajectory-compliance-array"] = true,
   ["executive-trajectory-compliance-array"] = true,
-  ["orbital-employment-cannon"] = true,
+  ["orbital-employment-catapult"] = true,
 }
 
 shared.UNBATCHED_RESULT_NAMES = {

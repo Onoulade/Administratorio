@@ -575,7 +575,7 @@ data:extend({
     effects = {
       {type = "unlock-recipe", recipe = "trajectory-compliance-array"},
       {type = "unlock-recipe", recipe = "orbital-deviation-order"},
-      {type = "unlock-recipe", recipe = "orbital-employment-cannon"},
+      {type = "unlock-recipe", recipe = "orbital-employment-catapult"},
       {type = "unlock-recipe", recipe = "voluntary-exploration-space-miner-formation"},
     },
     prerequisites = {"orbital-employment-infrastructure"},

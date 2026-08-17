@@ -321,8 +321,8 @@ if feature_flags.space_age_enabled() then
     },
     {
       type = "build-entity-achievement",
-      name = "orbital-employment-cannon-achievement",
-      to_build = "orbital-employment-cannon",
+      name = "orbital-employment-catapult-achievement",
+      to_build = "orbital-employment-catapult",
       icon = icons .. "asteroid-processing-docket.png",
       icon_size = 64,
       order = "h[orbital]-c",
