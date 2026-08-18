@@ -1157,6 +1157,11 @@ data:extend({
     },
     energy_required = 5,
   }, "gleba"),
+  -- Fulgora's identity here is scrap and recycling, deliberately. Lightning
+  -- is vanilla Fulgora's power source, not a resource, and it already gates
+  -- the planet's power budget the same way it does in the base game -- there
+  -- is no recipe-ingredient role for it that wouldn't feel bolted on, so it
+  -- stays untouched rather than forced in for parity with Gleba/Aquilo.
   surface_limited({
     type = "recipe",
     name = "charged-toner",
@@ -1994,6 +1999,11 @@ data:extend({
     },
     energy_required = 3,
   }, "vulcanus"),
+  -- The single, intentional lava sink on Vulcanus. Reviewed and kept as-is:
+  -- molten-promises already anchors the refined-nonsense and lie-distillation
+  -- chains, and vanilla's own lava danger is environmental (pipe routing,
+  -- building placement) rather than recipe-driven, so a second lava-consuming
+  -- recipe would be redundant plumbing, not more depth.
   surface_limited({
     type = "recipe",
     name = "molten-promises-production",

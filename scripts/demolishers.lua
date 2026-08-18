@@ -1,5 +1,13 @@
 local M = {}
 
+-- Per-PROCESS_INTERVAL (1s) upkeep, reviewed and kept as intentional rather
+-- than a placeholder: one vulcanus-lie-distillation building (300 lie/6s)
+-- exactly sustains a small-tier post with zero surplus, so the flat rate is
+-- already a real, felt production commitment at every tier -- big-tier posts
+-- are meant to demand a small dedicated lie-production wing, not a side
+-- effect of an idle distillery. Left flat rather than curved like
+-- trajectory_compliance's speed tiers on purpose: territory size (chunk
+-- count) is what actually scales total cost, not demolisher tier.
 M.SIZE_ORDER_COST = {small = 1, medium = 2, big = 3}
 M.SIZE_COFFEE_COST = {small = 50, medium = 100, big = 200}
 M.SIZE_DECAY = {small = 2, medium = 3, big = 4}
