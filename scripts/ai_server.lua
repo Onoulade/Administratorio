@@ -146,6 +146,12 @@ function M.rebuild_registry()
   M.ensure_storage()
   storage.ai_servers = {}
 
+  -- The AI Server is a Space Age (Aquilo) entity. find_entities_filtered
+  -- errors on an unknown prototype name, so skip entirely without it.
+  if prototypes and prototypes.entity and not prototypes.entity[C.AI_SERVER_NAME] then
+    return
+  end
+
   for _, surface in pairs(game.surfaces) do
     for _, entity in ipairs(surface.find_entities_filtered{name = C.AI_SERVER_NAME}) do
       if entity.valid then

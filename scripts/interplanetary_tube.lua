@@ -548,6 +548,12 @@ function M.rebuild_registry()
   M.ensure_storage()
   storage.terminus_registry = {}
 
+  -- The tube terminus is a Space Age entity. find_entities_filtered errors
+  -- on an unknown prototype name, so skip entirely without it.
+  if prototypes and prototypes.entity and not prototypes.entity[C.TERMINUS_NAME] then
+    return
+  end
+
   for _, surface in pairs(game.surfaces) do
     local planet_name = M.get_planet_name(surface)
     if planet_name then

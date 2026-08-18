@@ -536,6 +536,12 @@ function M.rebuild_registry()
   local runtime = get_runtime()
   cleanup_invalid_state()
 
+  -- The arbitration post is a Space Age entity. find_entities_filtered
+  -- errors on an unknown prototype name, so skip entirely without it.
+  if prototypes and prototypes.entity and not prototypes.entity[POST_NAME] then
+    return
+  end
+
   for _, surface in pairs(game.surfaces or {}) do
     for _, entity in ipairs(surface.find_entities_filtered{name = POST_NAME}) do
       if entity.valid and not runtime.posts[entity.unit_number] then

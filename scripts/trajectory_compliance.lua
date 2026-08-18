@@ -421,6 +421,17 @@ local function asteroid_prototype_exists(name)
   return not prototypes or not prototypes.entity or prototypes.entity[name] ~= nil
 end
 
+-- Array/catapult tiers are Space Age entities. find_entities_filtered errors
+-- on any unknown prototype name, so callers must only pass names that exist
+-- in the current save (Space Age may be disabled).
+local function existing_entity_names(name_set)
+  local names = {}
+  for name in pairs(name_set) do
+    if asteroid_prototype_exists(name) then names[#names + 1] = name end
+  end
+  return names
+end
+
 function M.configure_array(entity)
   local maximum_size_rank = entity and entity.valid and TARGET_TIERS[entity.name]
   if not maximum_size_rank or not entity.set_priority_target then return false end
@@ -450,8 +461,8 @@ end
 
 function M.configure_existing_arrays()
   if not game or not game.surfaces then return end
-  local names = {}
-  for name in pairs(TARGET_TIERS) do names[#names + 1] = name end
+  local names = existing_entity_names(TARGET_TIERS)
+  if #names == 0 then return end
   for _, surface in pairs(game.surfaces) do
     for _, entity in ipairs(surface.find_entities_filtered{name = names}) do
       M.configure_array(entity)
@@ -637,6 +648,7 @@ end
 local function reroute_catapults_targeting(target)
   local surface = target and target.valid and target.surface
   if not surface or not surface.valid or not surface.find_entities_filtered then return end
+  if not asteroid_prototype_exists(CATAPULT_NAME) then return end
   for _, catapult in ipairs(surface.find_entities_filtered{name = CATAPULT_NAME}) do
     if catapult.shooting_target == target then
       reroute_or_pause_catapult(catapult, target)
@@ -718,8 +730,8 @@ reconcile_array_target = reroute_or_pause_array
 local function reroute_arrays_targeting(target)
   local surface = target and target.valid and target.surface
   if not surface or not surface.valid or not surface.find_entities_filtered then return end
-  local names = {}
-  for name in pairs(ARRAY_TIERS) do names[#names + 1] = name end
+  local names = existing_entity_names(ARRAY_TIERS)
+  if #names == 0 then return end
   for _, array in ipairs(surface.find_entities_filtered{name = names}) do
     if array.shooting_target == target then
       reroute_or_pause_array(array, target)
@@ -741,8 +753,8 @@ end
 
 local function refresh_array_targets()
   if not game or not game.surfaces then return end
-  local names = {}
-  for name in pairs(ARRAY_TIERS) do names[#names + 1] = name end
+  local names = existing_entity_names(ARRAY_TIERS)
+  if #names == 0 then return end
   for _, surface in pairs(game.surfaces) do
     for _, array in ipairs(surface.find_entities_filtered{name = names}) do
       -- Set the explicit closest eligible target instead of merely clearing

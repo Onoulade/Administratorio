@@ -372,6 +372,12 @@ function M.rebuild_registry()
     {name = C.RELOCATION_CANNON_NAME, role = "emitter"},
     {name = C.RELOCATION_RECEIVER_NAME, role = "receiver"},
   }) do
+    -- Both roles are Space Age entities. find_entities_filtered errors on an
+    -- unknown prototype name, so skip a role entirely without its prototype.
+    if prototypes and prototypes.entity and not prototypes.entity[role_info.name] then
+      goto continue_role
+    end
+
     for _, surface in pairs(game.surfaces) do
       local planet_name = get_planet_name(surface)
       if planet_name then
@@ -401,6 +407,7 @@ function M.rebuild_registry()
         end
       end
     end
+    ::continue_role::
   end
 end
 
