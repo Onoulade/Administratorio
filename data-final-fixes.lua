@@ -226,7 +226,7 @@ local space_age_assembling_categories = {
 }
 
 local function append_existing_categories(categories)
-  if not (mods and mods["space-age"]) then return categories end
+  if not feature_flags.space_age_enabled() then return categories end
   for _, category in ipairs(space_age_assembling_categories) do
     if data.raw["recipe-category"] and data.raw["recipe-category"][category] then
       categories[#categories + 1] = category
