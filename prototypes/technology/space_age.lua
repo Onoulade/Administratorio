@@ -871,6 +871,14 @@ add_tech_science_pack("promethium-science-pack", "administrative-science-pack", 
 
 -- Unlock orbital permit with space platform
 add_tech_unlock("space-platform", "orbital-infrastructure-permit")
+
+-- Vanilla's coal-synthesis is normally unlocked by rocket-turret, which
+-- military_hiding.lua hides along with every other combat technology. Move
+-- its unlock onto carbon-fiber instead -- one of rocket-turret's own three
+-- prerequisites, so it lands at approximately the same research tier the
+-- recipe always sat at, just off a technology this mod actually keeps
+-- visible.
+add_tech_unlock("carbon-fiber", "coal-synthesis")
 add_tech_prerequisite("foundry", "vulcanus-certification")
 add_tech_prerequisite("big-mining-drill", "electric-engine")
 add_tech_prerequisite("biochamber", "gleba-conciliation")
