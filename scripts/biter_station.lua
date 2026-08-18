@@ -409,7 +409,8 @@ local function set_station_status(station, key)
     }
   elseif key == "biter-station-no-workers"
       or key == "biter-station-no-money"
-      or key == "biter-station-no-coffee" then
+      or key == "biter-station-no-coffee"
+      or key == "biter-station-building-unreachable" then
     station.custom_status = {
       diode = defines.entity_status_diode.red,
       label = {"gui." .. key},
@@ -1878,6 +1879,52 @@ function M.on_entity_removed(event)
   unmark_station_worker_unit(entity.unit_number)
 end
 
+-- Give up on the current leg instead of endlessly resending an unreachable
+-- go_to_location command (which otherwise leaves the biter standing still
+-- forever with no feedback). Surfaces the failure on the station's status
+-- the same way a missing worker/money/coffee condition does.
+local function handle_unreachable_destination(active_state, entity, station_id, tick)
+  local station = station_id and storage.biter_stations and storage.biter_stations[station_id] or nil
+  if station and station.valid then
+    set_station_status(station, "biter-station-building-unreachable")
+  end
+
+  if active_state.phase == "to_building" then
+    local queue = active_state.building_queue or {}
+    local building = queue[active_state.current_idx]
+    if building and building.valid and building.unit_number then
+      clear_building_claim(building.unit_number, active_state.biter_unit_number)
+    end
+    active_state.current_idx = active_state.current_idx + 1
+
+    local next_building = queue[active_state.current_idx]
+    while next_building and not (next_building.valid and next_building.unit_number) do
+      active_state.current_idx = active_state.current_idx + 1
+      next_building = queue[active_state.current_idx]
+    end
+
+    if next_building then
+      begin_phase_move(active_state, entity, "to_building", next_building, C.BITER_STATION_ARRIVAL_RADIUS, tick)
+      return
+    end
+
+    station = station and station.valid and station or nearest_valid_station(active_state)
+    if station and station.valid then
+      reassign_active_station(active_state, station)
+      begin_phase_move(active_state, entity, "to_station", station_interior_position(station), C.BITER_STATION_ARRIVAL_RADIUS, tick)
+      return
+    end
+
+    advance_orphaned_station_return(active_state, entity, tick)
+    return
+  end
+
+  -- The station itself (or the walk back to it) is unreachable. Don't
+  -- re-target the same unreachable station; give up on the trip cleanly.
+  begin_orphan_station_return(active_state, entity, tick)
+  turn_station_worker_into_protester(active_state, tick)
+end
+
 function M.on_ai_command_completed(event)
   if not event or not event.unit_number then return end
 
@@ -1897,7 +1944,12 @@ function M.on_ai_command_completed(event)
     return
   end
 
-  issue_move_command(entity, destination, retry_radius)
+  if defines.behavior_result and event.result ~= defines.behavior_result.fail then
+    issue_move_command(entity, destination, retry_radius)
+    return
+  end
+
+  handle_unreachable_destination(active_state, entity, station_id, event.tick or game.tick)
 end
 
 local function get_crafts_per_visit_for_force(force)
