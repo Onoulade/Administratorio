@@ -125,7 +125,7 @@ test("every machine that touches tokens does so through a fibre port", function(
 end)
 
 test("token recipes move fluid rather than items", function()
-  assert_true(recipes:find('results = {{type = "fluid", name = "inference-token", amount = 10}}', 1, true) ~= nil,
+  assert_true(recipes:find('results = {{type = "fluid", name = "inference-token", amount = 8}}', 1, true) ~= nil,
     "token production should output a fluid")
   assert_true(recipes:find('{type = "fluid", name = "inference-token", amount = 10},', 1, true) ~= nil,
     "slop production should consume the fluid")

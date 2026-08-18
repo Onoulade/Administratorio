@@ -1466,9 +1466,14 @@ data:extend({
     hide_from_player_crafting = true,
     localised_name = {"fluid-name.inference-token"},
     -- Electricity is the only input. The AI Server's draw and its heat are the
-    -- whole cost of inference; nothing is consumed but power.
+    -- whole cost of inference; nothing is consumed but power. Deliberately
+    -- tuned to a flat 1 token/s per server (8 tokens / 8s at 1x crafting
+    -- speed) -- the server itself is expensive to build and to power, and
+    -- its output only feeds the Slop Refinery, never late-game paperwork
+    -- directly, so an uncapped rate was never the actual escape valve it
+    -- might look like in isolation.
     ingredients = {},
-    results = {{type = "fluid", name = "inference-token", amount = 10}},
+    results = {{type = "fluid", name = "inference-token", amount = 8}},
     energy_required = 8,
   },
   {

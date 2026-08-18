@@ -722,7 +722,7 @@ ai_server.corpse = "big-remnants"
 -- token belongs to the Slop Refinery.
 ai_server.crafting_categories = {"ai-inference"}
 ai_server.fixed_recipe = "inference-token-production"
-ai_server.crafting_speed = 2
+ai_server.crafting_speed = 1
 ai_server.ingredient_count = 6
 ai_server.module_slots = 4
 ai_server.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
