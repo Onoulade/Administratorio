@@ -56,4 +56,15 @@ function M.quality_enabled()
   return mod_enabled("quality")
 end
 
+-- Space Age (and other optional-dependency) entities may not exist in the
+-- current prototype set. find_entities_filtered errors on an unknown
+-- prototype name rather than returning empty, so every caller that filters
+-- by one of these names must check existence first.
+function M.entity_prototype_exists(name)
+  if not (prototypes and prototypes.entity) then
+    return true
+  end
+  return prototypes.entity[name] ~= nil
+end
+
 return M

@@ -1,4 +1,5 @@
 local demolishers = require("scripts.demolishers")
+local feature_flags = require("feature_flags")
 
 local M = {}
 
@@ -538,7 +539,7 @@ function M.rebuild_registry()
 
   -- The arbitration post is a Space Age entity. find_entities_filtered
   -- errors on an unknown prototype name, so skip entirely without it.
-  if prototypes and prototypes.entity and not prototypes.entity[POST_NAME] then
+  if not feature_flags.entity_prototype_exists(POST_NAME) then
     return
   end
 

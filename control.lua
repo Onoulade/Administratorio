@@ -45,17 +45,10 @@ for _, name in ipairs(ADMIN_DESK_NAMES) do
   ADMIN_DESK_NAME_SET[name] = true
 end
 
-local function entity_prototype_exists(name)
-  if prototypes and prototypes.entity then
-    return prototypes.entity[name] ~= nil
-  end
-  return true
-end
-
 local function existing_entity_names(names)
   local filtered = {}
   for _, name in ipairs(names) do
-    if entity_prototype_exists(name) then
+    if feature_flags.entity_prototype_exists(name) then
       filtered[#filtered + 1] = name
     end
   end

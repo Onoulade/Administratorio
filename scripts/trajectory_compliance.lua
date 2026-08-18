@@ -1,3 +1,5 @@
+local feature_flags = require("feature_flags")
+
 local M = {}
 
 local ARRAY_NAME = "trajectory-compliance-array"
@@ -417,17 +419,13 @@ end
 
 local reconcile_array_target
 
-local function asteroid_prototype_exists(name)
-  return not prototypes or not prototypes.entity or prototypes.entity[name] ~= nil
-end
-
 -- Array/catapult tiers are Space Age entities. find_entities_filtered errors
 -- on any unknown prototype name, so callers must only pass names that exist
 -- in the current save (Space Age may be disabled).
 local function existing_entity_names(name_set)
   local names = {}
   for name in pairs(name_set) do
-    if asteroid_prototype_exists(name) then names[#names + 1] = name end
+    if feature_flags.entity_prototype_exists(name) then names[#names + 1] = name end
   end
   return names
 end
@@ -442,7 +440,7 @@ function M.configure_array(entity)
     if size_rank <= maximum_size_rank then
       for _, family in ipairs(ASTEROID_FAMILIES) do
         local asteroid_name = size .. "-" .. family .. "-asteroid"
-        if asteroid_prototype_exists(asteroid_name) then
+        if feature_flags.entity_prototype_exists(asteroid_name) then
           entity.set_priority_target(priority_index, asteroid_name)
           priority_index = priority_index + 1
         end
@@ -648,7 +646,7 @@ end
 local function reroute_catapults_targeting(target)
   local surface = target and target.valid and target.surface
   if not surface or not surface.valid or not surface.find_entities_filtered then return end
-  if not asteroid_prototype_exists(CATAPULT_NAME) then return end
+  if not feature_flags.entity_prototype_exists(CATAPULT_NAME) then return end
   for _, catapult in ipairs(surface.find_entities_filtered{name = CATAPULT_NAME}) do
     if catapult.shooting_target == target then
       reroute_or_pause_catapult(catapult, target)

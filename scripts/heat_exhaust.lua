@@ -5,6 +5,7 @@
 -- at-most interface instead so it is an actual heat sink.
 
 local C = require("scripts.constants")
+local feature_flags = require("feature_flags")
 
 local M = {}
 
@@ -28,7 +29,7 @@ end
 function M.rebuild_registry()
   -- Heat Exhaust is a Space Age (Aquilo) entity. find_entities_filtered
   -- errors on an unknown prototype name, so skip entirely without it.
-  if prototypes and prototypes.entity and not prototypes.entity[C.HEAT_EXHAUST_NAME] then
+  if not feature_flags.entity_prototype_exists(C.HEAT_EXHAUST_NAME) then
     return
   end
   for _, surface in pairs(game.surfaces or {}) do

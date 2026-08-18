@@ -29,6 +29,7 @@
 -- while the two colours keep the two directions from reading each other.
 
 local C = require("scripts.constants")
+local feature_flags = require("feature_flags")
 
 local M = {}
 
@@ -550,7 +551,7 @@ function M.rebuild_registry()
 
   -- The tube terminus is a Space Age entity. find_entities_filtered errors
   -- on an unknown prototype name, so skip entirely without it.
-  if prototypes and prototypes.entity and not prototypes.entity[C.TERMINUS_NAME] then
+  if not feature_flags.entity_prototype_exists(C.TERMINUS_NAME) then
     return
   end
 

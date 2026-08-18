@@ -26,6 +26,7 @@
 -- broadcast ever being misread as a request.
 
 local C = require("scripts.constants")
+local feature_flags = require("feature_flags")
 
 local M = {}
 
@@ -374,7 +375,7 @@ function M.rebuild_registry()
   }) do
     -- Both roles are Space Age entities. find_entities_filtered errors on an
     -- unknown prototype name, so skip a role entirely without its prototype.
-    if prototypes and prototypes.entity and not prototypes.entity[role_info.name] then
+    if not feature_flags.entity_prototype_exists(role_info.name) then
       goto continue_role
     end
 

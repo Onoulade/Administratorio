@@ -11,6 +11,7 @@
 -- pneumatic network pipe both work this way.
 
 local C = require("scripts.constants")
+local feature_flags = require("feature_flags")
 
 local M = {}
 
@@ -148,7 +149,7 @@ function M.rebuild_registry()
 
   -- The AI Server is a Space Age (Aquilo) entity. find_entities_filtered
   -- errors on an unknown prototype name, so skip entirely without it.
-  if prototypes and prototypes.entity and not prototypes.entity[C.AI_SERVER_NAME] then
+  if not feature_flags.entity_prototype_exists(C.AI_SERVER_NAME) then
     return
   end
 
