@@ -79,7 +79,7 @@ Pneumatic hardware itself is Quality-neutral and cannot be produced at a Quality
 
 ## Current State
 
-The base mod's Beta status means it is ready for broader playtesting, not that the paperwork has achieved enlightenment. Space Age is a separate **first-alpha** undertaking: broad systems are implemented and testable, while hands-on campaign coverage, balance, feasibility, migrations, UI/locale cleanup, and all original graphics remain outstanding or provisional.
+The base mod's Beta status means it is ready for broader playtesting, not that the paperwork has achieved enlightenment. Space Age is a separate **first-alpha** undertaking: broad systems are implemented and testable, while hands-on campaign coverage, balance, feasibility, migrations, and locale cleanup remain outstanding or provisional. Original graphics for the Space Age buildings are complete; a few still share working sounds with other buildings rather than having their own.
 
 Compatible with base Factorio 2.0. Experimental first-alpha support is available when Space Age is enabled, adding planet-specific administrative economies, a narrow interplanetary pneumatic trunk, AI servers and the administrative slop economy, specialist professions, colored paperwork, and Fulgora archive reassignment. Quality is an optional `? quality >= 2.0.0` integration; without it, base Administratorio behavior is unchanged.
 
