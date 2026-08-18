@@ -755,8 +755,8 @@ data:extend({
       {type = "item", name = "carbon", amount = 1},
       {type = "fluid", name = "water", amount = 20},
     },
-    results = {{type = "item", name = "paper", amount = 5}},
-    energy_required = 2,
+    results = {{type = "item", name = "paper", amount = 4}},
+    energy_required = 2.5,
     allow_productivity = true,
   }),
   vacuum_only({
@@ -770,8 +770,8 @@ data:extend({
       {type = "item", name = "iron-ore", amount = 1},
       {type = "fluid", name = "water", amount = 10},
     },
-    results = {{type = "item", name = "ink", amount = 4}},
-    energy_required = 2,
+    results = {{type = "item", name = "ink", amount = 3}},
+    energy_required = 2.5,
     allow_productivity = true,
   }),
   vacuum_only({
@@ -882,8 +882,8 @@ data:extend({
       {type = "item", name = "calcite", amount = 2},
       {type = "fluid", name = "water", amount = 40},
     },
-    results = {{type = "item", name = "paper", amount = 30}},
-    energy_required = 5,
+    results = {{type = "item", name = "paper", amount = 25}},
+    energy_required = 6,
     allow_productivity = true,
   }),
   vacuum_only({
@@ -898,8 +898,8 @@ data:extend({
       {type = "item", name = "sulfur", amount = 1},
       {type = "fluid", name = "water", amount = 10},
     },
-    results = {{type = "item", name = "ink", amount = 12}},
-    energy_required = 4,
+    results = {{type = "item", name = "ink", amount = 10}},
+    energy_required = 5,
     allow_productivity = true,
   }),
   vacuum_only({
