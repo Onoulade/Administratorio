@@ -763,9 +763,12 @@ greenhouse.working_sound = {
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
 if space_age_enabled then
+  -- No wood grows on Vulcanus (too hot) or Aquilo (too cold); bracket the
+  -- pressure range between the two rather than picking one side.
   greenhouse.surface_conditions = {
     {
       property = "pressure",
+      min = planets.BASIC_PLANET_PROPERTIES.aquilo.pressure + 1,
       max = planets.BASIC_PLANET_PROPERTIES.vulcanus.pressure - 1,
     },
   }
