@@ -1902,27 +1902,13 @@ test("planet-local space age recipes stay free of raw taxpayer money off Nauvis"
   end
 end)
 
-local function load_locale_section(locale_name, section_name)
-  local section = {}
-  local in_section = false
-  local path = mod_root .. "locale/" .. locale_name .. "/config.cfg"
-  for line in io.lines(path) do
-    local header = line:match("^%[(.-)%]$")
-    if header then
-      in_section = header == section_name
-    elseif in_section then
-      local key, value = line:match("^([^=]+)=(.*)$")
-      if key then section[key] = value end
-    end
-  end
-  return section
-end
+local locale_helpers = require("tests.locale_helpers")
 
 test("every Space Age technology has a name and description in every shipped locale", function()
   local missing = {}
   for _, locale_name in ipairs({"en", "fr", "ru"}) do
-    local names = load_locale_section(locale_name, "technology-name")
-    local descriptions = load_locale_section(locale_name, "technology-description")
+    local names = locale_helpers.section(mod_root, locale_name, "technology-name")
+    local descriptions = locale_helpers.section(mod_root, locale_name, "technology-description")
     for technology_name, technology in pairs(technologies) do
       if not preexisting_technology_names[technology_name] and technology.hidden ~= true then
         if not names[technology_name] or names[technology_name] == "" then

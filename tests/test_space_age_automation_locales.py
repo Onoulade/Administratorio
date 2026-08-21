@@ -56,11 +56,11 @@ def base_english_config() -> dict[tuple[str, str], str]:
 
 def main() -> None:
     baseline = base_english_config()
-    english = parse_locale((REPO_ROOT / "locale" / "en" / "config.cfg").read_text(encoding="utf-8"))
+    english = load_language("en")
     automation_keys = {
         pair
         for pair, value in english.items()
-        if baseline.get(pair) != value
+        if pair in baseline and baseline[pair] != value
     }
     assert automation_keys, "expected Space Age automation locale changes after 0.6.2"
 

@@ -35,22 +35,6 @@ local function read_file(path)
   return contents
 end
 
-local function load_locale(path)
-  local sections = {}
-  local current
-  for line in io.lines(path) do
-    local header = line:match("^%[(.-)%]$")
-    if header then
-      current = header
-      sections[current] = sections[current] or {}
-    elseif current then
-      local key, value = line:match("^([^=]+)=(.*)$")
-      if key then sections[current][key] = value end
-    end
-  end
-  return sections
-end
-
 local required_overrides = {
   ["asteroid-chunk-name"] = {"promethium-asteroid-chunk"},
   ["item-name"] = {
@@ -83,7 +67,7 @@ for language, marker in pairs({
   ru = "Администраториум",
 }) do
   test(language .. " locale overrides every visible promethium surface", function()
-    local locale = load_locale(mod_root .. "locale/" .. language .. "/config.cfg")
+    local locale = require("tests.locale_helpers").load(mod_root, language)
     for section_name, keys in pairs(required_overrides) do
       local section = locale[section_name] or {}
       for _, key in ipairs(keys) do

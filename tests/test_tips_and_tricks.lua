@@ -248,20 +248,9 @@ test("previously undocumented Space Age mechanics have dedicated tips", function
 end)
 
 test("every registered tip has an English name and description", function()
-  local locale = assert(io.open(mod_root .. "locale/en/config.cfg", "r"))
-  local section = nil
-  local names, descriptions = {}, {}
-  for line in locale:lines() do
-    local header = line:match("^%[([^%]]+)%]$")
-    if header then
-      section = header
-    else
-      local key = line:match("^([^=]+)=")
-      if key and section == "tips-and-tricks-item-name" then names[key] = true end
-      if key and section == "tips-and-tricks-item-description" then descriptions[key] = true end
-    end
-  end
-  locale:close()
+  local locale_helpers = require("tests.locale_helpers")
+  local names = locale_helpers.section(mod_root, "en", "tips-and-tricks-item-name")
+  local descriptions = locale_helpers.section(mod_root, "en", "tips-and-tricks-item-description")
 
   for name in pairs(tips) do
     assert_true(names[name], "missing English tip name " .. name)

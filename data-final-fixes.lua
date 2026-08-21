@@ -577,6 +577,30 @@ local function add_factoriopedia_note(prototype, note)
   end
 end
 
+-- Factoriopedia otherwise has no compact way to tell a player whether a
+-- colored document is locally made, remotely usable, or transportable at the
+-- current trunk tier.  Keep that operational information on the product page
+-- as well as in the item tooltip.
+local cross_planet_factoriopedia_descriptions = {
+  ["blank-cyan-form"] = {"administratorio-factoriopedia.cross-planet-cyan"},
+  ["blank-yellow-form"] = {"administratorio-factoriopedia.cross-planet-yellow"},
+  ["blank-magenta-form"] = {"administratorio-factoriopedia.cross-planet-magenta"},
+  ["cyan-yellow-form"] = {"administratorio-factoriopedia.cross-planet-cyan-yellow"},
+  ["cyan-magenta-form"] = {"administratorio-factoriopedia.cross-planet-cyan-magenta"},
+  ["yellow-magenta-form"] = {"administratorio-factoriopedia.cross-planet-yellow-magenta"},
+  ["thermal-process-license"] = {"administratorio-factoriopedia.cross-planet-vulcanus-charter"},
+  ["calcite-reagent-waiver"] = {"administratorio-factoriopedia.cross-planet-vulcanus-charter"},
+  ["offworld-metallurgy-charter"] = {"administratorio-factoriopedia.cross-planet-vulcanus-charter"},
+  ["cryogenic-operations-license"] = {"administratorio-factoriopedia.cross-planet-aquilo"},
+  ["trichromatic-permit"] = {"administratorio-factoriopedia.cross-planet-trichromatic"},
+  ["unified-operations-charter"] = {"administratorio-factoriopedia.cross-planet-unified"},
+}
+
+for item_name, description in pairs(cross_planet_factoriopedia_descriptions) do
+  local item = data.raw.item and data.raw.item[item_name]
+  if item then item.factoriopedia_description = description end
+end
+
 local function prefer_factoriopedia_recipe(original_recipe, preferred_recipe_name)
   if not original_recipe or not preferred_recipe_name then return end
   original_recipe.hidden_in_factoriopedia = true

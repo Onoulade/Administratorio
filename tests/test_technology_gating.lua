@@ -201,21 +201,7 @@ package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 dofile(mod_root .. "prototypes/technology.lua")
 
 local function load_locale_section(section_name)
-  local path = mod_root .. "locale/en/config.cfg"
-  local section = {}
-  local in_section = false
-  for line in io.lines(path) do
-    local header = line:match("^%[(.-)%]$")
-    if header then
-      in_section = header == section_name
-    elseif in_section then
-      local key, value = line:match("^([^=]+)=(.*)$")
-      if key then
-        section[key] = value
-      end
-    end
-  end
-  return section
+  return require("tests.locale_helpers").section(mod_root, "en", section_name)
 end
 
 local technology_name_locale = load_locale_section("technology-name")

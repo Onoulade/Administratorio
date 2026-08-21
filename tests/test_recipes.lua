@@ -126,23 +126,7 @@ end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 
 local function load_locale_section(section_name)
-  local path = mod_root .. "locale/en/config.cfg"
-  local section = nil
-  local values = {}
-
-  for line in io.lines(path) do
-    local header = line:match("^%[([^%]]+)%]$")
-    if header then
-      section = header
-    elseif section == section_name then
-      local key, value = line:match("^([^=]+)=(.*)$")
-      if key then
-        values[key] = value
-      end
-    end
-  end
-
-  return values
+  return require("tests.locale_helpers").section(mod_root, "en", section_name)
 end
 
 local recipe_name_locale = load_locale_section("recipe-name")

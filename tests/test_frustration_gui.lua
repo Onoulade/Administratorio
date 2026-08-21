@@ -34,19 +34,7 @@ defines = {
 local frustration = require("scripts.frustration")
 
 local function load_locale_section(section_name)
-  local path = mod_root .. "locale/en/config.cfg"
-  local values = {}
-  local active = false
-  for line in io.lines(path) do
-    local section = line:match("^%[([^%]]+)%]")
-    if section then
-      active = section == section_name
-    elseif active then
-      local key, value = line:match("^([^=]+)=(.*)$")
-      if key then values[key] = value end
-    end
-  end
-  return values
+  return require("tests.locale_helpers").section(mod_root, "en", section_name)
 end
 
 local gui_locale = load_locale_section("gui")
