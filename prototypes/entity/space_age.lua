@@ -453,6 +453,7 @@ administrative_space_station.icons = nil
 administrative_space_station.minable = {mining_time = 0.2, result = "administrative-space-station"}
 administrative_space_station.placeable_by = placeable_by_item("administrative-space-station")
 administrative_space_station.next_upgrade = nil
+administrative_space_station.rotatable = true
 administrative_space_station.crafting_categories = {"orbital-bureaucracy"}
 administrative_space_station.crafting_speed = 3.5
 administrative_space_station.energy_usage = "750kW"
@@ -1269,11 +1270,11 @@ orbital_employment_catapult.attack_parameters.turn_range = 0.05
 orbital_employment_catapult.attack_parameters.sound = {filename = sound_path .. "orbital-catapult.ogg", volume = 0.6}
 orbital_employment_catapult.energy_source = {
   type = "electric",
-  buffer_capacity = "10MJ",
-  input_flow_limit = "5MW",
+  buffer_capacity = "400kJ",
+  input_flow_limit = "200kW",
   usage_priority = "primary-input",
 }
-orbital_employment_catapult.energy_per_shot = "5MJ"
+orbital_employment_catapult.energy_per_shot = "200kJ"
 orbital_employment_catapult.surface_conditions = {
   {
     property = "pressure",

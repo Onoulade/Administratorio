@@ -349,8 +349,9 @@ test("orbital employment catapult deploys powered voluntary space miners", funct
   assert_eq(catapult.attack_parameters.range, 56)
   assert_eq(catapult.attack_parameters.min_range, 4)
   assert_eq(catapult.attack_parameters.turn_range, 0.05)
-  assert_eq(catapult.energy_per_shot, "5MJ")
-  assert_eq(catapult.energy_source.buffer_capacity, "10MJ")
+  assert_eq(catapult.energy_per_shot, "200kJ")
+  assert_eq(catapult.energy_source.buffer_capacity, "400kJ")
+  assert_eq(catapult.energy_source.input_flow_limit, "200kW")
   assert_eq(catapult.surface_conditions[1].max, 0)
 
   local projectile = assert(data.raw.projectile["orbital-biter-projectile"])
@@ -463,6 +464,8 @@ test("administrative space station is the dedicated vacuum bureaucracy building"
   assert_true(recipe ~= nil, "administrative-space-station recipe missing")
   assert_eq(entity.placeable_by[1].item, "administrative-space-station",
     "administrative-space-station should build from its own item")
+  assert_true(entity.rotatable,
+    "administrative-space-station should rotate so its fluid ports can face platform plumbing")
   assert_eq(entity.crafting_categories[1], "orbital-bureaucracy",
     "administrative-space-station should only craft orbital paperwork")
   assert_eq(entity.surface_conditions[1].max, 0, "administrative-space-station entity should stay vacuum-only")

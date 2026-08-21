@@ -2,6 +2,7 @@
 Version: 0.5.15
 Date: 2026-08-17
   Bugfixes:
+    - allow the Administrative Space Station to be rotated
     - let workers approach from any open face, not just the hive side
     - make hard mode a runtime toggle instead of startup-only
     - hide dead-end logistic-system, chain field-office-deployment after steam-power
@@ -9,6 +10,7 @@ Date: 2026-08-17
     - restore 3x3 collision box
   Balancing:
     - let administrative offices accept beacon effects
+    - reduce Orbital Miner Deployment Catapult power consumption by 96%
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.14
 Date: 2026-08-16
