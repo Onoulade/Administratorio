@@ -2,100 +2,33 @@
 
 **The factory must grow. Subject to approval.**
 
-Overhaul mod for Factorio 2.0 that replaces military conflict with corporate bureaucracy. No guns. No turrets. No military science. Every machine you build, every inserter you place, and every furnace you fire up requires the proper paperwork — and the biters you used to shoot now have HR representation and a grievance process.
+Administratorio is a full overhaul for Factorio 2.0, built around a small administrative correction: firepower is out, paperwork is in. The factory remains recognisable—belts, furnaces, copper vanishing at an indecent rate—but building it correctly is no longer quite enough. Built is not the same as approved, approved is not always the same as staffed, and none of those words necessarily imply that the coffee pipe is connected.
 
-The base Factorio experience is in **Beta**. The full progression arc is playable and the core systems are in place, but balance, compatibility, translations, and late-game polish are still being tuned. The Space Age integration is in its **first Alpha** and is available for early playtesting.
+Forms and Work Orders become factory inputs alongside the usual materials, while certain machinery also expects money or an employee to arrive and make its operation official. Offices develop working hours. Night work develops exceptions to the working hours, then staffing requirements for the exceptions. A factory can look perfectly healthy and remain motionless for reasons which are, regrettably, internally consistent.
 
-## Full Documentation
+The point was never to add a paper-themed recipe layer and leave Factorio underneath untouched. Administratorio changes what counts as a functioning factory: production depends on an administrative factory beside it, logistics begins on foot, labor has a cost, and local wildlife has ceased to be a military question.
 
-A comprehensive internal documentation system is available in the `Internal/docs/` directory:
+Biters do not attack you, and there are no guns with which to improve the conversation. They are citizens now. They arrive at Administration Desks with complaints about pollution, damaged landscapes, unemployment and the other public amenities your factory emits; settle their cases through the proper bureaucracy and they leave peacefully, even paying taxes. Leave them waiting and dissatisfaction becomes a protest, walks into the factory and switches off a building.
 
-- **[Internal/docs/index.md](Internal/docs/index.md)** — Documentation index and quick links to all pages
-- **[Internal/docs/core-mechanics.md](Internal/docs/core-mechanics.md)** — Core loops, paperwork tiers, complaint system, frustration/protest mechanics, resolution chains
-- **[Internal/docs/biter-employment.md](Internal/docs/biter-employment.md)** — Hiring workers, Biter Employment Office, Biterport (walking-worker roboport), Field Office
-- **[Internal/docs/buildings-and-structures.md](Internal/docs/buildings-and-structures.md)** — All buildings, production facilities, administrative buildings, pneumatic tube network, support structures
-- **[Internal/docs/technology-tree.md](Internal/docs/technology-tree.md)** — Complete tech tree from discovery through Constitutional Law, specialization training, capacity upgrades
-- **[Internal/docs/advanced-topics.md](Internal/docs/advanced-topics.md)** — Hired Biter (field agents), working hours system, modules, funding chain, coffee economy, train transit, bottlenecks
+> Native residents are no longer hostile. They are dissatisfied, which is much more expensive.
 
-## Quick Overview
+You may also hire them. Paid biter workers operate machinery, train for increasingly specific careers and form your first logistics network: Biterports send actual employees across the factory with items and construction materials instead of solving the matter with flying robots and abstraction. Salaries must be paid, night shifts must be caffeinated, and the union is not present merely for texture. Before long, the creatures once kept outside the walls are holding up most of what happens inside them.
 
-### Paperwork gates everything
+## Space Age
 
-Machines, smelting, chemistry, centrifuging, research — all of it now needs the correct form stapled to the usual ingredients. Iron and copper stop being your bottleneck somewhere around the first hour. After that, your bottleneck is paper, ink, Work Orders, and the one permit you forgot exists until the whole factory quietly stops moving.
+Going to space does not repeal the weapons ban. It does introduce asteroids, to which the Administration responds with trajectory orders, qualified biter astronauts and a use of the word “voluntary” that has passed internal review.
 
-### Complaints replace combat
+Each planet is treated as a new jurisdiction and, therefore, a new administrative problem. Vulcanus has demolishers who neither complain nor pay taxes, so claiming their territory calls for paperwork, bribery and a legally persuasive quantity of lies. Gleba permits biological paperwork and experiments whose participants are voluntary in quotation marks. Fulgora and Aquilo sustain different injuries to administrative common sense; meanwhile the forms begin crossing planets, mixing jurisdictions and acquiring the authority of a very expensive stamp.
 
-Biters don't raid your walls. They get intercepted and rerouted to your **Biter Administration Desk**, where they queue up as neutral citizens and file complaint tickets about landscape, smog, noise, and unemployment. You process each ticket through a **Resolution Office** chain, and the satisfied citizen leaves paying you in **Taxpayer Money**. It's restorative justice with positive externalities.
-
-Leave them waiting too long and they *protest* — walk to one of your buildings and disable it until you intervene. Throw a **Bureaucratic Promise** capsule to pacify them with temporary, legally non-binding reassurance. Throw an **Eviction Notice** to clear a nest, but be warned: the displaced biters show up at your desk already halfway to furious and freshly opinionated about property law.
-
-### Your former enemies are now on payroll
-
-Resolve a complaint with a **Job Offer** waiting in the desk, and the biter picks up the contract on its way out. Congratulations, you just hired a **Biter Worker**. They come in small, medium, big, and behemoth — bigger biter, more workers per hire, same health plan.
-
-From there, the workforce branches out:
-
-- **Formation Center** — the only building that can form biters into professions and conduct managerial briefings. Space Age profession formation is Nauvis-only, while a briefing can run on any planet for one reusable MMMM, one thematic material, and 5 Liquid Coffee with no Taxpayer Money; the briefed manager spoils back into a regular MMMM after three minutes.
-- **Biter Employment Office** — dispatches workers to nearby managed machines, one authorized craft per visit. Breakrooms, Union HQs, Propaganda Distilleries, oil refineries, centrifuges, and the industrial printer all run on biter visits. Which means the biters are now upstream of your own paperwork supply.
-- **Biterport** — a roboport, but staffed by walking biters instead of flying robots. Progress.
-- **Rideable Biter** — personal transport that runs on Taxpayer Money, available well before the vanilla car. Cannot be picked back up once placed, because the assignment is permanent by design. Run out of funding for 10 minutes and it reverts to a regular biter and files a complaint about you. Which is fair.
-- **Hired Biter (Field Agent)** — a controllable worker you deploy via capsule to evict enemy nests and follow waypoints.
-
-Space Age adds five temporary MMMM briefings: Training, Staffing, Compliance, Liaison, and Orbital Operations. Relevant formations and staffed construction recipes consume the correct briefed managers and return them as regular MMMMs, forcing another meeting before the next use. The orbital catapult no longer launches managers; it deploys recoverable **Voluntary Exploration Space Miners**, trained from an Astronaut, an Electric Mining Drill, and three differently briefed MMMMs.
-
-The native Promethium endgame is presented as **Administratorium** while retaining Space Age's original prototype IDs for save and mod compatibility. Its expedition now completes the administrative progression: Aquilo's chromatic tube tier and egg-courier formation are explicit prerequisites, the technology consumes Administrative Science, and every final pack requires an Administratorium Expedition Charter assembled from the preceding planetary and orbital paperwork families. The pack recipe is batched ten-fold against a single Voluntary Research Subject, at exact vanilla rocket parity.
-
-### Labor relations
-
-Because the workforce is real, the paperwork is too. Your Union Headquarters negotiates **Union Approval** as a fluid, and neglected workplaces eventually produce **OSHA Violations** that have to be scrubbed away in union-brokered cleanup runs. You fund the workers, the workers file the forms, the forms cite you, you pay the workers to make the citation go away. The loop closes. The loop is the point.
-
-### Office hours
-
-Office Desks, Corporate Breakrooms, and Union Headquarters clock out at night unless you install an **Overtime Exemption**. Biter Employment Offices and Biterports keep working past sunset, but their night dispatches require Liquid Coffee piped into any of the four side entrances. The biters, it turns out, also get tired. If you'd rather skip the whole circadian subplot, there's a startup setting to keep the factory on 24/7.
-
-### New resources, new fluids, new red tape
-
-**Bullshit Ore**, **Redundant Rubble**, and **Politician Fluid** feed a parallel economy of excuses, justifications, narratives, misinformation, policy, and slush funds. It is exactly as dignified as it sounds. Coffee is the lifeblood of the operation — you grow it in **Greenhouses**, brew it, and pipe it into anything important. When the coffee stops, the office stops, and then so does everything else, in that order.
-
-### A full tech tree built on red tape
-
-The entire research tree is reworked around bureaucratic milestones instead of military ones. New branches for paperwork throughput, renewable wood and coal, approvals, public finance, queue capacity, workforce management, logistics formations, and the late complaint families. The complaint endgame runs through **Constitutional Law** for biters and **Vagrancy Ordinances** for spitters. The rocket is still there, if you can justify it to finance.
-
-### Pneumatic Form Transport
-
-Forms travel through pneumatic tubes — Tube Intakes consume items into a per-network signal pool, and Tube Outtakes dispense them. Network capacity scales from 10 to 25, 50, 100, and 200 shared items via research. Tube Intakes use furnace-style intake validation with hidden per-paperwork recipes, so inserters feed only valid pneumatic paperwork items.
-
-### Administrative Certification (optional Quality integration)
-
-If Factorio's optional Quality mod is active, its native Quality system is rethemed as **Administrative Certification**. The native grades, probabilities, and unlock effects remain exactly native; only the paperwork, costs, and selected facility metrics are administratively reinterpreted. Quality Modules become **Accreditation Modules 1–3**, and their technologies become Certification Standards, Advanced Certification, Executive Certification, Cabinet Accreditation, and Ministerial Accreditation.
-
-Accreditation Modules are made in the `bureaucracy-modules` category and are deliberately expensive: their taxpayer-money costs are 25, 100, and 500 respectively, with five modules required at each upgrade. A T3 module therefore embodies 1,625 Taxpayer Money. This is not a mistake. It is an institution.
-
-Ordinary administrative production facilities use native Quality speed and module-department curves without extra energy use. Biterports increase only their own logistics and construction radii by 10% per level, while connection distance and payload stay research-gated. Field Offices scale their nearby-spawner range and placement preview on that same 10%-per-level curve. Biter Stations otherwise retain native health/inventory behavior only.
-
-Paperwork may be high quality, but its permit strength, form cost, research value, and recipe yield never change. The interplanetary trunk, pneumatic tubes, and biterport logistics preserve a document's exact grade. In particular, unqualified biterport requester filters request normal stock only; an explicit Quality filter requests that exact grade, including for construction ghosts.
-
-Pneumatic hardware itself is Quality-neutral and cannot be produced at a Quality grade. Archive recombination, territorial arbitration, trajectory compliance, and orbital mining treat Quality as cosmetic only: no extra speed, range, damage, yield, staffing, payload, or module departments. MMMM quality never improves meeting output or the process they supervise; native Quality may only preserve a temporary briefing or an egg courier longer before it spoils. The permanent Unstaffed Operations Waiver is unaffected. Quality never widens the interplanetary trunk, changes its transit time, or increases a Terminus's buffer.
-
-## Current State
-
-The base mod's Beta status means it is ready for broader playtesting, not that the paperwork has achieved enlightenment. Space Age is a separate **first-alpha** undertaking: broad systems are implemented and testable, while hands-on campaign coverage, balance, feasibility, migrations, and locale cleanup remain outstanding or provisional. Original graphics for the Space Age buildings are complete; a few still share working sounds with other buildings rather than having their own.
-
-Compatible with base Factorio 2.0. Experimental first-alpha support is available when Space Age is enabled, adding planet-specific administrative economies, a narrow interplanetary pneumatic trunk, AI servers and the administrative slop economy, specialist professions, colored paperwork, and Fulgora archive reassignment. Quality is an optional `? quality >= 2.0.0` integration; without it, base Administratorio behavior is unchanged.
-
-One caveat: the Working Hours shutdown is runtime logic, so planner mods like Factory Planner will mis-model those buildings unless you account for it manually. If you prefer planner accuracy over the day/night subplot, disable Working Hours in startup settings.
-
-## Development
-
-This repo uses a manual GitHub Actions release workflow for Factorio mod releases. See [CONTRIBUTING.md](CONTRIBUTING.md) for the version input, commit structure, and changelog behavior expected by the workflow.
+Administratorio is in **Beta**. The base game and Space Age campaigns can be played through, but balance, compatibility and migrations are still moving around. Reports from real factories are particularly useful; players routinely build arrangements no responsible test suite would think to fear.
 
 ## Credits
 
 The **Resolution Office** scrubber art and **Propaganda Distillery** art are by **Hurricane** ([Hurricane046](https://mods.factorio.com/user/Hurricane046)).
 
-The **Inference Token** icon, the **optic fibre** artwork, and the **optic fibre** mechanic come from **[Moshine](https://github.com/snouz/Moshine)** and **[Moshine-assets](https://github.com/snouz/Moshine-assets)** by **snouz**. The icon is Moshine's AI Trainer art, itself a composite including material from **Krastorio 1 and 2** (GNU LGPLv3) and **Hurricane046** (CC BY). The idea that machine reasoning travels only down a dedicated fibre — a pipe on its own connection category, so it never joins the ordinary fluid network — is Moshine's; the implementation here is Administratorio's own code built on the same pattern its pneumatic tubes already use. Full attribution and licence notices are in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+The **Inference Token** icon, the **optic fibre** artwork, and the **optic fibre** mechanic come from **[Moshine](https://github.com/snouz/Moshine)** and **[Moshine-assets](https://github.com/snouz/Moshine-assets)** by **snouz**.
 
-The **Involuntary Relocation Receiver** sprite and icon are a repurposed **[Long range delivery drones](https://mods.factorio.com/mod/Long_Range_Delivery_Drones)** (GNU LGPLv3) asset by **Sacredanarchy** and **Klonan**. Full attribution is in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+The **Involuntary Relocation Receiver** sprite and icon are a repurposed **[Long range delivery drones](https://mods.factorio.com/mod/Long_Range_Delivery_Drones)** (GNU LGPLv3) asset by **Sacredanarchy** and **Klonan**.
 
 ---
 
