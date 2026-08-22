@@ -57,7 +57,7 @@ local function load_biters_module()
       ["small-spitter"] = 5,
     },
     PROTEST_THRESHOLD = 600,
-    CAPTURE_BUREAU_LURE_RADIUS = 24,
+    CAPTURE_BUREAU_LURE_RADIUS = 29,
     CAPTURE_BUREAU_SPORE_UPKEEP_TICKS = 60,
     CAPTURE_BUREAU_SPORE_UPKEEP_AMOUNT = 5,
     CAPTURE_BUREAU_SPORE_VISUAL_TICKS = 60,
@@ -255,8 +255,32 @@ local function new_context(opts)
       end
       return result
     end
-    if filters and filters.force == "enemy" and filters.type == "unit" then
-      return nearby_enemies
+    if filters and filters.force == "enemy" and filters.type then
+      if not filters.position or not filters.radius then
+        return nearby_enemies
+      end
+      local result = {}
+      local radius_sq = filters.radius * filters.radius
+      for _, enemy in ipairs(nearby_enemies) do
+        local type_matches = filters.type == enemy.type
+        if type(filters.type) == "table" then
+          type_matches = false
+          for _, entity_type in ipairs(filters.type) do
+            if entity_type == enemy.type then
+              type_matches = true
+              break
+            end
+          end
+        end
+        if enemy.valid and type_matches then
+          local dx = enemy.position.x - filters.position.x
+          local dy = enemy.position.y - filters.position.y
+          if dx * dx + dy * dy <= radius_sq then
+            result[#result + 1] = enemy
+          end
+        end
+      end
+      return result
     end
     return {}
   end
@@ -333,6 +357,7 @@ local function new_context(opts)
   if opts.enemy_name then
     nearby_enemies[1] = new_entity(surface, {
       name = opts.enemy_name,
+      type = opts.enemy_type,
       unit_number = 11,
       position = opts.enemy_position or {x = 1, y = 1},
       force = "enemy",
@@ -479,6 +504,57 @@ test("capture bureau pentapod mode converts gleba wildlife into eggs", function(
   assert_true(ctx.nearby_enemies[1].valid == false, "captured pentapod should be removed from the world")
 end)
 
+test("oviposition spores attract every pentapod size and family across the enlarged radius", function()
+  local expected_yields = {
+    ["small-wriggler-pentapod"] = {eggs = 1, type = "unit"},
+    ["medium-wriggler-pentapod"] = {eggs = 2, type = "unit"},
+    ["big-wriggler-pentapod"] = {eggs = 4, type = "unit"},
+    ["small-strafer-pentapod"] = {eggs = 1, type = "spider-unit"},
+    ["medium-strafer-pentapod"] = {eggs = 2, type = "spider-unit"},
+    ["big-strafer-pentapod"] = {eggs = 4, type = "spider-unit"},
+    ["small-stomper-pentapod"] = {eggs = 1, type = "spider-unit"},
+    ["medium-stomper-pentapod"] = {eggs = 2, type = "spider-unit"},
+    ["big-stomper-pentapod"] = {eggs = 4, type = "spider-unit"},
+    ["small-wriggler-pentapod-premature"] = {eggs = 1, type = "unit"},
+    ["medium-wriggler-pentapod-premature"] = {eggs = 2, type = "unit"},
+    ["big-wriggler-pentapod-premature"] = {eggs = 4, type = "unit"},
+  }
+
+  for entity_name, expected in pairs(expected_yields) do
+    local attracted = new_context({
+      desk_name = "capture-bureau",
+      recipe_name = "capture-bureau-pentapod-eggs",
+      lure_fluid = "oviposition-lure-spores",
+      enemy_name = entity_name,
+      enemy_type = expected.type,
+      enemy_position = {x = 28.5, y = 0},
+      surface_name = "gleba",
+    })
+
+    biters.process_walk_in_registration(attracted.desk.surface, {attracted.desk})
+
+    assert_true(attracted.last_command() ~= nil,
+      entity_name .. " should be attracted from within the enlarged spore radius")
+
+    local captured = new_context({
+      desk_name = "capture-bureau",
+      recipe_name = "capture-bureau-pentapod-eggs",
+      lure_fluid = "oviposition-lure-spores",
+      enemy_name = entity_name,
+      enemy_type = expected.type,
+      enemy_position = {x = 0, y = 2},
+      surface_name = "gleba",
+    })
+
+    biters.process_walk_in_registration(captured.desk.surface, {captured.desk})
+
+    assert_eq(captured.inventory._added["pentapod-egg"], expected.eggs,
+      entity_name .. " should yield eggs according to its size")
+    assert_true(captured.nearby_enemies[1].valid == false,
+      entity_name .. " should be consumed by the Capture Bureau")
+  end
+end)
+
 test("spoiled tourism packages hatch back into max-frustration spitters", function()
   local ctx = new_context({
     desk_name = "admin-station",
@@ -513,7 +589,7 @@ test("spoiled pentapod eggs hatch into hostile attackers instead of bureaucracy 
   local ctx = new_context({
     desk_name = "admin-station",
     surface_name = "gleba",
-    enemy_name = "small-pentapod-premature",
+    enemy_name = "small-wriggler-pentapod-premature",
     enemy_position = {x = 0, y = 0},
   })
 

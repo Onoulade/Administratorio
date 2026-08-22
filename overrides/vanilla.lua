@@ -156,9 +156,9 @@ end
 -- PACIFY BITERS & SPAWNERS
 -------------------------------------------------------------------------------
 local hatched_pentapod_units = {
-  ["small-pentapod-premature"] = true,
-  ["medium-pentapod-premature"] = true,
-  ["big-pentapod-premature"] = true,
+  ["small-wriggler-pentapod-premature"] = true,
+  ["medium-wriggler-pentapod-premature"] = true,
+  ["big-wriggler-pentapod-premature"] = true,
 }
 
 for _, entity_type in ipairs({"unit", "unit-spawner"}) do

@@ -1505,7 +1505,14 @@ function M.process_walk_in_registration(surface, desks, runtime_profile)
       local search_pos = desk.position
       local search_radius = lure_mode and CAPTURE_BUREAU_LURE_RADIUS or 10
 
-      for _, biter in ipairs(surface.find_entities_filtered{force = "enemy", type = "unit", position = search_pos, radius = search_radius}) do
+      -- Strafers and stompers are spider-unit prototypes; wrigglers and
+      -- Nauvis enemies are regular units. Both classes can follow commands.
+      for _, biter in ipairs(surface.find_entities_filtered{
+        force = "enemy",
+        type = {"unit", "spider-unit"},
+        position = search_pos,
+        radius = search_radius,
+      }) do
         if biter.valid and biter.force.name == "enemy" and not storage.waiting_biters[biter.unit_number] then
           if pentapods.is_pentapod(biter.name) and not is_capture_bureau(desk) then
             goto skip_walkin_biter

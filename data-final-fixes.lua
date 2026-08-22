@@ -52,9 +52,9 @@ local PNEUMATIC_TRANSPORT_NOTE = {
 local TAXPAYER_MONEY_FUEL_CATEGORY = "administratorio-taxpayer-money"
 local REGULAR_FUEL_CATEGORY = "chemical"
 local HATCHED_PENTAPOD_UNITS = {
-  ["small-pentapod-premature"] = true,
-  ["medium-pentapod-premature"] = true,
-  ["big-pentapod-premature"] = true,
+  ["small-wriggler-pentapod-premature"] = true,
+  ["medium-wriggler-pentapod-premature"] = true,
+  ["big-wriggler-pentapod-premature"] = true,
 }
 
 local function sync_scrap_recycler_output_slots()
@@ -149,6 +149,14 @@ if egg_spoil_trigger and egg_spoil_trigger.action_delivery then
     type = "script",
     effect_id = "administratorio-pentapod-egg-hatch",
   })
+end
+
+-- Vanilla doubles one pentapod egg in 15 seconds. Keep duplication as a slow
+-- fallback so capturing wild pentapods with oviposition spores remains the
+-- practical source of fresh eggs instead of becoming obsolete immediately.
+local pentapod_egg_duplication = data.raw.recipe and data.raw.recipe["pentapod-egg"]
+if pentapod_egg_duplication then
+  pentapod_egg_duplication.energy_required = 60
 end
 
 -------------------------------------------------------------------------------

@@ -164,6 +164,13 @@ data = {
     furnace = {
       recycler = {type = "furnace", name = "recycler", result_inventory_size = 12},
     },
+    ["assembling-machine"] = {
+      ["chemical-plant"] = {
+        type = "assembling-machine",
+        name = "chemical-plant",
+        crafting_categories = {"chemistry", "chemistry-or-cryogenics", "organic-or-chemistry"},
+      },
+    },
     technology = technologies,
   },
 }
@@ -221,6 +228,13 @@ local function has_ingredient(recipe, item_name)
     if (ingredient.name or ingredient[1]) == item_name then
       return true
     end
+  end
+  return false
+end
+
+local function machine_has_category(machine, category_name)
+  for _, category in ipairs(machine and machine.crafting_categories or {}) do
+    if category == category_name then return true end
   end
   return false
 end
@@ -1468,6 +1482,12 @@ test("capture bureau mode recipes split by surface and role", function()
   assert_eq(tourism_spores.category, "organic", "tourism lure spores should be Biochamber-only")
   assert_eq(egg_spores.category, "organic-or-chemistry",
     "the first egg lure must not require a Biochamber built from an egg")
+  assert_true(machine_has_category(data.raw["assembling-machine"]["chemical-plant"], egg_spores.category),
+    "the Chemical Plant must be able to craft oviposition spores before the Biochamber exists")
+  assert_true(machine_has_category(data.raw["assembling-machine"]["chemical-plant"], spore_base.category),
+    "the Chemical Plant must be able to grow the hostile spore culture used by the egg lure")
+  assert_true(not tech_has_prerequisite(technologies["gleba-conciliation"], "biochamber"),
+    "spore acquisition must not depend on the Biochamber whose recipe requires an egg")
   assert_true(has_fluid_ingredient(workforce_spores, "hostile-spore-culture"),
     "workforce lure spores should consume Gleba spore culture")
   assert_true(has_fluid_ingredient(tourism_spores, "hostile-spore-culture"),

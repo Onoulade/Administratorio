@@ -103,8 +103,8 @@ data = {
           },
         },
       },
-      ["small-pentapod-premature"] = {
-        name = "small-pentapod-premature",
+      ["small-wriggler-pentapod-premature"] = {
+        name = "small-wriggler-pentapod-premature",
         subgroup = "enemies",
         attack_parameters = {
           ammo_type = {
@@ -122,8 +122,30 @@ data = {
           },
         },
       },
+      ["medium-wriggler-pentapod-premature"] = {
+        name = "medium-wriggler-pentapod-premature",
+        subgroup = "enemies",
+        attack_parameters = {
+          ammo_type = {
+            action = {{action_delivery = {{target_effects = {{type = "damage", damage = {amount = 20}}}}}}},
+          },
+        },
+      },
+      ["big-wriggler-pentapod-premature"] = {
+        name = "big-wriggler-pentapod-premature",
+        subgroup = "enemies",
+        attack_parameters = {
+          ammo_type = {
+            action = {{action_delivery = {{target_effects = {{type = "damage", damage = {amount = 30}}}}}}},
+          },
+        },
+      },
     },
-    ["unit-spawner"] = {},
+    ["unit-spawner"] = {
+      ["biter-spawner"] = {type = "unit-spawner", name = "biter-spawner", subgroup = "enemies"},
+      ["gleba-spawner"] = {type = "unit-spawner", name = "gleba-spawner", subgroup = "enemies"},
+      ["gleba-spawner-small"] = {type = "unit-spawner", name = "gleba-spawner-small", subgroup = "enemies"},
+    },
     lab = {},
     furnace = {
       ["stone-furnace"] = {name = "stone-furnace", type = "furnace"},
@@ -221,14 +243,33 @@ test("vanilla module recipes use the dedicated admin module category", function(
   end
 end)
 
-test("premature pentapods keep attack damage when eggs hatch", function()
+test("premature pentapods of every size keep vanilla attack damage when eggs hatch", function()
   local biter_damage = data.raw.unit["small-biter"].attack_parameters.ammo_type.action[1]
     .action_delivery[1].target_effects[1].damage.amount
-  local pentapod_damage = data.raw.unit["small-pentapod-premature"].attack_parameters.ammo_type.action[1]
-    .action_delivery[1].target_effects[1].damage.amount
-
   assert_true(biter_damage == 0, "regular biters should still be pacified")
-  assert_true(pentapod_damage > 0, "hatched premature pentapods should be able to damage buildings")
+
+  for _, prefix in ipairs({"small", "medium", "big"}) do
+    local entity_name = prefix .. "-wriggler-pentapod-premature"
+    local pentapod_damage = data.raw.unit[entity_name].attack_parameters.ammo_type.action[1]
+      .action_delivery[1].target_effects[1].damage.amount
+    assert_true(pentapod_damage > 0,
+      entity_name .. " should remain able to damage buildings after hatching")
+  end
+end)
+
+test("pentapod egg nests resist impact damage like biter nests", function()
+  for _, spawner_name in ipairs({"biter-spawner", "gleba-spawner", "gleba-spawner-small"}) do
+    local spawner = data.raw["unit-spawner"][spawner_name]
+    local impact_percent = nil
+    for _, resistance in ipairs(spawner.resistances or {}) do
+      if resistance.type == "impact" then
+        impact_percent = resistance.percent
+        break
+      end
+    end
+    assert_true(impact_percent == 100,
+      spawner_name .. " should be immune to collision and stomping damage")
+  end
 end)
 
 if failed > 0 then

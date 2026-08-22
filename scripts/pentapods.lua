@@ -5,16 +5,16 @@ local M = {}
 M.PENTAPOD_EGG_YIELDS = {
   ["small-wriggler-pentapod"] = 1,
   ["medium-wriggler-pentapod"] = 2,
-  ["big-wriggler-pentapod"] = 3,
+  ["big-wriggler-pentapod"] = 4,
   ["small-strafer-pentapod"] = 1,
   ["medium-strafer-pentapod"] = 2,
-  ["big-strafer-pentapod"] = 3,
-  ["small-stomper-pentapod"] = 2,
-  ["medium-stomper-pentapod"] = 3,
+  ["big-strafer-pentapod"] = 4,
+  ["small-stomper-pentapod"] = 1,
+  ["medium-stomper-pentapod"] = 2,
   ["big-stomper-pentapod"] = 4,
-  ["small-pentapod-premature"] = 1,
-  ["medium-pentapod-premature"] = 1,
-  ["big-pentapod-premature"] = 2,
+  ["small-wriggler-pentapod-premature"] = 1,
+  ["medium-wriggler-pentapod-premature"] = 2,
+  ["big-wriggler-pentapod-premature"] = 4,
 }
 
 local HATCHED_PENTAPOD_SCRIPT_EFFECT = "administratorio-pentapod-egg-hatch"
@@ -26,23 +26,23 @@ local PENTAPOD_MONEY_BAIT_PICKUP_RADIUS = C.PENTAPOD_MONEY_BAIT_PICKUP_RADIUS or
 local PENTAPOD_MONEY_BAIT_MIN_MONEY_PER_EGG = C.PENTAPOD_MONEY_BAIT_MIN_MONEY_PER_EGG or 10
 local PENTAPOD_MONEY_BAIT_MAX_MONEY_PER_EGG = C.PENTAPOD_MONEY_BAIT_MAX_MONEY_PER_EGG or 20
 local HATCHED_PENTAPOD_UNITS = {
-  ["small-pentapod-premature"] = true,
-  ["medium-pentapod-premature"] = true,
-  ["big-pentapod-premature"] = true,
+  ["small-wriggler-pentapod-premature"] = true,
+  ["medium-wriggler-pentapod-premature"] = true,
+  ["big-wriggler-pentapod-premature"] = true,
 }
 local PENTAPOD_BAIT_EGG_SCALE = {
   ["small-wriggler-pentapod"] = 1,
   ["small-strafer-pentapod"] = 1,
   ["small-stomper-pentapod"] = 1,
-  ["small-pentapod-premature"] = 1,
+  ["small-wriggler-pentapod-premature"] = 1,
   ["medium-wriggler-pentapod"] = 2,
   ["medium-strafer-pentapod"] = 2,
   ["medium-stomper-pentapod"] = 2,
-  ["medium-pentapod-premature"] = 2,
+  ["medium-wriggler-pentapod-premature"] = 2,
   ["big-wriggler-pentapod"] = 4,
   ["big-strafer-pentapod"] = 4,
   ["big-stomper-pentapod"] = 4,
-  ["big-pentapod-premature"] = 4,
+  ["big-wriggler-pentapod-premature"] = 4,
 }
 
 function M.is_pentapod(entity_name)

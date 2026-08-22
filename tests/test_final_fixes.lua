@@ -460,11 +460,19 @@ data.raw.item["pentapod-egg"] = {
       action_delivery = {
         type = "instant",
         source_effects = {
-          {type = "create-entity", entity_name = "small-pentapod-premature"},
+          {type = "create-entity", entity_name = "small-wriggler-pentapod-premature"},
         },
       },
     },
   },
+}
+data.raw.recipe["pentapod-egg"] = {
+  type = "recipe",
+  name = "pentapod-egg",
+  category = "organic",
+  energy_required = 15,
+  ingredients = {{type = "item", name = "pentapod-egg", amount = 1}},
+  results = {{type = "item", name = "pentapod-egg", amount = 2}},
 }
 data.raw.armor["mech-armor"] = {
   type = "armor",
@@ -2598,6 +2606,11 @@ test("pentapod egg spoil trigger notifies runtime to unpacify hatchlings", funct
     end
   end
   assert_true(found, "pentapod egg spoil trigger should include the hatchling runtime script effect")
+end)
+
+test("pentapod egg duplication remains much slower than spore harvesting", function()
+  assert_eq(data.raw.recipe["pentapod-egg"].energy_required, 60,
+    "egg duplication should be slowed from vanilla's 15 seconds to 60 seconds")
 end)
 
 -------------------------------------------------------------------------------
