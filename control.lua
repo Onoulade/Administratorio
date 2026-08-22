@@ -31,6 +31,7 @@ local hired_biter = require("scripts.hired_biter")
 local rideable_biter = require("scripts.rideable_biter")
 local spawner_population = require("scripts.spawner_population")
 local victory = require("scripts.victory")
+local admin_desk_rotation = require("scripts.admin_desk_rotation")
 
 biter_station.set_biters_module(biters)
 biterport.set_biters_module(biters)
@@ -112,11 +113,6 @@ local function normalize_player_admin_station_quickbar(player)
       player.set_quick_bar_slot(slot, {name = "admin-station", quality = filter.quality})
     end
   end
-end
-
-local function freeze_admin_station_rotation(desk)
-  if not desk or not desk.valid then return end
-  desk.rotatable = false
 end
 
 local function get_nest_exclusion_radius(entity_name)
@@ -250,7 +246,7 @@ end
 local function normalize_admin_station_entity(desk, player)
   if not desk or not desk.valid then return nil end
   if desk.name == "admin-station" or desk.name == "capture-bureau" then
-    freeze_admin_station_rotation(desk)
+    admin_desk_rotation.apply(desk)
     storage.admin_desks[desk.unit_number] = desk
     return desk
   end
@@ -284,7 +280,7 @@ local function normalize_admin_station_entity(desk, player)
   local new_desk = surface.create_entity(params)
   if not new_desk or not new_desk.valid then return desk end
 
-  freeze_admin_station_rotation(new_desk)
+  admin_desk_rotation.apply(new_desk)
   migrate_desk_storage(old_desk_id, new_desk)
   storage.admin_desks[new_desk.unit_number] = new_desk
   ensure_desk_combinator(new_desk)
@@ -300,7 +296,7 @@ end
 
 local function refresh_cached_desk(desk)
   if not desk or not desk.valid then return nil end
-  freeze_admin_station_rotation(desk)
+  admin_desk_rotation.apply(desk)
   storage.admin_desks[desk.unit_number] = desk
   zones.ensure_desk_runtime_state(desk)
   ensure_desk_combinator(desk)
@@ -1035,7 +1031,7 @@ local function on_entity_built_inner(event)
     local player = event.player_index and game.get_player(event.player_index)
     entity = normalize_admin_station_entity(entity, player) or entity
     if not entity or not entity.valid then return end
-    freeze_admin_station_rotation(entity)
+    admin_desk_rotation.apply(entity)
 
     local surface = entity.surface
     local desk_id = entity.unit_number

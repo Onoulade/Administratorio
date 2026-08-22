@@ -14,6 +14,7 @@ local planets = require("prototypes.shared.space_age_planets")
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 local generated_animation_speeds = require("prototypes.shared.generated_animation_speeds")
 local building_icons = require("prototypes.shared.building_icons")
+local native_fluid_rotation = require("prototypes.shared.native_fluid_rotation")
 local working_hours_enabled = feature_flags.working_hours_enabled()
 local space_age_enabled = feature_flags.space_age_enabled()
 local entity_graphics = "__administratorio__/graphics/entities/"
@@ -1374,6 +1375,10 @@ end
 
 if space_age_enabled then
   add_entity(capture_bureau)
+end
+
+for _, entity in ipairs(entities) do
+  native_fluid_rotation.enable(entity)
 end
 
 data:extend(entities)

@@ -415,6 +415,19 @@ test("chromatic printer is a flippable four-port liquid-fed machine", function()
   end
 end)
 
+test("all native-fluid Space Age machines are rotatable", function()
+  for entity_name, entity in pairs(data.raw["assembling-machine"] or {}) do
+    if entity_name ~= "assembling-machine-1"
+        and entity_name ~= "assembling-machine-2"
+        and entity_name ~= "assembling-machine-3"
+        and type(entity.fluid_boxes) == "table"
+        and next(entity.fluid_boxes) ~= nil then
+      assert_true(entity.rotatable,
+        entity_name .. " should rotate because it exposes native fluid boxes")
+    end
+  end
+end)
+
 test("notary office is the dedicated certification machine", function()
   local entity = data.raw["assembling-machine"]["notary-office"]
   assert_true(entity ~= nil, "notary-office missing")

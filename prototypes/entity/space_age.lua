@@ -1,4 +1,5 @@
 local planets = require("prototypes.shared.space_age_planets")
+local native_fluid_rotation = require("prototypes.shared.native_fluid_rotation")
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 local generated_animation_speeds = require("prototypes.shared.generated_animation_speeds")
 local building_icons = require("prototypes.shared.building_icons")
@@ -1337,6 +1338,13 @@ local space_age_entities = {
 
 if extend_formation_center then
   table.insert(space_age_entities, 1, formation_center)
+end
+
+-- Existing formation-center prototypes are modified in place rather than
+-- added to space_age_entities, so apply the policy to it explicitly as well.
+native_fluid_rotation.enable(formation_center)
+for _, entity in ipairs(space_age_entities) do
+  native_fluid_rotation.enable(entity)
 end
 
 data:extend(space_age_entities)
