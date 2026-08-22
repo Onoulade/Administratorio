@@ -77,12 +77,14 @@ data = {
     module = {},
     capsule = {},
     ammo = {},
+    ["ammo-turret"] = {},
     gun = {},
     armor = {},
     ["selection-tool"] = {},
     ["item-with-entity-data"] = {},
     ["rail-planner"] = {},
     ["spidertron-remote"] = {},
+    ["space-platform-starter-pack"] = {},
   },
 }
 
@@ -112,6 +114,56 @@ util = {
       return setmetatable(copy, getmetatable(tbl))
     end,
   },
+}
+
+mods = {
+  ["space-age"] = "2.0.0",
+}
+
+-- Factorio exposes mass units as data-stage globals.
+grams = 1
+kg = 1000
+tons = 1000000
+
+data.raw.ammo["voluntary-exploration-space-miner"] = {
+  type = "ammo",
+  name = "voluntary-exploration-space-miner",
+  ammo_category = "orbital-biter-ballistics",
+}
+data.raw.ammo["orbital-deviation-order"] = {
+  type = "ammo",
+  name = "orbital-deviation-order",
+  ammo_category = "trajectory-compliance",
+}
+data.raw.ammo["priority-orbital-deviation-order"] = {
+  type = "ammo",
+  name = "priority-orbital-deviation-order",
+  ammo_category = "trajectory-compliance",
+}
+data.raw.ammo["firearm-magazine"] = {
+  type = "ammo",
+  name = "firearm-magazine",
+  ammo_category = "bullet",
+}
+data.raw["ammo-turret"]["trajectory-compliance-array"] = {
+  type = "ammo-turret",
+  name = "trajectory-compliance-array",
+}
+data.raw["ammo-turret"]["senior-trajectory-compliance-array"] = {
+  type = "ammo-turret",
+  name = "senior-trajectory-compliance-array",
+}
+data.raw["ammo-turret"]["executive-trajectory-compliance-array"] = {
+  type = "ammo-turret",
+  name = "executive-trajectory-compliance-array",
+}
+data.raw["ammo-turret"]["orbital-employment-catapult"] = {
+  type = "ammo-turret",
+  name = "orbital-employment-catapult",
+}
+data.raw["ammo-turret"]["gun-turret"] = {
+  type = "ammo-turret",
+  name = "gun-turret",
 }
 
 -- Minimal vanilla coverage so final-fixes can exercise the Factoriopedia
@@ -159,6 +211,13 @@ data.raw.item["nuclear-reactor"] = {
   icon = "__base__/graphics/icons/nuclear-reactor.png",
   icon_size = 64,
 }
+data.raw.item["rocket-silo"] = {
+  type = "item",
+  name = "rocket-silo",
+  stack_size = 1,
+  icon = "__base__/graphics/icons/rocket-silo.png",
+  icon_size = 64,
+}
 data.raw.item["splitter"] = {
   type = "item",
   name = "splitter",
@@ -177,6 +236,7 @@ data.raw.item["boiler"] = {
   type = "item",
   name = "boiler",
   stack_size = 50,
+  place_result = "boiler",
   icon = "__base__/graphics/icons/boiler.png",
   icon_size = 64,
 }
@@ -184,6 +244,7 @@ data.raw.item["steam-engine"] = {
   type = "item",
   name = "steam-engine",
   stack_size = 10,
+  place_result = "steam-engine",
   icon = "__base__/graphics/icons/steam-engine.png",
   icon_size = 64,
 }
@@ -193,6 +254,22 @@ data.raw.item["transport-belt"] = {
   stack_size = 100,
   place_result = "transport-belt",
   icon = "__base__/graphics/icons/transport-belt.png",
+  icon_size = 64,
+}
+data.raw.item["pipe"] = {
+  type = "item",
+  name = "pipe",
+  stack_size = 100,
+  place_result = "pipe",
+  icon = "__base__/graphics/icons/pipe.png",
+  icon_size = 64,
+}
+data.raw.item["pipe-to-ground"] = {
+  type = "item",
+  name = "pipe-to-ground",
+  stack_size = 50,
+  place_result = "pipe-to-ground",
+  icon = "__base__/graphics/icons/pipe-to-ground.png",
   icon_size = 64,
 }
 data.raw.item["engine-unit"] = {
@@ -269,7 +346,7 @@ data.raw.item["solar-panel-equipment"] = {
   type = "item",
   name = "solar-panel-equipment",
   stack_size = 20,
-  placed_as_equipment_result = "solar-panel-equipment",
+  place_as_equipment_result = "solar-panel-equipment",
   icon = "__base__/graphics/icons/solar-panel-equipment.png",
   icon_size = 64,
 }
@@ -277,7 +354,7 @@ data.raw.item["battery-equipment"] = {
   type = "item",
   name = "battery-equipment",
   stack_size = 20,
-  placed_as_equipment_result = "battery-equipment",
+  place_as_equipment_result = "battery-equipment",
   icon = "__base__/graphics/icons/battery-equipment.png",
   icon_size = 64,
 }
@@ -285,7 +362,7 @@ data.raw.item["battery-mk2-equipment"] = {
   type = "item",
   name = "battery-mk2-equipment",
   stack_size = 20,
-  placed_as_equipment_result = "battery-mk2-equipment",
+  place_as_equipment_result = "battery-mk2-equipment",
   icon = "__base__/graphics/icons/battery-mk2-equipment.png",
   icon_size = 64,
 }
@@ -293,7 +370,7 @@ data.raw.item["exoskeleton-equipment"] = {
   type = "item",
   name = "exoskeleton-equipment",
   stack_size = 20,
-  placed_as_equipment_result = "exoskeleton-equipment",
+  place_as_equipment_result = "exoskeleton-equipment",
   icon = "__base__/graphics/icons/exoskeleton-equipment.png",
   icon_size = 64,
 }
@@ -302,6 +379,155 @@ data.raw.item["plastic-bar"] = {
   name = "plastic-bar",
   stack_size = 100,
   icon = "__base__/graphics/icons/plastic-bar.png",
+  icon_size = 64,
+}
+data.raw.item["cargo-bay"] = {
+  type = "item",
+  name = "cargo-bay",
+  stack_size = 10,
+  subgroup = "space-platform",
+  place_result = "cargo-bay",
+  icon = "__space-age__/graphics/icons/cargo-bay.png",
+  icon_size = 64,
+}
+data.raw.item["asteroid-collector"] = {
+  type = "item",
+  name = "asteroid-collector",
+  stack_size = 10,
+  subgroup = "space-platform",
+  place_result = "asteroid-collector",
+  icon = "__space-age__/graphics/icons/asteroid-collector.png",
+  icon_size = 64,
+}
+data.raw.item["crusher"] = {
+  type = "item",
+  name = "crusher",
+  stack_size = 10,
+  subgroup = "space-platform",
+  place_result = "crusher",
+  icon = "__space-age__/graphics/icons/crusher.png",
+  icon_size = 64,
+}
+data.raw.item["thruster"] = {
+  type = "item",
+  name = "thruster",
+  stack_size = 10,
+  subgroup = "space-platform",
+  place_result = "thruster",
+  icon = "__space-age__/graphics/icons/thruster.png",
+  icon_size = 64,
+}
+data.raw.item["space-platform-foundation"] = {
+  type = "item",
+  name = "space-platform-foundation",
+  stack_size = 100,
+  subgroup = "space-platform",
+  icon = "__space-age__/graphics/icons/space-platform-foundation.png",
+  icon_size = 64,
+}
+data.raw.item["propeller"] = {
+  type = "item",
+  name = "propeller",
+  stack_size = 100,
+  subgroup = "intermediate-product",
+  icon = "__space-age__/graphics/icons/thruster.png",
+  icon_size = 64,
+}
+data.raw.item["fusion-reactor"] = {
+  type = "item",
+  name = "fusion-reactor",
+  stack_size = 10,
+  subgroup = "energy",
+  place_result = "fusion-reactor",
+  icon = "__space-age__/graphics/icons/fusion-reactor.png",
+  icon_size = 64,
+}
+data.raw.item["fusion-generator"] = {
+  type = "item",
+  name = "fusion-generator",
+  stack_size = 10,
+  subgroup = "energy",
+  place_result = "fusion-generator",
+  icon = "__space-age__/graphics/icons/fusion-generator.png",
+  icon_size = 64,
+}
+data.raw.item["pentapod-egg"] = {
+  type = "item",
+  name = "pentapod-egg",
+  spoil_to_trigger_result = {
+    trigger = {
+      type = "direct",
+      action_delivery = {
+        type = "instant",
+        source_effects = {
+          {type = "create-entity", entity_name = "small-wriggler-pentapod-premature"},
+        },
+      },
+    },
+  },
+}
+data.raw.recipe["pentapod-egg"] = {
+  type = "recipe",
+  name = "pentapod-egg",
+  category = "organic",
+  energy_required = 15,
+  ingredients = {{type = "item", name = "pentapod-egg", amount = 1}},
+  results = {{type = "item", name = "pentapod-egg", amount = 2}},
+}
+data.raw.armor["mech-armor"] = {
+  type = "armor",
+  name = "mech-armor",
+  stack_size = 1,
+  icon = "__space-age__/graphics/icons/mech-armor.png",
+  icon_size = 64,
+}
+data.raw.tool["promethium-science-pack"] = {
+  type = "tool",
+  name = "promethium-science-pack",
+  stack_size = 200,
+  icon = "__space-age__/graphics/icons/promethium-science-pack.png",
+  icon_size = 64,
+}
+data.raw.tool["automation-science-pack"] = {
+  type = "tool",
+  name = "automation-science-pack",
+  subgroup = "science-pack",
+  stack_size = 200,
+  icon = "__base__/graphics/icons/automation-science-pack.png",
+  icon_size = 64,
+}
+data.raw.tool["space-science-pack"] = {
+  type = "tool",
+  name = "space-science-pack",
+  subgroup = "science-pack",
+  stack_size = 200,
+  icon = "__base__/graphics/icons/space-science-pack.png",
+  icon_size = 64,
+}
+data.raw.item["heating-tower"] = {
+  type = "item",
+  name = "heating-tower",
+  stack_size = 20,
+  subgroup = "environmental-protection",
+  place_result = "heating-tower",
+  icon = "__space-age__/graphics/icons/heating-tower.png",
+  icon_size = 64,
+}
+data.raw.item["chromatic-printer"] = {
+  type = "item",
+  name = "chromatic-printer",
+  stack_size = 50,
+  subgroup = "admin-printers",
+  place_result = "chromatic-printer",
+  icon = "__administratorio__/graphics/icons/steel-forge-icon.png",
+  icon_size = 64,
+}
+data.raw["space-platform-starter-pack"]["space-platform-starter-pack"] = {
+  type = "space-platform-starter-pack",
+  name = "space-platform-starter-pack",
+  stack_size = 1,
+  subgroup = "space-rocket",
+  icon = "__space-age__/graphics/icons/space-platform-starter-pack.png",
   icon_size = 64,
 }
 data.raw.item["solid-fuel"] = {
@@ -333,6 +559,31 @@ recipes["transport-belt"] = {
   },
   results = {
     { type = "item", name = "transport-belt", amount = 2 },
+  },
+}
+
+recipes["pipe"] = {
+  type = "recipe",
+  name = "pipe",
+  enabled = true,
+  ingredients = {
+    {type = "item", name = "iron-plate", amount = 1},
+  },
+  results = {
+    {type = "item", name = "pipe", amount = 1},
+  },
+}
+
+recipes["pipe-to-ground"] = {
+  type = "recipe",
+  name = "pipe-to-ground",
+  enabled = true,
+  ingredients = {
+    {type = "item", name = "pipe", amount = 10},
+    {type = "item", name = "iron-plate", amount = 5},
+  },
+  results = {
+    {type = "item", name = "pipe-to-ground", amount = 2},
   },
 }
 
@@ -506,6 +757,25 @@ recipes["nuclear-reactor"] = {
   },
 }
 
+recipes["rocket-silo"] = {
+  type = "recipe",
+  name = "rocket-silo",
+  category = "advanced-crafting",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "concrete", amount = 1000 },
+    { type = "item", name = "steel-plate", amount = 1000 },
+    { type = "item", name = "processing-unit", amount = 200 },
+    { type = "item", name = "electric-engine-unit", amount = 200 },
+  },
+  results = {
+    { type = "item", name = "rocket-silo", amount = 1 },
+  },
+  surface_conditions = {
+    { property = "pressure", min = 1000, max = 1000 },
+  },
+}
+
 recipes["repair-pack"] = {
   type = "recipe",
   name = "repair-pack",
@@ -530,6 +800,405 @@ recipes["heat-pipe"] = {
   },
   results = {
     { type = "item", name = "heat-pipe", amount = 1 },
+  },
+}
+
+recipes["electromagnetic-plant"] = {
+  type = "recipe",
+  name = "electromagnetic-plant",
+  category = "electronics-or-assembling",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "holmium-plate", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "electromagnetic-plant", amount = 1 },
+  },
+}
+
+recipes["dual-planet-widget"] = {
+  type = "recipe",
+  name = "dual-planet-widget",
+  category = "advanced-crafting",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "tungsten-plate", amount = 2 },
+    { type = "item", name = "carbon-fiber", amount = 2 },
+  },
+  results = {
+    { type = "item", name = "dual-planet-widget", amount = 1 },
+  },
+}
+
+recipes["quantum-processor"] = {
+  type = "recipe",
+  name = "quantum-processor",
+  category = "advanced-crafting",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "tungsten-plate", amount = 2 },
+    { type = "item", name = "carbon-fiber", amount = 2 },
+    { type = "item", name = "holmium-plate", amount = 2 },
+  },
+  results = {
+    { type = "item", name = "quantum-processor", amount = 1 },
+  },
+}
+
+recipes["lithium"] = {
+  type = "recipe",
+  name = "lithium",
+  category = "cryogenics",
+  enabled = false,
+  ingredients = {
+    { type = "fluid", name = "lithium-brine", amount = 50 },
+    { type = "fluid", name = "ammonia", amount = 50 },
+  },
+  results = {
+    { type = "item", name = "lithium", amount = 5 },
+  },
+}
+
+recipes["lithium-plate"] = {
+  type = "recipe",
+  name = "lithium-plate",
+  category = "smelting",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "lithium", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "lithium-plate", amount = 1 },
+  },
+}
+
+recipes["fluoroketone"] = {
+  type = "recipe",
+  name = "fluoroketone",
+  category = "cryogenics",
+  enabled = false,
+  ingredients = {
+    { type = "fluid", name = "ammonia", amount = 50 },
+    { type = "fluid", name = "fluorine", amount = 10 },
+    { type = "item", name = "lithium", amount = 1 },
+  },
+  results = {
+    { type = "fluid", name = "fluoroketone-hot", amount = 50 },
+  },
+}
+
+recipes["fluoroketone-cooling"] = {
+  type = "recipe",
+  name = "fluoroketone-cooling",
+  category = "cryogenics",
+  enabled = false,
+  ingredients = {
+    { type = "fluid", name = "fluoroketone-hot", amount = 10 },
+  },
+  results = {
+    { type = "fluid", name = "fluoroketone-cold", amount = 10 },
+  },
+}
+
+recipes["cryogenic-plant"] = {
+  type = "recipe",
+  name = "cryogenic-plant",
+  category = "cryogenics-or-assembling",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "lithium-plate", amount = 20 },
+    { type = "item", name = "superconductor", amount = 20 },
+  },
+  results = {
+    { type = "item", name = "cryogenic-plant", amount = 1 },
+  },
+}
+
+recipes["cargo-bay"] = {
+  type = "recipe",
+  name = "cargo-bay",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 20 },
+    { type = "item", name = "low-density-structure", amount = 20 },
+    { type = "item", name = "processing-unit", amount = 5 },
+  },
+  results = {
+    { type = "item", name = "cargo-bay", amount = 1 },
+  },
+}
+
+recipes["asteroid-collector"] = {
+  type = "recipe",
+  name = "asteroid-collector",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "low-density-structure", amount = 20 },
+    { type = "item", name = "processing-unit", amount = 8 },
+    { type = "item", name = "electric-engine-unit", amount = 8 },
+  },
+  results = {
+    { type = "item", name = "asteroid-collector", amount = 1 },
+  },
+}
+
+recipes["space-platform-starter-pack"] = {
+  type = "recipe",
+  name = "space-platform-starter-pack",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "space-platform-foundation", amount = 60 },
+    { type = "item", name = "steel-plate", amount = 20 },
+    { type = "item", name = "processing-unit", amount = 20 },
+  },
+  results = {
+    { type = "item", name = "space-platform-starter-pack", amount = 1 },
+  },
+}
+
+recipes["space-platform-foundation"] = {
+  type = "recipe",
+  name = "space-platform-foundation",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 20 },
+    { type = "item", name = "copper-cable", amount = 20 },
+  },
+  results = {
+    { type = "item", name = "space-platform-foundation", amount = 1 },
+  },
+}
+
+recipes["crusher"] = {
+  type = "recipe",
+  name = "crusher",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 10 },
+    { type = "item", name = "electronic-circuit", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "crusher", amount = 1 },
+  },
+}
+
+recipes["thruster"] = {
+  type = "recipe",
+  name = "thruster",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 10 },
+    { type = "item", name = "pipe", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "thruster", amount = 1 },
+  },
+}
+
+-- Space-processing recipes are identified by their recipe subgroup, rather
+-- than the product subgroup. This mirrors compatible platform intermediates
+-- whose products otherwise look like normal crafting items.
+recipes["propeller"] = {
+  type = "recipe",
+  name = "propeller",
+  category = "crafting",
+  subgroup = "space-processing",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 10 },
+    { type = "item", name = "pipe", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "propeller", amount = 1 },
+  },
+}
+
+recipes["metallic-asteroid-crushing"] = {
+  type = "recipe",
+  name = "metallic-asteroid-crushing",
+  category = "crushing",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "metallic-asteroid-chunk", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "iron-ore", amount = 10 },
+  },
+}
+
+recipes["carbonic-asteroid-crushing"] = {
+  type = "recipe",
+  name = "carbonic-asteroid-crushing",
+  category = "crushing",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "carbonic-asteroid-chunk", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "carbon", amount = 10 },
+  },
+}
+
+recipes["oxide-asteroid-crushing"] = {
+  type = "recipe",
+  name = "oxide-asteroid-crushing",
+  category = "crushing",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "oxide-asteroid-chunk", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "ice", amount = 10 },
+  },
+}
+
+recipes["advanced-metallic-asteroid-crushing"] = {
+  type = "recipe",
+  name = "advanced-metallic-asteroid-crushing",
+  category = "crushing",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "metallic-asteroid-chunk", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "iron-ore", amount = 20 },
+  },
+}
+
+recipes["metallic-asteroid-reprocessing"] = {
+  type = "recipe",
+  name = "metallic-asteroid-reprocessing",
+  category = "crushing",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "metallic-asteroid-chunk", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "carbonic-asteroid-chunk", amount = 1 },
+  },
+}
+
+recipes["fusion-reactor"] = {
+  type = "recipe",
+  name = "fusion-reactor",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "tungsten-plate", amount = 20 },
+    { type = "item", name = "carbon-fiber", amount = 20 },
+    { type = "item", name = "holmium-plate", amount = 20 },
+  },
+  results = {
+    { type = "item", name = "fusion-reactor", amount = 1 },
+  },
+}
+
+recipes["fusion-generator"] = {
+  type = "recipe",
+  name = "fusion-generator",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "tungsten-plate", amount = 10 },
+    { type = "item", name = "carbon-fiber", amount = 10 },
+    { type = "item", name = "holmium-plate", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "fusion-generator", amount = 1 },
+  },
+}
+
+recipes["mech-armor"] = {
+  type = "recipe",
+  name = "mech-armor",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "tungsten-plate", amount = 10 },
+    { type = "item", name = "carbon-fiber", amount = 10 },
+    { type = "item", name = "holmium-plate", amount = 10 },
+  },
+  results = {
+    { type = "item", name = "mech-armor", amount = 1 },
+  },
+}
+
+recipes["promethium-science-pack"] = {
+  type = "recipe",
+  name = "promethium-science-pack",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "promethium-asteroid-chunk", amount = 1 },
+    { type = "item", name = "quantum-processor", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "promethium-science-pack", amount = 10 },
+  },
+}
+
+recipes["space-science-pack"] = {
+  type = "recipe",
+  name = "space-science-pack",
+  category = "orbital-bureaucracy",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "iron-plate", amount = 2 },
+    { type = "item", name = "carbon", amount = 1 },
+    { type = "item", name = "ice", amount = 1 },
+    { type = "item", name = "research-grant-approval", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "space-science-pack", amount = 5 },
+  },
+}
+
+-- Deliberately invalid input fixture: final-fixes must preserve the material
+-- ingredients while removing every science pack from both difficulty levels.
+recipes["science-pack-smuggling"] = {
+  type = "recipe",
+  name = "science-pack-smuggling",
+  category = "chemistry",
+  enabled = false,
+  normal = {
+    ingredients = {
+      { type = "item", name = "iron-plate", amount = 2 },
+      { type = "item", name = "automation-science-pack", amount = 1 },
+      { type = "item", name = "administrative-science-pack", amount = 1 },
+    },
+    results = {{ type = "item", name = "iron-plate", amount = 1 }},
+  },
+  expensive = {
+    ingredients = {
+      { type = "item", name = "iron-plate", amount = 4 },
+      { type = "item", name = "space-science-pack", amount = 2 },
+    },
+    results = {{ type = "item", name = "iron-plate", amount = 1 }},
+  },
+}
+
+recipes["heating-tower"] = {
+  type = "recipe",
+  name = "heating-tower",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "steel-plate", amount = 15 },
+    { type = "item", name = "stone-brick", amount = 20 },
+    { type = "item", name = "pipe", amount = 4 },
+  },
+  results = {
+    { type = "item", name = "heating-tower", amount = 1 },
+  },
+}
+
+recipes["chromatic-printer"] = {
+  type = "recipe",
+  name = "chromatic-printer",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "printer-t2", amount = 1 },
+    { type = "item", name = "steel-plate", amount = 20 },
+    { type = "item", name = "advanced-circuit", amount = 20 },
+    { type = "item", name = "processing-unit", amount = 8 },
+  },
+  results = {
+    { type = "item", name = "chromatic-printer", amount = 1 },
   },
 }
 
@@ -833,6 +1502,24 @@ technologies["nuclear-power"] = {
   },
 }
 
+technologies["rocket-silo"] = {
+  type = "technology",
+  name = "rocket-silo",
+  effects = {
+    { type = "unlock-recipe", recipe = "rocket-silo" },
+  },
+  unit = {
+    count = 1,
+    ingredients = {
+      {"automation-science-pack", 1},
+      {"logistic-science-pack", 1},
+      {"chemical-science-pack", 1},
+      {"utility-science-pack", 1},
+    },
+    time = 1,
+  },
+}
+
 technologies["logistics"] = {
   type = "technology",
   name = "logistics",
@@ -902,6 +1589,15 @@ end
 -- Regression guard: explicit equipment overrides must be ignored by final-fixes.
 shared.BATCH_MULTIPLIERS["battery-equipment"] = 99
 
+-- Mirror data.lua's ownership capture while loading Administratorio fixtures.
+-- The hand-built recipes above represent vanilla/Space Age input and must not
+-- be registered as Administratorio recipes.
+local extend_prototypes = data.extend
+function data:extend(prototypes)
+  shared.register_admin_recipe_prototypes(prototypes)
+  return extend_prototypes(self, prototypes)
+end
+
 dofile(mod_root .. "prototypes/categories.lua")
 
 dofile(mod_root .. "prototypes/item/groups.lua")
@@ -919,6 +1615,7 @@ dofile(mod_root .. "prototypes/recipe/economy.lua")
 dofile(mod_root .. "prototypes/recipe/resolution.lua")
 dofile(mod_root .. "prototypes/recipe/modules.lua")
 dofile(mod_root .. "prototypes/technology.lua")
+data.extend = extend_prototypes
 dofile(mod_root .. "data-final-fixes.lua")
 
 -------------------------------------------------------------------------------
@@ -955,6 +1652,27 @@ local function count_ingredient(recipe, item_name)
     end
   end
   return count
+end
+
+local planet_specific_paperwork = {
+  "blank-cyan-form",
+  "blank-yellow-form",
+  "blank-magenta-form",
+  "cyan-yellow-form",
+  "cyan-magenta-form",
+  "yellow-magenta-form",
+  "trichromatic-permit",
+  "unified-operations-charter",
+  "cryogenic-operations-license",
+  "promethium-research-charter",
+  "hardened-data-vault",
+}
+
+local function assert_no_planet_specific_paperwork(recipe, label)
+  for _, paperwork_name in ipairs(planet_specific_paperwork) do
+    assert_true(not has_ingredient(recipe, paperwork_name),
+      label .. " should not require " .. paperwork_name .. " before first planet discovery")
+  end
 end
 
 local function get_result_amount(recipe, item_name)
@@ -1013,6 +1731,90 @@ end
 -- 3. TESTS
 -------------------------------------------------------------------------------
 
+test("science packs are research-only and never recipe ingredients", function()
+  local science_pack_items = {}
+  for item_name, item in pairs(data.raw.tool or {}) do
+    if item.subgroup == "science-pack" or item_name:find("science%-pack$") then
+      science_pack_items[item_name] = true
+    end
+  end
+
+  local function assert_level_is_clean(target, label)
+    for _, ingredient in ipairs((target and target.ingredients) or {}) do
+      local item_name = ingredient.name or ingredient[1]
+      local item_type = ingredient.type or "item"
+      assert_true(item_type ~= "item" or not science_pack_items[item_name],
+        label .. " should not consume science pack " .. tostring(item_name))
+    end
+  end
+
+  for recipe_name, recipe in pairs(recipes) do
+    assert_level_is_clean(recipe, recipe_name)
+    assert_level_is_clean(recipe.normal, recipe_name .. ".normal")
+    assert_level_is_clean(recipe.expensive, recipe_name .. ".expensive")
+  end
+
+  local smuggling = assert(get_recipe("science-pack-smuggling"), "science-pack-smuggling missing")
+  assert_true((get_ingredient_amount(smuggling.normal, "iron-plate") or 0) > 0,
+    "normal material ingredients should survive science-pack cleanup")
+  assert_true((get_ingredient_amount(smuggling.expensive, "iron-plate") or 0) > 0,
+    "expensive material ingredients should survive science-pack cleanup")
+  assert_true((get_result_amount(get_recipe("promethium-science-pack"), "promethium-science-pack") or 0) > 0,
+    "science-pack production outputs should remain intact")
+end)
+
+test("native space science uses one imported research approval per five-pack batch", function()
+  local recipe = assert(get_recipe("space-science-pack"), "native space-science-pack recipe missing")
+  assert_true(has_ingredient(recipe, "research-grant-approval"),
+    "native space science should consume the ordinary imported grant")
+  assert_eq(get_ingredient_amount(recipe, "research-grant-approval"), 1,
+    "one ordinary research approval should authorize each batch")
+  assert_true(not has_ingredient(recipe, "research-grant-work-order"),
+    "space science should use the portable approval rather than assembler paperwork")
+  assert_eq(get_result_amount(recipe, "space-science-pack"), 5,
+    "the native Space Age science output should remain unchanged")
+  assert_true(get_recipe("space-science-pack-regulated") == nil,
+    "orbital space science should not receive a hidden regulated duplicate")
+end)
+
+test("orbital administration weapons survive the military hiding pass", function()
+  assert_true(not data.raw.ammo["voluntary-exploration-space-miner"].hidden,
+    "VESM ammo should remain visible")
+  assert_true(not data.raw.ammo["orbital-deviation-order"].hidden,
+    "deviation order ammo should remain visible")
+  assert_true(not data.raw.ammo["priority-orbital-deviation-order"].hidden,
+    "priority deviation order ammo should remain visible")
+  assert_eq(data.raw.ammo["orbital-deviation-order"].weight, 1 * kg,
+    "routine deviation orders should weigh one kilogram")
+  assert_eq(data.raw.ammo["priority-orbital-deviation-order"].weight, 1 * kg,
+    "priority deviation orders should weigh one kilogram")
+  assert_true(not data.raw["ammo-turret"]["trajectory-compliance-array"].hidden,
+    "trajectory compliance array should remain visible")
+  assert_true(not data.raw["ammo-turret"]["senior-trajectory-compliance-array"].hidden,
+    "senior trajectory compliance array should remain visible")
+  assert_true(not data.raw["ammo-turret"]["executive-trajectory-compliance-array"].hidden,
+    "executive trajectory compliance array should remain visible")
+  assert_true(not data.raw["ammo-turret"]["orbital-employment-catapult"].hidden,
+    "orbital employment catapult should remain visible")
+  assert_eq(data.raw.ammo["firearm-magazine"].hidden, true,
+    "conventional ammunition should remain hidden")
+  assert_eq(data.raw["ammo-turret"]["gun-turret"].hidden, true,
+    "conventional ammo turrets should remain hidden")
+end)
+
+test("Recycling recipes are browsable rows in the Administrative tab, not their own tab", function()
+  assert_true(data.raw["item-group"]["admin-recycling-group"] == nil,
+    "admin-recycling-group should no longer exist as a standalone tab")
+  for _, subgroup_name in ipairs({
+    "archive-recovery-recipes",
+    "form-reassignment-recipes",
+    "form-paper-recycling-recipes",
+  }) do
+    local subgroup = assert(data.raw["item-subgroup"][subgroup_name], subgroup_name .. " missing")
+    assert_eq(subgroup.group, "admin-infrastructure-group")
+  end
+end)
+
 test("mechanical-printer gets a regulated AM recipe", function()
   local r = get_recipe("mechanical-printer-regulated")
   assert_true(r ~= nil, "mechanical-printer-regulated missing")
@@ -1029,25 +1831,15 @@ test("printer-t1 gets a regulated AM recipe", function()
   assert_true(not has_ingredient(r, "provisional-approval"), "printer-t1-regulated should combine provisional-approval")
 end)
 
-test("regulated admin building outputs follow their declared batch economics", function()
-  for building_name in pairs(shared.ADMIN_BUILDINGS) do
-    local base = get_recipe(building_name)
-    if base then
-      local regulated = get_recipe(building_name .. "-regulated")
-      assert_true(regulated ~= nil, building_name .. " should have a regulated assembler recipe")
-
-      local base_amount = get_result_amount(base, building_name)
-      if base_amount then
-        local multiplier = shared.BATCH_MULTIPLIERS[building_name]
-          or shared.BATCH_MULTIPLIER_DEFAULT
-        assert_eq(
-          get_result_amount(regulated, building_name),
-          base_amount * multiplier,
-          building_name .. " regulated output should match its batch multiplier"
-        )
-      end
-    end
-  end
+test("regulated admin buildings follow semantic building and biter defaults", function()
+  assert_eq(get_result_amount(get_recipe("mechanical-printer-regulated"), "mechanical-printer"), 2,
+    "ordinary production buildings should batch at 2x")
+  assert_eq(get_result_amount(get_recipe("field-office-regulated"), "field-office"), 1,
+    "biter-subgroup buildings should stay at native 1x")
+  assert_eq(get_result_amount(get_recipe("office-desk-regulated"), "office-desk"), 2,
+    "recipes consuming biter workers should preserve their native output")
+  assert_eq(get_result_amount(get_recipe("formation-center-regulated"), "formation-center"), 1,
+    "Space Age biter buildings should stay at native 1x")
 end)
 
 test("printer-t2 gets a regulated AM recipe", function()
@@ -1057,6 +1849,27 @@ test("printer-t2 gets a regulated AM recipe", function()
   assert_true(has_ingredient(r, "construction-work-order"), "printer-t2-regulated missing construction-work-order")
   assert_true(has_ingredient(r, "printer-t1"), "printer-t2-regulated missing printer-t1")
   assert_true(not has_ingredient(r, "construction-permit"), "printer-t2-regulated should combine construction-permit")
+end)
+
+test("field office stays on Nauvis while ordinary administrative construction stays grounded", function()
+  for _, recipe_name in ipairs({"field-office", "field-office-regulated"}) do
+    local recipe = assert(get_recipe(recipe_name), recipe_name .. " missing")
+    assert_eq(recipe.surface_conditions[1].property, "pressure", recipe_name .. " should use Nauvis pressure")
+    assert_eq(recipe.surface_conditions[1].min, 1000, recipe_name .. " should require Nauvis pressure")
+    assert_eq(recipe.surface_conditions[1].max, 1000, recipe_name .. " should require Nauvis pressure")
+    assert_eq(recipe.surface_conditions[2].property, "gravity", recipe_name .. " should use Nauvis gravity")
+    assert_eq(recipe.surface_conditions[2].min, 10, recipe_name .. " should require Nauvis gravity")
+    assert_eq(recipe.surface_conditions[2].max, 10, recipe_name .. " should require Nauvis gravity")
+  end
+
+  for _, recipe_name in ipairs({"office-desk", "biter-station", "biterport"}) do
+    local recipe = assert(get_recipe(recipe_name), recipe_name .. " missing")
+    assert_true(recipe.surface_conditions and recipe.surface_conditions[1]
+      and (recipe.surface_conditions[1].min or 0) >= 1,
+      recipe_name .. " should not be craftable in vacuum")
+  end
+  assert_true(get_recipe("printer-t2").surface_conditions == nil,
+    "printer-t2 construction should remain available on a platform")
 end)
 
 test("paper and ink get regulated AM recipes", function()
@@ -1082,6 +1895,205 @@ test("repair-pack gets a bulked regulated AM recipe", function()
   assert_eq(get_result_amount(regulated, "repair-pack"), 5, "repair-pack-regulated should batch to 5")
   assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_5.png"),
     "repair-pack-regulated should show the 5x overlay")
+  local bulk_badge = get_icon_layer(regulated, "__base__/graphics/icons/signal/signal_5.png")
+  assert_eq(bulk_badge.shift[1], -14, "repair-pack-regulated bulk overlay should be top-left")
+  assert_eq(bulk_badge.shift[2], -12, "repair-pack-regulated bulk overlay should be top-left")
+end)
+
+test("heat-pipe batches at 10x", function()
+  local regulated = get_recipe("heat-pipe")
+  assert_true(regulated ~= nil, "heat-pipe missing")
+  assert_eq(regulated.category, "advanced-crafting-regulated", "heat-pipe category")
+  assert_true(has_ingredient(regulated, "work-order"), "heat-pipe missing work-order")
+  assert_eq(get_result_amount(regulated, "heat-pipe"), 10, "heat-pipe should batch to 10")
+  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_1.png"),
+    "heat-pipe should show the 10x overlay")
+  assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_0.png"),
+    "heat-pipe should show the 10x overlay")
+end)
+
+test("plain pipes are paperwork-free while underground pipes use 5x construction batches", function()
+  local pipe = get_recipe("pipe-regulated")
+  assert_true(pipe ~= nil, "pipe-regulated missing")
+  assert_eq(pipe.category, "crafting-regulated", "plain pipe should remain automatable")
+  assert_eq(get_ingredient_amount(pipe, "iron-plate"), 1,
+    "plain pipe should retain its native ingredient quantity")
+  assert_eq(get_result_amount(pipe, "pipe"), 1,
+    "plain pipe should retain its native result quantity")
+  for paperwork_name in pairs(shared.PAPERWORK_ITEMS) do
+    assert_true(not has_ingredient(pipe, paperwork_name),
+      "plain pipe should not consume paperwork: " .. paperwork_name)
+  end
+  assert_true(not has_icon_layer(pipe, "__base__/graphics/icons/signal/signal_5.png"),
+    "plain pipe should not show a bulk overlay")
+
+  local underground = get_recipe("pipe-to-ground-regulated")
+  assert_true(underground ~= nil, "pipe-to-ground-regulated missing")
+  assert_true(has_ingredient(underground, "construction-work-order"),
+    "underground pipe should consume construction paperwork")
+  assert_eq(get_ingredient_amount(underground, "pipe"), 50,
+    "underground pipe ingredients should use a 5x batch")
+  assert_eq(get_result_amount(underground, "pipe-to-ground"), 10,
+    "underground pipe results should use a 5x batch")
+  assert_true(has_icon_layer(underground, "__base__/graphics/icons/signal/signal_5.png"),
+    "underground pipe should show the 5x overlay")
+end)
+
+test("fluid-only recipes retain native quantities and do not display a bulk overlay", function()
+  local oil = get_recipe("oil-processing")
+  assert_true(oil ~= nil, "oil-processing missing")
+  assert_eq(get_ingredient_amount(oil, "crude-oil"), 100,
+    "oil-processing ingredients should retain native quantities")
+  assert_eq(get_result_amount(oil, "heavy-oil"), 30,
+    "oil-processing results should retain native quantities")
+  assert_true(not has_icon_layer(oil, "__base__/graphics/icons/signal/signal_5.png"),
+    "oil-processing should not display a bulk overlay for fluid output")
+
+  local sulfuric_acid = get_recipe("sulfuric-acid")
+  assert_eq(get_result_amount(sulfuric_acid, "sulfuric-acid"), 50,
+    "fluid-only chemistry should retain native output quantities")
+end)
+
+test("equipment recipes stay unbatched at 1x", function()
+  local solar = get_recipe("solar-panel-equipment")
+  assert_true(solar ~= nil, "solar-panel-equipment missing")
+  assert_eq(get_result_amount(solar, "solar-panel-equipment"), 1, "solar-panel-equipment should stay 1x")
+  assert_true(not has_icon_layer(solar, "__base__/graphics/icons/signal/signal_1.png"),
+    "solar-panel-equipment should not show a 1x overlay")
+  assert_true(not has_icon_layer(solar, "__base__/graphics/icons/signal/signal_2.png"),
+    "solar-panel-equipment should not show a 2x overlay")
+
+  local battery = get_recipe("battery-equipment")
+  assert_true(battery ~= nil, "battery-equipment missing")
+  assert_eq(get_result_amount(battery, "battery-equipment"), 1, "battery-equipment should stay 1x")
+  assert_true(not has_icon_layer(battery, "__base__/graphics/icons/signal/signal_1.png"),
+    "battery-equipment should not show a 1x overlay")
+  assert_true(not has_icon_layer(battery, "__base__/graphics/icons/signal/signal_2.png"),
+    "battery-equipment should not show a 2x overlay")
+
+  local battery_mk2 = get_recipe("battery-mk2-equipment")
+  assert_true(battery_mk2 ~= nil, "battery-mk2-equipment missing")
+  assert_eq(get_result_amount(battery_mk2, "battery-mk2-equipment"), 1, "battery-mk2-equipment should stay 1x")
+  assert_true(not has_icon_layer(battery_mk2, "__base__/graphics/icons/signal/signal_1.png"),
+    "battery-mk2-equipment should not show a 1x overlay")
+  assert_true(not has_icon_layer(battery_mk2, "__base__/graphics/icons/signal/signal_2.png"),
+    "battery-mk2-equipment should not show a 2x overlay")
+
+  local exoskeleton = get_recipe("exoskeleton-equipment")
+  assert_true(exoskeleton ~= nil, "exoskeleton-equipment missing")
+  assert_eq(get_result_amount(exoskeleton, "exoskeleton-equipment"), 1, "exoskeleton-equipment should stay 1x")
+  assert_true(not has_icon_layer(exoskeleton, "__base__/graphics/icons/signal/signal_1.png"),
+    "exoskeleton-equipment should not show a 1x overlay")
+end)
+
+test("space platform structures stay unbatched at 1x", function()
+  local cargo_bay = get_recipe("cargo-bay")
+  assert_true(cargo_bay ~= nil, "cargo-bay missing")
+  assert_eq(get_result_amount(cargo_bay, "cargo-bay"), 1, "cargo-bay should stay 1x")
+  assert_eq(get_ingredient_amount(cargo_bay, "steel-plate"), 20, "cargo-bay ingredients should stay unbatched")
+  assert_true(not has_icon_layer(cargo_bay, "__base__/graphics/icons/signal/signal_1.png"),
+    "cargo-bay should not show a 1x overlay")
+  assert_true(not has_icon_layer(cargo_bay, "__base__/graphics/icons/signal/signal_5.png"),
+    "cargo-bay should not show a 5x overlay")
+end)
+
+test("space recipe subgroups stay unbatched and badge-free", function()
+  local propeller = get_recipe("propeller")
+  assert_true(propeller ~= nil, "propeller missing")
+  assert_eq(get_result_amount(propeller, "propeller"), 1,
+    "space-processing propeller should stay 1x")
+  assert_eq(get_ingredient_amount(propeller, "steel-plate"), 10,
+    "space-processing propeller ingredients should stay unbatched")
+  assert_true(not has_icon_layer(propeller, "__base__/graphics/icons/signal/signal_5.png"),
+    "space-processing propeller should not show a 5x overlay")
+  assert_true(not has_icon_layer(propeller, "__base__/graphics/icons/signal/signal_1.png"),
+    "space-processing propeller should not show a 1x overlay")
+end)
+
+test("space platform buildings use the orbital permit as their only paperwork", function()
+  local permit_name = "orbital-infrastructure-permit"
+  local permit_icon = "__administratorio__/graphics/icons/orbital-infrastructure-permit.png"
+
+  for _, recipe_name in ipairs({"cargo-bay", "asteroid-collector", "crusher", "thruster"}) do
+    local saw_recipe = false
+    for _, candidate_name in ipairs({recipe_name, recipe_name .. "-regulated"}) do
+      local recipe = get_recipe(candidate_name)
+      if recipe then
+        saw_recipe = true
+        local target = recipe.normal or recipe
+        local paperwork_count = 0
+        local permit_count = 0
+        for _, ingredient in ipairs(target.ingredients or {}) do
+          local ingredient_name = ingredient.name or ingredient[1]
+          if shared.PAPERWORK_ITEMS[ingredient_name] then
+            paperwork_count = paperwork_count + 1
+            if ingredient_name == permit_name then
+              permit_count = permit_count + 1
+            end
+          end
+        end
+
+        assert_eq(paperwork_count, 1, candidate_name .. " should have exactly one paperwork ingredient")
+        assert_eq(permit_count, 1, candidate_name .. " should use only the orbital infrastructure permit")
+        assert_eq(get_ingredient_amount(target, permit_name), 1,
+          candidate_name .. " should consume one orbital infrastructure permit")
+        assert_true(not has_icon_layer(recipe, permit_icon),
+          candidate_name .. " recipe icon should not display its permit ingredient")
+      end
+    end
+
+    assert_true(saw_recipe, recipe_name .. " recipe missing")
+    assert_true(not has_icon_layer(data.raw.item[recipe_name], permit_icon),
+      recipe_name .. " item icon should not display the orbital permit badge")
+  end
+
+  for _, bootstrap_name in ipairs({"space-platform-foundation", "space-platform-starter-pack"}) do
+    assert_true(not has_ingredient(get_recipe(bootstrap_name), permit_name),
+      bootstrap_name .. " should remain permit-free bootstrap infrastructure")
+    local item = data.raw.item[bootstrap_name]
+      or data.raw["space-platform-starter-pack"][bootstrap_name]
+    if item then
+      assert_true(not has_icon_layer(item, permit_icon),
+        bootstrap_name .. " should not display the building permit badge")
+    end
+  end
+end)
+
+test("space platform starter pack stays unbatched at 1x", function()
+  local starter_pack = get_recipe("space-platform-starter-pack")
+  assert_true(starter_pack ~= nil, "space-platform-starter-pack missing")
+  assert_eq(get_result_amount(starter_pack, "space-platform-starter-pack"), 1,
+    "space-platform-starter-pack should stay 1x")
+  assert_eq(get_ingredient_amount(starter_pack, "space-platform-foundation"), 60,
+    "space-platform-starter-pack ingredients should stay unbatched")
+  assert_true(not has_icon_layer(starter_pack, "__base__/graphics/icons/signal/signal_1.png"),
+    "space-platform-starter-pack should not show a 1x overlay")
+  assert_true(not has_icon_layer(starter_pack, "__base__/graphics/icons/signal/signal_5.png"),
+    "space-platform-starter-pack should not show a 5x overlay")
+end)
+
+test("vanilla space age buildings stay unbatched at 1x", function()
+  local heating_tower = get_recipe("heating-tower")
+  assert_true(heating_tower ~= nil, "heating-tower missing")
+  assert_eq(get_result_amount(heating_tower, "heating-tower"), 1, "heating-tower should stay 1x")
+  assert_eq(get_ingredient_amount(heating_tower, "steel-plate"), 15, "heating-tower ingredients should stay unbatched")
+  assert_true(not has_icon_layer(heating_tower, "__base__/graphics/icons/signal/signal_1.png"),
+    "heating-tower should not show a 1x overlay")
+  assert_true(not has_icon_layer(heating_tower, "__base__/graphics/icons/signal/signal_5.png"),
+    "heating-tower should not show a 5x overlay")
+end)
+
+test("mod space age buildings stay unbatched at 1x", function()
+  local chromatic_printer = get_recipe("chromatic-printer-regulated")
+  assert_true(chromatic_printer ~= nil, "chromatic-printer-regulated missing")
+  assert_eq(get_result_amount(chromatic_printer, "chromatic-printer"), 1,
+    "chromatic-printer-regulated should stay 1x")
+  assert_eq(get_ingredient_amount(chromatic_printer, "steel-plate"), 20,
+    "chromatic-printer-regulated ingredients should stay unbatched")
+  assert_true(not has_icon_layer(chromatic_printer, "__base__/graphics/icons/signal/signal_1.png"),
+    "chromatic-printer-regulated should not show a 1x overlay")
+  assert_true(not has_icon_layer(chromatic_printer, "__base__/graphics/icons/signal/signal_5.png"),
+    "chromatic-printer-regulated should not show a 5x overlay")
 end)
 
 test("smelting-basic keeps only explicit batch recipes", function()
@@ -1115,49 +2127,31 @@ test("electric compacted rubble remains an unlocked alternate to the canonical b
   assert_eq(electric.factoriopedia_alternative, "compacted-rubble")
 end)
 
-test("electric furnace stays handcraftable; regulated copy uses management verbal work order", function()
-  local original = get_recipe("electric-furnace")
-  assert_true(original ~= nil, "electric-furnace missing")
-  assert_eq(original.category, "advanced-crafting", "electric-furnace should remain handcraftable, matching vanilla")
-  assert_true(has_ingredient(original, "management-approval-verbal"), "electric-furnace missing management-approval-verbal when handcrafted")
-  assert_true(not has_ingredient(original, "management-verbal-work-order"), "electric-furnace handcraft recipe should not use the regulated work-order form")
-
-  local regulated = get_recipe("electric-furnace-regulated")
-  assert_true(regulated ~= nil, "electric-furnace-regulated missing")
-  assert_eq(regulated.category, "advanced-crafting-regulated", "electric-furnace-regulated category")
-  assert_true(has_ingredient(regulated, "management-verbal-work-order"), "electric-furnace-regulated missing management-verbal-work-order")
-  assert_true(not has_ingredient(regulated, "construction-work-order"), "electric-furnace-regulated should not use construction-work-order")
+test("electric furnace recipe upgrades to management verbal paperwork", function()
+  local r = get_recipe("electric-furnace")
+  assert_true(r ~= nil, "electric-furnace missing")
+  assert_eq(r.category, "advanced-crafting-regulated", "electric-furnace category")
+  assert_true(has_ingredient(r, "management-verbal-work-order"), "electric-furnace missing management-verbal-work-order")
+  assert_true(not has_ingredient(r, "construction-work-order"), "electric-furnace should not use construction-work-order")
 end)
 
-test("oil refinery stays handcraftable and assembler-craftable, without specialist or operating paperwork", function()
-  local original = get_recipe("oil-refinery")
-  assert_true(original ~= nil, "oil-refinery missing")
-  assert_eq(original.category, "crafting", "oil-refinery should remain handcraftable, matching vanilla")
-  assert_true(has_ingredient(original, "construction-permit"), "oil-refinery missing construction-permit when handcrafted")
-  assert_true(not has_ingredient(original, "chemical-operator"), "oil-refinery should not require chemical-operator")
-  assert_true(not has_ingredient(original, "chemical-handling-work-order"), "oil-refinery should not require chemical-handling-work-order")
-
-  local regulated = get_recipe("oil-refinery-regulated")
-  assert_true(regulated ~= nil, "oil-refinery-regulated missing")
-  assert_eq(regulated.category, "crafting-regulated", "oil-refinery-regulated category")
-  assert_true(has_ingredient(regulated, "construction-work-order"), "oil-refinery-regulated missing construction-work-order")
-  assert_true(not has_ingredient(regulated, "chemical-operator"), "oil-refinery-regulated should not require chemical-operator")
-  assert_true(not has_ingredient(regulated, "chemical-handling-work-order"), "oil-refinery-regulated should not require chemical-handling-work-order")
+test("oil refinery is assembler-craftable without specialist or operating paperwork", function()
+  local r = get_recipe("oil-refinery")
+  assert_true(r ~= nil, "oil-refinery missing")
+  assert_eq(r.category, "crafting-regulated", "oil-refinery category")
+  assert_true(has_ingredient(r, "construction-work-order"), "oil-refinery missing construction-work-order")
+  assert_true(not has_ingredient(r, "chemical-operator"), "oil-refinery should not require chemical-operator")
+  assert_true(not has_ingredient(r, "chemical-handling-work-order"), "oil-refinery should not require chemical-handling-work-order")
+  assert_true(get_recipe("oil-refinery-regulated") == nil, "oil-refinery should use its canonical recipe as the regulated assembler recipe")
 end)
 
-test("engine units stay handcraftable at vanilla ingredients (plus carbon offset); regulated copy adds baseline paperwork", function()
-  local original = get_recipe("engine-unit")
-  assert_true(original ~= nil, "engine-unit missing")
-  assert_eq(original.category, "crafting", "engine-unit should remain handcraftable, matching vanilla")
-  assert_true(not has_ingredient(original, "work-order"), "engine-unit is T0 and should not require work-order when handcrafted")
-  assert_true(has_ingredient(original, "carbon-offset-certificate-basic"), "engine-unit missing carbon-offset-certificate-basic")
-
-  local regulated = get_recipe("engine-unit-regulated")
-  assert_true(regulated ~= nil, "engine-unit-regulated missing")
-  assert_eq(regulated.category, "crafting-regulated", "engine-unit-regulated category")
-  assert_true(has_ingredient(regulated, "work-order"), "engine-unit-regulated missing work-order")
-  assert_true(has_ingredient(regulated, "carbon-offset-certificate-basic"), "engine-unit-regulated missing carbon-offset-certificate-basic")
-  assert_true(not has_ingredient(regulated, "management-verbal-work-order"), "engine-unit-regulated should not use management-verbal-work-order")
+test("engine units use baseline paperwork plus carbon offsets", function()
+  local r = get_recipe("engine-unit")
+  assert_true(r ~= nil, "engine-unit missing")
+  assert_eq(r.category, "crafting-regulated", "engine-unit category")
+  assert_true(has_ingredient(r, "work-order"), "engine-unit missing work-order")
+  assert_true(has_ingredient(r, "carbon-offset-certificate-basic"), "engine-unit missing carbon-offset-certificate-basic")
+  assert_true(not has_ingredient(r, "management-verbal-work-order"), "engine-unit should not use management-verbal-work-order")
 end)
 
 test("regulated advanced assembler path stays available to both AM2 and AM3", function()
@@ -1244,6 +2238,66 @@ test("boiler and steam-engine use safety paperwork in 2x batches", function()
   assert_true(has_ingredient(steam_engine_regulated, "safety-work-order"), "steam-engine-regulated should require safety-work-order")
   assert_eq(get_result_amount(steam_engine, "steam-engine"), 2, "steam-engine should batch handcraft results at 2x")
   assert_eq(get_result_amount(steam_engine_regulated, "steam-engine"), 2, "steam-engine-regulated should produce 2 steam engines")
+end)
+
+test("Space Age uses one shared rocket-silo recipe on every planet", function()
+  local recipe = get_recipe("rocket-silo")
+  assert_true(recipe ~= nil, "rocket-silo missing")
+  assert_eq(recipe.surface_conditions, nil, "rocket-silo should be craftable on every planet")
+  assert_true(not has_ingredient(recipe, "taxpayer-money"),
+    "rocket-silo should not consume loose taxpayer money")
+  assert_eq(get_ingredient_amount(recipe, "government-grant"), 1,
+    "rocket-silo should consume one financed government grant")
+  assert_eq(get_ingredient_amount(recipe, "management-approval-written"), 1,
+    "rocket-silo should keep the shared written approval")
+  assert_true(not has_ingredient(recipe, "management-written-work-order"),
+    "rocket-silo should replace the regulated work order with its shared authorization")
+
+  for _, planet in ipairs({"vulcanus", "gleba", "fulgora", "aquilo"}) do
+    local variant_name = "rocket-silo-" .. planet
+    assert_eq(get_recipe(variant_name), nil, variant_name .. " should not exist")
+    assert_true(not tech_unlocks_recipe("rocket-silo", variant_name),
+      variant_name .. " should not be unlocked")
+  end
+end)
+
+test("Space Age keeps the admin desk on Nauvis", function()
+  local recipe = get_recipe("admin-station")
+  assert_true(recipe ~= nil, "admin-station missing")
+  assert_true(recipe.surface_conditions ~= nil, "admin-station should be surface-limited")
+  assert_eq(recipe.surface_conditions[1].property, "pressure", "admin-station should use Nauvis pressure")
+  assert_eq(recipe.surface_conditions[1].min, 1000, "admin-station should require Nauvis pressure")
+  assert_eq(recipe.surface_conditions[1].max, 1000, "admin-station should require Nauvis pressure")
+  assert_eq(recipe.surface_conditions[2].property, "gravity", "admin-station should use Nauvis gravity")
+  assert_eq(recipe.surface_conditions[2].min, 10, "admin-station should require Nauvis gravity")
+  assert_eq(recipe.surface_conditions[2].max, 10, "admin-station should require Nauvis gravity")
+  for _, planet in ipairs({"vulcanus", "gleba", "fulgora", "aquilo"}) do
+    assert_eq(get_recipe("admin-station-" .. planet), nil,
+      "admin-station must not gain a planet-specific recipe")
+  end
+end)
+
+test("Space Age securitizes taxpayer money only on Nauvis", function()
+  local recipe = get_recipe("treasury-bond")
+  assert_true(recipe ~= nil, "treasury-bond missing")
+  assert_true(recipe.surface_conditions ~= nil, "treasury-bond should be surface-limited")
+  assert_eq(recipe.surface_conditions[1].property, "pressure", "treasury-bond should use Nauvis pressure")
+  assert_eq(recipe.surface_conditions[1].min, 1000, "treasury-bond should require Nauvis pressure")
+  assert_eq(recipe.surface_conditions[1].max, 1000, "treasury-bond should require Nauvis pressure")
+  assert_eq(recipe.surface_conditions[2].property, "gravity", "treasury-bond should use Nauvis gravity")
+  assert_eq(recipe.surface_conditions[2].min, 10, "treasury-bond should require Nauvis gravity")
+  assert_eq(recipe.surface_conditions[2].max, 10, "treasury-bond should require Nauvis gravity")
+end)
+
+test("Space Age replaces slush-fund laundering with tourism revenue", function()
+  assert_eq(get_recipe("slush-fund-production"), nil,
+    "Space Age should not register slush-fund production")
+  assert_eq(get_recipe("tax-audit"), nil,
+    "Space Age should not register the taxpayer-money laundering payout")
+  assert_eq(technologies["creative-accounting"], nil,
+    "Space Age should not expose a technology whose only purpose is laundering")
+  assert_true(not tech_unlocks_recipe("eminent-domain-zoning", "slush-fund-production"),
+    "eminent-domain-zoning should not unlock slush funds in Space Age")
 end)
 
 test("taxpayer money is accepted by regular burners", function()
@@ -1352,7 +2406,7 @@ test("admin building recipes redirect Factoriopedia to regulated copies", functi
   assert_true(not regulated.hidden_in_factoriopedia, "printer-t1-regulated should remain visible in Factoriopedia")
 end)
 
-test("Factoriopedia recipe renames have prototype migrations", function()
+test("Factoriopedia recipe renames are covered by profile-independent prototype migrations", function()
   local migration_path = mod_root .. "migrations/0.5.12-factoriopedia-recipe-renames.json"
   local migration_file = assert(io.open(migration_path, "r"))
   local migration_text = migration_file:read("*a")
@@ -1377,14 +2431,24 @@ test("Factoriopedia recipe renames have prototype migrations", function()
   local migrated_count = 0
   for old_name, new_name in pairs(migrated_recipe_renames) do
     migrated_count = migrated_count + 1
-    assert_eq(
-      generated_recipe_renames[old_name],
-      new_name,
-      old_name .. " migration should correspond to a generated recipe rename"
-    )
+    local active_rename = generated_recipe_renames[old_name]
+    if active_rename ~= nil then
+      assert_eq(
+        active_rename,
+        new_name,
+        old_name .. " migration should correspond to its active generated recipe rename"
+      )
+    else
+      assert_eq(
+        get_recipe(old_name),
+        nil,
+        old_name .. " may be absent from the generated map only when this feature profile omits it"
+      )
+    end
   end
 
-  assert_eq(migrated_count, generated_count, "recipe migration count should match generated rename count")
+  assert_true(migrated_count >= generated_count,
+    "the profile-independent migration should cover every active rename")
   assert_eq(migrated_recipe_renames["charcoal-production"], "coal", "coal recipe rename must be migrated")
 end)
 
@@ -1406,6 +2470,147 @@ test("all recipe ingredient lists are duplicate-free", function()
     assert_unique(recipe.normal, name .. ".normal")
     assert_unique(recipe.expensive, name .. ".expensive")
   end
+end)
+
+test("admin building regulated recipes batch and show overlays", function()
+  local printer = get_recipe("printer-t1-regulated")
+  assert_true(printer ~= nil, "printer-t1-regulated missing")
+  assert_eq(get_ingredient_amount(printer, "provisional-work-order"), 1, "printer-t1-regulated should keep combined paperwork as a fixed cost")
+  assert_eq(get_result_amount(printer, "printer-t1"), 2, "printer-t1-regulated should use the 2x production-building default")
+  assert_true(has_icon_layer(printer, "__base__/graphics/icons/signal/signal_2.png"),
+    "printer-t1-regulated should show the 2x overlay")
+  assert_true(not has_icon_layer(printer, "__administratorio__/graphics/icons/provisional-work-order.png"),
+    "printer-t1-regulated should not display its paperwork ingredient as an icon overlay")
+
+  local pipe = get_recipe("pneumatic-pipe-regulated")
+  assert_true(pipe ~= nil, "pneumatic-pipe-regulated missing")
+  assert_eq(get_result_amount(pipe, "pneumatic-pipe"), 10, "pneumatic-pipe-regulated should use a 5x tool batch")
+  assert_true(has_icon_layer(pipe, "__base__/graphics/icons/signal/signal_5.png"),
+    "pneumatic-pipe-regulated should show the 5x overlay")
+
+  local intake = get_recipe("tube-intake-regulated")
+  assert_true(intake ~= nil, "tube-intake-regulated missing")
+  assert_eq(get_result_amount(intake, "tube-intake"), 5, "tube-intake-regulated should batch to 5")
+  assert_true(has_icon_layer(intake, "__base__/graphics/icons/signal/signal_5.png"),
+    "tube-intake-regulated should show the 5x overlay")
+end)
+
+test("space age intermediate recipes gain the expected chromatic and aquilo gates", function()
+  local electromagnetic = get_recipe("electromagnetic-plant")
+  assert_true(electromagnetic ~= nil, "electromagnetic-plant missing")
+  assert_true(has_ingredient(electromagnetic, "blank-magenta-form"),
+    "electromagnetic-plant should gain blank-magenta-form for holmium use")
+
+  local asteroid_collector = get_recipe("asteroid-collector")
+  assert_true(asteroid_collector ~= nil, "asteroid-collector missing")
+  assert_true(not has_ingredient(asteroid_collector, "cyan-magenta-form"),
+    "asteroid collectors should stay available before any planet-specific paperwork")
+
+  local cargo_bay = get_recipe("cargo-bay")
+  assert_true(cargo_bay ~= nil, "cargo-bay missing")
+  assert_true(not has_ingredient(cargo_bay, "cyan-magenta-form"),
+    "cargo bays should stay available before any planet-specific paperwork")
+
+  local dual = get_recipe("dual-planet-widget")
+  assert_true(dual ~= nil, "dual-planet-widget missing")
+  assert_true(has_ingredient(dual, "cyan-yellow-form"),
+    "dual-planet-widget should collapse dual-planet paperwork into cyan-yellow-form")
+  assert_true(not has_ingredient(dual, "blank-cyan-form"),
+    "dual-planet-widget should not keep separate blank-cyan-form once cyan-yellow-form is available")
+  assert_true(not has_ingredient(dual, "blank-yellow-form"),
+    "dual-planet-widget should not keep separate blank-yellow-form once cyan-yellow-form is available")
+
+  local quantum = get_recipe("quantum-processor")
+  assert_true(quantum ~= nil, "quantum-processor missing")
+  assert_true(has_ingredient(quantum, "unified-operations-charter"),
+    "quantum-processor should gain unified-operations-charter as the top-tier multicolor gate")
+  assert_true(not has_ingredient(quantum, "blank-cyan-form"),
+    "quantum-processor should not keep separate blank-cyan-form once unified multicolor paperwork is used")
+  assert_true(not has_ingredient(quantum, "blank-yellow-form"),
+    "quantum-processor should not keep separate blank-yellow-form once unified multicolor paperwork is used")
+  assert_true(not has_ingredient(quantum, "blank-magenta-form"),
+    "quantum-processor should not keep separate blank-magenta-form once unified multicolor paperwork is used")
+
+  for _, recipe_name in ipairs({"fusion-reactor", "fusion-generator", "mech-armor"}) do
+    local recipe = get_recipe(recipe_name)
+    assert_true(recipe ~= nil, recipe_name .. " missing")
+    assert_true(has_ingredient(recipe, "trichromatic-permit"),
+      recipe_name .. " should require trichromatic-permit as a three-planet convergence gate")
+    assert_true(not has_ingredient(recipe, "blank-cyan-form"),
+      recipe_name .. " should not keep separate blank-cyan-form once trichromatic paperwork is used")
+    assert_true(not has_ingredient(recipe, "blank-yellow-form"),
+      recipe_name .. " should not keep separate blank-yellow-form once trichromatic paperwork is used")
+    assert_true(not has_ingredient(recipe, "blank-magenta-form"),
+      recipe_name .. " should not keep separate blank-magenta-form once trichromatic paperwork is used")
+  end
+
+  local promethium = get_recipe("promethium-science-pack")
+  assert_true(promethium ~= nil, "promethium-science-pack missing")
+  assert_true(has_ingredient(promethium, "promethium-research-charter"),
+    "promethium science should require a shattered-planet research charter")
+
+  local lithium = get_recipe("lithium")
+  assert_true(has_ingredient(lithium, "cyan-yellow-form"),
+    "lithium should require cyan-yellow-form as the first Aquilo convergence gate")
+  local lithium_plate = get_recipe("lithium-plate")
+  assert_true(has_ingredient(lithium_plate, "cyan-yellow-form"),
+    "lithium-plate should require cyan-yellow-form")
+  local fluoroketone = get_recipe("fluoroketone")
+  assert_true(has_ingredient(fluoroketone, "cryogenic-operations-license"),
+    "fluoroketone should require cryogenic-operations-license")
+  local cooling = get_recipe("fluoroketone-cooling")
+  assert_true(has_ingredient(cooling, "cryogenic-operations-license"),
+    "fluoroketone-cooling should require cryogenic-operations-license")
+  local cryogenic = get_recipe("cryogenic-plant")
+  assert_true(has_ingredient(cryogenic, "cryogenic-operations-license"),
+    "cryogenic-plant should require cryogenic-operations-license")
+end)
+
+test("first platform infrastructure and basic asteroid crushing stay pre-planet", function()
+  for _, recipe_name in ipairs({
+    "space-platform-foundation",
+    "space-platform-starter-pack",
+    "cargo-bay",
+    "asteroid-collector",
+    "crusher",
+    "thruster",
+    "metallic-asteroid-crushing",
+    "carbonic-asteroid-crushing",
+    "oxide-asteroid-crushing",
+  }) do
+    local recipe = get_recipe(recipe_name)
+    assert_true(recipe ~= nil, recipe_name .. " missing")
+    assert_no_planet_specific_paperwork(recipe, recipe_name)
+    assert_true(not has_ingredient(recipe, "asteroid-processing-docket"),
+      recipe_name .. " should not require post-space-science asteroid paperwork")
+  end
+
+  local advanced_crushing = get_recipe("advanced-metallic-asteroid-crushing")
+  assert_true(advanced_crushing ~= nil, "advanced-metallic-asteroid-crushing missing")
+  assert_true(has_ingredient(advanced_crushing, "asteroid-processing-docket"),
+    "advanced asteroid crushing should require asteroid-processing-docket")
+
+  local reprocessing = get_recipe("metallic-asteroid-reprocessing")
+  assert_true(reprocessing ~= nil, "metallic-asteroid-reprocessing missing")
+  assert_true(has_ingredient(reprocessing, "asteroid-processing-docket"),
+    "asteroid reprocessing should require asteroid-processing-docket")
+end)
+
+test("pentapod egg spoil trigger notifies runtime to unpacify hatchlings", function()
+  local effects = data.raw.item["pentapod-egg"].spoil_to_trigger_result.trigger.action_delivery.source_effects
+  local found = false
+  for _, effect in ipairs(effects) do
+    if effect.type == "script" and effect.effect_id == "administratorio-pentapod-egg-hatch" then
+      found = true
+      break
+    end
+  end
+  assert_true(found, "pentapod egg spoil trigger should include the hatchling runtime script effect")
+end)
+
+test("pentapod egg duplication remains much slower than spore harvesting", function()
+  assert_eq(data.raw.recipe["pentapod-egg"].energy_required, 60,
+    "egg duplication should be slowed from vanilla's 15 seconds to 60 seconds")
 end)
 
 -------------------------------------------------------------------------------

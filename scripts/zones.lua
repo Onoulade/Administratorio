@@ -70,6 +70,28 @@ function M.zone_area_is_clear(surface, bounds, exclude_entity)
   return true
 end
 
+local function destroy_corner_blockers_in_footprint(surface, footprint)
+  local blockers = surface.find_entities_filtered{
+    name = CORNER_BLOCKER_NAME,
+    area = {footprint.left_top, footprint.right_bottom}
+  }
+  for _, blocker in ipairs(blockers) do
+    if blocker.valid then blocker.destroy() end
+  end
+end
+
+local function clear_desk_zone_storage(desk_id, zone)
+  if zone and zone.footprint and game and game.surfaces then
+    for _, surface in pairs(game.surfaces) do
+      destroy_corner_blockers_in_footprint(surface, zone.footprint)
+    end
+  end
+  storage.desk_zones[desk_id] = nil
+  if storage.desk_grid_slots then storage.desk_grid_slots[desk_id] = nil end
+  if storage.desk_occupant_counts then storage.desk_occupant_counts[desk_id] = nil end
+  if storage.desk_return_positions then storage.desk_return_positions[desk_id] = nil end
+end
+
 function M.zone_overlaps_existing(bounds, exclude_desk_id)
   for desk_id, zone in pairs(storage.desk_zones) do
     if desk_id ~= exclude_desk_id and zone.bounds then
@@ -114,13 +136,7 @@ function M.create_corner_blockers(surface, footprint, force)
 end
 
 function M.destroy_corner_blockers(surface, footprint)
-  local blockers = surface.find_entities_filtered{
-    name = CORNER_BLOCKER_NAME,
-    area = {footprint.left_top, footprint.right_bottom}
-  }
-  for _, blocker in ipairs(blockers) do
-    if blocker.valid then blocker.destroy() end
-  end
+  destroy_corner_blockers_in_footprint(surface, footprint)
 end
 
 function M.get_queue_pos(desk)
@@ -417,20 +433,10 @@ end
 function M.cleanup_desk_zone(desk_id)
   local zone = storage.desk_zones[desk_id]
   if not zone or not zone.bounds then
-    storage.desk_zones[desk_id] = nil
-    if storage.desk_grid_slots then storage.desk_grid_slots[desk_id] = nil end
-    if storage.desk_return_positions then storage.desk_return_positions[desk_id] = nil end
+    clear_desk_zone_storage(desk_id, zone)
     return
   end
-  for _, surface in pairs(game.surfaces) do
-    if zone.footprint then
-      M.destroy_corner_blockers(surface, zone.footprint)
-    end
-  end
-  storage.desk_zones[desk_id] = nil
-  if storage.desk_grid_slots then storage.desk_grid_slots[desk_id] = nil end
-  if storage.desk_occupant_counts then storage.desk_occupant_counts[desk_id] = nil end
-  if storage.desk_return_positions then storage.desk_return_positions[desk_id] = nil end
+  clear_desk_zone_storage(desk_id, zone)
 end
 
 return M

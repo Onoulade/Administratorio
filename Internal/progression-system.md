@@ -1,12 +1,8 @@
 # Administratorio Progression Ledger
 
-> **Note:** This file tracks the actual progression model implemented by the code. For broader documentation, see the `Internal/docs/` directory.
-
 Derived from the code in `prototypes/`, `data-final-fixes.lua`, `overrides/vanilla.lua`, and the runtime scripts.
 
-## Release Status
-
-Administratorio is in beta: the full progression arc is expected to be playable, and this ledger should be treated as the reference for checking late-game balance, migration behavior, and remaining polish issues before stable release.
+This file tracks the actual progression model implemented by the mod, not just the intended design.
 
 ## Core Loops
 
@@ -28,10 +24,10 @@ Administratorio is in beta: the full progression arc is expected to be playable,
 
 1. Craft a `lab` to trigger vanilla `automation-science-pack`.
 2. That unlocks `automation-science-pack` and, via mod hook, `research-grant-approval-production`.
-3. Produce `administrative-science-pack` at the `office-desk`.
+3. Produce `automation-science-pack`.
 4. Research `automation` to unlock `work-order-production` and the early combined work-order recipes.
 5. Research `administrative-science-research` to unlock `administrative-science-pack-production`.
-6. Research `printing-technology` to unlock `printer-t1`.
+6. Produce `administrative-science-pack` at the `office-desk`.
 
 ### Bureaucracy loop
 
@@ -44,20 +40,16 @@ Administratorio is in beta: the full progression arc is expected to be playable,
 
 | Building | Category / role | Notes |
 | --- | --- | --- |
-| `office-desk` | `bureaucracy-registration` | Base forms, approvals, work-orders, science, excuses, bonds input chain, verified certificates, environmental permits |
-| `resolution-office` | `bureaucracy-resolution`, `resolution-handcraft` | Complaint-only: filing / case / brief / final resolution recipes |
+| `office-desk` | `bureaucracy-registration` | Base forms, approvals, work-orders, science, excuses, bonds input chain |
+| `resolution-office` | `bureaucracy-resolution`, `bureaucratic-bootstrap` | All complaint filing / case / final recipes plus legacy brief compatibility crafts; now also covers the shared bootstrap complaint filing entry points |
 | `mechanical-printer` | `printing` | Early printer, burner powered |
 | `printer-t1` | `printing`, `printing-workorder` | Midgame printer |
-| `printer-t2` | `printing`, `printing-advanced`, `printing-workorder` | Copying and high-throughput printing; managed by biter station |
+| `printer-t2` | `printing`, `printing-advanced`, `printing-workorder` | Copying and high-throughput printing |
 | `greenhouse` | `admin-greenhouse` | Renewable wood, coffee discovery, coffee cultivation |
 | `corporate-breakroom` | `watercooler-gossip` | Coffee, gossip, good excuses, verbal approvals |
 | `propaganda-distillery` | `propaganda-distillery` | Lie, misinformation, slush fund, justification chain |
-| `union-headquarters` | `union-negotiation`, `bureaucracy-policy` | Union approval, grants, narrative, written approvals, policy work, tax audits |
-| `admin-station` | storage + complaint desk | Holds tickets, resolved items, and payouts. inventory_size = 20 |
-| `biter-station` | biter dispatch | Dispatches workers to managed buildings within 30-tile radius; four side coffee entrances for night work |
-| `biterport` | biter-logistics | Walking-worker construction/logistics network; four side coffee entrances for night work |
-| `formation-center` | specialist-training | Trains Union Delegates, Chemical Operators, Nuclear Technicians |
-| `field-office` | early-worker | Summons biters from nearby nests (200 tiles) as one-per-craft-cycle workers |
+| `union-headquarters` | `union-negotiation`, `bureaucracy-policy` | Union approval, grants, verified certificates, narrative, written approvals, policy work, tax audits |
+| `admin-station` | storage + complaint desk | Holds tickets, resolved items, and payouts |
 
 ## Assembler Form Tiers
 
@@ -79,34 +71,82 @@ Administratorio is in beta: the full progression arc is expected to be playable,
 | Chemistry | `chemical-handling-work-order` | Chemical-plant operating document; no longer shares assembler `work-order` |
 | Centrifuging | `radiological-work-order` | Centrifuge operating document built from chemical paperwork and written approval |
 
-## Biter Station Managed Buildings
+## Actual Tech Ladder
 
-Managed by `biter-station`:
-- `union-headquarters`
-- `propaganda-distillery`
-- `corporate-breakroom`
-- `centrifuge`
-- `oil-refinery`
-- `printer-t2`
+### Trigger and red-tech stage
 
-## Runtime Biter System
+| Step | Unlock source | Important outputs |
+| --- | --- | --- |
+| Mine `redundant-rubble` | `discovery-redundant-rubble` | `provisional-approval-production`, `burner-mining-drill` |
+| Mine `bullshit-ore` | `discovery-bullshit` | `dubious-data-refining`, `basic-excuse-production` |
+| Craft `lab` | vanilla `automation-science-pack` | `automation-science-pack`, `research-grant-approval-production` |
+| Research `automation` | vanilla | `assembling-machine-1`, `work-order-production`, `safety-work-order-production`, `construction-work-order-production`, `research-grant-work-order-production` |
+| Research `administrative-science-research` | custom | `administrative-science-pack-production` |
+| Research `printing-technology` | custom | `printer-t1` |
 
-| Script | Responsibility |
-| --- | --- |
-| `scripts/biters.lua` | Biter routing, registration, resolution, protest logic |
-| `scripts/biters_protests.lua` | Protest system: targeting, wandering, pacification |
-| `scripts/biters_rendering.lua` | Biter rendering overlays, protest tints, text labels |
-| `scripts/hired_biter.lua` | Controllable hired biter field agents |
-| `scripts/biter_station.lua` | Biter Employment Office dispatch system |
-| `scripts/biterport.lua` | Walking-worker logistics/construction network |
-| `scripts/field_office.lua` | Early-game biter summoning from nests |
-| `scripts/rideable_biter.lua` | Personal transport powered by taxpayer money |
-| `scripts/frustration.lua` | Individual biter inspection GUI |
-| `scripts/working_hours.lua` | Building shutdown at night |
-| `scripts/trains.lua` | Transit permit chest and authorization system |
-| `scripts/pneumatic.lua` | Pneumatic tube network (signal-chain, not fluid-based) |
-| `scripts/zones.lua` | Desk waiting zone management |
-| `scripts/regulated_unlocks.lua` | Runtime technology effect propagation |
+### Green-tech stage
+
+| Tech | Main unlocks | Progression meaning |
+| --- | --- | --- |
+| `administrative-bureaucracy` | `greenhouse`, `greenhouse-wood` | Early red-science renewable wood bootstrap |
+| `littering-resolution` | `crappy-report-production`, `filing-littering`, `littering-final` | First spitter support |
+| `pneumatic-form-transport` | `compacted-rubble-production`, pneumatic buildings | Form logistics and rubble compression |
+| `local-precedents` | `printer-t2`, copy recipes, `useless-documentation-production`, `form-27b-6` | Real midgame paperwork acceleration |
+| `streamlined-work-orders` | direct draft-to-work-order printing | Throughput upgrade for early combined forms |
+| `industrial-propaganda` | distillery, lie / misinformation chain, coffee discovery, blank directives | Opens the true admin economy |
+
+### Chemical and late stage
+
+| Tech | Main unlocks | Progression meaning |
+| --- | --- | --- |
+| `environmental-compliance` | breakroom, coffee refining, verbal approvals, treasury bonds, petrochemical permit, smog + hazmat resolution, eviction notices | First real funding, coffee economy, and process-industry permitting |
+| `health-and-safety` | union HQ, justification, narrative, written approvals, radiological work order, government grants | Opens late-form, centrifuge paperwork, and grant chain |
+| `board-meetings` | written management proposal + heavy printer approval pass | Opens the executive committee layer inside Union HQ |
+| `eminent-domain-zoning` | white paper, policy, verified certificates, noise + loitering resolution, slush fund | High-bureaucracy policy tier |
+| `federal-regulation` | regulation | Formal law layer for the final complaint tier |
+| `creative-accounting` | tax audit | Converts slush funds back into official revenue through a dedicated late-game funding loop |
+| `constitutional-law` | unemployment + vagrancy resolution | Final complaint tier |
+
+## Complaint Unlock Ladder
+
+| Complaint pair | Available after | Recipe depth |
+| --- | --- | --- |
+| `landscape` | start | filing -> final |
+| `littering` | `littering-resolution` | filing -> final |
+| `smog` + `hazmat` | `environmental-compliance` | filing -> case -> final |
+| `noise` + `loitering` | `eminent-domain-zoning` | filing -> case -> final |
+| `unemployment` + `vagrancy` | `constitutional-law` | filing -> case -> final |
+
+### Runtime complaint generation
+
+| Enemy | Complaint count | Max tier |
+| --- | --- | --- |
+| small biter / spitter | 1 | tier 1 |
+| medium biter / spitter | 3 | tier 2 |
+| big biter / spitter | 6 | tier 3 |
+| behemoth biter / spitter | 10 | tier 4 |
+
+Frustration threshold is `600` seconds. Protesters disable a random player building until pacified.
+`promise` capsules now pacify a protester for up to `60` seconds while it retries to find an open desk. If no desk frees up before that timer expires, the protest resumes.
+
+## Funding Chain
+
+1. Resolve biter complaints.
+2. Receive `taxpayer-money`.
+3. Convert to `treasury-bond`.
+4. Build the first `union-headquarters`.
+5. Convert to `government-grant`.
+6. Spend grants on Union HQ policy work, late modules, and complaint chains.
+7. `tax-audit` launders `slush-fund` plus paperwork back into extra `taxpayer-money`.
+
+## Coffee / Propaganda / Policy Chain
+
+1. `greenhouse-discovery` gives the first `coffee-bean` at 10% probability while returning some of the input `wood`.
+2. `coffee-plantation` bootstraps bean multiplication.
+3. `coffee-refining` turns `coffee-bean` + `water` into `liquid-coffee`.
+4. `politician-fluid-refining` makes `lie`.
+5. `misinformation-production` + `credentials-production` + `data-production` build the admin-intelligence layer.
+6. `justification` -> `narrative` -> `white-paper` -> `policy` -> `regulation` is the late chain.
 
 ## Important Structural Bottlenecks
 
@@ -140,17 +180,17 @@ Managed by `biter-station`:
 - `paper` is foundational.
 - On low-tree starts, early paper and printer throughput are map sensitive until greenhouse wood is available.
 
-## Current Implementation Notes (Developer Reference)
+## Current Implementation Mismatches Worth Remembering
+
+These are not "design intent" notes. They are current-code notes.
 
 - `administrative-science-pack-production` is unlocked by `administrative-science-research`, not by `administrative-bureaucracy`.
 - `administrative-bureaucracy` now sits on red science only and no longer depends on `printing-technology`, so greenhouse wood arrives before the admin-science printer ramp.
 - `safety-waiver-draft`, `safety-waiver-printing`, `construction-permit-draft`, and `construction-permit-printing` are enabled from the start.
 - Because of that, T1 and T2 form production is front-loaded instead of being unlocked by later bureaucracy techs.
-- `filing-landscape` uses the `resolution-handcraft` category so it's handcraftable by the player and craftable in the resolution office. The `office-desk` has `bureaucratic-bootstrap` for starter paperwork (excuses, promises, drafts, waivers), but the resolution office is complaint-only.
+- `filing-landscape` still lives in `bureaucratic-bootstrap`, but the `resolution-office` now also has that category so it still handles the full complaint chain. The `office-desk` continues to share `bureaucratic-bootstrap`, but complaint processing is centered on the `resolution-office`.
 - Legacy `brief-*` recipes still exist for save compatibility, but normal progression no longer routes through them.
-- `administrative-bureaucracy` display string has been renamed to "Wood Production" (v0.3.1).
-- Pneumatic tubes reworked from fluid-based transport to signal-chain in v0.3.0.
-- Legacy directional admin station variants (admin-station-north/east/west) removed in v0.3.0.
+- `assembling-machine-3` only keeps regulated categories in `data-final-fixes.lua`, even though shared comments describe AM3 as a reward that should also keep original categories.
 
 ## Files To Re-check When Rebalancing
 
@@ -158,17 +198,7 @@ Managed by `biter-station`:
 - `prototypes/recipe/paperwork.lua`
 - `prototypes/recipe/resolution.lua`
 - `prototypes/recipe/economy.lua`
-- `prototypes/recipe/buildings.lua`
-- `prototypes/recipe/production.lua`
 - `data-final-fixes.lua`
 - `scripts/biters.lua`
-- `scripts/hired_biter.lua`
-- `scripts/biter_station.lua`
-- `scripts/biterport.lua`
-- `scripts/field_office.lua`
-- `scripts/rideable_biter.lua`
 - `scripts/constants.lua`
-- `scripts/working_hours.lua`
-- `scripts/pneumatic.lua`
-- `scripts/trains.lua`
 - `locale/en/config.cfg`

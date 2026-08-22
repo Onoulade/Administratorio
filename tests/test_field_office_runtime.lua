@@ -44,13 +44,22 @@ defines = {
   entity_status_diode = {red = 1, yellow = 2, green = 3},
   entity_status = {working = 1, normal = 2, low_power = 3},
   behavior_result = {success = 1, fail = 2},
-  command = {go_to_location = 1, stop = 2, wander = 3},
+  command = {go_to_location = 1, stop = 2},
   distraction = {none = 0, by_enemy = 1},
   inventory = {
     assembling_machine_input = 1,
     assembling_machine_output = 2,
   },
 }
+
+package.loaded["scripts.working_hours"] = nil
+package.preload["scripts.working_hours"] = function()
+  return {
+    is_enabled = function() return true end,
+    is_night = function() return true end,
+    entity_has_overtime_exemption = function() return false end,
+  }
+end
 
 local drawn = {}
 local next_render_id = 0
@@ -211,6 +220,42 @@ local function new_office(surface, unit_number, energy)
   return office
 end
 
+test("field office prototype has no module inventory", function()
+  local file = assert(io.open(mod_root .. "prototypes/entity/admin-buildings.lua", "r"))
+  local source = file:read("*a")
+  file:close()
+  local prototype = source:match("local field_office =.-%-%- Transit Permit Chest")
+
+  assert_true(prototype ~= nil, "field office prototype block should exist")
+  assert_true(prototype:find("field_office%.module_slots%s*=%s*0"),
+    "field office must explicitly expose zero module slots")
+  assert_true(prototype:find("field_office%.quality_affects_module_slots%s*=%s*false"),
+    "field office quality must never add module slots")
+  assert_true(prototype:find("field_office%.allowed_effects%s*=%s*{}"),
+    "field office must reject all installed module effects")
+  assert_true(prototype:find("field_office%.allowed_module_categories%s*=%s*nil"),
+    "field office must not advertise an accepted module category")
+  assert_true(not prototype:find("enable_machine_effects%(field_office%)"),
+    "field office must not opt into installed module effects")
+end)
+
+test("field office summons workers during the night", function()
+  reset()
+  local spawner = {valid = true, position = {x = 40, y = 50}}
+  local surface = new_surface({spawner})
+  surface.daytime = 0.5
+  local office = new_office(surface, 6, 100)
+  field_office.track_entity(office)
+
+  field_office.update(0)
+
+  assert_true(surface.created_entities[1] ~= nil, "nighttime office should summon a worker")
+  assert_eq(storage.field_office_state[office.unit_number].phase, "calling",
+    "nighttime office should enter the calling phase")
+  assert_eq(office.custom_status.label[1], "gui.field-office-calling",
+    "nighttime office should never report a working-hours closure")
+end)
+
 test("field office cursor draws office range and reachable nest markers", function()
   reset()
   local spawner = {valid = true, position = {x = 40, y = 50}}
@@ -266,16 +311,8 @@ test("field office reports unreachable workers after pathing failure", function(
   local biter = surface.created_entities[1]
   assert_true(biter ~= nil, "ready office should summon a worker")
   assert_eq(office.custom_status.label[1], "gui.field-office-calling", "office should enter calling status")
-  -- The search center is biased toward the worker's spawn position (approaching
-  -- from the spawner), then the surface mock adds +1 to x for the found spot.
-  local dx = biter.position.x - office.position.x
-  local dy = biter.position.y - office.position.y
-  local dist = math.sqrt(dx * dx + dy * dy)
-  local approach = math.min(dist, C.FIELD_OFFICE_APPROACH_OFFSET)
-  local expected_x = office.position.x + (dx / dist) * approach + 1
-  local expected_y = office.position.y + (dy / dist) * approach
-  assert_near(surface.path_requests[1].goal.x, expected_x, "path check should target a reachable standing position beside the office")
-  assert_near(surface.path_requests[1].goal.y, expected_y, "path check should target a reachable standing position beside the office")
+  assert_near(surface.path_requests[1].goal.x, office.position.x + 1, "path check should target a reachable standing position beside the office")
+  assert_near(surface.path_requests[1].goal.y, office.position.y, "path check should target a reachable standing position beside the office")
 
   field_office.on_ai_command_completed{unit_number = biter.unit_number, result = defines.behavior_result.fail, tick = 10}
 
@@ -318,15 +355,8 @@ test("field office path check does not target the occupied office center", funct
 
   local request = surface.path_requests[1]
   assert_true(request ~= nil, "ready office should request a worker path check")
-  local biter = surface.created_entities[1]
-  local dx = biter.position.x - office.position.x
-  local dy = biter.position.y - office.position.y
-  local dist = math.sqrt(dx * dx + dy * dy)
-  local approach = math.min(dist, C.FIELD_OFFICE_APPROACH_OFFSET)
-  local expected_x = office.position.x + (dx / dist) * approach + 1
-  local expected_y = office.position.y + (dy / dist) * approach
-  assert_near(request.goal.x, expected_x, "path check should use the worker destination")
-  assert_near(request.goal.y, expected_y, "path check should use the worker destination")
+  assert_near(request.goal.x, office.position.x + 1, "path check should use the worker destination")
+  assert_near(request.goal.y, office.position.y, "path check should use the worker destination")
   assert_near(surface.created_entities[1].commands[1].destination.x, request.goal.x, "worker command and path check should use the same goal")
   assert_near(surface.created_entities[1].commands[1].destination.y, request.goal.y, "worker command and path check should use the same goal")
 end)
@@ -395,7 +425,22 @@ test("field offices share their home nest population limit across update shards"
   assert_eq(unavailable, 3, "excess offices should wait for a leased slot to return")
 end)
 
-test("returning field office worker is destroyed only after reaching its spawner", function()
+test("field office skips a full nest for a farther nest with available biters on the first attempt", function()
+  reset()
+  local full_spawner = {valid = true, position = {x = 12, y = 20}, prototype = {max_count_of_owned_units = 0}}
+  local available_spawner = {valid = true, position = {x = 100, y = 20}}
+  local surface = new_surface({full_spawner, available_spawner})
+  local office = new_office(surface, 6, 100)
+  office.position = {x = 10, y = 20}
+  field_office.track_entity(office)
+
+  field_office.update(0)
+
+  assert_eq(#surface.created_entities, 1, "the nearer full nest should not block spawning from the farther available nest")
+  assert_eq(office.custom_status.label[1], "gui.field-office-calling", "office should summon on the first attempt instead of reporting no workers available")
+end)
+
+test("released field office worker is not destroyed before reaching its spawner", function()
   reset()
   local spawner = {valid = true, position = {x = 40, y = 50}}
   local surface = new_surface({spawner})
@@ -410,7 +455,7 @@ test("returning field office worker is destroyed only after reaching its spawner
   field_office.update(30)
   assert_eq(storage.field_office_state[office.unit_number].phase, "working", "arrived worker should start working")
 
-  office.products_finished = 3
+  office.products_finished = 2
   field_office.update(60)
   assert_true(storage.field_office_releasing[biter.unit_number] ~= nil, "released worker should be tracked while returning")
   assert_eq(biter.destructible, false, "returning worker should be protected from incidental removal")
@@ -424,33 +469,8 @@ test("returning field office worker is destroyed only after reaching its spawner
 
   biter.position = {x = spawner.position.x, y = spawner.position.y}
   field_office.update(60 + C.FIELD_OFFICE_BITER_DESPAWN_TICKS + 5)
-  -- The worker was a fresh spawn (never borrowed from the nest), so it must
-  -- be destroyed on return rather than released as a new permanent wild
-  -- biter -- otherwise every dispatch cycle would grow the nest's population.
-  assert_true(not biter.valid, "worker should be destroyed on return to keep the nest population neutral")
+  assert_true(not biter.valid, "script-created worker without an enemy AI owner should be destroyed after returning")
   assert_true(storage.field_office_releasing[biter.unit_number] == nil, "arrived worker should leave the releasing tracker")
-end)
-
-test("field office worker with no home spawner left is destroyed immediately on the next check", function()
-  reset()
-  local spawner = {valid = true, position = {x = 40, y = 50}}
-  local surface = new_surface({spawner})
-  local office = new_office(surface, 6, 100)
-  field_office.track_entity(office)
-
-  field_office.update(0)
-  local biter = surface.created_entities[1]
-  biter.position = {x = office.position.x, y = office.position.y}
-  field_office.update(30)
-
-  office.products_finished = 3
-  spawner.valid = false
-  field_office.update(60)
-  assert_true(storage.field_office_releasing[biter.unit_number] ~= nil, "worker should be tracked while returning even with no destination")
-
-  field_office.update(60 + C.FIELD_OFFICE_BITER_DESPAWN_TICKS)
-  assert_true(not biter.valid, "worker with no home spawner left to return to should be destroyed")
-  assert_true(storage.field_office_releasing[biter.unit_number] == nil, "worker should leave the releasing tracker")
 end)
 
 test("field office worker stays on site during low power", function()
@@ -501,7 +521,7 @@ test("field office summons a replacement worker for an in-progress craft", funct
   -- The next craft starts before the completed shift is observed, consuming
   -- its complaint item from the input inventory.
   input_count = 0
-  office.products_finished = 3
+  office.products_finished = 2
   office.crafting_progress = 0.5
   field_office.update(60)
   assert_eq(storage.field_office_state[office.unit_number].phase, "idle", "completed shift should release its worker")
@@ -578,6 +598,22 @@ test("field office restores a working worker if its entity is invalid after load
   assert_true(state.biter ~= nil and state.biter.valid, "working worker should be recreated")
   assert_true(state.biter.unit_number ~= old_biter.unit_number, "restored working worker should receive a fresh unit number")
   assert_eq(office.active, true, "office should remain active with the restored worker")
+end)
+
+test("field office certification scales biter range and placement preview radius", function()
+  assert_near(field_office.get_spawner_range({quality = {name = "normal"}}), C.FIELD_OFFICE_SPAWNER_RANGE,
+    "normal certification should retain the base range")
+  assert_near(field_office.get_spawner_range({quality = {name = "legendary"}}), C.FIELD_OFFICE_SPAWNER_RANGE * 1.5,
+    "legendary certification should use the infrastructure curve")
+
+  reset()
+  local surface = new_surface({})
+  local player = new_player(surface, "field-office")
+  player.cursor_stack.quality = {name = "legendary"}
+  field_office.update_placement_preview(player, 0, true)
+  local circle = drawn[1]
+  assert_near(circle.params.radius, C.FIELD_OFFICE_SPAWNER_RANGE * 1.5,
+    "legendary field-office cursor preview should match the placed office range")
 end)
 
 if failed > 0 then

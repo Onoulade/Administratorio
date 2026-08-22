@@ -190,6 +190,32 @@ local function active_worker()
   return nil
 end
 
+test("platform industrial printers use onboard authorization instead of biter dispatch", function()
+  storage = {}
+  package.loaded["scripts.biter_station"] = nil
+  local surface = new_surface()
+  surface.platform = {valid = true}
+  local force = {name = "player", valid = true, technologies = {}, set_cease_fire = function() end}
+  game = {
+    tick = 0,
+    surfaces = {surface},
+    forces = {player = force},
+    create_force = function(name)
+      local created = {name = name, valid = true, technologies = {}, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  local building = new_managed_building(surface, force)
+  local biter_station = require("scripts.biter_station")
+
+  biter_station.track_managed_building(building)
+
+  assert_true(building.active, "platform industrial printer should remain active")
+  assert_true(storage.managed_building_registry[building.unit_number] == nil,
+    "platform industrial printer should not wait in the terrestrial dispatch registry")
+end)
+
 test("biter station restores active worker if its entity is invalid after load", function()
   storage = {}
   package.loaded["scripts.biter_station"] = nil
@@ -323,6 +349,59 @@ test("labor efficiency charges only for the buildings assigned to a trip", funct
   active.phase_departed = true
   biter_station.update(30)
   assert_eq(station.inventory.get_item_count("taxpayer-money"), 0, "completed one-building trip should charge exactly one taxpayer money")
+end)
+
+test("worker skips an unreachable second building instead of freezing in place", function()
+  storage = {}
+  package.loaded["scripts.biter_station"] = nil
+  local surface = new_surface()
+  local force = {name = "player", valid = true, set_cease_fire = function() end, technologies = {}}
+  game = {
+    tick = 0,
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", valid = true, set_cease_fire = function() end},
+      neutral = {name = "neutral", valid = true, set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, valid = true, set_cease_fire = function() end, technologies = {}}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biter_station = require("scripts.biter_station")
+  local station = new_station(surface, force)
+  local building_one = new_managed_building(surface, force, {unit_number = 21, position = {x = 2, y = 0}})
+  local building_two = new_managed_building(surface, force, {unit_number = 22, position = {x = 15, y = 0}})
+  building_two.bounding_box = {
+    left_top = {x = 14.5, y = -0.5},
+    right_bottom = {x = 15.5, y = 0.5},
+  }
+  biter_station.track_station(station)
+  biter_station.track_managed_building(building_one)
+  biter_station.track_managed_building(building_two)
+  storage.biter_station_crafts_per_visit = 2
+
+  biter_station.update(10)
+
+  local active = active_worker()
+  assert_true(active ~= nil, "station should dispatch a worker")
+  assert_eq(#active.building_queue, 2, "trip should cover both buildings")
+
+  active.biter.position = {x = building_one.position.x, y = building_one.position.y}
+  active.phase_departed = true
+  biter_station.update(20)
+  assert_eq(active.current_idx, 2, "arriving at the first building should advance the queue")
+  assert_eq(active.phase, "to_building", "worker should now be heading to the second building")
+
+  biter_station.on_ai_command_completed{unit_number = active.biter_unit_number, tick = 25, result = "fail"}
+
+  assert_eq(active.current_idx, 3, "an unreachable second building should be skipped, not retried forever")
+  assert_true(active.biter.valid, "worker should not be destroyed when a building is unreachable")
+  assert_true(active.biter.commandable.has_command, "worker should receive a new command instead of freezing in place")
+  assert_eq(station.custom_status.label[1], "gui.biter-station-building-unreachable", "station should surface the pathing failure")
 end)
 
 test("managed building is claimed by the nearest station in overlapping coverage", function()

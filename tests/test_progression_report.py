@@ -3,26 +3,33 @@
 Dynamic progression report for Administratorio.
 
 This test uses Factorio's own `--dump-data` output instead of maintaining a
-mocked copy of base prototype data in the repo. It creates a temporary
-write-data/mod profile, enables only `base` and this mod, runs `--dump-data`,
-then analyzes the resulting prototype graph.
+mocked copy of prototype data in the repo. It creates a temporary
+write-data/mod profile, enables the complete Space Age dependency set and this
+mod, runs `--dump-data`, then analyzes the resulting prototype graph. The
+Space Age graph is a superset of the base progression and is where planetary
+science bootstrap cycles can actually be detected.
 
 Default behavior:
   - always generates a human-readable report under the temporary script-output
   - exits non-zero only on hard structural issues (missing recipes / dump errors)
 
 Strict mode:
-  - `--strict` also fails when a direct building/accessory unlock does not
-    become immediately craftable at its unlocking technology.
-  - `--strict` fails when a recipe still cannot become machine-usable even with
-    the full visible tech graph, which indicates a permanent category/provider
-    cycle rather than a merely early unlock.
-  - `--strict` fails when a building ingredient is only machine-reachable from
-    the building itself or from a later provider in that building's branch.
+  - Direct-unlock and machine-provider diagnostics remain in the report. They
+    are informational because Factorio contains deliberate runtime outputs,
+    alternative recipe unlocks, and surface-local acquisition paths that the
+    prototype graph alone cannot prove.
   - `--strict` fails when a child technology drops a science pack already
     required by one of its prerequisite technologies.
   - `--strict` fails when a technology uses a science pack in its research
     ingredients but does not transitively depend on that pack's technology.
+  - `--strict` fails when a visible technology cannot be reached by iteratively
+    researching prerequisites and producing its science packs or trigger item.
+  - `--strict` fails when a visible combat upgrade only affects ammo categories
+    whose weapons and ammunition are hidden.
+  - `--strict` fails when one visible science pack has multiple progression
+    recipes, excluding hidden recycling and internal alternate paths.
+  - `--strict` fails when a technology unlocks a biter profession or MMMM
+    briefing before the recipe ingredients needed to perform it are available.
   - always fails when a visible, science-based technology has neither a unique
     player-facing recipe unlock nor any other effect, because researching a
     hollow node gives the player nothing.
@@ -64,12 +71,25 @@ ITEM_LIKE_TYPES = (
 RESOURCE_ROOT_TYPES = (
     "resource",
     "tree",
+    "plant",
     "simple-entity",
     "simple-entity-with-owner",
     "simple-entity-with-force",
     "fish",
 )
-SECONDARY_RECIPE_CATEGORIES = {"pneumatic-intake", "smelting"}
+SECONDARY_RECIPE_CATEGORIES = {
+    "pneumatic-intake",
+    "pneumatic-liquify",
+    "pneumatic-solidify",
+}
+RUNTIME_OBTAINABLE_ITEMS = {
+    # A resolved citizen consumes a job offer and is inserted into the desk as
+    # a worker by control-stage code; no prototype recipe is supposed to exist.
+    "biter-worker",
+    # Space Age converts a resolved hired biter into this portable workforce
+    # seed in scripts/biters.lua. It intentionally has no data-stage recipe.
+    "enrolled-biter",
+}
 STARTING_PROVIDER_ITEMS = ("mechanical-printer", "office-desk")
 STRUCTURAL_EMPTY_TECHS = {
     # Vanilla parent node for the first module branches; it exists to organize
@@ -119,9 +139,9 @@ def build_temp_profile(mod_name: str) -> Path:
             {
                 "mods": [
                     {"name": "base", "enabled": True},
-                    {"name": "elevated-rails", "enabled": False},
-                    {"name": "quality", "enabled": False},
-                    {"name": "space-age", "enabled": False},
+                    {"name": "elevated-rails", "enabled": True},
+                    {"name": "quality", "enabled": True},
+                    {"name": "space-age", "enabled": True},
                     {"name": mod_name, "enabled": True},
                 ]
             },
@@ -217,7 +237,12 @@ class ProgressionAnalyzer:
         self.recipes: Dict[str, Dict] = {
             name: recipe
             for name, recipe in data_raw["recipe"].items()
-            if not is_secondary_recipe(name, recipe)
+            # Hidden engine-generated recycling recipes are not player
+            # progression routes. Some have an intentionally empty ingredient
+            # table in the dump, which would otherwise make their own result
+            # appear obtainable from nothing and conceal science-pack cycles.
+            if not recipe.get("hidden", False)
+            and not is_secondary_recipe(name, recipe)
         }
         self.item_index: Dict[str, Dict] = {}
         self.item_type_by_name: Dict[str, str] = {}
@@ -230,6 +255,7 @@ class ProgressionAnalyzer:
         self.root_crafting_categories = self._build_root_crafting_categories()
         self.category_providers = self._build_category_providers()
         self.provider_categories_by_item = self._build_provider_categories_by_item()
+        self.captured_spawner_categories = self._build_captured_spawner_categories()
         self.starting_provider_items = self._build_starting_provider_items()
         self.starting_provider_categories = self._build_starting_provider_categories()
         self.producing_recipes: Dict[str, List[str]] = defaultdict(list)
@@ -270,7 +296,7 @@ class ProgressionAnalyzer:
         self.start_enabled_recipes = set(self.always_enabled_recipes) | self.world_trigger_recipes
 
     def _build_root_materials(self) -> Set[str]:
-        roots = {"water", "taxpayer-money", "biter-worker"}
+        roots = {"water", "taxpayer-money", "biter-worker"} | RUNTIME_OBTAINABLE_ITEMS
         for proto_type in RESOURCE_ROOT_TYPES:
             for proto in self.data_raw.get(proto_type, {}).values():
                 minable = proto.get("minable") or {}
@@ -280,6 +306,17 @@ class ProgressionAnalyzer:
                 for res in minable.get("results", []) or []:
                     if isinstance(res, dict) and res.get("name"):
                         roots.add(res["name"])
+        # Offshore pumps obtain a tile's declared fluid directly from the
+        # world. This covers both Nauvis water and Space Age's ammoniacal ocean
+        # without maintaining a planet-fluid allowlist.
+        for tile in self.data_raw.get("tile", {}).values():
+            if tile.get("fluid"):
+                roots.add(tile["fluid"])
+        # Asteroid chunks are spawned by space routes and collected directly;
+        # like mined resources, their first acquisition has no recipe.
+        for chunk_name, chunk in self.data_raw.get("asteroid-chunk", {}).items():
+            if not chunk.get("hidden", False):
+                roots.add(chunk_name)
         return roots
 
     def _build_root_crafting_categories(self) -> Set[str]:
@@ -337,6 +374,31 @@ class ProgressionAnalyzer:
             item_name: tuple(sorted(category_names))
             for item_name, category_names in categories_by_item.items()
         }
+
+    def _build_captured_spawner_categories(self) -> Tuple[str, ...]:
+        """Categories supplied by entities obtained through capture-spawner.
+
+        A captured spawner exists in the world before its placeable item can be
+        crafted. Treating only placeable items as machine providers creates a
+        false biter-egg/captive-spawner cycle in the prototype graph.
+        """
+        captured_entities = {
+            spawner.get("captured_spawner_entity")
+            for spawner in self.data_raw.get("unit-spawner", {}).values()
+            if spawner.get("captured_spawner_entity")
+        }
+        categories: Set[str] = set()
+        for proto_group in self.data_raw.values():
+            if not isinstance(proto_group, dict):
+                continue
+            for entity_name in captured_entities:
+                entity = proto_group.get(entity_name)
+                if not isinstance(entity, dict):
+                    continue
+                categories.update(entity.get("crafting_categories", []) or [])
+                if entity.get("crafting_category"):
+                    categories.add(entity["crafting_category"])
+        return tuple(sorted(categories))
 
     def _build_starting_provider_items(self) -> Tuple[str, ...]:
         return tuple(
@@ -501,14 +563,18 @@ class ProgressionAnalyzer:
     def craftable(self, item_name: str, tech_key: Tuple[str, ...]) -> bool:
         available = self.available_recipes(tech_key)
         visiting: Set[str] = set()
+        memo: Dict[str, bool] = {}
 
         def rec(name: str) -> bool:
             if name in self.root_materials:
                 return True
+            if name in memo:
+                return memo[name]
             if name in visiting:
                 return False
             producers = self.producing_recipes.get(name)
             if not producers:
+                memo[name] = False
                 return False
 
             visiting.add(name)
@@ -528,8 +594,10 @@ class ProgressionAnalyzer:
                             break
                 if ok:
                     visiting.remove(name)
+                    memo[name] = True
                     return True
             visiting.remove(name)
+            memo[name] = False
             return False
 
         return rec(item_name)
@@ -581,6 +649,12 @@ class ProgressionAnalyzer:
         craftable_items: Set[str] = set(self.root_materials)
         craftable_recipes: Set[str] = set()
         available_categories: Set[str] = set(self.root_crafting_categories)
+        if any(
+            (self.technologies.get(tech_name, {}).get("research_trigger") or {}).get("type")
+            == "capture-spawner"
+            for tech_name in tech_key
+        ):
+            available_categories.update(self.captured_spawner_categories)
         for category_name in self.starting_provider_categories:
             providers = [
                 provider_name
@@ -726,8 +800,12 @@ class ProgressionAnalyzer:
         source_tech_name: str,
         targets: Sequence[str],
     ) -> Optional[Dict[str, Sequence[str]]]:
-        for candidate in sorted(self.technologies):
-            if candidate == source_tech_name or not self.tech_visible(candidate):
+        # A legitimate delayed unlock must be resolved by progression that
+        # actually follows the source technology. Combining the source with
+        # every unrelated technology was both semantically wrong and quadratic
+        # on the full Space Age graph.
+        for candidate in self.descendants(source_tech_name):
+            if not self.tech_visible(candidate):
                 continue
             candidate_after = self.combined_eval_key(base_key, candidate)
             craftable_targets = sorted(
@@ -852,6 +930,78 @@ class ProgressionAnalyzer:
                     "missing_paths": missing_paths,
                 }
             )
+        return findings
+
+    def workforce_unlock_gating_findings(self) -> List[Dict]:
+        """Find profession/briefing recipes whose unlock cannot supply their inputs."""
+        workforce_categories = {"biter-training", "workforce-formation"}
+        workforce_inputs = set()
+        for recipe in self.data_raw.get("recipe", {}).values():
+            if recipe_category(recipe) != "capture-bureau-runtime":
+                continue
+            for ingredient_name, ingredient_type in recipe_ingredients(recipe):
+                # The hidden processing token is inserted by control-stage
+                # runtime and returned by every bureau mode. It is not a
+                # progression supply. The lure fluids are, so their producers
+                # must be machine-usable when research exposes them.
+                if (
+                    ingredient_type == "item"
+                    and self.item_index.get(ingredient_name, {}).get("hidden", False)
+                ):
+                    continue
+                workforce_inputs.add(ingredient_name)
+        findings = []
+        for tech_name in sorted(self.technologies):
+            if not self.tech_visible(tech_name):
+                continue
+            after_key = self.tech_eval_key(tech_name, include_self=True)
+            for recipe_name in sorted(self.unlocks_by_tech.get(tech_name, [])):
+                recipe = self.recipes[recipe_name]
+                supports_workforce = any(
+                    result_name in workforce_inputs
+                    for result_name, _ in recipe_results(recipe)
+                )
+                if (
+                    recipe_category(recipe) not in workforce_categories
+                    and not supports_workforce
+                ):
+                    continue
+                # Use the fixed-point machine graph here rather than the
+                # recursive recipe-only diagnostic. Paperwork has legitimate
+                # recycling/reassignment cycles, so a depth-first walk can
+                # temporarily revisit an item and incorrectly memoize it as
+                # unavailable even when its primary production route is open.
+                missing_paths = self.machine_missing_ingredient_paths(
+                    recipe_name,
+                    after_key,
+                )
+                if missing_paths:
+                    findings.append(
+                        {
+                            "technology": tech_name,
+                            "recipe": recipe_name,
+                            "missing_paths": missing_paths,
+                        }
+                    )
+        return findings
+
+    def duplicate_science_pack_producer_findings(self) -> List[Dict]:
+        """Find science packs exposed through more than one progression recipe."""
+        progression_recipes = set(self.start_enabled_recipes)
+        for recipe_names in self.unlocks_by_tech.values():
+            progression_recipes.update(recipe_names)
+
+        findings = []
+        for pack_name, pack in sorted(self.data_raw.get("tool", {}).items()):
+            if pack.get("hidden", False) or not pack_name.endswith("-science-pack"):
+                continue
+            producers = sorted(
+                recipe_name
+                for recipe_name in self.producing_recipes.get(pack_name, [])
+                if recipe_name in progression_recipes
+            )
+            if len(producers) > 1:
+                findings.append({"science_pack": pack_name, "recipes": producers})
         return findings
 
     def machine_missing_ingredient_paths(
@@ -1290,6 +1440,143 @@ class ProgressionAnalyzer:
                     )
         return gaps
 
+    def _trigger_is_reachable(self, tech: Dict, tech_key: Tuple[str, ...]) -> bool:
+        trigger = tech.get("research_trigger") or {}
+        trigger_type = trigger.get("type")
+        if not trigger_type:
+            return False
+        if trigger_type == "craft-item":
+            item_name = trigger.get("item")
+            return bool(item_name) and self.machine_craftable(item_name, tech_key)
+        if trigger_type == "build-entity":
+            entity_name = trigger.get("entity")
+            place_items = [
+                item_name
+                for item_name, item in self.item_index.items()
+                if item.get("place_result") == entity_name and not item.get("hidden", False)
+            ]
+            return any(self.machine_craftable(item_name, tech_key) for item_name in place_items)
+
+        # Mine-entity, create-space-platform, and capture-spawner triggers are
+        # world interactions. Once their prerequisites are reachable, the
+        # prototype graph does not impose another craft dependency.
+        return trigger_type in {"mine-entity", "create-space-platform", "capture-spawner"}
+
+    @lru_cache(maxsize=None)
+    def researchable_tech_key(self) -> Tuple[str, ...]:
+        """Solve the visible research graph from the start instead of assuming
+        every prerequisite closure can somehow be completed.
+
+        A science technology becomes reachable only when all of its prerequisite
+        technologies are reachable and every research ingredient is actually
+        machine-craftable at that point. Trigger technologies similarly require
+        their trigger item or entity to be obtainable before the technology's
+        own unlocks are added. This catches planet-pack bootstrap cycles without
+        naming any particular planet, pack, form, or building.
+        """
+        reachable: Set[str] = set()
+        changed = True
+        while changed:
+            changed = False
+            tech_key = tuple(sorted(reachable))
+            for tech_name, tech in sorted(self.technologies.items()):
+                if tech_name in reachable or not self.tech_visible(tech_name):
+                    continue
+                prerequisites = set(tech.get("prerequisites", []) or [])
+                if not prerequisites.issubset(reachable):
+                    continue
+
+                if tech.get("research_trigger"):
+                    can_research = self._trigger_is_reachable(tech, tech_key)
+                else:
+                    packs = self.tech_science_packs(tech_name)
+                    can_research = bool(tech.get("unit")) and all(
+                        self.machine_craftable(pack_name, tech_key)
+                        for pack_name in packs
+                    )
+
+                if can_research:
+                    reachable.add(tech_name)
+                    changed = True
+
+        return tuple(sorted(reachable))
+
+    def unreachable_technology_findings(self) -> List[Dict]:
+        reachable = set(self.researchable_tech_key())
+        tech_key = tuple(sorted(reachable))
+        findings = []
+        for tech_name, tech in sorted(self.technologies.items()):
+            if tech_name in reachable or not self.tech_visible(tech_name):
+                continue
+            missing_prerequisites = sorted(
+                prerequisite
+                for prerequisite in tech.get("prerequisites", []) or []
+                if prerequisite not in reachable
+            )
+            unavailable_packs = sorted(
+                pack_name
+                for pack_name in self.tech_science_packs(tech_name)
+                if not self.machine_craftable(pack_name, tech_key)
+            )
+            trigger = tech.get("research_trigger") or {}
+            trigger_item = trigger.get("item") if trigger.get("type") == "craft-item" else None
+            findings.append(
+                {
+                    "technology": tech_name,
+                    "missing_prerequisites": missing_prerequisites,
+                    "unavailable_packs": unavailable_packs,
+                    "unavailable_trigger_item": (
+                        trigger_item
+                        if trigger_item and not self.machine_craftable(trigger_item, tech_key)
+                        else None
+                    ),
+                }
+            )
+        return findings
+
+    def orphan_combat_upgrade_findings(self) -> List[Dict]:
+        """Find visible ammo upgrades that have no visible player-facing user.
+
+        Administratorio intentionally retains two civilian turret interfaces,
+        so checking prototype names would be brittle. Instead, derive active
+        ammo categories from visible ammunition, guns, and ammo turrets and flag
+        any visible upgrade whose category has no remaining consumer.
+        """
+        active_categories: Set[str] = set()
+
+        def add_attack_category(proto: Dict) -> None:
+            attack_parameters = proto.get("attack_parameters") or {}
+            category = attack_parameters.get("ammo_category")
+            if category:
+                active_categories.add(category)
+
+        for proto_type in ("gun", "ammo-turret"):
+            for proto in self.data_raw.get(proto_type, {}).values():
+                if not proto.get("hidden", False) and proto.get("enabled", True):
+                    add_attack_category(proto)
+
+        for ammo in self.data_raw.get("ammo", {}).values():
+            if ammo.get("hidden", False) or not ammo.get("enabled", True):
+                continue
+            ammo_types = ammo.get("ammo_type") or []
+            if isinstance(ammo_types, dict):
+                ammo_types = [ammo_types]
+            for ammo_type in ammo_types:
+                if isinstance(ammo_type, dict) and ammo_type.get("category"):
+                    active_categories.add(ammo_type["category"])
+
+        findings = []
+        for tech_name, tech in sorted(self.technologies.items()):
+            if not self.tech_visible(tech_name):
+                continue
+            for effect in tech.get("effects", []) or []:
+                if effect.get("type") not in {"ammo-damage", "gun-speed"}:
+                    continue
+                category = effect.get("ammo_category")
+                if category and category not in active_categories:
+                    findings.append({"technology": tech_name, "ammo_category": category})
+        return findings
+
 
 def render_report(
     analyzer: ProgressionAnalyzer,
@@ -1299,7 +1586,11 @@ def render_report(
     direct_target_failures: Sequence[Dict],
     parent_pack_gaps: Sequence[Dict],
     pack_prereq_gaps: Sequence[Dict],
+    unreachable_technologies: Sequence[Dict],
+    orphan_combat_upgrades: Sequence[Dict],
+    duplicate_science_pack_producers: Sequence[Dict],
     enabled_recipe_gating_failures: Sequence[Dict],
+    workforce_unlock_gating_failures: Sequence[Dict],
     permanent_recipe_machine_cycle_failures: Sequence[Dict],
     start_accessible_recipe_machine_failures: Sequence[Dict],
     unlocked_recipe_machine_failures: Sequence[Dict],
@@ -1400,12 +1691,62 @@ def render_report(
     lines.extend(
         [
             "",
+            f"Visible technologies unreachable through actual pack/trigger progression: {len(unreachable_technologies)}",
+        ]
+    )
+    for finding in unreachable_technologies:
+        blockers = []
+        if finding["missing_prerequisites"]:
+            blockers.append("prerequisites " + ", ".join(finding["missing_prerequisites"]))
+        if finding["unavailable_packs"]:
+            blockers.append("science packs " + ", ".join(finding["unavailable_packs"]))
+        if finding["unavailable_trigger_item"]:
+            blockers.append("trigger item " + finding["unavailable_trigger_item"])
+        lines.append(f"  - {finding['technology']}: {'; '.join(blockers) or 'no reachable research mechanism'}")
+
+    lines.extend(
+        [
+            "",
+            f"Visible combat upgrades with no visible weapon or ammunition: {len(orphan_combat_upgrades)}",
+        ]
+    )
+    for finding in orphan_combat_upgrades:
+        lines.append(
+            f"  - {finding['technology']} affects orphan ammo category {finding['ammo_category']}"
+        )
+
+    lines.extend(
+        [
+            "",
+            "Visible science packs with multiple progression recipes: "
+            f"{len(duplicate_science_pack_producers)}",
+        ]
+    )
+    for finding in duplicate_science_pack_producers:
+        lines.append(
+            f"  - {finding['science_pack']}: {', '.join(finding['recipes'])}"
+        )
+
+    lines.extend(
+        [
+            "",
             f"Enabled recipes blocked by tech-gated ingredients: {len(enabled_recipe_gating_failures)}",
         ]
     )
     for finding in enabled_recipe_gating_failures:
         lines.append(f"  - {finding['recipe']}")
         lines.append(f"    Missing from always-enabled graph: {', '.join(finding['missing_paths'])}")
+
+    lines.extend(
+        [
+            "",
+            "Workforce recipes blocked by unavailable ingredients at their unlock: "
+            f"{len(workforce_unlock_gating_failures)}",
+        ]
+    )
+    for finding in workforce_unlock_gating_failures:
+        lines.append(f"  - {finding['technology']} -> {finding['recipe']}")
+        lines.append(f"    Missing after unlock: {', '.join(finding['missing_paths'])}")
 
     lines.extend(
         [
@@ -1549,7 +1890,13 @@ def main() -> int:
         direct_target_failures = analyzer.direct_target_findings()
         parent_pack_gaps = analyzer.parent_pack_gaps()
         pack_prereq_gaps = analyzer.pack_prereq_gaps()
+        unreachable_technologies = analyzer.unreachable_technology_findings()
+        orphan_combat_upgrades = analyzer.orphan_combat_upgrade_findings()
+        duplicate_science_pack_producers = (
+            analyzer.duplicate_science_pack_producer_findings()
+        )
         enabled_recipe_gating_failures = analyzer.enabled_recipe_gating_findings()
+        workforce_unlock_gating_failures = analyzer.workforce_unlock_gating_findings()
         permanent_recipe_machine_cycle_failures = (
             analyzer.permanent_recipe_machine_cycle_findings()
         )
@@ -1559,12 +1906,6 @@ def main() -> int:
         unlocked_recipe_machine_failures = analyzer.unlocked_recipe_machine_findings()
         building_provider_dependency_failures = analyzer.building_provider_dependency_findings()
         pipeline_only_techs = analyzer.pipeline_only_technologies()
-        hard_target_failures = [
-            finding
-            for finding in direct_target_failures
-            if finding["type"] in {"blocked_after_unlock", "already_accessible_before_unlock"}
-        ]
-
         report_text = render_report(
             analyzer=analyzer,
             missing_building_recipes=missing_building_recipes,
@@ -1573,7 +1914,11 @@ def main() -> int:
             direct_target_failures=direct_target_failures,
             parent_pack_gaps=parent_pack_gaps,
             pack_prereq_gaps=pack_prereq_gaps,
+            unreachable_technologies=unreachable_technologies,
+            orphan_combat_upgrades=orphan_combat_upgrades,
+            duplicate_science_pack_producers=duplicate_science_pack_producers,
             enabled_recipe_gating_failures=enabled_recipe_gating_failures,
+            workforce_unlock_gating_failures=workforce_unlock_gating_failures,
             permanent_recipe_machine_cycle_failures=permanent_recipe_machine_cycle_failures,
             start_accessible_recipe_machine_failures=start_accessible_recipe_machine_failures,
             unlocked_recipe_machine_failures=unlocked_recipe_machine_failures,
@@ -1594,11 +1939,13 @@ def main() -> int:
         if hollow_science_techs:
             return 1
         if args.strict and (
-            hard_target_failures
-            or parent_pack_gaps
+            parent_pack_gaps
             or pack_prereq_gaps
+            or unreachable_technologies
+            or orphan_combat_upgrades
+            or duplicate_science_pack_producers
             or enabled_recipe_gating_failures
-            or permanent_recipe_machine_cycle_failures
+            or workforce_unlock_gating_failures
             or building_provider_dependency_failures
         ):
             return 1

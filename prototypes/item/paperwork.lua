@@ -17,13 +17,13 @@ data:extend({
   { type = "item", name = "management-approval-verbal", icon = item_icons .. "management-approval-verbal.png", icon_size = 64, subgroup = "forms-permits", order = "c-b", stack_size = 20 },
   { type = "item", name = "management-written-proposal",icon = item_icons .. "management-written-proposal.png",icon_size = 64, subgroup = "forms-permits", order = "d-a", stack_size = 10 },
   { type = "item", name = "management-approval-written",icon = item_icons .. "management-approval-written.png",icon_size = 64, subgroup = "forms-permits", order = "d-c", stack_size = 10 },
-  { type = "item", name = "transit-authorization",      icon = item_icons .. "transit-authorization.png",      icon_size = 64, subgroup = "forms-permits", order = "f", stack_size = 50 },
+  { type = "item", name = "transit-authorization",      icon = item_icons .. "transit-authorization.png",      icon_size = 64, subgroup = "admin-transit", order = "c", stack_size = 50 },
   { type = "item", name = "research-grant-approval",    icon = item_icons .. "research-grant-approval.png",    icon_size = 64, subgroup = "forms-permits", order = "g", stack_size = 50 },
 
   -- Line 3: Work Orders & Machinery Forms
   { type = "item", name = "work-order",                       icon = item_icons .. "work-order.png",                       icon_size = 64, subgroup = "forms-work-orders", order = "a",  stack_size = 50 },
   { type = "item", name = "form-27b-6",                       icon = item_icons .. "form-27b-6.png",                       icon_size = 64, subgroup = "forms-work-orders", order = "b",  stack_size = 50 },
-  { type = "item", name = "provisional-work-order",           icons = {{ icon = item_icons .. "work-order.png", icon_size = 64 }, { icon = item_icons .. "provisional-approval.png", icon_size = 64, scale = 0.4, shift = {8, 8} }}, subgroup = "forms-work-orders", order = "c0", stack_size = 50 },
+  { type = "item", name = "provisional-work-order",           icon = item_icons .. "provisional-work-order.png",           icon_size = 64, subgroup = "forms-work-orders", order = "c0", stack_size = 50 },
   { type = "item", name = "safety-work-order",                icon = item_icons .. "safety-work-order.png",                icon_size = 64, subgroup = "forms-work-orders", order = "c1", stack_size = 50 },
   { type = "item", name = "construction-work-order",          icon = item_icons .. "construction-work-order.png",          icon_size = 64, subgroup = "forms-work-orders", order = "c2", stack_size = 50 },
   { type = "item", name = "management-verbal-work-order",     icon = item_icons .. "management-verbal-work-order.png",     icon_size = 64, subgroup = "forms-work-orders", order = "c3", stack_size = 20 },

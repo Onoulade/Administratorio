@@ -29,6 +29,10 @@ M.BITER_WORKER_YIELD = {
 M.PROTEST_THRESHOLD = 600 -- seconds of waiting before protest (~10 minutes)
 M.HARD_MODE_PROTEST_RATIO = 0.70
 M.HARD_MODE_FRUSTRATION_CAPACITY = math.floor(M.PROTEST_THRESHOLD / M.HARD_MODE_PROTEST_RATIO)
+M.ENROLLMENT_OFFER_LOW_FRUSTRATION_RATIO = 0.25
+M.ENROLLMENT_OFFER_MEDIUM_FRUSTRATION_RATIO = 0.50
+M.ENROLLMENT_OFFER_LOW_CHANCE = 0.05
+M.ENROLLMENT_OFFER_MEDIUM_CHANCE = 0.01
 M.PROMISE_HOLD_TICKS = 60 * 60 -- 60 seconds to find an open desk after a promise
 M.PACIFIED_FRUSTRATION_RATIO = 0.5
 M.PACIFIED_ROAM_REISSUE_TICKS = 30
@@ -101,6 +105,19 @@ M.DESK_SLOT_ARRIVAL_DISTANCE = 1.0
 M.EVOLUTION_COMPLAINT_WARNING_OFFSET = 0.05
 M.GROUP_REDIRECTS_PER_TICK = 8
 M.REGISTRATION_WALKIN_SCAN_TICKS = 5
+M.ADMIN_STATION_NEST_EXCLUSION_RADIUS = 32
+M.CAPTURE_BUREAU_NEST_EXCLUSION_RADIUS = 24
+M.CAPTURE_BUREAU_LURE_RADIUS = 29
+M.CAPTURE_BUREAU_SPORE_UPKEEP_TICKS = 60
+M.CAPTURE_BUREAU_SPORE_UPKEEP_AMOUNT = 5
+M.CAPTURE_BUREAU_SPORE_VISUAL_TICKS = 60
+M.HATCHED_PENTAPOD_FORCE_NAME = "administratorio-hatched-pentapods"
+M.PENTAPOD_MONEY_BAIT_INTERVAL_TICKS = 2 * 60
+M.PENTAPOD_MONEY_BAIT_SCAN_LIMIT = 24
+M.PENTAPOD_MONEY_BAIT_LURE_RADIUS = 24
+M.PENTAPOD_MONEY_BAIT_PICKUP_RADIUS = 1.75
+M.PENTAPOD_MONEY_BAIT_MIN_MONEY_PER_EGG = 10
+M.PENTAPOD_MONEY_BAIT_MAX_MONEY_PER_EGG = 20
 
 -- Biter complaint tiers (landscape/smog/noise/unemployment)
 M.COMPLAINT_TIERS = {
@@ -162,6 +179,11 @@ M.RETURN_EXIT_SEARCH_RADIUS = 24
 M.RETURN_EXIT_SEARCH_PRECISION = 2
 
 M.HUSH_MONEY_CALM_TICKS = 3 * 60 * 60 -- 3 minutes of suppressed spawning
+M.PETITION_COUNTER_NEST_RADIUS = 25
+M.PETITION_COUNTER_SCAN_INTERVAL_TICKS = 60
+M.PETITION_COUNTER_DISABLED_TEXT = "No nearby nests"
+M.PETITION_COUNTER_BONUS_PER_EXTRA_NEST = 0.02
+M.PETITION_COUNTER_MAX_BONUS_PROGRESS_PER_SCAN = 0.08
 
 -- Field office: proximity check for nearby biter spawners
 M.FIELD_OFFICE_SPAWNER_RANGE = 200    -- tiles: max distance to a biter spawner
@@ -173,7 +195,6 @@ M.FIELD_OFFICE_BITER_DESPAWN_TICKS = 30 * 60 -- stale return command retry caden
 M.FIELD_OFFICE_ARRIVAL_RADIUS = 2.5   -- distance threshold for "biter has arrived"
 M.FIELD_OFFICE_APPROACH_OFFSET = 1.5  -- roughly the office's footprint half-width; biases the arrival search toward the side actually facing the worker
 M.FIELD_OFFICE_FALLBACK_SEARCH_RADIUS = 5 -- unbiased search radius (from office center) used when the hive-facing side is fully blocked, so a worker can still approach from whichever face is actually open
-M.FIELD_OFFICE_RETURN_SEARCH_RADIUS = 6 -- search radius for a walkable spot near the spawner (its own tile is solid collision)
 M.FIELD_OFFICE_SPAWNER_CACHE_TTL = 30 * 60 -- ticks between background spawner cache refreshes
 M.FIELD_OFFICE_UPDATE_SHARDS = 6      -- each office is checked once per 30 ticks at a 5-tick cadence
 
@@ -189,17 +210,8 @@ M.BITER_STATION_ARRIVAL_RADIUS = 2.5
 -- Buildings that idle without a biter dispatched from a biter-station.
 -- Note: union-headquarters is intentionally NOT here — it consumes a biter
 -- as a recipe ingredient, so it does not also need ongoing dispatch.
-M.BITER_STATION_MANAGED_BUILDINGS = {
-  "propaganda-distillery",
-  "corporate-breakroom",
-  "centrifuge",
-  "oil-refinery",
-  "printer-t2",
-}
-M.BITER_STATION_MANAGED_BUILDING_SET = {}
-for _, name in ipairs(M.BITER_STATION_MANAGED_BUILDINGS) do
-  M.BITER_STATION_MANAGED_BUILDING_SET[name] = true
-end
+M.BITER_STATION_MANAGED_BUILDINGS = require("prototypes.shared.biter_station_buildings").names
+M.BITER_STATION_MANAGED_BUILDING_SET = require("prototypes.shared.biter_station_buildings").as_set()
 
 -- Biterport: walking-worker construction/logistics network.
 M.BITERPORT_NAME = "biterport"
@@ -245,43 +257,89 @@ M.PNEUMATIC_BUILDINGS = {
 }
 
 -- All items eligible for pneumatic tube transport.
--- Mirrors shared.PNEUMATIC_ITEMS from the data stage.
--- Used at runtime to validate intake contents before adding them to a network.
-M.PNEUMATIC_ITEMS = {
-  -- PAPERWORK_ITEMS
-  "work-order", "form-27b-6", "research-grant-approval", "provisional-approval",
-  "safety-waiver", "safety-waiver-draft", "construction-permit", "construction-permit-draft",
-  "transit-authorization",
-  "management-approval-verbal", "management-verbal-draft",
-  "management-approval-written", "management-written-proposal",
-  "carbon-offset-certificate-basic", "carbon-offset-certificate-verified",
-  "environmental-impact-report", "petrochemical-operating-permit",
-  "blank-form", "blank-approval", "blank-directive",
-  "treasury-bond", "government-grant",
-  "safety-work-order", "construction-work-order",
-  "management-verbal-work-order", "management-written-work-order",
-  "research-grant-work-order", "chemical-handling-work-order", "radiological-work-order",
-  -- Extra pneumatic items
-  "paper", "ink",
-  "ticket-landscape", "ticket-smog", "ticket-noise", "ticket-unemployment",
-  "ticket-littering", "ticket-hazmat", "ticket-loitering", "ticket-vagrancy",
-  "filing-l", "filing-s", "filing-n", "filing-u",
-  "filing-lt", "filing-h", "filing-lo", "filing-v",
-  "case-s", "case-n", "case-u",
-  "case-h", "case-lo", "case-v",
-  "brief-n", "brief-u",
-  "brief-lo", "brief-v",
-  "resolved-landscape", "resolved-smog", "resolved-noise", "resolved-unemployment",
-  "resolved-littering", "resolved-hazmat", "resolved-loitering", "resolved-vagrancy",
-  "osha-violation",
-  "basic-excuse", "crappy-report", "credentials", "data",
-  "good-excuse", "justification", "narrative", "policy", "regulation",
-  "white-paper", "administrative-science-pack",
-  "watercooler-gossip", "office-drama",
-  "taxpayer-money",
-  "useless-documentation", "refined-nonsense",
-  "job-offer",
+-- Defined in a dependency-free module so data-stage descriptions and runtime
+-- intake validation always agree.
+M.PNEUMATIC_ITEMS = require("prototypes.shared.pneumatic_items").names
+
+-- All items eligible for the interplanetary trunk, and the subset that only the
+-- Aquilo chromatic tier may carry.
+M.TRUNK_ITEM_SET = require("prototypes.shared.interplanetary_payloads").as_set()
+M.TRUNK_CHROMATIC_SET = require("prototypes.shared.interplanetary_payloads").chromatic_set()
+
+-- Interplanetary trunk: a deliberately narrow, slow, separate pool.
+-- It must never merge with the local pneumatic pool above. Merging would give
+-- free 200-capacity teleportation between planets and delete rocket logistics.
+M.TERMINUS_NAME = "interplanetary-terminus"
+M.TERMINUS_OUTBOUND_SLOTS = 1
+M.TERMINUS_ARRIVAL_SLOTS = 12
+-- Hidden combinator broadcasting the trunk pool's contents, wired to a
+-- Terminus's own RED wire only -- see M.collect_requests.
+M.TERMINUS_COMBINATOR_NAME = "terminus-pool-combinator"
+-- Half a second. The fastest tier lands an item every second, so a finer
+-- cadence would only re-scan idle endpoints.
+M.TERMINUS_CHECK_TICKS = 30
+
+-- Capacity is the number of items in flight empire-wide; transit is per item,
+-- so many items may be crossing at once, each carrying its own timer.
+M.TRUNK_BASE_CAPACITY = 3
+M.TRUNK_BASE_TRANSIT_TICKS = 30 * 60
+M.TRUNK_TIERS = {
+  {technology = "interplanetary-tube-capacity-2", capacity = 5,  transit_ticks = 15 * 60},
+  {technology = "interplanetary-tube-capacity-3", capacity = 10, transit_ticks = 5 * 60},
+  {technology = "interplanetary-tube-capacity-4", capacity = 15, transit_ticks = 2 * 60},
+  {technology = "interplanetary-tube-capacity-5", capacity = 20, transit_ticks = 1 * 60},
 }
+M.TRUNK_BASE_TECH = "interplanetary-tube-network"
+M.TRUNK_CHROMATIC_TECH = "interplanetary-tube-chromatic"
+
+-- One Terminus per planet by default. A three-tier climb --
+-- interplanetary-tube-additional-terminus-1 and -2 are finite gates; -3 is
+-- the infinite technology whose name suffix seeds its starting LEVEL at 3
+-- (Factorio reads an infinite tech's starting level off its own name
+-- suffix), so its .level already reads 3 the moment it is first researched --
+-- one for each of the three steps -- and keeps climbing by one per level
+-- after that. Only -3 is ever read at runtime; -1 and -2 are pure
+-- prerequisite gates.
+M.TERMINUS_BASE_PER_PLANET = 1
+M.TERMINUS_ADDITIONAL_TECH = "interplanetary-tube-additional-terminus-3"
+
+-- Involuntary Relocation Cannon: biter-family cargo only, moved a batch per
+-- shot rather than one timed item at a time. Restricting the cargo is what
+-- keeps rockets relevant for everything else.
+M.RELOCATION_CANNON_NAME = "involuntary-relocation-cannon"
+-- The emitter's counterpart: holds the arrivals buffer and files requests.
+-- Kept as a separate building so a sender never scans its own connector for
+-- requests it will never act on.
+M.RELOCATION_RECEIVER_NAME = "involuntary-relocation-receiver"
+M.RELOCATION_TRANSFER_FORM = require("prototypes.shared.relocation_cargo").TRANSFER_FORM
+M.RELOCATION_CARGO_SET = require("prototypes.shared.relocation_cargo").as_set()
+M.RELOCATION_PAYLOAD_PER_SHOT = require("prototypes.shared.relocation_cargo").PAYLOAD_PER_SHOT
+M.RELOCATION_SHOT_TICKS = require("prototypes.shared.relocation_cargo").SHOT_TICKS
+-- One second. Shots are already rate-limited by RELOCATION_SHOT_TICKS, so this
+-- only governs how promptly a newly signalled request is noticed.
+M.RELOCATION_CANNON_CHECK_TICKS = 60
+-- Hidden combinator broadcasting a building's current inventory contents.
+-- Shared by both roles; never wired to either building's own connector, for
+-- the same reason as C.TERMINUS_COMBINATOR_NAME.
+M.RELOCATION_STATUS_COMBINATOR_NAME = "relocation-status-combinator"
+
+-- AI Server: an assembling-machine paired with a hidden reactor child that
+-- carries the heat connections, because no single entity can both craft and
+-- emit heat.
+M.AI_SERVER_NAME = "ai-server"
+M.AI_SERVER_HEAT_CORE_NAME = "ai-server-heat-core"
+M.HEAT_EXHAUST_NAME = "heat-exhaust"
+-- A quarter second. Heat is integrated per check, so a coarser cadence would
+-- make the stall threshold overshoot in visible steps.
+M.AI_SERVER_CHECK_TICKS = 15
+M.AI_SERVER_AMBIENT_TEMPERATURE = 15
+M.AI_SERVER_MAX_TEMPERATURE = 1000
+-- Degrees added per tick while crafting. The core stores 5 MJ per degree, so
+-- 1 / 75 degrees per tick is exactly 4 MW at 60 ticks per second, matching
+-- the visible server's 4 MW electrical draw instead of creating free power.
+M.AI_SERVER_HEAT_PER_TICK = 1 / 75
+-- Reaching this stops the server outright rather than throttling it.
+M.AI_SERVER_STALL_TEMPERATURE = 950
 
 M.EVOLUTION_COMPLAINT_WARNINGS = {
   {

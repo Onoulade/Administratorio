@@ -7,7 +7,8 @@
 -- ----------------------------|----------------------------------------
 -- bureaucracy-registration    | Office Desk + Field Office (filing, permits, work-orders)
 -- bureaucracy-modules         | Office Desk (subpoena/audit/embezzlement module drafting)
--- bureaucratic-bootstrap     | Player character + Office Desk (starter paperwork bridge)
+-- bureaucratic-bootstrap      | Player character + Office Desk + Field Office (Nauvis/shared bootstrap)
+-- *-<planet>                  | Office Desk; player character for bootstrap variants
 -- bureaucracy-resolution      | Resolution Office (all complaint processing: filing, case, brief, final)
 -- resolution-handcraft        | Player character + Resolution Office (landscape complaint only)
 -- bureaucracy-policy          | Union Headquarters (policies, regulations, audits, written approvals)
@@ -19,11 +20,21 @@
 -- printing                    | Printer T1 (ink-based documents)
 -- printing-advanced           | Printer T2 (document duplication/copying)
 -- printing-workorder          | Printer T1/T2 (direct draft-to-work-order printing)
+-- orbital-printing            | Printer T2/Laser Printer (advanced asteroid paperwork)
 -- propaganda-distillery        | Propaganda Distillery (admin fluid processing)
 -- pneumatic-intake            | Tube Intake (hidden no-output intake validation)
+-- interplanetary-dispatch     | Interplanetary Terminus (hidden outbound payload validation)
+-- ai-inference                | AI Server (electricity into Inference Tokens)
+-- slop-refining               | Slop Refinery (tokens into slop and paperwork)
+-- citation-handling           | Slop Refinery (venting and fact-checking hallucinations)
+-- personnel-synthesis         | Synthetic Personnel Bureau (professions, not buildings)
+-- relocation-payload-in       | Involuntary Relocation Cannon (hidden biter-cargo validation, sender)
+-- relocation-payload-out      | Involuntary Relocation Receiver (hidden transfer-order validation)
 -------------------------------------------------------------------------------
 local feature_flags = require("feature_flags")
+local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 local working_hours_enabled = feature_flags.working_hours_enabled()
+local space_age_enabled = feature_flags.space_age_enabled()
 
 local categories = {
   {type = "recipe-category", name = "bureaucracy-registration"},
@@ -44,8 +55,43 @@ local categories = {
   {type = "recipe-category", name = "pneumatic-intake"},
 }
 
+if space_age_enabled then
+  for _, planet_name in ipairs(bureaucracy_categories.OFFWORLD_PLANETS) do
+    categories[#categories + 1] = {
+      type = "recipe-category",
+      name = bureaucracy_categories.bootstrap_for_planet(planet_name),
+    }
+    categories[#categories + 1] = {
+      type = "recipe-category",
+      name = bureaucracy_categories.registration_for_planet(planet_name),
+    }
+  end
+
+  categories[#categories + 1] = {type = "recipe-category", name = "interplanetary-dispatch"}
+  categories[#categories + 1] = {type = "recipe-category", name = "ai-inference"}
+  categories[#categories + 1] = {type = "recipe-category", name = "slop-refining"}
+  categories[#categories + 1] = {type = "recipe-category", name = "citation-handling"}
+  categories[#categories + 1] = {type = "recipe-category", name = "personnel-synthesis"}
+  categories[#categories + 1] = {type = "recipe-category", name = "relocation-payload-in"}
+  categories[#categories + 1] = {type = "recipe-category", name = "relocation-payload-out"}
+  categories[#categories + 1] = {type = "recipe-category", name = "printing-chromatic"}
+  categories[#categories + 1] = {type = "recipe-category", name = "printing-multicolor"}
+  categories[#categories + 1] = {type = "recipe-category", name = "archive-reassignment"}
+  categories[#categories + 1] = {type = "recipe-category", name = "bureaucracy-certification"}
+  categories[#categories + 1] = {type = "recipe-category", name = "bureaucracy-conciliation"}
+  categories[#categories + 1] = {type = "recipe-category", name = "hostile-acquisition"}
+  categories[#categories + 1] = {type = "recipe-category", name = "capture-bureau-runtime"}
+  categories[#categories + 1] = {type = "recipe-category", name = "territorial-arbitration"}
+  categories[#categories + 1] = {type = "recipe-category", name = "workforce-formation"}
+  categories[#categories + 1] = {type = "recipe-category", name = "orbital-bureaucracy"}
+  categories[#categories + 1] = {type = "recipe-category", name = "orbital-printing"}
+end
+
 if working_hours_enabled then
   categories[#categories + 1] = {type = "module-category", name = "night-work"}
+  if space_age_enabled then
+    categories[#categories + 1] = {type = "module-category", name = "unstaffed-operations"}
+  end
 end
 
 data:extend(categories)
@@ -58,6 +104,12 @@ if character then
     ["bureaucratic-bootstrap"] = true,
     ["resolution-handcraft"] = true,
   }
+
+  if space_age_enabled then
+    for _, planet_name in ipairs(bureaucracy_categories.OFFWORLD_PLANETS) do
+      required_categories[bureaucracy_categories.bootstrap_for_planet(planet_name)] = true
+    end
+  end
 
   for _, category in ipairs(character.crafting_categories) do
     required_categories[category] = nil

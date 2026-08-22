@@ -10,6 +10,7 @@ M.colors = {
   C_LIGHT_PURPLE = {220, 180, 255, 255},
   C_LIGHT_ORANGE = {255, 210, 140, 255},
   C_LIGHT_PINK = {255, 180, 210, 255},
+  C_LIGHT_CYAN = {170, 245, 245, 255},
   C_LIGHT_GRAY = {200, 200, 210, 255},
   C_MANILA = {235, 205, 150, 255},
   C_TAN = {210, 180, 140, 255},
@@ -28,6 +29,8 @@ M.colors = {
   S_DARK_BLUE = {20, 40, 140, 240},
   S_DARK_GREEN = {20, 90, 40, 240},
   S_GOLD = {210, 160, 20, 230},
+  S_CYAN = {20, 190, 205, 235},
+  S_MAGENTA = {205, 45, 145, 235},
 
   SC_RED = {180, 20, 20, 240},
   SC_BLUE = {20, 40, 160, 240},
@@ -74,6 +77,31 @@ M.recipe_tints = {
   ["osha-scrubbing"] = tint(rgba_from_color("S_DARK_RED", 1)),
   ["osha-violation-recycling"] = tint(rgba_from_color("SC_RED", 1)),
   ["overtime-exemption"] = tint(rgba_from_color("S_PINK", 1)),
+  -- The waiver is its own module with its own art, not a recolour of the
+  -- overtime exemption; it gets the violet-blue of its icon.
+  ["unstaffed-operations-waiver"] = tint(rgba_from_color("S_PURPLE", 1)),
+}
+
+M.document_tint_colors = {
+  ["blank-form"] = "C_WHITE",
+  ["blank-approval"] = "C_LIGHT_BLUE",
+  ["blank-directive"] = "C_LIGHT_PURPLE",
+  ["carbon-offset-certificate-basic"] = "C_LIGHT_GREEN",
+  ["form-27b-6"] = "C_LIGHT_RED",
+  ["environmental-impact-report"] = "C_LIGHT_GREEN",
+  ["work-order"] = "C_LIGHT_YELLOW",
+  ["safety-waiver"] = "C_LIGHT_BLUE",
+  ["construction-permit"] = "C_LIGHT_ORANGE",
+  ["management-approval-verbal"] = "C_LIGHT_YELLOW",
+  ["management-approval-written"] = "C_LIGHT_PURPLE",
+  ["safety-work-order"] = "C_LIGHT_BLUE",
+  ["construction-work-order"] = "C_LIGHT_ORANGE",
+  ["management-verbal-work-order"] = "C_LIGHT_YELLOW",
+  ["management-written-work-order"] = "C_LIGHT_PURPLE",
+  ["research-grant-work-order"] = "C_LIGHT_BLUE",
+  ["chemical-handling-work-order"] = "C_LIGHT_CYAN",
+  ["radiological-work-order"] = "C_LIGHT_RED",
+  ["thermal-transfer-sheet"] = "C_LIGHT_ORANGE",
 }
 
 local function copy_color(color)
@@ -89,6 +117,11 @@ function M.recipe_tint(recipe_name)
     tertiary = copy_color(source.tertiary),
     quaternary = copy_color(source.quaternary),
   }
+end
+
+function M.document_tint(document_name)
+  local color_name = M.document_tint_colors[document_name] or "C_CREAM"
+  return tint(rgba_from_color(color_name, 1))
 end
 
 return M

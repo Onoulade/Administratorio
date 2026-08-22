@@ -2497,6 +2497,22 @@ function M.new(deps)
       end
     end
 
+    -- Capacity rejection is an administrative failure, not a pathfinding
+    -- obstruction. Such protesters may look for another route or destination,
+    -- but must never demolish a building merely because the desk was full.
+    if info.allow_obstacle_breach == false then
+      info.pending_protest_candidates = nil
+      clear_protest_approach(info, candidate.target)
+      defer_protest_target_retry(
+        info,
+        entity,
+        C.PROTEST_OBSTACLE_RETRY_TICKS or (3 * 60),
+        load_factor
+      )
+      render.ensure_protest_rendering(info)
+      return true
+    end
+
     local configured_attacker_limit = load_factor > 1
       and (C.PROTEST_OBSTACLE_ATTACKER_LIMIT_HIGH_LOAD or 1)
       or (C.PROTEST_OBSTACLE_ATTACKER_LIMIT or 12)
@@ -2894,6 +2910,11 @@ function M.new(deps)
     if not info or not info.protest_obstacle_attacking then return false end
     if not entity or not entity.valid then
       clear_protest_obstacle_attack_runtime(info, entity)
+      return true
+    end
+    if info.allow_obstacle_breach == false then
+      clear_protest_obstacle_attack_runtime(info, entity)
+      defer_protest_target_retry(info, entity, C.PROTEST_OBSTACLE_RETRY_TICKS or (3 * 60))
       return true
     end
     local target = info.protest_obstacle_target
@@ -3414,6 +3435,13 @@ function M.new(deps)
       complaints_filed = previous_info and previous_info.complaints_filed == true or false,
       state = "protesting",
     }
+    if opts.allow_obstacle_breach ~= nil then
+      info.allow_obstacle_breach = opts.allow_obstacle_breach == true
+    elseif previous_info and previous_info.allow_obstacle_breach ~= nil then
+      info.allow_obstacle_breach = previous_info.allow_obstacle_breach == true
+    else
+      info.allow_obstacle_breach = true
+    end
     info.entity_name = entity.name
     if previous_info then
       deps.remember_home_spawner(info, previous_info.home_spawner)

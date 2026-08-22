@@ -1,8 +1,13 @@
 .DS_Store
 __pycache__/
 *.pyc
+.claude/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
 *.code-workspace
 *.zip
+Internal/all-recipes.txt
+Internal/all-techs.txt
+/Internal/shadow_pipeline/
+/graphics/icons/_preview.png

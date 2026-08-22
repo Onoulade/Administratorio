@@ -3,16 +3,24 @@
 
 local C = require("scripts.constants")
 local pneumatic = require("scripts.pneumatic")
+local interplanetary_tube = require("scripts.interplanetary_tube")
+local ai_server = require("scripts.ai_server")
+local heat_exhaust = require("scripts.heat_exhaust")
+local relocation_cannon = require("scripts.relocation_cannon")
 local frustration = require("scripts.frustration")
 local zones = require("scripts.zones")
 local biters = require("scripts.biters")
+local pentapods = require("scripts.pentapods")
 local trains = require("scripts.trains")
 local working_hours = require("scripts.working_hours")
 local field_office = require("scripts.field_office")
+local planetary_unlocks = require("scripts.planetary_unlocks")
 local biter_station = require("scripts.biter_station")
 local biter_station_hover = require("scripts.biter_station_hover")
 local biterport = require("scripts.biterport")
 local biterport_hover = require("scripts.biterport_hover")
+local trajectory_compliance = require("scripts.trajectory_compliance")
+local territorial_arbitration = require("scripts.territorial_arbitration")
 local runtime_debug = require("scripts.control_runtime_debug")
 local control_event_router = require("scripts.control_event_router")
 local control_resolution_processing_factory = require("scripts.control_resolution_processing")
@@ -22,11 +30,37 @@ local protest_targets = require("scripts.protest_targets")
 local hired_biter = require("scripts.hired_biter")
 local rideable_biter = require("scripts.rideable_biter")
 local spawner_population = require("scripts.spawner_population")
+local victory = require("scripts.victory")
+local admin_desk_rotation = require("scripts.admin_desk_rotation")
 
 biter_station.set_biters_module(biters)
 biterport.set_biters_module(biters)
 
-local ADMIN_STATION_NAMES = "admin-station"
+local ADMIN_DESK_NAMES = {
+  "admin-station",
+  "capture-bureau",
+}
+
+local ADMIN_DESK_NAME_SET = {}
+for _, name in ipairs(ADMIN_DESK_NAMES) do
+  ADMIN_DESK_NAME_SET[name] = true
+end
+
+local function existing_entity_names(names)
+  local filtered = {}
+  for _, name in ipairs(names) do
+    if feature_flags.entity_prototype_exists(name) then
+      filtered[#filtered + 1] = name
+    end
+  end
+  return filtered
+end
+
+local function find_entities_with_existing_names(surface, names)
+  local filtered_names = existing_entity_names(names)
+  if #filtered_names == 0 then return {} end
+  return surface.find_entities_filtered{name = filtered_names}
+end
 
 local UNIT_GROUP_DEBUG_SCAN_INTERVAL = 180
 local UNIT_GROUP_GATHER_REDIRECT_TICKS = 300
@@ -37,9 +71,19 @@ local resolution_processing
 local enable_regulated_variants_for_technology = regulated_unlocks.enable_regulated_variants_for_technology
 local FIELD_OFFICE_DEPLOYMENT_TECH = "field-office-deployment"
 
+local function get_entity_name(entity_or_name)
+  if type(entity_or_name) == "string" then return entity_or_name end
+  if entity_or_name then return entity_or_name.name end
+  return nil
+end
+
+local function is_admin_desk(entity_or_name)
+  local name = get_entity_name(entity_or_name)
+  return name and ADMIN_DESK_NAME_SET[name] == true
+end
+
 local function is_admin_station(entity_or_name)
-  local name = type(entity_or_name) == "string" and entity_or_name or (entity_or_name and entity_or_name.name)
-  return name == ADMIN_STATION_NAMES
+  return is_admin_desk(entity_or_name)
 end
 
 local function normalize_admin_station_inventory(inventory)
@@ -71,16 +115,18 @@ local function normalize_player_admin_station_quickbar(player)
   end
 end
 
-local function freeze_admin_station_rotation(desk)
-  if not desk or not desk.valid then return end
-  desk.rotatable = false
+local function get_nest_exclusion_radius(entity_name)
+  if entity_name == "capture-bureau" then
+    return C.CAPTURE_BUREAU_NEST_EXCLUSION_RADIUS or 32
+  end
+  return C.ADMIN_STATION_NEST_EXCLUSION_RADIUS or 32
 end
 
-local function find_nearby_enemy_spawner(surface, position)
+local function find_nearby_enemy_spawner(surface, position, entity_name)
   if not surface or not position then return nil end
   return surface.find_entities_filtered{
     position = position,
-    radius = 32,
+    radius = get_nest_exclusion_radius(entity_name),
     type = "unit-spawner",
     limit = 1
   }[1]
@@ -199,8 +245,8 @@ end
 
 local function normalize_admin_station_entity(desk, player)
   if not desk or not desk.valid then return nil end
-  if desk.name == "admin-station" then
-    freeze_admin_station_rotation(desk)
+  if desk.name == "admin-station" or desk.name == "capture-bureau" then
+    admin_desk_rotation.apply(desk)
     storage.admin_desks[desk.unit_number] = desk
     return desk
   end
@@ -234,7 +280,7 @@ local function normalize_admin_station_entity(desk, player)
   local new_desk = surface.create_entity(params)
   if not new_desk or not new_desk.valid then return desk end
 
-  freeze_admin_station_rotation(new_desk)
+  admin_desk_rotation.apply(new_desk)
   migrate_desk_storage(old_desk_id, new_desk)
   storage.admin_desks[new_desk.unit_number] = new_desk
   ensure_desk_combinator(new_desk)
@@ -250,7 +296,7 @@ end
 
 local function refresh_cached_desk(desk)
   if not desk or not desk.valid then return nil end
-  freeze_admin_station_rotation(desk)
+  admin_desk_rotation.apply(desk)
   storage.admin_desks[desk.unit_number] = desk
   zones.ensure_desk_runtime_state(desk)
   ensure_desk_combinator(desk)
@@ -260,7 +306,7 @@ end
 local function rebuild_desk_cache()
   storage.admin_desks = {}
   for _, surface in pairs(game.surfaces) do
-    for _, desk in ipairs(surface.find_entities_filtered{name = ADMIN_STATION_NAMES}) do
+    for _, desk in ipairs(find_entities_with_existing_names(surface, ADMIN_DESK_NAMES)) do
       if desk.valid then
         refresh_cached_desk(desk)
       end
@@ -418,12 +464,14 @@ local function init_storage()
     storage.waiting_biter_state_index_built = false
   end
   storage.desk_zones = storage.desk_zones or {}
+  storage.admin_desks = storage.admin_desks or {}
   storage.desk_combinators = storage.desk_combinators or {}
   storage.desk_reserved_slots = storage.desk_reserved_slots or {}
   storage.desk_grid_slots = storage.desk_grid_slots or {}
   storage.desk_occupant_counts = storage.desk_occupant_counts or {}
   storage.desk_return_positions = storage.desk_return_positions or {}
   storage.desk_circuit_dirty = storage.desk_circuit_dirty or {}
+  storage.capture_bureau_ports = storage.capture_bureau_ports or {}
   storage.evolution_complaint_warnings = storage.evolution_complaint_warnings or {}
   storage.stations = storage.stations or {}
   storage.achievements = storage.achievements or {}
@@ -441,6 +489,12 @@ local function init_storage()
   storage.stats.biters_hired = storage.stats.biters_hired or 0
   storage.stats.rockets_launched = storage.stats.rockets_launched or 0
   storage.calmed_spawners = storage.calmed_spawners or {}
+  trajectory_compliance.ensure_storage()
+  trajectory_compliance.configure_existing_arrays()
+  territorial_arbitration.ensure_storage()
+  interplanetary_tube.ensure_storage()
+  ai_server.ensure_storage()
+  relocation_cannon.ensure_storage()
   if WORKING_HOURS_ENABLED then
     working_hours.ensure_storage()
   end
@@ -481,14 +535,26 @@ local function set_biter_ceasefire()
   if not biter_force then
     biter_force = game.create_force("administratorio-biters")
   end
+  local hatched_pentapod_force = game.forces[C.HATCHED_PENTAPOD_FORCE_NAME]
+  if not hatched_pentapod_force then
+    hatched_pentapod_force = game.create_force(C.HATCHED_PENTAPOD_FORCE_NAME)
+  end
   biter_force.set_cease_fire(player, true)
   player.set_cease_fire(biter_force, true)
   biter_force.set_cease_fire(enemy, true)
   enemy.set_cease_fire(biter_force, true)
+  hatched_pentapod_force.set_cease_fire(player, false)
+  player.set_cease_fire(hatched_pentapod_force, false)
+  hatched_pentapod_force.set_cease_fire(enemy, true)
+  enemy.set_cease_fire(hatched_pentapod_force, true)
+  hatched_pentapod_force.set_cease_fire(biter_force, true)
+  biter_force.set_cease_fire(hatched_pentapod_force, true)
   local neutral = game.forces["neutral"]
   if neutral then
     biter_force.set_cease_fire(neutral, true)
     neutral.set_cease_fire(biter_force, true)
+    hatched_pentapod_force.set_cease_fire(neutral, true)
+    neutral.set_cease_fire(hatched_pentapod_force, true)
   end
 
   local hard_mode_force_name = C.HARD_MODE_ATTACK_FORCE_NAME or "administratorio-hard-mode-biters"
@@ -601,7 +667,13 @@ end
 local function on_init()
   init_storage()
   rebuild_desk_cache()
+  territorial_arbitration.rebuild_registry()
+  interplanetary_tube.rebuild_registry()
+  ai_server.rebuild_registry()
+  heat_exhaust.rebuild_registry()
+  relocation_cannon.rebuild_registry()
   biters.rebuild_desk_index()
+  biters.rebuild_capture_bureau_ports()
   biters.mark_all_desk_circuit_dirty()
   if WORKING_HOURS_ENABLED then
     working_hours.rebuild_registry()
@@ -624,15 +696,38 @@ local function on_init()
   end
   sync_all_regulated_recipe_unlocks()
   pneumatic.sync_all_intake_recipe_unlocks()
+  planetary_unlocks.sync_all()
   storage.needs_startup_cleanup = true
   storage.needs_protest_refresh = true
   needs_unit_group_scan = true
+end
+
+local function cleanup_orphan_admin_desk_storage()
+  for desk_id in pairs(storage.desk_zones or {}) do
+    local desk = storage.admin_desks and storage.admin_desks[desk_id] or nil
+    if not (desk and desk.valid) then
+      zones.cleanup_desk_zone(desk_id)
+      if storage.desk_combinators[desk_id] and storage.desk_combinators[desk_id].valid then
+        storage.desk_combinators[desk_id].destroy()
+      end
+      storage.desk_combinators[desk_id] = nil
+      storage.desk_reserved_slots[desk_id] = nil
+      if storage.desk_grid_slots then storage.desk_grid_slots[desk_id] = nil end
+      if storage.capture_bureau_ports then storage.capture_bureau_ports[desk_id] = nil end
+      biters.clear_desk_circuit_tracking(desk_id)
+    end
+  end
 end
 
 local function on_configuration_changed(event)
   warn_about_pre_040_save(event)
   init_storage()
   rebuild_desk_cache()
+  territorial_arbitration.rebuild_registry()
+  interplanetary_tube.rebuild_registry()
+  ai_server.rebuild_registry()
+  heat_exhaust.rebuild_registry()
+  relocation_cannon.rebuild_registry()
   trains.on_init()
   set_biter_ceasefire()
   
@@ -649,13 +744,14 @@ local function on_configuration_changed(event)
   storage.pneumatic_liquifiers = nil -- superseded by tube signal chain
 
   pneumatic.rebuild_all()
+  biters.rebuild_capture_bureau_ports()
 
   -- Destroy old waiting markers and normalize desks to the single centered station.
   for _, surface in pairs(game.surfaces) do
     local old_corner_blockers = surface.find_entities_filtered{name = "admin-station-corner-blocker"}
     for _, blocker in ipairs(old_corner_blockers) do blocker.destroy() end
 
-    for _, desk in ipairs(surface.find_entities_filtered{name = ADMIN_STATION_NAMES}) do
+    for _, desk in ipairs(find_entities_with_existing_names(surface, ADMIN_DESK_NAMES)) do
       desk = normalize_admin_station_entity(desk, nil) or desk
       local desk_id = desk.unit_number
       storage.desk_zones[desk_id] = {
@@ -663,7 +759,11 @@ local function on_configuration_changed(event)
         footprint = zones.get_desk_footprint_bounds(desk.position)
       }
       zones.create_corner_blockers(surface, storage.desk_zones[desk_id].footprint, desk.force)
-      ensure_desk_combinator(desk)
+      if desk.name == "capture-bureau" then
+        biters.ensure_capture_bureau_ports(desk)
+      else
+        ensure_desk_combinator(desk)
+      end
       biters.mark_desk_circuit_dirty(desk_id)
       storage.desk_reserved_slots[desk_id] = storage.desk_reserved_slots[desk_id] or 0
       storage.desk_grid_slots[desk_id] = storage.desk_grid_slots[desk_id] or {}
@@ -675,10 +775,13 @@ local function on_configuration_changed(event)
     end
   end
   if storage.desk_power then storage.desk_power = nil end
+  cleanup_orphan_admin_desk_storage()
   rebuild_desk_cache()
   biters.rebuild_desk_index()
   biters.mark_all_desk_circuit_dirty()
-  working_hours.rebuild_registry()
+  if WORKING_HOURS_ENABLED then
+    working_hours.rebuild_registry()
+  end
   field_office.rebuild_registry()
   spawner_population.rebuild()
   biter_station.rebuild_registry()
@@ -694,6 +797,7 @@ local function on_configuration_changed(event)
   end
   sync_all_regulated_recipe_unlocks()
   pneumatic.sync_all_intake_recipe_unlocks()
+  planetary_unlocks.sync_all()
   storage.needs_protest_refresh = true
   needs_unit_group_scan = true
 
@@ -709,6 +813,7 @@ local function on_research_finished(event)
   local research = event and event.research
   if not research or not research.valid then return end
   enable_regulated_variants_for_technology(research.force, research)
+  planetary_unlocks.on_research_finished(research)
   biter_station.on_research_finished(research)
   biterport.on_research_finished(research)
   -- Invalidate tube capacity cache when a pneumatic capacity tech is researched.
@@ -871,11 +976,14 @@ local function on_entity_built_inner(event)
   local entity = event.entity or event.created_entity
   if not entity or not entity.valid then return end
 
+  -- A strict native priority list prevents lower-tier arrays from spending a
+  -- manager on an asteroid that their script-side jurisdiction must reject.
+  trajectory_compliance.configure_array(entity)
+
   local surface = entity.surface
   local player = event.player_index and game.players[event.player_index]
 
-  -- Only the admin desk is restricted from being placed near nests
-  local nearby_spawner = is_admin_station(entity) and find_nearby_enemy_spawner(surface, entity.position)
+  local nearby_spawner = find_nearby_enemy_spawner(surface, entity.position)
 
   if nearby_spawner then
       -- 1. Notify the player
@@ -919,11 +1027,11 @@ local function on_entity_built_inner(event)
   end
 
   -- Handle Administration Station placement and zone logic
-  if is_admin_station(entity) then
+  if is_admin_desk(entity) then
     local player = event.player_index and game.get_player(event.player_index)
     entity = normalize_admin_station_entity(entity, player) or entity
     if not entity or not entity.valid then return end
-    freeze_admin_station_rotation(entity)
+    admin_desk_rotation.apply(entity)
 
     local surface = entity.surface
     local desk_id = entity.unit_number
@@ -936,7 +1044,7 @@ local function on_entity_built_inner(event)
     if overlaps_existing then
       if player then
         player.print({"message.admin-station-overlap"})
-        player.insert{name = "admin-station", count = 1, quality = entity.quality and entity.quality.name or nil}
+        player.insert{name = entity.name, count = 1, quality = entity.quality and entity.quality.name or nil}
       end
       entity.destroy()
       return
@@ -945,7 +1053,7 @@ local function on_entity_built_inner(event)
     if not area_clear then
       if player then
         player.print({"message.admin-station-blocked"})
-        player.insert{name = "admin-station", count = 1, quality = entity.quality and entity.quality.name or nil}
+        player.insert{name = entity.name, count = 1, quality = entity.quality and entity.quality.name or nil}
       end
       entity.destroy()
       return
@@ -979,7 +1087,11 @@ local function on_entity_built_inner(event)
 
     storage.desk_zones[desk_id] = {bounds = bounds, footprint = footprint}
     zones.create_corner_blockers(surface, footprint, entity.force)
-    ensure_desk_combinator(entity)
+    if entity.name == "capture-bureau" then
+      biters.ensure_capture_bureau_ports(entity)
+    else
+      ensure_desk_combinator(entity)
+    end
     storage.desk_reserved_slots[desk_id] = 0
     storage.desk_grid_slots[desk_id] = {}
     storage.admin_desks[desk_id] = entity
@@ -987,6 +1099,10 @@ local function on_entity_built_inner(event)
   -- Handle pneumatic endpoint support entities.
   elseif pneumatic.is_pneumatic_building(entity) then
     pneumatic.add_pneumatic_supports(entity)
+  elseif entity.name == territorial_arbitration.POST_NAME then
+    if not territorial_arbitration.on_entity_built(entity, event.player_index and game.get_player(event.player_index)) then
+      return
+    end
 
   -- Pipe placement changes tube network topology.
   elseif entity.name == "pneumatic-pipe" or entity.name == "pneumatic-pipe-to-ground" then
@@ -1009,6 +1125,14 @@ local function on_entity_built_inner(event)
         entity.destroy()
         return
       end
+    end
+    if interplanetary_tube.is_terminus(entity) and not interplanetary_tube.on_entity_built(entity, player) then
+      return
+    end
+    ai_server.on_entity_built(entity)
+    heat_exhaust.on_entity_built(entity)
+    if relocation_cannon.is_cannon(entity) and not relocation_cannon.on_entity_built(entity, player) then
+      return
     end
     if biterport.on_entity_built(event) then
       return
@@ -1063,6 +1187,39 @@ local function on_entity_built(event)
   on_entity_built_inner(event)
 end
 
+local function cleanup_admin_desk_storage(desk_id, surface)
+  if not desk_id then return end
+  storage.admin_desks = storage.admin_desks or {}
+  storage.desk_zones = storage.desk_zones or {}
+  storage.desk_combinators = storage.desk_combinators or {}
+  storage.desk_reserved_slots = storage.desk_reserved_slots or {}
+  local was_tracked = (storage.admin_desks and storage.admin_desks[desk_id])
+    or (storage.desk_zones and storage.desk_zones[desk_id])
+  storage.admin_desks[desk_id] = nil
+  if was_tracked then
+    biters.reroute_desk_biters(desk_id, surface)
+  end
+  zones.cleanup_desk_zone(desk_id)
+  if storage.desk_combinators[desk_id] and storage.desk_combinators[desk_id].valid then
+    storage.desk_combinators[desk_id].destroy()
+  end
+  storage.desk_combinators[desk_id] = nil
+  storage.desk_reserved_slots[desk_id] = nil
+  if storage.desk_grid_slots then storage.desk_grid_slots[desk_id] = nil end
+  if storage.capture_bureau_ports then storage.capture_bureau_ports[desk_id] = nil end
+  biters.clear_desk_circuit_tracking(desk_id)
+end
+
+local function cleanup_removed_admin_desk(entity)
+  if not entity or not entity.valid or not is_admin_desk(entity) then return false end
+  local desk_id = entity.unit_number
+  if entity.name == "capture-bureau" then
+    biters.delete_capture_bureau_ports(entity)
+  end
+  cleanup_admin_desk_storage(desk_id, entity.surface)
+  return true
+end
+
 local function on_entity_removed(event)
   local entity = event.entity
   if not entity or not entity.valid then return end
@@ -1086,22 +1243,15 @@ local function on_entity_removed(event)
   biterport.on_entity_removed(event)
   biter_station.untrack_entity(entity, game.tick)
   rideable_biter.untrack(entity)
+  territorial_arbitration.on_entity_removed(entity)
+  interplanetary_tube.on_entity_removed(entity, event.buffer)
+  ai_server.on_entity_removed(entity)
+  relocation_cannon.on_entity_removed(entity)
 
   trains.on_removed(entity)
 
-  if is_admin_station(entity) then
-    local desk_id = entity.unit_number
-    local surface = entity.surface
-    storage.admin_desks[desk_id] = nil
-    biters.reroute_desk_biters(desk_id, surface)
-    zones.cleanup_desk_zone(desk_id)
-    if storage.desk_combinators[desk_id] and storage.desk_combinators[desk_id].valid then
-      storage.desk_combinators[desk_id].destroy()
-    end
-    storage.desk_combinators[desk_id] = nil
-    storage.desk_reserved_slots[desk_id] = nil
-    if storage.desk_grid_slots then storage.desk_grid_slots[desk_id] = nil end
-    biters.clear_desk_circuit_tracking(desk_id)
+  if cleanup_removed_admin_desk(entity) then
+    return
   elseif pneumatic.is_pneumatic_building(entity) then
     pneumatic.delete_pneumatic_supports(entity)
   elseif entity.name == "pneumatic-pipe" or entity.name == "pneumatic-pipe-to-ground" then
@@ -1110,10 +1260,26 @@ local function on_entity_removed(event)
   end
 end
 
+local function on_pre_entity_removed(event)
+  cleanup_removed_admin_desk(event.entity)
+end
+
 local function on_toggle_runtime_debug(event)
   local player = game.get_player(event.player_index)
   if not player then return end
   runtime_debug.toggle(player)
+end
+
+local build_entity_died_filters
+
+-- Hard mode reads its feature flag fresh on every check, so no extra wiring is
+-- needed for it. Belt/inserter protest targets are cached in tables shared by
+-- reference across modules, so toggling them mid-game requires refreshing
+-- those tables in place and re-registering the on_entity_died event filter.
+local function on_runtime_mod_setting_changed(event)
+  if event.setting ~= "administratorio-debug-protest-belts-and-inserters" then return end
+  biters.refresh_protest_target_types()
+  script.set_event_filter(defines.events.on_entity_died, build_entity_died_filters())
 end
 
 -- ============================================================
@@ -1696,6 +1862,13 @@ end
 local function on_entity_died(event)
   local entity = event.entity
   spawner_population.on_entity_died(entity)
+  trajectory_compliance.on_entity_died(event)
+  -- These systems own hidden children, registries, or in-flight cargo. Death
+  -- events bypass the mined/raised-destroy handler, so route them through the
+  -- same cleanup while the entity is still a valid spill/refund anchor.
+  interplanetary_tube.on_entity_removed(entity, event.buffer)
+  ai_server.on_entity_removed(entity)
+  relocation_cannon.on_entity_removed(entity)
   if entity.name == C.HIRED_BITER_UNIT_NAME then
     hired_biter.untrack(entity, event)
   end
@@ -1719,31 +1892,21 @@ local function on_entity_died(event)
     field_office.untrack_entity(entity)
   end
   biter_station.untrack_entity(entity, event.tick)
-  if is_admin_station(entity) then
-    local desk_id = entity.unit_number
-    local surface = entity.surface
-    storage.admin_desks[desk_id] = nil
-    biters.reroute_desk_biters(desk_id, surface)
-    zones.cleanup_desk_zone(desk_id)
-    if storage.desk_combinators[desk_id] and storage.desk_combinators[desk_id].valid then
-      storage.desk_combinators[desk_id].destroy()
-    end
-    storage.desk_combinators[desk_id] = nil
-    storage.desk_reserved_slots[desk_id] = nil
-    if storage.desk_grid_slots then storage.desk_grid_slots[desk_id] = nil end
-    biters.clear_desk_circuit_tracking(desk_id)
-  end
+  territorial_arbitration.on_entity_removed(entity)
+  cleanup_removed_admin_desk(entity)
   if pneumatic.is_pneumatic_building(entity) then
     pneumatic.delete_pneumatic_supports(entity)
   end
   trains.on_removed(entity)
 end
 
-local ON_ENTITY_DIED_FILTERS = {
+local ON_ENTITY_DIED_BASE_FILTERS = {
+  {filter = "type", type = "asteroid"},
   {filter = "type", type = "unit"},
   {filter = "type", type = "pipe"},
   {filter = "type", type = "train-stop"},
   {filter = "name", name = "admin-station"},
+  {filter = "name", name = "capture-bureau"},
   {filter = "name", name = "biter-station"},
   {filter = "name", name = "biterport"},
   {filter = "name", name = "rideable-biter"},
@@ -1756,18 +1919,27 @@ local ON_ENTITY_DIED_FILTERS = {
 -- Keep death-event coverage in lockstep with every configured protest target.
 -- In particular, the debug belt/inserter targets need immediate reassignment
 -- when they are destroyed rather than waiting for the background recovery pass.
-for _, target_type in ipairs(protest_targets.get_target_types()) do
-  ON_ENTITY_DIED_FILTERS[#ON_ENTITY_DIED_FILTERS + 1] = {filter = "type", type = target_type}
+build_entity_died_filters = function()
+  local filters = {}
+  for _, base_filter in ipairs(ON_ENTITY_DIED_BASE_FILTERS) do
+    filters[#filters + 1] = base_filter
+  end
+  for _, target_type in ipairs(protest_targets.get_target_types()) do
+    filters[#filters + 1] = {filter = "type", type = target_type}
+  end
+  -- Explicit breach targets also need to wake their assigned attacker as soon
+  -- as they die. Transport infrastructure is absent from this list by design.
+  for _, building_type in ipairs(protest_targets.get_obstacle_building_types()) do
+    filters[#filters + 1] = {filter = "type", type = building_type}
+  end
+  return filters
 end
 
--- Explicit breach targets also need to wake their assigned attacker as soon as
--- they die. Transport infrastructure is absent from this list by design.
-for _, building_type in ipairs(protest_targets.get_obstacle_building_types()) do
-  ON_ENTITY_DIED_FILTERS[#ON_ENTITY_DIED_FILTERS + 1] = {filter = "type", type = building_type}
-end
+local ON_ENTITY_DIED_FILTERS = build_entity_died_filters()
 
 local function on_script_trigger_effect(event)
   biters.on_script_trigger_effect(event)
+  trajectory_compliance.on_script_trigger_effect(event)
   if event.effect_id == "hired-biter-deploy" then
     local pos = event.target_position
     local surface = event.surface_index and game.get_surface(event.surface_index)
@@ -1958,8 +2130,13 @@ local function build_win_gui(player)
 end
 
 local function on_rocket_launched(event)
-  if storage.stats then
-    storage.stats.rockets_launched = (storage.stats.rockets_launched or 0) + 1
+  victory.record_rocket_launch(storage.stats)
+
+  -- Cargo rockets are ordinary infrastructure in Space Age. Let the
+  -- expansion own its victory condition instead of finishing the game on the
+  -- first interplanetary shipment.
+  if not victory.should_finish_on_rocket_launch(feature_flags.space_age_enabled()) then
+    return
   end
 
   -- Show GUI to the player who launched, or all connected players
@@ -1996,13 +2173,16 @@ local function on_gui_click(event)
 end
 
 
+
 -- ============================================================
 -- MAIN LOOP (Runs every 1 second)
 -- ============================================================
 
 local function on_protest_pacing_tick(_event)
   runtime_debug.run_profiled_external_sections("protest_pacing", function()
-    biters.process_protest_pacing(game.surfaces[1])
+    for _, surface in pairs(game.surfaces) do
+      biters.process_protest_pacing(surface)
+    end
     refresh_selected_biter_info_guis()
   end)
 end
@@ -2028,17 +2208,41 @@ local function on_main_tick(event)
     biter_station.sanitize_external_links()
   end)
   resolution_processing.on_tick(event)
+  pentapods.process_money_baits(event.tick)
   runtime_debug.run_profiled_external_sections("hired_biter", function()
     hired_biter.update(event.tick)
   end)
   runtime_debug.run_profiled_external_sections("rideable_biter", function()
     rideable_biter.update(event.tick)
   end)
+  territorial_arbitration.on_tick(event)
+end
+
+local function on_trajectory_compliance_tick(event)
+  trajectory_compliance.on_tick(event)
 end
 
 local function on_pneumatic_tick(_event)
   runtime_debug.run_profiled_external_sections("pneumatic", function()
     pneumatic.on_pneumatic_tick()
+  end)
+end
+
+local function on_interplanetary_tube_tick(event)
+  runtime_debug.run_profiled_external_sections("interplanetary_tube", function()
+    interplanetary_tube.on_tick(event)
+  end)
+end
+
+local function on_ai_server_tick(event)
+  runtime_debug.run_profiled_external_sections("ai_server", function()
+    ai_server.on_tick(event)
+  end)
+end
+
+local function on_relocation_cannon_tick(event)
+  runtime_debug.run_profiled_external_sections("relocation_cannon", function()
+    relocation_cannon.on_tick(event)
   end)
 end
 
@@ -2093,19 +2297,28 @@ control_event_router.register({
   on_init = on_init,
   on_load = on_load,
   on_main_tick = on_main_tick,
+  on_trajectory_compliance_tick = on_trajectory_compliance_tick,
   on_pneumatic_tick = on_pneumatic_tick,
+  on_interplanetary_tube_tick = on_interplanetary_tube_tick,
+  terminus_check_ticks = C.TERMINUS_CHECK_TICKS,
+  on_ai_server_tick = on_ai_server_tick,
+  ai_server_check_ticks = C.AI_SERVER_CHECK_TICKS,
+  on_relocation_cannon_tick = on_relocation_cannon_tick,
+  relocation_cannon_check_ticks = C.RELOCATION_CANNON_CHECK_TICKS,
   on_player_created = on_player_created,
   on_player_cursor_stack_changed = on_player_cursor_stack_changed,
   on_player_joined_game = on_player_joined_game,
   on_player_left_game = on_player_left_game,
   on_player_crafted_item = on_player_crafted_item,
   on_pre_build = on_pre_build,
+  on_pre_entity_removed = on_pre_entity_removed,
   on_player_respawned = on_player_respawned,
   on_player_reverse_selected_area = on_player_reverse_selected_area,
   on_research_finished = on_research_finished,
   on_player_selected_area = on_player_selected_area,
   on_protest_pacing_tick = on_protest_pacing_tick,
   on_rocket_launched = on_rocket_launched,
+  on_runtime_mod_setting_changed = on_runtime_mod_setting_changed,
   on_script_path_request_finished = on_script_path_request_finished,
   on_script_trigger_effect = on_script_trigger_effect,
   on_selected_entity_changed = on_selected_entity_changed,

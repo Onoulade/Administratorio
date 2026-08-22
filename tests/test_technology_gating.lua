@@ -201,21 +201,7 @@ package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 dofile(mod_root .. "prototypes/technology.lua")
 
 local function load_locale_section(section_name)
-  local path = mod_root .. "locale/en/config.cfg"
-  local section = {}
-  local in_section = false
-  for line in io.lines(path) do
-    local header = line:match("^%[(.-)%]$")
-    if header then
-      in_section = header == section_name
-    elseif in_section then
-      local key, value = line:match("^([^=]+)=(.*)$")
-      if key then
-        section[key] = value
-      end
-    end
-  end
-  return section
+  return require("tests.locale_helpers").section(mod_root, "en", section_name)
 end
 
 local technology_name_locale = load_locale_section("technology-name")
@@ -345,6 +331,11 @@ test("local precedents and environmental compliance are split", function()
   assert_true(not tech_unlocks_recipe("environmental-compliance", "copy-environmental-impact-report"), "environmental-compliance should not unlock impact-report copying")
 end)
 
+test("old government liaison petition chain is removed", function()
+  assert_true(technologies["government-liaison"] == nil, "government-liaison technology should be removed")
+  assert_true(not tech_unlocks_recipe("printing-technology", "petition-counter"), "printing should not unlock petition-counter")
+end)
+
 test("administrative bureaucracy owns only the early greenhouse wood bootstrap", function()
   assert_true(technologies["administrative-bureaucracy"].icon == "__administratorio__/graphics/technology/greenhouse.png",
     "administrative-bureaucracy should use the greenhouse technology icon")
@@ -366,10 +357,13 @@ test("admin station capacity upgrades are tiered and chain correctly", function(
   local expected_icon = "__administratorio__/graphics/technology/admin-station-capacity.png"
   for level = 1, 8 do
     local tech_name = "admin-station-capacity-" .. level
+    local icons = technologies[tech_name].icons
     assert_true(technologies[tech_name] ~= nil, tech_name .. " should exist")
     assert_true(tech_has_effect(tech_name, "nothing"), tech_name .. " should expose a scripted-effect marker")
-    assert_true(technologies[tech_name].icon == expected_icon, tech_name .. " should use the building-based technology icon")
-    assert_true(technologies[tech_name].icon_size == 256, tech_name .. " should use the 256px technology icon size")
+    assert_true(icons and icons[1].icon == expected_icon, tech_name .. " should use the building-based technology icon")
+    assert_true(icons[1].icon_size == 256, tech_name .. " should use the 256px technology icon size")
+    assert_true(icons[2].icon == "__base__/graphics/icons/signal/signal_" .. level .. ".png",
+      tech_name .. " should display its capacity tier")
 
     if level == 1 then
       assert_true(tech_has_prereq(tech_name, "administrative-bureaucracy"), tech_name .. " should start from administrative-bureaucracy")
@@ -494,7 +488,8 @@ test("biterport capacity, transport, and logistics speed upgrades are tiered and
     end
   end
 
-  assert_true(not tech_uses_pack("biterport-transport-capacity-3", "chemical-science-pack"), "transport III should not use chemical science")
+  assert_true(not tech_uses_pack("biterport-transport-capacity-3", "chemical-science-pack"),
+    "transport III should remain below the chemical-science threshold")
   assert_true(tech_uses_pack("biterport-transport-capacity-4", "chemical-science-pack"), "transport IV should use chemical science")
   assert_true(tech_has_prereq("biterport-transport-capacity-4", "chemical-science-pack"), "transport IV should depend on chemical science")
   assert_true(tech_uses_pack("biterport-worker-speed-2", "chemical-science-pack"), "speed II should use chemical science")
@@ -627,11 +622,13 @@ test("environmental compliance is a single consolidated branch", function()
   assert_true(tech_has_prereq("environmental-compliance", "steel-processing"), "environmental-compliance should require steel-processing")
 end)
 
-test("environmental compliance stays below chemical tier lock-in", function()
-  assert_true(not tech_has_prereq("environmental-compliance", "chemical-science-pack"), "environmental-compliance should not require chemical science")
+test("environmental compliance stays before the oil and chemical bootstrap", function()
+  assert_true(not tech_has_prereq("environmental-compliance", "chemical-science-pack"),
+    "environmental-compliance must precede chemical science so oil-processing does not cycle")
   assert_true(not tech_has_prereq("environmental-compliance", "public-finance"), "environmental-compliance should not require public-finance")
   assert_true(not tech_has_prereq("environmental-compliance", "production-science-pack"), "environmental-compliance should not require production science")
-  assert_true(not tech_uses_pack("environmental-compliance", "chemical-science-pack"), "environmental-compliance should not use chemical science")
+  assert_true(not tech_uses_pack("environmental-compliance", "chemical-science-pack"),
+    "environmental-compliance must remain researchable before chemical science")
   assert_true(tech_uses_pack("environmental-compliance", "logistic-science-pack"), "environmental-compliance should use logistic science")
   assert_true(not tech_uses_pack("environmental-compliance", "production-science-pack"), "environmental-compliance should not use production science")
 end)
@@ -692,7 +689,7 @@ test("late complaint tiers are split by family and science tier", function()
   assert_true(tech_unlocks_recipe("constitutional-law", "unemployment-final"), "constitutional-law should unlock unemployment resolution")
   assert_true(tech_unlocks_recipe("vagrancy-ordinances", "vagrancy-final"), "vagrancy-ordinances should unlock vagrancy resolution")
   assert_true(tech_uses_pack("loitering-ordinances", "utility-science-pack"), "loitering-ordinances should use utility science")
-  assert_true(not tech_uses_pack("loitering-ordinances", "production-science-pack"), "loitering-ordinances should not use production science")
+  assert_true(tech_uses_pack("loitering-ordinances", "production-science-pack"), "loitering-ordinances should use production science")
   assert_true(tech_uses_pack("constitutional-law", "production-science-pack"), "constitutional-law should use production science")
   assert_true(not tech_uses_pack("constitutional-law", "utility-science-pack"), "constitutional-law should not use utility science")
   assert_true(tech_uses_pack("vagrancy-ordinances", "utility-science-pack"), "vagrancy-ordinances should use utility science")
@@ -715,7 +712,7 @@ test("science tier heads and inherited pack requirements are enforced", function
   assert_true(tech_has_prereq("eminent-domain-zoning", "production-science-pack"), "eminent-domain-zoning should require production science")
   assert_true(tech_has_prereq("constitutional-law", "production-science-pack"), "constitutional-law should require production science")
   assert_true(tech_has_prereq("loitering-ordinances", "utility-science-pack"), "loitering-ordinances should require utility science")
-  assert_true(not tech_has_prereq("loitering-ordinances", "production-science-pack"), "loitering-ordinances should not require production science")
+  assert_true(tech_has_prereq("loitering-ordinances", "production-science-pack"), "loitering-ordinances should require production science")
   assert_true(tech_has_prereq("vagrancy-ordinances", "utility-science-pack"), "vagrancy-ordinances should require utility science")
   assert_true(not tech_has_prereq("electric-mining-drill", "printing-technology"), "electric-mining-drill should not require printing-technology")
   assert_true(not tech_has_prereq("stone-wall", "printing-technology"), "stone-wall should not require printing-technology")

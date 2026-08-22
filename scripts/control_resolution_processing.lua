@@ -95,9 +95,21 @@ function M.new(deps)
 
     local desks = {}
     local powered_desks = desks
+    local desks_by_surface = {}
     runtime_debug.run_profiled_section(runtime_snapshot, "desk_cache", function()
       desks = deps.get_cached_desks()
       powered_desks = desks
+      desks_by_surface = {}
+      for _, desk in ipairs(powered_desks) do
+        if desk and desk.valid and desk.surface and desk.surface.valid then
+          local bucket = desks_by_surface[desk.surface.index]
+          if not bucket then
+            bucket = {surface = desk.surface, desks = {}}
+            desks_by_surface[desk.surface.index] = bucket
+          end
+          bucket.desks[#bucket.desks + 1] = desk
+        end
+      end
     end)
 
     runtime_debug.run_profiled_section(runtime_snapshot, "achievements", function()
@@ -110,15 +122,36 @@ function M.new(deps)
     end)
 
     runtime_debug.run_profiled_section(runtime_snapshot, "registration", function()
-      deps.biters.process_walk_in_registration(surface, powered_desks, runtime_snapshot and runtime_snapshot.sections or nil)
+      for _, bucket in pairs(desks_by_surface) do
+        deps.biters.process_walk_in_registration(bucket.surface, bucket.desks, runtime_snapshot and runtime_snapshot.sections or nil)
+      end
     end)
 
     runtime_debug.run_profiled_section(runtime_snapshot, "resolutions", function()
       deps.biters.process_resolutions(powered_desks)
+      deps.biters.process_space_tourist_returns(powered_desks)
     end)
 
     runtime_debug.run_profiled_section(runtime_snapshot, "frustration", function()
-      deps.biters.process_frustration_and_protests(surface)
+      local processed_surfaces = {}
+      for _, bucket in pairs(desks_by_surface) do
+        deps.biters.process_frustration_and_protests(bucket.surface)
+        processed_surfaces[bucket.surface.index] = true
+      end
+
+      for _, info in pairs(storage.waiting_biters or {}) do
+        local tracked_surface = nil
+        if info and info.entity and info.entity.valid then
+          tracked_surface = info.entity.surface
+        elseif info and info.last_known_surface_index then
+          tracked_surface = game.get_surface(info.last_known_surface_index)
+        end
+
+        if tracked_surface and not processed_surfaces[tracked_surface.index] then
+          deps.biters.process_frustration_and_protests(tracked_surface)
+          processed_surfaces[tracked_surface.index] = true
+        end
+      end
     end)
 
     runtime_debug.run_profiled_section(runtime_snapshot, "calmed_spawners", function()

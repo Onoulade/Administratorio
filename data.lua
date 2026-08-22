@@ -9,6 +9,7 @@
 -- 1. AUTOPLACE CONTROLS (must be registered before resources reference them)
 -------------------------------------------------------------------------------
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
+local feature_flags = require("feature_flags")
 
 data:extend({
   {
@@ -44,9 +45,45 @@ data:extend({
   }
 })
 
+if feature_flags.space_age_enabled() then
+  data:extend({
+    {
+      type = "autoplace-control",
+      name = "gleba_amber_sap_seep",
+      planet = "gleba",
+      localised_name = {"", "[entity=amber-sap-seep] ", {"entity-name.amber-sap-seep"}},
+      icon = "__administratorio__/graphics/icons/amber-sap.png",
+      icon_size = 64,
+      richness = true,
+      order = "d-a",
+      category = "resource"
+    },
+    {
+      type = "autoplace-control",
+      name = "vulcanus_verdigris_crust",
+      planet = "vulcanus",
+      localised_name = {"", "[entity=verdigris-crust] ", {"entity-name.verdigris-crust"}},
+      icons = {{icon = "__administratorio__/graphics/icons/bullshit-ore.png", icon_size = 64, tint = {r=0.25, g=0.9, b=0.75, a=1}}},
+      richness = true,
+      order = "c-a",
+      category = "resource"
+    },
+  })
+end
+
 -------------------------------------------------------------------------------
 -- 2. LOAD ALL MOD PROTOTYPES
 -------------------------------------------------------------------------------
+-- Track recipe ownership while this mod loads its own prototype files.  The
+-- final regulation pass uses this explicit registry instead of guessing from
+-- recipe-name patterns, which keeps third-party recipes out of the admin path.
+local shared = require("prototypes.shared")
+local extend_prototypes = data.extend
+function data:extend(prototypes)
+  shared.register_admin_recipe_prototypes(prototypes)
+  return extend_prototypes(self, prototypes)
+end
+
 require("prototypes.item")
 require("prototypes.tiles")
 require("prototypes.entity")
@@ -56,6 +93,8 @@ require("prototypes.signals")
 require("prototypes.sounds")
 require("prototypes.tips-and-tricks")
 require("prototypes.achievements")
+
+data.extend = extend_prototypes
 
 -------------------------------------------------------------------------------
 -- 3. VANILLA OVERRIDES (hide military, pacify biters, replace science, etc.)

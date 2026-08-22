@@ -2,80 +2,33 @@
 
 **The factory must grow. Subject to approval.**
 
-Overhaul mod for Factorio 2.0 that replaces military conflict with corporate bureaucracy. No guns. No turrets. No military science. Every machine you build, every inserter you place, and every furnace you fire up requires the proper paperwork — and the biters you used to shoot now have HR representation and a grievance process.
+Administratorio is a full overhaul for Factorio 2.0, built around a small administrative correction: firepower is out, paperwork is in. The factory remains recognisable—belts, furnaces, copper vanishing at an indecent rate—but building it correctly is no longer quite enough. Built is not the same as approved, approved is not always the same as staffed, and none of those words necessarily imply that the coffee pipe is connected.
 
-This is a **Beta**. The full progression arc is playable and the core systems are in place, but balance, compatibility, translations, and late-game polish are still being tuned. Bug reports and save-breaking edge cases are welcomed with the solemn gratitude of a man whose backlog is larger than his will to live.
+Forms and Work Orders become factory inputs alongside the usual materials, while certain machinery also expects money or an employee to arrive and make its operation official. Offices develop working hours. Night work develops exceptions to the working hours, then staffing requirements for the exceptions. A factory can look perfectly healthy and remain motionless for reasons which are, regrettably, internally consistent.
 
-## Full Documentation
+The point was never to add a paper-themed recipe layer and leave Factorio underneath untouched. Administratorio changes what counts as a functioning factory: production depends on an administrative factory beside it, logistics begins on foot, labor has a cost, and local wildlife has ceased to be a military question.
 
-A comprehensive internal documentation system is available in the `Internal/docs/` directory:
+Biters do not attack you, and there are no guns with which to improve the conversation. They are citizens now. They arrive at Administration Desks with complaints about pollution, damaged landscapes, unemployment and the other public amenities your factory emits; settle their cases through the proper bureaucracy and they leave peacefully, even paying taxes. Leave them waiting and dissatisfaction becomes a protest, walks into the factory and switches off a building.
 
-- **[Internal/docs/index.md](Internal/docs/index.md)** — Documentation index and quick links to all pages
-- **[Internal/docs/core-mechanics.md](Internal/docs/core-mechanics.md)** — Core loops, paperwork tiers, complaint system, frustration/protest mechanics, resolution chains
-- **[Internal/docs/biter-employment.md](Internal/docs/biter-employment.md)** — Hiring workers, Biter Employment Office, Biterport (walking-worker roboport), Field Office
-- **[Internal/docs/buildings-and-structures.md](Internal/docs/buildings-and-structures.md)** — All buildings, production facilities, administrative buildings, pneumatic tube network, support structures
-- **[Internal/docs/technology-tree.md](Internal/docs/technology-tree.md)** — Complete tech tree from discovery through Constitutional Law, specialization training, capacity upgrades
-- **[Internal/docs/advanced-topics.md](Internal/docs/advanced-topics.md)** — Hired Biter (field agents), working hours system, modules, funding chain, coffee economy, train transit, bottlenecks
+> Native residents are no longer hostile. They are dissatisfied, which is much more expensive.
 
-## Quick Overview
+You may also hire them. Paid biter workers operate machinery, train for increasingly specific careers and form your first logistics network: Biterports send actual employees across the factory with items and construction materials instead of solving the matter with flying robots and abstraction. Salaries must be paid, night shifts must be caffeinated, and the union is not present merely for texture. Before long, the creatures once kept outside the walls are holding up most of what happens inside them.
 
-### Paperwork gates everything
+## Space Age
 
-Machines, smelting, chemistry, centrifuging, research — all of it now needs the correct form stapled to the usual ingredients. Iron and copper stop being your bottleneck somewhere around the first hour. After that, your bottleneck is paper, ink, Work Orders, and the one permit you forgot exists until the whole factory quietly stops moving.
+Going to space does not repeal the weapons ban. It does introduce asteroids, to which the Administration responds with trajectory orders, qualified biter astronauts and a use of the word “voluntary” that has passed internal review.
 
-### Complaints replace combat
+Each planet is treated as a new jurisdiction and, therefore, a new administrative problem. Vulcanus has demolishers who neither complain nor pay taxes, so claiming their territory calls for paperwork, bribery and a legally persuasive quantity of lies. Gleba permits biological paperwork and experiments whose participants are voluntary in quotation marks. Fulgora and Aquilo sustain different injuries to administrative common sense; meanwhile the forms begin crossing planets, mixing jurisdictions and acquiring the authority of a very expensive stamp.
 
-Biters don't raid your walls. They get intercepted and rerouted to your **Biter Administration Desk**, where they queue up as neutral citizens and file complaint tickets about landscape, smog, noise, and unemployment. You process each ticket through a **Resolution Office** chain, and the satisfied citizen leaves paying you in **Taxpayer Money**. It's restorative justice with positive externalities.
-
-Leave them waiting too long and they *protest* — walk to one of your buildings and disable it until you intervene. Throw a **Bureaucratic Promise** capsule to pacify them with temporary, legally non-binding reassurance. Throw an **Eviction Notice** to clear a nest, but be warned: the displaced biters show up at your desk already halfway to furious and freshly opinionated about property law.
-
-### Your former enemies are now on payroll
-
-Resolve a complaint with a **Job Offer** waiting in the desk, and the biter picks up the contract on its way out. Congratulations, you just hired a **Biter Worker**. They come in small, medium, big, and behemoth — bigger biter, more workers per hire, same health plan.
-
-From there, the workforce branches out:
-
-- **Formation Center** — the only building that can train biters into specialists (Union Delegates, Chemical Operators, Nuclear Technicians), logistics formations, and rideable assignments. Chemical plants, centrifuges, nuclear reactors, and Union HQs require certified specialists to construct. Credentials matter.
-- **Biter Employment Office** — dispatches workers to nearby managed machines, one authorized craft per visit. Breakrooms, Union HQs, Propaganda Distilleries, oil refineries, centrifuges, and the industrial printer all run on biter visits. Which means the biters are now upstream of your own paperwork supply.
-- **Biterport** — a roboport, but staffed by walking biters instead of flying robots. Progress.
-- **Rideable Biter** — personal transport that runs on Taxpayer Money, available well before the vanilla car. Cannot be picked back up once placed, because the assignment is permanent by design. Run out of funding for 10 minutes and it reverts to a regular biter and files a complaint about you. Which is fair.
-- **Hired Biter (Field Agent)** — a controllable worker you deploy via capsule to evict enemy nests and follow waypoints.
-
-### Labor relations
-
-Because the workforce is real, the paperwork is too. Your Union Headquarters negotiates **Union Approval** as a fluid, and neglected workplaces eventually produce **OSHA Violations** that have to be scrubbed away in union-brokered cleanup runs. You fund the workers, the workers file the forms, the forms cite you, you pay the workers to make the citation go away. The loop closes. The loop is the point.
-
-### Office hours
-
-Office Desks, Corporate Breakrooms, and Union Headquarters clock out at night unless you install an **Overtime Exemption**. Biter Employment Offices and Biterports keep working past sunset, but their night dispatches require Liquid Coffee piped into any of the four side entrances. The biters, it turns out, also get tired. If you'd rather skip the whole circadian subplot, there's a startup setting to keep the factory on 24/7.
-
-### New resources, new fluids, new red tape
-
-**Bullshit Ore**, **Redundant Rubble**, and **Politician Fluid** feed a parallel economy of excuses, justifications, narratives, misinformation, policy, and slush funds. It is exactly as dignified as it sounds. Coffee is the lifeblood of the operation — you grow it in **Greenhouses**, brew it, and pipe it into anything important. When the coffee stops, the office stops, and then so does everything else, in that order.
-
-### A full tech tree built on red tape
-
-The entire research tree is reworked around bureaucratic milestones instead of military ones. New branches for paperwork throughput, renewable wood and coal, approvals, public finance, queue capacity, workforce management, logistics formations, and the late complaint families. The complaint endgame runs through **Constitutional Law** for biters and **Vagrancy Ordinances** for spitters. The rocket is still there, if you can justify it to finance.
-
-### Pneumatic Form Transport
-
-Forms travel through pneumatic tubes — Tube Intakes consume items into a per-network signal pool, and Tube Outtakes dispense them. Network capacity scales from 10 to 25, 50, 100, and 200 shared items via research. Tube Intakes use furnace-style intake validation with hidden per-paperwork recipes, so inserters feed only valid pneumatic paperwork items.
-
-## Current State
-
-Beta status means the mod is ready for broader playtesting, not that the paperwork has achieved enlightenment. Expect balance changes, UI/locale cleanup, and the occasional migration wart as the late-game systems get more miles on them.
-
-Incompatible with Space Age and Quality. Requires Factorio 2.0. Space Age and Quality compatibility is on the radar, pending approval.
-
-One caveat: the Working Hours shutdown is runtime logic, so planner mods like Factory Planner will mis-model those buildings unless you account for it manually. If you prefer planner accuracy over the day/night subplot, disable Working Hours in startup settings.
-
-## Development
-
-This repo uses a manual GitHub Actions release workflow for Factorio mod releases. See [CONTRIBUTING.md](CONTRIBUTING.md) for the version input, commit structure, and changelog behavior expected by the workflow.
+Administratorio is in **Beta**. The base game and Space Age campaigns can be played through, but balance, compatibility and migrations are still moving around. Reports from real factories are particularly useful; players routinely build arrangements no responsible test suite would think to fear.
 
 ## Credits
 
 The **Resolution Office** scrubber art and **Propaganda Distillery** art are by **Hurricane** ([Hurricane046](https://mods.factorio.com/user/Hurricane046)).
+
+The **Inference Token** icon, the **optic fibre** artwork, and the **optic fibre** mechanic come from **[Moshine](https://github.com/snouz/Moshine)** and **[Moshine-assets](https://github.com/snouz/Moshine-assets)** by **snouz**.
+
+The **Involuntary Relocation Receiver** sprite and icon are a repurposed **[Long range delivery drones](https://mods.factorio.com/mod/Long_Range_Delivery_Drones)** (GNU LGPLv3) asset by **Sacredanarchy** and **Klonan**.
 
 ---
 

@@ -7,8 +7,33 @@ local biters_module = nil
 
 local WORKER_FORCE_NAME = "administratorio-biters"
 local STATION_NAME = "biter-station"
+local ORBITAL_PRINTER_NAME = "printer-t2"
 local COFFEE_INPUT_NAME = "biter-station-coffee-input"
 local WALL_BLOCKER_NAME = "biter-station-wall-blocker"
+
+local function is_orbital_printer(entity)
+  return entity
+    and entity.valid
+    and entity.name == ORBITAL_PRINTER_NAME
+    and entity.surface
+    and entity.surface.platform ~= nil
+end
+
+-- An Unstaffed Operations Waiver installed in a managed building's module
+-- inventory authorises it to run without a dispatched worker biter, mirroring
+-- has_overtime_exemption in scripts/working_hours.lua. The waiver occupies a
+-- module slot the player would otherwise spend on productivity. It is
+-- permanent, but removing it immediately returns the building to dispatch.
+local function has_unstaffed_operations_waiver(entity)
+  if not entity or not entity.valid or not entity.get_module_inventory then
+    return false
+  end
+  local inventory = entity.get_module_inventory()
+  return inventory
+    and inventory.valid
+    and inventory.get_item_count("unstaffed-operations-waiver") > 0
+    or false
+end
 local WORKER_ITEM_NAME = "biter-worker"
 local MONEY_ITEM_NAME = "taxpayer-money"
 local COFFEE_FLUID_NAME = "liquid-coffee"
@@ -220,18 +245,6 @@ get_station_inventory = function(station)
   return station.get_inventory(defines.inventory.chest)
 end
 
-local function rotate_local_offset(offset, direction)
-  direction = direction or defines.direction.north
-  if direction == defines.direction.east then
-    return {x = -offset.y, y = offset.x}
-  elseif direction == defines.direction.south then
-    return {x = -offset.x, y = -offset.y}
-  elseif direction == defines.direction.west then
-    return {x = offset.y, y = -offset.x}
-  end
-  return {x = offset.x, y = offset.y}
-end
-
 local function offset_position(entity, offset)
   local position = entity and entity.position or {x = 0, y = 0}
   return {x = position.x + offset.x, y = position.y + offset.y}
@@ -396,7 +409,8 @@ local function set_station_status(station, key)
     }
   elseif key == "biter-station-no-workers"
       or key == "biter-station-no-money"
-      or key == "biter-station-no-coffee" then
+      or key == "biter-station-no-coffee"
+      or key == "biter-station-building-unreachable" then
     station.custom_status = {
       diode = defines.entity_status_diode.red,
       label = {"gui." .. key},
@@ -565,12 +579,6 @@ local function reassign_active_station(active_state, station)
   if storage.biter_station_worker_units and biter_unit_number then
     storage.biter_station_worker_units[biter_unit_number] = station.unit_number
   end
-end
-
-local function has_arrived(entity, target, radius)
-  if not entity or not entity.valid or not target or not target.valid then return false end
-  local threshold = (radius or 0) + 0.5
-  return distance_squared(entity.position, target.position) < threshold * threshold
 end
 
 local function has_arrived_position(entity, target_position, radius)
@@ -1053,7 +1061,9 @@ local function build_building_queue(station)
     if building.valid
        and building.unit_number
        and building.force
-       and building.force == station.force then
+       and building.force == station.force
+       and not is_orbital_printer(building)
+       and not has_unstaffed_operations_waiver(building) then
       storage.managed_building_registry[building.unit_number] = building
 
       local run_state = storage.managed_building_run[building.unit_number]
@@ -1409,7 +1419,12 @@ end
 local function advance_running_buildings()
   for unit_number, run_state in pairs(storage.managed_building_run) do
     local entity = run_state.entity
-    if not entity or not entity.valid then
+    if entity and entity.valid and has_unstaffed_operations_waiver(entity) then
+      -- A waiver installed mid-run takes over immediately: the building keeps
+      -- running rather than stopping when its dispatched crafts run out.
+      storage.managed_building_run[unit_number] = nil
+      entity.active = true
+    elseif not entity or not entity.valid then
       storage.managed_building_run[unit_number] = nil
     else
       local crafts_remaining = run_state.crafts_remaining or 0
@@ -1755,7 +1770,24 @@ function M.track_managed_building(entity)
     return
   end
 
+  if is_orbital_printer(entity) then
+    storage.managed_building_registry[entity.unit_number] = nil
+    storage.managed_building_run[entity.unit_number] = nil
+    -- The Administrative Space Station represents permanent onboard
+    -- authorization. Platform printers therefore do not wait for a walking
+    -- biter dispatched from a terrestrial Employment Office.
+    entity.active = true
+    return
+  end
+
   storage.managed_building_registry[entity.unit_number] = entity
+
+  if has_unstaffed_operations_waiver(entity) then
+    storage.managed_building_run[entity.unit_number] = nil
+    entity.active = true
+    return
+  end
+
   entity.active = false
 
   local run_state = storage.managed_building_run[entity.unit_number]
@@ -1847,6 +1879,52 @@ function M.on_entity_removed(event)
   unmark_station_worker_unit(entity.unit_number)
 end
 
+-- Give up on the current leg instead of endlessly resending an unreachable
+-- go_to_location command (which otherwise leaves the biter standing still
+-- forever with no feedback). Surfaces the failure on the station's status
+-- the same way a missing worker/money/coffee condition does.
+local function handle_unreachable_destination(active_state, entity, station_id, tick)
+  local station = station_id and storage.biter_stations and storage.biter_stations[station_id] or nil
+  if station and station.valid then
+    set_station_status(station, "biter-station-building-unreachable")
+  end
+
+  if active_state.phase == "to_building" then
+    local queue = active_state.building_queue or {}
+    local building = queue[active_state.current_idx]
+    if building and building.valid and building.unit_number then
+      clear_building_claim(building.unit_number, active_state.biter_unit_number)
+    end
+    active_state.current_idx = active_state.current_idx + 1
+
+    local next_building = queue[active_state.current_idx]
+    while next_building and not (next_building.valid and next_building.unit_number) do
+      active_state.current_idx = active_state.current_idx + 1
+      next_building = queue[active_state.current_idx]
+    end
+
+    if next_building then
+      begin_phase_move(active_state, entity, "to_building", next_building, C.BITER_STATION_ARRIVAL_RADIUS, tick)
+      return
+    end
+
+    station = station and station.valid and station or nearest_valid_station(active_state)
+    if station and station.valid then
+      reassign_active_station(active_state, station)
+      begin_phase_move(active_state, entity, "to_station", station_interior_position(station), C.BITER_STATION_ARRIVAL_RADIUS, tick)
+      return
+    end
+
+    advance_orphaned_station_return(active_state, entity, tick)
+    return
+  end
+
+  -- The station itself (or the walk back to it) is unreachable. Don't
+  -- re-target the same unreachable station; give up on the trip cleanly.
+  begin_orphan_station_return(active_state, entity, tick)
+  turn_station_worker_into_protester(active_state, tick)
+end
+
 function M.on_ai_command_completed(event)
   if not event or not event.unit_number then return end
 
@@ -1866,7 +1944,12 @@ function M.on_ai_command_completed(event)
     return
   end
 
-  issue_move_command(entity, destination, retry_radius)
+  if defines.behavior_result and event.result ~= defines.behavior_result.fail then
+    issue_move_command(entity, destination, retry_radius)
+    return
+  end
+
+  handle_unreachable_destination(active_state, entity, station_id, event.tick or game.tick)
 end
 
 local function get_crafts_per_visit_for_force(force)
@@ -1981,8 +2064,7 @@ function M.rebuild_registry()
 
     for _, building in ipairs(surface.find_entities_filtered{name = C.BITER_STATION_MANAGED_BUILDINGS}) do
       if building.valid and building.unit_number then
-        storage.managed_building_registry[building.unit_number] = building
-        building.active = false
+        M.track_managed_building(building)
       end
     end
   end
@@ -1995,6 +2077,24 @@ function M.rebuild_registry()
   end
 end
 
+--- Waivers can be inserted or removed at any time, so authorisation is
+--- re-checked every cycle rather than latched when the building is registered.
+local function reconcile_waivered_buildings()
+  for unit_number, entity in pairs(storage.managed_building_registry) do
+    if not entity or not entity.valid then
+      storage.managed_building_registry[unit_number] = nil
+    elseif has_unstaffed_operations_waiver(entity) then
+      if not entity.active then
+        entity.active = true
+      end
+      storage.managed_building_run[unit_number] = nil
+    elseif entity.active and not storage.managed_building_run[unit_number] then
+      -- The waiver was removed: the building waits for a dispatched biter again.
+      entity.active = false
+    end
+  end
+end
+
 function M.update(tick)
   M.ensure_storage()
 
@@ -2002,6 +2102,7 @@ function M.update(tick)
     return
   end
 
+  reconcile_waivered_buildings()
   sanitize_station_worker_registry_links()
   advance_running_buildings()
   advance_active_biters(tick)

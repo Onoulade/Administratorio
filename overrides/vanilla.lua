@@ -15,15 +15,16 @@
 -------------------------------------------------------------------------------
 local items_to_hide = {
   "pistol", "submachine-gun", "shotgun", "rocket-launcher", "combat-shotgun",
-  "flamethrower", "railgun",
+  "flamethrower", "railgun", "teslagun", "tesla-gun",
   "firearm-magazine", "piercing-rounds-magazine", "uranium-rounds-magazine",
   "shotgun-shell", "piercing-shotgun-shell", "rocket", "explosive-rocket",
   "atomic-bomb", "flamethrower-ammo", "cannon-shell", "explosive-cannon-shell",
   "uranium-cannon-shell", "explosive-uranium-cannon-shell", "artillery-shell",
-  "artillery-targeting-remote", "land-mine",
+  "artillery-targeting-remote", "land-mine", "railgun-ammo", "tesla-ammo",
   "grenade", "cluster-grenade", "poison-capsule", "slowdown-capsule",
   "defender-capsule", "distractor-capsule", "destroyer-capsule",
   "gun-turret", "laser-turret", "flamethrower-turret", "artillery-turret",
+  "tesla-turret", "railgun-turret",
   "artillery-wagon", "tank", "spidertron",
   "energy-shield-equipment", "energy-shield-mk2-equipment",
   "military-science-pack"
@@ -38,12 +39,16 @@ end
 
 for _, name in ipairs(items_to_hide) do
   hide_prototype("item", name)
+  hide_prototype("item-with-entity-data", name)
   hide_prototype("gun", name)
   hide_prototype("tool", name)
   hide_prototype("ammo", name)
   hide_prototype("armor", name)
   hide_prototype("recipe", name)
   hide_prototype("capsule", name)
+  hide_prototype("electric-turret", name)
+  hide_prototype("ammo-turret", name)
+  hide_prototype("fluid-turret", name)
 end
 
 -------------------------------------------------------------------------------
@@ -55,6 +60,7 @@ local techs_to_disable = {
   "atomic-bomb", "uranium-ammo", "flamethrower", "flammables",
   "personal-laser-defense-equipment", "discharge-defense-equipment",
   "artillery", "tank", "spidertron", "land-mine", "rocketry", "explosive-rocketry",
+  "railgun", "tesla-weapons", "tesla-turret", "railgun-turret",
   "laser", "laser-turret", "gun-turret", "flamethrower-turret",
   "defender", "distractor", "destroyer",
   "energy-shield-equipment", "energy-shield-mk2-equipment"
@@ -73,6 +79,8 @@ for tech_name, tech in pairs(data.raw["technology"]) do
      or tech_name:find("stronger%-explosives") or tech_name:find("refined%-flammables")
      or tech_name:find("energy%-weapons") or tech_name:find("laser%-weapons%-damage")
      or tech_name:find("weapon%-shooting%-speed")
+     or tech_name:find("electric%-weapons%-damage")
+     or tech_name:find("railgun%-shooting%-speed") or tech_name:find("railgun%-damage")
      or tech_name:find("follower%-robot%-count") or tech_name:find("combat%-robot")
      or tech_name:find("laser%-shooting%-speed") or tech_name:find("laser%-turret%-shooting")
      or tech_name:find("turret") then
@@ -101,6 +109,16 @@ local tech_prerequisite_replacements = {
   },
   ["rocket-fuel"] = {
     flammables = "advanced-oil-processing",
+  },
+  -- Space Age keeps civilian progression behind combat technologies. Since
+  -- Administratorio removes those weapons, fold the redundant combat edges
+  -- into prerequisites these technologies already have.
+  ["captivity"] = {
+    ["military-3"] = "agricultural-science-pack",
+    rocketry = "agricultural-science-pack",
+  },
+  ["planet-discovery-aquilo"] = {
+    ["rocket-turret"] = "advanced-asteroid-processing",
   },
 }
 
@@ -137,6 +155,12 @@ end
 -------------------------------------------------------------------------------
 -- PACIFY BITERS & SPAWNERS
 -------------------------------------------------------------------------------
+local hatched_pentapod_units = {
+  ["small-wriggler-pentapod-premature"] = true,
+  ["medium-wriggler-pentapod-premature"] = true,
+  ["big-wriggler-pentapod-premature"] = true,
+}
+
 for _, entity_type in ipairs({"unit", "unit-spawner"}) do
   for _, entity in pairs(data.raw[entity_type]) do
     if entity.subgroup == "enemies" or entity.name:find("biter")
@@ -152,7 +176,7 @@ for _, entity_type in ipairs({"unit", "unit-spawner"}) do
         {type = "impact", percent = 100},
         {type = "bureaucratic-logic", percent = -50}
       }
-      if entity.attack_parameters and entity.attack_parameters.ammo_type then
+      if not hatched_pentapod_units[entity.name] and entity.attack_parameters and entity.attack_parameters.ammo_type then
         local ammo = entity.attack_parameters.ammo_type
         if ammo.action then
           for _, action in pairs(ammo.action) do

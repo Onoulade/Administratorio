@@ -1,4 +1,5 @@
 local item_icons = "__administratorio__/graphics/icons/"
+local feature_flags = require("feature_flags")
 
 local function deepcopy(value)
   if table.deepcopy then return table.deepcopy(value) end
@@ -19,6 +20,10 @@ local function biter_role_icons(biter_icon, tint, overlay_icon)
     icons[#icons + 1] = {icon = overlay_icon, icon_size = 64, scale = 0.35, shift = {8, 8}}
   end
   return icons
+end
+
+local function tinted_icon(icon, tint)
+  return {{icon = icon, icon_size = 64, tint = tint}}
 end
 
 local smoke_animation = {
@@ -247,3 +252,50 @@ data:extend({
   { type = "fluid", name = "union-approval",    icon = item_icons .. "union-approval.png", icon_size = 64, subgroup = "admin-fluids", order = "e", default_temperature = 25, base_color = {r=0.2, g=0.4, b=1.0}, flow_color = {r=0.4, g=0.6, b=1.0} },
   { type = "fluid", name = "liquid-coffee",     icon = item_icons .. "coffee.png",                  icon_size = 64, subgroup = "admin-fluids", order = "f", default_temperature = 80, base_color = {r=0.3, g=0.2, b=0.1}, flow_color = {r=0.4, g=0.2, b=0.1} },
 })
+
+if feature_flags.space_age_enabled() then
+  data:extend({
+    -- Inference is a stream, not a crate. auto_barrel is off so it cannot be
+    -- decanted into a barrel and carried by belt, chest or rocket: the only way
+    -- to move it is optic fibre.
+    { type = "fluid", name = "inference-token", icon = item_icons .. "third-party/inference-token.png", icon_size = 64, subgroup = "admin-fluids", order = "g", default_temperature = 25, base_color = {r=0.25, g=0.65, b=0.95}, flow_color = {r=0.5, g=0.9, b=1.0}, auto_barrel = false },
+    { type = "fluid", name = "amber-sap",        icon = item_icons .. "amber-sap.png", icon_size = 64, subgroup = "admin-fluids", order = "f5", default_temperature = 35, base_color = {r=0.65, g=0.4, b=0.05}, flow_color = {r=0.95, g=0.7, b=0.2} },
+    { type = "fluid", name = "liquid-black-ink", icons = tinted_icon(item_icons .. "liquid-ink.png", {r=0.34, g=0.34, b=0.42, a=1}), subgroup = "admin-fluids", order = "g", default_temperature = 25, base_color = {r=0.08, g=0.08, b=0.12}, flow_color = {r=0.15, g=0.15, b=0.2} },
+    { type = "fluid", name = "cyan-slurry",      icon = item_icons .. "cyan-slurry.png", icon_size = 64, subgroup = "admin-fluids", order = "h", default_temperature = 90, base_color = {r=0.05, g=0.55, b=0.55}, flow_color = {r=0.15, g=0.85, b=0.85} },
+    { type = "fluid", name = "cyan-ink",         icons = tinted_icon(item_icons .. "liquid-ink.png", {r=0.15, g=0.95, b=1.0, a=1}), subgroup = "admin-fluids", order = "i", default_temperature = 25, base_color = {r=0.05, g=0.6, b=0.7}, flow_color = {r=0.2, g=0.9, b=1.0} },
+    { type = "fluid", name = "yellow-ink",       icons = tinted_icon(item_icons .. "liquid-ink.png", {r=1.0, g=0.92, b=0.15, a=1}), subgroup = "admin-fluids", order = "j", default_temperature = 25, base_color = {r=0.75, g=0.7, b=0.05}, flow_color = {r=1.0, g=0.95, b=0.2} },
+    { type = "fluid", name = "magenta-ink",      icons = tinted_icon(item_icons .. "liquid-ink.png", {r=1.0, g=0.2, b=0.85, a=1}), subgroup = "admin-fluids", order = "k", default_temperature = 25, base_color = {r=0.75, g=0.05, b=0.55}, flow_color = {r=1.0, g=0.2, b=0.8} },
+    { type = "fluid", name = "liquid-stimulant", icons = tinted_icon(item_icons .. "coffee.png", {r=0.3, g=1.0, b=1.0, a=1}), subgroup = "admin-fluids", order = "l", default_temperature = 110, base_color = {r=0.05, g=0.8, b=0.85}, flow_color = {r=0.2, g=1.0, b=1.0} },
+    { type = "fluid", name = "molten-promises",  icons = tinted_icon(item_icons .. "lie.png", {r=1.0, g=0.55, b=0.15, a=1}), subgroup = "admin-fluids", order = "m", default_temperature = 250, base_color = {r=0.6, g=0.35, b=0.05}, flow_color = {r=1.0, g=0.6, b=0.15} },
+    { type = "fluid", name = "hostile-spore-culture", icons = tinted_icon(item_icons .. "spore-culture.png", {r=0.55, g=0.85, b=0.28, a=1}), subgroup = "admin-fluids", order = "n", default_temperature = 30, base_color = {r=0.28, g=0.42, b=0.16}, flow_color = {r=0.55, g=0.85, b=0.28} },
+    { type = "fluid", name = "workforce-lure-spores", icons = tinted_icon(item_icons .. "spore-culture.png", {r=0.52, g=1.0, b=0.42, a=1}), subgroup = "admin-fluids", order = "n1", default_temperature = 30, base_color = {r=0.26, g=0.56, b=0.24}, flow_color = {r=0.52, g=1.0, b=0.42}, auto_barrel = false },
+    { type = "fluid", name = "tourism-lure-spores", icons = tinted_icon(item_icons .. "spore-culture.png", {r=0.35, g=0.9, b=1.0, a=1}), subgroup = "admin-fluids", order = "n2", default_temperature = 30, base_color = {r=0.16, g=0.48, b=0.58}, flow_color = {r=0.35, g=0.9, b=1.0}, auto_barrel = false },
+    { type = "fluid", name = "oviposition-lure-spores", icons = tinted_icon(item_icons .. "spore-culture.png", {r=0.9, g=0.95, b=0.28, a=1}), subgroup = "admin-fluids", order = "n3", default_temperature = 30, base_color = {r=0.44, g=0.46, b=0.14}, flow_color = {r=0.9, g=0.95, b=0.28}, auto_barrel = false },
+  })
+
+  data:extend({
+    {
+      type = "smoke-with-trigger",
+      name = "capture-bureau-spore-cloud",
+      flags = {"not-on-map"},
+      hidden = true,
+      show_when_smoke_off = true,
+      particle_count = 14,
+      particle_spread = {2.5, 1.5},
+      particle_distance_scale_factor = 0.65,
+      particle_scale_factor = {1.2, 0.8},
+      particle_duration_variation = 60 * 3,
+      wave_speed = {0.5 / 80, 0.5 / 60},
+      wave_distance = {0.8, 0.5},
+      spread_duration_variation = 80,
+      render_layer = "object",
+      affected_by_wind = false,
+      cyclic = true,
+      duration = 60 * 4,
+      fade_away_duration = 60,
+      spread_duration = 90,
+      color = {0.42, 0.85, 0.22, 0.34},
+      animation = smoke_animation,
+    },
+  })
+end

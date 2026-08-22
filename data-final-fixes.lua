@@ -8,24 +8,39 @@
 --   4. Machine-family operating paperwork for hazardous process recipes
 --   5. Deterministic recipe regulation
 --   6. Handcrafting visibility
---   7. Pneumatic form transport recipe generation
---   8. Admin station collision footprint layering
---   9. Taxpayer money fuel compatibility
+--   7. Colored ink gating for planet intermediates
+--   8. Pneumatic form transport recipe generation
+--   9. Admin station collision footprint layering
+--   10. Taxpayer money fuel compatibility
 --
 -- The regulation system:
---   No fluid ingredient (handcraftable, matches vanilla):
+--   Red science or below (handcraftable):
 --     Handcrafting -> original recipe (T0: no form, T1+: tier form added)
 --     AM1/AM2/AM3 and Factoriopedia -> separate "-regulated" copy
 --       (batched, form, consumed)
---   Fluid ingredient (not handcraftable, matches vanilla):
+--   Above green science (not handcraftable):
 --     Original recipe modified in-place -> regulated category, batched, form
 --     Keeps recipe identity and tech unlocks intact
 
 local shared = require("prototypes.shared")
+local batch_rules = require("prototypes.shared.batch_rules")
 local factoriopedia_merge = require("prototypes.factoriopedia_merge")
 local feature_flags = require("feature_flags")
+local space_age_planets = feature_flags.space_age_enabled() and require("prototypes.shared.space_age_planets") or nil
 
-local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
+-- Quality builds automatic recycling recipes during data-updates, after this
+-- mod's data.lua. Reassert the intended lossy paperwork rule at the final stage:
+-- every form in a paperwork subgroup recycles to one paper at 25% probability.
+if feature_flags.space_age_enabled() then
+  require("prototypes.shared.paperwork_recycling").apply()
+end
+
+-- The Quality mod owns its native recipes and automatic recycling recipes.
+-- Apply the administrative retheme only after every data-updates pass has run.
+if feature_flags.quality_enabled() then
+  require("prototypes.final_fixes.quality_integration").apply(data)
+end
+
 local REGULATED_AM_FACTORIOPEDIA_NOTE = {"administratorio-factoriopedia.regulated-assembling-note"}
 local PNEUMATIC_TRANSPORT_NOTE = {
   "",
@@ -34,100 +49,41 @@ local PNEUMATIC_TRANSPORT_NOTE = {
   {"item-name.tube-intake"},
   " ([item=tube-intake]).",
 }
-local WORKING_HOURS_ENABLED = feature_flags.working_hours_enabled()
-local DEBUG_SHOW_PAPERWORK_ICON_OVERLAYS = false
 local TAXPAYER_MONEY_FUEL_CATEGORY = "administratorio-taxpayer-money"
 local REGULAR_FUEL_CATEGORY = "chemical"
-local NIGHT_WORK_BUILDINGS = {
-  ["office-desk"] = true,
-  ["corporate-breakroom"] = true,
-  ["union-headquarters"] = true,
+local HATCHED_PENTAPOD_UNITS = {
+  ["small-wriggler-pentapod-premature"] = true,
+  ["medium-wriggler-pentapod-premature"] = true,
+  ["big-wriggler-pentapod-premature"] = true,
 }
 
-local ADMIN_STATION_NON_BLOCKING_NAMES = {
-  ["admin-station-combinator"] = true,
-  ["biterport-hidden-roboport"] = true,
-  ["biter-station-wall-blocker"] = true,
-  ["biterport-wall-blocker"] = true,
-  ["transit-permit-chest"] = true,
-  ["pneumatic-hidden-network-pipe"] = true,
-}
+local function sync_scrap_recycler_output_slots()
+  local recipe = data.raw.recipe and data.raw.recipe["scrap-recycling"]
+  local recycler = data.raw.furnace and data.raw.furnace["recycler"]
+  if not recipe or not recycler then return end
 
-local ADMIN_STATION_EXCLUDED_TYPES = {
-  -- Ephemeral / non-physical entities
-  ["character"] = true,
-  ["combat-robot"] = true,
-  ["construction-robot"] = true,
-  ["corpse"] = true,
-  ["entity-ghost"] = true,
-  ["explosion"] = true,
-  ["fire"] = true,
-  ["highlight-box"] = true,
-  ["item-entity"] = true,
-  ["logistic-robot"] = true,
-  ["optimized-decorative"] = true,
-  ["particle"] = true,
-  ["particle-source"] = true,
-  ["projectile"] = true,
-  ["rocket-silo-rocket"] = true,
-  ["segment"] = true,
-  ["segmented-unit"] = true,
-  ["smoke"] = true,
-  ["smoke-with-trigger"] = true,
-  ["speech-bubble"] = true,
-  ["spider-leg"] = true,
-  ["spider-unit"] = true,
-  ["stream"] = true,
-  ["tile-ghost"] = true,
-  ["unit"] = true,
-  -- Natural map features — must not block placement of miners, buildings, etc.
-  ["resource"] = true,
-  ["tree"] = true,
-  ["simple-entity"] = true,
-  ["simple-entity-with-force"] = true,
-  ["simple-entity-with-owner"] = true,
-  ["cliff"] = true,
-  ["fish"] = true,
-  -- Enemy structures — already blocked by object layer, no need for extra layer
-  ["unit-spawner"] = true,
-  ["turret"] = true,            -- enemy worms (player turrets are ammo-/electric-/fluid-turret)
-  -- Walkable entities — player walks over these in vanilla
-  ["transport-belt"] = true,
-  ["underground-belt"] = true,
-  ["splitter"] = true,
-  ["loader"] = true,
-  ["loader-1x1"] = true,
-  ["linked-belt"] = true,
-  ["lane-splitter"] = true,
-  ["inserter"] = true,
-  ["land-mine"] = true,
-  ["straight-rail"] = true,
-  ["curved-rail-a"] = true,
-  ["curved-rail-b"] = true,
-  ["half-diagonal-rail"] = true,
-  ["elevated-straight-rail"] = true,
-  ["elevated-curved-rail-a"] = true,
-  ["elevated-curved-rail-b"] = true,
-  ["elevated-half-diagonal-rail"] = true,
-  ["rail-ramp"] = true,
-  ["rail-support"] = true,
-  ["legacy-straight-rail"] = true,
-  ["legacy-curved-rail"] = true,
-  ["rail-signal"] = true,
-  ["rail-chain-signal"] = true,
-  ["display-panel"] = true,
-  -- Vehicles — mobile, should not be blocked by footprint
-  ["car"] = true,               -- cars and tanks
-  ["spider-vehicle"] = true,    -- spidertron
-  ["locomotive"] = true,
-  ["cargo-wagon"] = true,
-  ["fluid-wagon"] = true,
-}
+  local required_slots = 0
+  local function count_item_results(target)
+    if not target or not target.results then return end
+    local slots = 0
+    for _, result in ipairs(target.results) do
+      if (result.type or "item") == "item" then
+        slots = slots + 1
+      end
+    end
+    required_slots = math.max(required_slots, slots)
+  end
 
-local ADMIN_STATION_EXCLUDED_FLAGS = {
-  ["not-on-map"] = true,
-  ["placeable-off-grid"] = true,
-}
+  count_item_results(recipe)
+  count_item_results(recipe.normal)
+  count_item_results(recipe.expensive)
+
+  if required_slots > 0 then
+    recycler.result_inventory_size = math.max(recycler.result_inventory_size or 0, required_slots)
+  end
+end
+
+sync_scrap_recycler_output_slots()
 
 -------------------------------------------------------------------------------
 -- 1. ADDITIONAL RECIPE CATEGORIES
@@ -149,17 +105,13 @@ if data.raw["character"]["character"] then
   char.guns_inventory_size = 1
 end
 
--- Hide all guns and ammo (final pass catches anything other mods may add)
-for _, proto_type in ipairs({"gun", "ammo"}) do
-  for _, proto in pairs(data.raw[proto_type] or {}) do
-    proto.hidden = true
-  end
-end
+require("prototypes.final_fixes.military_hiding").apply(data)
 
 -------------------------------------------------------------------------------
 -- 2a. BITER SETUP
 -------------------------------------------------------------------------------
 for _, biter in pairs(data.raw["unit"] or {}) do
+  if not HATCHED_PENTAPOD_UNITS[biter.name] then
     if biter.vision_distance then
         biter.vision_distance = 0
         biter.distraction_radius = 0
@@ -167,10 +119,44 @@ for _, biter in pairs(data.raw["unit"] or {}) do
     -- Biters queuing inside admin station waiting zones must be clickable over
     -- the station (51) and over resources (50).
     biter.selection_priority = 52
+  end
 end
 
 for _, spawner in pairs(data.raw["unit-spawner"] or {}) do
     spawner.call_for_help_radius = 0
+end
+
+local function append_source_effect(action_delivery, effect)
+  if not action_delivery then return false end
+  if action_delivery[1] then
+    local appended = false
+    for _, delivery in ipairs(action_delivery) do
+      appended = append_source_effect(delivery, effect) or appended
+    end
+    return appended
+  end
+  action_delivery.source_effects = action_delivery.source_effects or {}
+  action_delivery.source_effects[#action_delivery.source_effects + 1] = effect
+  return true
+end
+
+local pentapod_egg = data.raw.item and data.raw.item["pentapod-egg"]
+local egg_spoil_trigger = pentapod_egg
+  and pentapod_egg.spoil_to_trigger_result
+  and pentapod_egg.spoil_to_trigger_result.trigger
+if egg_spoil_trigger and egg_spoil_trigger.action_delivery then
+  append_source_effect(egg_spoil_trigger.action_delivery, {
+    type = "script",
+    effect_id = "administratorio-pentapod-egg-hatch",
+  })
+end
+
+-- Vanilla doubles one pentapod egg in 15 seconds. Keep duplication as a slow
+-- fallback so capturing wild pentapods with oviposition spores remains the
+-- practical source of fresh eggs instead of becoming obsolete immediately.
+local pentapod_egg_duplication = data.raw.recipe and data.raw.recipe["pentapod-egg"]
+if pentapod_egg_duplication then
+  pentapod_egg_duplication.energy_required = 60
 end
 
 -------------------------------------------------------------------------------
@@ -230,17 +216,42 @@ end
 
 -------------------------------------------------------------------------------
 -- 3. MACHINE CATEGORY SETUP
--- All AMs use only regulated categories. No original crafting categories.
+-- Standard recipes use regulated categories. Space Age also defines special
+-- "or-assembling" and electronics categories for the bootstrap recipes of
+-- each planet; removing those categories makes every specialist machine
+-- require itself (and makes processing units require Fulgora).
 -------------------------------------------------------------------------------
+local space_age_assembling_categories = {
+  "electronics",
+  "electronics-with-fluid",
+  "pressing",
+  "metallurgy-or-assembling",
+  "organic-or-hand-crafting",
+  "organic-or-assembling",
+  "electronics-or-assembling",
+  "cryogenics-or-assembling",
+  "crafting-with-fluid-or-metallurgy",
+}
+
+local function append_existing_categories(categories)
+  if not feature_flags.space_age_enabled() then return categories end
+  for _, category in ipairs(space_age_assembling_categories) do
+    if data.raw["recipe-category"] and data.raw["recipe-category"][category] then
+      categories[#categories + 1] = category
+    end
+  end
+  return categories
+end
+
 if data.raw["assembling-machine"]["assembling-machine-1"] then
   data.raw["assembling-machine"]["assembling-machine-1"].crafting_categories = {"crafting-regulated"}
 end
 if data.raw["assembling-machine"]["assembling-machine-2"] then
-  data.raw["assembling-machine"]["assembling-machine-2"].crafting_categories = {"crafting-regulated", "advanced-crafting-regulated"}
+  data.raw["assembling-machine"]["assembling-machine-2"].crafting_categories = append_existing_categories({"crafting-regulated", "advanced-crafting-regulated"})
 end
 if data.raw["assembling-machine"]["assembling-machine-3"] then
   local am3 = data.raw["assembling-machine"]["assembling-machine-3"]
-  am3.crafting_categories = {"crafting-regulated", "advanced-crafting-regulated"}
+  am3.crafting_categories = append_existing_categories({"crafting-regulated", "advanced-crafting-regulated"})
   am3.ingredient_count = 12
 end
 
@@ -390,7 +401,9 @@ for _, recipe in pairs(data.raw["recipe"]) do
   if not shared.is_admin_recipe(recipe.name) then
     local cat = recipe.category or "crafting"
     local operating_form = shared.get_operating_form(recipe)
-    if operating_form then
+    -- Oil refineries use biter-station dispatch as their per-cycle gate. Keep
+    -- their fluid-only recipes free of a second operating-paperwork gate.
+    if operating_form and cat ~= "oil-processing" then
       add_ingredient_to_recipe(recipe.name, operating_form, 1)
 
       -- Hazardous process families still create OSHA fallout.
@@ -425,6 +438,57 @@ if compacted_rubble_electric then
 end
 
 -------------------------------------------------------------------------------
+-- 5a. BUILD RED-SCIENCE-ONLY RECIPE SET
+-- Scan all technologies to determine which recipes are unlocked by red science
+-- (automation-science-pack + administrative-science-pack only).
+-- Recipes requiring green science or higher are hidden from handcrafting.
+-------------------------------------------------------------------------------
+local RED_SCIENCE_PACKS = {
+  ["automation-science-pack"] = true,
+  ["administrative-science-pack"] = true,
+}
+
+local red_science_recipes = {}
+
+for _, tech in pairs(data.raw.technology) do
+  local is_red_only = true
+  if tech.unit and tech.unit.ingredients then
+    for _, ing in ipairs(tech.unit.ingredients) do
+      local pack_name = ing[1] or ing.name
+      if not RED_SCIENCE_PACKS[pack_name] then
+        is_red_only = false
+        break
+      end
+    end
+  end
+  -- research_trigger techs (mine-entity) count as red-science-tier
+  if tech.research_trigger then
+    is_red_only = true
+  end
+
+  if is_red_only and tech.effects then
+    for _, effect in ipairs(tech.effects) do
+      if effect.type == "unlock-recipe" then
+        red_science_recipes[effect.recipe] = true
+      end
+    end
+  end
+end
+
+local function is_red_science_or_below(recipe_name)
+  local recipe = data.raw["recipe"][recipe_name]
+  if not recipe then return false end
+  -- Refineries are biter-station-managed industrial infrastructure. Keep their
+  -- canonical recipe on the regulated assembler path even if oil-processing is
+  -- represented as a trigger technology.
+  if recipe_name == "oil-refinery" then return false end
+  -- Enabled by default = available from start (no tech needed)
+  if recipe.enabled ~= false then return true end
+  -- Unlocked by a red-science-only tech
+  return red_science_recipes[recipe_name] == true
+end
+
+-------------------------------------------------------------------------------
 -- 5. DETERMINISTIC RECIPE REGULATION
 --
 -- For every vanilla "crafting" / "advanced-crafting" / "crafting-with-fluid"
@@ -453,6 +517,7 @@ local ITEM_LIKE_PROTOTYPE_TYPES = {
   "item-with-entity-data",
   "rail-planner",
   "spidertron-remote",
+  "space-platform-starter-pack",
 }
 
 local function find_item_like_prototype(name)
@@ -464,34 +529,16 @@ local function find_item_like_prototype(name)
   return nil
 end
 
-local function get_max_stack_size(item_name)
-  local prototype = find_item_like_prototype(item_name)
-  if prototype then return prototype.stack_size or 1 end
-  return 100
-end
-
 local function get_recipe_batch_multiplier(recipe_name, recipe)
-  local explicit_multiplier = shared.BATCH_MULTIPLIERS[recipe_name]
-  local multiplier = explicit_multiplier or shared.BATCH_MULTIPLIER_DEFAULT
-  local r_proto = recipe.normal or recipe
-  local results = r_proto.results or (r_proto.result and {{name = r_proto.result}}) or {}
-
-  for _, res in ipairs(results) do
-    local res_name = res.name or res[1]
-    if res_name then
-      local prototype = find_item_like_prototype(res_name)
-      if get_max_stack_size(res_name) == 1 then
-        return 1
-      end
-      -- Equipment-grid items are always unbatched, even if a future explicit
-      -- multiplier override is accidentally added.
-      if prototype and prototype.placed_as_equipment_result then
-        return 1
-      end
-    end
-  end
-
-  return multiplier
+  return batch_rules.resolve(data.raw, recipe_name, recipe, {
+    default_multiplier = shared.BATCH_MULTIPLIER_DEFAULT,
+    building_multiplier = shared.BATCH_MULTIPLIER_BUILDING,
+    tool_multiplier = shared.BATCH_MULTIPLIER_TOOL,
+    multipliers = shared.BATCH_MULTIPLIERS,
+    unbatched_result_names = shared.UNBATCHED_RESULT_NAMES,
+    unbatched_result_subgroups = shared.UNBATCHED_RESULT_SUBGROUPS,
+    space_subgroup_prefixes = shared.UNBATCHED_RESULT_SUBGROUP_PREFIXES,
+  })
 end
 
 local function get_item_like_localisation(prototype, product_name)
@@ -505,8 +552,8 @@ local function get_item_like_localisation(prototype, product_name)
   if not localised_name then
     if prototype.place_result then
       localised_name = {"entity-name." .. prototype.place_result}
-    elseif prototype.placed_as_equipment_result then
-      localised_name = {"equipment-name." .. prototype.placed_as_equipment_result}
+    elseif prototype.place_as_equipment_result then
+      localised_name = {"equipment-name." .. prototype.place_as_equipment_result}
     elseif prototype.place_as_tile and prototype.place_as_tile.result then
       localised_name = {"tile-name." .. prototype.place_as_tile.result}
     else
@@ -517,8 +564,8 @@ local function get_item_like_localisation(prototype, product_name)
   if not localised_description then
     if prototype.place_result then
       localised_description = {"entity-description." .. prototype.place_result}
-    elseif prototype.placed_as_equipment_result then
-      localised_description = {"equipment-description." .. prototype.placed_as_equipment_result}
+    elseif prototype.place_as_equipment_result then
+      localised_description = {"equipment-description." .. prototype.place_as_equipment_result}
     elseif prototype.place_as_tile and prototype.place_as_tile.result then
       localised_description = {"tile-description." .. prototype.place_as_tile.result}
     else
@@ -536,6 +583,30 @@ local function add_factoriopedia_note(prototype, note)
   else
     prototype.factoriopedia_description = note
   end
+end
+
+-- Factoriopedia otherwise has no compact way to tell a player whether a
+-- colored document is locally made, remotely usable, or transportable at the
+-- current trunk tier.  Keep that operational information on the product page
+-- as well as in the item tooltip.
+local cross_planet_factoriopedia_descriptions = {
+  ["blank-cyan-form"] = {"administratorio-factoriopedia.cross-planet-cyan"},
+  ["blank-yellow-form"] = {"administratorio-factoriopedia.cross-planet-yellow"},
+  ["blank-magenta-form"] = {"administratorio-factoriopedia.cross-planet-magenta"},
+  ["cyan-yellow-form"] = {"administratorio-factoriopedia.cross-planet-cyan-yellow"},
+  ["cyan-magenta-form"] = {"administratorio-factoriopedia.cross-planet-cyan-magenta"},
+  ["yellow-magenta-form"] = {"administratorio-factoriopedia.cross-planet-yellow-magenta"},
+  ["thermal-process-license"] = {"administratorio-factoriopedia.cross-planet-vulcanus-charter"},
+  ["calcite-reagent-waiver"] = {"administratorio-factoriopedia.cross-planet-vulcanus-charter"},
+  ["offworld-metallurgy-charter"] = {"administratorio-factoriopedia.cross-planet-vulcanus-charter"},
+  ["cryogenic-operations-license"] = {"administratorio-factoriopedia.cross-planet-aquilo"},
+  ["trichromatic-permit"] = {"administratorio-factoriopedia.cross-planet-trichromatic"},
+  ["unified-operations-charter"] = {"administratorio-factoriopedia.cross-planet-unified"},
+}
+
+for item_name, description in pairs(cross_planet_factoriopedia_descriptions) do
+  local item = data.raw.item and data.raw.item[item_name]
+  if item then item.factoriopedia_description = description end
 end
 
 local function prefer_factoriopedia_recipe(original_recipe, preferred_recipe_name)
@@ -643,37 +714,14 @@ local function get_recipe_base_icons(recipe)
   return nil
 end
 
-local function shift_icon_layer(layer, offset, scale)
-  local shifted = util.table.deepcopy(layer)
-  local base_shift = shifted.shift or {0, 0}
+local function apply_bulk_recipe_icon_overlay(recipe, multiplier)
+  if not recipe then return end
 
-  shifted.shift = {
-    (base_shift[1] or 0) + offset[1],
-    (base_shift[2] or 0) + offset[2],
-  }
-  shifted.scale = (shifted.scale or 1) * scale
-
-  return shifted
-end
-
-local function apply_bulk_recipe_icon_overlay(recipe, multiplier, paperwork_name)
-  if not recipe or not paperwork_name then return end
+  local _, product_type = get_primary_result_name_and_type(recipe)
+  if product_type == "fluid" then return end
 
   local icons = get_recipe_base_icons(recipe)
   if not icons then return end
-
-  if DEBUG_SHOW_PAPERWORK_ICON_OVERLAYS and paperwork_name ~= "work-order" then
-    local paperwork = find_item_like_prototype(paperwork_name)
-    if not paperwork and data.raw["fluid"] then
-      paperwork = data.raw["fluid"][paperwork_name]
-    end
-    local paperwork_icons = clone_icon_layers(paperwork)
-    if paperwork_icons then
-      for _, layer in ipairs(paperwork_icons) do
-        table.insert(icons, shift_icon_layer(layer, {12, -12}, 0.24))
-      end
-    end
-  end
 
   if multiplier and multiplier > 1 then
     local multiplier_text = tostring(multiplier)
@@ -744,8 +792,9 @@ end
 
 -- Create a batched copy of a recipe with paperwork requirements.
 -- Paperwork is always consumed (no return).
-local function regulate_recipe(recipe, paperwork_requirements, multiplier)
+local function regulate_recipe(recipe, paperwork_requirements, multiplier, options)
   if not recipe then return end
+  options = options or {}
   paperwork_requirements = normalize_paperwork_requirements(paperwork_requirements)
 
   local function process_level(target)
@@ -763,15 +812,40 @@ local function regulate_recipe(recipe, paperwork_requirements, multiplier)
     -- ingredient tables do not mutate each other.
     if target.ingredients then
       local clean_ingredients = {}
+      local retained_paperwork = {}
+      local has_retained_paperwork = false
       for _, ing in ipairs(target.ingredients) do
         local name = ingredient_name(ing)
-        if not shared.PAPERWORK_ITEMS[name] then
+        if shared.PAPERWORK_ITEMS[name] and options.preserve_existing_paperwork then
+          local resolved_name = shared.COMBINED_FORMS[name] or name
+          append_or_merge_ingredient(retained_paperwork, {
+            type = "item",
+            name = resolved_name,
+            amount = ingredient_amount(ing),
+          })
+          has_retained_paperwork = true
+        elseif not shared.PAPERWORK_ITEMS[name] then
           local new_ing = util.table.deepcopy(ing)
           set_ingredient_amount(new_ing, ingredient_amount(new_ing) * multiplier)
           append_or_merge_ingredient(clean_ingredients, new_ing)
         end
       end
       target.ingredients = clean_ingredients
+
+      if options.preserve_existing_paperwork and not has_retained_paperwork
+          and options.fallback_paperwork then
+        for _, paperwork in ipairs(options.fallback_paperwork()) do
+          append_or_merge_ingredient(target.ingredients, {
+            type = "item",
+            name = paperwork.name,
+            amount = paperwork.amount,
+          })
+        end
+      end
+
+      for _, paperwork in ipairs(retained_paperwork) do
+        append_or_merge_ingredient(target.ingredients, paperwork)
+      end
 
       -- Paperwork per batch is fixed and never multiplied.
       for _, paperwork in ipairs(paperwork_requirements) do
@@ -877,12 +951,18 @@ end
 for name, recipe in pairs(data.raw["recipe"]) do
   if shared.is_admin_recipe(name) then goto next_operating_recipe end
 
+  -- Refineries are authorized by biter-station dispatch, not an operating
+  -- form. Their fluid-only processes retain native recipe quantities.
+  if (recipe.category or "crafting") == "oil-processing" then
+    goto next_operating_recipe
+  end
+
   local operating_form = shared.get_operating_form(recipe)
   if not operating_form then goto next_operating_recipe end
 
   local multiplier = get_recipe_batch_multiplier(name, recipe)
   regulate_recipe(recipe, operating_form, multiplier)
-  apply_bulk_recipe_icon_overlay(recipe, multiplier, operating_form)
+  apply_bulk_recipe_icon_overlay(recipe, multiplier)
 
   ::next_operating_recipe::
 end
@@ -913,8 +993,10 @@ for name, recipe in pairs(data.raw["recipe"]) do
     goto continue
   end
 
-  -- Determine batch multiplier (force 1 for non-stackable outputs)
-  local multiplier = get_recipe_batch_multiplier(name, recipe)
+  -- Paperwork-free recipes still receive a regulated-category automation copy,
+  -- but preserve their native quantities.
+  local paperwork_free = shared.PAPERWORK_FREE_REGULATED_RECIPES[name] == true
+  local multiplier = paperwork_free and 1 or get_recipe_batch_multiplier(name, recipe)
   local primary_result_name = get_primary_item_like_result_name(recipe)
   if primary_result_name then
     regulated_factoriopedia_products[primary_result_name] = true
@@ -924,9 +1006,12 @@ for name, recipe in pairs(data.raw["recipe"]) do
   local required_form = shared.get_required_form(name)
   local is_t0 = (required_form == "work-order")
 
-  local handcraft_paperwork = shared.get_paperwork_requirements(required_form, false)
-  local regulated_paperwork = shared.get_paperwork_requirements(required_form, true)
-  local regulated_form = (regulated_paperwork[1] and regulated_paperwork[1].name) or required_form
+  local handcraft_paperwork = paperwork_free
+    and {}
+    or shared.get_paperwork_requirements(required_form, false)
+  local regulated_paperwork = paperwork_free
+    and {}
+    or shared.get_paperwork_requirements(required_form, true)
 
   -- Determine regulated category
   local regulated_cat
@@ -936,25 +1021,22 @@ for name, recipe in pairs(data.raw["recipe"]) do
     regulated_cat = "advanced-crafting-regulated"
   end
 
-  -- Fluid recipes can never be hand-crafted (matches vanilla: the character
-  -- has no "crafting-with-fluid" category), so leaving the original on that
-  -- category would orphan it after we repurpose AM2/AM3 onto regulated
-  -- categories. Every other vanilla-handcraftable recipe stays handcraftable
-  -- here, regardless of tech tier.
-  local fluid_only = (cat == "crafting-with-fluid")
+  -- Fluid recipes can never be hand-crafted, so leaving the original on
+  -- crafting-with-fluid would orphan it after we repurpose AM2/AM3 onto
+  -- regulated categories.
+  local above_green = not is_red_science_or_below(name) or cat == "crafting-with-fluid"
 
-  if fluid_only then
+  if above_green then
     -------------------------------------------------------------------------
-    -- FLUID INGREDIENT: Regulate original recipe in-place.
-    -- No handcrafting possible (not even in vanilla), so we convert the
-    -- original directly. This preserves the recipe's identity (name, tech
-    -- unlock, usage info) while showing the correct regulated
-    -- ingredients/machines. Keep the recipe visible in the player's
-    -- crafting UI as unavailable.
+    -- ABOVE GREEN SCIENCE: Regulate original recipe in-place.
+    -- No handcrafting possible, so we convert the original directly.
+    -- This preserves the recipe's identity (name, tech unlock, usage info)
+    -- while showing the correct regulated ingredients/machines.
+    -- Keep the recipe visible in the player's crafting UI as unavailable.
     -------------------------------------------------------------------------
     recipe.category = regulated_cat
     regulate_recipe(recipe, regulated_paperwork, multiplier)
-    apply_bulk_recipe_icon_overlay(recipe, multiplier, regulated_form)
+    apply_bulk_recipe_icon_overlay(recipe, multiplier)
     recipe.hide_from_player_crafting = false
 
     -- Inject taxpayer-money for expensive late-game items
@@ -970,7 +1052,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     -- Tech effects: keep original unlock as-is (recipe name unchanged)
   else
     -------------------------------------------------------------------------
-    -- NO FLUID INGREDIENT: Create separate regulated copy for AMs,
+    -- RED SCIENCE OR BELOW: Create separate regulated copy for AMs,
     -- keep original for handcrafting, but point Factoriopedia at the
     -- regulated version so machine info reflects the real automation path.
     -------------------------------------------------------------------------
@@ -982,7 +1064,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     regulated.category = regulated_cat
 
     regulate_recipe(regulated, regulated_paperwork, multiplier)
-    apply_bulk_recipe_icon_overlay(regulated, multiplier, regulated_form)
+    apply_bulk_recipe_icon_overlay(regulated, multiplier)
 
     -- Inject taxpayer-money for expensive late-game items
     local money_cost = shared.TAXPAYER_MONEY_COSTS[name]
@@ -1000,35 +1082,12 @@ for name, recipe in pairs(data.raw["recipe"]) do
     -- Modify original for T1+ handcrafting (batch + tier form)
     if not is_t0 then
       batch_original_with_form(recipe, handcraft_paperwork, multiplier)
-      apply_bulk_recipe_icon_overlay(recipe, multiplier, required_form)
+      apply_bulk_recipe_icon_overlay(recipe, multiplier)
     end
 
   end
 
   ::continue::
-end
-
--------------------------------------------------------------------------------
--- OIL-PROCESSING BULKING
--- Oil refineries are biter-station-managed — each dispatched worker only
--- authorizes one craft cycle. Vanilla refinery recipe sizes would make
--- refineries craft absurdly fast under that model, so we bulk every
--- oil-processing recipe 5x (same multiplier as the regulated economy).
--- No operating paperwork is added — biter-station dispatch is the gate.
--------------------------------------------------------------------------------
-local OIL_REFINERY_BULK_MULTIPLIER = 5
-for name, recipe in pairs(data.raw["recipe"]) do
-  if shared.is_admin_recipe(name) or shared.ADMIN_BUILDINGS[name]
-     or FORM_PRODUCTION_RECIPE_SET[name] then
-    goto oil_continue
-  end
-
-  local cat = recipe.category or "crafting"
-  if cat ~= "oil-processing" then goto oil_continue end
-
-  regulate_recipe(recipe, {}, OIL_REFINERY_BULK_MULTIPLIER)
-
-  ::oil_continue::
 end
 
 -- Register all regulated recipes
@@ -1037,6 +1096,22 @@ for _, regulated in pairs(regulated_recipes) do
   table.insert(regulated_list, regulated)
 end
 data:extend(regulated_list)
+
+-------------------------------------------------------------------------------
+-- 5a1. IMPORTED RESEARCH APPROVAL FOR NATIVE SPACE SCIENCE
+-- Preserve Space Age's single five-pack native recipe and require exactly one
+-- ordinary research approval per batch. The approval must be produced on a
+-- planet and shipped to the Administrative Space Station.
+-------------------------------------------------------------------------------
+if feature_flags.space_age_enabled() then
+  for _, recipe_name in ipairs({"space-science-pack", "space-science-pack-regulated"}) do
+    if data.raw.recipe[recipe_name] then
+      remove_ingredient_from_recipe(recipe_name, "research-grant-approval")
+      remove_ingredient_from_recipe(recipe_name, "research-grant-work-order")
+      add_special_paperwork(recipe_name, "research-grant-approval", 1)
+    end
+  end
+end
 
 -------------------------------------------------------------------------------
 -- 5a2. FALLBACK REGULATION FOR REMAINING CRAFTING RECIPES
@@ -1054,96 +1129,12 @@ data:extend(regulated_list)
 -------------------------------------------------------------------------------
 
 local function regulate_admin_building(recipe, multiplier, recipe_name)
-  local function process_level(target)
-    if not target then return end
-
-    target.energy_required = (target.energy_required or 0.5) * multiplier
-
-    if target.ingredients then
-      local new_ingredients = {}
-      local paperwork_accum = {}  -- merges tier forms + existing combined forms to avoid duplicates
-
-      for _, ing in ipairs(target.ingredients) do
-        local name = ing.name or ing[1]
-        local amount = ing.amount or ing[2] or 1
-        local combined = shared.COMBINED_FORMS[name]
-        if combined then
-          -- Tier form → accumulate as combined form (fixed cost)
-          paperwork_accum[combined] = (paperwork_accum[combined] or 0) + amount
-        elseif shared.PAPERWORK_ITEMS[name] then
-          -- Other paperwork → accumulate as fixed cost, don't multiply
-          paperwork_accum[name] = (paperwork_accum[name] or 0) + amount
-        else
-          -- Regular material → multiply
-          local new_ing = util.table.deepcopy(ing)
-          if new_ing.amount then
-            new_ing.amount = new_ing.amount * multiplier
-          elseif new_ing[2] then
-            new_ing[2] = new_ing[2] * multiplier
-          end
-          append_or_merge_ingredient(new_ingredients, new_ing)
-        end
-      end
-
-      -- If no paperwork was found in the base recipe, fall back to the
-      -- tier-based form so recipes with no explicit forms (office-desk,
-      -- field-office, greenhouse, …) still receive a work-order.
-      if not next(paperwork_accum) then
-        local required_form = shared.get_required_form(recipe_name)
-        local reqs = shared.get_paperwork_requirements(required_form, true)
-        for _, req in ipairs(reqs) do
-          paperwork_accum[req.name] = (paperwork_accum[req.name] or 0) + req.amount
-        end
-      end
-
-      for pw_name, pw_amount in pairs(paperwork_accum) do
-        append_or_merge_ingredient(new_ingredients, {type = "item", name = pw_name, amount = pw_amount})
-      end
-      target.ingredients = new_ingredients
-    end
-
-    local results = {}
-    if target.results then
-      for _, res in ipairs(target.results) do
-        local new_res = util.table.deepcopy(res)
-        if new_res.amount then
-          new_res.amount = new_res.amount * multiplier
-        elseif new_res.amount_min and new_res.amount_max then
-          new_res.amount_min = new_res.amount_min * multiplier
-          new_res.amount_max = new_res.amount_max * multiplier
-        end
-        table.insert(results, new_res)
-      end
-    elseif target.result then
-      local count = (target.result_count or 1) * multiplier
-      table.insert(results, {type = "item", name = target.result, amount = count})
-      target.result = nil
-      target.result_count = nil
-    end
-    target.results = results
-    target.main_product = target.main_product or (results[1] and results[1].name)
-  end
-
-  process_level(recipe)
-  if recipe.normal then process_level(recipe.normal) end
-  if recipe.expensive then process_level(recipe.expensive) end
-end
-
-local function get_admin_building_icon_form(recipe)
-  local target = recipe.normal or recipe
-  if target.ingredients then
-    for _, ing in ipairs(target.ingredients) do
-      local name = ing.name or ing[1]
-      if shared.COMBINED_FORMS[name] then
-        return shared.COMBINED_FORMS[name]
-      end
-    end
-    for _, ing in ipairs(target.ingredients) do
-      local name = ing.name or ing[1]
-      if shared.PAPERWORK_ITEMS[name] then return name end
-    end
-  end
-  return "work-order"
+  regulate_recipe(recipe, {}, multiplier, {
+    preserve_existing_paperwork = true,
+    fallback_paperwork = function()
+      return shared.get_paperwork_requirements(shared.get_required_form(recipe_name), true)
+    end,
+  })
 end
 
 local admin_building_regulated = {}
@@ -1163,8 +1154,7 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
 
   local multiplier = get_recipe_batch_multiplier(recipe_name, recipe)
   regulate_admin_building(regulated, multiplier, recipe_name)
-  local regulated_form = get_admin_building_icon_form(regulated)
-  apply_bulk_recipe_icon_overlay(regulated, multiplier, regulated_form)
+  apply_bulk_recipe_icon_overlay(regulated, multiplier)
 
   table.insert(admin_building_regulated, regulated)
   regulated_factoriopedia_products[recipe_name] = true
@@ -1220,7 +1210,24 @@ for recipe_name, recipe in pairs(data.raw["recipe"] or {}) do
   end
 end
 add_special_paperwork("beacon", "treasury-bond", 1)
+-- One grant represents 500 taxpayer-money through the bond/grant chain. The
+-- silo consumes financed public works rather than loose currency, making the
+-- derivative the efficient interplanetary export.
 add_special_paperwork("rocket-silo", "government-grant", 1)
+
+-- Space-platform asteroid cracking should also consume explicit orbital
+-- processing paperwork for advanced/reprocessing loops. Basic asteroid
+-- crushing must stay available for the first platform and first space science.
+for recipe_name, recipe in pairs(data.raw["recipe"] or {}) do
+  if recipe
+    and not shared.is_admin_recipe(recipe_name)
+    and recipe_name:find("asteroid")
+    and (recipe_name:find("advanced") or recipe_name:find("reprocessing") or recipe_name:find("promethium"))
+    and (recipe_name:find("crushing") or recipe_name:find("processing") or recipe_name:find("reprocessing"))
+  then
+    add_special_paperwork(recipe_name, "asteroid-processing-docket", 1)
+  end
+end
 
 -- Cliff charges should stay civilian; remove the hidden military grenade
 -- dependency after any recipe cloning/regulation has happened.
@@ -1361,8 +1368,59 @@ for _, recipe in pairs(data.raw["recipe"] or {}) do
   end
 end
 
+-- 7. COLORED INK GATING FOR PLANET INTERMEDIATES
+-- Any recipe that consumes a Space Age planet-specific intermediate must also
+-- consume the corresponding colored ink form. This makes planet ink production
+-- essential for late-game manufacturing everywhere. Once Aquilo is online,
+-- multi-planet recipes are consolidated into composite paperwork instead of
+-- stacking multiple raw CMY forms independently.
+-- One form per batch (not multiplied), added after regulation.
 -------------------------------------------------------------------------------
--- 7. PNEUMATIC TUBE TRANSPORT
+require("prototypes.final_fixes.colored_ink_gating").apply(
+  data,
+  shared,
+  remove_ingredient_from_recipe,
+  add_special_paperwork
+)
+
+-------------------------------------------------------------------------------
+-- 7a1. UNSTAFFED OPERATIONS WAIVER FITMENT
+-- The waiver only belongs in machines that wait for a dispatched worker biter.
+-- Restrict every other machine to the module categories it already had, so a
+-- waiver cannot be parked somewhere it would do nothing.
+-------------------------------------------------------------------------------
+if feature_flags.space_age_enabled() and feature_flags.working_hours_enabled() then
+  require("prototypes.final_fixes.unstaffed_operations_gating").apply(
+    data,
+    require("prototypes.shared.biter_station_buildings").names
+  )
+end
+
+-------------------------------------------------------------------------------
+-- 7a2. EGG COURIERS
+-- Biter eggs never leave Nauvis. Reroute every vanilla recipe that consumed
+-- them offworld through a Nauvis-trained courier, preserving vanilla egg costs
+-- exactly. Runs after the ink gating so the promethium expedition charter is
+-- already present and scales with the batched recipe.
+-------------------------------------------------------------------------------
+if feature_flags.space_age_enabled() then
+  require("prototypes.final_fixes.egg_couriers").apply(data)
+end
+
+-------------------------------------------------------------------------------
+-- 7b. SPACE-PLATFORM BUILDING PERMITS
+-- Platform buildings consume exactly one orbital infrastructure permit as
+-- their sole paperwork ingredient. Run this after every general/special gate
+-- so construction, management, chromatic, or compatibility paperwork cannot
+-- leak back into either the canonical or regulated recipe.
+-------------------------------------------------------------------------------
+require("prototypes.final_fixes.space_platform_permits").apply(data, shared, ITEM_LIKE_PROTOTYPE_TYPES, {
+  ingredient_name = ingredient_name,
+  append_or_merge_ingredient = append_or_merge_ingredient,
+})
+
+-------------------------------------------------------------------------------
+-- 8. PNEUMATIC TUBE TRANSPORT
 -- Fluid/recipe generation removed — the tube system now uses a script-managed
 -- signal chain.  The pneumatic items list lives in shared.PNEUMATIC_ITEMS.
 -------------------------------------------------------------------------------
@@ -1380,104 +1438,11 @@ for item_name in pairs(shared.PNEUMATIC_ITEMS) do
   end
 end
 
+
 -------------------------------------------------------------------------------
--- 8. ADMIN STATION COLLISION FOOTPRINT
+-- 9. ADMIN STATION COLLISION FOOTPRINT
 -------------------------------------------------------------------------------
-
-local function collision_box_is_zero(box)
-  return box
-    and box[1] and box[2]
-    and box[1][1] == 0 and box[1][2] == 0
-    and box[2][1] == 0 and box[2][2] == 0
-end
-
-local function normalize_collision_mask(mask)
-  if not mask then
-    -- Preserve Factorio's default collision layers for ground entities;
-    -- without these the entity loses water/object/player collision entirely.
-    return {layers = {item = true, object = true, player = true, water_tile = true}}
-  end
-  if mask.layers then
-    mask.layers = mask.layers or {}
-    return mask
-  end
-
-  local normalized = {layers = {}}
-  for key, value in pairs(mask) do
-    if key == "not_colliding_with_itself" or key == "consider_tile_transitions" or key == "colliding_with_tiles_only" then
-      normalized[key] = value
-    elseif type(key) == "number" and type(value) == "string" then
-      normalized.layers[value] = true
-    elseif type(key) == "string" and value == true then
-      normalized.layers[key] = true
-    end
-  end
-  return normalized
-end
-
-local function has_excluded_flag(prototype)
-  if not prototype.flags then return false end
-  for _, flag in ipairs(prototype.flags) do
-    if ADMIN_STATION_EXCLUDED_FLAGS[flag] then
-      return true
-    end
-  end
-  return false
-end
-
-local function should_add_admin_station_layer(prototype)
-  if not prototype or ADMIN_STATION_NON_BLOCKING_NAMES[prototype.name] then
-    return false
-  end
-  if ADMIN_STATION_EXCLUDED_TYPES[prototype.type] or has_excluded_flag(prototype) then
-    return false
-  end
-  if not prototype.collision_mask then
-    return false
-  end
-  if not prototype.collision_box or collision_box_is_zero(prototype.collision_box) then
-    return false
-  end
-  return true
-end
-
-local function build_standard_module_categories()
-  local categories = {}
-  for name, _ in pairs(data.raw["module-category"] or {}) do
-    if name ~= "night-work" then
-      categories[#categories + 1] = name
-    end
-  end
-  table.sort(categories)
-  return categories
-end
-
-local function copy_array(values)
-  local copy = {}
-  for index, value in ipairs(values) do
-    copy[index] = value
-  end
-  return copy
-end
-
-local STANDARD_MODULE_CATEGORIES = build_standard_module_categories()
-
-for _, prototype_set in pairs(data.raw) do
-  for _, prototype in pairs(prototype_set) do
-    if should_add_admin_station_layer(prototype) then
-      prototype.collision_mask = normalize_collision_mask(prototype.collision_mask)
-      prototype.collision_mask.layers[ADMIN_STATION_COLLISION_LAYER] = true
-    end
-
-    if prototype and type(prototype.module_slots) == "number" and prototype.module_slots > 0 then
-      local categories = copy_array(STANDARD_MODULE_CATEGORIES)
-      if WORKING_HOURS_ENABLED and NIGHT_WORK_BUILDINGS[prototype.name] then
-        categories[#categories + 1] = "night-work"
-      end
-      prototype.allowed_module_categories = categories
-    end
-  end
-end
+require("prototypes.final_fixes.collision_masks").apply(data, feature_flags.working_hours_enabled())
 
 -------------------------------------------------------------------------------
 -- 8b. BITERPORT ITEM PLACE_RESULT FALLBACK
@@ -1520,3 +1485,61 @@ if rideable then
   rideable.starting_sound = nil
   rideable.engine_sound = nil
 end
+
+-------------------------------------------------------------------------------
+-- 11. SHARED ROCKET-SILO AUTHORIZATION
+-- Space Age planets use the same physical silo and the same administrative
+-- recipe. Public finance travels as grants rather than loose taxpayer money;
+-- Aquilo remains import-dependent because it cannot produce every input.
+-------------------------------------------------------------------------------
+if space_age_planets and data.raw.recipe and data.raw.recipe["rocket-silo"] then
+  local canonical = data.raw.recipe["rocket-silo"]
+  local replaceable_admin_ingredients = {
+    ["government-grant"] = true,
+    ["management-approval-written"] = true,
+    ["management-written-work-order"] = true,
+    ["construction-work-order"] = true,
+    ["environmental-impact-report"] = true,
+    ["taxpayer-money"] = true,
+  }
+
+  local function replace_admin_cost(recipe, additions)
+    local filtered = {}
+    for _, ingredient in ipairs(recipe.ingredients or {}) do
+      local name = ingredient.name or ingredient[1]
+      if not replaceable_admin_ingredients[name] then filtered[#filtered + 1] = ingredient end
+    end
+    for _, ingredient in ipairs(additions) do filtered[#filtered + 1] = ingredient end
+    recipe.ingredients = filtered
+  end
+
+  replace_admin_cost(canonical, {
+    {type = "item", name = "government-grant", amount = 1},
+    {type = "item", name = "management-approval-written", amount = 1},
+  })
+  canonical.surface_conditions = nil
+
+  -- Taxpayer money is generated, securitized, and allocated on Nauvis. Off-world
+  -- finance arrives as a finished grant, never from minting money, bonds, or
+  -- grants on another planet.
+  for _, source_recipe_name in ipairs({"treasury-bond-production", "government-grant-production", "tax-audit"}) do
+    local recipe_name = factoriopedia_recipe_renames[source_recipe_name] or source_recipe_name
+    space_age_planets.apply_planet_surface_conditions(data.raw.recipe[recipe_name], "nauvis")
+  end
+end
+
+-------------------------------------------------------------------------------
+-- 12. SCIENCE PACKS ARE RESEARCH-ONLY
+-- Science packs belong in technology unit ingredients, never crafting recipe
+-- ingredients. Discover them from loaded item prototypes so vanilla, Space
+-- Age, Administratorio, and compatibility-mod packs all obey the same rule.
+-- This runs last to prevent any earlier recipe mutation from reintroducing one.
+-------------------------------------------------------------------------------
+require("prototypes.final_fixes.science_pack_stripping").apply(data, ITEM_LIKE_PROTOTYPE_TYPES)
+
+-------------------------------------------------------------------------------
+-- 13. ROCKET CARGO WEIGHTS
+-- Apply after every item-producing integration has finished so all mod-owned
+-- cargo, including Space Age tourism items and generated forms, is covered.
+-------------------------------------------------------------------------------
+require("prototypes.final_fixes.rocket_weights").apply()

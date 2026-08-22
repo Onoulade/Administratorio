@@ -2,7 +2,12 @@
 -- Single source of truth for constants used across data.lua and data-final-fixes.lua.
 
 local shared = {}
-local compatibility_rules = require("prototypes.shared.vanilla_rules")
+local feature_flags = require("feature_flags")
+local pneumatic_items = require("prototypes.shared.pneumatic_items")
+local space_age_enabled = feature_flags.space_age_enabled()
+local compatibility_rules = space_age_enabled
+  and require("prototypes.shared.space_age_rules")
+  or require("prototypes.shared.non_space_age_rules")
 
 -------------------------------------------------------------------------------
 -- CORE DESIGN PRINCIPLES
@@ -97,38 +102,7 @@ shared.PAPERWORK_ITEMS = {
 -- administrative goods. Used by both data stage (recipe generation if any)
 -- and control stage (intake inserter filter setup).
 -------------------------------------------------------------------------------
-shared.PNEUMATIC_ITEMS = {}
-for name, _ in pairs(shared.PAPERWORK_ITEMS) do
-  shared.PNEUMATIC_ITEMS[name] = true
-end
-do
-  local extra = {
-    "paper", "ink", "blank-form", "blank-approval", "blank-directive",
-    "safety-waiver-draft", "construction-permit-draft",
-    "management-verbal-draft", "management-written-proposal",
-    "ticket-landscape", "ticket-smog", "ticket-noise", "ticket-unemployment",
-    "ticket-littering", "ticket-hazmat", "ticket-loitering", "ticket-vagrancy",
-    "filing-l", "filing-s", "filing-n", "filing-u",
-    "filing-lt", "filing-h", "filing-lo", "filing-v",
-    "case-s", "case-n", "case-u",
-    "case-h", "case-lo", "case-v",
-    "brief-n", "brief-u",
-    "brief-lo", "brief-v",
-    "resolved-landscape", "resolved-smog", "resolved-noise", "resolved-unemployment",
-    "resolved-littering", "resolved-hazmat", "resolved-loitering", "resolved-vagrancy",
-    "osha-violation",
-    "basic-excuse", "crappy-report", "credentials", "data",
-    "good-excuse", "justification", "narrative", "policy", "regulation",
-    "white-paper", "administrative-science-pack",
-    "watercooler-gossip", "office-drama",
-    "taxpayer-money",
-    "useless-documentation", "refined-nonsense",
-    "job-offer",
-  }
-  for _, name in ipairs(extra) do
-    shared.PNEUMATIC_ITEMS[name] = true
-  end
-end
+shared.PNEUMATIC_ITEMS = pneumatic_items.as_set()
 
 -------------------------------------------------------------------------------
 -- COMBINED FORMS
@@ -228,6 +202,29 @@ shared.ADMIN_BUILDINGS = {
   ["pneumatic-pipe-to-ground"] = true,
 }
 
+if space_age_enabled then
+  shared.ADMIN_BUILDINGS["chromatic-printer"] = true
+  shared.ADMIN_BUILDINGS["laser-printer"] = true
+  shared.ADMIN_BUILDINGS["formation-center"] = true
+  shared.ADMIN_BUILDINGS["administrative-space-station"] = true
+  shared.ADMIN_BUILDINGS["trajectory-compliance-array"] = true
+  shared.ADMIN_BUILDINGS["senior-trajectory-compliance-array"] = true
+  shared.ADMIN_BUILDINGS["executive-trajectory-compliance-array"] = true
+  shared.ADMIN_BUILDINGS["orbital-employment-catapult"] = true
+  shared.ADMIN_BUILDINGS["notary-office"] = true
+  shared.ADMIN_BUILDINGS["territorial-arbitration-post"] = true
+  shared.ADMIN_BUILDINGS["capture-bureau"] = true
+  shared.ADMIN_BUILDINGS["conciliation-desk"] = true
+  shared.ADMIN_BUILDINGS["digital-services-bureau"] = true
+  shared.ADMIN_BUILDINGS["interplanetary-terminus"] = true
+  shared.ADMIN_BUILDINGS["ai-server"] = true
+  shared.ADMIN_BUILDINGS["slop-refinery"] = true
+  shared.ADMIN_BUILDINGS["synthetic-personnel-bureau"] = true
+  shared.ADMIN_BUILDINGS["involuntary-relocation-cannon"] = true
+  shared.ADMIN_BUILDINGS["involuntary-relocation-receiver"] = true
+  shared.ADMIN_BUILDINGS["heat-exhaust"] = true
+end
+
 -------------------------------------------------------------------------------
 -- FORM PRODUCTION RECIPES
 -- Maps form item names to the recipe that produces them.
@@ -250,6 +247,77 @@ shared.FORM_PRODUCTION_RECIPES = {
   ["radiological-work-order"] = "radiological-work-order-production",
 }
 
+if space_age_enabled then
+  shared.PAPERWORK_ITEMS["heatproof-form-stock"] = true
+  shared.PAPERWORK_ITEMS["blank-cyan-form"] = true
+  shared.PAPERWORK_ITEMS["mycelial-form-stock"] = true
+  shared.PAPERWORK_ITEMS["blank-yellow-form"] = true
+  shared.PAPERWORK_ITEMS["signal-form-stock"] = true
+  shared.PAPERWORK_ITEMS["blank-magenta-form"] = true
+  shared.PAPERWORK_ITEMS["permit-draft"] = true
+  shared.PAPERWORK_ITEMS["inspection-docket"] = true
+  shared.PAPERWORK_ITEMS["embossed-seal"] = true
+  shared.PAPERWORK_ITEMS["industrial-charter"] = true
+  shared.PAPERWORK_ITEMS["territorial-resettlement-order"] = true
+  shared.PAPERWORK_ITEMS["thermal-process-license"] = true
+  shared.PAPERWORK_ITEMS["calcite-reagent-waiver"] = true
+  shared.PAPERWORK_ITEMS["offworld-metallurgy-charter"] = true
+  shared.PAPERWORK_ITEMS["symbiosis-record"] = true
+  shared.PAPERWORK_ITEMS["conciliation-order"] = true
+  shared.PAPERWORK_ITEMS["archive-recovery-permit"] = true
+  shared.PAPERWORK_ITEMS["digital-processing-certificate"] = true
+  shared.PAPERWORK_ITEMS["electromagnetic-operating-license"] = true
+  shared.PAPERWORK_ITEMS["data-recovery-order"] = true
+  shared.PAPERWORK_ITEMS["hardened-data-vault"] = true
+  shared.PAPERWORK_ITEMS["asteroid-processing-docket"] = true
+  shared.PAPERWORK_ITEMS["orbital-deviation-order"] = true
+  shared.PAPERWORK_ITEMS["priority-orbital-deviation-order"] = true
+  shared.PAPERWORK_ITEMS["orbital-operations-form"] = true
+  shared.PAPERWORK_ITEMS["orbital-infrastructure-permit"] = true
+  shared.PAPERWORK_ITEMS["cyan-yellow-form"] = true
+  shared.PAPERWORK_ITEMS["cyan-magenta-form"] = true
+  shared.PAPERWORK_ITEMS["yellow-magenta-form"] = true
+  shared.PAPERWORK_ITEMS["trichromatic-permit"] = true
+  shared.PAPERWORK_ITEMS["orbital-tourism-form"] = true
+  shared.PAPERWORK_ITEMS["unified-operations-charter"] = true
+  shared.PAPERWORK_ITEMS["cryogenic-operations-license"] = true
+  shared.PAPERWORK_ITEMS["promethium-research-charter"] = true
+
+  shared.FORM_PRODUCTION_RECIPES["heatproof-form-stock"] = "heatproof-form-stock"
+  shared.FORM_PRODUCTION_RECIPES["blank-cyan-form"] = "blank-cyan-form-production"
+  shared.FORM_PRODUCTION_RECIPES["mycelial-form-stock"] = "mycelial-form-stock"
+  shared.FORM_PRODUCTION_RECIPES["blank-yellow-form"] = "blank-yellow-form-production"
+  shared.FORM_PRODUCTION_RECIPES["signal-form-stock"] = "signal-form-stock"
+  shared.FORM_PRODUCTION_RECIPES["blank-magenta-form"] = "blank-magenta-form-production"
+  shared.FORM_PRODUCTION_RECIPES["permit-draft"] = "permit-draft"
+  shared.FORM_PRODUCTION_RECIPES["inspection-docket"] = "inspection-docket"
+  shared.FORM_PRODUCTION_RECIPES["embossed-seal"] = "embossed-seal"
+  shared.FORM_PRODUCTION_RECIPES["industrial-charter"] = "industrial-charter"
+  shared.FORM_PRODUCTION_RECIPES["territorial-resettlement-order"] = "territorial-resettlement-order"
+  shared.FORM_PRODUCTION_RECIPES["thermal-process-license"] = "thermal-process-license"
+  shared.FORM_PRODUCTION_RECIPES["calcite-reagent-waiver"] = "calcite-reagent-waiver"
+  shared.FORM_PRODUCTION_RECIPES["offworld-metallurgy-charter"] = "offworld-metallurgy-charter"
+  shared.FORM_PRODUCTION_RECIPES["symbiosis-record"] = "symbiosis-record"
+  shared.FORM_PRODUCTION_RECIPES["conciliation-order"] = "conciliation-order"
+  shared.FORM_PRODUCTION_RECIPES["archive-recovery-permit"] = "archive-recovery-permit"
+  shared.FORM_PRODUCTION_RECIPES["digital-processing-certificate"] = "digital-processing-certificate"
+  shared.FORM_PRODUCTION_RECIPES["electromagnetic-operating-license"] = "electromagnetic-operating-license"
+  shared.FORM_PRODUCTION_RECIPES["data-recovery-order"] = "data-recovery-order"
+  shared.FORM_PRODUCTION_RECIPES["hardened-data-vault"] = "hardened-data-vault-production"
+  shared.FORM_PRODUCTION_RECIPES["orbital-deviation-order"] = "orbital-deviation-order"
+  shared.FORM_PRODUCTION_RECIPES["priority-orbital-deviation-order"] = "priority-orbital-deviation-order"
+  shared.FORM_PRODUCTION_RECIPES["orbital-operations-form"] = "orbital-operations-form"
+  shared.FORM_PRODUCTION_RECIPES["orbital-infrastructure-permit"] = "orbital-infrastructure-permit"
+  shared.FORM_PRODUCTION_RECIPES["cyan-yellow-form"] = "cyan-yellow-form-production"
+  shared.FORM_PRODUCTION_RECIPES["cyan-magenta-form"] = "cyan-magenta-form-production"
+  shared.FORM_PRODUCTION_RECIPES["yellow-magenta-form"] = "yellow-magenta-form-production"
+  shared.FORM_PRODUCTION_RECIPES["trichromatic-permit"] = "trichromatic-permit-production"
+  shared.FORM_PRODUCTION_RECIPES["orbital-tourism-form"] = "orbital-tourism-form-production"
+  shared.FORM_PRODUCTION_RECIPES["unified-operations-charter"] = "unified-operations-charter-production"
+  shared.FORM_PRODUCTION_RECIPES["cryogenic-operations-license"] = "cryogenic-operations-license-production"
+  shared.FORM_PRODUCTION_RECIPES["promethium-research-charter"] = "promethium-research-charter-production"
+end
+
 -------------------------------------------------------------------------------
 -- COMBINED FORM PRODUCTION RECIPES
 -- Maps combined form names to the recipe that produces them.
@@ -264,77 +332,163 @@ shared.COMBINED_FORM_PRODUCTION_RECIPES = {
   ["research-grant-work-order"] = "research-grant-work-order-production",
 }
 
+-- ADMIN RECIPE REGISTRATION
+--
+-- Recipes are registered while Administratorio loads its own prototype files
+-- (see data.lua).  This deliberately avoids name-pattern guessing: a third
+-- party recipe named "permit-production" is not ours merely because it has a
+-- bureaucratic-sounding name.
 -------------------------------------------------------------------------------
--- ADMIN RECIPE DETECTION
--- Returns true if a recipe name belongs to our mod and should NOT be processed
--- by the vanilla recipe regulation system.
--------------------------------------------------------------------------------
+shared.ADMIN_RECIPE_REGULATION_EXEMPTIONS = {
+  -- These Administratorio recipes intentionally enter the vanilla regulation
+  -- path; they are base materials in the automated economy.
+  ["paper-production"] = true,
+  ["ink-production"] = true,
+}
+
+-- These ordinary recipes still need a copy on the regulated assembler
+-- category, but automation consumes no paperwork and preserves native recipe
+-- quantities. Underground pipe construction is intentionally not exempt.
+shared.PAPERWORK_FREE_REGULATED_RECIPES = {
+  ["pipe"] = true,
+}
+shared.ADMIN_RECIPE_NAMES = {}
+
+function shared.register_admin_recipe(name)
+  if name and not shared.ADMIN_RECIPE_REGULATION_EXEMPTIONS[name] then
+    shared.ADMIN_RECIPE_NAMES[name] = true
+  end
+end
+
+function shared.register_admin_recipe_prototypes(prototypes)
+  for _, prototype in ipairs(prototypes or {}) do
+    if prototype.type == "recipe" then
+      shared.register_admin_recipe(prototype.name)
+    end
+  end
+end
+
+-- Form-production recipes are declared in this shared module rather than in a
+-- single prototype file, so register them directly as well. This keeps the
+-- classifier correct for focused tests and for any future loader that does not
+-- use data.lua's prototype-registration wrapper.
+for _, recipe_name in pairs(shared.FORM_PRODUCTION_RECIPES) do
+  shared.register_admin_recipe(recipe_name)
+end
+for _, recipe_name in pairs(shared.COMBINED_FORM_PRODUCTION_RECIPES) do
+  shared.register_admin_recipe(recipe_name)
+end
+
 function shared.is_admin_recipe(name)
-  -- Recipes that match admin patterns but should still be regulated
-  local NOT_ADMIN = {
-    ["paper-production"] = true,
-    ["ink-production"] = true,
-  }
-  if NOT_ADMIN[name] then return false end
-  if name:match("%-barrel$") or name:match("%-unbarrel$") then return false end
+  if shared.ADMIN_RECIPE_REGULATION_EXEMPTIONS[name] then return false end
+  return shared.ADMIN_RECIPE_NAMES[name] == true
+    or shared.ADMIN_BUILDINGS[name] == true
+end
 
-  -- Explicit building check
-  if shared.ADMIN_BUILDINGS[name] then return true end
+-------------------------------------------------------------------------------
+-- UNBATCHED RESULT SUBGROUPS
+-- Space construction outputs should always stay at 1x even when they live in
+-- normal crafting categories, so platform infrastructure and launch hardware
+-- do not inherit bulk recipe treatment.
+-------------------------------------------------------------------------------
+shared.UNBATCHED_RESULT_SUBGROUPS = {
+  ["space-related"] = true,
+  ["space-platform"] = true,
+  ["space-rocket"] = true,
+  ["space-interactors"] = true,
+}
 
-  -- Explicit form production recipe check
-  for _, recipe_name in pairs(shared.FORM_PRODUCTION_RECIPES) do
-    if name == recipe_name then return true end
-  end
+-- Space Age recipes are conservative by default. Explicit multiplier entries
+-- may opt true intermediates into larger batches, while new orbital buildings
+-- and compatible platform content remain 1x without another name allowlist.
+shared.UNBATCHED_RESULT_SUBGROUP_PREFIXES = {
+  "space-",
+  "admin-space-",
+}
 
-  -- Explicit combined form production recipe check
-  for _, recipe_name in pairs(shared.COMBINED_FORM_PRODUCTION_RECIPES) do
-    if name == recipe_name then return true end
-  end
+-- Placeable structures whose construction is intrinsically tied to a space
+-- platform. data-final-fixes also discovers compatible placeable items in the
+-- vanilla "space-platform" subgroup so newly added platform buildings inherit
+-- the same permit rule automatically. Foundation tiles and starter packs are
+-- deliberately absent: they bootstrap the platform rather than build on it.
+shared.SPACE_PLATFORM_BUILDING_RECIPES = {
+  ["cargo-bay"] = true,
+  ["asteroid-collector"] = true,
+  ["crusher"] = true,
+  ["thruster"] = true,
+  ["administrative-space-station"] = true,
+  ["trajectory-compliance-array"] = true,
+  ["senior-trajectory-compliance-array"] = true,
+  ["executive-trajectory-compliance-array"] = true,
+  ["orbital-employment-catapult"] = true,
+}
 
-  -- Pattern-based detection for mod recipe naming conventions.
-  local patterns = {
-    -- Core admin patterns
-    "^admin", "bureau", "^filing%-", "^case%-", "^brief%-",
-    "^landscape%-final", "^smog%-final", "^noise%-final", "^unemployment%-final",
-    "^littering%-final", "^hazmat%-final", "^loitering%-final", "^vagrancy%-final",
-    -- Paperwork production
-    "%-production$", "%-refining$", "%-batch$", "^copy%-",
-    -- Specific item/recipe names
-    "certificate", "form%-27b", "waiver", "approval",
-    "permit", "clearance", "provisional",
-    "bond", "grant", "slush", "ink", "audit",
-    -- Combined forms
-    "%-work%-order",
-    -- Draft/printing pipeline
-    "directive", "%-draft", "%-printing", "%-proposal", "%-review",
-    -- BS economy
-    "dubious%-data", "excuse", "gossip", "justification",
-    "narrative", "white%-paper", "policy%-production", "regulation%-production",
-    "promise", "eviction", "osha", "office%-drama",
-    -- Rubble derivatives
-    "useless%-documentation", "compacted%-rubble", "refined%-nonsense",
-    -- Greenhouse & coffee
-    "greenhouse", "coffee",
-    -- Paper & forms
-    "^blank%-form", "^blank%-approval", "^blank%-directive",
-    -- Resolution
-    "^resolved%-", "waiting%-zone",
-    -- Pneumatic
-    "^pneumatic%-", "^form%-liquifier", "^form%-solidifier",
-    -- Science
-    "administrative%-science",
-    -- Biter employment
-    "job%-offer", "biter%-worker", "biter%-logistics%-formation", "union%-delegate", "chemical%-operator", "nuclear%-technician",
-    "specialist%-training",
-  }
-  for _, pat in ipairs(patterns) do
-    if name:find(pat) then return true end
-  end
-  return false
+shared.UNBATCHED_RESULT_NAMES = {
+  -- Vanilla Space Age buildings and launch/space infrastructure.
+  ["rocket-silo"] = true,
+  ["cargo-landing-pad"] = true,
+  ["space-platform-foundation"] = true,
+  ["space-platform-starter-pack"] = true,
+  ["cargo-bay"] = true,
+  ["asteroid-collector"] = true,
+  ["crusher"] = true,
+  ["thruster"] = true,
+  ["foundry"] = true,
+  ["big-mining-drill"] = true,
+  ["agricultural-tower"] = true,
+  ["biochamber"] = true,
+  ["biolab"] = true,
+  ["captive-biter-spawner"] = true,
+  ["lightning-rod"] = true,
+  ["lightning-collector"] = true,
+  ["heating-tower"] = true,
+  ["electromagnetic-plant"] = true,
+  ["fusion-reactor"] = true,
+  ["fusion-generator"] = true,
+  ["cryogenic-plant"] = true,
+  ["rocket-turret"] = true,
+  ["tesla-turret"] = true,
+  ["railgun-turret"] = true,
+  ["capture-robot-rocket"] = true,
+  ["railgun-ammo"] = true,
+  ["foundation"] = true,
+  ["ice-platform"] = true,
+
+  -- Space Age editor/debug infrastructure also keeps its native quantities.
+  ["heat-interface"] = true,
+  ["infinity-chest"] = true,
+  ["infinity-pipe"] = true,
+
+  -- Administratorio Space Age buildings.
+  ["trajectory-compliance-array"] = true,
+  ["formation-center"] = true,
+  ["chromatic-printer"] = true,
+  ["notary-office"] = true,
+  ["territorial-arbitration-post"] = true,
+  ["capture-bureau"] = true,
+  ["conciliation-desk"] = true,
+  ["digital-services-bureau"] = true,
+  ["laser-printer"] = true,
+  ["interplanetary-terminus"] = true,
+  ["ai-server"] = true,
+  ["slop-refinery"] = true,
+  ["synthetic-personnel-bureau"] = true,
+  ["involuntary-relocation-cannon"] = true,
+  ["involuntary-relocation-receiver"] = true,
+  ["heat-exhaust"] = true,
+}
+
+-- Platform construction policy is also a hard 1x batch policy. Derive the
+-- batch view from the permit-policy set so these two declarations cannot drift.
+for recipe_name in pairs(shared.SPACE_PLATFORM_BUILDING_RECIPES) do
+  shared.UNBATCHED_RESULT_NAMES[recipe_name] = true
 end
 
 -------------------------------------------------------------------------------
 -- BATCH MULTIPLIERS
+-- Semantic defaults classify production buildings at 2x, repeatable tool
+-- infrastructure at 5x, and ordinary items at 5x. This table contains only
+-- deliberate balance exceptions and high-volume intermediates.
 -- How many items are produced per regulated craft.
 -- Determines effective form cost per item:
 --   10x = 0.1 forms/item (bulk intermediates)
@@ -343,6 +497,8 @@ end
 --    1x = 1.0 forms/item (megastructures)
 -------------------------------------------------------------------------------
 shared.BATCH_MULTIPLIER_DEFAULT = 5
+shared.BATCH_MULTIPLIER_BUILDING = 2
+shared.BATCH_MULTIPLIER_TOOL = 5
 shared.BATCH_MULTIPLIERS = {
   -- Megastructures (1x = 1 form each)
   ["rocket-silo"] = 1,
@@ -355,51 +511,9 @@ shared.BATCH_MULTIPLIERS = {
   ["electric-furnace"] = 1,
   ["heat-exchanger"] = 1,
   ["steam-turbine"] = 1,
-  -- Personal equipment (1x = 1 form each)
-  ["solar-panel-equipment"] = 1,
-  ["fission-reactor-equipment"] = 1,
-  ["fusion-reactor-equipment"] = 1,
-  ["battery-equipment"] = 1,
-  ["battery-mk2-equipment"] = 1,
-  ["belt-immunity-equipment"] = 1,
-  ["exoskeleton-equipment"] = 1,
-  ["personal-roboport-equipment"] = 1,
-  ["personal-roboport-mk2-equipment"] = 1,
-  ["night-vision-equipment"] = 1,
-  ["energy-shield-equipment"] = 1,
-  ["energy-shield-mk2-equipment"] = 1,
-  ["personal-laser-defense-equipment"] = 1,
-  ["discharge-defense-equipment"] = 1,
-  -- Machines & science (2x = 0.5 forms each)
-  ["lab"] = 2,
-  ["boiler"] = 2,
-  ["steam-engine"] = 2,
-  ["assembling-machine-1"] = 2,
-  ["assembling-machine-2"] = 2,
-  ["chemical-plant"] = 2,
+  -- Exceptional production buildings (1x = 1 form each)
   ["oil-refinery"] = 1,
-  ["pumpjack"] = 2,
-  ["roboport"] = 2,
-  ["radar"] = 2,
-  ["burner-mining-drill"] = 2,
-  ["electric-mining-drill"] = 2,
-  ["steel-furnace"] = 2,
-  -- Admin mod buildings (2x = 0.5 forms each)
-  ["field-office"] = 2,
-  ["office-desk"] = 2,
-  ["biter-station"] = 2,
-  ["corporate-breakroom"] = 2,
-  ["greenhouse"] = 2,
-  ["propaganda-distillery"] = 2,
-  ["printer-t2"] = 2,
-  ["admin-station"] = 2,
-  ["formation-center"] = 2,
-  ["resolution-office"] = 2,
-  ["solar-panel"] = 5,
-  ["accumulator"] = 5,
-  ["splitter"] = 5,
-  ["fast-splitter"] = 5,
-  ["express-splitter"] = 5,
+  -- Science remains an explicit economic progression.
   ["automation-science-pack"] = 5,
   ["logistic-science-pack"] = 5,
   ["chemical-science-pack"] = 2,
@@ -407,20 +521,33 @@ shared.BATCH_MULTIPLIERS = {
   ["utility-science-pack"] = 1,
   ["space-science-pack"] = 1,
   -- High-volume intermediates (10x = 0.1 forms each)
-  ["medium-electric-pole"] = 10,
   ["copper-cable"] = 10,
   ["iron-gear-wheel"] = 10,
-  ["pipe"] = 10,
-  ["heat-pipe"] = 10,
-  ["transport-belt"] = 10,
-  ["fast-transport-belt"] = 10,
   ["electronic-circuit"] = 10,
   ["ink"] = 10,
   ["ink-production"] = 10,
-  ["pneumatic-pipe"] = 10,
-  ["pneumatic-pipe-to-ground"] = 10,
+  -- Repeatable tool infrastructure (5x = 0.2 forms each). These explicit
+  -- entries also document mod prototypes that may not expose a vanilla entity
+  -- type to compatibility-test fixtures.
+  -- Heat-pipe segments are consumed like intermediates despite being
+  -- placeable infrastructure, so their high-volume 10x economics are explicit.
+  ["heat-pipe"] = 10,
+  ["transport-belt"] = 5,
+  ["pipe-to-ground"] = 5,
+  ["pneumatic-pipe"] = 5,
+  ["pneumatic-pipe-to-ground"] = 5,
   ["tube-intake"] = 5,
   ["tube-outtake"] = 5,
+  -- High-end logistics are made in smaller installation lots.
+  ["express-transport-belt"] = 2,
+  ["express-underground-belt"] = 2,
+  ["express-splitter"] = 2,
+  ["stack-inserter"] = 2,
+  ["bulk-inserter"] = 2,
+  ["turbo-transport-belt"] = 2,
+  ["turbo-underground-belt"] = 2,
+  ["turbo-splitter"] = 2,
+  ["turbo-loader"] = 2,
   ["iron-plate"] = 20,
   ["copper-plate"] = 20,
   ["steel-plate"] = 20,
@@ -433,20 +560,12 @@ shared.BATCH_MULTIPLIERS = {
   ["paper-production"] = 20,
 }
 
--- `mods` is a Factorio data-stage global; the standalone Lua test harness
--- doesn't define it, so fall back to an empty table there (mod treated as absent).
-local mods = mods or {}
-if mods["aai-loaders"] then
-  shared.BATCH_MULTIPLIERS["aai-loader"] = 2
-  shared.BATCH_MULTIPLIERS["aai-fast-loader"] = 1
-  shared.BATCH_MULTIPLIERS["aai-express-loader"] = 1
-end
-
+-- COMPATIBILITY RULESET
+-- Non-Space-Age and Space-Age rules are split into separate files so each
+-- mode can evolve independently without mixing conditionals across this file.
 -------------------------------------------------------------------------------
--- RULESET
--- Main branch keeps baseline (vanilla) regulation rules in a dedicated file.
--------------------------------------------------------------------------------
-shared.COMPATIBILITY_RULESET = "vanilla"
+shared.SPACE_AGE_ENABLED = space_age_enabled
+shared.COMPATIBILITY_RULESET = space_age_enabled and "space-age" or "non-space-age"
 
 function shared.get_required_form(recipe_name)
   return compatibility_rules.get_required_form(recipe_name)
@@ -459,8 +578,29 @@ end
 -- baseline petrochem stays on the basic permit while advanced processing and
 -- more demanding chemistry step up to the chemical work order.
 -------------------------------------------------------------------------------
-shared.OPERATING_FORM_BY_CATEGORY = compatibility_rules.OPERATING_FORM_BY_CATEGORY
-shared.OPERATING_FORM_BY_RECIPE = compatibility_rules.OPERATING_FORM_BY_RECIPE
+shared.OPERATING_FORM_CONFIG = compatibility_rules.OPERATING_FORM_CONFIG
+
+-- Compatibility views for consumers that still inspect the old tables. The
+-- rule source remains OPERATING_FORM_CONFIG, so category defaults, recipe
+-- overrides, and exemptions cannot drift across parallel structures.
+shared.OPERATING_FORM_BY_CATEGORY = {}
+shared.OPERATING_FORM_BY_RECIPE = {}
+shared.OPERATING_FORM_EXEMPT_BY_CATEGORY = {}
+shared.OPERATING_FORM_EXEMPT_BY_RECIPE = {}
+for category, rule in pairs(shared.OPERATING_FORM_CONFIG.categories or {}) do
+  if rule.exempt then
+    shared.OPERATING_FORM_EXEMPT_BY_CATEGORY[category] = true
+  elseif rule.form then
+    shared.OPERATING_FORM_BY_CATEGORY[category] = rule.form
+  end
+end
+for recipe_name, rule in pairs(shared.OPERATING_FORM_CONFIG.recipes or {}) do
+  if rule.exempt then
+    shared.OPERATING_FORM_EXEMPT_BY_RECIPE[recipe_name] = true
+  elseif rule.form then
+    shared.OPERATING_FORM_BY_RECIPE[recipe_name] = rule.form
+  end
+end
 
 function shared.get_operating_form(recipe_or_name, category)
   local recipe_name = recipe_or_name
@@ -469,8 +609,15 @@ function shared.get_operating_form(recipe_or_name, category)
     category = recipe_or_name.category
   end
 
-  return shared.OPERATING_FORM_BY_RECIPE[recipe_name]
-    or shared.OPERATING_FORM_BY_CATEGORY[category or "crafting"]
+  local recipe_rule = shared.OPERATING_FORM_CONFIG.recipes[recipe_name]
+  if recipe_rule then
+    return recipe_rule.exempt and nil or recipe_rule.form
+  end
+
+  local category_rule = shared.OPERATING_FORM_CONFIG.categories[category or "crafting"]
+  if category_rule then
+    return category_rule.exempt and nil or category_rule.form
+  end
 end
 
 -------------------------------------------------------------------------------

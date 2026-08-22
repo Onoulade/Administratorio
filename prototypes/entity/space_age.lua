@@ -1,0 +1,1350 @@
+local planets = require("prototypes.shared.space_age_planets")
+local native_fluid_rotation = require("prototypes.shared.native_fluid_rotation")
+local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
+local generated_animation_speeds = require("prototypes.shared.generated_animation_speeds")
+local building_icons = require("prototypes.shared.building_icons")
+local entity_graphics = "__administratorio__/graphics/entities/"
+local item_icons = "__administratorio__/graphics/icons/"
+local sound_path = "__administratorio__/sound/buildings/"
+local space_age_graphics = entity_graphics .. "space-age/"
+local space_age_icons = item_icons .. "space-age/"
+local GENERATED_FRAME_COUNT = generated_animation_speeds.FRAME_COUNT
+local GENERATED_LINE_LENGTH = generated_animation_speeds.LINE_LENGTH
+
+local function placeable_by_item(name)
+  return {
+    {item = name, count = 1},
+  }
+end
+
+local function require_non_vacuum(entity)
+  return planets.require_non_vacuum_surface(entity)
+end
+
+local function space_age_animation(name, width, height)
+  return {
+    filename = space_age_graphics .. name .. "-animation.png",
+    priority = "high",
+    width = width,
+    height = height,
+    frame_count = GENERATED_FRAME_COUNT,
+    line_length = GENERATED_LINE_LENGTH,
+    animation_speed = generated_animation_speeds.speed(name),
+    scale = 0.5,
+  }
+end
+
+local function space_age_shadow(name, width, height, shift_x, shift_y, repeat_count)
+  local shadow = {
+    filename = space_age_graphics .. name .. "-shadow.png",
+    priority = "high",
+    width = width,
+    height = height,
+    frame_count = 1,
+    scale = 0.5,
+    shift = util.by_pixel(shift_x, shift_y),
+    draw_as_shadow = true,
+  }
+  shadow.repeat_count = repeat_count
+  return shadow
+end
+
+--- The building sheets used below all ship as one packed grid plus a single
+--- frame shadow. Frame size, count and line length differ per sheet.
+local function machine_sheet(folder, spec)
+  local base = entity_graphics .. folder .. "/"
+  local layers = {
+    {
+      filename = base .. "animation.png",
+      priority = "high",
+      width = spec.width,
+      height = spec.height,
+      frame_count = spec.frame_count,
+      line_length = spec.line_length,
+      animation_speed = spec.animation_speed or 0.5,
+      scale = spec.scale,
+      shift = spec.shift,
+    },
+  }
+
+  if spec.emission then
+    layers[#layers + 1] = {
+      filename = base .. "emission.png",
+      priority = "high",
+      width = spec.width,
+      height = spec.height,
+      frame_count = spec.frame_count,
+      line_length = spec.line_length,
+      animation_speed = spec.animation_speed or 0.5,
+      scale = spec.scale,
+      shift = spec.shift,
+      draw_as_glow = true,
+      blend_mode = "additive",
+    }
+  end
+
+  layers[#layers + 1] = {
+    filename = base .. "shadow.png",
+    priority = "high",
+    width = spec.shadow_width,
+    height = spec.shadow_height,
+    frame_count = 1,
+    repeat_count = spec.frame_count,
+    scale = spec.scale,
+    shift = spec.shadow_shift or spec.shift,
+    draw_as_shadow = true,
+  }
+
+  return {layers = layers}
+end
+
+local function align_footprint(entity, collision_width, collision_height, selection_width, selection_height, offset)
+  local x = offset and offset[1] or 0
+  local y = offset and offset[2] or 0
+  entity.collision_box = {
+    {-collision_width / 2 + x, -collision_height / 2 + y},
+    {collision_width / 2 + x, collision_height / 2 + y},
+  }
+  entity.selection_box = {
+    {-selection_width / 2 + x, -selection_height / 2 + y},
+    {selection_width / 2 + x, selection_height / 2 + y},
+  }
+end
+
+local formation_center = data.raw["assembling-machine"]["formation-center"]
+local extend_formation_center = formation_center == nil
+if not formation_center then
+  formation_center = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
+  formation_center.name = "formation-center"
+  formation_center.minable = {mining_time = 0.2, result = "formation-center"}
+  formation_center.placeable_by = placeable_by_item("formation-center")
+  formation_center.next_upgrade = nil
+  formation_center.fluid_boxes = {
+    {
+      production_type = "input",
+      pipe_connections = {{
+        flow_direction = "input",
+        direction = defines.direction.north,
+        position = {0, -1},
+      }},
+      volume = 100,
+    },
+    {
+      production_type = "input",
+      pipe_connections = {{
+        flow_direction = "input",
+        direction = defines.direction.south,
+        position = {0, 1},
+      }},
+      volume = 100,
+    },
+  }
+end
+
+formation_center.icon = item_icons .. "formation-center.png"
+formation_center.icon_size = 64
+formation_center.icons = nil
+formation_center.crafting_categories = formation_center.crafting_categories or {}
+local has_workforce_formation = false
+for _, category in ipairs(formation_center.crafting_categories) do
+  if category == "workforce-formation" then
+    has_workforce_formation = true
+    break
+  end
+end
+if not has_workforce_formation then
+  formation_center.crafting_categories[#formation_center.crafting_categories + 1] = "workforce-formation"
+end
+formation_center.crafting_speed = 1.5
+formation_center.energy_usage = "500kW"
+formation_center.energy_source = {type = "electric", usage_priority = "secondary-input"}
+formation_center.ingredient_count = 6
+formation_center.result_inventory_size = 4
+formation_center.module_slots = 4
+formation_center.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+formation_center.fluid_boxes_off_when_no_fluid_recipe = true
+
+local chromatic_printer = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
+chromatic_printer.name = "chromatic-printer"
+chromatic_printer.icon = space_age_icons .. "chromatic-printer.png"
+chromatic_printer.icon_size = 64
+chromatic_printer.minable = {mining_time = 0.2, result = "chromatic-printer"}
+chromatic_printer.placeable_by = {{item = "chromatic-printer", count = 1}}
+chromatic_printer.next_upgrade = nil
+chromatic_printer.crafting_categories = {"printing", "printing-advanced", "printing-workorder", "printing-chromatic", "printing-multicolor"}
+chromatic_printer.crafting_speed = 3
+chromatic_printer.energy_usage = "350kW"
+chromatic_printer.energy_source = {type = "electric", usage_priority = "secondary-input"}
+chromatic_printer.surface_conditions = {
+  {
+    property = "pressure",
+    min = planets.BASIC_PLANET_PROPERTIES.aquilo.pressure + 1,
+  },
+}
+align_footprint(chromatic_printer, 2.4, 2.4, 3, 3)
+chromatic_printer.fluid_boxes_off_when_no_fluid_recipe = true
+chromatic_printer.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -1}}},
+    volume = 1000,
+  },
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.east, position = {1, 0}}},
+    volume = 1000,
+  },
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {0, 1}}},
+    volume = 1000,
+  },
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.west, position = {-1, 0}}},
+    volume = 1000,
+  },
+}
+chromatic_printer.graphics_set = {
+  animation = {
+    layers = {
+      space_age_animation("chromatic-printer", 192, 192),
+      space_age_shadow("chromatic-printer", 278, 144, 19.5, 18, GENERATED_FRAME_COUNT),
+    }
+  }
+}
+chromatic_printer.working_sound = {
+  sound = {
+    allow_random_repeat = true,
+    variations = {
+      {filename = sound_path .. "chromatic-printer.ogg", volume = 0.55},
+      {filename = sound_path .. "printer-alt-1.ogg", volume = 0.5},
+      {filename = sound_path .. "printer-alt-2.ogg", volume = 0.5},
+    },
+  },
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+}
+
+local notary_office = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
+notary_office.name = "notary-office"
+notary_office.icon = space_age_icons .. "notary-office.png"
+notary_office.icon_size = 64
+notary_office.minable = {mining_time = 0.2, result = "notary-office"}
+notary_office.placeable_by = placeable_by_item("notary-office")
+notary_office.next_upgrade = nil
+notary_office.crafting_categories = {"bureaucracy-certification"}
+notary_office.crafting_speed = 2
+notary_office.base_productivity = 0.5
+notary_office.energy_usage = "450kW"
+notary_office.energy_source = {type = "electric", usage_priority = "secondary-input"}
+notary_office.ingredient_count = 8
+notary_office.module_slots = 4
+notary_office.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+align_footprint(notary_office, 2.4, 2.4, 3, 3, {-0.5 / 32, 1 / 32})
+notary_office.fluid_boxes_off_when_no_fluid_recipe = true
+notary_office.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -1}}},
+    volume = 1000,
+  },
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {0, 1}}},
+    volume = 1000,
+  },
+  {
+    production_type = "output",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "output", direction = defines.direction.east, position = {1, 0}}},
+    volume = 1000,
+  },
+}
+notary_office.graphics_set = {
+  animation = {
+    layers = {
+      space_age_animation("notary-office", 192, 192),
+      space_age_shadow("notary-office", 272, 148, 19.5, 18, GENERATED_FRAME_COUNT),
+    }
+  }
+}
+notary_office.working_sound = {
+  sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.45},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+}
+
+local territorial_arbitration_post = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
+territorial_arbitration_post.name = "territorial-arbitration-post"
+territorial_arbitration_post.icon = space_age_icons .. "territorial-arbitration-post.png"
+territorial_arbitration_post.icon_size = 64
+territorial_arbitration_post.minable = {mining_time = 0.2, result = "territorial-arbitration-post"}
+territorial_arbitration_post.placeable_by = placeable_by_item("territorial-arbitration-post")
+territorial_arbitration_post.next_upgrade = nil
+territorial_arbitration_post.fixed_recipe = "territorial-arbitration-processing"
+territorial_arbitration_post.crafting_categories = {"territorial-arbitration"}
+territorial_arbitration_post.crafting_speed = 1
+territorial_arbitration_post.base_productivity = 0.5
+territorial_arbitration_post.energy_usage = "300kW"
+territorial_arbitration_post.energy_source = {type = "electric", usage_priority = "secondary-input"}
+territorial_arbitration_post.ingredient_count = 6
+territorial_arbitration_post.module_slots = 0
+territorial_arbitration_post.allowed_effects = {}
+align_footprint(territorial_arbitration_post, 6.5, 6.5, 7, 7, {-0.5 / 32, 23 / 32})
+territorial_arbitration_post.fluid_boxes_off_when_no_fluid_recipe = true
+territorial_arbitration_post.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -2.5}}},
+    volume = 1000,
+  },
+}
+territorial_arbitration_post.graphics_set = {
+  animation = {
+    layers = {
+      space_age_animation("territorial-arbitration-post", 448, 448),
+      space_age_shadow("territorial-arbitration-post", 768, 348, 77.5, 38.5, GENERATED_FRAME_COUNT),
+    }
+  }
+}
+territorial_arbitration_post.working_sound = {
+  sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.4},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+}
+
+local conciliation_desk = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-2"])
+conciliation_desk.name = "conciliation-desk"
+conciliation_desk.icon = space_age_icons .. "conciliation-desk.png"
+conciliation_desk.icon_size = 64
+conciliation_desk.minable = {mining_time = 0.2, result = "conciliation-desk"}
+conciliation_desk.placeable_by = placeable_by_item("conciliation-desk")
+conciliation_desk.next_upgrade = nil
+conciliation_desk.crafting_categories = {"bureaucracy-conciliation"}
+conciliation_desk.crafting_speed = 1.75
+conciliation_desk.base_productivity = 0.5
+conciliation_desk.energy_usage = "450kW"
+conciliation_desk.energy_source = {type = "electric", usage_priority = "secondary-input"}
+conciliation_desk.ingredient_count = 8
+conciliation_desk.module_slots = 4
+conciliation_desk.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+align_footprint(conciliation_desk, 2.4, 2.4, 3, 3, {0, 2 / 32})
+conciliation_desk.fluid_boxes_off_when_no_fluid_recipe = true
+conciliation_desk.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -1}}},
+    volume = 1000,
+  },
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.south, position = {0, 1}}},
+    volume = 1000,
+  },
+  {
+    production_type = "output",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "output", direction = defines.direction.east, position = {1, 0}}},
+    volume = 1000,
+  },
+}
+conciliation_desk.graphics_set = {
+  animation = {
+    layers = {
+      space_age_animation("conciliation-desk", 192, 192),
+      space_age_shadow("conciliation-desk", 284, 144, 21, 19.5, GENERATED_FRAME_COUNT),
+    }
+  }
+}
+conciliation_desk.working_sound = {
+  sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.45},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+}
+
+local digital_services_bureau = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
+digital_services_bureau.name = "digital-services-bureau"
+digital_services_bureau.icon = space_age_icons .. "digital-services-bureau.png"
+digital_services_bureau.icon_size = 64
+digital_services_bureau.minable = {mining_time = 0.2, result = "digital-services-bureau"}
+digital_services_bureau.placeable_by = placeable_by_item("digital-services-bureau")
+digital_services_bureau.next_upgrade = nil
+digital_services_bureau.crafting_categories = {
+  bureaucracy_categories.registration_for_planet("fulgora"),
+  bureaucracy_categories.bootstrap_for_planet("fulgora"),
+}
+digital_services_bureau.crafting_speed = 3
+digital_services_bureau.base_productivity = 0.5
+digital_services_bureau.energy_usage = "1MW"
+digital_services_bureau.energy_source = {type = "electric", usage_priority = "secondary-input"}
+digital_services_bureau.ingredient_count = 10
+digital_services_bureau.module_slots = 6
+digital_services_bureau.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+align_footprint(digital_services_bureau, 2.4, 2.4, 3, 3, {-0.5 / 32, 1 / 32})
+digital_services_bureau.fluid_boxes_off_when_no_fluid_recipe = true
+digital_services_bureau.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -1}}},
+    volume = 1000,
+  },
+  {
+    production_type = "output",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "output", direction = defines.direction.south, position = {0, 1}}},
+    volume = 1000,
+  },
+}
+digital_services_bureau.graphics_set = {
+  animation = {
+    layers = {
+      space_age_animation("digital-services-bureau", 192, 192),
+      space_age_shadow("digital-services-bureau", 304, 162, 26, 5, GENERATED_FRAME_COUNT),
+    }
+  }
+}
+digital_services_bureau.working_sound = {
+  sound = {filename = sound_path .. "office-ambience-loop.ogg", volume = 0.5},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+}
+
+local laser_printer = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
+laser_printer.name = "laser-printer"
+laser_printer.icon = space_age_icons .. "laser-printer.png"
+laser_printer.icon_size = 64
+laser_printer.minable = {mining_time = 0.2, result = "laser-printer"}
+laser_printer.placeable_by = placeable_by_item("laser-printer")
+laser_printer.next_upgrade = nil
+laser_printer.crafting_categories = {"printing", "printing-advanced", "printing-workorder", "printing-multicolor", "orbital-printing"}
+laser_printer.crafting_speed = 5
+laser_printer.base_productivity = 0.5
+laser_printer.energy_usage = "600kW"
+laser_printer.energy_source = {type = "electric", usage_priority = "secondary-input"}
+laser_printer.ingredient_count = 10
+laser_printer.module_slots = 6
+laser_printer.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+align_footprint(laser_printer, 2.4, 2.4, 3, 3, {-3 / 32, 0})
+laser_printer.fluid_boxes_off_when_no_fluid_recipe = true
+laser_printer.fluid_boxes = {}
+laser_printer.graphics_set = {
+  animation = {
+    layers = {
+      space_age_animation("laser-printer", 192, 192),
+      space_age_shadow("laser-printer", 304, 110, 32.5, 31, GENERATED_FRAME_COUNT),
+    }
+  }
+}
+laser_printer.working_sound = {
+  sound = {filename = sound_path .. "laser-printer.ogg", volume = 0.6},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+}
+
+local administrative_space_station = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
+administrative_space_station.name = "administrative-space-station"
+administrative_space_station.icon = space_age_icons .. "administrative-space-station.png"
+administrative_space_station.icon_size = 64
+administrative_space_station.icons = nil
+administrative_space_station.minable = {mining_time = 0.2, result = "administrative-space-station"}
+administrative_space_station.placeable_by = placeable_by_item("administrative-space-station")
+administrative_space_station.next_upgrade = nil
+administrative_space_station.rotatable = true
+administrative_space_station.crafting_categories = {"orbital-bureaucracy"}
+administrative_space_station.crafting_speed = 3.5
+administrative_space_station.energy_usage = "750kW"
+administrative_space_station.energy_source = {type = "electric", usage_priority = "secondary-input"}
+administrative_space_station.ingredient_count = 10
+administrative_space_station.module_slots = 4
+administrative_space_station.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+align_footprint(administrative_space_station, 2.4, 2.4, 3, 3, {-0.5 / 32, 2 / 32})
+administrative_space_station.surface_conditions = {
+  {
+    property = "pressure",
+    min = 0,
+    max = 0,
+  },
+}
+administrative_space_station.fluid_boxes_off_when_no_fluid_recipe = true
+administrative_space_station.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -1}}},
+    volume = 1000,
+  },
+  {
+    production_type = "output",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{flow_direction = "output", direction = defines.direction.south, position = {0, 1}}},
+    volume = 1000,
+  },
+}
+administrative_space_station.graphics_set = {
+  animation = {
+    layers = {
+      space_age_animation("administrative-space-station", 192, 192),
+      space_age_shadow("administrative-space-station", 248, 154, 12.5, 15.5, GENERATED_FRAME_COUNT),
+    }
+  }
+}
+administrative_space_station.working_sound = {
+  sound = {filename = sound_path .. "admin-space-station.ogg", volume = 0.55},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+}
+
+-- Involuntary Relocation Cannon: a regular building, not a turret.
+--
+-- No catapult prototype is involved. Biters and managers are reassigned across
+-- the solar system because HR filed a transfer order, and the building that
+-- does it is bureaucratic infrastructure rather than artillery. Planets only:
+-- space platforms are out of scope, and the Cobaye reaches orbit by rocket at
+-- parity cost.
+--
+-- Same furnace shell as the Terminus, so inserters validate the payload against
+-- the relocation-payload recipe family and the engine enforces the
+-- biter-family-only rule without any runtime checking on the input side.
+local involuntary_relocation_cannon = {
+  type = "furnace",
+  name = "involuntary-relocation-cannon",
+  icon = item_icons .. "relocation-cannon.png",
+  icon_size = 64,
+  flags = {"placeable-neutral", "player-creation"},
+  minable = {mining_time = 0.4, result = "involuntary-relocation-cannon"},
+  placeable_by = placeable_by_item("involuntary-relocation-cannon"),
+  max_health = 500,
+  corpse = "big-remnants",
+  crafting_categories = {"relocation-payload"},
+  crafting_speed = 0.001,
+  energy_usage = "1W",
+  energy_source = {type = "void"},
+  -- A furnace source inventory may hold exactly one slot. On a sending cannon
+  -- that slot is the cargo; on a receiving cannon it is the transfer orders.
+  source_inventory_size = 1,
+  result_inventory_size = 12,
+  trash_inventory_size = 0,
+  module_slots = 0,
+  allowed_effects = {},
+  show_recipe_icon = false,
+  show_recipe_icon_on_map = false,
+  enable_logistic_control_behavior = false,
+  circuit_wire_max_distance = 9,
+  circuit_connector = circuit_connector_definitions.create_vector(
+    universal_connector_template,
+    {
+      {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+    }
+  ),
+  graphics_set = {
+    animation = {
+      filename = entity_graphics .. "relocation-cannon/relocation-cannon.png",
+      priority = "high",
+      width = 360,
+      height = 432,
+      frame_count = 1,
+      scale = 0.42,
+      shift = util.by_pixel(0, -13),
+    },
+  },
+  working_sound = {
+    sound = {filename = sound_path .. "relocation-cannon.ogg", volume = 0.5},
+    idle_sound = {filename = "__base__/sound/idle1.ogg"}
+  },
+}
+involuntary_relocation_cannon.crafting_categories = {"relocation-payload-in"}
+align_footprint(involuntary_relocation_cannon, 4.4, 4.4, 5, 5)
+
+-- Involuntary Relocation Receiver: the emitter's counterpart. Holds the
+-- arrivals buffer and files requests; never carries cargo of its own. A
+-- deepcopy of the emitter shell (inventory sizes, circuit connector) with a
+-- narrower recipe category, a smaller 2x2 footprint, its own name, and its
+-- own art -- a repurposed Long range delivery drones asset (GNU LGPLv3,
+-- Sacredanarchy & Klonan; see THIRD-PARTY-NOTICES.md).
+local involuntary_relocation_receiver = table.deepcopy(involuntary_relocation_cannon)
+involuntary_relocation_receiver.name = "involuntary-relocation-receiver"
+involuntary_relocation_receiver.icon = item_icons .. "relocation-receiver.png"
+involuntary_relocation_receiver.icon_size = 64
+involuntary_relocation_receiver.minable = {mining_time = 0.4, result = "involuntary-relocation-receiver"}
+involuntary_relocation_receiver.placeable_by = placeable_by_item("involuntary-relocation-receiver")
+involuntary_relocation_receiver.crafting_categories = {"relocation-payload-out"}
+involuntary_relocation_receiver.graphics_set = {
+  animation = {
+    filename = entity_graphics .. "relocation-cannon/relocation-receiver.png",
+    priority = "high",
+    width = 125,
+    height = 167,
+    frame_count = 1,
+    scale = 64 / 125,
+    shift = util.by_pixel(0, -12),
+  },
+}
+align_footprint(involuntary_relocation_receiver, 1.8, 1.8, 2, 2)
+
+-- Relocation status combinator: a hidden constant-combinator broadcasting a
+-- building's current inventory contents (cargo for an emitter, transfer-order
+-- count for a receiver). Shared by both roles. Wired to the real building's
+-- own RED wire only -- the player connects red to the emitter/receiver
+-- itself, same connector as everything else, never to this hidden entity
+-- directly -- see C.RELOCATION_STATUS_COMBINATOR_NAME.
+local relocation_status_combinator = {
+  type = "constant-combinator",
+  name = "relocation-status-combinator",
+  icon = item_icons .. "relocation-cannon.png",
+  icon_size = 64,
+  flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "placeable-off-grid"},
+  collision_mask = {layers = {}},
+  collision_box = {{0, 0}, {0, 0}},
+  selection_box = {{0, 0}, {0, 0}},
+  selectable_in_game = false,
+  hidden = true,
+  item_slot_count = 32,
+  sprites = {
+    north = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    east = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    south = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    west = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+  },
+  activity_led_sprites = {
+    north = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    east = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    south = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    west = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+  },
+  activity_led_light_offsets = {{0, 0}, {0, 0}, {0, 0}, {0, 0}},
+  circuit_wire_connection_points = {
+    {wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}}},
+    {wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}}},
+    {wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}}},
+    {wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}}},
+  },
+  circuit_wire_max_distance = 9,
+}
+
+-- Synthetic Personnel Bureau: manufactures professions, not buildings.
+--
+-- Four small recipes rather than thirteen duplicated building recipes. That
+-- touches zero existing recipes, does not double Factoriopedia entries, and
+-- covers professions added later without further work. It solves the actual
+-- pain: worker-biter-formation is Nauvis-bound, so today every specialist means
+-- a Nauvis round trip.
+local synthetic_personnel_bureau = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
+synthetic_personnel_bureau.name = "synthetic-personnel-bureau"
+synthetic_personnel_bureau.icon = nil
+synthetic_personnel_bureau.icon_size = nil
+synthetic_personnel_bureau.icon = item_icons .. "synthetic-personnel-bureau.png"
+synthetic_personnel_bureau.icon_size = 64
+synthetic_personnel_bureau.minable = {mining_time = 0.3, result = "synthetic-personnel-bureau"}
+synthetic_personnel_bureau.placeable_by = placeable_by_item("synthetic-personnel-bureau")
+synthetic_personnel_bureau.next_upgrade = nil
+synthetic_personnel_bureau.max_health = 400
+synthetic_personnel_bureau.corpse = "medium-remnants"
+synthetic_personnel_bureau.crafting_categories = {"personnel-synthesis"}
+synthetic_personnel_bureau.crafting_speed = 1
+synthetic_personnel_bureau.ingredient_count = 6
+synthetic_personnel_bureau.module_slots = 3
+synthetic_personnel_bureau.allowed_effects = {"speed", "consumption", "pollution"}
+-- Electricity is the intended constraint, not ingredient rarity. This keeps the
+-- Bureau tethered to the AI server's power bill.
+synthetic_personnel_bureau.energy_usage = "6MW"
+synthetic_personnel_bureau.energy_source = {
+  type = "electric",
+  usage_priority = "secondary-input",
+  emissions_per_minute = {pollution = 6},
+}
+-- 5x5, matching the Formation Center whose artwork it reuses.
+synthetic_personnel_bureau.collision_box = {{-2.25, -2.25}, {2.25, 2.25}}
+synthetic_personnel_bureau.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
+synthetic_personnel_bureau.fluid_boxes_off_when_no_fluid_recipe = true
+synthetic_personnel_bureau.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{
+      flow_direction = "input",
+      direction = defines.direction.north,
+      position = {0, -2},
+      connection_category = "optical-data",
+    }},
+    filter = "inference-token",
+    volume = 1000,
+  },
+}
+synthetic_personnel_bureau.graphics_set = {
+  animation = machine_sheet("synthetic-personnel-bureau", {
+    width = 280, height = 320, frame_count = 60, line_length = 8,
+    scale = 160 / 280, shift = util.by_pixel(0, -12), emission = true,
+    shadow_width = 700, shadow_height = 500, shadow_shift = util.by_pixel(20, 6),
+  }),
+}
+synthetic_personnel_bureau.working_sound = {
+  sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.5},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"}
+}
+
+-- AI Server: a composite entity.
+--
+-- The engine will not let one entity both craft a recipe and emit heat:
+-- assembling-machine has no heat output, reactor has no crafting. So the
+-- visible AI Server is an assembling-machine with a brutal electric draw, and
+-- a hidden reactor child at the same position carries the heat connections.
+-- scripts/ai_server.lua drives the child's temperature from the parent's
+-- crafting state. The child's connections are laid out on the visible 7x7
+-- footprint so heat pipes attach exactly where players expect them.
+local AI_SERVER_HEAT_CONNECTIONS = {}
+for _, offset in ipairs({-2, 0, 2}) do
+  AI_SERVER_HEAT_CONNECTIONS[#AI_SERVER_HEAT_CONNECTIONS + 1] =
+    {position = {offset, -4}, direction = defines.direction.north}
+  AI_SERVER_HEAT_CONNECTIONS[#AI_SERVER_HEAT_CONNECTIONS + 1] =
+    {position = {offset, 4}, direction = defines.direction.south}
+  AI_SERVER_HEAT_CONNECTIONS[#AI_SERVER_HEAT_CONNECTIONS + 1] =
+    {position = {4, offset}, direction = defines.direction.east}
+  AI_SERVER_HEAT_CONNECTIONS[#AI_SERVER_HEAT_CONNECTIONS + 1] =
+    {position = {-4, offset}, direction = defines.direction.west}
+end
+
+local ai_server = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
+ai_server.name = "ai-server"
+ai_server.icon = item_icons .. "ai-server.png"
+ai_server.icon_size = 64
+ai_server.icons = nil
+ai_server.minable = {mining_time = 0.5, result = "ai-server"}
+ai_server.placeable_by = placeable_by_item("ai-server")
+ai_server.next_upgrade = nil
+ai_server.max_health = 600
+ai_server.corpse = "big-remnants"
+-- One job only: turn electricity into inference. Everything downstream of a
+-- token belongs to the Slop Refinery.
+ai_server.crafting_categories = {"ai-inference"}
+ai_server.fixed_recipe = "inference-token-production"
+ai_server.crafting_speed = 1
+ai_server.ingredient_count = 6
+ai_server.module_slots = 4
+ai_server.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+ai_server.energy_usage = "4MW"
+ai_server.energy_source = {
+  type = "electric",
+  usage_priority = "secondary-input",
+  emissions_per_minute = {pollution = 12},
+}
+ai_server.collision_box = {{-3.25, -3.25}, {3.25, 3.25}}
+ai_server.selection_box = {{-3.5, -3.5}, {3.5, 3.5}}
+ai_server.fluid_boxes_off_when_no_fluid_recipe = true
+-- Inference is piped, never carried. These sit on the perimeter tiles the heat
+-- connections leave free, so a heat pipe and a fibre never contest a tile.
+ai_server.fluid_boxes = {
+  {
+    production_type = "output",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{
+      flow_direction = "output",
+      direction = defines.direction.east,
+      position = {3, -3},
+      connection_category = "optical-data",
+    }},
+    filter = "inference-token",
+    volume = 1000,
+  },
+}
+ai_server.graphics_set = {
+  animation = machine_sheet("ai-server", {
+    width = 400, height = 400, frame_count = 60, line_length = 8,
+    scale = 224 / 400, shift = util.by_pixel(0, -8), emission = true,
+    shadow_width = 700, shadow_height = 600, shadow_shift = util.by_pixel(24, 8),
+  }),
+}
+ai_server.working_sound = {
+  sound = {filename = sound_path .. "ai-server.ogg", volume = 0.5},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"},
+}
+
+local ai_server_heat_core = {
+  type = "reactor",
+  name = "ai-server-heat-core",
+  icon = item_icons .. "ai-server.png",
+  icon_size = 64,
+  flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "placeable-off-grid", "no-automated-item-removal", "no-automated-item-insertion"},
+  hidden = true,
+  selectable_in_game = false,
+  collision_mask = {layers = {}},
+  collision_box = {{-3.25, -3.25}, {3.25, 3.25}},
+  selection_box = {{0, 0}, {0, 0}},
+  max_health = 1,
+  consumption = "1W",
+  energy_source = {type = "void"},
+  neighbour_bonus = 0,
+  heat_buffer = {
+    max_temperature = 1000,
+    specific_heat = "5MJ",
+    -- One server supplies 4 MW of heat; the small margin permits a connected
+    -- heat network to absorb normal fluctuations without turning the hidden
+    -- buffer into a multi-gigawatt burst battery.
+    max_transfer = "5MW",
+    minimum_glow_temperature = 350,
+    connections = AI_SERVER_HEAT_CONNECTIONS,
+  },
+  picture = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+}
+
+-- Heat Exhaust: a genuine vanilla heat void.
+--
+-- "at-most" caps the network temperature, so surplus heat simply leaves. This
+-- exists for players who want the compute without the power generation, and it
+-- must never be more efficient than actually using the heat.
+--
+-- gui_mode is "none" on purpose: an editable heat interface could be flipped to
+-- "at-least" and become an infinite free heat source.
+local heat_exhaust = {
+  type = "heat-interface",
+  name = "heat-exhaust",
+  icon = item_icons .. "heat-exhaust.png",
+  icon_size = 64,
+  flags = {"placeable-neutral", "player-creation"},
+  minable = {mining_time = 0.2, result = "heat-exhaust"},
+  placeable_by = placeable_by_item("heat-exhaust"),
+  max_health = 200,
+  corpse = "medium-remnants",
+  collision_box = {{-1.35, -1.35}, {1.35, 1.35}},
+  selection_box = {{-1.5, -1.5}, {1.5, 1.5}},
+  gui_mode = "none",
+  heat_buffer = {
+    max_temperature = 1000,
+    specific_heat = "1MJ",
+    -- A single exhaust keeps one 4 MW server cool with a little headroom.
+    -- Larger compute farms need proportional cooling rather than one fan
+    -- silently deleting an entire planet's heat economy.
+    max_transfer = "5MW",
+    minimum_glow_temperature = 350,
+    connections = {
+      {position = {0, -2}, direction = defines.direction.north},
+      {position = {2, 0}, direction = defines.direction.east},
+      {position = {0, 2}, direction = defines.direction.south},
+      {position = {-2, 0}, direction = defines.direction.west},
+    },
+  },
+  picture = {
+    filename = entity_graphics .. "ai-server/heat-exhaust.png",
+    width = 473,
+    height = 459,
+    -- 473px of art over a 3x3 footprint: 96 / 473 keeps the fan inside its
+    -- own tiles instead of overhanging them.
+    scale = 96 / 473,
+    shift = {0, 0},
+  },
+}
+
+-- Slop Refinery: everything downstream of a token.
+--
+-- The AI Server does one thing, turning electricity into inference. Refining
+-- that inference into slop, slop into fabricated paperwork, and handling the
+-- hallucinations that fall out is a separate building on the other end of the
+-- fibre, so compute and clerical output scale independently.
+local slop_refinery = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-3"])
+slop_refinery.name = "slop-refinery"
+slop_refinery.icon = item_icons .. "slop-refinery.png"
+slop_refinery.icon_size = 64
+slop_refinery.icons = nil
+slop_refinery.minable = {mining_time = 0.5, result = "slop-refinery"}
+slop_refinery.placeable_by = placeable_by_item("slop-refinery")
+slop_refinery.next_upgrade = nil
+slop_refinery.max_health = 550
+slop_refinery.corpse = "big-remnants"
+slop_refinery.crafting_categories = {"slop-refining", "citation-handling"}
+slop_refinery.crafting_speed = 2
+slop_refinery.ingredient_count = 6
+slop_refinery.module_slots = 4
+slop_refinery.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
+slop_refinery.energy_usage = "1MW"
+slop_refinery.energy_source = {
+  type = "electric",
+  usage_priority = "secondary-input",
+  emissions_per_minute = {pollution = 8},
+}
+slop_refinery.collision_box = {{-3.25, -3.25}, {3.25, 3.25}}
+slop_refinery.selection_box = {{-3.5, -3.5}, {3.5, 3.5}}
+slop_refinery.fluid_boxes_off_when_no_fluid_recipe = true
+slop_refinery.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_covers = pipecoverspictures(),
+    pipe_connections = {{
+      flow_direction = "input",
+      direction = defines.direction.west,
+      position = {-3, 0},
+      connection_category = "optical-data",
+    }},
+    filter = "inference-token",
+    volume = 1000,
+  },
+}
+slop_refinery.graphics_set = {
+  animation = machine_sheet("slop-refinery", {
+    width = 590, height = 640, frame_count = 80, line_length = 10,
+    scale = 224 / 590, shift = util.by_pixel(0, -24), emission = true,
+    shadow_width = 1200, shadow_height = 700, shadow_shift = util.by_pixel(40, 10),
+  }),
+}
+slop_refinery.working_sound = {
+  sound = {filename = sound_path .. "slop-machine.ogg", volume = 0.5},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"},
+}
+
+-- Interplanetary Terminus: the trunk endpoint, one per planet.
+--
+-- A furnace shell, exactly like tube-intake, so inserters validate outbound
+-- paperwork against the interplanetary-dispatch recipe family and the engine
+-- enforces the payload whitelist for free. The runtime keeps it deactivated;
+-- it never actually crafts. Source inventory is the outbound buffer, result
+-- inventory is the arrivals buffer that the player empties by hand.
+local interplanetary_terminus = {
+  type = "furnace",
+  name = "interplanetary-terminus",
+  icon = space_age_icons .. "interplanetary-terminus.png",
+  icon_size = 64,
+  flags = {"placeable-neutral", "player-creation"},
+  minable = {mining_time = 0.2, result = "interplanetary-terminus"},
+  placeable_by = placeable_by_item("interplanetary-terminus"),
+  max_health = 450,
+  corpse = "big-remnants",
+  crafting_categories = {"interplanetary-dispatch"},
+  crafting_speed = 0.001,
+  energy_usage = "1W",
+  energy_source = {type = "void"},
+  -- A furnace source inventory may hold exactly one slot, so a Terminus exports
+  -- one form at a time. That suits a deliberately narrow trunk.
+  source_inventory_size = 1,
+  result_inventory_size = 12,
+  trash_inventory_size = 0,
+  module_slots = 0,
+  allowed_effects = {},
+  show_recipe_icon = false,
+  show_recipe_icon_on_map = false,
+  enable_logistic_control_behavior = false,
+  circuit_wire_max_distance = 9,
+  circuit_connector = circuit_connector_definitions.create_vector(
+    universal_connector_template,
+    {
+      {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+      {variation = 18, main_offset = util.by_pixel(26, 26), shadow_offset = util.by_pixel(30, 30), show_shadow = true},
+    }
+  ),
+  graphics_set = {
+    animation = machine_sheet("interplanetary-terminus", {
+      width = 160, height = 290, frame_count = 20, line_length = 8,
+      scale = 96 / 160, shift = util.by_pixel(0, -34), emission = true,
+      shadow_width = 400, shadow_height = 350, shadow_shift = util.by_pixel(0, -34),
+    }),
+  },
+  working_sound = {
+    sound = {filename = sound_path .. "interplanetary-tube.ogg", volume = 0.5},
+    idle_sound = {filename = "__base__/sound/idle1.ogg"}
+  },
+}
+align_footprint(interplanetary_terminus, 2.4, 2.4, 3, 3, {-1 / 32, 3 / 32})
+
+-- Terminus pool combinator: a hidden constant-combinator broadcasting the
+-- force-wide trunk pool's current contents. Wired to the Terminus's own RED
+-- wire only; requests are read from GREEN only (scripts/interplanetary_tube.lua
+-- M.collect_requests), so the two directions never mix on the shared
+-- connector. The player wires red to the real, visible Terminus itself --
+-- never to this hidden entity directly.
+local terminus_pool_combinator = {
+  type = "constant-combinator",
+  name = "terminus-pool-combinator",
+  icon = space_age_icons .. "interplanetary-terminus.png",
+  icon_size = 64,
+  flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "placeable-off-grid"},
+  collision_mask = {layers = {}},
+  collision_box = {{0, 0}, {0, 0}},
+  selection_box = {{0, 0}, {0, 0}},
+  selectable_in_game = false,
+  hidden = true,
+  item_slot_count = 128,
+  sprites = {
+    north = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    east = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    south = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    west = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+  },
+  activity_led_sprites = {
+    north = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    east = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    south = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+    west = {filename = "__core__/graphics/empty.png", width = 1, height = 1},
+  },
+  activity_led_light_offsets = {{0, 0}, {0, 0}, {0, 0}, {0, 0}},
+  circuit_wire_connection_points = {
+    {wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}}},
+    {wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}}},
+    {wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}}},
+    {wire = {red = {0.3, 0}, green = {0.3, 0}}, shadow = {red = {0.3, 0}, green = {0.3, 0}}},
+  },
+  circuit_wire_max_distance = 9,
+}
+
+local asteroid_size_masks = {
+  small = "administratorio-asteroid-small",
+  medium = "administratorio-asteroid-medium",
+  big = "administratorio-asteroid-big",
+  huge = "administratorio-asteroid-huge",
+}
+
+data:extend({
+  {type = "trigger-target-type", name = asteroid_size_masks.small},
+  {type = "trigger-target-type", name = asteroid_size_masks.medium},
+  {type = "trigger-target-type", name = asteroid_size_masks.big},
+  {type = "trigger-target-type", name = asteroid_size_masks.huge},
+})
+
+-- Deviation arrays have actual jurisdictional limits. Giving every asteroid
+-- size its own native target mask stops junior hardware from wasting orders and
+-- power on an asteroid that its committee is not authorised to redirect.
+for _, size in ipairs({"small", "medium", "big", "huge"}) do
+  for _, family in ipairs({"metallic", "carbonic", "oxide", "promethium"}) do
+    local asteroid = data.raw.asteroid[size .. "-" .. family .. "-asteroid"]
+    if asteroid then
+      asteroid.trigger_target_mask = {asteroid_size_masks[size]}
+    end
+  end
+end
+
+local function make_trajectory_compliance_array(spec)
+  local array = table.deepcopy(data.raw["ammo-turret"]["gun-turret"])
+  array.name = spec.name
+  array.icon = nil
+  array.icons = spec.icons
+  array.minable = {mining_time = 0.2, result = spec.name}
+  array.placeable_by = placeable_by_item(spec.name)
+  array.next_upgrade = spec.next_upgrade
+  array.fast_replaceable_group = "trajectory-compliance-array"
+  array.attack_target_mask = spec.target_masks
+  array.attack_parameters.ammo_category = "trajectory-compliance"
+  array.attack_parameters.cooldown = 300
+  array.attack_parameters.range = spec.range
+  array.energy_source = {
+    type = "electric",
+    buffer_capacity = spec.energy_per_shot,
+    input_flow_limit = spec.input_flow_limit,
+    usage_priority = "primary-input",
+  }
+  array.energy_per_shot = spec.energy_per_shot
+  array.prepare_with_no_ammo = false
+  array.surface_conditions = {
+    {
+      property = "pressure",
+      min = 0,
+      max = 0,
+    },
+  }
+  return array
+end
+
+local trajectory_compliance_array = make_trajectory_compliance_array({
+  name = "trajectory-compliance-array",
+  icons = building_icons.trajectory_array("junior"),
+  next_upgrade = "senior-trajectory-compliance-array",
+  target_masks = {asteroid_size_masks.small, asteroid_size_masks.medium},
+  range = 20,
+  energy_per_shot = "1.3MJ",
+  input_flow_limit = "2.6MW",
+})
+
+local senior_trajectory_compliance_array = make_trajectory_compliance_array({
+  name = "senior-trajectory-compliance-array",
+  icons = building_icons.trajectory_array("senior"),
+  next_upgrade = "executive-trajectory-compliance-array",
+  target_masks = {asteroid_size_masks.small, asteroid_size_masks.medium, asteroid_size_masks.big},
+  range = 30,
+  energy_per_shot = "2.6MJ",
+  input_flow_limit = "5.2MW",
+})
+
+local executive_trajectory_compliance_array = make_trajectory_compliance_array({
+  name = "executive-trajectory-compliance-array",
+  icons = building_icons.trajectory_array("executive"),
+  next_upgrade = nil,
+  target_masks = {
+    asteroid_size_masks.small,
+    asteroid_size_masks.medium,
+    asteroid_size_masks.big,
+    asteroid_size_masks.huge,
+  },
+  range = 40,
+  energy_per_shot = "5.2MJ",
+  input_flow_limit = "10.4MW",
+})
+
+local fallback_manager_animation = {
+  filename = "__base__/graphics/icons/behemoth-biter.png",
+  width = 64,
+  height = 64,
+  frame_count = 1,
+  direction_count = 1,
+}
+local manager_unit = data.raw.unit and data.raw.unit["behemoth-biter"] or {
+  run_animation = fallback_manager_animation,
+  attack_parameters = {animation = fallback_manager_animation},
+}
+
+local function scale_layer_shift(layer, scale_factor)
+  local shift = layer.shift
+  if not shift then return end
+  if shift.x ~= nil or shift.y ~= nil then
+    shift.x = (shift.x or 0) * scale_factor
+    shift.y = (shift.y or 0) * scale_factor
+  else
+    shift[1] = (shift[1] or 0) * scale_factor
+    shift[2] = (shift[2] or 0) * scale_factor
+  end
+end
+
+local function scale_animation_layers(animation, scale_factor, animation_speed)
+  local result = table.deepcopy(animation)
+  for _, layer in ipairs(result.layers or {result}) do
+    layer.scale = (layer.scale or 1) * scale_factor
+    scale_layer_shift(layer, scale_factor)
+    if animation_speed then layer.animation_speed = animation_speed end
+  end
+  return result
+end
+
+local function make_manager_attack_animation(source_animation, scale_factor, animation_speed)
+  local animation = {type = "animation", name = "orbital-manager-attack", layers = {}}
+  for _, source_layer in ipairs(source_animation.layers or {source_animation}) do
+    local layer = table.deepcopy(source_layer)
+    if layer.filenames then
+      layer.filename = layer.filenames[1]
+      layer.filenames = nil
+      layer.lines_per_file = nil
+      layer.slice = nil
+    end
+    layer.direction_count = nil
+    layer.scale = (layer.scale or 1) * scale_factor
+    scale_layer_shift(layer, scale_factor)
+    layer.animation_speed = animation_speed
+    animation.layers[#animation.layers + 1] = layer
+  end
+  return animation
+end
+
+local function make_manager_still_sprite(source_animation, direction_index, scale_factor)
+  local sprite = {layers = {}}
+  for _, source_layer in ipairs(source_animation.layers or {source_animation}) do
+    local layer = table.deepcopy(source_layer)
+    local frame_count = layer.frame_count or 1
+    local line_length = layer.line_length or frame_count
+    local first_frame = direction_index * frame_count
+    local first_row = math.floor(first_frame / line_length)
+    local first_column = first_frame % line_length
+
+    if layer.filenames then
+      local lines_per_file = layer.lines_per_file or 1
+      local file_index = math.floor(first_row / lines_per_file) + 1
+      layer.filename = layer.filenames[file_index]
+      layer.y = (layer.y or 0) + (first_row % lines_per_file) * layer.height
+      layer.filenames = nil
+      layer.lines_per_file = nil
+      layer.slice = nil
+    else
+      layer.y = (layer.y or 0) + first_row * layer.height
+    end
+
+    layer.x = (layer.x or 0) + first_column * layer.width
+    layer.direction_count = nil
+    layer.frame_count = nil
+    layer.line_length = nil
+    layer.animation_speed = nil
+    layer.scale = (layer.scale or 1) * scale_factor
+    scale_layer_shift(layer, scale_factor)
+    sprite.layers[#sprite.layers + 1] = layer
+  end
+  return sprite
+end
+
+local manager_attack_animation = make_manager_attack_animation(
+  manager_unit.attack_parameters.animation,
+  0.46,
+  1
+)
+data:extend({manager_attack_animation})
+
+-- A deployed VESM rides the asteroid until demolition, then becomes one more
+-- native collectible chunk. Mining that chunk returns the miner directly to
+-- collector output, so belts and inserters can route the employee normally.
+-- Asteroid chunks cannot animate themselves. Use a still frame from the real
+-- biter run sheet. Sixteen hidden directional variants preserve the manager's
+-- final facing without polling or synchronising an invisible render object.
+local returning_employee_chunks = {}
+for direction_index = 0, 15 do
+  local returning_employee_chunk = table.deepcopy(data.raw["asteroid-chunk"]["metallic-asteroid-chunk"])
+  returning_employee_chunk.name = direction_index == 0
+      and "returning-orbital-employee"
+    or string.format("returning-orbital-employee-orientation-%02d", direction_index)
+  returning_employee_chunk.localised_name = {"item-name.returning-orbital-employee"}
+  returning_employee_chunk.localised_description = {"item-description.returning-orbital-employee"}
+  returning_employee_chunk.icon = nil
+  returning_employee_chunk.icons = {
+    {icon = "__space-age__/graphics/icons/metallic-asteroid-chunk.png", icon_size = 64},
+    {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.48, shift = {4, -2}},
+    {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.28, shift = {9, 7}},
+  }
+  returning_employee_chunk.minable = {
+    mining_time = 0.2,
+    result = "voluntary-exploration-space-miner",
+    mining_particle = "metallic-asteroid-chunk-particle-medium",
+  }
+  returning_employee_chunk.graphics_set = {
+    rotation_speed = 0,
+    sprite = make_manager_still_sprite(manager_unit.run_animation, direction_index, 0.46),
+  }
+  returning_employee_chunk.dying_trigger_effect = {
+    type = "create-explosion",
+    entity_name = "explosion-hit",
+    only_when_visible = true,
+  }
+  if direction_index ~= 0 then
+    returning_employee_chunk.hidden_in_factoriopedia = true
+    returning_employee_chunk.hide_from_signal_gui = true
+  end
+  returning_employee_chunks[#returning_employee_chunks + 1] = returning_employee_chunk
+end
+data:extend(returning_employee_chunks)
+
+-- The projectile is, with complete institutional sincerity, a behemoth biter.
+-- Its script effect attaches the worker; one-second work cycles perform damage,
+-- and collection of the eventual employee chunk is the only return path.
+local orbital_biter_projectile = table.deepcopy(data.raw.projectile["rocket"])
+orbital_biter_projectile.name = "orbital-biter-projectile"
+orbital_biter_projectile.acceleration = 0
+orbital_biter_projectile.max_speed = 0.36
+orbital_biter_projectile.turn_speed = 0.08
+orbital_biter_projectile.turning_speed_increases_exponentially_with_projectile_speed = nil
+orbital_biter_projectile.animation = scale_animation_layers(manager_unit.run_animation, 0.46, 0.18)
+orbital_biter_projectile.shadow = nil
+orbital_biter_projectile.smoke = nil
+orbital_biter_projectile.action = {
+  type = "direct",
+  action_delivery = {
+    type = "instant",
+    target_effects = {
+      {
+        type = "script",
+        effect_id = "administratorio-asteroid-biter-assault",
+        affects_target = true,
+      },
+      {type = "create-explosion", entity_name = "explosion-hit"},
+    },
+  },
+}
+
+local orbital_employment_catapult = table.deepcopy(data.raw["ammo-turret"]["railgun-turret"])
+orbital_employment_catapult.name = "orbital-employment-catapult"
+orbital_employment_catapult.icon = nil
+orbital_employment_catapult.icons = {
+  {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
+  {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
+}
+orbital_employment_catapult.minable = {mining_time = 0.5, result = "orbital-employment-catapult"}
+orbital_employment_catapult.placeable_by = placeable_by_item("orbital-employment-catapult")
+orbital_employment_catapult.next_upgrade = nil
+orbital_employment_catapult.fast_replaceable_group = nil
+orbital_employment_catapult.attack_target_mask = {
+  asteroid_size_masks.small,
+  asteroid_size_masks.medium,
+  asteroid_size_masks.big,
+  asteroid_size_masks.huge,
+}
+orbital_employment_catapult.attack_parameters.ammo_category = "orbital-biter-ballistics"
+orbital_employment_catapult.attack_parameters.cooldown = 240
+orbital_employment_catapult.attack_parameters.range = 56
+orbital_employment_catapult.attack_parameters.min_range = 4
+orbital_employment_catapult.attack_parameters.turn_range = 0.05
+orbital_employment_catapult.attack_parameters.sound = {filename = sound_path .. "orbital-catapult.ogg", volume = 0.6}
+orbital_employment_catapult.energy_source = {
+  type = "electric",
+  buffer_capacity = "400kJ",
+  input_flow_limit = "200kW",
+  usage_priority = "primary-input",
+}
+orbital_employment_catapult.energy_per_shot = "200kJ"
+orbital_employment_catapult.surface_conditions = {
+  {
+    property = "pressure",
+    min = 0,
+    max = 0,
+  },
+}
+
+local public_train_stop = table.deepcopy(data.raw["train-stop"]["train-stop"])
+public_train_stop.name = "public-train-stop"
+public_train_stop.icon = nil
+public_train_stop.icon_size = nil
+public_train_stop.icons = building_icons.public_train_stop()
+public_train_stop.minable = {mining_time = 0.2, result = "public-train-stop"}
+public_train_stop.placeable_by = placeable_by_item("public-train-stop")
+
+for _, entity in ipairs({
+  formation_center,
+  chromatic_printer,
+  notary_office,
+  territorial_arbitration_post,
+  conciliation_desk,
+  digital_services_bureau,
+  interplanetary_terminus,
+  ai_server,
+  heat_exhaust,
+  synthetic_personnel_bureau,
+  slop_refinery,
+  involuntary_relocation_cannon,
+  involuntary_relocation_receiver,
+}) do
+  require_non_vacuum(entity)
+end
+
+local space_age_entities = {
+  chromatic_printer,
+  laser_printer,
+  administrative_space_station,
+  notary_office,
+  territorial_arbitration_post,
+  conciliation_desk,
+  digital_services_bureau,
+  interplanetary_terminus,
+  terminus_pool_combinator,
+  ai_server,
+  ai_server_heat_core,
+  heat_exhaust,
+  synthetic_personnel_bureau,
+  slop_refinery,
+  involuntary_relocation_cannon,
+  involuntary_relocation_receiver,
+  relocation_status_combinator,
+  orbital_biter_projectile,
+  trajectory_compliance_array,
+  senior_trajectory_compliance_array,
+  executive_trajectory_compliance_array,
+  orbital_employment_catapult,
+  public_train_stop,
+}
+
+if extend_formation_center then
+  table.insert(space_age_entities, 1, formation_center)
+end
+
+-- Existing formation-center prototypes are modified in place rather than
+-- added to space_age_entities, so apply the policy to it explicitly as well.
+native_fluid_rotation.enable(formation_center)
+for _, entity in ipairs(space_age_entities) do
+  native_fluid_rotation.enable(entity)
+end
+
+data:extend(space_age_entities)

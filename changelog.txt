@@ -1,7 +1,76 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.0
+Date: 2026-08-21
+  Features:
+    - add optional first-alpha compatibility with Factorio: Space Age while preserving base-only play
+    - add planet-specific administrative progression, local bootstrap recipes, surface restrictions, and escape routes for Vulcanus, Gleba, Fulgora, and Aquilo
+    - add chromatic printing with cyan, yellow, and magenta inks, form stock, single-color forms, paired forms, the Trichromatic Permit, and the Unified Operations Charter
+    - gate tungsten, carbon-fiber, holmium, cryogenic, quantum, and other Space Age production behind the paperwork of the relevant planetary jurisdictions
+    - add Verdigris Crust to Vulcanus and its cyan certification chain, Notary Office, Territorial Arbitration Post, and off-world metallurgy charters
+    - add Amber Sap to Gleba and its perishable yellow paperwork, Conciliation Desk, Capture Bureau, pentapod egg acquisition, and renewable local bureaucracy
+    - add Fulgoran archive recovery, expanded scrap recycling, magenta paperwork, the Digital Services Bureau, and archive document reassignment
+    - add Aquilo cryogenic administration, the Laser Printer, multicolor convergence paperwork, and frozen-ink restrictions
+    - add space tourism packages and orbital tourism revenue as the renewable Space Age public-finance loop
+    - add Bureaucratic Transcendence and Public Train Stops that permanently waive per-arrival transit paperwork
+    - add the Administrative Space Station and orbital variants of planetary paperwork
+    - add three tiers of Trajectory Compliance Array to redirect asteroids with jurisdiction-specific deviation orders
+    - add the Orbital Miner Deployment Catapult, recoverable Voluntary Exploration Space Miners, asteroid staffing limits, mining-yield recovery, and repeatable damage and capacity research
+    - add a separate interplanetary pneumatic trunk with requestable Termini, quality-preserving transfers, restricted paperwork payloads, per-item travel time, and capacity and Terminus upgrades
+    - add worker, clerical, management, astronaut, notary, conciliation, relay, cryoprint, and other specialist formation paths
+    - add five temporary MMMM briefings for training, staffing, compliance, liaison, and orbital operations
+    - add Nauvis-trained egg couriers so Space Age recipes can use biter-egg authority without shipping eggs off-world
+    - add AI Servers that produce Inference Tokens over dedicated optic fibre while exporting usable heat to vanilla heat networks
+    - add Heat Exhausts, the Slop Refinery, Administrative Slop, generated black-ink paperwork, and Fabricated Citation disposal and fact-checking
+    - add the permanent Unstaffed Operations Waiver for automating worker-managed buildings at the cost of a module slot
+    - add the endgame Synthetic Personnel Bureau for manufacturing core planetary specialists
+    - add paired Involuntary Relocation Catapult and Receiver buildings for transferring biter personnel between planets
+    - retheme promethium as Administratorium and complete the endgame with an expedition charter assembled from planetary and orbital paperwork
+    - add Space Age technologies, research triggers, repeatable upgrades, item groups, Factoriopedia guidance, Tips and Tricks simulations, and cross-planet progression guidance
+    - add 45 Space Age achievements spanning every planet, chromatic paperwork, orbital industry, logistics, professions, and endgame milestones, plus an achievement for triggering the first protest
+    - add optional Quality integration as Administrative Certification, including Accreditation Modules, renamed certification grades and technologies, and quality-preserving logistics
+  Changes:
+    - keep the Space Age dependency optional and isolate all expansion prototypes, recipes, technologies, categories, and runtime systems behind feature flags
+    - keep native metallurgy, organic, electromagnetic, and cryogenic machines free of recurring operating paperwork while regulating their construction and outputs
+    - preserve vanilla planet surface restrictions and avoid duplicate off-world versions of native Space Age processes
+    - limit ordinary administrative offices to Nauvis or planetary equivalents and reserve the Administrative Space Station for orbital platforms
+    - organize administrative items into dedicated paperwork, planetary, workforce, compliance, logistics, and automation groups
+    - replace Space Age slush-fund laundering with tourism-backed public finance
+    - assign administrative rocket cargo weights and require Treasury Bonds and Government Grants for rocket-silo finance
+    - preserve exact item quality through pneumatic tubes, the interplanetary trunk, archive reassignment, and other administrative logistics
+    - make administrative certification cosmetic for paperwork strength, orbital mining, trajectory compliance, staffing, trunk throughput, and other scripted systems
+  Balancing:
+    - tune each planet's local bureaucracy so the first science pack and a viable rocket escape can be produced without circular imports
+    - keep colored forms, planetary charters, specialists, and automation intentionally constrained so rockets remain relevant after interplanetary tubes unlock
+    - make Gleba paperwork spoil and scale Capture Bureau egg payouts by pentapod size
+    - narrow planetary paperwork exceptions and prevent Greenhouses from operating on Vulcanus or Aquilo
+    - rebalance Administrative Space Station, orbital printer, ink, catapult, tourism, AI Server, Slop Refinery, Terminus, waiver, bureau, and relocation costs and throughput
+    - increase and rebalance regulated rocket cargo weights for administrative buildings, forms, workers, and orbital equipment
+  Bugfixes:
+    - preserve item quality through regulated recipes, pneumatic transport, and cross-planet transfers
+    - protect launched orbital employees, reserve asteroid staffing capacity, retarget deviation arrays by distance, and recover airborne overflow safely
+    - prevent administrative entities and registry rebuilds from referencing Space Age prototypes when the expansion is disabled
+    - restore reconciled technology unlocks, recipe batching, planet gates, coal synthesis, and orbital-science progression after the Space Age integration
+    - prevent Field Offices and Biter Stations from stranding or freezing workers when a destination is unreachable
+    - guard invalid runtime entity handles and clean up removed Capture Bureaus and other Space Age runtime state safely
+    - fix Space Age item-group load failures, building footprints, collision boxes, rotation, pipe and fibre ports, shadows, and recipe icons
+    - correct Tips and Tricks claims and cross-planet guidance to match the implemented systems
+  Graphics:
+    - add original animated art, icons, emissions, and shadows for the new planetary, orbital, logistics, and automation buildings
+    - refresh printer, Formation Center, Biterport, Work Station, Union Headquarters, Corporate Breakroom, paperwork, profession, and technology art
+  Sounds:
+    - add dedicated working sounds for the Space Age administrative buildings and orbital-tier machinery
+  Locale:
+    - add English names, descriptions, statuses, GUI text, Factoriopedia notes, and Tips and Tricks for Space Age content
+    - expand French and Russian translations across Space Age items, recipes, technologies, entities, interfaces, and tutorials
+  Docs:
+    - document planet-by-planet progression, professions, public finance, automation, Quality integration, orbital systems, and compatibility rules
+  Internal:
+    - add base-only and Space Age loading tests, planet-escape analysis, runtime system coverage, and generic progression validation
+---------------------------------------------------------------------------------------------------
 Version: 0.5.15
 Date: 2026-08-17
   Bugfixes:
+    - allow the Administrative Space Station to be rotated
     - let workers approach from any open face, not just the hive side
     - make hard mode a runtime toggle instead of startup-only
     - hide dead-end logistic-system, chain field-office-deployment after steam-power
@@ -9,6 +78,7 @@ Date: 2026-08-17
     - restore 3x3 collision box
   Balancing:
     - let administrative offices accept beacon effects
+    - reduce Orbital Miner Deployment Catapult power consumption by 96%
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.14
 Date: 2026-08-16
@@ -25,6 +95,7 @@ Version: 0.5.13
 Date: 2026-08-09
   Bugfixes:
     - defer compacted rubble Factoriopedia link
+    - keep Field Offices open at night and remove their module slots
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.12
 Date: 2026-08-09

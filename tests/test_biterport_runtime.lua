@@ -136,6 +136,120 @@ local function new_inventory(size, initial_items)
   return inventory
 end
 
+local function make_invalid_for_read_stack()
+  return setmetatable({}, {
+    __index = function(_, key)
+      if key == "valid_for_read" then return false end
+      error("LuaItemStack API call when LuaItemStack was invalid for read", 2)
+    end,
+  })
+end
+
+local function use_factorio_empty_slot_semantics(inventory)
+  for index = 1, #inventory do
+    if inventory[index] == nil then
+      inventory[index] = make_invalid_for_read_stack()
+    end
+  end
+end
+
+local function stack_quality_name(stack)
+  return stack and stack.quality and stack.quality.name or "normal"
+end
+
+local function new_quality_inventory(size, initial_stacks)
+  local inventory = {size = size or 8}
+  for index = 1, inventory.size do inventory[index] = nil end
+
+  local function matches(stack, spec)
+    return stack and stack.valid_for_read
+      and stack.name == spec.name
+      and stack_quality_name(stack) == (spec.quality or "normal")
+  end
+
+  local function rebuild()
+    for index = 1, inventory.size do inventory[index] = nil end
+    for index, stack in ipairs(inventory.stacks) do
+      inventory[index] = {
+        valid_for_read = true,
+        name = stack.name,
+        count = stack.count,
+        quality = stack.quality ~= "normal" and {name = stack.quality} or nil,
+      }
+    end
+  end
+
+  inventory.stacks = {}
+  for _, stack in ipairs(initial_stacks or {}) do
+    inventory.stacks[#inventory.stacks + 1] = {
+      name = stack.name,
+      count = stack.count,
+      quality = stack.quality or "normal",
+    }
+  end
+
+  function inventory.get_item_count(spec)
+    local name = type(spec) == "table" and spec.name or spec
+    local requested_quality = type(spec) == "table" and (spec.quality or "normal") or nil
+    local count = 0
+    for _, stack in ipairs(inventory.stacks) do
+      if stack.name == name and (requested_quality == nil or stack.quality == requested_quality) then
+        count = count + stack.count
+      end
+    end
+    return count
+  end
+
+  function inventory.can_insert(spec)
+    return spec and spec.name and (spec.count or 0) > 0 and #inventory.stacks < inventory.size
+      or false
+  end
+
+  function inventory.insert(spec)
+    if not spec or not spec.name then return 0 end
+    local requested_quality = spec.quality or "normal"
+    for _, stack in ipairs(inventory.stacks) do
+      if stack.name == spec.name and stack.quality == requested_quality then
+        stack.count = stack.count + (spec.count or 0)
+        rebuild()
+        return spec.count or 0
+      end
+    end
+    if #inventory.stacks >= inventory.size then return 0 end
+    inventory.stacks[#inventory.stacks + 1] = {
+      name = spec.name,
+      count = spec.count or 0,
+      quality = requested_quality,
+    }
+    rebuild()
+    return spec.count or 0
+  end
+
+  function inventory.remove(spec)
+    if not spec or not spec.name then return 0 end
+    local requested_quality = spec.quality or "normal"
+    local remaining = spec.count or 0
+    local removed = 0
+    for index = #inventory.stacks, 1, -1 do
+      local stack = inventory.stacks[index]
+      if stack.name == spec.name and stack.quality == requested_quality then
+        local take = math.min(remaining, stack.count)
+        stack.count = stack.count - take
+        removed = removed + take
+        remaining = remaining - take
+        if stack.count <= 0 then table.remove(inventory.stacks, index) end
+        if remaining <= 0 then break end
+      end
+    end
+    rebuild()
+    return removed
+  end
+
+  setmetatable(inventory, {__len = function(self) return self.size end})
+  rebuild()
+  return inventory
+end
+
 local function within(area, position)
   return position.x >= area.left_top.x
     and position.x <= area.right_bottom.x
@@ -200,6 +314,7 @@ local function new_surface()
       force = params.force,
       unit_number = next_unit_number,
       direction = params.direction,
+      quality = params.quality and {name = params.quality} or nil,
       bounding_box = {
         left_top = {x = params.position.x - 0.4, y = params.position.y - 0.4},
         right_bottom = {x = params.position.x + 0.4, y = params.position.y + 0.4},
@@ -248,6 +363,7 @@ local function new_chest(surface, unit_number, position, logistic_mode, items, r
     for i, filter in ipairs(request_filters) do
       section.filters[i] = {
         value = filter.value or filter.name,
+        quality = filter.quality,
         min = filter.min or filter.count or 0,
         max = filter.max,
       }
@@ -257,6 +373,7 @@ local function new_chest(surface, unit_number, position, logistic_mode, items, r
       if not filter then return nil end
       return {
         value = filter.value,
+        quality = filter.quality,
         min = filter.min,
         max = filter.max,
       }
@@ -264,6 +381,7 @@ local function new_chest(surface, unit_number, position, logistic_mode, items, r
     function section.set_slot(slot_index, filter)
       section.filters[slot_index] = {
         value = filter.value or filter.name,
+        quality = filter.quality,
         min = filter.min or filter.count or 0,
         max = filter.max,
       }
@@ -485,7 +603,7 @@ test("biter station sprite metrics match updated assets", function()
   local station_block = source:match("biter_station%.picture.-biter_station%.draw_stateless_visualisations_in_ghost")
   assert_true(station_block ~= nil, "biter station graphics block should exist")
   assert_true(station_block:find("work%-station%-floor%.png.-width%s*=%s*480.-height%s*=%s*419"), "floor sprite metrics should match 480x419 asset")
-  assert_true(station_block:find("work%-station%-roof%.png.-width%s*=%s*480.-height%s*=%s*419"), "roof sprite metrics should match 480x419 asset")
+  assert_true(station_block:find("work%-station%-roof%-animation%.png.-width%s*=%s*480.-height%s*=%s*419"), "animated roof sprite metrics should match 480x419 frames")
 end)
 
 test("biterport refills player personal logistics requests", function()
@@ -724,6 +842,7 @@ test("biterport empties player trash into network storage", function()
   local storage_chest = new_chest(surface, 31, {x = 7, y = 0}, "storage", {})
   storage_chest.force = force
   local player = new_player(surface, force, {}, {}, {["stone"] = 1})
+  use_factorio_empty_slot_semantics(player.trash_inventory)
   game.connected_players = {player}
 
   biterport.ensure_storage()
@@ -1157,6 +1276,137 @@ test("non-returning orphaned biterport worker protests immediately without a hos
   assert_eq(active.phase, "orphaned_returning", "failed non-returning worker should become orphaned")
   assert_true(protested_entity == worker_entity, "orphaned worker should become a protester immediately")
   assert_eq(active_worker_count(), 0, "converted protester should leave biterport active worker tracking")
+end)
+
+test("biterport requests use exact certification identity and unqualified filters stay normal-only", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+  local surface = new_surface()
+  local force = {name = "player", technologies = {}, set_cease_fire = function() end}
+  game = {
+    tick = 0,
+    connected_players = {},
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 2, 2)
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {})
+  provider.force = force
+  provider.inventory = new_quality_inventory(8, {{name = "policy", count = 1, quality = "legendary"}})
+  function provider.get_inventory() return provider.inventory end
+  local requester = new_chest(surface, 31, {x = 4, y = 0}, "requester", {}, {{name = "policy", count = 1}})
+  requester.force = force
+  requester.inventory = new_quality_inventory(8, {})
+  function requester.get_inventory() return requester.inventory end
+
+  biterport.track_port(port)
+  biterport.update(30)
+  assert_eq(active_worker_count(), 0, "an unqualified requester must not receive legendary provider stock")
+
+  requester.request_section.filters[1].value = {name = "policy", quality = "legendary"}
+  biterport.update(60)
+  local active = first_active_worker()
+  assert_true(active ~= nil, "an explicit legendary requester should dispatch")
+  assert_eq(active.job.item_quality, "legendary", "job reservation must keep its requested quality")
+  advance_worker_to(active, provider.position, 60, biterport)
+  active = first_active_worker()
+  advance_worker_to(active, requester.position, 61, biterport)
+  assert_eq(provider.inventory.get_item_count({name = "policy", quality = "legendary"}), 0,
+    "the exact-grade provider stack should be removed")
+  assert_eq(requester.inventory.get_item_count({name = "policy", quality = "legendary"}), 1,
+    "the exact-grade requester stack should be delivered without downgrade")
+end)
+
+test("legendary biterports scale construction range, preserve ghost grade, and pass it to hidden roboports", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+  local surface = new_surface()
+  local force = {name = "player", technologies = {}, set_cease_fire = function() end}
+  game = {
+    tick = 0,
+    connected_players = {},
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 1, 2)
+  port.quality = {name = "legendary"}
+  local provider = new_chest(surface, 30, {x = 30, y = 0}, "passive-provider", {})
+  provider.force = force
+  provider.inventory = new_quality_inventory(8, {{name = "office-desk", count = 1, quality = "legendary"}})
+  function provider.get_inventory() return provider.inventory end
+  biterport.track_port(port)
+
+  local hidden = storage.biterport_hidden_roboports[port.unit_number]
+  assert_eq(hidden.quality.name, "legendary", "hidden roboport should inherit its placed port quality")
+  local ghost = {
+    valid = true,
+    type = "entity-ghost",
+    ghost_name = "office-desk",
+    ghost_prototype = {name = "office-desk", items_to_place_this = {{name = "office-desk"}}},
+    quality = {name = "legendary"},
+    position = {x = 80, y = 0},
+    surface = surface,
+    force = force,
+    direction = defines.direction.north,
+    bounding_box = {left_top = {x = 79.5, y = -0.5}, right_bottom = {x = 80.5, y = 0.5}},
+  }
+
+  assert_true(biterport.on_entity_built({entity = ghost, tick = 30}),
+    "a legendary port should reach a ghost at 80 tiles; normal construction radius is only 55")
+  local active = first_active_worker()
+  assert_eq(active.job.item_quality, "legendary", "construction job must reserve the ghost's exact grade")
+end)
+
+test("biterport migration normalizes legacy item grades and cache keys", function()
+  storage = {
+    biterport_logistics_reservations = {
+      [1] = {item_name = "policy", count = 1},
+    },
+    biterport_workers = {
+      [2] = {job = {item_name = "policy"}, carried_stack = {name = "policy", count = 1}},
+    },
+    biterport_storage_target_cache = {network = {policy = 99}},
+  }
+  package.loaded["scripts.biterport"] = nil
+  game = {
+    forces = {
+      player = {name = "player", set_cease_fire = function() end},
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  local biterport = require("scripts.biterport")
+  biterport.normalize_quality_state()
+  assert_eq(storage.biterport_logistics_reservations[1].item_quality, "normal")
+  assert_eq(storage.biterport_workers[2].job.item_quality, "normal")
+  assert_eq(storage.biterport_workers[2].carried_stack.quality, "normal")
+  assert_eq(storage.biterport_storage_target_cache.network["policy" .. string.char(31) .. "normal"], 99,
+    "legacy name-only cache entries should be rekeyed as normal-quality identities")
 end)
 
 print(("Biterport runtime tests: %d passed, %d failed"):format(passed, failed))

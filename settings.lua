@@ -9,7 +9,7 @@ data:extend({
   {
     type = "bool-setting",
     name = "administratorio-debug-protest-belts-and-inserters",
-    setting_type = "startup",
+    setting_type = "runtime-global",
     default_value = false,
     order = "z[administratorio]-b[debug-protest-belts-inserters]",
   },

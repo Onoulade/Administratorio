@@ -23,6 +23,7 @@ local function assert_true(value, msg)
 end
 
 local tips = {}
+local categories = {}
 
 data = {
   raw = {},
@@ -32,6 +33,8 @@ function data:extend(prototypes)
   for _, proto in ipairs(prototypes) do
     if proto.type == "tips-and-tricks-item" then
       tips[proto.name] = proto
+    elseif proto.type == "tips-and-tricks-item-category" then
+      categories[proto.name] = proto
     end
   end
 end
@@ -43,6 +46,7 @@ else
   mod_root = "./"
 end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
+mods = { ["space-age"] = "2.0.0" }
 
 dofile(mod_root .. "prototypes/tips-and-tricks.lua")
 
@@ -95,6 +99,10 @@ test("eviction and night-shift tips stay wired to the relevant unlocks", functio
       "working-hours tip should unlock from building " .. entity_name
     )
   end
+  assert_true(
+    not trigger_contains(working_hours.trigger, "build-entity", "entity", "field-office"),
+    "working-hours tip should not treat the always-open field office as night-gated"
+  )
 end)
 
 test("rideable biter tip unlocks with its dedicated technology", function()
@@ -111,6 +119,159 @@ test("biterport tip unlocks with biterport-logistics technology", function()
     trigger_contains(item.trigger, "research", "technology", "biterport-logistics"),
     "biterport tip should unlock from the biterport-logistics technology"
   )
+end)
+
+test("previously orphaned core mechanic tips unlock with their mechanics", function()
+  local expected = {
+    ["administratorio-bullshit-economy"] = "discovery-bullshit",
+    ["administratorio-admin-science"] = "administrative-science-research",
+    ["administratorio-propaganda-distillery"] = "industrial-propaganda",
+    ["administratorio-transit-authorization"] = "railway",
+    ["administratorio-pneumatic-transport"] = "pneumatic-form-transport",
+  }
+  for name, technology in pairs(expected) do
+    assert_true(
+      trigger_contains(tip(name).trigger, "research", "technology", technology),
+      name .. " should unlock from " .. technology
+    )
+  end
+end)
+
+test("every Administratorio tip is text-only", function()
+  local count = 0
+  for name, item in pairs(tips) do
+    count = count + 1
+    assert_true(item.simulation == nil, name .. " should not attach an animation")
+  end
+  assert_true(count >= 69, "expected complete core and Space Age tip coverage")
+end)
+
+test("tips are divided into mechanic-focused categories", function()
+  local expected_categories = {
+    "administratorio-welcome",
+    "administratorio-biter-complaints",
+    "administratorio-biter-employment",
+    "administratorio-workforce-formation-title",
+    "administratorio-chromatic-printing",
+    "administratorio-vulcanus-certification",
+    "administratorio-gleba-conciliation",
+    "administratorio-cross-planet-bureaucracy",
+    "administratorio-fulgora-digital-services",
+    "administratorio-aquilo-tube-network",
+  }
+
+  for _, category_name in ipairs(expected_categories) do
+    assert_true(categories[category_name] ~= nil, "missing tips category " .. category_name)
+    local title = tip(category_name)
+    assert_true(title.category == category_name, category_name .. " title should belong to its own category")
+    assert_true(title.is_title == true, category_name .. " should be the category title")
+    assert_true(title.indent == 0, category_name .. " title should not be indented")
+  end
+
+  assert_true(categories.administratorio == nil, "the legacy catch-all category should be removed")
+  for name, item in pairs(tips) do
+    assert_true(categories[item.category] ~= nil, name .. " references missing category " .. tostring(item.category))
+    if not item.is_title then
+      assert_true(item.indent == 1, name .. " should be a category child")
+    end
+  end
+end)
+
+test("Space Age planet manifests unlock with their planetary systems", function()
+  local expected = {
+    ["administratorio-vulcanus-manifest"] = "vulcanus-certification",
+    ["administratorio-gleba-manifest"] = "gleba-conciliation",
+    ["administratorio-fulgora-archives"] = "archive-recombination",
+    ["administratorio-aquilo-manifest"] = "interplanetary-tube-chromatic",
+  }
+  for name, technology in pairs(expected) do
+    assert_true(
+      trigger_contains(tip(name).trigger, "research", "technology", technology),
+      name .. " should unlock from " .. technology
+    )
+  end
+end)
+
+test("orbital tips unlock with the feature they explain", function()
+  assert_true(
+    trigger_contains(tip("administratorio-workforce-formation-title").trigger, "research", "technology", "space-platform"),
+    "the orbital category should appear with space-platform"
+  )
+  assert_true(
+    trigger_contains(tip("administratorio-workforce-formation").trigger, "research", "technology", "worker-formation"),
+    "workforce overview should unlock from worker-formation"
+  )
+  assert_true(
+    trigger_contains(tip("administratorio-orbital-specialists").trigger, "research", "technology", "specialized-formation"),
+    "orbital specialists should unlock from specialized-formation"
+  )
+
+  local compliance_tips = {
+    "administratorio-trajectory-compliance-arrays",
+    "administratorio-orbital-employment-catapult",
+  }
+  for _, name in ipairs(compliance_tips) do
+    assert_true(
+      trigger_contains(tip(name).trigger, "research", "technology", "orbital-compliance-systems"),
+      name .. " should unlock from orbital-compliance-systems"
+    )
+  end
+  assert_true(
+    trigger_contains(tip("administratorio-administrative-space-station").trigger,
+      "research", "technology", "orbital-employment-infrastructure"),
+    "the administrative station should unlock from orbital-employment-infrastructure"
+  )
+
+  local permit = tip("administratorio-orbital-infrastructure-permit")
+  assert_true(
+    trigger_contains(permit.trigger, "research", "technology", "space-platform"),
+    "orbital-infrastructure-permit should unlock from space-platform"
+  )
+end)
+
+test("previously undocumented Space Age mechanics have dedicated tips", function()
+  local expected = {
+    ["administratorio-space-age-enrollment"] = "worker-formation",
+    ["administratorio-offworld-economy"] = "space-platform",
+    ["administratorio-management-briefings"] = "management-formation",
+    ["administratorio-yellow-paperwork-spoilage"] = "gleba-conciliation",
+    ["administratorio-pentapod-bargaining"] = "gleba-conciliation",
+    ["administratorio-space-tourism"] = "cyan-yellow-bureaucracy",
+    ["administratorio-promethium-administration"] = "promethium-science-pack",
+  }
+  for name, technology in pairs(expected) do
+    assert_true(
+      trigger_contains(tip(name).trigger, "research", "technology", technology),
+      name .. " should unlock from " .. technology
+    )
+  end
+end)
+
+test("every registered tip has an English name and description", function()
+  local locale_helpers = require("tests.locale_helpers")
+  local names = locale_helpers.section(mod_root, "en", "tips-and-tricks-item-name")
+  local descriptions = locale_helpers.section(mod_root, "en", "tips-and-tricks-item-description")
+
+  for name in pairs(tips) do
+    assert_true(names[name], "missing English tip name " .. name)
+    assert_true(descriptions[name], "missing English tip description " .. name)
+  end
+end)
+
+test("advanced orbital tips wait for their first relevant research", function()
+  local expected = {
+    ["administratorio-senior-trajectory-compliance-array"] = "trajectory-compliance-jurisdiction-2",
+    ["administratorio-executive-trajectory-compliance-array"] = "trajectory-compliance-jurisdiction-3",
+    ["administratorio-orbital-employment-damage"] = "orbital-employment-damage-1",
+    ["administratorio-orbital-employment-capacity"] = "orbital-employment-capacity-1",
+    ["administratorio-trajectory-compliance-speed"] = "trajectory-compliance-speed-1",
+  }
+  for name, technology in pairs(expected) do
+    assert_true(
+      trigger_contains(tip(name).trigger, "research", "technology", technology),
+      name .. " should unlock from " .. technology
+    )
+  end
 end)
 
 print(("Tips & Tricks tests: %d passed, %d failed"):format(passed, failed))

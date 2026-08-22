@@ -1,6 +1,7 @@
 #!/bin/sh
 
 set -eu
+export PYTHONDONTWRITEBYTECODE=1
 
 usage() {
   cat <<'EOF'
@@ -10,7 +11,7 @@ Required arguments:
   --repo-root PATH     Absolute or relative path to the repo root.
 
 Optional arguments:
-  --factorio-bin PATH  Factorio binary passed to the progression report test.
+  --factorio-bin PATH  Factorio binary passed to the runtime and configuration tests.
   --help               Show this help text.
 
 Any arguments after -- are forwarded to Python tests.
@@ -51,6 +52,7 @@ done
 
 [ -n "$REPO_ROOT" ] || { echo "--repo-root is required" >&2; exit 1; }
 command -v lua >/dev/null 2>&1 || { echo "'lua' not found on PATH" >&2; exit 1; }
+command -v luac >/dev/null 2>&1 || { echo "'luac' not found on PATH" >&2; exit 1; }
 
 # Prefer python3. Fall back to python only if it is Python 3.
 if command -v python3 >/dev/null 2>&1; then
@@ -82,11 +84,20 @@ run_lua_tests() {
   done
 }
 
+run_lua_syntax_checks() {
+  printf '==> Lua syntax check\n'
+  find "$REPO_ROOT" -path "$REPO_ROOT/.git" -prune -o -type f -name '*.lua' -print |
+  while IFS= read -r lua_file; do
+    [ -n "$lua_file" ] || continue
+    luac -p "$lua_file"
+  done
+}
+
 run_python_tests() {
   for test_file in "$TEST_DIR"/test_*.py; do
     [ -f "$test_file" ] || continue
     printf '==> %s\n' "$(basename "$test_file")"
-    if [ "$(basename "$test_file")" = "test_progression_report.py" ]; then
+    if [ "$(basename "$test_file")" = "test_progression_report.py" ] || [ "$(basename "$test_file")" = "test_planet_escape.py" ] || [ "$(basename "$test_file")" = "test_factorio_config_matrix.py" ]; then
       if [ -z "$FACTORIO_BIN" ]; then
         printf 'Skipping %s; --factorio-bin was not provided.\n' "$(basename "$test_file")"
         continue
@@ -99,6 +110,7 @@ run_python_tests() {
 }
 
 cd "$REPO_ROOT"
+run_lua_syntax_checks
 run_lua_tests
 run_python_tests "$@"
 

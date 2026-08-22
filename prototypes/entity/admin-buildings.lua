@@ -10,7 +10,13 @@
 -------------------------------------------------------------------------------
 local feature_flags = require("feature_flags")
 local unit_ai_settings = require("scripts.unit_ai_settings")
+local planets = require("prototypes.shared.space_age_planets")
+local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
+local generated_animation_speeds = require("prototypes.shared.generated_animation_speeds")
+local building_icons = require("prototypes.shared.building_icons")
+local native_fluid_rotation = require("prototypes.shared.native_fluid_rotation")
 local working_hours_enabled = feature_flags.working_hours_enabled()
+local space_age_enabled = feature_flags.space_age_enabled()
 local entity_graphics = "__administratorio__/graphics/entities/"
 local scrubber_graphics = entity_graphics .. "scrubber/"
 local sound_path = "__administratorio__/sound/buildings/"
@@ -20,6 +26,8 @@ local OFFICE_DESK_SPEED = working_hours_enabled and 1.0 or 0.75
 local BREAKROOM_SPEED = working_hours_enabled and 1.0 or 0.75
 local UNION_HQ_SPEED = working_hours_enabled and 1.0 or 0.75
 local SPRITTER_ANIMATION_SPEED = 1 / 3
+local GENERATED_FRAME_COUNT = generated_animation_speeds.FRAME_COUNT
+local GENERATED_LINE_LENGTH = generated_animation_speeds.LINE_LENGTH
 
 local function disabled_entity_description(key)
   if working_hours_enabled then
@@ -45,6 +53,11 @@ local function enable_machine_effects(machine)
     uses_beacon_effects = true,
     uses_surface_effects = true,
   }
+end
+
+local function require_non_vacuum(entity)
+  if not space_age_enabled then return entity end
+  return planets.require_non_vacuum_surface(entity)
 end
 
 local function tint_sprites(t, tint)
@@ -187,6 +200,10 @@ local admin_station_base = {
   draw_stateless_visualisations_in_ghost = true,
 }
 
+if space_age_enabled then
+  planets.apply_planet_surface_conditions(admin_station_base, "nauvis")
+end
+
 local function make_admin_station(name)
   local station = table.deepcopy(admin_station_base)
   station.name = name
@@ -202,6 +219,63 @@ local function make_admin_station(name)
 end
 
 local admin_station = make_admin_station("admin-station")
+local capture_bureau = table.deepcopy(data.raw["furnace"]["electric-furnace"] or data.raw["assembling-machine"]["assembling-machine-2"])
+capture_bureau.name = "capture-bureau"
+capture_bureau.icon = "__administratorio__/graphics/icons/admin-desk.png"
+capture_bureau.icon_size = 64
+capture_bureau.minable = {mining_time = 0.5, result = "capture-bureau"}
+capture_bureau.placeable_by = placeable_by_item("capture-bureau")
+capture_bureau.localised_name = {"entity-name.capture-bureau"}
+capture_bureau.localised_description = {"entity-description.capture-bureau"}
+capture_bureau.next_upgrade = nil
+capture_bureau.crafting_categories = {"capture-bureau-runtime"}
+capture_bureau.crafting_speed = 1
+capture_bureau.energy_usage = "300kW"
+capture_bureau.energy_source = {type = "electric", usage_priority = "secondary-input"}
+capture_bureau.source_inventory_size = 1
+capture_bureau.result_inventory_size = 20
+capture_bureau.module_slots = 0
+capture_bureau.allowed_effects = {}
+capture_bureau.flags = {"placeable-neutral", "player-creation"}
+capture_bureau.max_health = 500
+capture_bureau.corpse = "big-remnants"
+capture_bureau.collision_mask = {layers = {administratorio_station_footprint = true, water_tile = true}}
+capture_bureau.collision_box = {{-4.4, -4.4}, {4.4, 4.4}}
+capture_bureau.selection_box = {{-4.5, -4.5}, {4.5, 4.5}}
+capture_bureau.selection_priority = 1
+capture_bureau.fast_replaceable_group = "admin-station"
+capture_bureau.circuit_wire_max_distance = nil
+capture_bureau.circuit_connector = nil
+capture_bureau.graphics_set = {
+  animation = {
+    layers = {
+      machine_animation_layer("__core__/graphics/empty.png", 1, 1, 1, 1, util.by_pixel(0, 0)),
+    },
+  },
+}
+capture_bureau.stateless_visualisation = table.deepcopy(admin_station_base.stateless_visualisation)
+capture_bureau.draw_stateless_visualisations_in_ghost = true
+capture_bureau.fluid_boxes = {
+  {
+    production_type = "input",
+    pipe_connections = {
+      { flow_direction = "input", direction = defines.direction.north, position = {-2, -4} },
+      { flow_direction = "input", direction = defines.direction.north, position = {2, -4} },
+      { flow_direction = "input", direction = defines.direction.east, position = {4, -2} },
+      { flow_direction = "input", direction = defines.direction.east, position = {4, 2} },
+      { flow_direction = "input", direction = defines.direction.south, position = {-2, 4} },
+      { flow_direction = "input", direction = defines.direction.south, position = {2, 4} },
+      { flow_direction = "input", direction = defines.direction.west, position = {-4, -2} },
+      { flow_direction = "input", direction = defines.direction.west, position = {-4, 2} },
+    },
+    volume = 800,
+  },
+}
+capture_bureau.fluid_boxes_off_when_no_fluid_recipe = false
+capture_bureau.working_sound = {
+  sound = {filename = sound_path .. "office-machine-loop-v2.ogg", volume = 0.32},
+  idle_sound = {filename = "__base__/sound/idle1.ogg"},
+}
 
 local biter_station = table.deepcopy(data.raw["container"]["steel-chest"])
 biter_station.name = "biter-station"
@@ -234,15 +308,25 @@ biter_station.picture = {
       scale = 0.42,
       shift = util.by_pixel(0, -5),
     },
+    {
+      filename = entity_graphics .. "work-station/shadow.png",
+      width = 784,
+      height = 352,
+      scale = 0.42,
+      shift = util.by_pixel(45.6, 22.63),
+      draw_as_shadow = true,
+    },
   },
 }
 biter_station.stateless_visualisation = {
   render_layer = "higher-object-above",
   animation = {
-    filename = entity_graphics .. "work-station/work-station-roof.png",
+    filename = entity_graphics .. "work-station/work-station-roof-animation.png",
     width = 480,
     height = 419,
-    frame_count = 1,
+    frame_count = GENERATED_FRAME_COUNT,
+    line_length = GENERATED_LINE_LENGTH,
+    animation_speed = generated_animation_speeds.speed("biter-station-roof"),
     scale = 0.42,
     shift = util.by_pixel(0, -5),
   },
@@ -283,15 +367,25 @@ biterport.picture = {
       scale = 0.4,
       shift = util.by_pixel(0, -5),
     },
+    {
+      filename = entity_graphics .. "biterport/shadow-generated.png",
+      width = 814,
+      height = 320,
+      scale = 0.4,
+      shift = util.by_pixel(55.6, 43.8),
+      draw_as_shadow = true,
+    },
   },
 }
 biterport.stateless_visualisation = {
   render_layer = "higher-object-above",
   animation = {
-    filename = entity_graphics .. "biterport/biterport-roof.png",
+    filename = entity_graphics .. "biterport/biterport-roof-animation.png",
     width = 480,
     height = 454,
-    frame_count = 1,
+    frame_count = GENERATED_FRAME_COUNT,
+    line_length = GENERATED_LINE_LENGTH,
+    animation_speed = generated_animation_speeds.speed("biterport-roof"),
     scale = 0.4,
     shift = util.by_pixel(0, -5),
   },
@@ -518,7 +612,7 @@ office_desk.next_upgrade = nil
 office_desk.icon = biter_building_icons .. "office-building.png"
 office_desk.icon_size = 64
 office_desk.icons = nil
-office_desk.crafting_categories = {"bureaucracy-registration", "bureaucracy-modules", "bureaucratic-bootstrap"}
+office_desk.crafting_categories = bureaucracy_categories.office_desk(space_age_enabled)
 office_desk.crafting_speed = OFFICE_DESK_SPEED
 office_desk.ingredient_count = 10
 office_desk.module_slots = 4
@@ -581,14 +675,26 @@ formation_center.graphics_set = {
   animation = {
     layers = {
       {
-        filename = entity_graphics .. "formation-center/formation-center.png",
+        filename = entity_graphics .. "formation-center/formation-center-animation.png",
         priority = "high",
         width = 480,
         height = 435,
-        frame_count = 1,
-        repeat_count = 32,
+        frame_count = GENERATED_FRAME_COUNT,
+        line_length = GENERATED_LINE_LENGTH,
+        animation_speed = generated_animation_speeds.speed("formation-center"),
         scale = 1 / 3,
         shift = util.by_pixel(0, -8),
+      },
+      {
+        filename = entity_graphics .. "formation-center/shadow.png",
+        priority = "high",
+        width = 850,
+        height = 298,
+        frame_count = 1,
+        repeat_count = GENERATED_FRAME_COUNT,
+        scale = 1 / 3,
+        shift = util.by_pixel(61, 27.5),
+        draw_as_shadow = true,
       },
     },
   },
@@ -657,6 +763,18 @@ greenhouse.working_sound = {
   sound = { filename = "__administratorio__/sound/buildings/greenhouse.ogg", volume = 0.75 },
   idle_sound = { filename = "__base__/sound/idle1.ogg" }
 }
+if space_age_enabled then
+  -- No wood grows on Vulcanus (too hot) or Aquilo (too cold); bracket the
+  -- pressure range between the two rather than picking one side.
+  greenhouse.surface_conditions = {
+    {
+      property = "pressure",
+      min = planets.BASIC_PLANET_PROPERTIES.aquilo.pressure + 1,
+      max = planets.BASIC_PLANET_PROPERTIES.vulcanus.pressure - 1,
+    },
+  }
+  require_non_vacuum(greenhouse)
+end
 
 -- Corporate Breakroom: 5x5 gossip
 local breakroom = table.deepcopy(data.raw["assembling-machine"]["assembling-machine-1"])
@@ -672,12 +790,13 @@ enable_machine_effects(breakroom)
 breakroom.localised_description = disabled_entity_description("corporate-breakroom-no-working-hours")
 breakroom.collision_box = {{-2.25, -2.25}, {2.25, 2.25}}
 breakroom.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
-breakroom.icon = "__administratorio__/graphics/icons/warehouse-icon.png"
+breakroom.icon = biter_building_icons .. "corporate-breakroom-v2.png"
 breakroom.icon_size = 64
 breakroom.graphics_set = {
   animation = {
     layers = {
-      { filename = entity_graphics .. "corporate-breakroom/warehouse-1.png", priority = "high", width = 319, height = 328, frame_count = 1, scale = 0.5, shift = {0, -0.1} },
+      { filename = entity_graphics .. "corporate-breakroom/breakroom-animation.png", priority = "high", width = 180, height = 185, frame_count = GENERATED_FRAME_COUNT, line_length = GENERATED_LINE_LENGTH, animation_speed = generated_animation_speeds.speed("corporate-breakroom"), scale = 0.9, shift = {0, -0.1} },
+      { filename = entity_graphics .. "corporate-breakroom/shadow.png", priority = "high", width = 326, height = 146, frame_count = 1, repeat_count = GENERATED_FRAME_COUNT, scale = 0.9, shift = util.by_pixel(62.1, 33.25), draw_as_shadow = true },
     }
   }
 }
@@ -711,7 +830,15 @@ union_hq.ingredient_count = 10
 union_hq.module_slots = 6
 union_hq.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
 enable_machine_effects(union_hq)
-union_hq.localised_description = disabled_entity_description("union-headquarters-no-working-hours")
+if space_age_enabled then
+  union_hq.localised_description = {
+    "entity-description." .. (working_hours_enabled
+      and "union-headquarters-space-age"
+      or "union-headquarters-space-age-no-working-hours")
+  }
+else
+  union_hq.localised_description = disabled_entity_description("union-headquarters-no-working-hours")
+end
 union_hq.collision_box = {{-3.25, -3.25}, {3.25, 3.25}}
 union_hq.selection_box = {{-3.5, -3.5}, {3.5, 3.5}}
 union_hq.energy_usage = "1MW"
@@ -722,11 +849,13 @@ union_hq.graphics_set = {
   animation = {
     layers = {
       {
-        filename = union_hq_graphics .. "union-hq.png",
+        filename = union_hq_graphics .. "union-hq-animation.png",
         priority = "high",
         width = 480,
         height = 495,
-        frame_count = 1,
+        frame_count = GENERATED_FRAME_COUNT,
+        line_length = GENERATED_LINE_LENGTH,
+        animation_speed = generated_animation_speeds.speed("union-headquarters"),
         scale = union_hq_scale,
         shift = {0, 0.0},
       },
@@ -736,6 +865,7 @@ union_hq.graphics_set = {
         width = 683,
         height = 623,
         frame_count = 1,
+        repeat_count = GENERATED_FRAME_COUNT,
         draw_as_shadow = true,
         scale = 0.4,
         shift = {1.2, 1.2},
@@ -858,6 +988,9 @@ local propaganda_distillery = table.deepcopy(data.raw["assembling-machine"]["oil
 propaganda_distillery.name = "propaganda-distillery"
 propaganda_distillery.minable.result = "propaganda-distillery"
 propaganda_distillery.placeable_by = placeable_by_item("propaganda-distillery")
+if space_age_enabled then
+  propaganda_distillery.localised_description = {"entity-description.propaganda-distillery-space-age"}
+end
 propaganda_distillery.next_upgrade = nil
 propaganda_distillery.icon = distillery_graphics .. "base/fuel-refinery-icon.png"
 propaganda_distillery.icon_size = 64
@@ -966,14 +1099,13 @@ field_office.minable.result = "field-office"
 field_office.placeable_by = placeable_by_item("field-office")
 field_office.next_upgrade = nil
 field_office.icon = nil
-field_office.icons = {
-  { icon = biter_building_icons .. "office-building.png", icon_size = 64, tint = {r = 0.75, g = 0.65, b = 0.45, a = 1} },
-}
-field_office.crafting_categories = {"bureaucracy-registration", "bureaucratic-bootstrap", "resolution-handcraft"}
+field_office.icons = building_icons.field_office()
+field_office.crafting_categories = bureaucracy_categories.field_office()
 field_office.crafting_speed = 0.5
 field_office.module_slots = 0
-enable_machine_effects(field_office)
-field_office.localised_description = {"entity-description.field-office-no-working-hours"}
+field_office.quality_affects_module_slots = false
+field_office.allowed_effects = {}
+field_office.allowed_module_categories = nil
 field_office.collision_box = {{-1.2, -1.2}, {1.2, 1.2}}
 field_office.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
 field_office.energy_source = {
@@ -1005,8 +1137,9 @@ field_office.working_sound = {
 -- Transit Permit Chest: visible 1x1 chest auto-placed next to train stops
 local transit_permit_chest = table.deepcopy(data.raw["container"]["steel-chest"])
 transit_permit_chest.name = "transit-permit-chest"
-transit_permit_chest.icon = "__base__/graphics/icons/steel-chest.png"
-transit_permit_chest.icon_size = 64
+transit_permit_chest.icon = nil
+transit_permit_chest.icons = building_icons.transit_permit_chest()
+transit_permit_chest.icon_size = nil
 transit_permit_chest.flags = {"placeable-neutral", "not-deconstructable", "not-blueprintable", "not-upgradable", "placeable-off-grid"}
 transit_permit_chest.minable = nil
 transit_permit_chest.inventory_size = 1
@@ -1218,5 +1351,34 @@ add_entity(hired_biter_supply_chest)
 add_entity(paperwork_provider_chest)
 add_entity(paperwork_storage_chest)
 add_entity(paperwork_requester_chest)
+
+if space_age_enabled then
+  -- Field Offices borrow temporary labor from native enemy spawners, a workforce
+  -- that only exists on Nauvis. Do not allow placement where the office could
+  -- never authorize a craft.
+  planets.apply_planet_surface_conditions(field_office, "nauvis")
+
+  for _, entity in ipairs({
+    admin_station,
+    biter_station,
+    biterport,
+    capture_bureau,
+    resolution_office,
+    office_desk,
+    breakroom,
+    union_hq,
+    propaganda_distillery,
+  }) do
+    require_non_vacuum(entity)
+  end
+end
+
+if space_age_enabled then
+  add_entity(capture_bureau)
+end
+
+for _, entity in ipairs(entities) do
+  native_fluid_rotation.enable(entity)
+end
 
 data:extend(entities)

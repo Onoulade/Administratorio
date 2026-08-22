@@ -126,23 +126,7 @@ end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 
 local function load_locale_section(section_name)
-  local path = mod_root .. "locale/en/config.cfg"
-  local section = nil
-  local values = {}
-
-  for line in io.lines(path) do
-    local header = line:match("^%[([^%]]+)%]$")
-    if header then
-      section = header
-    elseif section == section_name then
-      local key, value = line:match("^([^=]+)=(.*)$")
-      if key then
-        values[key] = value
-      end
-    end
-  end
-
-  return values
+  return require("tests.locale_helpers").section(mod_root, "en", section_name)
 end
 
 local recipe_name_locale = load_locale_section("recipe-name")
@@ -161,8 +145,17 @@ dofile(mod_root .. "prototypes/recipe/economy.lua")
 dofile(mod_root .. "prototypes/recipe/resolution.lua")
 dofile(mod_root .. "prototypes/recipe/modules.lua")
 
+-- Mirror the recipe loader's post-pass that supplies the printer paper masks.
+require("prototypes.shared.printing_tints").apply(recipes)
+
 -- Load shared constants
 local shared = require("prototypes.shared")
+
+-- Mirror data.lua's recipe-ownership registration for this focused recipe
+-- fixture, which loads Administratorio recipe files directly.
+for recipe_name in pairs(recipes) do
+  shared.register_admin_recipe(recipe_name)
+end
 
 -------------------------------------------------------------------------------
 -- HELPERS
@@ -238,6 +231,38 @@ end
 -- =========================================================================
 -- PRINCIPLE 1: FORMS ARE THE CURRENCY OF AUTOMATION
 -- =========================================================================
+
+test("every printer recipe supplies a crafting-machine tint", function()
+  local printing_categories = {
+    ["printing"] = true,
+    ["printing-advanced"] = true,
+    ["printing-workorder"] = true,
+  }
+
+  for recipe_name, recipe in pairs(recipes) do
+    if printing_categories[recipe.category] then
+      local tint = recipe.crafting_machine_tint
+      assert_true(tint and tint.primary,
+        recipe_name .. " is missing the primary printer-paper tint")
+    end
+  end
+end)
+
+test("selected document families use distinct printer-paper colors", function()
+  local function tint_key(recipe_name)
+    local color = recipes[recipe_name].crafting_machine_tint.primary
+    return string.format("%.4f/%.4f/%.4f", color.r, color.g, color.b)
+  end
+
+  local approval = tint_key("blank-approval-production")
+  local directive = tint_key("blank-directive-production")
+  local construction = tint_key("construction-permit-printing")
+  local environmental = tint_key("copy-environmental-impact-report")
+
+  assert_false(approval == directive, "approval and directive paper colors must differ")
+  assert_false(directive == construction, "directive and construction paper colors must differ")
+  assert_false(construction == environmental, "construction and environmental paper colors must differ")
+end)
 
 test("shared.PAPERWORK_ITEMS contains all core forms", function()
   local expected = {
@@ -418,6 +443,7 @@ test("safety-waiver requires 2-step printing pipeline", function()
   assert_eq(print_step.category, "printing")
   assert_true(has_ingredient(print_step, "safety-waiver-draft"))
   assert_true(has_ingredient(print_step, "ink"))
+  assert_eq(get_result_amount(print_step, "safety-waiver"), 2)
 end)
 
 test("construction-permit requires 2-step printing pipeline", function()
@@ -431,6 +457,13 @@ test("construction-permit requires 2-step printing pipeline", function()
   assert_eq(print_step.category, "printing")
   assert_true(has_ingredient(print_step, "construction-permit-draft"))
   assert_true(has_ingredient(print_step, "ink"))
+  assert_eq(get_result_amount(print_step, "construction-permit"), 2)
+end)
+
+test("old petition approval recipes are removed", function()
+  assert_true(get_recipe("safety-waiver-approval") == nil, "safety approval should be removed")
+  assert_true(get_recipe("construction-permit-approval") == nil, "construction approval should be removed")
+  assert_true(get_recipe("radiological-work-order-approval") == nil, "radiological approval should be removed")
 end)
 
 test("management-approval-verbal requires 2-step pipeline (gossip + printing)", function()
@@ -671,10 +704,10 @@ test("T0 items: belts, cables, pipes use work-order", function()
   assert_eq(shared.get_required_form("iron-plate"), "work-order")
   assert_eq(shared.get_required_form("small-electric-pole"), "work-order")
   assert_eq(shared.get_required_form("burner-inserter"), "work-order")
-  assert_eq(shared.get_required_form("inserter"), "work-order")
 end)
 
 test("T1 items: inserters, radar, walls use safety-waiver", function()
+  assert_eq(shared.get_required_form("inserter"), "safety-waiver")
   assert_eq(shared.get_required_form("long-handed-inserter"), "safety-waiver")
   assert_eq(shared.get_required_form("fast-inserter"), "safety-waiver")
   assert_eq(shared.get_required_form("splitter"), "safety-waiver")
@@ -740,10 +773,10 @@ end)
 -- MACHINE OPERATION PAPERWORK
 -- =========================================================================
 
-test("refinery recipes do not require operating paperwork", function()
+test("refinery recipes: basic oil-processing is exempt, advanced ops require chemical paperwork", function()
   assert_eq(shared.get_operating_form({name = "oil-processing", category = "oil-processing"}), nil)
-  assert_eq(shared.get_operating_form({name = "advanced-oil-processing", category = "oil-processing"}), nil)
-  assert_eq(shared.get_operating_form({name = "coal-liquefaction", category = "oil-processing"}), nil)
+  assert_eq(shared.get_operating_form({name = "advanced-oil-processing", category = "oil-processing"}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "coal-liquefaction", category = "oil-processing"}), "chemical-handling-work-order")
 end)
 
 test("chemistry recipes use chemical-handling-work-order", function()
@@ -829,7 +862,6 @@ test("electric furnace compacts rubble without a carbon offset certificate", fun
   assert_nil(r.factoriopedia_alternative,
     "electric rubble should link to its Factoriopedia alternative only after canonical renaming")
 end)
-
 test("starter furnace recipes are enabled from start", function()
   local starter_smelting_recipes = {
     "iron-plate-batch", "copper-plate-batch", "stone-brick-batch",
@@ -849,7 +881,6 @@ test("steel-plate-batch is locked behind steel-processing", function()
   assert_eq(r.category, "smelting-basic")
   assert_eq(r.enabled, false, "steel-plate-batch should not be enabled from start")
 end)
-
 test("charcoal-production requires carbon offset", function()
   local r = get_recipe("charcoal-production")
   assert_true(r ~= nil)
@@ -1055,7 +1086,12 @@ test("treasury-bond requires taxpayer-money at the office desk", function()
   local r = get_recipe("treasury-bond-production")
   assert_eq(r.category, "bureaucracy-registration")
   assert_true(has_ingredient(r, "taxpayer-money"))
-  assert_eq(get_ingredient_amount(r, "taxpayer-money"), 10)
+  assert_eq(get_ingredient_amount(r, "taxpayer-money"), 50)
+  assert_eq(r.auto_recycle, false, "treasury bonds must not recycle back into loose taxpayer money")
+end)
+
+test("rocket-silo financing uses grants instead of a direct taxpayer-money surcharge", function()
+  assert_nil(shared.TAXPAYER_MONEY_COSTS["rocket-silo"])
 end)
 
 test("rideable biter uses paperwork and coffee in its assignment recipe", function()
@@ -1098,7 +1134,22 @@ test("government-grant requires treasury-bond and union negotiation", function()
   local r = get_recipe("government-grant-production")
   assert_eq(r.category, "union-negotiation")
   assert_true(has_ingredient(r, "treasury-bond"))
+  assert_eq(get_ingredient_amount(r, "treasury-bond"), 10)
   assert_true(has_ingredient(r, "management-approval-verbal"))
+end)
+
+test("repeatable policy and casework use bonds instead of megaproject grants", function()
+  for _, recipe_name in ipairs({
+    "policy-production",
+    "regulation-production",
+    "case-unemployment",
+    "hired-biter-capsule",
+    "overtime-exemption",
+  }) do
+    local r = get_recipe(recipe_name)
+    assert_true(has_ingredient(r, "treasury-bond"), recipe_name .. " should consume treasury bonds")
+    assert_false(has_ingredient(r, "government-grant"), recipe_name .. " should not consume government grants")
+  end
 end)
 
 test("specialist training bootstraps before the buildings that consume specialists", function()
@@ -1175,6 +1226,7 @@ test("slush-fund-production uses propaganda-distillery", function()
   local r = get_recipe("slush-fund-production")
   assert_eq(r.category, "propaganda-distillery")
   assert_true(has_ingredient(r, "treasury-bond"))
+  assert_eq(get_ingredient_amount(r, "treasury-bond"), 1)
 end)
 
 -- =========================================================================
@@ -1261,10 +1313,16 @@ test("is_admin_recipe returns false for vanilla recipes", function()
   end
 end)
 
-test("is_admin_recipe detects resolution recipes", function()
+test("is_admin_recipe detects explicitly registered resolution recipes", function()
   local resolution = {"filing-landscape", "case-smog", "noise-final", "unemployment-final"}
   for _, name in ipairs(resolution) do
     assert_true(shared.is_admin_recipe(name), name .. " not detected as admin")
+  end
+end)
+
+test("is_admin_recipe does not classify third-party recipes by name pattern", function()
+  for _, name in ipairs({"advanced-circuit-production", "third-party-basic-excuse-production", "outside-permit"}) do
+    assert_false(shared.is_admin_recipe(name), name .. " should not be treated as an admin recipe")
   end
 end)
 
@@ -1310,6 +1368,10 @@ test("direct draft-to-work-order recipes use printing-workorder category", funct
     assert_true(has_ingredient(r, "work-order"), name .. " missing work-order")
     assert_true(has_ingredient(r, "ink"), name .. " missing ink")
   end
+  assert_true(has_ingredient(get_recipe("safety-work-order-printing"), "safety-waiver"), "safety shortcut should require approved safety waiver")
+  assert_true(not has_ingredient(get_recipe("safety-work-order-printing"), "safety-waiver-draft"), "safety shortcut should not use draft")
+  assert_true(has_ingredient(get_recipe("construction-work-order-printing"), "construction-permit"), "construction shortcut should require approved permit")
+  assert_true(not has_ingredient(get_recipe("construction-work-order-printing"), "construction-permit-draft"), "construction shortcut should not use draft")
 end)
 
 test("only draft-backed work-order printing produces 2x output", function()
@@ -1361,7 +1423,8 @@ test("overtime-exemption requires union-negotiation category", function()
   local r = get_recipe("overtime-exemption")
   assert_eq(r.category, "union-negotiation")
   assert_true(has_ingredient(r, "processing-unit"))
-  assert_true(has_ingredient(r, "government-grant"))
+  assert_eq(get_ingredient_amount(r, "treasury-bond"), 4)
+  assert_false(has_ingredient(r, "government-grant"))
   assert_true(has_ingredient(r, "management-approval-written"))
   assert_false(has_ingredient(r, "taxpayer-money"))
   assert_false(has_ingredient(r, "regulation"))
@@ -1424,6 +1487,18 @@ test("pneumatic intake recipes accept every transportable item without outputs",
     assert_eq(#recipe.ingredients, 1, recipe.name .. " should have one ingredient")
     assert_eq(recipe.ingredients[1].name, item_name, recipe.name .. " wrong ingredient")
     assert_eq(#recipe.results, 0, recipe.name .. " should not output anything")
+  end
+end)
+
+test("data-stage and runtime pneumatic payload sets stay identical", function()
+  local runtime_items = require("prototypes.shared.pneumatic_items").names
+  local runtime_set = {}
+  for _, item_name in ipairs(runtime_items) do
+    runtime_set[item_name] = true
+    assert_true(shared.PNEUMATIC_ITEMS[item_name], item_name .. " is missing from data-stage pneumatic items")
+  end
+  for item_name in pairs(shared.PNEUMATIC_ITEMS) do
+    assert_true(runtime_set[item_name], item_name .. " is missing from runtime pneumatic items")
   end
 end)
 
@@ -1613,11 +1688,10 @@ local function check_pre_electricity_chain(item_name, visited, path)
   return nil
 end
 
-test("boiler bootstrap: safety-waiver chain requires no electricity", function()
-  -- safety-waiver is the form required to handcraft a boiler or steam-engine
+test("safety-waiver remains pre-electricity craftable through direct printing", function()
   local visited = {}
   local err = check_pre_electricity_chain("safety-waiver", visited, "safety-waiver")
-  assert_true(err == nil, "DEADLOCK: " .. (err or ""))
+  assert_true(err == nil, "safety-waiver should stay pre-electricity craftable")
 end)
 
 test("boiler bootstrap: carbon-offset-certificate-basic chain requires no electricity", function()
@@ -1643,9 +1717,7 @@ test("boiler bootstrap: all vanilla boiler/steam-engine ingredients are pre-elec
 end)
 
 test("basic-excuse is handcraftable (bureaucratic-bootstrap category)", function()
-  -- basic-excuse is a critical bootstrap item: safety-waiver-draft needs it,
-  -- and safety-waiver is required for boiler/steam-engine. If this recipe
-  -- requires an electric machine, players cannot bootstrap power.
+  -- basic-excuse remains a critical bootstrap item for early draft paperwork.
   local r = get_recipe("basic-excuse-production")
   assert_true(r ~= nil, "basic-excuse-production missing")
   assert_eq(r.category, "bureaucratic-bootstrap",
