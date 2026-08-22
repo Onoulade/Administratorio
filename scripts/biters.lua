@@ -1061,7 +1061,7 @@ local function finalize_pathfinding_biter_arrival(info, desk, source)
     zones.release_slot(desk.unit_number, b_id)
     unindex_biter_from_desk(desk.unit_number, b_id)
     untrack_waiting_biter(b_id, info)
-    M.trigger_immediate_protest(entity, entity.surface, info)
+    M.trigger_immediate_protest(entity, entity.surface, info, {allow_obstacle_breach = false})
     return true
   end
   normalize_case_progress(info)
@@ -1092,7 +1092,7 @@ local function finalize_pathfinding_biter_arrival(info, desk, source)
     zones.release_slot(desk.unit_number, b_id)
     unindex_biter_from_desk(desk.unit_number, b_id)
     untrack_waiting_biter(b_id, info)
-    M.trigger_immediate_protest(entity, entity.surface, info)
+    M.trigger_immediate_protest(entity, entity.surface, info, {allow_obstacle_breach = false})
     return true
   end
 
@@ -1422,7 +1422,7 @@ function M.send_biter_to_station_with_targets(entity, targets, opts)
     if pentapods.is_pentapod(entity.name) then
       return
     end
-    M.trigger_immediate_protest(entity, entity.surface)
+    M.trigger_immediate_protest(entity, entity.surface, nil, {allow_obstacle_breach = false})
     return
   end
   for _, desk in ipairs(preferred_targets) do
@@ -1454,10 +1454,10 @@ function M.send_biter_to_station_with_targets(entity, targets, opts)
     track_waiting_biter(entity.unit_number, info)
     if not route_biter_to_desk(info, entity, best, {initial_frustration = initial_frustration}) then
       untrack_waiting_biter(entity.unit_number, info)
-      M.trigger_immediate_protest(entity, entity.surface, info)
+      M.trigger_immediate_protest(entity, entity.surface, info, {allow_obstacle_breach = false})
     end
   else
-    M.trigger_immediate_protest(entity, entity.surface)
+    M.trigger_immediate_protest(entity, entity.surface, nil, {allow_obstacle_breach = false})
   end
 end
 
@@ -1485,7 +1485,7 @@ local function enforce_desk_capacity_limit(desk)
     zones.release_slot(desk_id, entry.b_id)
     unindex_biter_from_desk(desk_id, entry.b_id)
     untrack_waiting_biter(entry.b_id, entry.info)
-    M.trigger_immediate_protest(entry.info.entity, desk.surface, entry.info)
+    M.trigger_immediate_protest(entry.info.entity, desk.surface, entry.info, {allow_obstacle_breach = false})
   end
   mark_desk_circuit_dirty(desk_id)
 end
@@ -1578,7 +1578,7 @@ function M.process_walk_in_registration(surface, desks, runtime_profile)
               remaining_slots = remaining_slots - 1
             else
               untrack_waiting_biter(biter.unit_number, info)
-              M.trigger_immediate_protest(biter, surface, info)
+              M.trigger_immediate_protest(biter, surface, info, {allow_obstacle_breach = false})
             end
           end
         end

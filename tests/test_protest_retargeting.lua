@@ -1054,6 +1054,41 @@ test("preserved immediate protest attacks the nearest eligible blocking building
   assert_eq(entity.force, game.forces.neutral, "route resumption should restore the managed ceasefire force")
 end)
 
+test("a full destination never authorizes a soft-mode building breach", function()
+  local ctx = new_test_context(false)
+  local target = new_target(ctx.surface, 299, 20, 20)
+  local obstacle = new_obstacle(ctx.surface, 298, 6, 6, "furnace", "stone-furnace")
+  ctx.set_protest_targets({target})
+  ctx.set_protest_obstacles({obstacle})
+
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 4, y = 4},
+    force = "player",
+  }
+  assert_true(ctx.controller.trigger_immediate_protest(
+    entity,
+    ctx.surface,
+    nil,
+    {preserve_entity = true, allow_obstacle_breach = false}
+  ), "capacity-rejected biter should remain managed as a protester")
+
+  ctx.controller.on_script_path_request_finished{
+    id = ctx.get_pending_request_id(),
+    path = nil,
+  }
+
+  local info = storage.waiting_biters[entity.unit_number]
+  assert_eq(ctx.get_attack_command_count(), 0,
+    "a full desk must not turn path validation failure into a building attack")
+  assert_true(info.protest_obstacle_attacking ~= true,
+    "capacity rejection must remain distinct from physical obstruction breach mode")
+  assert_true(info.protest_path_retry_deferred == true,
+    "capacity-rejected protester should wait for a bounded retry")
+  assert_eq(entity.force, game.forces.neutral,
+    "capacity rejection must keep the biter on the managed ceasefire force")
+end)
+
 test("normal-load path failure tries the next historic protest candidate when no obstruction exists", function()
   local ctx = new_test_context()
   local first_target = new_target(ctx.surface, 107, 20, 20)
