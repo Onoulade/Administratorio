@@ -1,4 +1,192 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.1
+Date: 2026-08-24
+  Features:
+    - show nearby nest workforce
+    - split relocation cannon into emitter and receiver
+    - rework interplanetary trunk into a shared claimable pool
+    - move inference tokens onto optic fibre only
+    - add the automation grievance thread
+    - add the involuntary relocation cannon
+    - route biter eggs through Nauvis-trained couriers
+    - add the synthetic personnel bureau
+    - add the unstaffed operations waiver
+    - add AI servers and the slop economy
+    - add the interplanetary tube network
+    - delete the fax network
+    - retheme promethium as administratorium
+    - allow toggling hard mode and belt/inserter protests mid-game
+    - add achievement for triggering first protest
+    - drive per-building animation speed from generated table
+    - isolate planetary bureaucracy
+    - rework orbital administration
+    - organize administrative item groups
+    - expand space-age guidance and achievements
+    - add managerial briefing workflow
+    - add administrative certification
+    - add orbital infrastructure permits
+    - rework manager catapult asteroid handling
+    - rework asteroid travel with manager catapult
+    - overhaul manager-powered asteroid defense
+    - overhaul planetary administration progression
+  Bugfixes:
+    - print combined work orders from drafts
+    - correct inaccurate claims in tips-and-tricks entries
+    - stop freezing workers on an unreachable building
+    - re-unlock coal-synthesis off carbon-fiber, not rocket-turret
+    - go through feature_flags for the assembling-category gate
+    - reuse a single entity-prototype-exists helper
+    - guard entity registry rebuilds against Space Age being disabled
+    - move fibre ports inside their collision boxes
+    - cap furnace source inventories at one slot
+    - give no-output recipes an explicit icon
+    - make administrative icons coherent
+    - operate overnight without modules
+    - scan nests by distance instead of engine scan order
+    - fall through to other nests when nearest is full
+    - correct administrative science pack color from gray to pink
+    - remove achievement for researching greenhouse tech
+    - guard invalid Factorio API handles
+    - strengthen generated building shadows
+    - restore reconciled batching and pneumatic quality
+    - restore reconciled prototype progression
+    - preserve formation assets and refresh breakroom
+    - remove field-agent paperwork recipes
+    - protect orbital employee launches
+    - remove infrastructure recipe overlays
+    - simplify recipe bulk badges
+    - preserve pneumatic item quality
+    - retarget deviation arrays by distance
+  Balancing:
+    - bar the Greenhouse from Vulcanus and Aquilo
+    - retune AI Server to a flat 1 inference-token/s
+    - trim orbital paper/ink recipe rates below planetary equivalents
+    - rework the waiver, trunk, fibre, bureau and cannon
+    - narrow planetary paperwork exceptions
+    - extend and accelerate catapults
+    - assign administratorio cargo weights
+    - narrow planetary escape routes
+    - replace laundering with tourism revenue
+  Gui:
+    - reorganize administrative tabs and fix Space Age load crash
+  Graphics:
+    - add dedicated item icon
+    - add receiver sprite and fix emitter sprite bounds
+    - new building art and split the AI server in two
+    - use Moshine's optic fibre sprites
+    - use the new unstaffed operations waiver icons
+    - align unlock icons with assets
+    - refresh layered sprites and recipe tints
+    - align building sprites to footprints
+  Locale:
+    - finish item-name paren cleanup and fill 206 missing keys
+    - complete tips-and-tricks translation coverage
+    - sync translated tips with the English accuracy fixes
+    - translate remaining item/recipe/technology keys
+    - fill entity-name/description gaps for orbital buildings
+    - describe the trunk pool and the emitter/receiver split
+  Docs:
+    - mark lava/lightning depth and arbitration upkeep as intentional
+    - correct README claim that Space Age graphics are outstanding
+    - correct doctrine invalidated by deleting the fax network
+    - record the space age automation plan
+  Internal:
+    - add animation source data
+    - restore 0.6.0 changelog
+    - cover rebuild_registry() with Space Age disabled
+    - remove orphaned assets and dead code
+    - reconcile with pre-rebuild space-age content
+    - cover the space age automation pass
+    - remove obsolete repository artifacts
+  Changes:
+    - Merge branch 'space-age'
+    - Fix admin footprint reservations across surfaces
+    - Add complaint item locator debug UI
+    - Remove safety waivers from regular inserters
+    - Space age
+    - 0.6.0 - Space Age
+    - Prevent full desks from provoking biter attacks
+    - Balance pentapod spore attraction
+    - Allow native-fluid admin machines to rotate
+    - Balance orbital administration buildings
+    - Improve cross-planet player guidance
+    - Update to 0.6.3
+    - Merge branch 'main' into space-age-clean
+    - add dedicated working sounds for orbital-tier buildings
+    - orbital employment cannon is now a catapult
+    - Fix interplanetary terminus shadow alignment
+    - Fix Space Age automation integration
+    - isolate the space age automation systems from each other
+    - remove the automation complaint family
+    - Change version to 0.6.2
+    - rebalance rocket cargo weights
+    - tune building animation visuals and speeds
+    - Fix Space Age progression and orbital science
+    - Add organized Space Age tips and tricks
+    - Add simulations and unlock triggers for tips
+    - Work on animations
+    - Add shadows to admin and space age entities
+    - Tighten tech prerequisites and gate space-age buildings
+    - classify paperwork batch sizes
+    - Release Space Age first-alpha support and bump version to 0.6.0
+    - split late recipe gating passes
+    - harden recipe regulation and shared rules
+    - Align Space Age planning docs with vanilla restrictions
+    - Unify rocket silo finance around treasury bonds and grants
+    - Refactor administratorio data and UI flows
+    - Refactor admin interfaces and trim redundant code
+    - Fix post-rebase Space Age gating tests
+    - Guard fax registry rebuild against missing prototypes
+    - Fix Capture Bureau cleanup on removal
+    - Expand scrap recycling and remove Fulgora toner deposit
+    - Increase capture bureau spore upkeep rate
+    - Scale pentapod egg payouts by size
+    - Extract pentapod bait handling into a dedicated module
+    - Floor money for eggs
+    - Allow hatched pentapods to attack player buildings
+    - Remove petition counter plumbing and add capture bureau spores
+    - Refine Space Age paperwork gating and platform bootstrap
+    - Refine Space Age paperwork gating and compatibility notes
+    - Gate petrochemical permit behind Space Age
+    - Add biter-government permit approvals and Petition Counter
+    - Remove form liquifier and solidifier recipes
+    - Clarify Space Age workforce surfaces and notary logistics
+    - Fix Space Age validation and docs
+    - Rework fax emitter UI
+    - Rework fax receiver UI and add color-aware reconstruction
+    - Add paired ink forms and renewable dubious data recipe
+    - Gate bicolored tourism forms by matching planet sciences
+    - Public transportation
+    - Fix Space Age resource planet registration and sorting
+    - Overhaul territorial arbitration post and restrict admin-station to Nauvis
+    - Space-tourism
+    - Add orbital admin station and block regular offices in space
+    - Keep all Space Age buildings unbatched
+    - Add missing promise icon definition
+    - Align space age plans with implemented fax and worker rules
+    - Implement Vulcanus territorial arbitration and early notary tech
+    - Add fax emitter and queue capacity support
+    - Document Space Age solver verification results
+    - Implement Aquilo multicolor gating and update Space Age docs
+    - Document Space Age progress and holmium magenta gating
+    - Update Space Age plans for Aquilo and Gleba progress
+    - Refine Space Age plans for Gleba and Fulgora
+    - Implement Gleba conciliation and offworld bio paperwork
+    - Fix Union HQ grant deadlock and add strict provider checks
+    - Expand Vulcanus local bureaucracy production paths
+    - Rework planet escape analysis for real Space Age progression
+    - Enable early Space Age compatibility and Vulcanus certification
+    - Add trajectory compliance arrays for asteroid deviation
+    - Add expensive Nauvis biter job offers
+    - Wire workforce roles into Space Age progression
+    - Add Space Age workforce formation and specialist roles
+    - Add worker-biter gating for Space Age building exemptions
+    - Add Space Age compatibility scaffolding with chromatic printer baseline
+    - Add professions plan and offworld reactor budget
+    - Define cash-light Space Age finance rules
+    - Expand Space Age planning docs for CMY planets and faxing
+    - Add Space Age compatibility design plan
+---------------------------------------------------------------------------------------------------
 Version: 0.6.0
 Date: 2026-08-21
   Features:
