@@ -14,6 +14,7 @@ local pentapods = require("scripts.pentapods")
 local trains = require("scripts.trains")
 local working_hours = require("scripts.working_hours")
 local field_office = require("scripts.field_office")
+local field_office_hover = require("scripts.field_office_hover")
 local planetary_unlocks = require("scripts.planetary_unlocks")
 local biter_station = require("scripts.biter_station")
 local biter_station_hover = require("scripts.biter_station_hover")
@@ -907,6 +908,7 @@ local function on_selected_entity_changed(event)
 
   biter_station_hover.clear(event.player_index)
   biterport_hover.clear(event.player_index)
+  field_office_hover.clear(player)
 
   local entity = player.selected
   if entity and entity.valid and biter_station.is_station(entity) then
@@ -916,6 +918,7 @@ local function on_selected_entity_changed(event)
   elseif entity and entity.valid and biterport.is_port(entity) then
     biterport_hover.show_port(player, entity)
   end
+  field_office_hover.refresh(player)
 
   if entity and entity.valid and entity.type == "unit" and storage.waiting_biters[entity.unit_number] then
     pneumatic.destroy_tube_info_gui(player)
@@ -934,6 +937,7 @@ end
 local function on_player_left_game(event)
   biter_station_hover.clear(event.player_index)
   biterport_hover.clear(event.player_index)
+  field_office_hover.clear(event.player_index)
   field_office.clear_placement_preview(event.player_index)
   runtime_debug.close_complaint_locator(event.player_index)
 end
@@ -2190,12 +2194,19 @@ end
 -- MAIN LOOP (Runs every 1 second)
 -- ============================================================
 
-local function on_protest_pacing_tick(_event)
+local function on_protest_pacing_tick(event)
   runtime_debug.run_profiled_external_sections("protest_pacing", function()
     for _, surface in pairs(game.surfaces) do
       biters.process_protest_pacing(surface)
     end
     refresh_selected_biter_info_guis()
+    if event.tick % 60 == 0 then
+      for _, player in pairs(game.connected_players) do
+        if field_office_hover.is_open(player) then
+          field_office_hover.refresh(player)
+        end
+      end
+    end
   end)
 end
 
