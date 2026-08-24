@@ -1,0 +1,212 @@
+{
+  "name": "administrative-space-station",
+  "source": "graphics/entities/space-age/administrative-space-station.png",
+  "output": "graphics/entities/space-age/administrative-space-station-animation.png",
+  "size": [
+    192,
+    192
+  ],
+  "motions": [
+    {
+      "type": "signal",
+      "origin": [
+        34.2,
+        10.7
+      ],
+      "travel": 18,
+      "count": 1,
+      "alpha": 158,
+      "color": [
+        102,
+        201,
+        255
+      ],
+      "start_angle": 205,
+      "end_angle": 335
+    },
+    {
+      "type": "signal",
+      "origin": [
+        34.97,
+        136.46
+      ],
+      "travel": 60,
+      "count": 1,
+      "alpha": 147,
+      "color": [
+        213,
+        132,
+        0
+      ],
+      "start_angle": 205,
+      "end_angle": 335,
+      "phase": 1
+    },
+    {
+      "type": "sweep",
+      "bbox": [
+        74,
+        129,
+        113.14,
+        148.46
+      ],
+      "polygon": [
+        [
+          76,
+          131
+        ],
+        [
+          117,
+          131
+        ],
+        [
+          117,
+          147
+        ],
+        [
+          76,
+          147
+        ]
+      ],
+      "axis": "x",
+      "color": [
+        82,
+        188,
+        255
+      ],
+      "alpha": 80,
+      "width": 2,
+      "blur": 1.5
+    },
+    {
+      "type": "chase",
+      "points": [
+        [
+          149.83,
+          51.43,
+          63,
+          160,
+          255
+        ],
+        [
+          141.6,
+          153.26,
+          63,
+          160,
+          255
+        ],
+        [
+          43.89,
+          160.11,
+          63,
+          160,
+          255
+        ]
+      ],
+      "radius": [
+        3,
+        4
+      ],
+      "alpha": 100,
+      "blur": 2
+    },
+    {
+      "type": "vibration",
+      "polygon": [
+        [
+          8.91,
+          71.66
+        ],
+        [
+          16.11,
+          63.43
+        ],
+        [
+          25.71,
+          63.43
+        ],
+        [
+          30.86,
+          69.6
+        ],
+        [
+          31.2,
+          115.89
+        ],
+        [
+          8.91,
+          116.23
+        ]
+      ],
+      "pivot": [
+        18.17,
+        88.11
+      ],
+      "amplitude": [
+        0,
+        -0.4
+      ],
+      "cycles_per_loop": 2,
+      "waveform": "sine",
+      "phase": 0,
+      "y_phase_offset": 0,
+      "rotation_degrees": 0,
+      "rotation_phase_offset": 0,
+      "feather": 0.65,
+      "background_mode": "source",
+      "cavity_brightness": 0.48,
+      "cavity_blur": 1.2,
+      "supersample": 6
+    },
+    {
+      "type": "vibration",
+      "polygon": [
+        [
+          160.79,
+          80.91
+        ],
+        [
+          167.99,
+          72.68
+        ],
+        [
+          177.59,
+          72.68
+        ],
+        [
+          182.74,
+          78.85
+        ],
+        [
+          183.08,
+          125.14
+        ],
+        [
+          160.79,
+          125.48
+        ]
+      ],
+      "pivot": [
+        170.05,
+        97.36
+      ],
+      "amplitude": [
+        0,
+        -0.4
+      ],
+      "cycles_per_loop": 2,
+      "waveform": "sine",
+      "phase": 0.505,
+      "y_phase_offset": 0,
+      "rotation_degrees": 0,
+      "rotation_phase_offset": 0,
+      "feather": 0.65,
+      "background_mode": "source",
+      "cavity_brightness": 0.48,
+      "cavity_blur": 1.2,
+      "supersample": 6
+    }
+  ],
+  "animation_speed": 0.15,
+  "crafting_speed": 3.5
+}

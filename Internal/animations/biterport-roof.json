@@ -1,0 +1,121 @@
+{
+  "name": "biterport-roof",
+  "source": "graphics/entities/biterport/biterport-roof.png",
+  "output": "graphics/entities/biterport/biterport-roof-animation.png",
+  "size": [
+    480,
+    454
+  ],
+  "motions": [
+    {
+      "type": "signal",
+      "origin": [
+        368.57,
+        17.14
+      ],
+      "travel": 28,
+      "count": 3,
+      "alpha": 62,
+      "color": [
+        255,
+        112,
+        105
+      ],
+      "start_angle": 195,
+      "end_angle": 345,
+      "width": 2
+    },
+    {
+      "type": "surface_scan",
+      "polygon": [
+        [
+          114,
+          299.91
+        ],
+        [
+          372.86,
+          298.2
+        ],
+        [
+          373.71,
+          326.48
+        ],
+        [
+          114,
+          328.19
+        ]
+      ],
+      "axis": "x",
+      "color": [
+        213,
+        132,
+        0
+      ],
+      "alpha": 77,
+      "width": 3,
+      "blur": 2.5,
+      "phase": 0.2
+    },
+    {
+      "type": "chase",
+      "points": [
+        [
+          14.29,
+          271.43,
+          255,
+          198,
+          38
+        ],
+        [
+          69.14,
+          290.29,
+          255,
+          198,
+          38
+        ],
+        [
+          241.14,
+          289.71,
+          255,
+          198,
+          38
+        ],
+        [
+          413.71,
+          290.86,
+          255,
+          198,
+          38
+        ],
+        [
+          466.86,
+          270.29,
+          255,
+          198,
+          38
+        ]
+      ],
+      "radius": [
+        6,
+        6
+      ],
+      "alpha": 110,
+      "blur": 3
+    },
+    {
+      "type": "steam",
+      "origin": [
+        90.29,
+        98.86
+      ],
+      "rise": 54,
+      "drift": 15,
+      "count": 23,
+      "radius": 3,
+      "alpha": 184,
+      "blur": 2.5
+    }
+  ],
+  "animation_speed": 0.19,
+  "crafting_speed": 1
+}

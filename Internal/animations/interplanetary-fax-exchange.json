@@ -1,0 +1,189 @@
+{
+  "name": "interplanetary-fax-exchange",
+  "source": "graphics/entities/space-age/interplanetary-fax-exchange.png",
+  "output": "graphics/entities/space-age/interplanetary-fax-exchange-animation.png",
+  "size": [
+    192,
+    192
+  ],
+  "motions": [
+    {
+      "type": "signal",
+      "origin": [
+        43.2,
+        21.26
+      ],
+      "travel": 30,
+      "count": 2,
+      "alpha": 76,
+      "color": [
+        91,
+        195,
+        255
+      ],
+      "start_angle": 200,
+      "end_angle": 340
+    },
+    {
+      "type": "surface_scan",
+      "polygon": [
+        [
+          44.57,
+          79.89
+        ],
+        [
+          120,
+          79.89
+        ],
+        [
+          120,
+          99.09
+        ],
+        [
+          44.91,
+          97.71
+        ]
+      ],
+      "axis": "y",
+      "color": [
+        229,
+        230,
+        222
+      ],
+      "alpha": 58,
+      "width": 3,
+      "blur": 1.2,
+      "phase": 0.2
+    },
+    {
+      "type": "surface_scan",
+      "polygon": [
+        [
+          47.66,
+          124.46
+        ],
+        [
+          116.91,
+          124.46
+        ],
+        [
+          117.26,
+          141.6
+        ],
+        [
+          46.97,
+          142.29
+        ]
+      ],
+      "axis": "y",
+      "color": [
+        229,
+        230,
+        222
+      ],
+      "alpha": 58,
+      "width": 3,
+      "blur": 1.2,
+      "phase": 0.7
+    },
+    {
+      "type": "chase",
+      "points": [
+        [
+          19.54,
+          126.86,
+          65,
+          182,
+          255
+        ],
+        [
+          19.2,
+          149.14,
+          65,
+          182,
+          255
+        ],
+        [
+          138.51,
+          52.46,
+          65,
+          182,
+          255
+        ],
+        [
+          165.94,
+          52.11,
+          65,
+          182,
+          255
+        ]
+      ],
+      "radius": [
+        4,
+        5
+      ],
+      "alpha": 105,
+      "blur": 2.5
+    },
+    {
+      "type": "pulse",
+      "center": [
+        151.2,
+        148.46
+      ],
+      "radius": [
+        12.69,
+        6
+      ],
+      "color": [
+        187,
+        255,
+        52
+      ],
+      "alpha": 110,
+      "blur": 4
+    },
+    {
+      "type": "vibration",
+      "polygon": [
+        [
+          46.86,
+          124.8
+        ],
+        [
+          116.34,
+          124.8
+        ],
+        [
+          116.34,
+          140.11
+        ],
+        [
+          46.86,
+          140.11
+        ]
+      ],
+      "pivot": [
+        81.6,
+        132.34
+      ],
+      "amplitude": [
+        0.69,
+        0
+      ],
+      "cycles_per_loop": 3,
+      "waveform": "motor",
+      "phase": 0,
+      "y_phase_offset": 0,
+      "rotation_degrees": 0.25,
+      "rotation_phase_offset": 0,
+      "feather": 0.65,
+      "background_mode": "source",
+      "cavity_brightness": 0.48,
+      "cavity_blur": 1.2,
+      "supersample": 6
+    }
+  ],
+  "animation_speed": 0.22,
+  "crafting_speed": 1
+}

@@ -1,0 +1,195 @@
+{
+  "name": "territorial-arbitration-post",
+  "source": "graphics/entities/space-age/territorial-arbitration-post.png",
+  "output": "graphics/entities/space-age/territorial-arbitration-post-animation.png",
+  "size": [
+    448,
+    448
+  ],
+  "motions": [
+    {
+      "type": "signal",
+      "origin": [
+        94.4,
+        90.67
+      ],
+      "travel": 28,
+      "count": 2,
+      "alpha": 62,
+      "color": [
+        109,
+        205,
+        255
+      ],
+      "start_angle": 205,
+      "end_angle": 335,
+      "width": 2
+    },
+    {
+      "type": "signal",
+      "origin": [
+        283.8,
+        41.6
+      ],
+      "travel": 24,
+      "count": 2,
+      "alpha": 58,
+      "color": [
+        255,
+        188,
+        68
+      ],
+      "start_angle": 195,
+      "end_angle": 345,
+      "width": 2,
+      "phase": 0.3
+    },
+    {
+      "type": "pulse",
+      "center": [
+        294.4,
+        282.4
+      ],
+      "radius": [
+        58.4,
+        32
+      ],
+      "color": [
+        255,
+        190,
+        49
+      ],
+      "alpha": 45,
+      "blur": 9
+    },
+    {
+      "type": "chase",
+      "points": [
+        [
+          66.4,
+          104,
+          255,
+          167,
+          62
+        ],
+        [
+          380.8,
+          103.2,
+          255,
+          167,
+          62
+        ],
+        [
+          64,
+          316.8,
+          255,
+          167,
+          62
+        ],
+        [
+          380.8,
+          316.8,
+          255,
+          167,
+          62
+        ]
+      ],
+      "radius": [
+        7,
+        7
+      ],
+      "alpha": 100,
+      "blur": 4
+    },
+    {
+      "type": "vibration",
+      "polygon": [
+        [
+          225.83,
+          250.51
+        ],
+        [
+          362.06,
+          251.43
+        ],
+        [
+          361.6,
+          310.4
+        ],
+        [
+          225.83,
+          309.94
+        ]
+      ],
+      "pivot": [
+        293.94,
+        304.46
+      ],
+      "amplitude": [
+        0,
+        0.1
+      ],
+      "cycles_per_loop": 2,
+      "waveform": "motor",
+      "phase": 0,
+      "y_phase_offset": 0,
+      "rotation_degrees": 0.25,
+      "rotation_phase_offset": 0,
+      "feather": 0.65,
+      "background_mode": "source",
+      "cavity_brightness": 0.48,
+      "cavity_blur": 1.2,
+      "supersample": 6
+    },
+    {
+      "type": "vibration",
+      "polygon": [
+        [
+          226.29,
+          122.97
+        ],
+        [
+          241.37,
+          116.57
+        ],
+        [
+          314.06,
+          116.11
+        ],
+        [
+          330.51,
+          123.89
+        ],
+        [
+          330.06,
+          186.06
+        ],
+        [
+          226.29,
+          184.23
+        ]
+      ],
+      "pivot": [
+        277.03,
+        177.83
+      ],
+      "amplitude": [
+        0,
+        0.1
+      ],
+      "cycles_per_loop": 3,
+      "waveform": "motor",
+      "phase": 0.615,
+      "y_phase_offset": 0,
+      "rotation_degrees": 0.25,
+      "rotation_phase_offset": 0,
+      "feather": 0.65,
+      "background_mode": "source",
+      "cavity_brightness": 0.48,
+      "cavity_blur": 1.2,
+      "supersample": 6
+    }
+  ],
+  "animation_speed": 0.25,
+  "crafting_speed": 1
+}

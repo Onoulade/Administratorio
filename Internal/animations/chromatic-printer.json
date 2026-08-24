@@ -1,0 +1,431 @@
+{
+  "name": "chromatic-printer",
+  "source": "graphics/entities/space-age/chromatic-printer.png",
+  "output": "graphics/entities/space-age/chromatic-printer-animation.png",
+  "size": [
+    192,
+    192
+  ],
+  "motions": [
+    {
+      "type": "chase",
+      "points": [
+        [
+          12.69,
+          73.37,
+          44,
+          217,
+          230
+        ],
+        [
+          13.03,
+          89.83,
+          227,
+          56,
+          196
+        ],
+        [
+          12.34,
+          106.97,
+          255,
+          206,
+          52
+        ],
+        [
+          173.14,
+          62.06,
+          44,
+          217,
+          230
+        ],
+        [
+          173.49,
+          78.51,
+          227,
+          56,
+          196
+        ],
+        [
+          173.49,
+          95.31,
+          255,
+          206,
+          52
+        ]
+      ],
+      "radius": [
+        5,
+        7
+      ],
+      "alpha": 125,
+      "blur": 3
+    },
+    {
+      "type": "chase",
+      "points": [
+        [
+          87.77,
+          148.8,
+          70,
+          230,
+          160
+        ],
+        [
+          104.91,
+          148.11,
+          255,
+          196,
+          70
+        ],
+        [
+          96,
+          148.11,
+          255,
+          80,
+          70
+        ]
+      ],
+      "radius": [
+        3,
+        3
+      ],
+      "alpha": 135,
+      "blur": 1.5
+    },
+    {
+      "type": "gauge",
+      "label": "Gauge needle",
+      "center": [
+        145.51,
+        106.15
+      ],
+      "plane_basis": [
+        [
+          3.84,
+          0.14
+        ],
+        [
+          0,
+          3.42
+        ]
+      ],
+      "minimum_angle_degrees": -150,
+      "maximum_angle_degrees": -30,
+      "needle_length": 0.78,
+      "tail_length": 0.12,
+      "needle_width": 0.055,
+      "tip_width": 0.012,
+      "pivot_radius": 0.1,
+      "waveform": "sine",
+      "cycles_per_loop": 2,
+      "phase": 0.555,
+      "reverse": true,
+      "background_enabled": true,
+      "face_color": [
+        235,
+        227,
+        208
+      ],
+      "face_alpha": 255,
+      "rim_color": [
+        196,
+        182,
+        150
+      ],
+      "rim_shadow_color": [
+        163,
+        148,
+        116
+      ],
+      "rim_width": 0.09,
+      "tick_color": [
+        45,
+        40,
+        34
+      ],
+      "tick_count": 11,
+      "major_tick_every": 5,
+      "tick_length": 0.105,
+      "tick_margin": 0.055,
+      "tick_width": 0.75,
+      "needle_color": [
+        40,
+        36,
+        30
+      ],
+      "edge_color": [
+        20,
+        18,
+        15
+      ],
+      "highlight_color": [
+        140,
+        132,
+        118
+      ],
+      "pivot_color": [
+        55,
+        50,
+        42
+      ],
+      "shadow_offset": [
+        0.8,
+        1
+      ],
+      "shadow_alpha": 115,
+      "shadow_blur": 0.55,
+      "clip_to_face": true,
+      "face_fraction": 1,
+      "aperture_feather": 0.5,
+      "supersample": 6
+    },
+    {
+      "type": "vibration",
+      "polygon": [
+        [
+          58.97,
+          49.83
+        ],
+        [
+          71.54,
+          41.14
+        ],
+        [
+          149.03,
+          41.37
+        ],
+        [
+          160.69,
+          49.14
+        ],
+        [
+          160,
+          118.4
+        ],
+        [
+          155.89,
+          118.17
+        ],
+        [
+          155.2,
+          111.54
+        ],
+        [
+          152.74,
+          111.43
+        ],
+        [
+          152.23,
+          119.14
+        ],
+        [
+          122.4,
+          118.46
+        ],
+        [
+          81.94,
+          134.4
+        ],
+        [
+          59.14,
+          122.91
+        ]
+      ],
+      "pivot": [
+        110.91,
+        129.94
+      ],
+      "amplitude": [
+        0.65,
+        1
+      ],
+      "cycles_per_loop": 5,
+      "waveform": "motor",
+      "phase": 0.02,
+      "y_phase_offset": 0.005,
+      "rotation_degrees": 0.18,
+      "rotation_phase_offset": 0.05,
+      "feather": 0.65,
+      "background_mode": "source",
+      "cavity_brightness": 0.48,
+      "cavity_blur": 1.2,
+      "supersample": 6
+    },
+    {
+      "type": "gauge",
+      "label": "Gauge needle",
+      "center": [
+        48.41,
+        102.58
+      ],
+      "plane_basis": [
+        [
+          3.84,
+          0.14
+        ],
+        [
+          0,
+          3.42
+        ]
+      ],
+      "minimum_angle_degrees": -150,
+      "maximum_angle_degrees": -30,
+      "needle_length": 0.78,
+      "tail_length": 0.12,
+      "needle_width": 0.055,
+      "tip_width": 0.012,
+      "pivot_radius": 0.1,
+      "waveform": "sine",
+      "cycles_per_loop": 1,
+      "phase": 0,
+      "reverse": false,
+      "background_enabled": true,
+      "face_color": [
+        235,
+        227,
+        208
+      ],
+      "face_alpha": 255,
+      "rim_color": [
+        196,
+        182,
+        150
+      ],
+      "rim_shadow_color": [
+        163,
+        148,
+        116
+      ],
+      "rim_width": 0.09,
+      "tick_color": [
+        45,
+        40,
+        34
+      ],
+      "tick_count": 11,
+      "major_tick_every": 5,
+      "tick_length": 0.105,
+      "tick_margin": 0.055,
+      "tick_width": 0.75,
+      "needle_color": [
+        40,
+        36,
+        30
+      ],
+      "edge_color": [
+        20,
+        18,
+        15
+      ],
+      "highlight_color": [
+        140,
+        132,
+        118
+      ],
+      "pivot_color": [
+        55,
+        50,
+        42
+      ],
+      "shadow_offset": [
+        0.8,
+        1
+      ],
+      "shadow_alpha": 115,
+      "shadow_blur": 0.55,
+      "clip_to_face": true,
+      "face_fraction": 1,
+      "aperture_feather": 0.5,
+      "supersample": 6
+    },
+    {
+      "type": "gauge",
+      "label": "Gauge needle",
+      "center": [
+        180.34,
+        41.01
+      ],
+      "plane_basis": [
+        [
+          3.84,
+          0.14
+        ],
+        [
+          0,
+          3.42
+        ]
+      ],
+      "minimum_angle_degrees": -150,
+      "maximum_angle_degrees": -30,
+      "needle_length": 0.78,
+      "tail_length": 0.12,
+      "needle_width": 0.055,
+      "tip_width": 0.012,
+      "pivot_radius": 0.1,
+      "waveform": "sine",
+      "cycles_per_loop": 1,
+      "phase": 0.555,
+      "reverse": true,
+      "background_enabled": true,
+      "face_color": [
+        200,
+        203,
+        206
+      ],
+      "face_alpha": 255,
+      "rim_color": [
+        90,
+        94,
+        98
+      ],
+      "rim_shadow_color": [
+        58,
+        61,
+        64
+      ],
+      "rim_width": 0.09,
+      "tick_color": [
+        22,
+        22,
+        24
+      ],
+      "tick_count": 11,
+      "major_tick_every": 5,
+      "tick_length": 0.105,
+      "tick_margin": 0.055,
+      "tick_width": 0.75,
+      "needle_color": [
+        214,
+        90,
+        46
+      ],
+      "edge_color": [
+        70,
+        32,
+        16
+      ],
+      "highlight_color": [
+        245,
+        178,
+        140
+      ],
+      "pivot_color": [
+        48,
+        50,
+        52
+      ],
+      "shadow_offset": [
+        0.8,
+        1
+      ],
+      "shadow_alpha": 115,
+      "shadow_blur": 0.55,
+      "clip_to_face": true,
+      "face_fraction": 1,
+      "aperture_feather": 0.5,
+      "supersample": 6
+    }
+  ],
+  "animation_speed": 0.05,
+  "crafting_speed": 3
+}

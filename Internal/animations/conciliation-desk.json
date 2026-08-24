@@ -1,0 +1,340 @@
+{
+  "name": "conciliation-desk",
+  "source": "graphics/entities/space-age/conciliation-desk.png",
+  "output": "graphics/entities/space-age/conciliation-desk-animation.png",
+  "size": [
+    192,
+    192
+  ],
+  "motions": [
+    {
+      "type": "mechanical_rotor",
+      "center": [
+        34,
+        29
+      ],
+      "plane_basis": [
+        [
+          14,
+          0
+        ],
+        [
+          0,
+          10.43
+        ]
+      ],
+      "aperture_radius": [
+        10.5,
+        10.5
+      ],
+      "aperture_bbox": [
+        19,
+        21,
+        41,
+        43
+      ],
+      "hub_center": [
+        34,
+        29
+      ],
+      "source_hub_basis": [
+        [
+          3.5,
+          0
+        ],
+        [
+          0,
+          3.5
+        ]
+      ],
+      "hub_bbox": [
+        26,
+        28,
+        34,
+        36
+      ],
+      "blade_count": 4,
+      "base_angle": -1.571,
+      "blade_outer_fraction": 0.4,
+      "blade_color": [
+        76,
+        75,
+        68
+      ],
+      "hub_color": [
+        104,
+        98,
+        84
+      ],
+      "fixed_occluder_lines": [
+        [
+          20,
+          27,
+          40,
+          27,
+          1
+        ],
+        [
+          19,
+          31,
+          41,
+          31,
+          1
+        ],
+        [
+          19,
+          35,
+          41,
+          35,
+          1
+        ],
+        [
+          20,
+          39,
+          40,
+          39,
+          1
+        ]
+      ],
+      "aperture_feather": 0.55,
+      "hub_feather": 0.5,
+      "supersample": 10
+    },
+    {
+      "type": "mechanical_rotor",
+      "center": [
+        157.5,
+        28.8
+      ],
+      "plane_basis": [
+        [
+          12.7,
+          0
+        ],
+        [
+          0,
+          11
+        ]
+      ],
+      "aperture_radius": [
+        11.5,
+        11.5
+      ],
+      "aperture_bbox": [
+        153,
+        21,
+        176,
+        44
+      ],
+      "hub_center": [
+        157,
+        28.8
+      ],
+      "source_hub_basis": [
+        [
+          4.5,
+          0
+        ],
+        [
+          0,
+          4.5
+        ]
+      ],
+      "hub_bbox": [
+        160,
+        28,
+        169,
+        37
+      ],
+      "blade_count": 6,
+      "base_angle": -1.571,
+      "blade_outer_fraction": 0.41,
+      "leading_tip": -0.22,
+      "trailing_tip": 0.25,
+      "blade_color": [
+        105,
+        103,
+        96
+      ],
+      "hub_color": [
+        121,
+        112,
+        92
+      ],
+      "aperture_feather": 0.55,
+      "hub_feather": 0.55,
+      "supersample": 10,
+      "direction": 1
+    },
+    {
+      "type": "mechanical_rotor",
+      "center": [
+        157.5,
+        144
+      ],
+      "plane_basis": [
+        [
+          12.4,
+          0
+        ],
+        [
+          0,
+          11
+        ]
+      ],
+      "aperture_radius": [
+        11.5,
+        11.5
+      ],
+      "aperture_bbox": [
+        153,
+        135,
+        176,
+        158
+      ],
+      "hub_center": [
+        157,
+        144
+      ],
+      "source_hub_basis": [
+        [
+          4.5,
+          0
+        ],
+        [
+          0,
+          4.5
+        ]
+      ],
+      "hub_bbox": [
+        160,
+        142,
+        169,
+        151
+      ],
+      "blade_count": 6,
+      "base_angle": -1.571,
+      "direction": 1,
+      "blade_outer_fraction": 0.41,
+      "leading_tip": -0.22,
+      "trailing_tip": 0.25,
+      "blade_color": [
+        105,
+        103,
+        96
+      ],
+      "hub_color": [
+        121,
+        112,
+        92
+      ],
+      "aperture_feather": 0.55,
+      "hub_feather": 0.55,
+      "supersample": 10
+    },
+    {
+      "type": "sweep",
+      "bbox": [
+        81.26,
+        88.8,
+        114.17,
+        115.89
+      ],
+      "polygon": [
+        [
+          76,
+          78
+        ],
+        [
+          122,
+          78
+        ],
+        [
+          122,
+          114
+        ],
+        [
+          76,
+          114
+        ]
+      ],
+      "axis": "x",
+      "color": [
+        243,
+        221,
+        93
+      ],
+      "alpha": 75,
+      "width": 2,
+      "blur": 2
+    },
+    {
+      "type": "pulse",
+      "center": [
+        157.37,
+        69.26
+      ],
+      "radius": [
+        12,
+        18
+      ],
+      "color": [
+        98,
+        235,
+        165
+      ],
+      "alpha": 75,
+      "blur": 4
+    },
+    {
+      "type": "vibration",
+      "polygon": [
+        [
+          65.14,
+          70.97
+        ],
+        [
+          130.97,
+          70.97
+        ],
+        [
+          132,
+          125.49
+        ],
+        [
+          121.03,
+          123.09
+        ],
+        [
+          113.83,
+          125.14
+        ],
+        [
+          65.49,
+          125.49
+        ]
+      ],
+      "pivot": [
+        98.06,
+        98.4
+      ],
+      "amplitude": [
+        0,
+        -0.5
+      ],
+      "cycles_per_loop": 2,
+      "waveform": "motor",
+      "phase": 0,
+      "y_phase_offset": 0,
+      "rotation_degrees": 0.67,
+      "rotation_phase_offset": 0,
+      "feather": 0.65,
+      "background_mode": "source",
+      "cavity_brightness": 0.48,
+      "cavity_blur": 1.2,
+      "supersample": 6
+    }
+  ],
+  "animation_speed": 0.11,
+  "crafting_speed": 1.75
+}
