@@ -216,42 +216,47 @@ end
 
 -------------------------------------------------------------------------------
 -- 3. MACHINE CATEGORY SETUP
--- Standard recipes use regulated categories. Space Age also defines special
--- "or-assembling" and electronics categories for the bootstrap recipes of
--- each planet; removing those categories makes every specialist machine
--- require itself (and makes processing units require Fulgora).
+-- Standard recipes use regulated categories. Space Age moves a number of
+-- recipes onto categories shared by assemblers and native specialist machines
+-- (foundry, biochamber, electromagnetic plant, and cryogenic plant). Keep the
+-- native recipe on that shared category, create a regulated assembler copy in
+-- section 5, and expose only the regulated categories to AM1/AM2/AM3. Giving
+-- assemblers the shared categories directly bypasses all paperwork; this was
+-- the cause of basic belts becoming AM2-only under Space Age.
 -------------------------------------------------------------------------------
-local space_age_assembling_categories = {
-  "electronics",
-  "electronics-with-fluid",
-  "pressing",
-  "metallurgy-or-assembling",
-  "organic-or-hand-crafting",
-  "organic-or-assembling",
-  "electronics-or-assembling",
-  "cryogenics-or-assembling",
-  "crafting-with-fluid-or-metallurgy",
+local SPACE_AGE_SHARED_ASSEMBLER_CATEGORIES = {
+  -- Available to AM1 in unmodified Space Age.
+  ["electronics"] = "crafting-regulated",
+  ["pressing"] = "crafting-regulated",
+
+  -- Available only to fluid-capable/advanced assemblers in Space Age.
+  ["electronics-with-fluid"] = "advanced-crafting-regulated",
+  ["metallurgy-or-assembling"] = "advanced-crafting-regulated",
+  ["organic-or-hand-crafting"] = "advanced-crafting-regulated",
+  ["organic-or-assembling"] = "advanced-crafting-regulated",
+  ["electronics-or-assembling"] = "advanced-crafting-regulated",
+  ["cryogenics-or-assembling"] = "advanced-crafting-regulated",
+  ["crafting-with-fluid-or-metallurgy"] = "advanced-crafting-regulated",
 }
 
-local function append_existing_categories(categories)
-  if not feature_flags.space_age_enabled() then return categories end
-  for _, category in ipairs(space_age_assembling_categories) do
-    if data.raw["recipe-category"] and data.raw["recipe-category"][category] then
-      categories[#categories + 1] = category
-    end
-  end
-  return categories
-end
+-- Space Age deliberately exposes these native categories to the character as
+-- well as to a specialist machine. Regulated assembler copies must not make
+-- their originals disappear from handcrafting (notably fast belts/splitters).
+local SPACE_AGE_CHARACTER_CRAFTING_CATEGORIES = {
+  ["electronics"] = true,
+  ["pressing"] = true,
+  ["organic-or-hand-crafting"] = true,
+}
 
 if data.raw["assembling-machine"]["assembling-machine-1"] then
   data.raw["assembling-machine"]["assembling-machine-1"].crafting_categories = {"crafting-regulated"}
 end
 if data.raw["assembling-machine"]["assembling-machine-2"] then
-  data.raw["assembling-machine"]["assembling-machine-2"].crafting_categories = append_existing_categories({"crafting-regulated", "advanced-crafting-regulated"})
+  data.raw["assembling-machine"]["assembling-machine-2"].crafting_categories = {"crafting-regulated", "advanced-crafting-regulated"}
 end
 if data.raw["assembling-machine"]["assembling-machine-3"] then
   local am3 = data.raw["assembling-machine"]["assembling-machine-3"]
-  am3.crafting_categories = append_existing_categories({"crafting-regulated", "advanced-crafting-regulated"})
+  am3.crafting_categories = {"crafting-regulated", "advanced-crafting-regulated"}
   am3.ingredient_count = 12
 end
 
@@ -988,8 +993,16 @@ for name, recipe in pairs(data.raw["recipe"]) do
 
   local cat = recipe.category or "crafting"
 
-  -- Only regulate standard crafting categories
-  if cat ~= "crafting" and cat ~= "advanced-crafting" and cat ~= "crafting-with-fluid" then
+  local shared_space_age_regulated_cat = feature_flags.space_age_enabled()
+    and SPACE_AGE_SHARED_ASSEMBLER_CATEGORIES[cat]
+    or nil
+  local is_standard_assembler_category = cat == "crafting"
+    or cat == "advanced-crafting"
+    or cat == "crafting-with-fluid"
+
+  -- Regulate both vanilla assembler categories and Space Age categories that
+  -- are shared between assemblers and a native specialist machine.
+  if not is_standard_assembler_category and not shared_space_age_regulated_cat then
     goto continue
   end
 
@@ -1014,10 +1027,10 @@ for name, recipe in pairs(data.raw["recipe"]) do
     or shared.get_paperwork_requirements(required_form, true)
 
   -- Determine regulated category
-  local regulated_cat
-  if cat == "crafting" then
+  local regulated_cat = shared_space_age_regulated_cat
+  if not regulated_cat and cat == "crafting" then
     regulated_cat = "crafting-regulated"
-  else
+  elseif not regulated_cat then
     regulated_cat = "advanced-crafting-regulated"
   end
 
@@ -1026,7 +1039,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
   -- regulated categories.
   local above_green = not is_red_science_or_below(name) or cat == "crafting-with-fluid"
 
-  if above_green then
+  if above_green and not shared_space_age_regulated_cat then
     -------------------------------------------------------------------------
     -- ABOVE GREEN SCIENCE: Regulate original recipe in-place.
     -- No handcrafting possible, so we convert the original directly.
@@ -1077,10 +1090,23 @@ for name, recipe in pairs(data.raw["recipe"]) do
     end
 
     regulated_recipes[regulated.name] = regulated
-    prefer_factoriopedia_recipe(recipe, regulated.name)
+    -- Standard crafting recipes have separate handcraft and assembler copies,
+    -- so Factoriopedia should prefer the regulated production path. A Space
+    -- Age shared-category original is also the native specialist-machine path;
+    -- keep it visible alongside the regulated assembler copy.
+    if not shared_space_age_regulated_cat then
+      prefer_factoriopedia_recipe(recipe, regulated.name)
+    end
 
-    -- Modify original for T1+ handcrafting (batch + tier form)
-    if not is_t0 then
+    -- Preserve Space Age's explicitly handcraftable shared categories. Other
+    -- above-green originals remain native-machine recipes but stay out of the
+    -- character menu.
+    if shared_space_age_regulated_cat
+      and above_green
+      and not SPACE_AGE_CHARACTER_CRAFTING_CATEGORIES[cat]
+    then
+      recipe.hide_from_player_crafting = true
+    elseif not is_t0 then
       batch_original_with_form(recipe, handcraft_paperwork, multiplier)
       apply_bulk_recipe_icon_overlay(recipe, multiplier)
     end

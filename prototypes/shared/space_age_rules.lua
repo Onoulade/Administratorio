@@ -16,6 +16,12 @@ rules.OPERATING_FORM_CONFIG = {
 }
 
 rules.OPERATING_FORM_CONFIG.categories["oil-processing"] = {form = "chemical-handling-work-order"}
+-- Space Age migrates several vanilla chemical recipes away from `chemistry`
+-- so they can also run in Biochambers or Cryogenic Plants. They remain
+-- hazardous chemical processes and must not lose their operating paperwork
+-- merely because their category became a hybrid.
+rules.OPERATING_FORM_CONFIG.categories["chemistry-or-cryogenics"] = {form = "chemical-handling-work-order"}
+rules.OPERATING_FORM_CONFIG.categories["organic-or-chemistry"] = {form = "chemical-handling-work-order"}
 for _, category in ipairs({
   "metallurgy",
   "organic",

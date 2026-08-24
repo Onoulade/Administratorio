@@ -91,6 +91,29 @@ test("direct prototypes and missing regulated copies are handled safely", functi
   assert_true(not force.recipes["fast-inserter-regulated"].enabled, "invalid technologies should be ignored")
 end)
 
+test("configuration sync enables default and previously unlocked regulated copies", function()
+  local force = new_force()
+  force.recipes["transport-belt"].enabled = true
+  force.recipes["fast-inserter"].enabled = true
+
+  regulated_unlocks.sync_enabled_variants(force)
+
+  assert_true(force.recipes["transport-belt-regulated"].enabled,
+    "existing saves should enable the new basic-belt regulated copy")
+  assert_true(force.recipes["fast-inserter-regulated"].enabled,
+    "existing saves should mirror already-researched recipes")
+end)
+
+test("configuration sync ignores disabled originals and invalid forces", function()
+  local force = new_force()
+
+  regulated_unlocks.sync_enabled_variants(force)
+  regulated_unlocks.sync_enabled_variants({valid = false})
+
+  assert_true(not force.recipes["transport-belt-regulated"].enabled,
+    "disabled originals must not be unlocked")
+end)
+
 print(("Regulated unlock runtime tests: %d passed, %d failed"):format(passed, failed))
 if failed > 0 then
   for _, err in ipairs(errors) do

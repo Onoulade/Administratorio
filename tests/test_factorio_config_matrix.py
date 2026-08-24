@@ -97,6 +97,61 @@ def run_case(factorio_bin: Path, *, space_age: bool, working_hours: bool) -> dic
         return dump_data(factorio_bin, root)
 
 
+def assert_space_age_category_migrations_are_regulated(data_raw: dict) -> None:
+    """Audit every Space Age category that can otherwise bypass an assembler."""
+    shared_categories = {
+        "electronics": "crafting-regulated",
+        "pressing": "crafting-regulated",
+        "electronics-with-fluid": "advanced-crafting-regulated",
+        "metallurgy-or-assembling": "advanced-crafting-regulated",
+        "organic-or-hand-crafting": "advanced-crafting-regulated",
+        "organic-or-assembling": "advanced-crafting-regulated",
+        "electronics-or-assembling": "advanced-crafting-regulated",
+        "cryogenics-or-assembling": "advanced-crafting-regulated",
+        "crafting-with-fluid-or-metallurgy": "advanced-crafting-regulated",
+    }
+    recipes = data_raw["recipe"]
+
+    for machine_name, expected_categories in {
+        "assembling-machine-1": ["crafting-regulated"],
+        "assembling-machine-2": ["crafting-regulated", "advanced-crafting-regulated"],
+        "assembling-machine-3": ["crafting-regulated", "advanced-crafting-regulated"],
+    }.items():
+        actual = data_raw["assembling-machine"][machine_name]["crafting_categories"]
+        assert actual == expected_categories, (
+            f"{machine_name} retained a Space Age shared category and can bypass paperwork: {actual}"
+        )
+
+    audited = 0
+    for recipe_name, recipe in recipes.items():
+        category = recipe.get("category", "crafting")
+        expected_category = shared_categories.get(category)
+        if expected_category is None or recipe_name.endswith("-regulated"):
+            continue
+        audited += 1
+        regulated_name = recipe_name + "-regulated"
+        regulated = recipes.get(regulated_name)
+        assert regulated is not None, (
+            f"Space Age shared-category recipe {recipe_name} [{category}] has no regulated assembler copy"
+        )
+        assert regulated.get("category") == expected_category, (
+            f"{regulated_name} should use {expected_category}, got {regulated.get('category')}"
+        )
+    assert audited > 0, "Space Age shared-category audit did not inspect any recipes"
+
+    for recipe_name, recipe in recipes.items():
+        if recipe.get("category", "crafting") in {"electronics", "pressing", "organic-or-hand-crafting"}:
+            assert not recipe.get("hide_from_player_crafting", False), (
+                f"{recipe_name} disappeared from the Space Age handcrafting menu"
+            )
+
+    for recipe_name in ("sulfuric-acid", "plastic-bar", "sulfur", "battery", "heavy-oil-cracking", "light-oil-cracking"):
+        ingredients = {ingredient["name"] for ingredient in recipes[recipe_name].get("ingredients", [])}
+        assert "chemical-handling-work-order" in ingredients, (
+            f"{recipe_name} lost operating paperwork through a Space Age hybrid chemistry category"
+        )
+
+
 def main() -> None:
     args = parse_args()
     if not args.factorio_bin:
@@ -115,6 +170,7 @@ def main() -> None:
     )
 
     no_working_hours = run_case(factorio_bin, space_age=True, working_hours=False)
+    assert_space_age_category_migrations_are_regulated(no_working_hours)
     assert "unstaffed-operations" not in no_working_hours.get("technology", {}), (
         "disabled Working Hours must not expose a technology whose recipe does not exist"
     )

@@ -70,6 +70,7 @@ local needs_unit_group_scan = false
 local needs_load_bugged_biter_cleanup = false
 local resolution_processing
 local enable_regulated_variants_for_technology = regulated_unlocks.enable_regulated_variants_for_technology
+local sync_enabled_regulated_variants = regulated_unlocks.sync_enabled_variants
 local FIELD_OFFICE_DEPLOYMENT_TECH = "field-office-deployment"
 
 local function get_entity_name(entity_or_name)
@@ -317,6 +318,7 @@ end
 
 local function sync_force_regulated_recipe_unlocks(force)
   if not force or not force.valid then return end
+  sync_enabled_regulated_variants(force)
   for _, technology in pairs(force.technologies) do
     if technology.researched then
       enable_regulated_variants_for_technology(force, technology)

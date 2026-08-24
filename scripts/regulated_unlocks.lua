@@ -42,4 +42,21 @@ function M.enable_regulated_variants_for_technology(force, technology_ref)
   end
 end
 
+-- New regulated prototypes added by an update are not automatically enabled
+-- for existing forces, even when their original recipe is enabled from the
+-- start (basic belts are the important case). Mirror every currently enabled
+-- original during init/configuration sync, independently of technology effects.
+function M.sync_enabled_variants(force)
+  if not force or force.valid == false or not force.recipes then return end
+
+  for recipe_name, original in pairs(force.recipes) do
+    if original.enabled and not recipe_name:find("%-regulated$") then
+      local regulated = force.recipes[recipe_name .. "-regulated"]
+      if regulated then
+        regulated.enabled = true
+      end
+    end
+  end
+end
+
 return M

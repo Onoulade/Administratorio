@@ -85,6 +85,13 @@ test("existing vanilla operating-paperwork mappings remain intact under Space Ag
   assert_eq(shared.get_operating_form({name = "uranium-processing", category = "centrifuging"}), "radiological-work-order")
 end)
 
+test("Space Age hybrid chemical categories retain chemical paperwork", function()
+  assert_eq(shared.get_operating_form({name = "sulfuric-acid", category = "chemistry-or-cryogenics"}),
+    "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "heavy-oil-cracking", category = "organic-or-chemistry"}),
+    "chemical-handling-work-order")
+end)
+
 test("platform fuel uses local orbital forms while meltwater remains a bootstrap", function()
   assert_nil(shared.get_operating_form({name = "ice-melting", category = "chemistry"}),
     "ice melting must not deadlock orbital paper production")

@@ -553,6 +553,7 @@ data.raw.fluid["sulfuric-acid"] = {
 recipes["transport-belt"] = {
   type = "recipe",
   name = "transport-belt",
+  category = "pressing",
   enabled = true,
   ingredients = {
     { type = "item", name = "iron-plate", amount = 1 },
@@ -715,7 +716,7 @@ recipes["electric-engine-unit"] = {
 recipes["battery"] = {
   type = "recipe",
   name = "battery",
-  category = "chemistry",
+  category = "chemistry-or-cryogenics",
   enabled = false,
   ingredients = {
     { type = "item", name = "iron-plate", amount = 1 },
@@ -730,7 +731,7 @@ recipes["battery"] = {
 recipes["rocket-fuel"] = {
   type = "recipe",
   name = "rocket-fuel",
-  category = "chemistry",
+  category = "organic-or-assembling",
   enabled = false,
   ingredients = {
     { type = "item", name = "solid-fuel", amount = 10 },
@@ -1345,7 +1346,7 @@ recipes["coal-liquefaction"] = {
 recipes["plastic-bar"] = {
   type = "recipe",
   name = "plastic-bar",
-  category = "chemistry",
+  category = "chemistry-or-cryogenics",
   enabled = false,
   ingredients = {
     { type = "fluid", name = "petroleum-gas", amount = 20 },
@@ -1359,7 +1360,7 @@ recipes["plastic-bar"] = {
 recipes["sulfur"] = {
   type = "recipe",
   name = "sulfur",
-  category = "chemistry",
+  category = "chemistry-or-cryogenics",
   enabled = false,
   ingredients = {
     { type = "fluid", name = "petroleum-gas", amount = 30 },
@@ -1373,7 +1374,7 @@ recipes["sulfur"] = {
 recipes["sulfuric-acid"] = {
   type = "recipe",
   name = "sulfuric-acid",
-  category = "chemistry",
+  category = "chemistry-or-cryogenics",
   enabled = false,
   ingredients = {
     { type = "item", name = "iron-plate", amount = 1 },
@@ -2154,16 +2155,52 @@ test("engine units use baseline paperwork plus carbon offsets", function()
   assert_true(not has_ingredient(r, "management-verbal-work-order"), "engine-unit should not use management-verbal-work-order")
 end)
 
-test("regulated advanced assembler path stays available to both AM2 and AM3", function()
+test("assemblers expose only regulated categories after Space Age migration", function()
+  local am1 = data.raw["assembling-machine"]["assembling-machine-1"]
   local am2 = data.raw["assembling-machine"]["assembling-machine-2"]
   local am3 = data.raw["assembling-machine"]["assembling-machine-3"]
 
+  assert_true(am1 ~= nil, "assembling-machine-1 missing")
   assert_true(am2 ~= nil, "assembling-machine-2 missing")
   assert_true(am3 ~= nil, "assembling-machine-3 missing")
+  assert_eq(#am1.crafting_categories, 1, "AM1 should not retain Space Age shared categories")
+  assert_eq(am1.crafting_categories[1], "crafting-regulated", "AM1 regulated category")
+  assert_eq(#am2.crafting_categories, 2, "AM2 should not retain Space Age shared categories")
   assert_eq(am2.crafting_categories[1], "crafting-regulated", "AM2 primary regulated category")
   assert_eq(am2.crafting_categories[2], "advanced-crafting-regulated", "AM2 advanced regulated category")
+  assert_eq(#am3.crafting_categories, 2, "AM3 should not retain Space Age shared categories")
   assert_eq(am3.crafting_categories[1], "crafting-regulated", "AM3 primary regulated category")
   assert_eq(am3.crafting_categories[2], "advanced-crafting-regulated", "AM3 advanced regulated category")
+end)
+
+test("Space Age shared categories receive regulated assembler copies", function()
+  local belt = get_recipe("transport-belt")
+  local regulated_belt = get_recipe("transport-belt-regulated")
+  assert_eq(belt.category, "pressing", "native belt path should remain available to the foundry")
+  assert_true(regulated_belt ~= nil, "Space Age pressing belt missing regulated copy")
+  assert_eq(regulated_belt.category, "crafting-regulated", "basic belt should run in AM1")
+  assert_true(has_ingredient(regulated_belt, "work-order"), "regulated belt missing work-order")
+
+  local rocket_fuel = get_recipe("rocket-fuel")
+  local regulated_rocket_fuel = get_recipe("rocket-fuel-regulated")
+  assert_eq(rocket_fuel.category, "organic-or-assembling", "native rocket-fuel path should remain available to the biochamber")
+  assert_true(regulated_rocket_fuel ~= nil, "hybrid rocket-fuel recipe missing regulated copy")
+  assert_eq(regulated_rocket_fuel.category, "advanced-crafting-regulated", "rocket fuel should use the regulated AM2 path")
+
+  local electromagnetic = get_recipe("electromagnetic-plant")
+  local regulated_electromagnetic = get_recipe("electromagnetic-plant-regulated")
+  assert_eq(electromagnetic.category, "electronics-or-assembling", "native electromagnetic build path should be preserved")
+  assert_true(regulated_electromagnetic ~= nil, "specialist-machine bootstrap missing regulated copy")
+  assert_eq(regulated_electromagnetic.category, "advanced-crafting-regulated", "specialist-machine bootstrap should use AM2")
+end)
+
+test("Space Age hybrid chemistry categories retain operating paperwork", function()
+  for _, recipe_name in ipairs({"battery", "plastic-bar", "sulfur", "sulfuric-acid"}) do
+    local recipe = get_recipe(recipe_name)
+    assert_true(recipe ~= nil, recipe_name .. " missing")
+    assert_true(has_ingredient(recipe, "chemical-handling-work-order"),
+      recipe_name .. " lost chemical paperwork after Space Age category migration")
+  end
 end)
 
 test("high-energy intermediates require verified carbon certificates", function()
@@ -2382,14 +2419,14 @@ test("pneumatic transport does not duplicate regulated unlocks", function()
   assert_true(not tech_unlocks_recipe("pneumatic-form-transport", "tube-outtake-regulated"), "pneumatic-form-transport should not list tube-outtake-regulated")
 end)
 
-test("vanilla recipes redirect Factoriopedia to regulated copies", function()
+test("Space Age native and regulated recipe paths both remain visible in Factoriopedia", function()
   local original = get_recipe("transport-belt")
   local regulated = get_recipe("transport-belt-regulated")
 
   assert_true(original ~= nil, "transport-belt missing")
   assert_true(regulated ~= nil, "transport-belt-regulated missing")
-  assert_eq(original.factoriopedia_alternative, "transport-belt-regulated", "transport-belt should redirect Factoriopedia to the regulated recipe")
-  assert_eq(original.hidden_in_factoriopedia, true, "transport-belt should be hidden in Factoriopedia")
+  assert_eq(original.factoriopedia_alternative, nil, "native transport-belt recipe should not redirect away from the foundry path")
+  assert_true(not original.hidden_in_factoriopedia, "native transport-belt recipe should remain visible in Factoriopedia")
   assert_true(not regulated.hidden_in_factoriopedia, "transport-belt-regulated should remain visible in Factoriopedia")
   assert_true(type(regulated.localised_name) == "table", "transport-belt-regulated missing localised_name")
   assert_eq(regulated.localised_name[1], "entity-name.transport-belt", "transport-belt-regulated should localise from place_result")
