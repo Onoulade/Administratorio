@@ -8,7 +8,47 @@ local RUNTIME_DEBUG_SUMMARY_NAME = "administratorio-runtime-debug-summary"
 local RUNTIME_DEBUG_REGISTRATION_NAME = "administratorio-runtime-debug-registration"
 local RUNTIME_DEBUG_FIELD_OFFICE_NAME = "administratorio-runtime-debug-field-office"
 local RUNTIME_DEBUG_COUNTS_NAME = "administratorio-runtime-debug-counts"
+local RUNTIME_DEBUG_BUTTONS_NAME = "administratorio-runtime-debug-buttons"
+local RUNTIME_DEBUG_CONTENT_NAME = "administratorio-runtime-debug-content"
+local COMPLAINT_LOCATOR_OPEN_NAME = "administratorio-complaint-locator-open"
+local COMPLAINT_LOCATOR_FRAME_NAME = "administratorio-complaint-locator"
+local COMPLAINT_LOCATOR_CLOSE_NAME = "administratorio-complaint-locator-close"
+local COMPLAINT_LOCATOR_REFRESH_NAME = "administratorio-complaint-locator-refresh"
+local COMPLAINT_LOCATOR_FILTERS_NAME = "administratorio-complaint-locator-filters"
+local COMPLAINT_LOCATOR_ITEM_NAME = "administratorio-complaint-locator-item"
+local COMPLAINT_LOCATOR_RESULTS_NAME = "administratorio-complaint-locator-results"
+local COMPLAINT_LOCATOR_SUMMARY_NAME = "administratorio-complaint-locator-summary"
+local COMPLAINT_LOCATOR_RESULT_PREFIX = "administratorio-complaint-locator-result-"
 local RUNTIME_DEBUG_HISTORY_LIMIT = 60
+local COMPLAINT_LOCATOR_RESULT_LIMIT = 100
+
+local COMPLAINT_LOCATOR_ITEMS = {
+  "ticket-landscape",
+  "ticket-smog",
+  "ticket-noise",
+  "ticket-unemployment",
+  "ticket-littering",
+  "ticket-hazmat",
+  "ticket-loitering",
+  "ticket-vagrancy",
+  "resolved-landscape",
+  "resolved-smog",
+  "resolved-noise",
+  "resolved-unemployment",
+  "resolved-littering",
+  "resolved-hazmat",
+  "resolved-loitering",
+  "resolved-vagrancy",
+}
+
+local BELT_CONNECTABLE_TYPES = {
+  ["transport-belt"] = true,
+  ["underground-belt"] = true,
+  splitter = true,
+  loader = true,
+  ["loader-1x1"] = true,
+  ["linked-belt"] = true,
+}
 
 local RUNTIME_DEBUG_ACCOUNTED_KEYS = {
   "unit_groups",
@@ -153,8 +193,224 @@ local runtime_debug_pending_requests = {}
 local runtime_debug_next_sample_id = 0
 local runtime_debug_external_sections = {}
 local runtime_debug_external_total = nil
+local complaint_locator_results_by_player = {}
 
 local update_runtime_debug_guis
+
+local function complaint_locator_result_index(element_name)
+  if type(element_name) ~= "string" then return nil end
+  if element_name:sub(1, #COMPLAINT_LOCATOR_RESULT_PREFIX) ~= COMPLAINT_LOCATOR_RESULT_PREFIX then
+    return nil
+  end
+  local suffix = element_name:sub(#COMPLAINT_LOCATOR_RESULT_PREFIX + 1)
+  if suffix == "" or suffix:find("%D") then return nil end
+  return tonumber(suffix)
+end
+
+local function pool_key_item_name(key)
+  if type(key) ~= "string" then return nil end
+  local separator = key:find("\31", 1, true)
+  return separator and key:sub(1, separator - 1) or key
+end
+
+local function inventory_item_count(owner, item_name)
+  local total = 0
+  local seen = {}
+  local ok, max_index = pcall(owner.get_max_inventory_index)
+  if not ok or not max_index then return 0 end
+  for inventory_index = 1, max_index do
+    local got_inventory, inventory = pcall(owner.get_inventory, inventory_index)
+    if got_inventory and inventory and inventory.valid and not seen[inventory] then
+      seen[inventory] = true
+      local got_count, count = pcall(inventory.get_item_count, item_name)
+      if got_count then total = total + (count or 0) end
+    end
+  end
+  return total
+end
+
+local function line_item_count(line, item_name)
+  if not line or not line.valid then return 0 end
+  local total = 0
+  for index = 1, #line do
+    local stack = line[index]
+    if stack and stack.valid_for_read and stack.name == item_name then
+      total = total + (stack.count or 0)
+    end
+  end
+  return total
+end
+
+local function entity_transport_item_count(entity, item_name)
+  if not BELT_CONNECTABLE_TYPES[entity.type] then return 0 end
+  local ok, max_index = pcall(entity.get_max_transport_line_index)
+  if not ok or not max_index then return 0 end
+  local total = 0
+  for line_index = 1, max_index do
+    local got_line, line = pcall(entity.get_transport_line, line_index)
+    if got_line then total = total + line_item_count(line, item_name) end
+  end
+  return total
+end
+
+local function add_locator_result(rows, count, source, anchor, surface, position)
+  if not count or count <= 0 then return end
+  if anchor and anchor.valid then
+    surface = anchor.surface
+    position = anchor.position
+  end
+  rows[#rows + 1] = {
+    count = count,
+    source = source,
+    anchor = anchor,
+    surface = surface,
+    position = position,
+  }
+end
+
+local function first_pneumatic_anchor(net_id)
+  for uid, entry in pairs(storage.tube_intakes or {}) do
+    if storage.tube_network_cache and storage.tube_network_cache[uid] == net_id
+      and entry.entity and entry.entity.valid then
+      return entry.entity
+    end
+  end
+  for uid, entry in pairs(storage.tube_outtakes or {}) do
+    if storage.tube_network_cache and storage.tube_network_cache[uid] == net_id
+      and entry.entity and entry.entity.valid then
+      return entry.entity
+    end
+  end
+  return nil
+end
+
+local function first_terminus_anchor(force_index)
+  for _, entry in pairs(storage.terminus_registry or {}) do
+    if entry.force_index == force_index and entry.entity and entry.entity.valid then
+      return entry.entity
+    end
+  end
+  return nil
+end
+
+local function scan_script_managed_items(rows, item_name)
+  for net_id, pool in pairs(storage.tube_signals or {}) do
+    local count = 0
+    for key, amount in pairs(pool) do
+      if pool_key_item_name(key) == item_name then count = count + amount end
+    end
+    add_locator_result(rows, count, {"gui.complaint-locator-source-pneumatic"}, first_pneumatic_anchor(net_id))
+  end
+
+  for _, pool in pairs(storage.tube_orphan_signals or {}) do
+    local count = 0
+    for key, amount in pairs(pool) do
+      if pool_key_item_name(key) == item_name then count = count + amount end
+    end
+    add_locator_result(rows, count, {"gui.complaint-locator-source-pneumatic-orphan"})
+  end
+
+  for _, flight in ipairs(storage.terminus_flights or {}) do
+    if flight.item == item_name then
+      add_locator_result(rows, flight.count, {"gui.complaint-locator-source-terminus-transit"}, flight.from_entity)
+    end
+  end
+
+  for force_index, pool in pairs(storage.trunk_pool or {}) do
+    local count = 0
+    for key, amount in pairs(pool) do
+      if pool_key_item_name(key) == item_name then count = count + amount end
+    end
+    add_locator_result(rows, count, {"gui.complaint-locator-source-terminus-pool"}, first_terminus_anchor(force_index))
+  end
+
+  for _, active in pairs(storage.biterport_workers or {}) do
+    local stack = active and active.carried_stack
+    if stack and stack.name == item_name then
+      add_locator_result(rows, stack.count, {"gui.complaint-locator-source-biterport"}, active.biter)
+    end
+  end
+end
+
+local function scan_world_for_complaint_item(item_name, requesting_player)
+  local rows = {}
+  local scanned_entities = 0
+
+  local function scan_player(owner)
+    local count = inventory_item_count(owner, item_name)
+    local cursor = owner.cursor_stack
+    if cursor and cursor.valid_for_read and cursor.name == item_name then
+      count = count + (cursor.count or 0)
+    end
+    add_locator_result(rows, count, {"gui.complaint-locator-source-player", owner.name},
+      owner.character, owner.surface, owner.position)
+  end
+
+  if requesting_player then scan_player(requesting_player) end
+  if #rows > 0 then
+    return rows, 0, rows[1].count, true
+  end
+
+  for _, owner in pairs(game.players) do
+    if owner ~= requesting_player then scan_player(owner) end
+  end
+
+  if #rows > 0 then
+    local total_items = 0
+    for _, row in ipairs(rows) do total_items = total_items + row.count end
+    return rows, 0, total_items, true
+  end
+
+  for _, surface in pairs(game.surfaces) do
+    for _, entity in ipairs(surface.find_entities()) do
+      scanned_entities = scanned_entities + 1
+      if entity.valid then
+        if entity.type == "item-entity" then
+          local stack = entity.stack
+          if stack and stack.valid_for_read and stack.name == item_name then
+            add_locator_result(rows, stack.count, {"gui.complaint-locator-source-ground"}, entity)
+          end
+        elseif entity.type ~= "character" then
+          local inventory_count = inventory_item_count(entity, item_name)
+          add_locator_result(rows, inventory_count, {
+            "gui.complaint-locator-source-inventory", "[entity=" .. entity.name .. "]"
+          }, entity)
+
+          local transport_count = entity_transport_item_count(entity, item_name)
+          add_locator_result(rows, transport_count, {
+            "gui.complaint-locator-source-belt", "[entity=" .. entity.name .. "]"
+          }, entity)
+
+          if entity.type == "inserter" then
+            local held = entity.held_stack
+            if held and held.valid_for_read and held.name == item_name then
+              add_locator_result(rows, held.count, {"gui.complaint-locator-source-inserter"}, entity)
+            end
+          end
+        end
+      end
+    end
+  end
+
+  scan_script_managed_items(rows, item_name)
+  table.sort(rows, function(a, b)
+    if a.surface and not b.surface then return true end
+    if b.surface and not a.surface then return false end
+    local a_surface = a.surface and a.surface.index or math.huge
+    local b_surface = b.surface and b.surface.index or math.huge
+    if a_surface ~= b_surface then return a_surface < b_surface end
+    local ax = a.position and a.position.x or math.huge
+    local bx = b.position and b.position.x or math.huge
+    if ax ~= bx then return ax < bx end
+    local ay = a.position and a.position.y or math.huge
+    local by = b.position and b.position.y or math.huge
+    return ay < by
+  end)
+
+  local total_items = 0
+  for _, row in ipairs(rows) do total_items = total_items + row.count end
+  return rows, scanned_entities, total_items, false
+end
 
 local function add_runtime_profiler_to_table(target, key, profiler)
   if not target or not key or not profiler then return end
@@ -385,31 +641,59 @@ local function add_runtime_metric_table(parent, name, rows)
 end
 
 local function ensure_runtime_debug_gui(player)
-  local frame = player.gui.left[RUNTIME_DEBUG_VIEW_NAME]
+  local legacy_frame = player.gui.left[RUNTIME_DEBUG_VIEW_NAME]
+  if legacy_frame and legacy_frame.valid then legacy_frame.destroy() end
+  local display_height = player.display_resolution and player.display_resolution.height or 900
+  local display_scale = player.display_scale or 1
+  local available_height = math.max(320, math.floor(display_height / display_scale) - 120)
+  local frame = player.gui.screen[RUNTIME_DEBUG_VIEW_NAME]
   if frame and frame.valid then
-    if frame[RUNTIME_DEBUG_UPDATED_NAME]
-      and frame[RUNTIME_DEBUG_SUMMARY_NAME]
-      and frame[RUNTIME_DEBUG_REGISTRATION_NAME]
-      and frame[RUNTIME_DEBUG_FIELD_OFFICE_NAME]
-      and frame[RUNTIME_DEBUG_COUNTS_NAME] then
+    local content = frame[RUNTIME_DEBUG_CONTENT_NAME]
+    if content
+      and content[RUNTIME_DEBUG_UPDATED_NAME]
+      and content[RUNTIME_DEBUG_SUMMARY_NAME]
+      and content[RUNTIME_DEBUG_REGISTRATION_NAME]
+      and content[RUNTIME_DEBUG_FIELD_OFFICE_NAME]
+      and content[RUNTIME_DEBUG_COUNTS_NAME]
+      and frame[RUNTIME_DEBUG_BUTTONS_NAME]
+      and frame[RUNTIME_DEBUG_BUTTONS_NAME][COMPLAINT_LOCATOR_OPEN_NAME] then
+      frame.style.height = available_height
+      frame.style.maximal_height = available_height
+      content.style.height = available_height - 50
+      content.style.maximal_height = available_height - 50
       return frame
     end
     frame.destroy()
   end
 
-  frame = player.gui.left.add{
+  frame = player.gui.screen.add{
     type = "frame",
     name = RUNTIME_DEBUG_VIEW_NAME,
     direction = "vertical",
   }
   frame.style.minimal_width = 520
+  frame.style.height = available_height
+  frame.style.maximal_height = available_height
+  frame.auto_center = true
 
-  local title_flow = frame.add{type = "flow", direction = "horizontal"}
+  local title_flow = frame.add{type = "flow", name = RUNTIME_DEBUG_BUTTONS_NAME, direction = "horizontal"}
+  title_flow.drag_target = frame
   title_flow.style.horizontally_stretchable = true
 
-  local title = title_flow.add{type = "label", caption = {"gui.debug-title"}}
-  title.style.font = "default-bold"
+  local title = title_flow.add{type = "label", caption = {"gui.debug-title"}, style = "frame_title"}
+  title.drag_target = frame
   title.style.horizontally_stretchable = true
+
+  title_flow.add{
+    type = "button",
+    name = COMPLAINT_LOCATOR_OPEN_NAME,
+    caption = {"gui.complaint-locator-open"},
+  }
+  title_flow.add{
+    type = "button",
+    name = RUNTIME_DEBUG_EXPORT_NAME,
+    caption = {"gui.debug-export"},
+  }
 
   local close_button = title_flow.add{
     type = "sprite-button",
@@ -420,12 +704,25 @@ local function ensure_runtime_debug_gui(player)
   }
   close_button.style.top_margin = -4
 
-  local subtitle = frame.add{type = "label", caption = {"gui.debug-subtitle"}}
+  local content = frame.add{
+    type = "scroll-pane",
+    name = RUNTIME_DEBUG_CONTENT_NAME,
+    direction = "vertical",
+    vertical_scroll_policy = "auto",
+    horizontal_scroll_policy = "never",
+  }
+  content.style.horizontally_stretchable = true
+  content.style.vertically_stretchable = true
+  content.style.height = available_height - 50
+  content.style.maximal_height = available_height - 50
+
+  local subtitle = content.add{type = "label", caption = {"gui.debug-subtitle"}}
   subtitle.style.single_line = false
+  subtitle.style.maximal_width = 480
   subtitle.style.font_color = {r = 0.7, g = 0.7, b = 0.7}
   subtitle.style.bottom_margin = 4
 
-  local updated = frame.add{
+  local updated = content.add{
     type = "label",
     name = RUNTIME_DEBUG_UPDATED_NAME,
     caption = {"gui.debug-waiting"},
@@ -433,31 +730,31 @@ local function ensure_runtime_debug_gui(player)
   updated.style.font_color = {r = 0.85, g = 0.85, b = 0.85}
   updated.style.bottom_margin = 6
 
-  local summary_title = frame.add{type = "label", caption = {"gui.debug-summary-title"}}
+  local summary_title = content.add{type = "label", caption = {"gui.debug-summary-title"}}
   summary_title.style.font = "default-semibold"
-  add_runtime_metric_table(frame, RUNTIME_DEBUG_SUMMARY_NAME, RUNTIME_DEBUG_SUMMARY_ROWS)
+  add_runtime_metric_table(content, RUNTIME_DEBUG_SUMMARY_NAME, RUNTIME_DEBUG_SUMMARY_ROWS)
 
-  frame.add{type = "line"}
+  content.add{type = "line"}
 
-  local registration_title = frame.add{type = "label", caption = {"gui.debug-registration-title"}}
+  local registration_title = content.add{type = "label", caption = {"gui.debug-registration-title"}}
   registration_title.style.font = "default-semibold"
   registration_title.style.top_margin = 2
-  add_runtime_metric_table(frame, RUNTIME_DEBUG_REGISTRATION_NAME, RUNTIME_DEBUG_REGISTRATION_ROWS)
+  add_runtime_metric_table(content, RUNTIME_DEBUG_REGISTRATION_NAME, RUNTIME_DEBUG_REGISTRATION_ROWS)
 
-  frame.add{type = "line"}
+  content.add{type = "line"}
 
-  local field_office_title = frame.add{type = "label", caption = {"gui.debug-field-office-title"}}
+  local field_office_title = content.add{type = "label", caption = {"gui.debug-field-office-title"}}
   field_office_title.style.font = "default-semibold"
   field_office_title.style.top_margin = 2
-  add_runtime_metric_table(frame, RUNTIME_DEBUG_FIELD_OFFICE_NAME, RUNTIME_DEBUG_FIELD_OFFICE_ROWS)
+  add_runtime_metric_table(content, RUNTIME_DEBUG_FIELD_OFFICE_NAME, RUNTIME_DEBUG_FIELD_OFFICE_ROWS)
 
-  frame.add{type = "line"}
+  content.add{type = "line"}
 
-  local counts_title = frame.add{type = "label", caption = {"gui.debug-counts-title"}}
+  local counts_title = content.add{type = "label", caption = {"gui.debug-counts-title"}}
   counts_title.style.font = "default-semibold"
   counts_title.style.top_margin = 2
 
-  local counts_table = frame.add{
+  local counts_table = content.add{
     type = "table",
     name = RUNTIME_DEBUG_COUNTS_NAME,
     column_count = 2,
@@ -479,15 +776,189 @@ local function ensure_runtime_debug_gui(player)
     }
   end
 
-  local button_flow = frame.add{type = "flow", direction = "horizontal"}
-  button_flow.style.top_margin = 8
-  button_flow.add{
-    type = "button",
-    name = RUNTIME_DEBUG_EXPORT_NAME,
-    caption = {"gui.debug-export"},
+  return frame
+end
+
+local function ensure_complaint_locator_gui(player)
+  local existing = player.gui.screen[COMPLAINT_LOCATOR_FRAME_NAME]
+  if existing and existing.valid then return existing end
+
+  local frame = player.gui.screen.add{
+    type = "frame",
+    name = COMPLAINT_LOCATOR_FRAME_NAME,
+    direction = "vertical",
+  }
+  frame.style.minimal_width = 440
+  frame.style.maximal_width = 480
+  frame.style.maximal_height = 700
+  frame.auto_center = true
+
+  local titlebar = frame.add{type = "flow", direction = "horizontal"}
+  titlebar.drag_target = frame
+  titlebar.style.horizontally_stretchable = true
+  local title = titlebar.add{type = "label", caption = {"gui.complaint-locator-title"}, style = "frame_title"}
+  title.drag_target = frame
+  title.style.horizontally_stretchable = true
+  titlebar.add{
+    type = "sprite-button",
+    name = COMPLAINT_LOCATOR_CLOSE_NAME,
+    sprite = "utility/close",
+    style = "frame_action_button",
+    tooltip = {"gui.debug-close"},
   }
 
+  local subtitle = frame.add{type = "label", caption = {"gui.complaint-locator-subtitle"}}
+  subtitle.style.single_line = false
+  subtitle.style.maximal_width = 440
+  subtitle.style.font_color = {r = 0.7, g = 0.7, b = 0.7}
+
+  local filters = frame.add{type = "flow", name = COMPLAINT_LOCATOR_FILTERS_NAME, direction = "horizontal"}
+  filters.style.top_margin = 6
+  filters.add{type = "label", caption = {"gui.complaint-locator-item-filter"}}
+  local item_items = {}
+  for _, item_name in ipairs(COMPLAINT_LOCATOR_ITEMS) do
+    item_items[#item_items + 1] = {"item-name." .. item_name}
+  end
+  filters.add{
+    type = "drop-down",
+    name = COMPLAINT_LOCATOR_ITEM_NAME,
+    items = item_items,
+    selected_index = 1,
+  }
+  filters.add{
+    type = "button",
+    name = COMPLAINT_LOCATOR_REFRESH_NAME,
+    caption = {"gui.complaint-locator-search"},
+  }
+
+  local summary = frame.add{
+    type = "label",
+    name = COMPLAINT_LOCATOR_SUMMARY_NAME,
+    caption = {"gui.complaint-locator-ready"},
+  }
+  summary.style.top_margin = 6
+  summary.style.font = "default-semibold"
+
+  local results = frame.add{
+    type = "scroll-pane",
+    name = COMPLAINT_LOCATOR_RESULTS_NAME,
+    direction = "vertical",
+    vertical_scroll_policy = "auto",
+    horizontal_scroll_policy = "never",
+  }
+  results.style.horizontally_stretchable = true
+  results.style.maximal_height = 520
+
   return frame
+end
+
+local function release_complaint_locator_pause(player_index)
+  complaint_locator_results_by_player[player_index] = nil
+  local owners = storage.complaint_locator_pause_owners
+  if not owners or not owners[player_index] then return end
+  owners[player_index] = nil
+  if not next(owners) then
+    game.tick_paused = storage.complaint_locator_preexisting_pause == true
+    storage.complaint_locator_preexisting_pause = nil
+  end
+end
+
+local function refresh_complaint_locator(player)
+  local frame = player.gui.screen[COMPLAINT_LOCATOR_FRAME_NAME]
+  if not frame or not frame.valid then return end
+  local filters = frame[COMPLAINT_LOCATOR_FILTERS_NAME]
+  local dropdown = filters[COMPLAINT_LOCATOR_ITEM_NAME]
+  local item_name = COMPLAINT_LOCATOR_ITEMS[dropdown.selected_index]
+  local results = frame[COMPLAINT_LOCATOR_RESULTS_NAME]
+  results.clear()
+
+  storage.complaint_locator_pause_owners = storage.complaint_locator_pause_owners or {}
+  if not next(storage.complaint_locator_pause_owners) then
+    storage.complaint_locator_preexisting_pause = game.tick_paused == true
+  end
+  storage.complaint_locator_pause_owners[player.index] = true
+  game.tick_paused = true
+
+  frame[COMPLAINT_LOCATOR_SUMMARY_NAME].caption = {"gui.complaint-locator-searching", {"item-name." .. item_name}}
+  local scan_ok, rows, scanned_entities, total_items, player_only =
+    pcall(scan_world_for_complaint_item, item_name, player)
+  if not scan_ok then
+    release_complaint_locator_pause(player.index)
+    error(rows)
+  end
+  complaint_locator_results_by_player[player.index] = rows
+
+  local shown = math.min(#rows, COMPLAINT_LOCATOR_RESULT_LIMIT)
+  frame[COMPLAINT_LOCATOR_SUMMARY_NAME].caption = {
+    player_only and "gui.complaint-locator-summary-player" or "gui.complaint-locator-summary",
+    total_items,
+    #rows,
+    shown,
+    scanned_entities,
+  }
+  if shown == 0 then
+    results.add{type = "label", caption = {"gui.complaint-locator-empty"}}
+    return
+  end
+
+  for index = 1, shown do
+    local row = rows[index]
+    local surface_name = row.surface and row.surface.name or "?"
+    local x = row.position and math.floor(row.position.x) or "?"
+    local y = row.position and math.floor(row.position.y) or "?"
+    local location = row.surface and row.position
+      and {"gui.complaint-locator-location", surface_name, x, y}
+      or {"gui.complaint-locator-unlocated"}
+    local button = results.add{
+      type = "button",
+      name = COMPLAINT_LOCATOR_RESULT_PREFIX .. tostring(index),
+      caption = {
+        "",
+        "[item=", item_name, "] ×", row.count,
+        "  ", row.source, "  ", location,
+      },
+      tooltip = {"gui.complaint-locator-result-tooltip"},
+    }
+    button.style.horizontally_stretchable = true
+    button.style.horizontal_align = "left"
+  end
+end
+
+local function open_complaint_locator(player)
+  ensure_complaint_locator_gui(player)
+end
+
+local function focus_complaint(player, result_index)
+  local row = complaint_locator_results_by_player[player.index]
+    and complaint_locator_results_by_player[player.index][result_index]
+  if not row then
+    player.print({"message.complaint-locator-missing"})
+    return
+  end
+  local surface = row.anchor and row.anchor.valid and row.anchor.surface or row.surface
+  local position = row.anchor and row.anchor.valid and row.anchor.position or row.position
+  if not surface or not position then
+    player.print({"message.complaint-locator-no-position"})
+    return
+  end
+
+  player.set_controller{
+    type = defines.controllers.remote,
+    position = position,
+    surface = surface,
+  }
+  player.zoom = 1.5
+  rendering.draw_circle{
+    color = {r = 1, g = 0.2, b = 0.2, a = 1},
+    radius = 4,
+    width = 5,
+    filled = false,
+    target = position,
+    surface = surface,
+    players = {player},
+    time_to_live = 600,
+  }
+  player.print({"message.complaint-locator-focused", surface.name, math.floor(position.x), math.floor(position.y)})
 end
 
 local function update_runtime_metric_table(metric_table, rows)
@@ -509,17 +980,20 @@ local function update_runtime_debug_gui(player)
   if not player or not player.valid then return end
 
   if not is_runtime_debug_enabled(player.index) then
-    local frame = player.gui.left[RUNTIME_DEBUG_VIEW_NAME]
+    local frame = player.gui.screen[RUNTIME_DEBUG_VIEW_NAME]
     if frame then frame.destroy() end
+    local legacy_frame = player.gui.left[RUNTIME_DEBUG_VIEW_NAME]
+    if legacy_frame then legacy_frame.destroy() end
     return
   end
 
   local frame = ensure_runtime_debug_gui(player)
-  local updated = frame[RUNTIME_DEBUG_UPDATED_NAME]
-  local summary_table = frame[RUNTIME_DEBUG_SUMMARY_NAME]
-  local registration_table = frame[RUNTIME_DEBUG_REGISTRATION_NAME]
-  local field_office_table = frame[RUNTIME_DEBUG_FIELD_OFFICE_NAME]
-  local counts_table = frame[RUNTIME_DEBUG_COUNTS_NAME]
+  local content = frame[RUNTIME_DEBUG_CONTENT_NAME]
+  local updated = content[RUNTIME_DEBUG_UPDATED_NAME]
+  local summary_table = content[RUNTIME_DEBUG_SUMMARY_NAME]
+  local registration_table = content[RUNTIME_DEBUG_REGISTRATION_NAME]
+  local field_office_table = content[RUNTIME_DEBUG_FIELD_OFFICE_NAME]
+  local counts_table = content[RUNTIME_DEBUG_COUNTS_NAME]
 
   if last_runtime_debug_snapshot then
     updated.caption = {"gui.debug-updated", last_runtime_debug_snapshot.tick, #runtime_debug_history}
@@ -719,6 +1193,24 @@ function M.toggle(player)
   end
 end
 
+function M.toggle_complaint_locator(player)
+  if not player then return end
+  local frame = player.gui.screen[COMPLAINT_LOCATOR_FRAME_NAME]
+  if frame and frame.valid then
+    release_complaint_locator_pause(player.index)
+    frame.destroy()
+  else
+    open_complaint_locator(player)
+  end
+end
+
+function M.close_complaint_locator(player_index)
+  release_complaint_locator_pause(player_index)
+  local player = game.get_player(player_index)
+  local frame = player and player.gui.screen[COMPLAINT_LOCATOR_FRAME_NAME]
+  if frame and frame.valid then frame.destroy() end
+end
+
 function M.handle_gui_click(player, element_name)
   if element_name == RUNTIME_DEBUG_CLOSE_NAME then
     storage.runtime_debug_players[player.index] = nil
@@ -731,6 +1223,38 @@ function M.handle_gui_click(player, element_name)
     return true
   end
 
+  if element_name == COMPLAINT_LOCATOR_OPEN_NAME then
+    open_complaint_locator(player)
+    return true
+  end
+
+  if element_name == COMPLAINT_LOCATOR_CLOSE_NAME then
+    local frame = player.gui.screen[COMPLAINT_LOCATOR_FRAME_NAME]
+    release_complaint_locator_pause(player.index)
+    if frame then frame.destroy() end
+    return true
+  end
+
+  if element_name == COMPLAINT_LOCATOR_REFRESH_NAME then
+    refresh_complaint_locator(player)
+    return true
+  end
+
+  local result_index = complaint_locator_result_index(element_name)
+  if result_index then
+    focus_complaint(player, result_index)
+    return true
+  end
+
+  return false
+end
+
+function M.handle_gui_closed(element, player_index)
+  if element and element.valid and element.name == COMPLAINT_LOCATOR_FRAME_NAME then
+    release_complaint_locator_pause(player_index)
+    element.destroy()
+    return true
+  end
   return false
 end
 
@@ -748,5 +1272,11 @@ function M.handle_string_translated(event)
 
   finalize_runtime_debug_sample(request.sample_id)
 end
+
+
+M._test = {
+  complaint_locator_result_index = complaint_locator_result_index,
+  scan_world_for_complaint_item = scan_world_for_complaint_item,
+}
 
 return M

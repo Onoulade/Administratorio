@@ -2,6 +2,7 @@
 Version: 0.6.0
 Date: 2026-08-21
   Features:
+    - add an on-demand complaint-item locator that checks player inventories first, then pauses the simulation while scanning map inventories, belts, inserters, ground items, pneumatic pools, Terminus storage and transit, and biterport cargo
     - add optional first-alpha compatibility with Factorio: Space Age while preserving base-only play
     - add planet-specific administrative progression, local bootstrap recipes, surface restrictions, and escape routes for Vulcanus, Gleba, Fulgora, and Aquilo
     - add chromatic printing with cyan, yellow, and magenta inks, form stock, single-color forms, paired forms, the Trichromatic Permit, and the Unified Operations Charter
@@ -29,6 +30,7 @@ Date: 2026-08-21
     - add 45 Space Age achievements spanning every planet, chromatic paperwork, orbital industry, logistics, professions, and endgame milestones, plus an achievement for triggering the first protest
     - add optional Quality integration as Administrative Certification, including Accreditation Modules, renamed certification grades and technologies, and quality-preserving logistics
   Changes:
+    - move the runtime debug view into a draggable, screen-height-aware scrolling window, place Find Complaints and Export in its title bar, and constrain locator copy to a readable wrapped width
     - keep the Space Age dependency optional and isolate all expansion prototypes, recipes, technologies, categories, and runtime systems behind feature flags
     - keep native metallurgy, organic, electromagnetic, and cryogenic machines free of recurring operating paperwork while regulating their construction and outputs
     - preserve vanilla planet surface restrictions and avoid duplicate off-world versions of native Space Age processes
@@ -46,6 +48,7 @@ Date: 2026-08-21
     - rebalance Administrative Space Station, orbital printer, ink, catapult, tourism, AI Server, Slop Refinery, Terminus, waiver, bureau, and relocation costs and throughput
     - increase and rebalance regulated rocket cargo weights for administrative buildings, forms, workers, and orbital equipment
   Bugfixes:
+    - fix complaint locator result buttons not opening Remote View because their GUI names were interpreted as Lua patterns instead of literal identifiers
     - preserve item quality through regulated recipes, pneumatic transport, and cross-planet transfers
     - protect launched orbital employees, reserve asteroid staffing capacity, retarget deviation arrays by distance, and recover airborne overflow safely
     - prevent administrative entities and registry rebuilds from referencing Space Age prototypes when the expansion is disabled

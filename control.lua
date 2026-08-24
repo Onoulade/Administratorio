@@ -480,6 +480,7 @@ local function init_storage()
   storage.pending_group_redirect_head = storage.pending_group_redirect_head or 1
   storage.unit_group_redirect_watch = storage.unit_group_redirect_watch or {}
   storage.runtime_debug_players = storage.runtime_debug_players or {}
+  storage.complaint_locator_pause_owners = storage.complaint_locator_pause_owners or {}
   storage.stats = storage.stats or {}
   storage.stats.cases_resolved = storage.stats.cases_resolved or 0
   storage.stats.money_earned = storage.stats.money_earned or 0
@@ -934,6 +935,7 @@ local function on_player_left_game(event)
   biter_station_hover.clear(event.player_index)
   biterport_hover.clear(event.player_index)
   field_office.clear_placement_preview(event.player_index)
+  runtime_debug.close_complaint_locator(event.player_index)
 end
 
 local function refresh_selected_biter_info_guis()
@@ -1268,6 +1270,12 @@ local function on_toggle_runtime_debug(event)
   local player = game.get_player(event.player_index)
   if not player then return end
   runtime_debug.toggle(player)
+end
+
+local function on_toggle_complaint_locator(event)
+  local player = game.get_player(event.player_index)
+  if not player then return end
+  runtime_debug.toggle_complaint_locator(player)
 end
 
 local build_entity_died_filters
@@ -2172,6 +2180,10 @@ local function on_gui_click(event)
   end
 end
 
+local function on_gui_closed(event)
+  runtime_debug.handle_gui_closed(event.element, event.player_index)
+end
+
 
 
 -- ============================================================
@@ -2294,6 +2306,7 @@ control_event_router.register({
   on_entity_removed = on_entity_removed,
   on_field_agent_waypoint_input = on_field_agent_waypoint_input,
   on_gui_click = on_gui_click,
+  on_gui_closed = on_gui_closed,
   on_init = on_init,
   on_load = on_load,
   on_main_tick = on_main_tick,
@@ -2324,6 +2337,7 @@ control_event_router.register({
   on_selected_entity_changed = on_selected_entity_changed,
   on_string_translated = on_string_translated,
   on_toggle_runtime_debug = on_toggle_runtime_debug,
+  on_toggle_complaint_locator = on_toggle_complaint_locator,
   on_train_changed_state = on_train_changed_state,
   on_unit_added_to_group = on_unit_added_to_group,
   on_unit_group_created = on_unit_group_created,
