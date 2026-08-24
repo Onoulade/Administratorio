@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Keep the Space Age automation pass localized in every shipped language.
 
-The 0.6.2 release predates the automation pass and has unrelated translation
+The baseline revision predates the automation pass and has unrelated translation
 debt. This audit deliberately scopes itself to English config keys introduced
-or changed after that release, so new tube, AI, waiver, courier, and cannon
+or changed after that baseline, so new tube, AI, waiver, courier, and cannon
 content cannot silently fall back to English.
 """
 
@@ -62,7 +62,7 @@ def main() -> None:
         for pair, value in english.items()
         if pair in baseline and baseline[pair] != value
     }
-    assert automation_keys, "expected Space Age automation locale changes after 0.6.2"
+    assert automation_keys, "expected Space Age automation locale changes after the baseline"
 
     for language in LANGUAGES:
         localized = load_language(language)

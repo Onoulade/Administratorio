@@ -333,4 +333,14 @@ function M.get_counts(spawner)
   return count_entries(record.owned), count_entries(record.detached)
 end
 
+-- Returns the capacity that script-managed systems (currently complaints and
+-- Field Offices) may lease from this nest. Native owned units do not reduce
+-- availability: lease_new_unit retires one of them when a slot is transferred.
+function M.get_capacity(spawner)
+  local total = spawner_limit(spawner)
+  local _, used = M.get_counts(spawner)
+  if total == nil then return nil, used, nil end
+  return math.max(0, total - used), used, total
+end
+
 return M

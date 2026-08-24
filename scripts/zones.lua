@@ -35,10 +35,17 @@ function M.get_desk_footprint_bounds(pos)
   }
 end
 
+local function active_desk_on_surface(desk_id, surface)
+  local desk = storage.admin_desks and storage.admin_desks[desk_id]
+  return desk and desk.valid and desk.surface and surface
+    and desk.surface.index == surface.index
+end
+
 function M.is_in_admin_zone(surface, box)
   for desk_id, zone in pairs(storage.desk_zones) do
     local b = zone.footprint or zone.bounds
-    if b and box.left_top.x < b.right_bottom.x and box.right_bottom.x > b.left_top.x
+    if active_desk_on_surface(desk_id, surface)
+       and b and box.left_top.x < b.right_bottom.x and box.right_bottom.x > b.left_top.x
        and box.left_top.y < b.right_bottom.y and box.right_bottom.y > b.left_top.y then
       return true
     end
@@ -82,8 +89,18 @@ end
 
 local function clear_desk_zone_storage(desk_id, zone)
   if zone and zone.footprint and game and game.surfaces then
-    for _, surface in pairs(game.surfaces) do
+    local desk = storage.admin_desks and storage.admin_desks[desk_id]
+    local surface_index = zone.surface_index
+      or (desk and desk.valid and desk.surface and desk.surface.index)
+    local surface = surface_index and game.surfaces[surface_index]
+    if surface then
       destroy_corner_blockers_in_footprint(surface, zone.footprint)
+    else
+      -- Legacy zones did not record their surface. Configuration migration
+      -- removes all legacy blockers before rebuilding live station zones.
+      for _, legacy_surface in pairs(game.surfaces) do
+        destroy_corner_blockers_in_footprint(legacy_surface, zone.footprint)
+      end
     end
   end
   storage.desk_zones[desk_id] = nil
@@ -92,9 +109,9 @@ local function clear_desk_zone_storage(desk_id, zone)
   if storage.desk_return_positions then storage.desk_return_positions[desk_id] = nil end
 end
 
-function M.zone_overlaps_existing(bounds, exclude_desk_id)
+function M.zone_overlaps_existing(surface, bounds, exclude_desk_id)
   for desk_id, zone in pairs(storage.desk_zones) do
-    if desk_id ~= exclude_desk_id and zone.bounds then
+    if desk_id ~= exclude_desk_id and zone.bounds and active_desk_on_surface(desk_id, surface) then
       local b = zone.footprint or zone.bounds
       if bounds.left_top.x < b.right_bottom.x and bounds.right_bottom.x > b.left_top.x
          and bounds.left_top.y < b.right_bottom.y and bounds.right_bottom.y > b.left_top.y then
@@ -242,7 +259,11 @@ function M.ensure_desk_runtime_state(desk)
     end
   end
 
-  storage.desk_zones[desk_id] = {bounds = bounds, footprint = footprint}
+  storage.desk_zones[desk_id] = {
+    bounds = bounds,
+    footprint = footprint,
+    surface_index = desk.surface.index,
+  }
   storage.desk_reserved_slots[desk_id] = storage.desk_reserved_slots[desk_id] or 0
   storage.desk_grid_slots[desk_id] = storage.desk_grid_slots[desk_id] or {}
   ensure_occupant_counts()

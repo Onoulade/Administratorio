@@ -1,0 +1,246 @@
+{
+  "name": "digital-services-bureau",
+  "source": "graphics/entities/space-age/digital-services-bureau.png",
+  "output": "graphics/entities/space-age/digital-services-bureau-animation.png",
+  "size": [
+    192,
+    192
+  ],
+  "motions": [
+    {
+      "type": "mechanical_rotor",
+      "center": [
+        159.5,
+        49
+      ],
+      "plane_basis": [
+        [
+          17.469,
+          0
+        ],
+        [
+          0,
+          14.63
+        ]
+      ],
+      "aperture_radius": [
+        17.56,
+        14.79
+      ],
+      "aperture_bbox": [
+        140,
+        32,
+        179,
+        66
+      ],
+      "hub_center": [
+        159.5,
+        49
+      ],
+      "source_hub_basis": [
+        [
+          6.3,
+          0
+        ],
+        [
+          0,
+          5.4
+        ]
+      ],
+      "hub_bbox": [
+        153,
+        43,
+        166,
+        55
+      ],
+      "blade_count": 6,
+      "base_angle": -1.571,
+      "blade_color": [
+        78,
+        75,
+        67
+      ],
+      "hub_color": [
+        104,
+        98,
+        86
+      ],
+      "fixed_grille": {
+        "rings": [
+          [
+            10,
+            1
+          ],
+          [
+            15,
+            1
+          ]
+        ],
+        "spokes": {
+          "count": 8,
+          "inner_radius": 5,
+          "outer_radius": 15,
+          "width": 1
+        }
+      },
+      "aperture_feather": 0.65,
+      "hub_feather": 0.6,
+      "supersample": 10
+    },
+    {
+      "type": "orbit_glint",
+      "bbox": [
+        67.89,
+        28.11,
+        123.77,
+        77.14
+      ],
+      "turns": 1,
+      "count": 6,
+      "dot_radius": 2.5,
+      "alpha": 64,
+      "blur": 1.2,
+      "color": [
+        255,
+        152,
+        89
+      ]
+    },
+    {
+      "type": "chase",
+      "points": [
+        [
+          33.26,
+          44.91,
+          242,
+          45,
+          210
+        ],
+        [
+          44.57,
+          44.57,
+          242,
+          45,
+          210
+        ],
+        [
+          152.23,
+          83.31,
+          242,
+          45,
+          210
+        ],
+        [
+          170.06,
+          82.97,
+          242,
+          45,
+          210
+        ]
+      ],
+      "radius": [
+        4,
+        8
+      ],
+      "alpha": 105,
+      "blur": 3
+    },
+    {
+      "type": "sweep",
+      "bbox": [
+        140.4,
+        119.06,
+        179.66,
+        145.03
+      ],
+      "polygon": [
+        [
+          144.08,
+          119.11
+        ],
+        [
+          177.08,
+          119.11
+        ],
+        [
+          177.08,
+          145.11
+        ],
+        [
+          144.08,
+          145.11
+        ]
+      ],
+      "axis": "y",
+      "color": [
+        64,
+        158,
+        255
+      ],
+      "alpha": 75,
+      "width": 1,
+      "blur": 1.5
+    },
+    {
+      "type": "source_occluder",
+      "shape": "polygon",
+      "polygon": [
+        [
+          78.72,
+          23.86
+        ],
+        [
+          114.65,
+          23.59
+        ],
+        [
+          114.65,
+          47.45
+        ],
+        [
+          76.25,
+          44.43
+        ]
+      ],
+      "feather": 0.35
+    },
+    {
+      "type": "pulse",
+      "center": [
+        163.75,
+        17.83
+      ],
+      "radius": [
+        14.81,
+        11.52
+      ],
+      "color": [
+        215,
+        109,
+        185
+      ],
+      "alpha": 108,
+      "blur": 5.8
+    },
+    {
+      "type": "sweep",
+      "bbox": [
+        17.01,
+        122.61,
+        44.43,
+        147.02
+      ],
+      "axis": "y",
+      "color": [
+        88,
+        52,
+        0
+      ],
+      "alpha": 69,
+      "width": 2,
+      "blur": 2.1
+    }
+  ],
+  "animation_speed": 0.1,
+  "crafting_speed": 3
+}

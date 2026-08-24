@@ -111,6 +111,11 @@ data:extend({{
   consuming = "none"
 }, {
   type = "custom-input",
+  name = "administratorio-toggle-complaint-locator",
+  key_sequence = "CONTROL + SHIFT + F",
+  consuming = "none"
+}, {
+  type = "custom-input",
   name = "administratorio-field-agent-toggle-select",
   key_sequence = "mouse-button-1",
   consuming = "none",

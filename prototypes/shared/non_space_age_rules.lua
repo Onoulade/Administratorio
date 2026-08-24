@@ -27,7 +27,15 @@ function rules.get_required_form(recipe_name)
     return explicit_form_overrides[recipe_name]
   end
 
-  if recipe_name == "burner-inserter" then return "work-order" end
+  -- Standard inserters are ordinary logistics infrastructure.  Reserve the
+  -- safety tier for bulk/stack inserters and other genuinely heavier machinery.
+  local regular_inserters = {
+    ["burner-inserter"] = true,
+    ["inserter"] = true,
+    ["long-handed-inserter"] = true,
+    ["fast-inserter"] = true,
+  }
+  if regular_inserters[recipe_name] then return "work-order" end
 
   local tier4_patterns = {
     "assembling%-machine%-3", "centrifuge", "rocket%-silo",

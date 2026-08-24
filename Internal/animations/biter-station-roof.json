@@ -1,0 +1,226 @@
+{
+  "name": "biter-station-roof",
+  "source": "graphics/entities/work-station/work-station-roof.png",
+  "output": "graphics/entities/work-station/work-station-roof-animation.png",
+  "size": [
+    480,
+    419
+  ],
+  "motions": [
+    {
+      "type": "surface_scan",
+      "polygon": [
+        [
+          84,
+          109.75
+        ],
+        [
+          143.14,
+          72.03
+        ],
+        [
+          144,
+          221.22
+        ],
+        [
+          82.29,
+          259.81
+        ]
+      ],
+      "axis": "y",
+      "color": [
+        255,
+        196,
+        101
+      ],
+      "alpha": 51,
+      "width": 5,
+      "blur": 4,
+      "phase": 0.05
+    },
+    {
+      "type": "surface_scan",
+      "polygon": [
+        [
+          161.14,
+          107.18
+        ],
+        [
+          218.57,
+          71.17
+        ],
+        [
+          217.71,
+          219.51
+        ],
+        [
+          162,
+          255.52
+        ]
+      ],
+      "axis": "y",
+      "color": [
+        255,
+        196,
+        101
+      ],
+      "alpha": 41,
+      "width": 5,
+      "blur": 4,
+      "phase": 0.3
+    },
+    {
+      "type": "surface_scan",
+      "polygon": [
+        [
+          239.14,
+          108.04
+        ],
+        [
+          297.43,
+          72.03
+        ],
+        [
+          299.14,
+          219.51
+        ],
+        [
+          240.86,
+          252.09
+        ]
+      ],
+      "axis": "y",
+      "color": [
+        255,
+        196,
+        101
+      ],
+      "alpha": 40,
+      "width": 5,
+      "blur": 4,
+      "phase": 0.55
+    },
+    {
+      "type": "surface_scan",
+      "polygon": [
+        [
+          313.71,
+          107.18
+        ],
+        [
+          366,
+          74.6
+        ],
+        [
+          368.57,
+          222.94
+        ],
+        [
+          313.71,
+          257.23
+        ]
+      ],
+      "axis": "y",
+      "color": [
+        255,
+        196,
+        101
+      ],
+      "alpha": 39,
+      "width": 5,
+      "blur": 4,
+      "phase": 0.8
+    },
+    {
+      "type": "pulse",
+      "center": [
+        121.71,
+        69.45
+      ],
+      "radius": [
+        27.43,
+        24.01
+      ],
+      "color": [
+        255,
+        146,
+        30
+      ],
+      "alpha": 70,
+      "blur": 5
+    },
+    {
+      "type": "steam",
+      "origin": [
+        345.43,
+        50.59
+      ],
+      "rise": 34,
+      "drift": 6,
+      "count": 4,
+      "radius": 3,
+      "alpha": 34,
+      "blur": 2.5
+    },
+    {
+      "type": "mechanical_rotor",
+      "center": [
+        212.08,
+        64.17
+      ],
+      "plane_basis": [
+        [
+          15.19,
+          0
+        ],
+        [
+          0,
+          11.75
+        ]
+      ],
+      "aperture_radius": [
+        20,
+        20
+      ],
+      "aperture_bbox": [
+        220,
+        189.5,
+        260,
+        229.5
+      ],
+      "hub_center": [
+        212.08,
+        64.17
+      ],
+      "source_hub_basis": [
+        [
+          4.41,
+          0
+        ],
+        [
+          0,
+          3.41
+        ]
+      ],
+      "hub_bbox": [
+        232,
+        201.5,
+        248,
+        217.5
+      ],
+      "blade_count": 9,
+      "base_angle": 0,
+      "blade_color": [
+        90,
+        85,
+        70
+      ],
+      "aperture_feather": 0.32,
+      "hub_feather": 0.6,
+      "supersample": 8,
+      "pitches_per_loop": 2
+    }
+  ],
+  "animation_speed": 0.2,
+  "crafting_speed": 1
+}

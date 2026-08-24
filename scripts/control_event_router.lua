@@ -78,6 +78,7 @@ function M.register(deps)
   end
 
   script.on_event("administratorio-toggle-runtime-debug", deps.on_toggle_runtime_debug)
+  script.on_event("administratorio-toggle-complaint-locator", deps.on_toggle_complaint_locator)
   script.on_event("administratorio-field-agent-toggle-select", deps.on_field_agent_waypoint_input)
   script.on_event("administratorio-field-agent-set-waypoint", deps.on_field_agent_waypoint_input)
   script.on_event("administratorio-field-agent-append-waypoint", deps.on_field_agent_waypoint_input)
@@ -98,6 +99,7 @@ function M.register(deps)
   script.on_event(defines.events.on_train_changed_state, deps.on_train_changed_state)
   script.on_event(defines.events.on_rocket_launched, deps.on_rocket_launched)
   script.on_event(defines.events.on_gui_click, deps.on_gui_click)
+  script.on_event(defines.events.on_gui_closed, deps.on_gui_closed)
   script.on_event(defines.events.on_research_finished, deps.on_research_finished)
 
   -- Each system declares the cadence its own behaviour needs. Sharing an

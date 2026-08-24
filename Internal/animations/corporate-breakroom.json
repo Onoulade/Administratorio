@@ -1,0 +1,220 @@
+{
+  "name": "corporate-breakroom",
+  "source": "graphics/entities/corporate-breakroom/breakroom.png",
+  "output": "graphics/entities/corporate-breakroom/breakroom-animation.png",
+  "size": [
+    180,
+    185
+  ],
+  "motions": [
+    {
+      "type": "mechanical_rotor",
+      "center": [
+        40,
+        27
+      ],
+      "plane_basis": [
+        [
+          13.1,
+          0
+        ],
+        [
+          0.2,
+          10.5
+        ]
+      ],
+      "aperture_radius": [
+        10.5,
+        10.5
+      ],
+      "aperture_bbox": [
+        24,
+        20,
+        45,
+        41
+      ],
+      "hub_center": [
+        40,
+        27
+      ],
+      "source_hub_basis": [
+        [
+          4.5,
+          0
+        ],
+        [
+          0,
+          4.5
+        ]
+      ],
+      "hub_bbox": [
+        30,
+        26,
+        39,
+        35
+      ],
+      "blade_count": 8,
+      "base_angle": -1.571,
+      "blade_outer_fraction": 0.41,
+      "blade_color": [
+        142,
+        138,
+        137
+      ],
+      "hub_color": [
+        148,
+        125,
+        112
+      ],
+      "aperture_feather": 0.55,
+      "hub_feather": 0.55,
+      "supersample": 10,
+      "direction": 1
+    },
+    {
+      "type": "mechanical_rotor",
+      "center": [
+        40.4,
+        60.5
+      ],
+      "plane_basis": [
+        [
+          13.4,
+          0
+        ],
+        [
+          0,
+          10.5
+        ]
+      ],
+      "aperture_radius": [
+        10.5,
+        10.5
+      ],
+      "aperture_bbox": [
+        24,
+        45,
+        45,
+        66
+      ],
+      "hub_center": [
+        40.5,
+        60.5
+      ],
+      "source_hub_basis": [
+        [
+          3.3,
+          0
+        ],
+        [
+          0,
+          4.5
+        ]
+      ],
+      "hub_bbox": [
+        30,
+        51,
+        39,
+        60
+      ],
+      "blade_count": 8,
+      "base_angle": -1.571,
+      "direction": 1,
+      "blade_outer_fraction": 0.41,
+      "blade_color": [
+        142,
+        138,
+        137
+      ],
+      "hub_color": [
+        148,
+        125,
+        112
+      ],
+      "aperture_feather": 0.55,
+      "hub_feather": 0.55,
+      "supersample": 10
+    },
+    {
+      "type": "pulse",
+      "center": [
+        138.73,
+        10.57
+      ],
+      "radius": [
+        9,
+        8
+      ],
+      "color": [
+        255,
+        160,
+        74
+      ],
+      "alpha": 55,
+      "blur": 4
+    },
+    {
+      "type": "steam",
+      "origin": [
+        99.89,
+        32.77
+      ],
+      "rise": 23,
+      "drift": 4,
+      "count": 4,
+      "radius": 2.5,
+      "alpha": 77,
+      "blur": 2
+    },
+    {
+      "type": "vibration",
+      "polygon": [
+        [
+          117.04,
+          13.21
+        ],
+        [
+          130.44,
+          2.27
+        ],
+        [
+          145.55,
+          2.64
+        ],
+        [
+          159.52,
+          13.21
+        ],
+        [
+          158.95,
+          50.97
+        ],
+        [
+          116.47,
+          51.72
+        ]
+      ],
+      "pivot": [
+        138.18,
+        42.85
+      ],
+      "amplitude": [
+        0,
+        0.4
+      ],
+      "cycles_per_loop": 2,
+      "waveform": "motor",
+      "phase": 0,
+      "y_phase_offset": 0,
+      "rotation_degrees": 0.31,
+      "rotation_phase_offset": 0,
+      "feather": 0.65,
+      "background_mode": "source",
+      "cavity_brightness": 0.48,
+      "cavity_blur": 1.2,
+      "supersample": 6
+    }
+  ],
+  "animation_speed": 0.2,
+  "crafting_speed": 1
+}

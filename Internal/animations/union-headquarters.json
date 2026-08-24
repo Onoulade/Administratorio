@@ -1,0 +1,576 @@
+{
+  "name": "union-headquarters",
+  "source": "graphics/entities/union-hq/union-hq.png",
+  "output": "graphics/entities/union-hq/union-hq-animation.png",
+  "size": [
+    480,
+    495
+  ],
+  "motions": [
+    {
+      "type": "mechanical_rotor",
+      "center": [
+        371,
+        75
+      ],
+      "plane_basis": [
+        [
+          16.4,
+          0
+        ],
+        [
+          0,
+          15
+        ]
+      ],
+      "aperture_radius": [
+        15.5,
+        15
+      ],
+      "aperture_bbox": [
+        362,
+        61,
+        394,
+        91
+      ],
+      "hub_center": [
+        371,
+        75
+      ],
+      "source_hub_basis": [
+        [
+          5.5,
+          0
+        ],
+        [
+          0,
+          5.5
+        ]
+      ],
+      "hub_bbox": [
+        370,
+        69,
+        386,
+        83
+      ],
+      "blade_count": 6,
+      "base_angle": -1.571,
+      "leading_tip": -0.22,
+      "trailing_tip": 0.25,
+      "blade_color": [
+        83,
+        77,
+        63
+      ],
+      "hub_color": [
+        130,
+        112,
+        82
+      ],
+      "aperture_feather": 0.6,
+      "hub_feather": 0.6,
+      "supersample": 10
+    },
+    {
+      "type": "mechanical_rotor",
+      "center": [
+        420.4,
+        74.84
+      ],
+      "plane_basis": [
+        [
+          17,
+          0
+        ],
+        [
+          0,
+          15
+        ]
+      ],
+      "aperture_radius": [
+        15.5,
+        15
+      ],
+      "aperture_bbox": [
+        406,
+        61,
+        438,
+        91
+      ],
+      "hub_center": [
+        420.7,
+        75.4
+      ],
+      "source_hub_basis": [
+        [
+          5.5,
+          0
+        ],
+        [
+          0,
+          5.5
+        ]
+      ],
+      "hub_bbox": [
+        414,
+        69,
+        430,
+        83
+      ],
+      "blade_count": 6,
+      "base_angle": -1.571,
+      "direction": -1,
+      "leading_tip": -0.22,
+      "trailing_tip": 0.25,
+      "blade_color": [
+        83,
+        77,
+        63
+      ],
+      "hub_color": [
+        130,
+        112,
+        82
+      ],
+      "aperture_feather": 0.6,
+      "hub_feather": 0.6,
+      "supersample": 10
+    },
+    {
+      "type": "mechanical_gear",
+      "center": [
+        240,
+        335
+      ],
+      "plane_basis": [
+        [
+          39,
+          0
+        ],
+        [
+          0,
+          34
+        ]
+      ],
+      "outer_radius": [
+        39,
+        34
+      ],
+      "inner_radius": [
+        25,
+        21.8
+      ],
+      "inner_fraction": 0.64,
+      "tooth_count": 12,
+      "base_angle": -1.571,
+      "root_fraction": 0.89,
+      "tooth_tip_fraction": 0.23,
+      "gear_color": [
+        126,
+        86,
+        30
+      ],
+      "gear_edge": [
+        214,
+        162,
+        70,
+        195
+      ],
+      "gear_root_edge": [
+        62,
+        42,
+        21,
+        150
+      ],
+      "source_center": [
+        240,
+        333
+      ],
+      "source_center_basis": [
+        [
+          20.28,
+          0
+        ],
+        [
+          0,
+          17.68
+        ]
+      ],
+      "source_tooth_material": true,
+      "source_albedo_blend": 0.84,
+      "albedo_tint_strength": 0.62,
+      "source_material_blend": 0.14,
+      "material_blur": 2.4,
+      "aperture_feather": 0.64,
+      "center_feather": 1.5,
+      "supersample": 10,
+      "direction": 1,
+      "gear_thickness_fraction": 0.05,
+      "thickness_direction": [
+        -0.07,
+        -1
+      ]
+    },
+    {
+      "type": "source_occluder",
+      "label": "Left foreground brace",
+      "shape": "polygon",
+      "polygon": [
+        [
+          212.49,
+          324.58
+        ],
+        [
+          218.48,
+          319.7
+        ],
+        [
+          227.6,
+          313.19
+        ],
+        [
+          239.88,
+          311.33
+        ],
+        [
+          251.42,
+          313.93
+        ],
+        [
+          258.68,
+          319.52
+        ],
+        [
+          265,
+          324.73
+        ],
+        [
+          273.19,
+          325.1
+        ],
+        [
+          273.19,
+          337.01
+        ],
+        [
+          267.8,
+          337.01
+        ],
+        [
+          266.12,
+          340.36
+        ],
+        [
+          259.79,
+          342.03
+        ],
+        [
+          252.16,
+          350.04
+        ],
+        [
+          238.76,
+          354.87
+        ],
+        [
+          228.34,
+          351.9
+        ],
+        [
+          221.64,
+          345.94
+        ],
+        [
+          217.92,
+          341.1
+        ],
+        [
+          210.66,
+          340.55
+        ],
+        [
+          210.48,
+          337.2
+        ],
+        [
+          205.08,
+          337.38
+        ],
+        [
+          205.08,
+          326.4
+        ],
+        [
+          209.73,
+          325.66
+        ]
+      ],
+      "feather": 0.25
+    },
+    {
+      "type": "chase",
+      "points": [
+        [
+          39.41,
+          5.56,
+          255,
+          183,
+          58
+        ],
+        [
+          439.53,
+          5.05,
+          255,
+          183,
+          58
+        ],
+        [
+          449.13,
+          258.11,
+          255,
+          183,
+          58
+        ],
+        [
+          29.3,
+          259.12,
+          255,
+          183,
+          58
+        ]
+      ],
+      "radius": [
+        7,
+        7
+      ],
+      "alpha": 85,
+      "blur": 4
+    },
+    {
+      "type": "steam",
+      "origin": [
+        169.71,
+        260.76
+      ],
+      "rise": 80,
+      "drift": 10,
+      "count": 120,
+      "radius": 3,
+      "alpha": 121,
+      "blur": 3.6
+    },
+    {
+      "type": "steam",
+      "origin": [
+        308.48,
+        261.64
+      ],
+      "rise": 80,
+      "drift": 10,
+      "count": 120,
+      "radius": 3,
+      "alpha": 126,
+      "blur": 4
+    },
+    {
+      "type": "mechanical_rotor",
+      "center": [
+        90.5,
+        114
+      ],
+      "plane_basis": [
+        [
+          21.76,
+          0
+        ],
+        [
+          0,
+          16.82
+        ]
+      ],
+      "aperture_radius": [
+        20,
+        20
+      ],
+      "aperture_bbox": [
+        220,
+        227.5,
+        260,
+        267.5
+      ],
+      "hub_center": [
+        90.5,
+        113
+      ],
+      "source_hub_basis": [
+        [
+          5,
+          0
+        ],
+        [
+          0,
+          5
+        ]
+      ],
+      "hub_bbox": [
+        232,
+        239.5,
+        248,
+        255.5
+      ],
+      "blade_count": 12,
+      "base_angle": 0,
+      "blade_color": [
+        90,
+        85,
+        70
+      ],
+      "aperture_feather": 0.6,
+      "hub_feather": 0.6,
+      "supersample": 8,
+      "direction": 1
+    },
+    {
+      "type": "chase",
+      "points": [
+        [
+          82.73,
+          236.54,
+          255,
+          190,
+          70
+        ],
+        [
+          392.45,
+          235.83,
+          255,
+          190,
+          70
+        ],
+        [
+          406.59,
+          235.48,
+          255,
+          190,
+          70
+        ]
+      ],
+      "radius": [
+        3,
+        3
+      ],
+      "alpha": 136,
+      "blur": 2
+    },
+    {
+      "type": "vibration",
+      "polygon": [
+        [
+          374.41,
+          166.89
+        ],
+        [
+          385.38,
+          155.93
+        ],
+        [
+          401.64,
+          152.39
+        ],
+        [
+          414.01,
+          155.57
+        ],
+        [
+          421.44,
+          163.35
+        ],
+        [
+          423.21,
+          245.03
+        ],
+        [
+          375.83,
+          245.38
+        ]
+      ],
+      "pivot": [
+        399.52,
+        208.61
+      ],
+      "amplitude": [
+        0.4,
+        0.7
+      ],
+      "cycles_per_loop": 3,
+      "waveform": "motor",
+      "phase": 0,
+      "y_phase_offset": 0,
+      "rotation_degrees": 0.25,
+      "rotation_phase_offset": 0,
+      "feather": 0.65,
+      "background_mode": "source",
+      "cavity_brightness": 0.48,
+      "cavity_blur": 1.2,
+      "supersample": 6
+    },
+    {
+      "type": "vibration",
+      "polygon": [
+        [
+          65.76,
+          36.06
+        ],
+        [
+          79.9,
+          24.4
+        ],
+        [
+          92.28,
+          15.2
+        ],
+        [
+          107.48,
+          26.87
+        ],
+        [
+          118.09,
+          35.71
+        ],
+        [
+          117.03,
+          94.76
+        ],
+        [
+          91.92,
+          88.75
+        ],
+        [
+          66.82,
+          97.59
+        ]
+      ],
+      "pivot": [
+        91.22,
+        86.98
+      ],
+      "amplitude": [
+        -0.65,
+        0.4
+      ],
+      "cycles_per_loop": 3,
+      "waveform": "motor",
+      "phase": 0,
+      "y_phase_offset": 0,
+      "rotation_degrees": 0.25,
+      "rotation_phase_offset": 0,
+      "feather": 0.65,
+      "background_mode": "source",
+      "cavity_brightness": 0.48,
+      "cavity_blur": 1.2,
+      "supersample": 6
+    }
+  ],
+  "animation_speed": 0.6,
+  "crafting_speed": 1
+}

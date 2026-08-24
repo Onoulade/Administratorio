@@ -109,6 +109,7 @@ game = {
 }
 
 local field_office = require("scripts.field_office")
+local spawner_population = require("scripts.spawner_population")
 local C = require("scripts.constants")
 
 local function reset()
@@ -614,6 +615,41 @@ test("field office certification scales biter range and placement preview radius
   local circle = drawn[1]
   assert_near(circle.params.radius, C.FIELD_OFFICE_SPAWNER_RANGE * 1.5,
     "legendary field-office cursor preview should match the placed office range")
+end)
+
+test("field office population summary aggregates and sorts per-nest capacity", function()
+  reset()
+  local farther = {
+    valid = true,
+    unit_number = 701,
+    position = {x = 70, y = 20},
+    prototype = {max_count_of_owned_units = 4},
+  }
+  local nearer = {
+    valid = true,
+    unit_number = 702,
+    position = {x = 20, y = 20},
+    prototype = {max_count_of_owned_units = 7},
+  }
+  local surface = new_surface({farther, nearer})
+  farther.surface = surface
+  nearer.surface = surface
+  local office = new_office(surface, 6, 100)
+  field_office.track_entity(office)
+
+  local leased_worker = {valid = true, unit_number = 1702}
+  assert_true(spawner_population.lease_new_unit(leased_worker, nearer))
+
+  local summary = field_office.get_nearby_population_summary(office)
+  assert_eq(summary.available, 10, "aggregate availability should subtract active leases")
+  assert_eq(summary.used, 1)
+  assert_eq(summary.total, 11)
+  assert_eq(#summary.nests, 2)
+  assert_true(summary.nests[1].entity == nearer, "per-nest rows should be nearest first")
+  assert_eq(summary.nests[1].available, 6)
+  assert_eq(summary.nests[1].used, 1)
+  assert_eq(summary.nests[1].total, 7)
+  assert_eq(field_office.get_nearby_office_count(nearer), 1)
 end)
 
 if failed > 0 then

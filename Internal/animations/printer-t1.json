@@ -1,0 +1,663 @@
+{
+  "name": "printer-t1",
+  "source": "graphics/entities/printer-t1/printer-t1.png",
+  "output": "graphics/entities/printer-t1/printer-t1-animation.png",
+  "size": [
+    128,
+    152
+  ],
+  "motions": [
+    {
+      "type": "surface_scan",
+      "polygon": [
+        [
+          46,
+          5
+        ],
+        [
+          82,
+          5
+        ],
+        [
+          82,
+          31
+        ],
+        [
+          46,
+          31
+        ]
+      ],
+      "axis": "y",
+      "color": [
+        66,
+        49,
+        34
+      ],
+      "alpha": 72,
+      "width": 1,
+      "blur": 0.35
+    },
+    {
+      "type": "surface_scan",
+      "polygon": [
+        [
+          43,
+          34
+        ],
+        [
+          85,
+          34
+        ],
+        [
+          85,
+          50
+        ],
+        [
+          43,
+          50
+        ]
+      ],
+      "axis": "y",
+      "color": [
+        69,
+        51,
+        35
+      ],
+      "alpha": 60,
+      "width": 1,
+      "blur": 0.35,
+      "phase": 0.55
+    },
+    {
+      "type": "surface_scan",
+      "polygon": [
+        [
+          36,
+          70
+        ],
+        [
+          94,
+          70
+        ],
+        [
+          94,
+          80
+        ],
+        [
+          36,
+          80
+        ]
+      ],
+      "axis": "y",
+      "color": [
+        255,
+        233,
+        190
+      ],
+      "alpha": 52,
+      "width": 2,
+      "blur": 1,
+      "phase": 0.2
+    },
+    {
+      "type": "surface_scan",
+      "polygon": [
+        [
+          36,
+          84
+        ],
+        [
+          94,
+          84
+        ],
+        [
+          94,
+          94
+        ],
+        [
+          36,
+          94
+        ]
+      ],
+      "axis": "y",
+      "color": [
+        255,
+        233,
+        190
+      ],
+      "alpha": 48,
+      "width": 2,
+      "blur": 1,
+      "phase": 0.7
+    },
+    {
+      "type": "surface_scan",
+      "polygon": [
+        [
+          46,
+          122
+        ],
+        [
+          83,
+          122
+        ],
+        [
+          83,
+          146
+        ],
+        [
+          46,
+          146
+        ]
+      ],
+      "axis": "y",
+      "color": [
+        67,
+        49,
+        34
+      ],
+      "alpha": 70,
+      "width": 1,
+      "blur": 0.35,
+      "phase": 0.35
+    },
+    {
+      "type": "pulse",
+      "center": [
+        107.2,
+        52.39
+      ],
+      "radius": [
+        7.05,
+        6.78
+      ],
+      "color": [
+        255,
+        197,
+        54
+      ],
+      "alpha": 145,
+      "blur": 2
+    },
+    {
+      "type": "gauge",
+      "label": "Gauge needle",
+      "center": [
+        18.73,
+        79.26
+      ],
+      "plane_basis": [
+        [
+          5.15,
+          -0.27
+        ],
+        [
+          0.09,
+          3.98
+        ]
+      ],
+      "minimum_angle_degrees": -150,
+      "maximum_angle_degrees": -30,
+      "needle_length": 0.78,
+      "tail_length": 0.12,
+      "needle_width": 0.055,
+      "tip_width": 0.012,
+      "pivot_radius": 0.1,
+      "waveform": "triangle",
+      "cycles_per_loop": 1,
+      "phase": 0,
+      "reverse": false,
+      "background_enabled": true,
+      "face_color": [
+        225,
+        193,
+        160
+      ],
+      "face_alpha": 255,
+      "rim_color": [
+        137,
+        102,
+        57
+      ],
+      "rim_shadow_color": [
+        48,
+        38,
+        29
+      ],
+      "rim_width": 0.09,
+      "tick_color": [
+        167,
+        123,
+        0
+      ],
+      "tick_count": 11,
+      "major_tick_every": 5,
+      "tick_length": 0.105,
+      "tick_margin": 0.055,
+      "tick_width": 0.75,
+      "needle_color": [
+        196,
+        68,
+        49
+      ],
+      "edge_color": [
+        67,
+        31,
+        24
+      ],
+      "highlight_color": [
+        245,
+        163,
+        118
+      ],
+      "pivot_color": [
+        116,
+        91,
+        61
+      ],
+      "shadow_offset": [
+        0.8,
+        1
+      ],
+      "shadow_alpha": 59,
+      "shadow_blur": 0.55,
+      "clip_to_face": true,
+      "face_fraction": 0.96,
+      "aperture_feather": 0.5,
+      "supersample": 6
+    },
+    {
+      "type": "mechanical_gear",
+      "center": [
+        36.37,
+        63.42
+      ],
+      "plane_basis": [
+        [
+          5.33,
+          0
+        ],
+        [
+          0,
+          3.98
+        ]
+      ],
+      "outer_radius": [
+        20,
+        20
+      ],
+      "inner_radius": [
+        13,
+        13
+      ],
+      "inner_fraction": 0.65,
+      "tooth_count": 10,
+      "base_angle": 0,
+      "root_fraction": 0.88,
+      "tooth_tip_fraction": 0.22,
+      "gear_color": [
+        112,
+        88,
+        51
+      ],
+      "gear_thickness_fraction": 0.24,
+      "thickness_direction": [
+        0,
+        1
+      ],
+      "thickness_brightness": 0.46,
+      "thickness_edge_highlight": 0.14,
+      "fill_style": "bars",
+      "fill_count": 5,
+      "fill_width_fraction": 0.24,
+      "body_hub_fraction": 0.24,
+      "body_rim_width": 0.1,
+      "hole_ring_fraction": 0.53,
+      "hole_radius_fraction": 0.12,
+      "source_tooth_material": true,
+      "source_albedo_blend": 0.7,
+      "albedo_tint_strength": 0.7,
+      "source_material_blend": 0.16,
+      "material_blur": 2,
+      "aperture_feather": 0.65,
+      "supersample": 8,
+      "center_feather": 0.65
+    },
+    {
+      "type": "mechanical_gear",
+      "center": [
+        90.82,
+        63.42
+      ],
+      "plane_basis": [
+        [
+          5.52,
+          0
+        ],
+        [
+          0,
+          3.71
+        ]
+      ],
+      "outer_radius": [
+        20,
+        20
+      ],
+      "inner_radius": [
+        13,
+        13
+      ],
+      "inner_fraction": 0.65,
+      "tooth_count": 10,
+      "base_angle": 0,
+      "root_fraction": 0.88,
+      "tooth_tip_fraction": 0.22,
+      "gear_color": [
+        112,
+        88,
+        51
+      ],
+      "gear_thickness_fraction": 0.17,
+      "thickness_direction": [
+        0.1,
+        1
+      ],
+      "thickness_brightness": 0.46,
+      "thickness_edge_highlight": 0.14,
+      "fill_style": "bars",
+      "fill_count": 5,
+      "fill_width_fraction": 0.24,
+      "body_hub_fraction": 0.24,
+      "body_rim_width": 0.1,
+      "hole_ring_fraction": 0.53,
+      "hole_radius_fraction": 0.12,
+      "source_tooth_material": true,
+      "source_albedo_blend": 0.7,
+      "albedo_tint_strength": 0.7,
+      "source_material_blend": 0.16,
+      "material_blur": 2,
+      "aperture_feather": 0.65,
+      "supersample": 8
+    },
+    {
+      "type": "vertical_gear",
+      "polygon": [
+        [
+          31.57,
+          69.21
+        ],
+        [
+          31.57,
+          67.04
+        ],
+        [
+          97.79,
+          66.95
+        ],
+        [
+          97.88,
+          68.94
+        ]
+      ],
+      "middle": [
+        64.7,
+        68.04
+      ],
+      "axis": "y",
+      "tooth_count": 40,
+      "arc_start_degrees": 90,
+      "arc_end_degrees": 90,
+      "direction": 1,
+      "pitches_per_loop": 1,
+      "phase": 0,
+      "source_tooth_material": true,
+      "source_material_blend": 0.82,
+      "source_detail_strength": 0.88,
+      "material_blur": 1.6,
+      "tooth_width_fraction": 0.18,
+      "tooth_depth_fraction": 0.82,
+      "outer_edge": "start",
+      "silhouette_softness": 0.025,
+      "side_depth_fraction": 0.34,
+      "root_face_brightness": 0.55,
+      "cavity_brightness": 0.15,
+      "side_face_brightness": 0.49,
+      "face_texture_strength": 0.18,
+      "root_shadow_strength": 0.42,
+      "tip_highlight_strength": 0.36,
+      "edge_softness": 0.065,
+      "highlight_strength": 0.34,
+      "shadow_strength": 0.5,
+      "groove_strength": 0.075,
+      "tooth_top_light": 0.018,
+      "groove_visibility_power": 0.62,
+      "side_visibility_power": 0.58,
+      "side_face_strength": 0.42,
+      "side_shadow_strength": 0.55,
+      "side_gap_shadow": 0.1,
+      "edge_material_floor": 0.22,
+      "edge_occlusion_power": 0.72,
+      "light_direction": 1,
+      "aperture_feather": 0.55,
+      "supersample": 6
+    },
+    {
+      "type": "vertical_gear",
+      "polygon": [
+        [
+          96.74,
+          13.99
+        ],
+        [
+          99.28,
+          14.48
+        ],
+        [
+          99.28,
+          68.52
+        ],
+        [
+          96.99,
+          68.52
+        ]
+      ],
+      "middle": [
+        98.07,
+        41.38
+      ],
+      "axis": "y",
+      "tooth_count": 40,
+      "arc_start_degrees": 90,
+      "arc_end_degrees": 90,
+      "direction": -1,
+      "pitches_per_loop": 1,
+      "phase": 0,
+      "source_tooth_material": true,
+      "source_material_blend": 0.82,
+      "source_detail_strength": 0.88,
+      "material_blur": 1.6,
+      "tooth_width_fraction": 0.18,
+      "tooth_depth_fraction": 0.62,
+      "outer_edge": "start",
+      "silhouette_softness": 0.025,
+      "side_depth_fraction": 0.34,
+      "root_face_brightness": 0.55,
+      "cavity_brightness": 0.15,
+      "side_face_brightness": 0.49,
+      "face_texture_strength": 0.18,
+      "root_shadow_strength": 0.42,
+      "tip_highlight_strength": 0.36,
+      "edge_softness": 0.065,
+      "highlight_strength": 0.34,
+      "shadow_strength": 0.5,
+      "groove_strength": 0.075,
+      "tooth_top_light": 0.018,
+      "groove_visibility_power": 0.62,
+      "side_visibility_power": 0.58,
+      "side_face_strength": 0.42,
+      "side_shadow_strength": 0.55,
+      "side_gap_shadow": 0.1,
+      "edge_material_floor": 0.22,
+      "edge_occlusion_power": 0.72,
+      "light_direction": 1,
+      "aperture_feather": 0.55,
+      "supersample": 6
+    },
+    {
+      "type": "vertical_gear",
+      "polygon": [
+        [
+          28.83,
+          13.38
+        ],
+        [
+          31.37,
+          13.87
+        ],
+        [
+          31.37,
+          67.91
+        ],
+        [
+          29.08,
+          67.91
+        ]
+      ],
+      "middle": [
+        29.91,
+        41.98
+      ],
+      "axis": "y",
+      "tooth_count": 40,
+      "arc_start_degrees": 90,
+      "arc_end_degrees": 90,
+      "direction": 1,
+      "pitches_per_loop": 1,
+      "phase": 0,
+      "source_tooth_material": true,
+      "source_material_blend": 0.82,
+      "source_detail_strength": 0.88,
+      "material_blur": 1.6,
+      "tooth_width_fraction": 0.18,
+      "tooth_depth_fraction": 0.62,
+      "outer_edge": "start",
+      "silhouette_softness": 0.025,
+      "side_depth_fraction": 0.34,
+      "root_face_brightness": 0.55,
+      "cavity_brightness": 0.15,
+      "side_face_brightness": 0.49,
+      "face_texture_strength": 0.18,
+      "root_shadow_strength": 0.42,
+      "tip_highlight_strength": 0.36,
+      "edge_softness": 0.065,
+      "highlight_strength": 0.34,
+      "shadow_strength": 0.5,
+      "groove_strength": 0.075,
+      "tooth_top_light": 0.018,
+      "groove_visibility_power": 0.62,
+      "side_visibility_power": 0.58,
+      "side_face_strength": 0.42,
+      "side_shadow_strength": 0.55,
+      "side_gap_shadow": 0.1,
+      "edge_material_floor": 0.22,
+      "edge_occlusion_power": 0.72,
+      "light_direction": 1,
+      "aperture_feather": 0.55,
+      "supersample": 6
+    },
+    {
+      "type": "vibration",
+      "polygon": [
+        [
+          100.61,
+          54.41
+        ],
+        [
+          104.59,
+          49.34
+        ],
+        [
+          109.89,
+          49.1
+        ],
+        [
+          111.94,
+          53.08
+        ],
+        [
+          119.42,
+          53.08
+        ],
+        [
+          120.15,
+          86.25
+        ],
+        [
+          100.85,
+          86.25
+        ]
+      ],
+      "pivot": [
+        110.86,
+        83.6
+      ],
+      "amplitude": [
+        0.2,
+        -0.05
+      ],
+      "cycles_per_loop": 3,
+      "waveform": "motor",
+      "phase": 0,
+      "y_phase_offset": 0,
+      "rotation_degrees": 0.08,
+      "rotation_phase_offset": 0,
+      "feather": 0.65,
+      "background_mode": "source",
+      "cavity_brightness": 0.48,
+      "cavity_blur": 1.2,
+      "supersample": 6
+    },
+    {
+      "type": "vibration",
+      "polygon": [
+        [
+          30.64,
+          72.14
+        ],
+        [
+          97.23,
+          71.9
+        ],
+        [
+          97.35,
+          100.61
+        ],
+        [
+          30.52,
+          101.09
+        ]
+      ],
+      "pivot": [
+        64,
+        76
+      ],
+      "amplitude": [
+        -0.07,
+        -0.97
+      ],
+      "cycles_per_loop": 1,
+      "waveform": "rattle",
+      "phase": 0,
+      "y_phase_offset": 0.03,
+      "rotation_degrees": 0.25,
+      "rotation_phase_offset": 0,
+      "feather": 0.65,
+      "background_mode": "source",
+      "cavity_brightness": 0.48,
+      "cavity_blur": 1.2,
+      "supersample": 6
+    }
+  ],
+  "animation_speed": 0.2,
+  "crafting_speed": 1
+}

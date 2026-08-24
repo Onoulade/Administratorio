@@ -14,6 +14,7 @@ local pentapods = require("scripts.pentapods")
 local trains = require("scripts.trains")
 local working_hours = require("scripts.working_hours")
 local field_office = require("scripts.field_office")
+local field_office_hover = require("scripts.field_office_hover")
 local planetary_unlocks = require("scripts.planetary_unlocks")
 local biter_station = require("scripts.biter_station")
 local biter_station_hover = require("scripts.biter_station_hover")
@@ -480,6 +481,7 @@ local function init_storage()
   storage.pending_group_redirect_head = storage.pending_group_redirect_head or 1
   storage.unit_group_redirect_watch = storage.unit_group_redirect_watch or {}
   storage.runtime_debug_players = storage.runtime_debug_players or {}
+  storage.complaint_locator_pause_owners = storage.complaint_locator_pause_owners or {}
   storage.stats = storage.stats or {}
   storage.stats.cases_resolved = storage.stats.cases_resolved or 0
   storage.stats.money_earned = storage.stats.money_earned or 0
@@ -756,7 +758,8 @@ local function on_configuration_changed(event)
       local desk_id = desk.unit_number
       storage.desk_zones[desk_id] = {
         bounds = zones.get_zone_bounds(desk.position),
-        footprint = zones.get_desk_footprint_bounds(desk.position)
+        footprint = zones.get_desk_footprint_bounds(desk.position),
+        surface_index = surface.index,
       }
       zones.create_corner_blockers(surface, storage.desk_zones[desk_id].footprint, desk.force)
       if desk.name == "capture-bureau" then
@@ -906,6 +909,7 @@ local function on_selected_entity_changed(event)
 
   biter_station_hover.clear(event.player_index)
   biterport_hover.clear(event.player_index)
+  field_office_hover.clear(player)
 
   local entity = player.selected
   if entity and entity.valid and biter_station.is_station(entity) then
@@ -915,6 +919,7 @@ local function on_selected_entity_changed(event)
   elseif entity and entity.valid and biterport.is_port(entity) then
     biterport_hover.show_port(player, entity)
   end
+  field_office_hover.refresh(player)
 
   if entity and entity.valid and entity.type == "unit" and storage.waiting_biters[entity.unit_number] then
     pneumatic.destroy_tube_info_gui(player)
@@ -933,7 +938,9 @@ end
 local function on_player_left_game(event)
   biter_station_hover.clear(event.player_index)
   biterport_hover.clear(event.player_index)
+  field_office_hover.clear(event.player_index)
   field_office.clear_placement_preview(event.player_index)
+  runtime_debug.close_complaint_locator(event.player_index)
 end
 
 local function refresh_selected_biter_info_guis()
@@ -1037,7 +1044,7 @@ local function on_entity_built_inner(event)
     local desk_id = entity.unit_number
     local bounds = zones.get_zone_bounds(entity.position)
     local footprint = zones.get_desk_footprint_bounds(entity.position)
-    local overlaps_existing = zones.zone_overlaps_existing(footprint, desk_id)
+    local overlaps_existing = zones.zone_overlaps_existing(surface, footprint, desk_id)
     local area_clear = zones.zone_area_is_clear(surface, footprint, entity)
 
     -- Prevent overlap with other station footprints or existing buildings.
@@ -1085,7 +1092,11 @@ local function on_entity_built_inner(event)
       end
     end
 
-    storage.desk_zones[desk_id] = {bounds = bounds, footprint = footprint}
+    storage.desk_zones[desk_id] = {
+      bounds = bounds,
+      footprint = footprint,
+      surface_index = surface.index,
+    }
     zones.create_corner_blockers(surface, footprint, entity.force)
     if entity.name == "capture-bureau" then
       biters.ensure_capture_bureau_ports(entity)
@@ -1268,6 +1279,12 @@ local function on_toggle_runtime_debug(event)
   local player = game.get_player(event.player_index)
   if not player then return end
   runtime_debug.toggle(player)
+end
+
+local function on_toggle_complaint_locator(event)
+  local player = game.get_player(event.player_index)
+  if not player then return end
+  runtime_debug.toggle_complaint_locator(player)
 end
 
 local build_entity_died_filters
@@ -2172,18 +2189,29 @@ local function on_gui_click(event)
   end
 end
 
+local function on_gui_closed(event)
+  runtime_debug.handle_gui_closed(event.element, event.player_index)
+end
+
 
 
 -- ============================================================
 -- MAIN LOOP (Runs every 1 second)
 -- ============================================================
 
-local function on_protest_pacing_tick(_event)
+local function on_protest_pacing_tick(event)
   runtime_debug.run_profiled_external_sections("protest_pacing", function()
     for _, surface in pairs(game.surfaces) do
       biters.process_protest_pacing(surface)
     end
     refresh_selected_biter_info_guis()
+    if event.tick % 60 == 0 then
+      for _, player in pairs(game.connected_players) do
+        if field_office_hover.is_open(player) then
+          field_office_hover.refresh(player)
+        end
+      end
+    end
   end)
 end
 
@@ -2294,6 +2322,7 @@ control_event_router.register({
   on_entity_removed = on_entity_removed,
   on_field_agent_waypoint_input = on_field_agent_waypoint_input,
   on_gui_click = on_gui_click,
+  on_gui_closed = on_gui_closed,
   on_init = on_init,
   on_load = on_load,
   on_main_tick = on_main_tick,
@@ -2324,6 +2353,7 @@ control_event_router.register({
   on_selected_entity_changed = on_selected_entity_changed,
   on_string_translated = on_string_translated,
   on_toggle_runtime_debug = on_toggle_runtime_debug,
+  on_toggle_complaint_locator = on_toggle_complaint_locator,
   on_train_changed_state = on_train_changed_state,
   on_unit_added_to_group = on_unit_added_to_group,
   on_unit_group_created = on_unit_group_created,

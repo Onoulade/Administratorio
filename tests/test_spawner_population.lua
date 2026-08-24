@@ -179,6 +179,20 @@ test("new worker is refused when all nest slots are already leased", function()
   assert_true(second.valid, "caller retains control of a refused worker entity")
 end)
 
+test("capacity reports leases as used and leaves native roamers available", function()
+  local spawner = new_spawner(80, 4)
+  local native = new_unit(17, spawner)
+  reset({native})
+  limiter.rebuild()
+  local worker = new_unit(18, nil)
+  assert_true(limiter.lease_new_unit(worker, spawner))
+
+  local available, used, total = limiter.get_capacity(spawner)
+  assert_eq(available, 3)
+  assert_eq(used, 1)
+  assert_eq(total, 4)
+end)
+
 if failed > 0 then
   io.stderr:write(table.concat(errors, "\n") .. "\n")
   os.exit(1)

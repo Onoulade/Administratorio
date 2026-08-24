@@ -1016,4 +1016,58 @@ end
 M.is_field_office = is_field_office
 M.get_spawner_range = field_office_spawner_range
 
+function M.get_nearby_population_summary(office)
+  local summary = {available = 0, used = 0, total = 0, nests = {}}
+  if not office or not office.valid or not office.surface then return summary end
+
+  local spawners = office.surface.find_entities_filtered{
+    type = SPAWNER_TYPES,
+    position = office.position,
+    radius = field_office_spawner_range(office),
+    force = "enemy",
+  }
+
+  for _, spawner in ipairs(spawners) do
+    if spawner.valid then
+      local available, used, total = spawner_population.get_capacity(spawner)
+      -- Vanilla unit spawners always have a finite population limit. Keep the
+      -- panel useful for modded spawners whose prototype omits it as well.
+      available = available or 0
+      total = total or used
+      summary.available = summary.available + available
+      summary.used = summary.used + used
+      summary.total = summary.total + total
+      summary.nests[#summary.nests + 1] = {
+        entity = spawner,
+        available = available,
+        used = used,
+        total = total,
+        distance_squared = distance_squared(spawner.position, office.position),
+      }
+    end
+  end
+
+  table.sort(summary.nests, function(a, b)
+    if a.distance_squared == b.distance_squared then
+      return (a.entity.unit_number or 0) < (b.entity.unit_number or 0)
+    end
+    return a.distance_squared < b.distance_squared
+  end)
+  return summary
+end
+
+function M.get_nearby_office_count(spawner)
+  if not spawner or not spawner.valid then return 0 end
+  local count = 0
+  for _, office in pairs(storage.field_offices or {}) do
+    if office and office.valid and office.surface == spawner.surface then
+      local range = field_office_spawner_range(office)
+      if distance_squared(office.position, spawner.position) <= range * range then
+        count = count + 1
+      end
+    end
+  end
+  return count
+end
+
 return M

@@ -1,0 +1,298 @@
+{
+  "name": "fax-emitter",
+  "source": "graphics/entities/space-age/fax-emitter.png",
+  "output": "graphics/entities/space-age/fax-emitter-animation.png",
+  "size": [
+    128,
+    128
+  ],
+  "motions": [
+    {
+      "type": "surface_scan",
+      "polygon": [
+        [
+          22.26,
+          40.45
+        ],
+        [
+          88.26,
+          40.45
+        ],
+        [
+          88.26,
+          57.45
+        ],
+        [
+          22.26,
+          57.45
+        ]
+      ],
+      "axis": "y",
+      "color": [
+        61,
+        50,
+        43
+      ],
+      "alpha": 68,
+      "width": 1,
+      "blur": 0.3
+    },
+    {
+      "type": "surface_scan",
+      "polygon": [
+        [
+          18.31,
+          69.14
+        ],
+        [
+          95.31,
+          69.14
+        ],
+        [
+          95.09,
+          88.23
+        ],
+        [
+          18.29,
+          88.69
+        ]
+      ],
+      "axis": "y",
+      "color": [
+        238,
+        229,
+        205
+      ],
+      "alpha": 55,
+      "width": 2,
+      "blur": 1,
+      "phase": 0.28
+    },
+    {
+      "type": "surface_scan",
+      "polygon": [
+        [
+          17.09,
+          90.17
+        ],
+        [
+          97.09,
+          90.17
+        ],
+        [
+          96.46,
+          101.71
+        ],
+        [
+          16.91,
+          102.63
+        ]
+      ],
+      "axis": "y",
+      "color": [
+        62,
+        51,
+        44
+      ],
+      "alpha": 62,
+      "width": 1,
+      "blur": 0.3,
+      "phase": 0.62
+    },
+    {
+      "type": "pulse",
+      "center": [
+        112,
+        86.4
+      ],
+      "radius": [
+        8.69,
+        5
+      ],
+      "color": [
+        80,
+        238,
+        87
+      ],
+      "alpha": 145,
+      "blur": 2
+    },
+    {
+      "type": "chase",
+      "points": [
+        [
+          9.37,
+          22.4,
+          73,
+          185,
+          255
+        ],
+        [
+          37.26,
+          24,
+          73,
+          185,
+          255
+        ],
+        [
+          111.09,
+          23.09,
+          73,
+          185,
+          255
+        ]
+      ],
+      "radius": [
+        8,
+        8
+      ],
+      "alpha": 151,
+      "blur": 5.4
+    },
+    {
+      "type": "vibration",
+      "polygon": [
+        [
+          19.07,
+          71.05
+        ],
+        [
+          30.86,
+          71.77
+        ],
+        [
+          31.09,
+          68.57
+        ],
+        [
+          82.42,
+          68.31
+        ],
+        [
+          82.55,
+          72.49
+        ],
+        [
+          93.52,
+          73.01
+        ],
+        [
+          93.52,
+          87.9
+        ],
+        [
+          18.97,
+          88.69
+        ]
+      ],
+      "pivot": [
+        56.42,
+        76.8
+      ],
+      "amplitude": [
+        0.92,
+        0.13
+      ],
+      "cycles_per_loop": 3,
+      "waveform": "motor",
+      "phase": 0,
+      "y_phase_offset": 0,
+      "rotation_degrees": 0.25,
+      "rotation_phase_offset": 0,
+      "feather": 0.65,
+      "background_mode": "source",
+      "cavity_brightness": 0.48,
+      "cavity_blur": 1.2,
+      "supersample": 6
+    },
+    {
+      "type": "gauge",
+      "label": "Gauge needle",
+      "center": [
+        112.2,
+        47.02
+      ],
+      "plane_basis": [
+        [
+          7.31,
+          0
+        ],
+        [
+          0,
+          4.7
+        ]
+      ],
+      "minimum_angle_degrees": -182.01,
+      "maximum_angle_degrees": 25.23,
+      "needle_length": 0.78,
+      "tail_length": 0.12,
+      "needle_width": 0.055,
+      "tip_width": 0.012,
+      "pivot_radius": 0.1,
+      "waveform": "sine",
+      "cycles_per_loop": 1,
+      "phase": 0,
+      "reverse": false,
+      "background_enabled": true,
+      "face_color": [
+        57,
+        51,
+        42
+      ],
+      "face_alpha": 255,
+      "rim_color": [
+        137,
+        102,
+        57
+      ],
+      "rim_shadow_color": [
+        48,
+        38,
+        29
+      ],
+      "rim_width": 0.09,
+      "tick_color": [
+        225,
+        204,
+        153
+      ],
+      "tick_count": 11,
+      "major_tick_every": 5,
+      "tick_length": 0.105,
+      "tick_margin": 0.055,
+      "tick_width": 0.75,
+      "needle_color": [
+        196,
+        68,
+        49
+      ],
+      "edge_color": [
+        67,
+        31,
+        24
+      ],
+      "highlight_color": [
+        245,
+        163,
+        118
+      ],
+      "pivot_color": [
+        116,
+        91,
+        61
+      ],
+      "shadow_offset": [
+        0.8,
+        1
+      ],
+      "shadow_alpha": 115,
+      "shadow_blur": 0.55,
+      "clip_to_face": true,
+      "face_fraction": 1,
+      "aperture_feather": 0.5,
+      "supersample": 6
+    }
+  ],
+  "animation_speed": 0.18,
+  "crafting_speed": 1
+}
