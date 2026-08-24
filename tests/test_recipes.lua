@@ -1371,10 +1371,10 @@ test("direct draft-to-work-order recipes use printing-workorder category", funct
     assert_true(has_ingredient(r, "work-order"), name .. " missing work-order")
     assert_true(has_ingredient(r, "ink"), name .. " missing ink")
   end
-  assert_true(has_ingredient(get_recipe("safety-work-order-printing"), "safety-waiver"), "safety shortcut should require approved safety waiver")
-  assert_true(not has_ingredient(get_recipe("safety-work-order-printing"), "safety-waiver-draft"), "safety shortcut should not use draft")
-  assert_true(has_ingredient(get_recipe("construction-work-order-printing"), "construction-permit"), "construction shortcut should require approved permit")
-  assert_true(not has_ingredient(get_recipe("construction-work-order-printing"), "construction-permit-draft"), "construction shortcut should not use draft")
+  assert_true(has_ingredient(get_recipe("safety-work-order-printing"), "safety-waiver-draft"), "safety shortcut should accept the draft")
+  assert_true(not has_ingredient(get_recipe("safety-work-order-printing"), "safety-waiver"), "safety shortcut should not require a separately printed waiver")
+  assert_true(has_ingredient(get_recipe("construction-work-order-printing"), "construction-permit-draft"), "construction shortcut should accept the draft")
+  assert_true(not has_ingredient(get_recipe("construction-work-order-printing"), "construction-permit"), "construction shortcut should not require a separately printed permit")
 end)
 
 test("only draft-backed work-order printing produces 2x output", function()
