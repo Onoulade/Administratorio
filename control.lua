@@ -758,7 +758,8 @@ local function on_configuration_changed(event)
       local desk_id = desk.unit_number
       storage.desk_zones[desk_id] = {
         bounds = zones.get_zone_bounds(desk.position),
-        footprint = zones.get_desk_footprint_bounds(desk.position)
+        footprint = zones.get_desk_footprint_bounds(desk.position),
+        surface_index = surface.index,
       }
       zones.create_corner_blockers(surface, storage.desk_zones[desk_id].footprint, desk.force)
       if desk.name == "capture-bureau" then
@@ -1043,7 +1044,7 @@ local function on_entity_built_inner(event)
     local desk_id = entity.unit_number
     local bounds = zones.get_zone_bounds(entity.position)
     local footprint = zones.get_desk_footprint_bounds(entity.position)
-    local overlaps_existing = zones.zone_overlaps_existing(footprint, desk_id)
+    local overlaps_existing = zones.zone_overlaps_existing(surface, footprint, desk_id)
     local area_clear = zones.zone_area_is_clear(surface, footprint, entity)
 
     -- Prevent overlap with other station footprints or existing buildings.
@@ -1091,7 +1092,11 @@ local function on_entity_built_inner(event)
       end
     end
 
-    storage.desk_zones[desk_id] = {bounds = bounds, footprint = footprint}
+    storage.desk_zones[desk_id] = {
+      bounds = bounds,
+      footprint = footprint,
+      surface_index = surface.index,
+    }
     zones.create_corner_blockers(surface, footprint, entity.force)
     if entity.name == "capture-bureau" then
       biters.ensure_capture_bureau_ports(entity)
