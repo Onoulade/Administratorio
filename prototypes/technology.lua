@@ -1290,6 +1290,23 @@ if data.raw["technology"]["logistic-system"] then
 end
 
 -- Buildings that require biter-workers or specialists need employment tech
+-- Space Age changes the workforce item from the directly-created
+-- `biter-worker` to the Formation Center's `worker-biter`.  Keep every recipe
+-- that consumes that item behind worker-formation; otherwise the technology
+-- card appears before the first machine-usable worker can exist.
+if space_age_enabled then
+  for _, tech_name in ipairs({
+    "rideable-biter",
+    "biterport-logistics",
+    "union-delegate-training",
+    "chemical-operator-training",
+    "nuclear-technician-training",
+    "hired-biter-fieldwork",
+  }) do
+    add_tech_prerequisite(tech_name, "worker-formation")
+  end
+end
+
   add_tech_prerequisite("rideable-biter", "corporate-hospitality")
   add_tech_prerequisite("rideable-biter", "verbal-approvals")
   add_tech_prerequisite("biter-employment-office", "industrial-propaganda")

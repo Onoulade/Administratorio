@@ -149,7 +149,7 @@ The `admin-station` is your central complaint desk. It's the primary interface b
 
 ## 4. Your Former Enemies Are Now On Payroll
 
-Resolve a complaint with a **Job Offer** waiting in the desk, and the biter picks up the contract on its way out. Congratulations — you just hired a **Biter Worker**.
+Resolve a complaint with a **Job Offer** waiting in the desk, and the biter picks up the contract on its way out. In the base game this creates a **Biter Worker** directly. With Space Age, a successful Nauvis enrollment first creates an **Enrolled Biter**, which the Formation Center trains into a **Worker Biter**. Enrollment has a 75% chance at or below 50% frustration, 50% above 50% through 75%, 25% above 75% through 90%, and 0% above 90%.
 
 They come in small, medium, big, and behemoth. Bigger biter, more workers per hire, same health plan.
 

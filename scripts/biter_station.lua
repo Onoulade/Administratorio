@@ -1,4 +1,5 @@
 local C = require("scripts.constants")
+local feature_flags = require("feature_flags")
 local working_hours = require("scripts.working_hours")
 local unit_ai_settings = require("scripts.unit_ai_settings")
 
@@ -34,10 +35,27 @@ local function has_unstaffed_operations_waiver(entity)
     and inventory.get_item_count("unstaffed-operations-waiver") > 0
     or false
 end
-local WORKER_ITEM_NAME = "biter-worker"
+local WORKER_ITEM_NAME = feature_flags.space_age_enabled() and "worker-biter" or "biter-worker"
+local LEGACY_WORKER_ITEM_NAME = feature_flags.space_age_enabled() and "biter-worker" or nil
 local MONEY_ITEM_NAME = "taxpayer-money"
 local COFFEE_FLUID_NAME = "liquid-coffee"
 local WORKER_ENTITY_NAME = "small-biter"
+
+local function get_worker_count(inv)
+  local count = inv.get_item_count(WORKER_ITEM_NAME)
+  if LEGACY_WORKER_ITEM_NAME then
+    count = count + inv.get_item_count(LEGACY_WORKER_ITEM_NAME)
+  end
+  return count
+end
+
+local function remove_one_worker(inv)
+  if inv.remove({name = WORKER_ITEM_NAME, count = 1}) >= 1 then
+    return true
+  end
+  return LEGACY_WORKER_ITEM_NAME ~= nil
+    and inv.remove({name = LEGACY_WORKER_ITEM_NAME, count = 1}) >= 1
+end
 local STATION_WALL_OFFSETS = {
   {x = -2, y = -2}, {x = -1, y = -2}, {x = 1, y = -2}, {x = 2, y = -2},
   {x = -2, y = -1}, {x = 2, y = -1},
@@ -427,7 +445,7 @@ local function has_station_inputs(station)
   local inv = get_station_inventory(station)
   if not inv then return false, false, false end
 
-  local has_worker = inv.get_item_count(WORKER_ITEM_NAME) > 0
+  local has_worker = get_worker_count(inv) > 0
   local has_money = inv.get_item_count(MONEY_ITEM_NAME) >= C.BITER_STATION_SALARY
   local has_coffee = has_dispatch_coffee(station)
   return has_worker, has_money, has_coffee
@@ -1242,7 +1260,7 @@ local function dispatch_single_station_biter(station, queue)
     return false
   end
 
-  if inv.remove({name = WORKER_ITEM_NAME, count = 1}) < 1 then
+  if not remove_one_worker(inv) then
     return false
   end
 
@@ -1311,7 +1329,7 @@ local function dispatch_station_biters(station)
     return 0
   end
 
-  local worker_count = inv.get_item_count(WORKER_ITEM_NAME)
+  local worker_count = get_worker_count(inv)
   local money_count = inv.get_item_count(MONEY_ITEM_NAME)
   if worker_count <= 0 then
     set_station_status(station, "biter-station-no-workers")

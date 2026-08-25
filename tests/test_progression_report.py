@@ -83,9 +83,6 @@ SECONDARY_RECIPE_CATEGORIES = {
     "pneumatic-solidify",
 }
 RUNTIME_OBTAINABLE_ITEMS = {
-    # A resolved citizen consumes a job offer and is inserted into the desk as
-    # a worker by control-stage code; no prototype recipe is supposed to exist.
-    "biter-worker",
     # Space Age converts a resolved hired biter into this portable workforce
     # seed in scripts/biters.lua. It intentionally has no data-stage recipe.
     "enrolled-biter",
@@ -296,7 +293,7 @@ class ProgressionAnalyzer:
         self.start_enabled_recipes = set(self.always_enabled_recipes) | self.world_trigger_recipes
 
     def _build_root_materials(self) -> Set[str]:
-        roots = {"water", "taxpayer-money", "biter-worker"} | RUNTIME_OBTAINABLE_ITEMS
+        roots = {"water", "taxpayer-money"} | RUNTIME_OBTAINABLE_ITEMS
         for proto_type in RESOURCE_ROOT_TYPES:
             for proto in self.data_raw.get(proto_type, {}).values():
                 minable = proto.get("minable") or {}
@@ -971,7 +968,7 @@ class ProgressionAnalyzer:
                 # recycling/reassignment cycles, so a depth-first walk can
                 # temporarily revisit an item and incorrectly memoize it as
                 # unavailable even when its primary production route is open.
-                missing_paths = self.machine_missing_ingredient_paths(
+                missing_paths = self.recipe_machine_blockers(
                     recipe_name,
                     after_key,
                 )
@@ -1280,6 +1277,17 @@ class ProgressionAnalyzer:
                         if self.craftable(ingredient_name, after_key):
                             continue
 
+                        # A machine-only provider is fine when it can be
+                        # reached without the building currently being
+                        # crafted.  Only classify it as a self-provider cycle
+                        # when excluding that building removes the path.
+                        if self.machine_craftable(
+                            ingredient_name,
+                            after_key,
+                            (building_name,),
+                        ):
+                            continue
+
                         if self.machine_craftable(ingredient_name, after_key):
                             findings.append(
                                 {
@@ -1306,6 +1314,22 @@ class ProgressionAnalyzer:
                                     "building": building_name,
                                     "ingredient": ingredient_name,
                                     "delayed_resolution": delayed_resolution,
+                                }
+                            )
+                        else:
+                            # A building recipe with an item ingredient that
+                            # has neither a current machine path nor a
+                            # descendant provider is a hard bootstrap deadlock,
+                            # not merely a late unlock.  Keep it in the strict
+                            # failure set so a provider cycle cannot hide in an
+                            # informational report.
+                            findings.append(
+                                {
+                                    "type": "unresolvable_provider",
+                                    "technology": tech_name,
+                                    "recipe": recipe_name,
+                                    "building": building_name,
+                                    "ingredient": ingredient_name,
                                 }
                             )
         return findings
@@ -1815,11 +1839,13 @@ def render_report(
             lines.append(
                 f"    Machine-reachable only if {finding['building']} already exists"
             )
-        else:
+        elif finding["type"] == "requires_descendant_provider":
             lines.append(
                 "    First machine-reachable from descendant tech: "
                 f"{finding['delayed_resolution']['technology']}"
             )
+        else:
+            lines.append("    No reachable provider exists after any technology unlock")
 
     lines.extend(
         [

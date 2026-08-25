@@ -277,7 +277,10 @@ data:extend({
     ingredients = {
       {type = "item", name = "enrolled-biter", amount = 1},
       {type = "item", name = "credentials", amount = 1},
-      {type = "item", name = "good-excuse", amount = 1},
+      -- The first worker must bootstrap before information-management's
+      -- later good-excuse chain.  Basic excuses are available in the early
+      -- paperwork branch and keep this recipe acyclic.
+      {type = "item", name = "basic-excuse", amount = 1},
     },
     results = {{type = "item", name = "worker-biter", amount = 1}},
     energy_required = 10

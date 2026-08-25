@@ -50,6 +50,17 @@ mods = { ["space-age"] = "2.0.0" }
 
 dofile(mod_root .. "prototypes/tips-and-tricks.lua")
 
+local function read_file(path)
+  local handle = assert(io.open(path, "r"))
+  local content = handle:read("*a")
+  handle:close()
+  return content
+end
+
+local english_tips_locale = read_file(mod_root .. "locale/en/tips.cfg")
+local english_items_locale = read_file(mod_root .. "locale/en/items.cfg")
+local english_recipes_locale = read_file(mod_root .. "locale/en/recipes.cfg")
+
 local function trigger_contains(trigger, expected_type, expected_key, expected_value)
   if not trigger then return false end
   if trigger.type == expected_type and trigger[expected_key] == expected_value then
@@ -110,6 +121,32 @@ test("rideable biter tip unlocks with its dedicated technology", function()
   assert_true(
     trigger_contains(item.trigger, "research", "technology", "rideable-biter"),
     "rideable biter tip should unlock from rideable-biter"
+  )
+end)
+
+test("Space Age job offers document their enrollment odds in tips and Factoriopedia text", function()
+  assert_true(
+    english_tips_locale:find("At or below 50% frustration — 75% chance", 1, true) ~= nil,
+    "enrollment tip should document the 75% low-frustration chance"
+  )
+  assert_true(
+    english_tips_locale:find("Above 50% through 75% — 50% chance", 1, true) ~= nil,
+    "enrollment tip should document the 50% medium-frustration chance"
+  )
+  assert_true(
+    english_tips_locale:find("Above 75% through 90% — 25% chance", 1, true) ~= nil and
+      english_tips_locale:find("Above 90% — 0% chance", 1, true) ~= nil,
+    "enrollment tip should document the upper enrollment bands and cutoff"
+  )
+  assert_true(
+    english_items_locale:find("job-offer=Place this in an Admin Station", 1, true) ~= nil and
+      english_items_locale:find("75% chance at or below 50% frustration", 1, true) ~= nil,
+    "Job Offer item description should explain the odds"
+  )
+  assert_true(
+    english_recipes_locale:find("job-offer-production=Draft an employment contract", 1, true) ~= nil and
+      english_recipes_locale:find("75% chance at or below 50% frustration", 1, true) ~= nil,
+    "Job Offer recipe description should explain the odds"
   )
 end)
 
