@@ -248,6 +248,9 @@ M.TUBE_CAPACITY_TECHS = {
   ["pneumatic-capacity-3"] = 50,   -- total 100
   ["pneumatic-capacity-4"] = 100,  -- total 200
 }
+-- Tiles a network may reach from any one of its endpoints, as the crow flies.
+-- A Factorissimo wall closes the current radius off and opens a new one on the
+-- far side, so the reach outdoors and the reach inside a factory add up.
 M.TUBE_MAX_NETWORK_RADIUS = 120
 
 -- Tube endpoint entity names.
