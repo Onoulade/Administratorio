@@ -92,14 +92,34 @@ end
 
 local MAX_NETWORK_RADIUS = C.TUBE_MAX_NETWORK_RADIUS or 120 -- tiles from the starting pipe
 
+--- Entities the tube network is allowed to walk through.
+--- The "pneumatic-forms" connection category normally keeps foreign fluid
+--- entities out on its own, but the Factorissimo compatibility patch
+--- (prototypes/final_fixes/factorissimo_pneumatic.lua) gives that mod's wall
+--- pumps both the default and the pneumatic category.  Without this whitelist a
+--- water pipe on the far side of such a pump would drag the entire fluid grid
+--- into the tube network.
+local TRAVERSABLE_NETWORK_ENTITIES = {
+  ["pneumatic-pipe"] = true,
+  ["pneumatic-pipe-to-ground"] = true,
+  ["pneumatic-hidden-network-pipe"] = true,
+  ["factory-inside-pump-input"] = true,
+  ["factory-inside-pump-output"] = true,
+  ["factory-outside-pump-input"] = true,
+  ["factory-outside-pump-output"] = true,
+}
+
 --- BFS through fluidbox connections starting from a hidden network pipe.
 --- Returns network_id, over_extended.
 --- network_id: smallest unit_number in the connected component.
 --- over_extended: true if any connected pipe exceeds MAX_NETWORK_RADIUS.
 local function bfs_network_id(network_pipe)
   if not network_pipe or not network_pipe.valid then return nil, false end
-  local origin = network_pipe.position
   local id = network_pipe.unit_number
+  -- The radius bound is measured per surface: a network crossing into a
+  -- Factorissimo factory continues in unrelated coordinates, so each surface
+  -- measures from wherever the network first entered it.
+  local origins = {[network_pipe.surface_index] = network_pipe.position}
   local visited = {[network_pipe.unit_number] = true}
   local queue = {network_pipe}
   local head = 1
@@ -110,21 +130,29 @@ local function bfs_network_id(network_pipe)
     local fb = current.fluidbox
     if fb then
       for i = 1, #fb do
-        local connections = fb.get_connections(i)
+        -- get_pipe_connections, not get_connections: only this one reports the
+        -- "linked" connection that bridges a Factorissimo factory wall.
+        local connections = fb.get_pipe_connections(i)
         if connections then
-          for _, connected_fb in ipairs(connections) do
-            local owner = connected_fb.owner
+          for _, connection in ipairs(connections) do
+            local owner = connection.target and connection.target.owner
             -- Ghost entities participate in fluidbox connections in Factorio 2.x
             -- (for placement preview), but must not count as real network links.
             if owner and owner.valid and not visited[owner.unit_number]
-                and owner.type ~= "entity-ghost" then
+                and owner.type ~= "entity-ghost"
+                and TRAVERSABLE_NETWORK_ENTITIES[owner.name] then
               visited[owner.unit_number] = true
               if owner.unit_number < id then id = owner.unit_number end
               local pos = owner.position
-              local dx = pos.x - origin.x
-              local dy = pos.y - origin.y
-              if dx * dx + dy * dy > MAX_NETWORK_RADIUS * MAX_NETWORK_RADIUS then
-                over_extended = true
+              local origin = origins[owner.surface_index]
+              if not origin then
+                origins[owner.surface_index] = pos
+              else
+                local dx = pos.x - origin.x
+                local dy = pos.y - origin.y
+                if dx * dx + dy * dy > MAX_NETWORK_RADIUS * MAX_NETWORK_RADIUS then
+                  over_extended = true
+                end
               end
               table.insert(queue, owner)
             end
@@ -135,6 +163,7 @@ local function bfs_network_id(network_pipe)
   end
   return id, over_extended
 end
+M.bfs_network_id = bfs_network_id -- exposed for tests
 
 -------------------------------------------------------------------------------
 -- CAPACITY HELPERS

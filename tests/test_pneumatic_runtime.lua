@@ -133,6 +133,53 @@ test("legacy unqualified signal-pool entries remain normal quality", function()
   assert_eq(pneumatic.get_network_total(2), 0, "legacy transfer should remain conserved")
 end)
 
+-- Factorissimo compatibility: a tube network crosses a factory wall through the
+-- linked pump pair, and must not leak into the fluid network behind that pump.
+local function new_fluid_entity(spec)
+  local entity = {
+    valid = true,
+    name = spec.name,
+    type = spec.type or "pipe",
+    unit_number = spec.unit_number,
+    position = spec.position,
+    surface_index = spec.surface_index,
+    connections = {},
+  }
+  entity.fluidbox = {true}
+  function entity.fluidbox.get_pipe_connections(_)
+    local pipe_connections = {}
+    for _, neighbour in ipairs(entity.connections) do
+      pipe_connections[#pipe_connections + 1] = {target = {owner = neighbour}}
+    end
+    return pipe_connections
+  end
+  return entity
+end
+
+local function link(a, b)
+  a.connections[#a.connections + 1] = b
+  b.connections[#b.connections + 1] = a
+end
+
+test("tube network crosses a Factorissimo wall without absorbing fluid pipes", function()
+  local outside_pipe = new_fluid_entity{name = "pneumatic-hidden-network-pipe", unit_number = 10, position = {x = 0, y = 0}, surface_index = 1}
+  local outside_pump = new_fluid_entity{name = "factory-outside-pump-input", type = "pump", unit_number = 20, position = {x = 1, y = 0}, surface_index = 1}
+  -- The factory interior sits at unrelated coordinates on its own surface.
+  local inside_pump = new_fluid_entity{name = "factory-inside-pump-input", type = "pump", unit_number = 30, position = {x = 4000, y = 4000}, surface_index = 2}
+  local inside_pipe = new_fluid_entity{name = "pneumatic-pipe", unit_number = 40, position = {x = 4001, y = 4000}, surface_index = 2}
+  local foreign_pipe = new_fluid_entity{name = "pipe", unit_number = 5, position = {x = 2, y = 0}, surface_index = 1}
+
+  link(outside_pipe, outside_pump)
+  link(outside_pump, inside_pump) -- the linked cross-surface connection
+  link(inside_pump, inside_pipe)
+  link(outside_pump, foreign_pipe)
+
+  local net_id, over_extended = pneumatic.bfs_network_id(outside_pipe)
+
+  assert_eq(net_id, 10, "network id should ignore the foreign fluid pipe behind the pump")
+  assert_eq(over_extended, false, "a factory interior's coordinates must not count against the radius limit")
+end)
+
 print("\n=== PNEUMATIC RUNTIME TESTS ===")
 print("Passed: " .. passed .. "  Failed: " .. failed .. "  Total: " .. (passed + failed))
 if failed > 0 then
