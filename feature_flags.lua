@@ -67,4 +67,15 @@ function M.entity_prototype_exists(name)
   return prototypes.entity[name] ~= nil
 end
 
+-- Module items are gated behind feature flags (working hours, Space Age), so
+-- a saved game can run this code with the prototype absent. get_item_count
+-- errors on an unknown item name rather than returning 0, so callers that
+-- look for an optional item must check existence first.
+function M.item_prototype_exists(name)
+  if not (prototypes and prototypes.item) then
+    return true
+  end
+  return prototypes.item[name] ~= nil
+end
+
 return M
