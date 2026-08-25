@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.2
+Date: 2026-08-24
+  Changes:
+    - Merge branch 'main' of https://github.com/Onoulade/Administratorio
+    - Fix Space Age regulated recipe categories
+---------------------------------------------------------------------------------------------------
 Version: 0.6.1
 Date: 2026-08-24
   Features:
