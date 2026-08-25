@@ -74,6 +74,9 @@ local function has_overtime_exemption(entity)
   if not entity or not entity.valid or not entity.get_module_inventory then
     return false
   end
+  if not feature_flags.item_prototype_exists("overtime-exemption") then
+    return false
+  end
   local inventory = entity.get_module_inventory()
   return inventory and inventory.valid and inventory.get_item_count("overtime-exemption") > 0 or false
 end

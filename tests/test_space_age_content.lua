@@ -82,6 +82,12 @@ local recipes = {
     ingredients = {{type = "item", name = "biter-worker", amount = 1}},
     results = {{type = "item", name = "biter-logistics-formation", amount = 1}},
   },
+  ["resolution-office"] = {
+    type = "recipe",
+    name = "resolution-office",
+    ingredients = {{type = "item", name = "worker-biter", amount = 1}},
+    results = {{type = "item", name = "resolution-office", amount = 1}},
+  },
   ["scrap-recycling"] = {type = "recipe", name = "scrap-recycling", results = {{type = "item", name = "iron-gear-wheel", amount = 1, probability = 0.2}}},
 }
 
@@ -134,6 +140,11 @@ local technologies = {
   ["planet-discovery-gleba"] = {type = "technology", name = "planet-discovery-gleba", effects = {}},
   ["nest-expropriation"] = {type = "technology", name = "nest-expropriation", effects = {}},
   ["hired-biter-fieldwork"] = {type = "technology", name = "hired-biter-fieldwork", effects = {}},
+  ["biter-employment"] = {
+    type = "technology",
+    name = "biter-employment",
+    effects = {{type = "unlock-recipe", recipe = "resolution-office"}},
+  },
   ["promethium-science-pack"] = {
     type = "technology",
     name = "promethium-science-pack",
@@ -214,6 +225,7 @@ end
 -- job-offer / job-offer-production live in economy.lua (loaded before space_age.lua,
 -- matching prototypes/item.lua and prototypes/recipe.lua's real require order).
 dofile(mod_root .. "prototypes/item/economy.lua")
+dofile(mod_root .. "prototypes/recipe/buildings.lua")
 dofile(mod_root .. "prototypes/recipe/economy.lua")
 dofile(mod_root .. "prototypes/item/space_age.lua")
 dofile(mod_root .. "prototypes/item/capsules-and-fluids.lua")
@@ -226,6 +238,15 @@ local function has_ingredient(recipe, item_name)
   if not recipe or not recipe.ingredients then return false end
   for _, ingredient in ipairs(recipe.ingredients) do
     if (ingredient.name or ingredient[1]) == item_name then
+      return true
+    end
+  end
+  return false
+end
+
+local function has_unlock(technology, recipe_name)
+  for _, effect in ipairs(technology and technology.effects or {}) do
+    if effect.type == "unlock-recipe" and effect.recipe == recipe_name then
       return true
     end
   end
@@ -437,6 +458,40 @@ test("worker-biter exists as the enrolled-to-workforce intermediate", function()
   assert_true(has_ingredient(recipes["job-offer-production"], "provisional-approval"), "job-offer should require provisional approval")
   assert_true(recipes["worker-biter-formation"] ~= nil, "worker-biter formation recipe missing")
   assert_true(has_ingredient(recipes["worker-biter-formation"], "enrolled-biter"), "worker-biter should come from enrolled-biter")
+end)
+
+test("Space Age office desks keep the workforce bootstrap acyclic", function()
+  assert_true(not has_ingredient(recipes["office-desk"], "biter-worker"),
+    "Space Age office desks must not require the worker they help produce")
+  assert_true(has_ingredient(recipes["formation-center"], "office-desk"),
+    "the Formation Center should still be built from office desks")
+end)
+
+test("Space Age workforce output is accepted by employment recipes", function()
+  local worker_consumers = {
+    "resolution-office",
+    "rideable-biter",
+    "biter-logistics-formation",
+    "union-delegate-training",
+    "chemical-operator-training",
+    "nuclear-technician-training",
+    "hired-biter-capsule",
+  }
+  for _, recipe_name in ipairs(worker_consumers) do
+    assert_true(has_ingredient(recipes[recipe_name], "worker-biter"),
+      recipe_name .. " should consume the Space Age worker-biter output")
+    assert_true(not has_ingredient(recipes[recipe_name], "biter-worker"),
+      recipe_name .. " should not consume the legacy base worker item")
+  end
+end)
+
+test("Space Age resolution office unlock waits for the first worker", function()
+  local employment = data.raw.technology["biter-employment"]
+  local formation = data.raw.technology["worker-formation"]
+  assert_true(employment ~= nil)
+  assert_true(formation ~= nil)
+  assert_true(not has_unlock(employment, "resolution-office"))
+  assert_true(has_unlock(formation, "resolution-office"))
 end)
 
 test("space age keeps the formation center item icon", function()
@@ -897,9 +952,9 @@ test("workforce progression is split by role and orbital scope", function()
   assert_true(not tech_unlocks_recipe(metallurgy, "licensed-notary-formation"),
     "metallurgic-science-pack should no longer unlock licensed-notary-formation")
   assert_eq(worker.prerequisites[1], "formation-center", "worker formation should require the formation center")
-  assert_eq(worker.prerequisites[2], "space-platform", "worker formation should follow the platform bootstrap")
-  assert_true(tech_has_prerequisite(worker, "health-and-safety"),
-    "worker formation should follow the narrative and excuse supply used by its recipes")
+  assert_eq(worker.prerequisites[2], "industrial-propaganda", "worker formation should follow the credential supply used by its recipe")
+  assert_true(not tech_has_prerequisite(worker, "space-platform"),
+    "worker formation should remain available before the orbital bootstrap")
   assert_true(tech_has_prerequisite(management, "eminent-domain-zoning"),
     "management formation should follow the policy supply used by regular MMMMs")
   assert_true(tech_has_prerequisite(management, "repair-pack"),

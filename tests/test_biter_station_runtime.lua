@@ -586,6 +586,41 @@ test("non-returning orphaned station worker protests immediately without a host"
   assert_true(active_worker() == nil, "converted protester should leave station active worker tracking")
 end)
 
+test("managed building without the waiver item prototype does not error", function()
+  storage = {}
+  package.loaded["scripts.biter_station"] = nil
+  local surface = new_surface()
+  local force = {name = "player", valid = true, technologies = {}, set_cease_fire = function() end}
+  game = {
+    tick = 0,
+    surfaces = {surface},
+    forces = {player = force},
+    create_force = function(name)
+      local created = {name = name, valid = true, technologies = {}, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  -- Space Age (or working hours) disabled: the waiver module never loads, and
+  -- the engine errors on get_item_count for an unknown item name.
+  prototypes = {item = {}}
+  local building = new_managed_building(surface, force)
+  function building.get_module_inventory()
+    return {
+      valid = true,
+      get_item_count = function(name) error("Unknown item name: " .. name) end,
+    }
+  end
+  local biter_station = require("scripts.biter_station")
+
+  biter_station.track_managed_building(building)
+
+  assert_true(storage.managed_building_registry[building.unit_number] == building,
+    "building should still be tracked when the waiver prototype is absent")
+  assert_eq(building.active, false, "building without a waiver should wait for a dispatched worker")
+  prototypes = nil
+end)
+
 print(("Biter station runtime tests: %d passed, %d failed"):format(passed, failed))
 if failed > 0 then
   for _, err in ipairs(errors) do

@@ -7,6 +7,7 @@ end
 
 local icon_tints = require("prototypes.shared.icon_tints")
 local space_age_enabled = require("feature_flags").space_age_enabled()
+local worker_item_name = space_age_enabled and "worker-biter" or "biter-worker"
 
 local function rgba(r, g, b, a)
   return {r = r, g = g, b = b, a = a or 1}
@@ -189,7 +190,7 @@ data:extend({
     category = "biter-training", enabled = false,
     order = "b-a",
     ingredients = {
-      {type="item", name="biter-worker", amount=1},
+      {type="item", name=worker_item_name, amount=1},
       {type="item", name="blank-approval", amount=2},
       {type="item", name="management-verbal-work-order", amount=1},
       {type="fluid", name="liquid-coffee", amount=25},
@@ -211,7 +212,7 @@ data:extend({
   {
     type = "recipe", name = "biter-logistics-formation", subgroup = "admin-biter-logistics", category = "biter-training", enabled = false, order = "d",
     ingredients = {
-      {type="item", name="biter-worker", amount=1},
+      {type="item", name=worker_item_name, amount=1},
       {type="item", name="management-verbal-work-order", amount=1},
       {type="item", name="form-27b-6", amount=1},
       {type="fluid", name="liquid-coffee", amount=35},
@@ -224,7 +225,7 @@ data:extend({
   {
     type = "recipe", name = "union-delegate-training", subgroup = "admin-biter-management", category = "biter-training", enabled = false, order = "c-a",
     ingredients = {
-      {type="item", name="biter-worker", amount=1},
+      {type="item", name=worker_item_name, amount=1},
       {type="item", name="management-verbal-work-order", amount=1},
       {type="item", name="form-27b-6", amount=1},
       {type="fluid", name="liquid-coffee", amount=50},
@@ -235,7 +236,7 @@ data:extend({
   {
     type = "recipe", name = "chemical-operator-training", subgroup = "admin-biter-operations", category = "biter-training", enabled = false, order = "d-a",
     ingredients = {
-      {type="item", name="biter-worker", amount=1},
+      {type="item", name=worker_item_name, amount=1},
       {type="item", name="chemical-handling-work-order", amount=1},
       {type="item", name="safety-waiver", amount=1},
       {type="fluid", name="liquid-coffee", amount=45},
@@ -246,7 +247,7 @@ data:extend({
   {
     type = "recipe", name = "nuclear-technician-training", subgroup = "admin-biter-operations", category = "biter-training", enabled = false, order = "d-b",
     ingredients = {
-      {type="item", name="biter-worker", amount=1},
+      {type="item", name=worker_item_name, amount=1},
       {type="item", name="radiological-work-order", amount=1},
       {type="item", name="management-approval-written", amount=1},
       {type="item", name="environmental-impact-report", amount=1},
@@ -261,7 +262,7 @@ data:extend({
     localised_description = {"item-description.hired-biter-capsule"},
     category = "biter-training", enabled = false, order = "d-c",
     ingredients = {
-      {type="item", name="biter-worker",    amount=1},
+      {type="item", name=worker_item_name,    amount=1},
       {type="item", name="treasury-bond", amount=2},
       {type="item", name="management-written-work-order", amount=2},
       {type="item", name="research-grant-work-order", amount=1},

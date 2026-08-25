@@ -24,6 +24,17 @@ local function add_tech_prerequisite(technology_name, prerequisite_name)
   table.insert(technology.prerequisites, prerequisite_name)
 end
 
+local function remove_tech_unlock(technology_name, recipe_name)
+  local technology = data.raw["technology"] and data.raw["technology"][technology_name]
+  if not technology or not technology.effects then return end
+  for index = #technology.effects, 1, -1 do
+    local effect = technology.effects[index]
+    if effect.type == "unlock-recipe" and effect.recipe == recipe_name then
+      table.remove(technology.effects, index)
+    end
+  end
+end
+
 local function add_tech_science_pack(technology_name, pack_name, amount)
   local technology = data.raw.technology and data.raw.technology[technology_name]
   if not technology or not technology.unit or not technology.unit.ingredients then return end
@@ -465,7 +476,12 @@ data:extend({
       {type = "unlock-recipe", recipe = "job-offer-production"},
       {type = "unlock-recipe", recipe = "worker-biter-formation"},
     },
-    prerequisites = {"formation-center", "space-platform", "health-and-safety"},
+    -- Basic workers are the bootstrap for specialist training and must be
+    -- available before the bureaucracy/oil chain.  Keeping this at the
+    -- Formation Center plus the credential chain.  The first formation uses
+    -- basic-excuse rather than the later good-excuse chain so this remains a
+    -- finite bootstrap.
+    prerequisites = {"formation-center", "industrial-propaganda"},
     unit = {
       count = 240,
       ingredients = {
@@ -492,7 +508,9 @@ data:extend({
       {type = "unlock-recipe", recipe = "management-trainee-formation"},
       {type = "unlock-recipe", recipe = "middle-management-managing-manager-formation"},
     },
-    prerequisites = {"worker-formation", "union-delegate-training", "eminent-domain-zoning"},
+    -- The orbital briefing is one of this tech's unlocks, so its rocket-fuel
+    -- input must be researched before the card becomes available.
+    prerequisites = {"worker-formation", "union-delegate-training", "eminent-domain-zoning", "rocket-fuel"},
     unit = {
       count = 280,
       ingredients = {
@@ -1369,6 +1387,13 @@ data:extend({
     order = "h-y",
   },
 })
+
+-- In Space Age the employment office cannot make a resolution office until
+-- the Formation Center has produced the first machine-usable worker.  Keep
+-- the office unlock aligned with that actual provider instead of exposing a
+-- recipe that is impossible to craft at biter-employment.
+remove_tech_unlock("biter-employment", "resolution-office")
+add_tech_unlock("worker-formation", "resolution-office")
 
 for technology_name, technology in pairs(data.raw.technology or {}) do
   if technology_name ~= "involuntary-relocation" then

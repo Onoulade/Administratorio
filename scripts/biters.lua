@@ -866,11 +866,14 @@ end
 
 local function get_nauvis_enrollment_offer_chance(info)
   local frustration = (info and info.frustration) or 0
-  if frustration < C.PROTEST_THRESHOLD * (C.ENROLLMENT_OFFER_LOW_FRUSTRATION_RATIO or 0.25) then
-    return C.ENROLLMENT_OFFER_LOW_CHANCE or 0.05
+  if frustration <= C.PROTEST_THRESHOLD * (C.ENROLLMENT_OFFER_LOW_FRUSTRATION_RATIO or 0.50) then
+    return C.ENROLLMENT_OFFER_LOW_CHANCE or 0.75
   end
-  if frustration < C.PROTEST_THRESHOLD * (C.ENROLLMENT_OFFER_MEDIUM_FRUSTRATION_RATIO or 0.50) then
-    return C.ENROLLMENT_OFFER_MEDIUM_CHANCE or 0.01
+  if frustration <= C.PROTEST_THRESHOLD * (C.ENROLLMENT_OFFER_MEDIUM_FRUSTRATION_RATIO or 0.75) then
+    return C.ENROLLMENT_OFFER_MEDIUM_CHANCE or 0.50
+  end
+  if frustration <= C.PROTEST_THRESHOLD * (C.ENROLLMENT_OFFER_HIGH_FRUSTRATION_RATIO or 0.90) then
+    return C.ENROLLMENT_OFFER_HIGH_CHANCE or 0.25
   end
   return 0
 end

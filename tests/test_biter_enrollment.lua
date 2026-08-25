@@ -50,10 +50,12 @@ local function load_biters_module(space_age_enabled)
       ["small-spitter"] = 1,
     },
     PROTEST_THRESHOLD = 600,
-    ENROLLMENT_OFFER_LOW_FRUSTRATION_RATIO = 0.25,
-    ENROLLMENT_OFFER_MEDIUM_FRUSTRATION_RATIO = 0.50,
-    ENROLLMENT_OFFER_LOW_CHANCE = 0.05,
-    ENROLLMENT_OFFER_MEDIUM_CHANCE = 0.01,
+    ENROLLMENT_OFFER_LOW_FRUSTRATION_RATIO = 0.50,
+    ENROLLMENT_OFFER_MEDIUM_FRUSTRATION_RATIO = 0.75,
+    ENROLLMENT_OFFER_HIGH_FRUSTRATION_RATIO = 0.90,
+    ENROLLMENT_OFFER_LOW_CHANCE = 0.75,
+    ENROLLMENT_OFFER_MEDIUM_CHANCE = 0.50,
+    ENROLLMENT_OFFER_HIGH_CHANCE = 0.25,
     RETURN_WALK_DISTANCE = 200,
     RETURN_DESPAWN_TICKS = 30 * 60,
     DESK_SLOT_COMMAND_RADIUS = 0.5,
@@ -291,9 +293,9 @@ local function new_context(opts)
   }
 end
 
-test("low-frustration resolved biter can accept a job offer", function()
-  with_random(0.04, function()
-    local ctx = new_context({job_offer_count = 1, frustration = 100})
+test("resolved biter can accept a job offer at the 75% threshold through 50% frustration", function()
+  with_random(0.74, function()
+    local ctx = new_context({job_offer_count = 1, frustration = 300})
     biters.process_resolutions({ctx.desk})
 
     assert_true(storage.waiting_biters[ctx.entity.unit_number] == nil, "accepted biter should be untracked")
@@ -306,21 +308,33 @@ test("low-frustration resolved biter can accept a job offer", function()
   end)
 end)
 
-test("mid-frustration resolved biter can only accept at the reduced chance", function()
-  with_random(0.005, function()
-    local ctx = new_context({job_offer_count = 1, frustration = 200})
+test("resolved biter can accept a job offer at the 50% threshold through 75% frustration", function()
+  with_random(0.49, function()
+    local ctx = new_context({job_offer_count = 1, frustration = 450})
     biters.process_resolutions({ctx.desk})
 
-    assert_true(storage.waiting_biters[ctx.entity.unit_number] == nil, "accepted mid-frustration biter should be untracked")
-    assert_eq(ctx.inventory._removed["job-offer"], 1, "mid-frustration success should still consume the offer")
-    assert_eq(ctx.inventory._added["enrolled-biter"], 1, "mid-frustration success should produce enrolled-biter")
-    assert_true(ctx.inventory._added["taxpayer-money"] == nil, "mid-frustration success should skip taxpayer payout")
+    assert_true(storage.waiting_biters[ctx.entity.unit_number] == nil, "accepted medium-frustration biter should be untracked")
+    assert_eq(ctx.inventory._removed["job-offer"], 1, "medium-frustration success should still consume the offer")
+    assert_eq(ctx.inventory._added["enrolled-biter"], 1, "medium-frustration success should produce enrolled-biter")
+    assert_true(ctx.inventory._added["taxpayer-money"] == nil, "medium-frustration success should skip taxpayer payout")
+  end)
+end)
+
+test("resolved biter can accept a job offer at the 25% threshold through 90% frustration", function()
+  with_random(0.24, function()
+    local ctx = new_context({job_offer_count = 1, frustration = 540})
+    biters.process_resolutions({ctx.desk})
+
+    assert_true(storage.waiting_biters[ctx.entity.unit_number] == nil, "accepted high-frustration biter should be untracked")
+    assert_eq(ctx.inventory._removed["job-offer"], 1, "high-frustration success should consume the offer")
+    assert_eq(ctx.inventory._added["enrolled-biter"], 1, "high-frustration success should produce enrolled-biter")
+    assert_true(ctx.inventory._added["taxpayer-money"] == nil, "high-frustration success should skip taxpayer payout")
   end)
 end)
 
 test("failed job offer keeps the normal return-home payout path", function()
-  with_random(0.50, function()
-    local ctx = new_context({job_offer_count = 1, frustration = 100})
+  with_random(0.80, function()
+    local ctx = new_context({job_offer_count = 1, frustration = 300})
     biters.process_resolutions({ctx.desk})
 
     assert_true(storage.waiting_biters[ctx.entity.unit_number] == ctx.info, "failed offer should keep the biter tracked for return-home cleanup")
@@ -333,15 +347,15 @@ test("failed job offer keeps the normal return-home payout path", function()
   end)
 end)
 
-test("high-frustration biter consumes the offer but cannot convert", function()
+test("biter above 90% frustration consumes the offer but cannot convert", function()
   with_random(0.0, function()
-    local ctx = new_context({job_offer_count = 1, frustration = 400})
+    local ctx = new_context({job_offer_count = 1, frustration = 541})
     biters.process_resolutions({ctx.desk})
 
-    assert_eq(ctx.info.state, "returning_home", "high-frustration biter should follow the normal return-home path")
-    assert_eq(ctx.inventory._removed["job-offer"], 1, "high-frustration offer should still be consumed")
-    assert_eq(ctx.inventory._added["taxpayer-money"], 5, "high-frustration biter should still pay taxpayer money")
-    assert_true(ctx.inventory._added["enrolled-biter"] == nil, "high-frustration biter should never convert")
+    assert_eq(ctx.info.state, "returning_home", "biter above 90% should follow the normal return-home path")
+    assert_eq(ctx.inventory._removed["job-offer"], 1, "offer above 90% should still be consumed")
+    assert_eq(ctx.inventory._added["taxpayer-money"], 5, "biter above 90% should still pay taxpayer money")
+    assert_true(ctx.inventory._added["enrolled-biter"] == nil, "biter above 90% should never convert")
   end)
 end)
 

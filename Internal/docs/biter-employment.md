@@ -2,7 +2,9 @@
 
 ## Biter Worker Hiring
 
-When you resolve a biter's complaint with a **Job Offer** in the Biter Administration Desk inventory, the biter leaves as a **Biter Worker** item instead of paying taxpayer money.
+When you resolve a biter's complaint with a **Job Offer** in the Biter Administration Desk inventory, the biter leaves as hired labor instead of paying taxpayer money.
+
+With Space Age enabled, hiring has one extra Nauvis step: a successful offer creates an **Enrolled Biter**, and the Formation Center trains that item into a **Worker Biter**. Office Desks remain bootstrap-safe so you can build the Formation Center before you have a Worker Biter. The Space Age offer is consumed when the enrollment attempt is made and has a 75% chance at or below 50% frustration, 50% above 50% through 75%, 25% above 75% through 90%, and no chance above 90%.
 
 ### Worker Yield by Biter Type
 
