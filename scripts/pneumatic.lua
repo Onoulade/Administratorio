@@ -90,40 +90,83 @@ local function set_intake_status_blocked(entity, key)
   set_intake_status(entity, key, defines.entity_status_diode.red)
 end
 
-local MAX_NETWORK_RADIUS = C.TUBE_MAX_NETWORK_RADIUS or 120 -- tiles from the starting pipe
+local MAX_NETWORK_RADIUS = C.TUBE_MAX_NETWORK_RADIUS -- tiles from the starting pipe
+
+--- Entities the tube network is allowed to walk through.
+--- The "pneumatic-forms" connection category normally keeps foreign fluid
+--- entities out on its own, but the Factorissimo compatibility patch
+--- (prototypes/final_fixes/factorissimo_pneumatic.lua) gives that mod's wall
+--- pumps both the default and the pneumatic category.  Without this whitelist a
+--- water pipe on the far side of such a pump would drag the entire fluid grid
+--- into the tube network.
+local TRAVERSABLE_NETWORK_ENTITIES = {
+  ["pneumatic-pipe"] = true,
+  ["pneumatic-pipe-to-ground"] = true,
+  ["pneumatic-hidden-network-pipe"] = true,
+  ["factory-inside-pump-input"] = true,
+  ["factory-inside-pump-output"] = true,
+  ["factory-outside-pump-input"] = true,
+  ["factory-outside-pump-output"] = true,
+}
 
 --- BFS through fluidbox connections starting from a hidden network pipe.
 --- Returns network_id, over_extended.
 --- network_id: smallest unit_number in the connected component.
---- over_extended: true if any connected pipe exceeds MAX_NETWORK_RADIUS.
+--- over_extended: true if any connected pipe reaches past MAX_NETWORK_RADIUS,
+--- counting the radii on either side of a factory wall together.
 local function bfs_network_id(network_pipe)
   if not network_pipe or not network_pipe.valid then return nil, false end
-  local origin = network_pipe.position
-  local id = network_pipe.unit_number
-  local visited = {[network_pipe.unit_number] = true}
+  local start = network_pipe.unit_number
+  local id = start
+  -- Reach stays a straight-line radius, exactly as it is for a network that
+  -- never leaves its surface.  Crossing a Factorissimo wall closes the current
+  -- radius off into `reached` and opens a new one at the far side, so the reach
+  -- outdoors and the reach inside a factory sum instead of being measured
+  -- against virtual-map coordinates that mean nothing to either.
+  -- ponytail: hop-count BFS, so a pipe reachable two ways is measured along
+  -- whichever route arrives first. Switch to Dijkstra if that ever misfires.
+  local reached = {[start] = 0}                     -- radii closed off behind us
+  local origin = {[start] = network_pipe.position}  -- where the current radius starts
   local queue = {network_pipe}
   local head = 1
   local over_extended = false
+
+  local function radius_from(origin_position, position)
+    local dx = position.x - origin_position.x
+    local dy = position.y - origin_position.y
+    return math.sqrt(dx * dx + dy * dy)
+  end
+
   while head <= #queue do
     local current = queue[head]
     head = head + 1
+    local current_id = current.unit_number
     local fb = current.fluidbox
     if fb then
       for i = 1, #fb do
-        local connections = fb.get_connections(i)
+        -- get_pipe_connections, not get_connections: only this one reports the
+        -- "linked" connection that bridges a Factorissimo factory wall.
+        local connections = fb.get_pipe_connections(i)
         if connections then
-          for _, connected_fb in ipairs(connections) do
-            local owner = connected_fb.owner
+          for _, connection in ipairs(connections) do
+            local owner = connection.target and connection.target.owner
             -- Ghost entities participate in fluidbox connections in Factorio 2.x
             -- (for placement preview), but must not count as real network links.
-            if owner and owner.valid and not visited[owner.unit_number]
-                and owner.type ~= "entity-ghost" then
-              visited[owner.unit_number] = true
+            if owner and owner.valid and reached[owner.unit_number] == nil
+                and owner.type ~= "entity-ghost"
+                and TRAVERSABLE_NETWORK_ENTITIES[owner.name] then
               if owner.unit_number < id then id = owner.unit_number end
-              local pos = owner.position
-              local dx = pos.x - origin.x
-              local dy = pos.y - origin.y
-              if dx * dx + dy * dy > MAX_NETWORK_RADIUS * MAX_NETWORK_RADIUS then
+              local position = owner.position
+              local walled_off = owner.surface_index ~= current.surface_index
+              local carried = reached[current_id]
+              local from = origin[current_id]
+              if walled_off then
+                carried = carried + radius_from(from, current.position)
+                from = position
+              end
+              reached[owner.unit_number] = carried
+              origin[owner.unit_number] = from
+              if carried + radius_from(from, position) > MAX_NETWORK_RADIUS then
                 over_extended = true
               end
               table.insert(queue, owner)
@@ -135,6 +178,7 @@ local function bfs_network_id(network_pipe)
   end
   return id, over_extended
 end
+M.bfs_network_id = bfs_network_id -- exposed for tests
 
 -------------------------------------------------------------------------------
 -- CAPACITY HELPERS
