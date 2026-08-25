@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.3
+Date: 2026-08-25
+  Changes:
+    - Merge branch 'main' of https://github.com/Onoulade/Administratorio
+    - biter_station: skip waiver lookup when the module item is absent (#30)
+    - Fix Space Age biter workforce bootstrap
+    - biter_station: skip waiver lookup when the module item is absent
+---------------------------------------------------------------------------------------------------
 Version: 0.6.2
 Date: 2026-08-24
   Changes:
