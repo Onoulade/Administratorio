@@ -1620,3 +1620,10 @@ require("prototypes.final_fixes.science_pack_stripping").apply(data, ITEM_LIKE_P
 -- cargo, including Space Age tourism items and generated forms, is covered.
 -------------------------------------------------------------------------------
 require("prototypes.final_fixes.rocket_weights").apply()
+
+-------------------------------------------------------------------------------
+-- 14. FACTORISSIMO PNEUMATIC TUBE COMPATIBILITY
+-- Let pneumatic tubes pass through a Factorissimo factory wall. No-op when
+-- Factorissimo is absent.
+-------------------------------------------------------------------------------
+require("prototypes.final_fixes.factorissimo_pneumatic").apply(data)

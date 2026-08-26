@@ -133,6 +133,82 @@ test("legacy unqualified signal-pool entries remain normal quality", function()
   assert_eq(pneumatic.get_network_total(2), 0, "legacy transfer should remain conserved")
 end)
 
+-- Factorissimo compatibility: a tube network crosses a factory wall through the
+-- linked pump pair, and must not leak into the fluid network behind that pump.
+local function new_fluid_entity(spec)
+  local entity = {
+    valid = true,
+    name = spec.name,
+    type = spec.type or "pipe",
+    unit_number = spec.unit_number,
+    position = spec.position,
+    surface_index = spec.surface_index,
+    connections = {},
+  }
+  entity.fluidbox = {true}
+  function entity.fluidbox.get_pipe_connections(_)
+    local pipe_connections = {}
+    for _, neighbour in ipairs(entity.connections) do
+      pipe_connections[#pipe_connections + 1] = {target = {owner = neighbour}}
+    end
+    return pipe_connections
+  end
+  return entity
+end
+
+local function link(a, b)
+  a.connections[#a.connections + 1] = b
+  b.connections[#b.connections + 1] = a
+end
+
+test("tube network chains two factories without absorbing fluid pipes", function()
+  -- One tube leaves factory A, crosses the outside world, and enters factory B.
+  -- Both interiors live on the same shared factory floor surface, 512 tiles
+  -- apart on the virtual map -- a distance that is bookkeeping, not tube.
+  local inside_a = new_fluid_entity{name = "pneumatic-hidden-network-pipe", unit_number = 10, position = {x = 4000, y = 4000}, surface_index = 2}
+  local pump_a_in = new_fluid_entity{name = "factory-inside-pump-output", type = "pump", unit_number = 20, position = {x = 4001, y = 4000}, surface_index = 2}
+  local pump_a_out = new_fluid_entity{name = "factory-outside-pump-input", type = "pump", unit_number = 30, position = {x = 1, y = 0}, surface_index = 1}
+  local outside_tube = new_fluid_entity{name = "pneumatic-pipe", unit_number = 40, position = {x = 2, y = 0}, surface_index = 1}
+  local pump_b_out = new_fluid_entity{name = "factory-outside-pump-input", type = "pump", unit_number = 50, position = {x = 3, y = 0}, surface_index = 1}
+  local pump_b_in = new_fluid_entity{name = "factory-inside-pump-output", type = "pump", unit_number = 60, position = {x = 4512, y = 4000}, surface_index = 2}
+  local inside_b = new_fluid_entity{name = "pneumatic-pipe", unit_number = 70, position = {x = 4513, y = 4000}, surface_index = 2}
+  local foreign_pipe = new_fluid_entity{name = "pipe", unit_number = 5, position = {x = 2, y = 1}, surface_index = 1}
+
+  link(inside_a, pump_a_in)
+  link(pump_a_in, pump_a_out) -- the linked cross-surface connection
+  link(pump_a_out, outside_tube)
+  link(outside_tube, pump_b_out)
+  link(pump_b_out, pump_b_in) -- and the second one
+  link(pump_b_in, inside_b)
+  link(outside_tube, foreign_pipe)
+
+  local net_id, over_extended = pneumatic.bfs_network_id(inside_a)
+
+  assert_eq(net_id, 10, "network id should ignore the foreign fluid pipe behind the pump")
+  assert_eq(over_extended, false, "crossing a factory wall must not cost network length")
+end)
+
+test("tube reach inside a factory adds to the reach outdoors", function()
+  -- 100 tiles outdoors, then 100 more inside a factory: under the 120-tile
+  -- radius apart, over it together.
+  local outside_start = new_fluid_entity{name = "pneumatic-hidden-network-pipe", unit_number = 10, position = {x = 0, y = 0}, surface_index = 1}
+  local outside_end = new_fluid_entity{name = "pneumatic-pipe", unit_number = 20, position = {x = 100, y = 0}, surface_index = 1}
+  local pump_outside = new_fluid_entity{name = "factory-outside-pump-input", type = "pump", unit_number = 30, position = {x = 101, y = 0}, surface_index = 1}
+  local pump_inside = new_fluid_entity{name = "factory-inside-pump-output", type = "pump", unit_number = 40, position = {x = 4000, y = 4000}, surface_index = 2}
+  local inside_end = new_fluid_entity{name = "pneumatic-pipe", unit_number = 50, position = {x = 4100, y = 4000}, surface_index = 2}
+
+  link(outside_start, outside_end)
+  link(outside_end, pump_outside)
+  link(pump_outside, pump_inside)
+
+  local _, outside_only = pneumatic.bfs_network_id(outside_start)
+  assert_eq(outside_only, false, "101 tiles of outdoor tube alone stays within the radius")
+
+  link(pump_inside, inside_end)
+  local _, with_interior = pneumatic.bfs_network_id(outside_start)
+  assert_eq(with_interior, true, "the same run plus 100 tiles inside a factory exceeds it")
+end)
+
 print("\n=== PNEUMATIC RUNTIME TESTS ===")
 print("Passed: " .. passed .. "  Failed: " .. failed .. "  Total: " .. (passed + failed))
 if failed > 0 then
