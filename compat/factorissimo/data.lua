@@ -1,4 +1,7 @@
--- ADMINISTRATORIO: FACTORISSIMO PNEUMATIC COMPATIBILITY
+-- ADMINISTRATORIO: FACTORISSIMO PNEUMATIC COMPATIBILITY (DATA STAGE)
+--
+-- Loaded from compat/init.lua during data-final-fixes; runs on require, like
+-- every other data-stage compat module.
 --
 -- Factorissimo carries fluids through a factory wall with a pair of hidden
 -- pumps linked across surfaces.  Those pumps only accept the "default" pipe
@@ -15,8 +18,6 @@
 -- Nothing flows across such a mismatch -- tubes never carry fluid -- and the
 -- BFS whitelist in scripts/pneumatic.lua refuses to walk out of the pump into a
 -- foreign fluid network.
-
-local M = {}
 
 -- A pipeline's extent is the min extent of every fluidbox in it, measured in
 -- raw coordinates with no regard for which surface each one sits on.  A tube
@@ -40,7 +41,7 @@ local FACTORY_PUMPS = {
   "factory-outside-pump-output",
 }
 
-function M.apply(data)
+local function apply()
   local pumps = data.raw.pump
   if not (pumps and pumps["factory-inside-pump-input"]) then return end -- no Factorissimo
 
@@ -68,4 +69,4 @@ function M.apply(data)
   end
 end
 
-return M
+apply()

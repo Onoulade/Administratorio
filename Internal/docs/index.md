@@ -12,6 +12,7 @@ An overhaul mod for Factorio 2.0 that replaces military conflict with corporate 
 - **[Biter Employment](biter-employment.md)** — Hiring workers, the Biter Employment Office (station), Biterport (walking-worker roboport), and Field Office.
 - **[Buildings & Structures](buildings-and-structures.md)** — All buildings, production facilities, administrative buildings, pneumatic tube network, and support structures.
 - **[Technology Tree](technology-tree.md)** — Complete tech tree from discovery triggers through Constitutional Law, including specialization training and capacity upgrades.
+- **[Mod Compatibility](mod-compatibility.md)** — For contributors: the `compat/` hook engine, existing hook points, and how to add compatibility with another mod without touching core logic.
 - **[Advanced Topics](advanced-topics.md)** — Hired Biter (field agents), working hours system, modules, funding chain, coffee economy, train transit, and structural bottlenecks.
 
 ## Current State

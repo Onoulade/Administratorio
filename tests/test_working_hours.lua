@@ -155,6 +155,61 @@ test("hard mode attackers do not keep working-hours protest shutdown claims", fu
   assert_eq(storage.working_hours_state[breakroom.unit_number].reason, nil, "hard-mode attackers should not leave a protest shutdown reason")
 end)
 
+-------------------------------------------------------------------------------
+-- SEALED INTERIORS (the resolution itself lives in test_factorissimo_compat)
+-------------------------------------------------------------------------------
+
+test("desk inside a lit factory shuts down when it is night outside", function()
+  storage = {}
+  package.loaded["feature_flags"] = nil
+  package.loaded["compat.hooks"] = nil
+  package.loaded["compat.factorissimo.runtime"] = nil
+  package.loaded["scripts.working_hours"] = nil
+  -- Same order as control.lua: compat registers, then the core module loads.
+  require("compat.init").load("runtime")
+  local working_hours = require("scripts.working_hours")
+
+  -- Factorissimo freezes a lit factory floor at noon; the planet outside it is
+  -- at midnight.
+  local factory = {
+    force = {
+      valid = true,
+      technologies = {["factory-interior-upgrade-lights"] = {researched = true}},
+    },
+    outside_surface = {valid = true, index = 1, daytime = 0.5, dusk = 0.25, dawn = 0.75},
+    outside_x = 10,
+    outside_y = 20,
+  }
+  remote = {
+    interfaces = {
+      factorissimo = {
+        is_factorissimo_surface = true,
+        find_surrounding_factory_by_surface_index = true,
+      },
+    },
+    call = function(_, method, surface_index)
+      if method == "is_factorissimo_surface" then return surface_index == 2 end
+      return surface_index == 2 and factory or nil
+    end,
+  }
+
+  local desk = new_entity("office-desk")
+  desk.surface = {valid = true, index = 2, daytime = 1, dusk = 0.25, dawn = 0.75}
+  desk.position = {x = 0, y = 0}
+  working_hours.refresh_entity(desk)
+
+  assert_eq(desk.active, false, "desk inside a factory should close for the night")
+  assert_eq(storage.working_hours_state[desk.unit_number].reason, "night", "desk inside a factory should record a night shutdown")
+
+  working_hours.update_managed_buildings()
+  assert_eq(desk.active, false, "the periodic update should keep the desk closed")
+
+  remote = nil
+  package.loaded["compat.hooks"] = nil
+  package.loaded["compat.factorissimo.runtime"] = nil
+  package.loaded["scripts.working_hours"] = nil
+end)
+
 print(("Working hours tests: %d passed, %d failed"):format(passed, failed))
 if failed > 0 then
   for _, err in ipairs(errors) do

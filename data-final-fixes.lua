@@ -1622,8 +1622,7 @@ require("prototypes.final_fixes.science_pack_stripping").apply(data, ITEM_LIKE_P
 require("prototypes.final_fixes.rocket_weights").apply()
 
 -------------------------------------------------------------------------------
--- 14. FACTORISSIMO PNEUMATIC TUBE COMPATIBILITY
--- Let pneumatic tubes pass through a Factorissimo factory wall. No-op when
--- Factorissimo is absent.
+-- 14. OTHER MODS
+-- Every data-stage compatibility module, each a no-op when its mod is absent.
 -------------------------------------------------------------------------------
-require("prototypes.final_fixes.factorissimo_pneumatic").apply(data)
+require("compat.init").load("data")
