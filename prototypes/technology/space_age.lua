@@ -1395,6 +1395,7 @@ data:extend({
 -- the office unlock aligned with that actual provider instead of exposing a
 -- recipe that is impossible to craft at biter-employment.
 remove_tech_unlock("biter-employment", "resolution-office")
+remove_tech_unlock("biter-employment", "job-offer-production")
 add_tech_unlock("worker-formation", "resolution-office")
 
 for technology_name, technology in pairs(data.raw.technology or {}) do
