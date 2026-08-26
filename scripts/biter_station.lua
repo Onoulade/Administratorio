@@ -2,7 +2,6 @@ local C = require("scripts.constants")
 local feature_flags = require("feature_flags")
 local working_hours = require("scripts.working_hours")
 local unit_ai_settings = require("scripts.unit_ai_settings")
-local feature_flags = require("feature_flags")
 
 local M = {}
 local biters_module = nil
@@ -28,6 +27,12 @@ end
 -- permanent, but removing it immediately returns the building to dispatch.
 local function has_unstaffed_operations_waiver(entity)
   if not entity or not entity.valid or not entity.get_module_inventory then
+    return false
+  end
+  -- This module is only registered when Space Age is active. Check the
+  -- feature flag before touching the inventory so base-only games never ask
+  -- Factorio to resolve an item that cannot exist in their prototype set.
+  if not feature_flags.space_age_enabled() then
     return false
   end
   if not feature_flags.item_prototype_exists("unstaffed-operations-waiver") then

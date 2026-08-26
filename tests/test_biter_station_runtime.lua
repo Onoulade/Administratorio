@@ -589,6 +589,7 @@ end)
 test("managed building without the waiver item prototype does not error", function()
   storage = {}
   package.loaded["scripts.biter_station"] = nil
+  mods = {}
   local surface = new_surface()
   local force = {name = "player", valid = true, technologies = {}, set_cease_fire = function() end}
   game = {
@@ -603,7 +604,7 @@ test("managed building without the waiver item prototype does not error", functi
   }
   -- Space Age (or working hours) disabled: the waiver module never loads, and
   -- the engine errors on get_item_count for an unknown item name.
-  prototypes = {item = {}}
+  prototypes = nil
   local building = new_managed_building(surface, force)
   function building.get_module_inventory()
     return {
