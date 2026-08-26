@@ -276,10 +276,11 @@ data:extend({
     subgroup = "admin-biter-training", order = "b-a",
     ingredients = {
       {type = "item", name = "enrolled-biter", amount = 1},
-      {type = "item", name = "credentials", amount = 1},
       -- The first worker must bootstrap before information-management's
       -- later good-excuse chain.  Basic excuses are available in the early
-      -- paperwork branch and keep this recipe acyclic.
+      -- paperwork branch and keep this recipe acyclic. Credentials are a
+      -- later workforce input; requiring them here would make the first
+      -- worker depend on staffed propaganda buildings.
       {type = "item", name = "basic-excuse", amount = 1},
     },
     results = {{type = "item", name = "worker-biter", amount = 1}},

@@ -460,6 +460,10 @@ test("worker-biter exists as the enrolled-to-workforce intermediate", function()
   assert_true(has_ingredient(recipes["job-offer-production"], "provisional-approval"), "job-offer should require provisional approval")
   assert_true(recipes["worker-biter-formation"] ~= nil, "worker-biter formation recipe missing")
   assert_true(has_ingredient(recipes["worker-biter-formation"], "enrolled-biter"), "worker-biter should come from enrolled-biter")
+  assert_true(not has_ingredient(recipes["worker-biter-formation"], "credentials"),
+    "the first worker must not depend on credentials made by staffed buildings")
+  assert_true(has_ingredient(recipes["worker-biter-formation"], "basic-excuse"),
+    "the first worker should use the early bootstrap excuse")
 end)
 
 test("Space Age office desks keep the workforce bootstrap acyclic", function()
@@ -963,8 +967,8 @@ test("workforce progression is split by role and orbital scope", function()
   assert_true(not tech_unlocks_recipe(chromatic, "worker-biter"), "chromatic-printing should not directly unlock worker-biter")
   assert_true(not tech_unlocks_recipe(metallurgy, "licensed-notary-formation"),
     "metallurgic-science-pack should no longer unlock licensed-notary-formation")
-  assert_eq(worker.prerequisites[1], "formation-center", "worker formation should require the formation center")
-  assert_eq(worker.prerequisites[2], "industrial-propaganda", "worker formation should follow the credential supply used by its recipe")
+  assert_eq(#worker.prerequisites, 1, "worker formation should have only the Formation Center bootstrap prerequisite")
+  assert_eq(worker.prerequisites[1], "formation-center", "worker formation should be available before staffed propaganda buildings")
   assert_true(not tech_has_prerequisite(worker, "space-platform"),
     "worker formation should remain available before the orbital bootstrap")
   assert_true(tech_has_prerequisite(management, "eminent-domain-zoning"),

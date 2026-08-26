@@ -477,11 +477,11 @@ data:extend({
       {type = "unlock-recipe", recipe = "worker-biter-formation"},
     },
     -- Basic workers are the bootstrap for specialist training and must be
-    -- available before the bureaucracy/oil chain.  Keeping this at the
-    -- Formation Center plus the credential chain.  The first formation uses
-    -- basic-excuse rather than the later good-excuse chain so this remains a
+    -- available before the staffed propaganda/coffee economy. The first
+    -- formation uses an enrolled biter plus a basic excuse, so the Formation
+    -- Center is the only workforce prerequisite and this route remains a
     -- finite bootstrap.
-    prerequisites = {"formation-center", "industrial-propaganda"},
+    prerequisites = {"formation-center"},
     unit = {
       count = 240,
       ingredients = {
