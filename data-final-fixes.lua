@@ -1123,6 +1123,24 @@ for _, regulated in pairs(regulated_recipes) do
 end
 data:extend(regulated_list)
 
+-- Recipes shared by native machines and assembling machines keep their
+-- canonical recipe for the native machine, while the regulated copy is the
+-- assembler route. Both routes must be unlocked together; otherwise a
+-- research trigger such as "craft foundry" has a recipe in the data dump but
+-- no machine can actually make it before the native machine exists.
+local function add_recipe_unlock(technology, recipe_name)
+  technology.effects = technology.effects or {}
+  for _, effect in ipairs(technology.effects) do
+    if effect.type == "unlock-recipe" and effect.recipe == recipe_name then
+      return
+    end
+  end
+  technology.effects[#technology.effects + 1] = {
+    type = "unlock-recipe",
+    recipe = recipe_name,
+  }
+end
+
 -------------------------------------------------------------------------------
 -- 5a1. IMPORTED RESEARCH APPROVAL FOR NATIVE SPACE SCIENCE
 -- Preserve Space Age's single five-pack native recipe and require exactly one
@@ -1189,6 +1207,27 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
   ::next_admin_building::
 end
 data:extend(admin_building_regulated)
+
+-- Pair every generated regulated copy with the technology that unlocks its
+-- canonical recipe. This must run after both generation passes: admin
+-- building fallbacks are created separately from the normal recipe copies.
+for regulated_name in pairs(data.raw["recipe"]) do
+  if regulated_name:find("%-regulated$") then
+    local base_name = regulated_name:gsub("%-regulated$", "")
+    for _, technology in pairs(data.raw["technology"] or {}) do
+      local unlocks_base = false
+      for _, effect in ipairs(technology.effects or {}) do
+        if effect.type == "unlock-recipe" and effect.recipe == base_name then
+          unlocks_base = true
+          break
+        end
+      end
+      if unlocks_base then
+        add_recipe_unlock(technology, regulated_name)
+      end
+    end
+  end
+end
 
 -- Demolition products need explicit construction paperwork on top of their
 -- normal process permits so cliff clearance and blasting stay on-theme.

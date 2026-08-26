@@ -220,11 +220,14 @@ def recipe_results(recipe: Dict) -> List[Tuple[str, str]]:
 
 
 def is_secondary_recipe(name: str, recipe: Dict) -> bool:
-    if name.endswith("-regulated"):
-        return True
     if recipe_category(recipe) in SECONDARY_RECIPE_CATEGORIES:
         return True
     return False
+
+
+def is_hidden_helper_recipe(recipe: Dict) -> bool:
+    """Return recipes used as machine-only alternatives, not player routes."""
+    return bool(recipe.get("hide_from_player_crafting", False))
 
 
 class ProgressionAnalyzer:
@@ -289,6 +292,11 @@ class ProgressionAnalyzer:
         self.world_trigger_recipes = set(self.world_trigger_recipe_techs)
         self.always_enabled_recipes = {
             name for name, recipe in self.recipes.items() if recipe_enabled_from_start(recipe)
+        }
+        self.player_facing_always_enabled_recipes = {
+            name
+            for name in self.always_enabled_recipes
+            if not is_hidden_helper_recipe(self.recipes[name])
         }
         self.start_enabled_recipes = set(self.always_enabled_recipes) | self.world_trigger_recipes
 
@@ -917,7 +925,7 @@ class ProgressionAnalyzer:
 
     def enabled_recipe_gating_findings(self) -> List[Dict]:
         findings = []
-        for recipe_name in sorted(self.always_enabled_recipes):
+        for recipe_name in sorted(self.player_facing_always_enabled_recipes):
             missing_paths = self.enabled_recipe_missing_paths(recipe_name)
             if not missing_paths:
                 continue
@@ -996,6 +1004,7 @@ class ProgressionAnalyzer:
                 recipe_name
                 for recipe_name in self.producing_recipes.get(pack_name, [])
                 if recipe_name in progression_recipes
+                and not is_hidden_helper_recipe(self.recipes[recipe_name])
             )
             if len(producers) > 1:
                 findings.append({"science_pack": pack_name, "recipes": producers})
@@ -1132,7 +1141,7 @@ class ProgressionAnalyzer:
         start_key: Tuple[str, ...] = ()
         for recipe_name in sorted(self.start_enabled_recipes):
             recipe = self.recipes[recipe_name]
-            if recipe.get("hidden"):
+            if recipe.get("hidden") or is_hidden_helper_recipe(recipe):
                 continue
             if (recipe_category(recipe) or "crafting") == "parameters":
                 continue
@@ -1218,7 +1227,7 @@ class ProgressionAnalyzer:
         full_key = self.full_tech_key()
         for recipe_name in sorted(self.recipes):
             recipe = self.recipes[recipe_name]
-            if recipe.get("hidden"):
+            if recipe.get("hidden") or is_hidden_helper_recipe(recipe):
                 continue
             if (recipe_category(recipe) or "crafting") == "parameters":
                 continue

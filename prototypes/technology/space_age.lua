@@ -623,7 +623,7 @@ data:extend({
     effects = {
       {type = "unlock-recipe", recipe = "senior-trajectory-compliance-array"},
     },
-    prerequisites = {"orbital-compliance-systems", "metallurgic-science-pack", "agricultural-science-pack", "electromagnetic-science-pack"},
+    prerequisites = {"orbital-compliance-systems", "metallurgic-science-pack", "agricultural-science-pack", "electromagnetic-science-pack", "carbon-fiber"},
     unit = {
       count = 1200,
       ingredients = {
@@ -906,6 +906,9 @@ add_tech_prerequisite("orbital-compliance-systems", "radar")
 add_tech_prerequisite("orbital-compliance-systems", "electric-mining-drill")
 add_tech_prerequisite("space-platform-thruster", "orbital-compliance-systems")
 add_tech_prerequisite("management-formation", "repair-pack")
+-- Quantum processing and the senior trajectory array both consume carbon
+-- fiber. Keep its recipe researchable before either downstream machine path.
+add_tech_prerequisite("quantum-processor", "carbon-fiber")
 add_tech_prerequisite("metallurgic-science-pack", "cyan-ink-production")
 add_tech_prerequisite("agricultural-science-pack", "gleba-conciliation")
 add_tech_prerequisite("electromagnetic-science-pack", "fulgora-salvage-administration")

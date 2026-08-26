@@ -1133,6 +1133,8 @@ test("deviation paperwork and VESM catapult are distinct orbital systems", funct
 
   local senior_tech = assert(technologies["trajectory-compliance-jurisdiction-2"], "senior jurisdiction missing")
   local executive_tech = assert(technologies["trajectory-compliance-jurisdiction-3"], "executive jurisdiction missing")
+  assert_true(tech_has_prerequisite(senior_tech, "carbon-fiber"),
+    "senior jurisdiction must follow the carbon fiber recipe it consumes")
   assert_true(tech_unlocks_recipe(senior_tech, "senior-trajectory-compliance-array"))
   assert_true(tech_unlocks_recipe(executive_tech, "executive-trajectory-compliance-array"))
   local has_quantum_prerequisite = false
