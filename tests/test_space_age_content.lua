@@ -494,6 +494,14 @@ test("Space Age resolution office unlock waits for the first worker", function()
   assert_true(has_unlock(formation, "resolution-office"))
 end)
 
+test("Space Age worker formation stays before chemical science", function()
+  local formation = assert(technologies["worker-formation"], "worker-formation technology missing")
+  assert_true(not tech_uses_pack(formation, "chemical-science-pack"),
+    "worker-formation must not consume chemical science before it bootstraps chemical science")
+  assert_true(not tech_has_prerequisite(formation, "chemical-science-pack"),
+    "worker-formation must not depend on chemical science before it bootstraps chemical science")
+end)
+
 test("space age keeps the formation center item icon", function()
   assert_eq(items["formation-center"].icon,
     "__administratorio__/graphics/icons/formation-center.png",

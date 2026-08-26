@@ -79,6 +79,66 @@ def test_building_provider_cycle_is_reported_as_unresolvable():
     } in findings
 
 
+def test_science_pack_bootstrap_gap_is_reported_transitively():
+    # This mirrors Factorio's final post-inheritance prototypes: the worker
+    # bootstrap's blue-pack requirement also makes the specialist training
+    # card blue-gated through its worker-formation prerequisite.
+    data_raw = {
+        "technology": {
+            "chemical-science-pack": {
+                "unit": {
+                    "ingredients": [
+                        {"name": "automation-science-pack"},
+                        {"name": "logistic-science-pack"},
+                        {"name": "chemical-science-pack"},
+                    ]
+                },
+            },
+            "formation-center": {
+                "unit": {
+                    "ingredients": [
+                        {"name": "automation-science-pack"},
+                        {"name": "logistic-science-pack"},
+                    ]
+                },
+            },
+            "worker-formation": {
+                "prerequisites": ["formation-center"],
+                "unit": {
+                    "ingredients": [
+                        {"name": "automation-science-pack"},
+                        {"name": "logistic-science-pack"},
+                        {"name": "chemical-science-pack"},
+                    ]
+                },
+            },
+            "chemical-operator-training": {
+                "prerequisites": ["worker-formation"],
+                "unit": {
+                    "ingredients": [
+                        {"name": "automation-science-pack"},
+                        {"name": "logistic-science-pack"},
+                        {"name": "chemical-science-pack"},
+                    ]
+                },
+            },
+        },
+        "recipe": {},
+        "item": {},
+        "tool": {},
+    }
+
+    analyzer = progression_report.ProgressionAnalyzer(data_raw)
+    findings = {
+        (finding["technology"], finding["pack"])
+        for finding in analyzer.pack_prereq_gaps()
+    }
+
+    assert ("worker-formation", "chemical-science-pack") in findings
+    assert ("chemical-operator-training", "chemical-science-pack") in findings
+
+
 if __name__ == "__main__":
     test_building_provider_cycle_is_reported_as_unresolvable()
+    test_science_pack_bootstrap_gap_is_reported_transitively()
     print("Progression analyzer unit test passed.")

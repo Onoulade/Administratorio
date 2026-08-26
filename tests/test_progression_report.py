@@ -20,7 +20,7 @@ Strict mode:
     prototype graph alone cannot prove.
   - `--strict` fails when a child technology drops a science pack already
     required by one of its prerequisite technologies.
-  - `--strict` fails when a technology uses a science pack in its research
+  - always fails when a technology uses a science pack in its research
     ingredients but does not transitively depend on that pack's technology.
   - `--strict` fails when a visible technology cannot be reached by iteratively
     researching prerequisites and producing its science packs or trigger item.
@@ -1964,9 +1964,13 @@ def main() -> int:
             return 1
         if hollow_science_techs:
             return 1
+        # A missing pack prerequisite is always a hard research-ordering
+        # defect. Keeping this outside strict mode ensures the normal
+        # Factorio-backed test invocation catches bootstrap cycles too.
+        if pack_prereq_gaps:
+            return 1
         if args.strict and (
             parent_pack_gaps
-            or pack_prereq_gaps
             or unreachable_technologies
             or orphan_combat_upgrades
             or duplicate_science_pack_producers
