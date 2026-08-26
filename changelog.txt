@@ -1,4 +1,21 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.4
+Date: 2026-08-26
+  Bugfixes:
+    - remove duplicate job offer unlock
+    - correct bulk form icon and space science yield
+    - unlock regulated machine routes with recipes
+    - keep workforce bootstrap before chemical science
+    - guard waiver lookup without Space Age
+  Internal:
+    - audit complete game reachability
+  Changes:
+    - Merge branch 'main' of https://github.com/Onoulade/Administratorio
+    - carry tube networks through Factorissimo walls (#29)
+    - Merge branch 'main' into pneumatic/factorissimo-compat
+    - sum network radii across Factorissimo walls
+    - carry tube networks through Factorissimo walls
+---------------------------------------------------------------------------------------------------
 Version: 0.6.3
 Date: 2026-08-25
   Changes:
