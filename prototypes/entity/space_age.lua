@@ -462,7 +462,7 @@ administrative_space_station.energy_source = {type = "electric", usage_priority 
 administrative_space_station.ingredient_count = 10
 administrative_space_station.module_slots = 4
 administrative_space_station.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
-align_footprint(administrative_space_station, 2.4, 2.4, 3, 3, {-0.5 / 32, 2 / 32})
+align_footprint(administrative_space_station, 2.4, 2.4, 3, 3)
 administrative_space_station.surface_conditions = {
   {
     property = "pressure",
@@ -474,14 +474,10 @@ administrative_space_station.fluid_boxes_off_when_no_fluid_recipe = true
 administrative_space_station.fluid_boxes = {
   {
     production_type = "input",
+    pipe_picture = assembler3pipepictures(),
     pipe_covers = pipecoverspictures(),
     pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -1}}},
-    volume = 1000,
-  },
-  {
-    production_type = "output",
-    pipe_covers = pipecoverspictures(),
-    pipe_connections = {{flow_direction = "output", direction = defines.direction.south, position = {0, 1}}},
+    secondary_draw_orders = {north = -1},
     volume = 1000,
   },
 }

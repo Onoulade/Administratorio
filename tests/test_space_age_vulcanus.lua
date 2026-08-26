@@ -256,6 +256,10 @@ function pipecoverspictures()
   return {}
 end
 
+function assembler3pipepictures()
+  return {north = {}, east = {}, south = {}, west = {}}
+end
+
 local mod_root = debug.getinfo(1, "S").source:match("@(.*/)")
 if mod_root then
   mod_root = mod_root:gsub("Internal/tests/$", ""):gsub("tests/$", "")
@@ -479,6 +483,20 @@ test("administrative space station is the dedicated vacuum bureaucracy building"
     "administrative-space-station should build from its own item")
   assert_true(entity.rotatable,
     "administrative-space-station should rotate so its fluid ports can face platform plumbing")
+  assert_eq(entity.collision_box[1][1], -1.2,
+    "administrative-space-station collision box must stay centered for runtime rotation")
+  assert_eq(entity.collision_box[1][2], -1.2,
+    "administrative-space-station collision box must stay centered for runtime rotation")
+  assert_eq(entity.collision_box[2][1], 1.2,
+    "administrative-space-station collision box must stay centered for runtime rotation")
+  assert_eq(entity.collision_box[2][2], 1.2,
+    "administrative-space-station collision box must stay centered for runtime rotation")
+  assert_eq(#entity.fluid_boxes, 1,
+    "administrative-space-station should expose only its recipe fluid input")
+  assert_eq(entity.fluid_boxes[1].production_type, "input",
+    "administrative-space-station pipe should follow the fluid input")
+  assert_true(entity.fluid_boxes[1].pipe_picture ~= nil,
+    "administrative-space-station should draw its pipe on the fluid input connection")
   assert_eq(entity.crafting_categories[1], "orbital-bureaucracy",
     "administrative-space-station should only craft orbital paperwork")
   assert_eq(entity.surface_conditions[1].max, 0, "administrative-space-station entity should stay vacuum-only")
