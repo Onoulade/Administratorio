@@ -1411,6 +1411,14 @@ def main() -> int:
                     + ", ".join(unknown)
                 )
 
+            for target_name, amount in targets:
+                plan = analyzer.plan_target(planet_name, target_name, amount)
+                if plan["deadlocks"]:
+                    failures.append(
+                        f"{planet_name}: {format_fraction(amount)}x {target_name} has unresolved deadlocks: "
+                        + ", ".join(sorted(plan["deadlocks"]))
+                    )
+
             if args.enforce_import_policy:
                 aggregate = Counter()
                 for target_name, amount in targets:

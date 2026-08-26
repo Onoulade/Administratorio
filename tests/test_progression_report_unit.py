@@ -24,7 +24,7 @@ def test_building_provider_cycle_is_reported_as_unresolvable():
                 "subgroup": "admin-buildings",
                 "place_result": "formation-center",
             },
-            "biter-worker": {"type": "item", "subgroup": "admin-biter-training"},
+            "unavailable-worker": {"type": "item", "subgroup": "admin-biter-training"},
             "enrolled-biter": {"type": "item", "subgroup": "admin-biter-training"},
         },
         "character": {
@@ -50,7 +50,7 @@ def test_building_provider_cycle_is_reported_as_unresolvable():
         "recipe": {
             "office-desk": {
                 "enabled": False,
-                "ingredients": [{"type": "item", "name": "biter-worker", "amount": 1}],
+                "ingredients": [{"type": "item", "name": "unavailable-worker", "amount": 1}],
                 "results": [{"type": "item", "name": "office-desk", "amount": 1}],
             },
             "formation-center": {
@@ -75,7 +75,7 @@ def test_building_provider_cycle_is_reported_as_unresolvable():
         "technology": "biter-employment",
         "recipe": "office-desk",
         "building": "office-desk",
-        "ingredient": "biter-worker",
+        "ingredient": "unavailable-worker",
     } in findings
 
 
@@ -138,7 +138,65 @@ def test_science_pack_bootstrap_gap_is_reported_transitively():
     assert ("chemical-operator-training", "chemical-science-pack") in findings
 
 
+def test_unlocked_recipe_machine_cycles_are_not_masked_by_internal_recipes():
+    data_raw = {
+        "technology": {
+            "desk-tech": {
+                "effects": [{"type": "unlock-recipe", "recipe": "desk"}],
+            },
+        },
+        "recipe": {
+            "desk": {
+                "enabled": False,
+                "ingredients": [{"type": "item", "name": "paper", "amount": 1}],
+                "results": [{"type": "item", "name": "desk", "amount": 1}],
+            },
+            # This recipe has no unlock effect and is intentionally not a
+            # player route. It must not create a permanent-cycle finding.
+            "internal-stage": {
+                "enabled": False,
+                "category": "missing-machine-category",
+                "ingredients": [{"type": "item", "name": "paper", "amount": 1}],
+                "results": [{"type": "item", "name": "internal-stage", "amount": 1}],
+            },
+        },
+        "item": {
+            "paper": {"type": "item"},
+            "desk": {"type": "item"},
+            "internal-stage": {"type": "item", "hidden": True},
+        },
+        "tool": {},
+        "character": {"character": {"crafting_categories": ["crafting"]}},
+    }
+
+    analyzer = progression_report.ProgressionAnalyzer(data_raw)
+
+    assert analyzer.permanent_recipe_machine_cycle_findings() == []
+
+
+def test_item_reachability_distinguishes_runtime_and_ui_items_from_orphans():
+    data_raw = {
+        "technology": {},
+        "recipe": {},
+        "item": {
+            "orphan-item": {"type": "item"},
+            "biter-worker": {"type": "item"},
+            "red-wire": {"type": "item"},
+        },
+        "tool": {},
+        "character": {"character": {"crafting_categories": ["crafting"]}},
+    }
+
+    analyzer = progression_report.ProgressionAnalyzer(data_raw)
+
+    assert analyzer.item_reachability_findings() == [
+        {"type": "item", "item": "orphan-item", "producers": []}
+    ]
+
+
 if __name__ == "__main__":
     test_building_provider_cycle_is_reported_as_unresolvable()
     test_science_pack_bootstrap_gap_is_reported_transitively()
+    test_unlocked_recipe_machine_cycles_are_not_masked_by_internal_recipes()
+    test_item_reachability_distinguishes_runtime_and_ui_items_from_orphans()
     print("Progression analyzer unit test passed.")

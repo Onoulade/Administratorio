@@ -17,6 +17,12 @@ local visibility_exceptions = {
   },
 }
 
+local removed_combat_items = {
+  "rocket-turret",
+  "personal-laser-defense-equipment",
+  "discharge-defense-equipment",
+}
+
 function M.apply(data)
   for _, prototype_type in ipairs({"gun", "ammo", "ammo-turret", "electric-turret", "fluid-turret"}) do
     for name, prototype in pairs(data.raw[prototype_type] or {}) do
@@ -41,6 +47,20 @@ function M.apply(data)
     if technology then
       technology.hidden = true
       technology.enabled = false
+    end
+  end
+
+  -- Hiding the combat entities alone leaves their item/recipe/technology
+  -- shells visible, even though their ingredients can no longer be produced.
+  -- Remove those dangling player-facing entries with the rest of the combat
+  -- surface so the progression graph has no intentionally unreachable items.
+  for _, name in ipairs(removed_combat_items) do
+    for _, prototype_type in ipairs({"item", "recipe", "technology"}) do
+      local prototype = data.raw[prototype_type] and data.raw[prototype_type][name]
+      if prototype then
+        prototype.hidden = true
+        prototype.enabled = false
+      end
     end
   end
 end

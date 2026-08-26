@@ -120,7 +120,7 @@ function M.apply()
   set_weights("item", {
     "heatproof-form-stock", "blank-cyan-form", "mycelial-form-stock", "blank-yellow-form",
     "signal-form-stock", "blank-magenta-form", "cyan-yellow-form", "cyan-magenta-form",
-    "yellow-magenta-form", "permit-draft", "orbital-operations-form", "orbital-tourism-form",
+    "yellow-magenta-form", "permit-draft", "orbital-operations-form",
   }, 1 * kg)
   set_weights("item", {"inspection-docket", "symbiosis-record", "archive-recovery-permit", "conciliation-order"}, 2 * kg)
   set_weights("item", {"embossed-seal", "digital-processing-certificate", "data-recovery-order", "asteroid-processing-docket"}, 3 * kg)

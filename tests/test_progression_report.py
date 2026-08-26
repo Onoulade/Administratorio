@@ -22,14 +22,18 @@ Strict mode:
     required by one of its prerequisite technologies.
   - always fails when a technology uses a science pack in its research
     ingredients but does not transitively depend on that pack's technology.
-  - `--strict` fails when a visible technology cannot be reached by iteratively
+  - the normal audit fails when a visible technology cannot be reached by iteratively
     researching prerequisites and producing its science packs or trigger item.
-  - `--strict` fails when a visible combat upgrade only affects ammo categories
+  - the normal audit fails when a visible combat upgrade only affects ammo categories
     whose weapons and ammunition are hidden.
-  - `--strict` fails when one visible science pack has multiple progression
+  - the normal audit fails when one visible science pack has multiple progression
     recipes, excluding hidden recycling and internal alternate paths.
-  - `--strict` fails when a technology unlocks a biter profession or MMMM
+  - the normal audit fails when a technology unlocks a biter profession or MMMM
     briefing before the recipe ingredients needed to perform it are available.
+  - the normal audit fails when a visible item-like prototype cannot be obtained
+    from a world/runtime source or any recipe after the complete tech graph.
+  - the normal audit fails when an enabled/unlocked recipe has a permanent
+    machine/category deadlock or a mod building has an unresolvable provider.
   - always fails when a visible, science-based technology has neither a unique
     player-facing recipe unlock nor any other effect, because researching a
     hollow node gives the player nothing.
@@ -86,6 +90,22 @@ RUNTIME_OBTAINABLE_ITEMS = {
     # Space Age converts a resolved hired biter into this portable workforce
     # seed in scripts/biters.lua. It intentionally has no data-stage recipe.
     "enrolled-biter",
+    # Biter stations emit these as runtime workforce and complaint inputs.
+    "biter-worker",
+    "ticket-landscape", "ticket-smog", "ticket-noise", "ticket-unemployment",
+    "ticket-littering", "ticket-hazmat", "ticket-loitering", "ticket-vagrancy",
+    # These are produced by entities, achievements, or scripted capture.
+    "depleted-uranium-fuel-cell",
+    "transit-permit-chest",
+    "territorial-deed",
+    "small-spitter-tourism-package", "medium-spitter-tourism-package",
+    "big-spitter-tourism-package", "behemoth-spitter-tourism-package",
+}
+RUNTIME_OBTAINABLE_FLUIDS = {"slush-fund"}
+NON_PROGRESSION_ITEMS = {
+    # Circuit wires and remotes are UI/entity controls, not inventory recipes.
+    "red-wire", "green-wire", "copper-wire",
+    "discharge-defense-remote", "spidertron-remote",
 }
 STARTING_PROVIDER_ITEMS = ("mechanical-printer", "office-desk")
 STRUCTURAL_EMPTY_TECHS = {
@@ -301,7 +321,7 @@ class ProgressionAnalyzer:
         self.start_enabled_recipes = set(self.always_enabled_recipes) | self.world_trigger_recipes
 
     def _build_root_materials(self) -> Set[str]:
-        roots = {"water", "taxpayer-money"} | RUNTIME_OBTAINABLE_ITEMS
+        roots = {"water", "taxpayer-money"} | RUNTIME_OBTAINABLE_ITEMS | RUNTIME_OBTAINABLE_FLUIDS
         for proto_type in RESOURCE_ROOT_TYPES:
             for proto in self.data_raw.get(proto_type, {}).values():
                 minable = proto.get("minable") or {}
@@ -511,6 +531,28 @@ class ProgressionAnalyzer:
                         changed = True
 
         return tuple(sorted(reachable))
+
+    def item_reachability_findings(self) -> List[Dict]:
+        """Find visible inventory prototypes with no complete acquisition path."""
+        full_key = self.full_tech_key()
+        craftable_items = set(self.machine_state(full_key)[0])
+        findings = []
+        for proto_type in ITEM_LIKE_TYPES:
+            for item_name, item in sorted(self.data_raw.get(proto_type, {}).items()):
+                if item.get("hidden", False) or not item.get("enabled", True):
+                    continue
+                if item_name in NON_PROGRESSION_ITEMS:
+                    continue
+                if item_name in self.root_materials or item_name in craftable_items:
+                    continue
+                findings.append(
+                    {
+                        "type": proto_type,
+                        "item": item_name,
+                        "producers": self.producing_recipes.get(item_name, []),
+                    }
+                )
+        return findings
 
     @lru_cache(maxsize=None)
     def tech_eval_key(self, tech_name: str, include_self: bool = True) -> Tuple[str, ...]:
@@ -750,6 +792,8 @@ class ProgressionAnalyzer:
             before_key = self.tech_eval_key(tech_name, include_self=False)
             after_key = self.tech_eval_key(tech_name, include_self=True)
             for recipe_name in self.unlocks_by_tech.get(tech_name, []):
+                if is_hidden_helper_recipe(self.recipes[recipe_name]):
+                    continue
                 output_targets = [
                     result_name
                     for result_name, _ in recipe_results(self.recipes[recipe_name])
@@ -1192,7 +1236,7 @@ class ProgressionAnalyzer:
             after_key = self.tech_eval_key(tech_name, include_self=True)
             for recipe_name in sorted(self.unlocks_by_tech.get(tech_name, [])):
                 recipe = self.recipes[recipe_name]
-                if recipe.get("hidden"):
+                if recipe.get("hidden") or is_hidden_helper_recipe(recipe):
                     continue
                 if not self.recipe_ingredients_machine_ready(recipe_name, after_key):
                     continue
@@ -1225,9 +1269,16 @@ class ProgressionAnalyzer:
     def permanent_recipe_machine_cycle_findings(self) -> List[Dict]:
         findings: List[Dict] = []
         full_key = self.full_tech_key()
+        available = self.available_recipes(full_key)
         for recipe_name in sorted(self.recipes):
             recipe = self.recipes[recipe_name]
             if recipe.get("hidden") or is_hidden_helper_recipe(recipe):
+                continue
+            # Recipes that are neither enabled nor unlocked are internal
+            # intermediate definitions, not player progression routes. They
+            # must not be reported as deadlocks merely because a later stage
+            # intentionally consumes them through runtime logic.
+            if recipe_name not in available:
                 continue
             if (recipe_category(recipe) or "crafting") == "parameters":
                 continue
@@ -1628,6 +1679,7 @@ def render_report(
     start_accessible_recipe_machine_failures: Sequence[Dict],
     unlocked_recipe_machine_failures: Sequence[Dict],
     building_provider_dependency_failures: Sequence[Dict],
+    item_reachability_failures: Sequence[Dict],
     pipeline_only_techs: Sequence[str],
     dump_path: Path,
 ) -> str:
@@ -1859,6 +1911,17 @@ def render_report(
     lines.extend(
         [
             "",
+            "Visible item-like prototypes unreachable after the complete tech graph: "
+            f"{len(item_reachability_failures)}",
+        ]
+    )
+    for finding in item_reachability_failures:
+        producers = ", ".join(finding["producers"]) or "no recipe producer"
+        lines.append(f"  - {finding['item']} [{finding['type']}] ({producers})")
+
+    lines.extend(
+        [
+            "",
             f"Direct target unlocks still blocked through reachable progression: {len(unresolved_failures)}",
         ]
     )
@@ -1940,6 +2003,7 @@ def main() -> int:
         )
         unlocked_recipe_machine_failures = analyzer.unlocked_recipe_machine_findings()
         building_provider_dependency_failures = analyzer.building_provider_dependency_findings()
+        item_reachability_failures = analyzer.item_reachability_findings()
         pipeline_only_techs = analyzer.pipeline_only_technologies()
         report_text = render_report(
             analyzer=analyzer,
@@ -1958,6 +2022,7 @@ def main() -> int:
             start_accessible_recipe_machine_failures=start_accessible_recipe_machine_failures,
             unlocked_recipe_machine_failures=unlocked_recipe_machine_failures,
             building_provider_dependency_failures=building_provider_dependency_failures,
+            item_reachability_failures=item_reachability_failures,
             pipeline_only_techs=pipeline_only_techs,
             dump_path=dump_path,
         )
@@ -1966,6 +2031,12 @@ def main() -> int:
         write_file(report_path, report_text)
         print(report_text, end="")
         print(f"Report written to {report_path}")
+
+        unresolved_recipe_machine_failures = [
+            finding
+            for finding in unlocked_recipe_machine_failures
+            if finding["type"] == "blocked_after_unlock"
+        ]
 
         if missing_building_recipes:
             return 1
@@ -1978,14 +2049,20 @@ def main() -> int:
         # Factorio-backed test invocation catches bootstrap cycles too.
         if pack_prereq_gaps:
             return 1
-        if args.strict and (
-            parent_pack_gaps
-            or unreachable_technologies
-            or orphan_combat_upgrades
-            or duplicate_science_pack_producers
+        if (
+            unreachable_technologies
             or enabled_recipe_gating_failures
             or workforce_unlock_gating_failures
+            or permanent_recipe_machine_cycle_failures
+            or unresolved_recipe_machine_failures
             or building_provider_dependency_failures
+            or item_reachability_failures
+        ):
+            return 1
+        if args.strict and (
+            parent_pack_gaps
+            or orphan_combat_upgrades
+            or duplicate_science_pack_producers
         ):
             return 1
         return 0
