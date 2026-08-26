@@ -1,6 +1,10 @@
 -- ADMINISTRATORIO: RUNTIME ORCHESTRATOR
 -- Requires script modules and registers all event handlers.
 
+-- Compatibility modules first: they register into compat/hooks.lua, and script
+-- modules read those hook points while loading.
+require("compat.init").load("runtime")
+
 local C = require("scripts.constants")
 local pneumatic = require("scripts.pneumatic")
 local interplanetary_tube = require("scripts.interplanetary_tube")

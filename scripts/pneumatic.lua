@@ -9,6 +9,7 @@
 -- into the pipe graph for BFS-based network detection.
 
 local C = require("scripts.constants")
+local hooks = require("compat.hooks")
 local M = {}
 
 -------------------------------------------------------------------------------
@@ -93,21 +94,16 @@ end
 local MAX_NETWORK_RADIUS = C.TUBE_MAX_NETWORK_RADIUS -- tiles from the starting pipe
 
 --- Entities the tube network is allowed to walk through.
---- The "pneumatic-forms" connection category normally keeps foreign fluid
---- entities out on its own, but the Factorissimo compatibility patch
---- (prototypes/final_fixes/factorissimo_pneumatic.lua) gives that mod's wall
---- pumps both the default and the pneumatic category.  Without this whitelist a
---- water pipe on the far side of such a pump would drag the entire fluid grid
---- into the tube network.
-local TRAVERSABLE_NETWORK_ENTITIES = {
+--- The "pneumatic-forms" connection category keeps foreign fluid entities out
+--- on its own.  A compat module that widens some other mod's entity to accept
+--- our category has to add that entity here as well, or a water pipe on the far
+--- side of it would drag the entire fluid grid into the tube network.
+--- Collected once, at load time, so the BFS keeps indexing a plain table.
+local TRAVERSABLE_NETWORK_ENTITIES = hooks.collect("tube_traversable_entities", {
   ["pneumatic-pipe"] = true,
   ["pneumatic-pipe-to-ground"] = true,
   ["pneumatic-hidden-network-pipe"] = true,
-  ["factory-inside-pump-input"] = true,
-  ["factory-inside-pump-output"] = true,
-  ["factory-outside-pump-input"] = true,
-  ["factory-outside-pump-output"] = true,
-}
+})
 
 --- BFS through fluidbox connections starting from a hidden network pipe.
 --- Returns network_id, over_extended.

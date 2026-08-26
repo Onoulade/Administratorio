@@ -36,6 +36,10 @@ else
 end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 
+-- Compat modules register their traversable entities before pneumatic.lua
+-- collects them, exactly as control.lua orders it.
+require("compat.init").load("runtime")
+
 package.loaded["scripts.pneumatic"] = nil
 local pneumatic = require("scripts.pneumatic")
 
