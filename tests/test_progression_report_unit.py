@@ -194,9 +194,117 @@ def test_item_reachability_distinguishes_runtime_and_ui_items_from_orphans():
     ]
 
 
+def test_staffing_cycle_blocks_first_worker_and_is_reported():
+    # Every recipe exists and the complete technology graph is available, but
+    # the worker requires credentials whose inputs are made in two
+    # biter-station-managed categories. A plain recipe closure incorrectly
+    # accepts this graph; the staffed fixed point must reject it.
+    data_raw = {
+        "technology": {
+            "formation-center": {
+                "effects": [{"type": "unlock-recipe", "recipe": "formation-center"}],
+            },
+            "worker-formation": {
+                "prerequisites": ["formation-center"],
+                "effects": [{"type": "unlock-recipe", "recipe": "worker-biter-formation"}],
+            },
+            "industrial-propaganda": {
+                "prerequisites": ["worker-formation"],
+                "effects": [
+                    {"type": "unlock-recipe", "recipe": "corporate-breakroom"},
+                    {"type": "unlock-recipe", "recipe": "propaganda-distillery"},
+                    {"type": "unlock-recipe", "recipe": "credentials-production"},
+                    {"type": "unlock-recipe", "recipe": "lie-production"},
+                    {"type": "unlock-recipe", "recipe": "refined-nonsense-production"},
+                ],
+            },
+        },
+        "recipe": {
+            "formation-center": {
+                "enabled": False,
+                "ingredients": [],
+                "results": [{"name": "formation-center"}],
+            },
+            "corporate-breakroom": {
+                "enabled": False,
+                "ingredients": [],
+                "results": [{"name": "corporate-breakroom"}],
+            },
+            "propaganda-distillery": {
+                "enabled": False,
+                "ingredients": [],
+                "results": [{"name": "propaganda-distillery"}],
+            },
+            "worker-biter-formation": {
+                "enabled": False,
+                "category": "workforce-formation",
+                "ingredients": [
+                    {"type": "item", "name": "enrolled-biter", "amount": 1},
+                    {"type": "item", "name": "credentials", "amount": 1},
+                ],
+                "results": [{"name": "worker-biter"}],
+            },
+            "credentials-production": {
+                "enabled": False,
+                "category": "bureaucracy-registration",
+                "ingredients": [
+                    {"type": "item", "name": "lie", "amount": 1},
+                    {"type": "item", "name": "refined-nonsense", "amount": 1},
+                ],
+                "results": [{"name": "credentials"}],
+            },
+            "lie-production": {
+                "enabled": False,
+                "category": "propaganda-distillery",
+                "ingredients": [],
+                "results": [{"name": "lie"}],
+            },
+            "refined-nonsense-production": {
+                "enabled": False,
+                "category": "watercooler-gossip",
+                "ingredients": [],
+                "results": [{"name": "refined-nonsense"}],
+            },
+        },
+        "item": {
+            "office-desk": {"place_result": "office-desk"},
+            "formation-center": {"place_result": "formation-center"},
+            "corporate-breakroom": {"place_result": "corporate-breakroom"},
+            "propaganda-distillery": {"place_result": "propaganda-distillery"},
+            "worker-biter": {},
+            "credentials": {},
+            "lie": {},
+            "refined-nonsense": {},
+            "enrolled-biter": {},
+        },
+        "assembling-machine": {
+            "office-desk": {"crafting_categories": ["bureaucracy-registration"]},
+            "formation-center": {"crafting_categories": ["workforce-formation"]},
+            "corporate-breakroom": {"crafting_categories": ["watercooler-gossip"]},
+            "propaganda-distillery": {"crafting_categories": ["propaganda-distillery"]},
+        },
+        "character": {"character": {"crafting_categories": ["crafting"]}},
+        "tool": {},
+    }
+
+    analyzer = progression_report.ProgressionAnalyzer(data_raw)
+    full_key = analyzer.full_tech_key()
+
+    assert analyzer.machine_craftable("worker-biter", full_key)
+    assert not analyzer.staffed_machine_craftable("worker-biter", full_key)
+    assert analyzer.staffing_bootstrap_findings() == [
+        {
+            "worker": "worker-biter",
+            "producers": ["worker-biter-formation"],
+            "reason": "no worker-producing route is usable before staffed categories activate",
+        }
+    ]
+
+
 if __name__ == "__main__":
     test_building_provider_cycle_is_reported_as_unresolvable()
     test_science_pack_bootstrap_gap_is_reported_transitively()
     test_unlocked_recipe_machine_cycles_are_not_masked_by_internal_recipes()
     test_item_reachability_distinguishes_runtime_and_ui_items_from_orphans()
+    test_staffing_cycle_blocks_first_worker_and_is_reported()
     print("Progression analyzer unit test passed.")

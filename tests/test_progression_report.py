@@ -34,6 +34,8 @@ Strict mode:
     from a world/runtime source or any recipe after the complete tech graph.
   - the normal audit fails when an enabled/unlocked recipe has a permanent
     machine/category deadlock or a mod building has an unresolvable provider.
+  - the normal audit fails when runtime staffing turns a seemingly reachable
+    tech, worker output, or item into an unreachable route.
   - always fails when a visible, science-based technology has neither a unique
     player-facing recipe unlock nor any other effect, because researching a
     hollow node gives the player nothing.
@@ -46,6 +48,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -113,6 +116,26 @@ STRUCTURAL_EMPTY_TECHS = {
     # prerequisites while speed/productivity/efficiency own the actual recipes.
     "modules",
 }
+
+
+def _load_staffed_provider_items() -> Tuple[str, ...]:
+    """Read the runtime biter-station provider list from its shared source.
+
+    Staffing is runtime behavior, so Factorio's prototype dump cannot encode
+    it.  The shared Lua module is deliberately dependency-free and is the
+    source of truth used by both data-stage and runtime code; reading its
+    literal list here keeps the progression audit synchronized with the game.
+    """
+    source_path = REPO_ROOT / "prototypes" / "shared" / "biter_station_buildings.lua"
+    source = source_path.read_text()
+    match = re.search(r"M\.names\s*=\s*\{(.*?)\n\}", source, re.S)
+    if not match:
+        raise AssertionError(f"Could not find staffed provider list in {source_path}")
+    return tuple(re.findall(r'^\s*"([^"]+)",\s*$', match.group(1), re.M))
+
+
+STAFFED_PROVIDER_ITEMS = _load_staffed_provider_items()
+WORKFORCE_ITEM_NAMES = ("worker-biter", "biter-worker")
 
 
 def parse_args() -> argparse.Namespace:
@@ -440,6 +463,25 @@ class ProgressionAnalyzer:
             categories.update(self.provider_categories_by_item.get(item_name, ()))
         return tuple(sorted(categories))
 
+    def workforce_item_names(self) -> Set[str]:
+        """Return the workforce item active for this data set.
+
+        Space Age keeps the base ``biter-worker`` prototype for migration and
+        compatibility, but its actual bootstrap output is ``worker-biter``.
+        Treating both as free starting staff recreates the false negative this
+        audit is designed to prevent.
+        """
+        produced = {
+            result_name
+            for recipe in self.recipes.values()
+            for result_name, _ in recipe_results(recipe)
+        }
+        if "worker-biter" in produced:
+            return {"worker-biter"}
+        if "biter-worker" in self.item_index:
+            return {"biter-worker"}
+        return set(WORKFORCE_ITEM_NAMES) & set(self.item_index)
+
     def tech_visible(self, tech_name: str) -> bool:
         tech = self.technologies[tech_name]
         return tech.get("enabled", True) and not tech.get("hidden", False)
@@ -686,13 +728,16 @@ class ProgressionAnalyzer:
         return rec(item_name)
 
     @lru_cache(maxsize=None)
-    def machine_state(
+    def _machine_state(
         self,
         tech_key: Tuple[str, ...],
         excluded_provider_items: Tuple[str, ...] = (),
+        respect_staffing: bool = False,
     ) -> Tuple[Tuple[str, ...], Tuple[str, ...], Tuple[str, ...]]:
         available = self.available_recipes(tech_key)
         excluded = set(excluded_provider_items)
+        staffed_provider_items = set(STAFFED_PROVIDER_ITEMS)
+        staffing_items = self.workforce_item_names()
         craftable_items: Set[str] = set(self.root_materials)
         craftable_recipes: Set[str] = set()
         available_categories: Set[str] = set(self.root_crafting_categories)
@@ -723,6 +768,17 @@ class ProgressionAnalyzer:
                 if category_name not in available_categories:
                     continue
 
+                if respect_staffing and not (staffing_items & craftable_items):
+                    providers = self.category_providers.get(category_name, ())
+                    if providers and all(
+                        provider_name in staffed_provider_items
+                        for provider_name in providers
+                    ):
+                        # The building may be buildable, but its category is
+                        # not operational until a worker exists. This is the
+                        # missing state transition in a plain recipe graph.
+                        continue
+
                 if any(
                     ingredient_name not in craftable_items
                     for ingredient_name, _ in recipe_ingredients(recipe)
@@ -752,6 +808,31 @@ class ProgressionAnalyzer:
         )
 
     @lru_cache(maxsize=None)
+    def machine_state(
+        self,
+        tech_key: Tuple[str, ...],
+        excluded_provider_items: Tuple[str, ...] = (),
+    ) -> Tuple[Tuple[str, ...], Tuple[str, ...], Tuple[str, ...]]:
+        return self._machine_state(tech_key, excluded_provider_items, False)
+
+    @lru_cache(maxsize=None)
+    def staffed_machine_state(
+        self,
+        tech_key: Tuple[str, ...],
+        excluded_provider_items: Tuple[str, ...] = (),
+    ) -> Tuple[Tuple[str, ...], Tuple[str, ...], Tuple[str, ...]]:
+        """Compute the machine fixed point while enforcing runtime staffing.
+
+        The ordinary machine graph answers whether a building can be placed.
+        This graph answers whether its recipes can actually run from the
+        workerless starting state. A category whose only providers are
+        biter-station-managed buildings is held closed until a worker item is
+        produced, which exposes worker -> credential -> staffed building
+        cycles and their analogues.
+        """
+        return self._machine_state(tech_key, excluded_provider_items, True)
+
+    @lru_cache(maxsize=None)
     def machine_craftable(
         self,
         item_name: str,
@@ -760,6 +841,30 @@ class ProgressionAnalyzer:
     ) -> bool:
         craftable_items, _, _ = self.machine_state(tech_key, excluded_provider_items)
         return item_name in set(craftable_items)
+
+    @lru_cache(maxsize=None)
+    def staffed_machine_craftable(
+        self,
+        item_name: str,
+        tech_key: Tuple[str, ...],
+        excluded_provider_items: Tuple[str, ...] = (),
+    ) -> bool:
+        craftable_items, _, _ = self.staffed_machine_state(
+            tech_key, excluded_provider_items
+        )
+        return item_name in set(craftable_items)
+
+    @lru_cache(maxsize=None)
+    def staffed_recipe_machine_usable(
+        self,
+        recipe_name: str,
+        tech_key: Tuple[str, ...],
+        excluded_provider_items: Tuple[str, ...] = (),
+    ) -> bool:
+        _, craftable_recipes, _ = self.staffed_machine_state(
+            tech_key, excluded_provider_items
+        )
+        return recipe_name in set(craftable_recipes)
 
     @lru_cache(maxsize=None)
     def recipe_machine_usable(
@@ -1546,6 +1651,32 @@ class ProgressionAnalyzer:
         # prototype graph does not impose another craft dependency.
         return trigger_type in {"mine-entity", "create-space-platform", "capture-spawner"}
 
+    def _staffing_trigger_is_reachable(
+        self, tech: Dict, tech_key: Tuple[str, ...]
+    ) -> bool:
+        trigger = tech.get("research_trigger") or {}
+        trigger_type = trigger.get("type")
+        if trigger_type == "craft-item":
+            item_name = trigger.get("item")
+            return bool(item_name) and self.staffed_machine_craftable(item_name, tech_key)
+        if trigger_type == "build-entity":
+            entity_name = trigger.get("entity")
+            place_items = [
+                item_name
+                for item_name, item in self.item_index.items()
+                if item.get("place_result") == entity_name
+                and not item.get("hidden", False)
+            ]
+            return any(
+                self.staffed_machine_craftable(item_name, tech_key)
+                for item_name in place_items
+            )
+        return trigger_type in {
+            "mine-entity",
+            "create-space-platform",
+            "capture-spawner",
+        }
+
     @lru_cache(maxsize=None)
     def researchable_tech_key(self) -> Tuple[str, ...]:
         """Solve the visible research graph from the start instead of assuming
@@ -1584,6 +1715,128 @@ class ProgressionAnalyzer:
                     changed = True
 
         return tuple(sorted(reachable))
+
+    @lru_cache(maxsize=None)
+    def staffed_researchable_tech_key(self) -> Tuple[str, ...]:
+        """Solve research progression while staffed machines are inactive.
+
+        This is intentionally a separate fixed point from
+        ``researchable_tech_key``. Research may unlock a machine recipe, but
+        that recipe is not a usable production route until its biter-station
+        staffing requirement is itself reachable. Keeping both graphs lets the
+        report distinguish "the recipe exists" from "the player can operate it".
+        """
+        reachable: Set[str] = set()
+        changed = True
+        while changed:
+            changed = False
+            tech_key = tuple(sorted(reachable))
+            for tech_name, tech in sorted(self.technologies.items()):
+                if tech_name in reachable or not self.tech_visible(tech_name):
+                    continue
+                prerequisites = set(tech.get("prerequisites", []) or [])
+                if not prerequisites.issubset(reachable):
+                    continue
+
+                if tech.get("research_trigger"):
+                    can_research = self._staffing_trigger_is_reachable(tech, tech_key)
+                else:
+                    packs = self.tech_science_packs(tech_name)
+                    can_research = bool(tech.get("unit")) and all(
+                        self.staffed_machine_craftable(pack_name, tech_key)
+                        for pack_name in packs
+                    )
+
+                if can_research:
+                    reachable.add(tech_name)
+                    changed = True
+
+        return tuple(sorted(reachable))
+
+    def staffed_unreachable_technology_findings(self) -> List[Dict]:
+        """Find technologies unreachable when managed buildings need workers."""
+        reachable = set(self.staffed_researchable_tech_key())
+        tech_key = tuple(sorted(reachable))
+        findings = []
+        for tech_name, tech in sorted(self.technologies.items()):
+            if tech_name in reachable or not self.tech_visible(tech_name):
+                continue
+            missing_prerequisites = sorted(
+                prerequisite
+                for prerequisite in tech.get("prerequisites", []) or []
+                if prerequisite not in reachable
+            )
+            unavailable_packs = sorted(
+                pack_name
+                for pack_name in self.tech_science_packs(tech_name)
+                if not self.staffed_machine_craftable(pack_name, tech_key)
+            )
+            trigger = tech.get("research_trigger") or {}
+            trigger_item = trigger.get("item") if trigger.get("type") == "craft-item" else None
+            findings.append(
+                {
+                    "technology": tech_name,
+                    "missing_prerequisites": missing_prerequisites,
+                    "unavailable_packs": unavailable_packs,
+                    "unavailable_trigger_item": (
+                        trigger_item
+                        if trigger_item
+                        and not self.staffed_machine_craftable(trigger_item, tech_key)
+                        else None
+                    ),
+                }
+            )
+        return findings
+
+    def staffed_item_reachability_findings(self) -> List[Dict]:
+        """Find inventory prototypes unavailable with the full staffed graph."""
+        full_key = self.staffed_researchable_tech_key()
+        craftable_items = set(self.staffed_machine_state(full_key)[0])
+        findings = []
+        for proto_type in ITEM_LIKE_TYPES:
+            for item_name, item in sorted(self.data_raw.get(proto_type, {}).items()):
+                if item.get("hidden", False) or not item.get("enabled", True):
+                    continue
+                if item_name in NON_PROGRESSION_ITEMS:
+                    continue
+                if item_name in self.root_materials or item_name in craftable_items:
+                    continue
+                findings.append(
+                    {
+                        "type": proto_type,
+                        "item": item_name,
+                        "producers": self.producing_recipes.get(item_name, []),
+                    }
+                )
+        return findings
+
+    def staffing_bootstrap_findings(self) -> List[Dict]:
+        """Find worker outputs that remain unavailable from a workerless start."""
+        full_key = self.staffed_researchable_tech_key()
+        worker_outputs: Set[str] = set()
+        for recipe in self.recipes.values():
+            if recipe_category(recipe) not in {"biter-training", "workforce-formation"}:
+                continue
+            worker_outputs.update(
+                result_name
+                for result_name, _ in recipe_results(recipe)
+                if result_name in self.workforce_item_names()
+            )
+
+        findings = []
+        for worker_name in sorted(worker_outputs):
+            if worker_name in self.root_materials:
+                continue
+            if self.staffed_machine_craftable(worker_name, full_key):
+                continue
+            findings.append(
+                {
+                    "worker": worker_name,
+                    "producers": sorted(self.producing_recipes.get(worker_name, [])),
+                    "reason": "no worker-producing route is usable before staffed categories activate",
+                }
+            )
+        return findings
 
     def unreachable_technology_findings(self) -> List[Dict]:
         reachable = set(self.researchable_tech_key())
@@ -1671,6 +1924,8 @@ def render_report(
     parent_pack_gaps: Sequence[Dict],
     pack_prereq_gaps: Sequence[Dict],
     unreachable_technologies: Sequence[Dict],
+    staffed_unreachable_technologies: Sequence[Dict],
+    staffing_bootstrap_failures: Sequence[Dict],
     orphan_combat_upgrades: Sequence[Dict],
     duplicate_science_pack_producers: Sequence[Dict],
     enabled_recipe_gating_failures: Sequence[Dict],
@@ -1680,6 +1935,7 @@ def render_report(
     unlocked_recipe_machine_failures: Sequence[Dict],
     building_provider_dependency_failures: Sequence[Dict],
     item_reachability_failures: Sequence[Dict],
+    staffed_item_reachability_failures: Sequence[Dict],
     pipeline_only_techs: Sequence[str],
     dump_path: Path,
 ) -> str:
@@ -1788,6 +2044,38 @@ def render_report(
         if finding["unavailable_trigger_item"]:
             blockers.append("trigger item " + finding["unavailable_trigger_item"])
         lines.append(f"  - {finding['technology']}: {'; '.join(blockers) or 'no reachable research mechanism'}")
+
+    lines.extend(
+        [
+            "",
+            "Visible technologies unreachable with runtime staffing enforced: "
+            f"{len(staffed_unreachable_technologies)}",
+        ]
+    )
+    for finding in staffed_unreachable_technologies:
+        blockers = []
+        if finding["missing_prerequisites"]:
+            blockers.append("prerequisites " + ", ".join(finding["missing_prerequisites"]))
+        if finding["unavailable_packs"]:
+            blockers.append("science packs " + ", ".join(finding["unavailable_packs"]))
+        if finding["unavailable_trigger_item"]:
+            blockers.append("trigger item " + finding["unavailable_trigger_item"])
+        lines.append(
+            f"  - {finding['technology']}: "
+            f"{'; '.join(blockers) or 'no reachable staffed research mechanism'}"
+        )
+
+    lines.extend(
+        [
+            "",
+            "Worker bootstrap outputs unavailable before staffed categories activate: "
+            f"{len(staffing_bootstrap_failures)}",
+        ]
+    )
+    for finding in staffing_bootstrap_failures:
+        lines.append(
+            f"  - {finding['worker']}: {', '.join(finding['producers']) or 'no producer'}"
+        )
 
     lines.extend(
         [
@@ -1922,6 +2210,17 @@ def render_report(
     lines.extend(
         [
             "",
+            "Visible item-like prototypes unreachable with runtime staffing enforced: "
+            f"{len(staffed_item_reachability_failures)}",
+        ]
+    )
+    for finding in staffed_item_reachability_failures:
+        producers = ", ".join(finding["producers"]) or "no recipe producer"
+        lines.append(f"  - {finding['item']} [{finding['type']}] ({producers})")
+
+    lines.extend(
+        [
+            "",
             f"Direct target unlocks still blocked through reachable progression: {len(unresolved_failures)}",
         ]
     )
@@ -1989,6 +2288,8 @@ def main() -> int:
         parent_pack_gaps = analyzer.parent_pack_gaps()
         pack_prereq_gaps = analyzer.pack_prereq_gaps()
         unreachable_technologies = analyzer.unreachable_technology_findings()
+        staffed_unreachable_technologies = analyzer.staffed_unreachable_technology_findings()
+        staffing_bootstrap_failures = analyzer.staffing_bootstrap_findings()
         orphan_combat_upgrades = analyzer.orphan_combat_upgrade_findings()
         duplicate_science_pack_producers = (
             analyzer.duplicate_science_pack_producer_findings()
@@ -2004,6 +2305,7 @@ def main() -> int:
         unlocked_recipe_machine_failures = analyzer.unlocked_recipe_machine_findings()
         building_provider_dependency_failures = analyzer.building_provider_dependency_findings()
         item_reachability_failures = analyzer.item_reachability_findings()
+        staffed_item_reachability_failures = analyzer.staffed_item_reachability_findings()
         pipeline_only_techs = analyzer.pipeline_only_technologies()
         report_text = render_report(
             analyzer=analyzer,
@@ -2014,6 +2316,8 @@ def main() -> int:
             parent_pack_gaps=parent_pack_gaps,
             pack_prereq_gaps=pack_prereq_gaps,
             unreachable_technologies=unreachable_technologies,
+            staffed_unreachable_technologies=staffed_unreachable_technologies,
+            staffing_bootstrap_failures=staffing_bootstrap_failures,
             orphan_combat_upgrades=orphan_combat_upgrades,
             duplicate_science_pack_producers=duplicate_science_pack_producers,
             enabled_recipe_gating_failures=enabled_recipe_gating_failures,
@@ -2023,6 +2327,7 @@ def main() -> int:
             unlocked_recipe_machine_failures=unlocked_recipe_machine_failures,
             building_provider_dependency_failures=building_provider_dependency_failures,
             item_reachability_failures=item_reachability_failures,
+            staffed_item_reachability_failures=staffed_item_reachability_failures,
             pipeline_only_techs=pipeline_only_techs,
             dump_path=dump_path,
         )
@@ -2051,12 +2356,15 @@ def main() -> int:
             return 1
         if (
             unreachable_technologies
+            or staffed_unreachable_technologies
+            or staffing_bootstrap_failures
             or enabled_recipe_gating_failures
             or workforce_unlock_gating_failures
             or permanent_recipe_machine_cycle_failures
             or unresolved_recipe_machine_failures
             or building_provider_dependency_failures
             or item_reachability_failures
+            or staffed_item_reachability_failures
         ):
             return 1
         if args.strict and (
