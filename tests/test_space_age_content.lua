@@ -246,6 +246,16 @@ local function has_ingredient(recipe, item_name)
   return false
 end
 
+local function ingredient_amount(recipe, item_name)
+  if not recipe or not recipe.ingredients then return nil end
+  for _, ingredient in ipairs(recipe.ingredients) do
+    if (ingredient.name or ingredient[1]) == item_name then
+      return ingredient.amount or ingredient[2]
+    end
+  end
+  return nil
+end
+
 local function has_unlock(technology, recipe_name)
   for _, effect in ipairs(technology and technology.effects or {}) do
     if effect.type == "unlock-recipe" and effect.recipe == recipe_name then
@@ -462,8 +472,18 @@ test("worker-biter exists as the enrolled-to-workforce intermediate", function()
   assert_true(has_ingredient(recipes["worker-biter-formation"], "enrolled-biter"), "worker-biter should come from enrolled-biter")
   assert_true(not has_ingredient(recipes["worker-biter-formation"], "credentials"),
     "the first worker must not depend on credentials made by staffed buildings")
-  assert_true(has_ingredient(recipes["worker-biter-formation"], "basic-excuse"),
-    "the first worker should use the early bootstrap excuse")
+  assert_true(not has_ingredient(recipes["worker-biter-formation"], "safety-waiver"),
+    "worker formation must not consume a construction-liability waiver")
+  assert_eq(ingredient_amount(recipes["worker-biter-formation"], "provisional-approval"), 1,
+    "the first worker should require exactly one entry-level clearance")
+  assert_true(not has_ingredient(recipes["worker-biter-formation"], "administrative-science-pack"),
+    "worker formation must not consume science packs as training material")
+  assert_true(not has_ingredient(recipes["worker-biter-formation"], "taxpayer-money"),
+    "workforce formation must stay free of raw taxpayer money")
+  assert_true(not has_ingredient(recipes["worker-biter-formation"], "work-order"),
+    "worker formation must not consume machine-crafting work orders")
+  assert_eq(#recipes["worker-biter-formation"].ingredients, 2,
+    "worker formation should contain only the enrollee and provisional approval")
 end)
 
 test("Space Age office desks keep the workforce bootstrap acyclic", function()

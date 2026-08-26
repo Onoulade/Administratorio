@@ -478,9 +478,9 @@ data:extend({
     },
     -- Basic workers are the bootstrap for specialist training and must be
     -- available before the staffed propaganda/coffee economy. The first
-    -- formation uses an enrolled biter plus a basic excuse, so the Formation
-    -- Center is the only workforce prerequisite and this route remains a
-    -- finite bootstrap.
+    -- formation uses only an early field-office approval, so the Formation
+    -- Center is the only workforce prerequisite and this route remains
+    -- finite.
     prerequisites = {"formation-center"},
     unit = {
       count = 240,
