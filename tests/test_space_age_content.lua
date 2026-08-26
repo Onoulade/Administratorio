@@ -44,6 +44,8 @@ local recipes = {
   ["low-density-structure"] = {type = "recipe", name = "low-density-structure", ingredients = {{type = "item", name = "steel-plate", amount = 10}}},
   ["rocket-control-unit"] = {type = "recipe", name = "rocket-control-unit", ingredients = {{type = "item", name = "processing-unit", amount = 1}}},
   ["rocket-silo"] = {type = "recipe", name = "rocket-silo", ingredients = {{type = "item", name = "steel-plate", amount = 100}}},
+  -- This is the native Space Age input. data-final-fixes normalizes its
+  -- five-pack output to one pack after this data-stage content test runs.
   ["space-science-pack"] = {
     type = "recipe",
     name = "space-science-pack",

@@ -1418,6 +1418,11 @@ test("industrial printer copy recipes exist for every work-order family", functi
   end
 end)
 
+test("Form 27B-6 bulk copying uses the Form 27B-6 icon", function()
+  assert_eq(get_recipe("copy-form-27b-6").icon,
+    "__administratorio__/graphics/icons/form-27b-6.png")
+end)
+
 -- =========================================================================
 -- MODULES
 -- =========================================================================

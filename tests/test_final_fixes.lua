@@ -1145,6 +1145,7 @@ recipes["space-science-pack"] = {
     { type = "item", name = "ice", amount = 1 },
     { type = "item", name = "research-grant-approval", amount = 1 },
   },
+  energy_required = 15,
   results = {
     { type = "item", name = "space-science-pack", amount = 5 },
   },
@@ -1764,16 +1765,24 @@ test("science packs are research-only and never recipe ingredients", function()
     "science-pack production outputs should remain intact")
 end)
 
-test("native space science uses one imported research approval per five-pack batch", function()
+test("native space science uses one imported research approval per one-pack craft", function()
   local recipe = assert(get_recipe("space-science-pack"), "native space-science-pack recipe missing")
   assert_true(has_ingredient(recipe, "research-grant-approval"),
     "native space science should consume the ordinary imported grant")
   assert_eq(get_ingredient_amount(recipe, "research-grant-approval"), 1,
-    "one ordinary research approval should authorize each batch")
+    "one ordinary research approval should authorize each craft")
+  assert_eq(get_ingredient_amount(recipe, "iron-plate"), 2,
+    "space science should retain its native iron cost")
+  assert_eq(get_ingredient_amount(recipe, "carbon"), 1,
+    "space science should retain its native carbon cost")
+  assert_eq(get_ingredient_amount(recipe, "ice"), 1,
+    "space science should retain its native ice cost")
+  assert_eq(recipe.energy_required, 15,
+    "space science should retain its native crafting time")
   assert_true(not has_ingredient(recipe, "research-grant-work-order"),
     "space science should use the portable approval rather than assembler paperwork")
-  assert_eq(get_result_amount(recipe, "space-science-pack"), 5,
-    "the native Space Age science output should remain unchanged")
+  assert_eq(get_result_amount(recipe, "space-science-pack"), 1,
+    "space science should produce one pack per craft")
   assert_true(get_recipe("space-science-pack-regulated") == nil,
     "orbital space science should not receive a hidden regulated duplicate")
 end)

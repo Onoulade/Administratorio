@@ -1143,13 +1143,25 @@ end
 
 -------------------------------------------------------------------------------
 -- 5a1. IMPORTED RESEARCH APPROVAL FOR NATIVE SPACE SCIENCE
--- Preserve Space Age's single five-pack native recipe and require exactly one
--- ordinary research approval per batch. The approval must be produced on a
--- planet and shipped to the Administrative Space Station.
+-- Keep Space Age's one canonical recipe, but restore its one-pack output and
+-- require exactly one ordinary research approval per craft. The approval must
+-- be produced on a planet and shipped to the Administrative Space Station.
 -------------------------------------------------------------------------------
 if feature_flags.space_age_enabled() then
   for _, recipe_name in ipairs({"space-science-pack", "space-science-pack-regulated"}) do
     if data.raw.recipe[recipe_name] then
+      local recipe = data.raw.recipe[recipe_name]
+      for _, target in ipairs({recipe, recipe.normal, recipe.expensive}) do
+        for _, result in ipairs((target and target.results) or {}) do
+          if (result.name or result[1]) == "space-science-pack" then
+            if result.name then
+              result.amount = 1
+            else
+              result[2] = 1
+            end
+          end
+        end
+      end
       remove_ingredient_from_recipe(recipe_name, "research-grant-approval")
       remove_ingredient_from_recipe(recipe_name, "research-grant-work-order")
       add_special_paperwork(recipe_name, "research-grant-approval", 1)
