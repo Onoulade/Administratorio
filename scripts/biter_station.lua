@@ -359,7 +359,7 @@ end
 local function dispatch_requires_coffee(station)
   return station and station.valid
     and working_hours.is_enabled()
-    and working_hours.is_night(station.surface)
+    and working_hours.is_night(station.surface, station.position)
 end
 
 local function available_dispatch_coffee(station)

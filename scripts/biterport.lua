@@ -472,7 +472,7 @@ end
 local function dispatch_requires_coffee(port)
   return port and port.valid
     and working_hours.is_enabled()
-    and working_hours.is_night(port.surface)
+    and working_hours.is_night(port.surface, port.position)
 end
 
 local function available_dispatch_coffee(port)

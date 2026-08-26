@@ -1,5 +1,6 @@
 local M = {}
 local feature_flags = require("feature_flags")
+local hooks = require("compat.hooks")
 local WORKING_HOURS_ENABLED = feature_flags.working_hours_enabled()
 
 local MANAGED_BUILDINGS = {
@@ -59,15 +60,31 @@ local function clear_visual_state(entity, state)
   end
 end
 
-local function is_surface_night(surface)
-  if not surface or not surface.valid then return false end
-
-  local daytime = surface.daytime
+local function surface_daytime_is_night(surface)
   if surface.dusk == surface.dawn then
     return false
   end
   -- 30% of the day closed, centered on midnight (0.5)
+  local daytime = surface.daytime
   return daytime >= 0.35 and daytime < 0.65
+end
+
+-- Some mods put buildings on a surface whose time of day is frozen -- a sealed
+-- factory interior, for one -- so ask which surface carries the real time of
+-- day, and whether the spot is dark whatever that surface says. Falling through
+-- to this surface is the vanilla answer.
+local function time_of_day_surface(surface, position)
+  local outside, dark = hooks.resolve("time_of_day_surface", surface, position)
+  if outside == nil then return surface, false end
+  return outside, dark or false
+end
+
+local function is_surface_night(surface, position)
+  if not surface or not surface.valid then return false end
+
+  local outside, dark = time_of_day_surface(surface, position)
+  if dark then return true end
+  return surface_daytime_is_night(outside)
 end
 
 local function has_overtime_exemption(entity)
@@ -251,7 +268,7 @@ function M.refresh_entity(entity)
   if entity_is_protested(entity) then
     reason = "protest"
   elseif requires_overtime_exemption(entity)
-     and is_surface_night(entity.surface)
+     and is_surface_night(entity.surface, entity.position)
      and not has_overtime_exemption(entity) then
     reason = "night"
   end
@@ -424,11 +441,16 @@ function M.update_managed_buildings()
       storage.working_hours_state[unit_number] = nil
       storage.working_hours_protest_claims[unit_number] = nil
     else
-      local surface_id = entity.surface.index
-      local surface_is_night = surface_night_cache[surface_id]
-      if surface_is_night == nil then
-        surface_is_night = is_surface_night(entity.surface)
-        surface_night_cache[surface_id] = surface_is_night
+      -- Resolve before caching: buildings sharing a surface can sit inside
+      -- different sealed interiors, and so answer to different planets.
+      local outside, dark = time_of_day_surface(entity.surface, entity.position)
+      local surface_is_night = true
+      if not dark then
+        surface_is_night = surface_night_cache[outside.index]
+        if surface_is_night == nil then
+          surface_is_night = outside.valid and surface_daytime_is_night(outside) or false
+          surface_night_cache[outside.index] = surface_is_night
+        end
       end
 
       local reason = nil
@@ -445,8 +467,8 @@ function M.update_managed_buildings()
   end
 end
 
-function M.is_night(surface)
-  return is_surface_night(surface)
+function M.is_night(surface, position)
+  return is_surface_night(surface, position)
 end
 
 function M.entity_has_overtime_exemption(entity)
