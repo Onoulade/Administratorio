@@ -2,6 +2,9 @@
 Version: 0.6.4
 Date: 2026-08-26
   Bugfixes:
+    - retune compliance-array force from measured junior filings to late executive saturation
+    - let simultaneous compliance-array pushes add speed before reaching their safety limit
+    - bias centerline asteroid deviation sideways across multiple compliance arrays
     - remove duplicate job offer unlock
     - correct bulk form icon and space science yield
     - unlock regulated machine routes with recipes

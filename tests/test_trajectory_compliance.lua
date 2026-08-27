@@ -496,7 +496,7 @@ test("deviation pushes threats outward without deleting or salvaging them", func
   assert_eq(table_count(storage.trajectory_compliance.deviations), 1)
 
   module.on_tick({tick = 1})
-  assert_near(asteroid.position.x, 10.02, 1e-9,
+  assert_near(asteroid.position.x, 10.005, 1e-9,
     "one pulse should push a medium asteroid slowly away from the hub")
   assert_eq(#platform.created_chunks, 0)
   assert_eq(#hub.inserted, 0)
@@ -534,6 +534,87 @@ test("asteroid mass and overlapping deviation pulses scale sustained movement", 
   module.on_tick({tick = 2})
   assert_near(huge.position.x, 10.015, 1e-9,
     "overlapping arrays should add their outward push")
+end)
+
+test("multiple arrays add speed until the deviation safety limit", function()
+  local _, _, surface, force = new_world()
+  local asteroid = new_target("asteroid", "small-metallic-asteroid")
+  local first_array = new_source(surface, force, "normal", "trajectory-compliance-array")
+  local second_array = new_source(surface, force, "normal", "trajectory-compliance-array")
+
+  fire_deviation(first_array, asteroid)
+  local previous_x = asteroid.position.x
+  module.on_tick({tick = 1})
+  local one_array_speed = asteroid.position.x - previous_x
+  assert_near(one_array_speed, module.DEVIATION_FORCE_PER_PULSE, 1e-9)
+
+  fire_deviation(second_array, asteroid)
+  previous_x = asteroid.position.x
+  module.on_tick({tick = 2})
+  local two_array_speed = asteroid.position.x - previous_x
+  assert_near(two_array_speed, one_array_speed * 2, 1e-9,
+    "a second array should double the speed while below the limit")
+
+  for _ = 1, 6 do
+    local extra_array = new_source(surface, force, "normal", "trajectory-compliance-array")
+    fire_deviation(extra_array, asteroid)
+  end
+  previous_x = asteroid.position.x
+  module.on_tick({tick = 3})
+  assert_near(asteroid.position.x - previous_x, module.DEVIATION_MAX_SPEED, 1e-9,
+    "combined array speed should stop at the safety limit")
+end)
+
+test("one max-speed executive array sustains the cap against a huge asteroid", function()
+  local _, _, surface, force = new_world()
+  local array = new_source(surface, force, "normal", "executive-trajectory-compliance-array")
+  local asteroid = new_target("asteroid", "huge-metallic-asteroid")
+
+  -- Level 9 fires every 30 ticks. Eleven orders remain active across the
+  -- 330-tick push lifetime once the array reaches steady state.
+  for tick = 0, 300, 30 do
+    array.shooting_target = asteroid
+    module.on_script_trigger_effect({
+      effect_id = module.DEVIATION_EFFECT_ID,
+      source_entity = array,
+      target_entity = asteroid,
+      tick = tick,
+    })
+  end
+
+  local previous_x = asteroid.position.x
+  module.on_tick({tick = 329})
+  assert_near(asteroid.position.x - previous_x, module.DEVIATION_MAX_SPEED, 1e-9,
+    "a fully researched executive array should maintain maximum huge-asteroid speed")
+end)
+
+test("centerline asteroids receive one shared lateral failsafe from every array", function()
+  local _, hub, surface, force = new_world()
+  local array_a = new_source(surface, force, "normal", "executive-trajectory-compliance-array")
+  local array_b = new_source(surface, force, "normal", "executive-trajectory-compliance-array")
+  array_a.position = {x = hub.position.x - 4, y = 0}
+  array_b.position = {x = hub.position.x + 4, y = 0}
+  local asteroid = new_target("asteroid", "medium-metallic-asteroid")
+  asteroid.position = {x = hub.position.x, y = -10}
+
+  fire_deviation(array_a, asteroid)
+  module.on_tick({tick = 1})
+  local first_lateral_offset = asteroid.position.x - hub.position.x
+  assert_near(math.abs(first_lateral_offset),
+    module.DEVIATION_FORCE_PER_PULSE
+      * module.ARRAY_FORCE_MULTIPLIERS[array_a.name]
+      / module.DEVIATION_MASS_FACTORS.medium
+      * module.DEVIATION_MIN_LATERAL_RATIO,
+    1e-9,
+    "a centerline asteroid must immediately gain lateral movement")
+
+  fire_deviation(array_b, asteroid)
+  module.on_tick({tick = 2})
+  local combined_lateral_offset = asteroid.position.x - hub.position.x
+  assert_true(first_lateral_offset * combined_lateral_offset > 0,
+    "opposed arrays must retain the asteroid's chosen escape side")
+  assert_true(math.abs(combined_lateral_offset) > math.abs(first_lateral_offset),
+    "a second array must reinforce rather than cancel lateral movement")
 end)
 
 test("deviation tiers reject asteroids beyond their jurisdiction", function()

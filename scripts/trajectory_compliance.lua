@@ -9,6 +9,11 @@ local ARRAY_TIERS = {
   ["senior-trajectory-compliance-array"] = 3,
   ["executive-trajectory-compliance-array"] = 4,
 }
+local ARRAY_FORCE_MULTIPLIERS = {
+  ["trajectory-compliance-array"] = 1,
+  ["senior-trajectory-compliance-array"] = 2,
+  ["executive-trajectory-compliance-array"] = 4,
+}
 local ARRAY_RANGES = {
   ["trajectory-compliance-array"] = 20,
   ["senior-trajectory-compliance-array"] = 30,
@@ -65,8 +70,14 @@ local BASE_BITER_DAMAGE = 125
 local ASSAULT_INTERVAL = 60
 local ASSIGNMENT_RESERVATION_LIFETIME = 600
 local DEVIATION_PUSH_LIFETIME = 330
-local DEVIATION_FORCE_PER_PULSE = 0.025
-local DEVIATION_MAX_SPEED = 0.04
+local DEVIATION_FORCE_PER_PULSE = 0.00625
+-- At maximum firing research an Executive Array sustains this limit alone,
+-- even against a huge asteroid. Earlier arrays need overlapping installations.
+local DEVIATION_MAX_SPEED = 0.05
+-- Keep centerline asteroids from being pushed harmlessly straight ahead. The
+-- sign is chosen once per target deviation, so every array reinforces the same
+-- lateral escape instead of symmetric arrays cancelling one another.
+local DEVIATION_MIN_LATERAL_RATIO = 0.2
 local PRIORITY_DEVIATION_STRENGTH = 2
 -- Arrays otherwise retain their engine-selected target indefinitely. Recheck
 -- often enough to follow the nearest incoming threat, without scanning every
@@ -106,6 +117,7 @@ local OUTCOME_AT_CAPACITY = "at-capacity"
 M.ARRAY_NAME = ARRAY_NAME
 M.CATAPULT_NAME = CATAPULT_NAME
 M.ARRAY_TIERS = ARRAY_TIERS
+M.ARRAY_FORCE_MULTIPLIERS = ARRAY_FORCE_MULTIPLIERS
 M.TARGET_TIERS = TARGET_TIERS
 M.ASTEROID_SIZE_RANKS = ASTEROID_SIZE_RANKS
 M.ASTEROID_CHUNK_YIELDS = ASTEROID_CHUNK_YIELDS
@@ -132,6 +144,7 @@ M.ASSIGNMENT_RESERVATION_LIFETIME = ASSIGNMENT_RESERVATION_LIFETIME
 M.DEVIATION_PUSH_LIFETIME = DEVIATION_PUSH_LIFETIME
 M.DEVIATION_FORCE_PER_PULSE = DEVIATION_FORCE_PER_PULSE
 M.DEVIATION_MAX_SPEED = DEVIATION_MAX_SPEED
+M.DEVIATION_MIN_LATERAL_RATIO = DEVIATION_MIN_LATERAL_RATIO
 M.PRIORITY_DEVIATION_STRENGTH = PRIORITY_DEVIATION_STRENGTH
 M.ARRAY_RETARGET_INTERVAL = ARRAY_RETARGET_INTERVAL
 M.DEVIATION_MASS_FACTORS = DEVIATION_MASS_FACTORS
@@ -828,6 +841,7 @@ local function resolve_deviation(event, strength)
       target = target,
       size = size,
       platform_index = platform.index,
+      lateral_sign = deviation_id % 2 == 0 and 1 or -1,
       pushes = {},
     }
     state.deviations[deviation_id] = deviation
@@ -837,7 +851,7 @@ local function resolve_deviation(event, strength)
   deviation.pushes[#deviation.pushes + 1] = {
     source = source,
     expires_tick = tick + DEVIATION_PUSH_LIFETIME,
-    strength = strength or 1,
+    strength = (strength or 1) * (ARRAY_FORCE_MULTIPLIERS[source.name] or 1),
   }
 
   -- Each order creates one fixed-duration outward push. Faster firing research
@@ -1019,13 +1033,26 @@ local function process_deviations(tick)
             away_x, away_y, distance = 0, -1, 1
           end
 
+          local direction_x = away_x / distance
+          local direction_y = away_y / distance
+          if math.abs(direction_x) < DEVIATION_MIN_LATERAL_RATIO then
+            -- Old saves may already contain deviations without a chosen side.
+            -- Pick it once and retain it for all overlapping array pushes.
+            if deviation.lateral_sign ~= 1 and deviation.lateral_sign ~= -1 then
+              deviation.lateral_sign = deviation_id % 2 == 0 and 1 or -1
+            end
+            direction_x = deviation.lateral_sign * DEVIATION_MIN_LATERAL_RATIO
+            local forward_ratio = math.sqrt(1 - direction_x * direction_x)
+            direction_y = direction_y < 0 and -forward_ratio or forward_ratio
+          end
+
           local speed = math.min(
             DEVIATION_MAX_SPEED,
             DEVIATION_FORCE_PER_PULSE * active_push_strength / mass_factor
           )
           target.teleport({
-            x = target.position.x + away_x / distance * speed,
-            y = target.position.y + away_y / distance * speed,
+            x = target.position.x + direction_x * speed,
+            y = target.position.y + direction_y * speed,
           })
         end
       end
