@@ -85,7 +85,7 @@ jobs:
             .filter(Boolean);
 
           const commits = [
-            ...sh(`git log --format=%s ${previousTag}..HEAD`)
+            ...sh(`git log --no-merges --format=%s ${previousTag}..HEAD`)
               .split("\n")
               .map((line) => line.trim())
               .filter(Boolean)
