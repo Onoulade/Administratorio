@@ -504,7 +504,7 @@ test("deviation pushes threats outward without deleting or salvaging them", func
   assert_eq(#hub.inserted, 0)
 end)
 
-test("arrays periodically retarget the nearest eligible asteroid", function()
+test("arrays periodically retarget the highest-risk eligible asteroid", function()
   local _, _, surface, force = new_world()
   local array = new_source(surface, force, "normal", "trajectory-compliance-array")
   local already_deviated = new_target("asteroid", "small-metallic-asteroid", nil, surface)
@@ -517,8 +517,24 @@ test("arrays periodically retarget the nearest eligible asteroid", function()
   module.on_tick({tick = module.ARRAY_RETARGET_INTERVAL})
 
   assert_eq(array.shooting_target, incoming,
-    "an array should leave a sufficiently displaced asteroid for the nearest eligible threat")
+    "an array should leave a sufficiently displaced asteroid for the higher-risk threat")
   assert_true(not array.disabled_by_script)
+end)
+
+test("arrays prioritize a centerline collision over a nearby deflected asteroid", function()
+  local _, hub, surface, force = new_world()
+  local array = new_source(surface, force, "normal", "executive-trajectory-compliance-array")
+  array.position = {x = 10, y = 0}
+  local deflected = new_target("asteroid", "small-metallic-asteroid", nil, surface)
+  local collision_course = new_target("asteroid", "small-carbonic-asteroid", nil, surface)
+  deflected.position = {x = 10.1, y = -5}
+  collision_course.position = {x = hub.position.x, y = -5}
+
+  fire_deviation(array, deflected)
+  module.on_tick({tick = module.ARRAY_RETARGET_INTERVAL})
+
+  assert_eq(array.shooting_target, collision_course,
+    "cross-track collision risk should outrank proximity to an edge-mounted array")
 end)
 
 test("asteroid mass and overlapping deviation pulses scale sustained movement", function()

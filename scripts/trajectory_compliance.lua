@@ -696,7 +696,11 @@ local function available_deviation_target_for(source, excluded_target)
   end
 
   local best_target
-  local best_distance
+  local best_lateral_distance
+  local best_hub_distance
+  local best_source_distance
+  local platform = platform_for_source(source)
+  local hub = platform and platform.valid and platform.hub
   for _, candidate in ipairs(surface.find_entities_filtered{
     type = "asteroid",
     position = source.position,
@@ -706,12 +710,33 @@ local function available_deviation_target_for(source, excluded_target)
       and valid_asteroid_target(source, candidate)
       and not target_has_assigned_workers(candidate)
     then
-      local dx = candidate.position.x - source.position.x
-      local dy = candidate.position.y - source.position.y
-      local distance = dx * dx + dy * dy
-      if not best_distance or distance < best_distance then
+      local source_dx = candidate.position.x - source.position.x
+      local source_dy = candidate.position.y - source.position.y
+      local source_distance = source_dx * source_dx + source_dy * source_dy
+      local lateral_distance = 0
+      local hub_distance = source_distance
+      if hub and hub.valid then
+        local hub_dx = candidate.position.x - hub.position.x
+        local hub_dy = candidate.position.y - hub.position.y
+        -- Space platforms travel vertically. Cross-track distance therefore
+        -- measures collision risk better than distance from an array mounted
+        -- near an outer edge. Once a push moves a target sideways, centered
+        -- incoming asteroids take priority at the next target refresh.
+        lateral_distance = math.abs(hub_dx)
+        hub_distance = hub_dx * hub_dx + hub_dy * hub_dy
+      end
+
+      if not best_lateral_distance
+        or lateral_distance < best_lateral_distance
+        or (lateral_distance == best_lateral_distance and hub_distance < best_hub_distance)
+        or (lateral_distance == best_lateral_distance
+          and hub_distance == best_hub_distance
+          and source_distance < best_source_distance)
+      then
         best_target = candidate
-        best_distance = distance
+        best_lateral_distance = lateral_distance
+        best_hub_distance = hub_distance
+        best_source_distance = source_distance
       end
     end
   end
