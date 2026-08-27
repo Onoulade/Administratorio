@@ -1,4 +1,22 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.6
+Date: 2026-08-27
+  Bugfixes:
+    - localize and gate trajectory jurisdiction
+  Balancing:
+    - smooth and boost voluntary miner damage
+    - reduce trajectory array power draw
+  Compatibility:
+    - move AAI loader overrides into compat
+  Internal:
+    - exclude merge commits from changelog
+  Changes:
+    - Gate trajectory jurisdiction behind space science
+    - Add regression coverage for recipe and event paths
+    - Fix machine construction paperwork paths
+    - Prioritize collision-course asteroids
+    - Retune trajectory compliance array pushes
+---------------------------------------------------------------------------------------------------
 Version: 0.6.5
 Date: 2026-08-26
   Bugfixes:
