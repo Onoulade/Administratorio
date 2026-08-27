@@ -66,8 +66,9 @@ local CAPACITY_TECH_LEVELS = 4
 local BASE_EMPLOYEE_CAPACITY = 1
 local CATAPULT_RANGE = 56
 local CATAPULT_TURN_RANGE = 0.05
-local BASE_BITER_DAMAGE = 125
-local ASSAULT_INTERVAL = 60
+local BASE_BITER_DAMAGE = 137.5
+local ASSAULT_INTERVAL = 15
+local ASSAULT_DAMAGE_SCALE = ASSAULT_INTERVAL / 60
 local ASSIGNMENT_RESERVATION_LIFETIME = 600
 local DEVIATION_PUSH_LIFETIME = 330
 local DEVIATION_FORCE_PER_PULSE = 0.00625
@@ -1112,7 +1113,7 @@ local function process_assaults(tick)
           active_workers = active_workers + 1
         end
       end
-      local damage = M.biter_damage(force) * active_workers
+      local damage = M.biter_damage(force) * active_workers * ASSAULT_DAMAGE_SCALE
       local health = target.health or fallback_asteroid_health(assault.size, assault.family)
       if damage > 0
         and health

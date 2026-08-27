@@ -286,7 +286,7 @@ end
 
 test("native ammo damage research scales per-second biter damage", function()
   local _, _, _, force = new_world(nil, 1.5)
-  assert_near(module.biter_damage(force), 312.5, 1e-9)
+  assert_near(module.biter_damage(force), 343.75, 1e-9)
 end)
 
 test("priority deviation orders apply twice the sustained push", function()
@@ -324,9 +324,11 @@ test("VESM quality never changes orbital performance", function()
   assert_eq(legendary_damage, module.BASE_BITER_DAMAGE,
     "higher-quality VESMs must not gain a damage bonus")
 
-  module.on_tick({tick = 60})
-  assert_eq(normal_target.health, 275)
-  assert_eq(legendary_target.health, 275,
+  for tick = module.ASSAULT_INTERVAL, 60, module.ASSAULT_INTERVAL do
+    module.on_tick({tick = tick})
+  end
+  assert_eq(normal_target.health, 262.5)
+  assert_eq(legendary_target.health, 262.5,
     "higher-quality VESMs must not gain a work-cycle bonus")
 end)
 
@@ -634,7 +636,7 @@ test("deviation tiers reject asteroids beyond their jurisdiction", function()
   assert_true(fire_deviation(executive, huge))
 end)
 
-test("impact attaches a worker and damage begins on the next work cycle", function()
+test("impact attaches a worker and damage begins on the next quarter-second work cycle", function()
   local platform, hub, surface, force = new_world()
   local catapult = new_source(surface, force, "rare")
   local asteroid = new_target("asteroid", "big-metallic-asteroid")
@@ -643,15 +645,19 @@ test("impact attaches a worker and damage begins on the next work cycle", functi
 
   assert_true(handled)
   assert_eq(outcome, module.OUTCOME_ATTACHED)
-  assert_eq(damage, 125)
+  assert_eq(damage, 137.5)
   assert_true(not destroyed)
   assert_eq(asteroid.health, 2000, "impact must not deal immediate damage")
   assert_eq(table_count(storage.trajectory_compliance.assaults), 1)
 
-  module.on_tick({tick = 59})
+  module.on_tick({tick = 14})
   assert_eq(asteroid.health, 2000)
+  module.on_tick({tick = 15})
+  assert_eq(asteroid.health, 1965.625)
+  module.on_tick({tick = 30})
+  module.on_tick({tick = 45})
   module.on_tick({tick = 60})
-  assert_eq(asteroid.health, 1875)
+  assert_eq(asteroid.health, 1862.5, "four updates must retain the configured per-second DPS")
   assert_eq(#platform.created_chunks, 0)
   assert_eq(#hub.inserted, 0, "attached workers cannot teleport home")
 end)
@@ -745,16 +751,16 @@ test("multiple managers receive distinct animated positions and phases", functio
   end
 end)
 
-test("a late-cycle impact waits a full second before its first damage", function()
+test("a late-cycle impact waits a full work interval before its first damage", function()
   local _, _, surface, force = new_world()
   local catapult = new_source(surface, force)
   local asteroid = new_target("asteroid", "medium-metallic-asteroid")
-  fire_biter(catapult, asteroid, {tick = 59})
+  fire_biter(catapult, asteroid, {tick = 14})
 
-  module.on_tick({tick = 60})
+  module.on_tick({tick = 15})
   assert_eq(asteroid.health, 400)
-  module.on_tick({tick = 120})
-  assert_eq(asteroid.health, 275)
+  module.on_tick({tick = 30})
+  assert_eq(asteroid.health, 365.625)
 end)
 
 test("multiple attached workers stack damage and each becomes a chunk", function()
@@ -764,7 +770,9 @@ test("multiple attached workers stack damage and each becomes a chunk", function
 
   fire_biter(catapult, asteroid)
   fire_biter(catapult, asteroid)
-  module.on_tick({tick = 60})
+  for tick = module.ASSAULT_INTERVAL, 60, module.ASSAULT_INTERVAL do
+    module.on_tick({tick = tick})
+  end
 
   assert_true(asteroid.destroyed)
   assert_eq(#platform.created_chunks, 8, "six salvage plus two employees expected")

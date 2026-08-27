@@ -1333,7 +1333,7 @@ test("orbital employment damage research scales by 50 percent through late scien
     for _, effect in ipairs(technology.effects or {}) do
       if effect.type == "nothing" then description_effect = effect end
     end
-    assert_eq(description_effect.effect_description[2], tostring(125 * (1 + level * 0.5)))
+    assert_eq(description_effect.effect_description[2], tostring(137.5 * (1 + level * 0.5)))
   end
 end)
 

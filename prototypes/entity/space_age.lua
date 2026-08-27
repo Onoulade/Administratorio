@@ -1216,7 +1216,7 @@ end
 data:extend(returning_employee_chunks)
 
 -- The projectile is, with complete institutional sincerity, a behemoth biter.
--- Its script effect attaches the worker; one-second work cycles perform damage,
+-- Its script effect attaches the worker; quarter-second work cycles perform damage,
 -- and collection of the eventual employee chunk is the only return path.
 local orbital_biter_projectile = table.deepcopy(data.raw.projectile["rocket"])
 orbital_biter_projectile.name = "orbital-biter-projectile"

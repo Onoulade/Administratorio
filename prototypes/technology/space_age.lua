@@ -830,7 +830,7 @@ for level, count in ipairs(orbital_employment_damage_counts) do
       },
       {
         type = "nothing",
-        effect_description = {"technology-effect.orbital-employment-damage", tostring(125 * (1 + level * 0.5))},
+        effect_description = {"technology-effect.orbital-employment-damage", tostring(137.5 * (1 + level * 0.5))},
       },
     },
     prerequisites = prerequisites,
