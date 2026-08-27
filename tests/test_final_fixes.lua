@@ -563,6 +563,17 @@ recipes["transport-belt"] = {
   },
 }
 
+for _, belt_name in ipairs({"fast-transport-belt", "fast-underground-belt", "express-underground-belt"}) do
+  recipes[belt_name] = {
+    type = "recipe",
+    name = belt_name,
+    category = "pressing",
+    enabled = false,
+    ingredients = {{ type = "item", name = "iron-plate", amount = 1 }},
+    results = {{ type = "item", name = belt_name, amount = 1 }},
+  }
+end
+
 recipes["pipe"] = {
   type = "recipe",
   name = "pipe",
@@ -2190,6 +2201,15 @@ test("Space Age shared categories receive regulated assembler copies", function(
   assert_eq(regulated_belt.category, "crafting-regulated", "basic belt should run in AM1")
   assert_true(has_ingredient(regulated_belt, "work-order"), "regulated belt missing work-order")
 
+  for _, belt_name in ipairs({"fast-transport-belt", "fast-underground-belt", "express-underground-belt"}) do
+    local native = get_recipe(belt_name)
+    assert_true(native ~= nil, belt_name .. " missing")
+    assert_true(has_ingredient(native, "construction-work-order"),
+      belt_name .. " foundry path should require construction-work-order")
+    assert_true(not has_ingredient(native, "construction-permit"),
+      belt_name .. " foundry path should not require construction-permit")
+  end
+
   local rocket_fuel = get_recipe("rocket-fuel")
   local regulated_rocket_fuel = get_recipe("rocket-fuel-regulated")
   assert_eq(rocket_fuel.category, "organic-or-assembling", "native rocket-fuel path should remain available to the biochamber")
@@ -2201,6 +2221,57 @@ test("Space Age shared categories receive regulated assembler copies", function(
   assert_eq(electromagnetic.category, "electronics-or-assembling", "native electromagnetic build path should be preserved")
   assert_true(regulated_electromagnetic ~= nil, "specialist-machine bootstrap missing regulated copy")
   assert_eq(regulated_electromagnetic.category, "advanced-crafting-regulated", "specialist-machine bootstrap should use AM2")
+end)
+
+test("machine-facing recipes always use combined paperwork", function()
+  local shared = require("prototypes.shared")
+  local shared_machine_categories = {
+    ["electronics"] = true,
+    ["pressing"] = true,
+    ["electronics-with-fluid"] = true,
+    ["metallurgy-or-assembling"] = true,
+    ["organic-or-hand-crafting"] = true,
+    ["organic-or-assembling"] = true,
+    ["electronics-or-assembling"] = true,
+    ["cryogenics-or-assembling"] = true,
+    ["crafting-with-fluid-or-metallurgy"] = true,
+  }
+
+  local function assert_machine_paperwork(recipe, recipe_name)
+    local base_name = recipe_name:gsub("%-regulated$", "")
+    -- Administrative building recipes preserve their explicit construction
+    -- and operating paperwork rather than deriving one form from the product
+    -- name.  They have dedicated assertions below (for example printer-t2).
+    if shared.is_admin_recipe(base_name) then return end
+    local required_form = shared.get_required_form(base_name)
+    local combined_form = shared.get_paperwork_requirements(required_form, true)[1].name
+    local base_form = shared.get_paperwork_requirements(required_form, false)[1].name
+
+    if shared.PAPERWORK_FREE_REGULATED_RECIPES[base_name] then return end
+
+    local function check_level(target, level_name)
+      if not target then return end
+      assert_true(has_ingredient(target, combined_form),
+        recipe_name .. level_name .. " should require " .. combined_form)
+      if combined_form ~= base_form then
+        assert_true(not has_ingredient(target, base_form),
+          recipe_name .. level_name .. " should not retain " .. base_form)
+      end
+    end
+
+    check_level(recipe, "")
+    check_level(recipe.normal, ".normal")
+    check_level(recipe.expensive, ".expensive")
+  end
+
+  for recipe_name, recipe in pairs(recipes) do
+    if recipe_name:find("%-regulated$") then
+      assert_machine_paperwork(recipe, recipe_name)
+    elseif shared_machine_categories[recipe.category]
+        and shared.get_required_form(recipe_name) == "construction-permit" then
+      assert_machine_paperwork(recipe, recipe_name)
+    end
+  end
 end)
 
 test("Space Age hybrid chemistry categories retain operating paperwork", function()
@@ -2394,12 +2465,29 @@ test("elevated rail ramps and supports require construction paperwork even on re
   assert_true(has_ingredient(support_regulated, "construction-work-order"), "rail-support-regulated should require construction-work-order")
 end)
 
-test("cliff explosives drop grenades but keep construction paperwork", function()
+test("cliff explosives use the correct paperwork for their machine path", function()
   local recipe = get_recipe("cliff-explosives")
+  local machine_recipe = get_recipe("cliff-explosives-regulated") or recipe
 
   assert_true(recipe ~= nil, "cliff-explosives missing")
   assert_true(not has_ingredient(recipe, "grenade"), "cliff-explosives should not require grenades")
-  assert_true(has_ingredient(recipe, "construction-permit"), "cliff-explosives should require construction-permit")
+  assert_true(has_ingredient(machine_recipe, "construction-work-order"),
+    "machine-facing cliff-explosives should require construction-work-order")
+  assert_true(not has_ingredient(machine_recipe, "construction-permit"),
+    "machine-facing cliff-explosives should not require construction-permit")
+  if machine_recipe ~= recipe then
+    assert_true(has_ingredient(recipe, "construction-permit"),
+      "handcrafted cliff-explosives should retain construction-permit")
+  end
+end)
+
+test("biterport uses a construction work order", function()
+  local recipe = get_recipe("biterport")
+  assert_true(recipe ~= nil, "biterport missing")
+  assert_true(has_ingredient(recipe, "construction-work-order"),
+    "biterport should require construction-work-order")
+  assert_true(not has_ingredient(recipe, "construction-permit"),
+    "biterport should not require construction-permit")
 end)
 
 test("all plain crafting recipes have regulated AM copies", function()
