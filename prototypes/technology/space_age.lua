@@ -615,6 +615,30 @@ data:extend({
   -- ============================================================
   {
     type = "technology",
+    name = "trajectory-compliance-jurisdiction-1",
+    icon = "__base__/graphics/technology/weapon-shooting-speed-1.png",
+    icon_size = 256,
+    effects = {
+      {type = "unlock-recipe", recipe = "trajectory-compliance-array"},
+    },
+    prerequisites = {"orbital-compliance-systems"},
+    unit = {
+      count = 600,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"production-science-pack", 1},
+        {"space-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 45,
+    },
+    order = "h-b-j[01]",
+  },
+
+  {
+    type = "technology",
     name = "trajectory-compliance-jurisdiction-2",
     icons = {
       {icon = "__base__/graphics/technology/weapon-shooting-speed-1.png", icon_size = 256},
@@ -623,7 +647,7 @@ data:extend({
     effects = {
       {type = "unlock-recipe", recipe = "senior-trajectory-compliance-array"},
     },
-    prerequisites = {"orbital-compliance-systems", "metallurgic-science-pack", "agricultural-science-pack", "electromagnetic-science-pack", "carbon-fiber"},
+    prerequisites = {"trajectory-compliance-jurisdiction-1", "metallurgic-science-pack", "agricultural-science-pack", "electromagnetic-science-pack", "carbon-fiber"},
     unit = {
       count = 1200,
       ingredients = {
