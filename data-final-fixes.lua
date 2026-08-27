@@ -1123,6 +1123,45 @@ for _, regulated in pairs(regulated_recipes) do
 end
 data:extend(regulated_list)
 
+-- Some Space Age native-machine recipes have no separate handcraft recipe:
+-- the native recipe itself is the machine path.  A construction permit is
+-- the handcraft form, while that machine path must consume its combined
+-- construction work order.  The normal regulated-copy path already applies
+-- this conversion; these native recipes need the same treatment explicitly.
+local function use_machine_construction_work_order(recipe)
+  if not recipe then return end
+
+  local function process_level(target)
+    if not target or not target.ingredients then return end
+    for _, ingredient in ipairs(target.ingredients) do
+      if ingredient_name(ingredient) == "construction-permit" then
+        if ingredient.name or ingredient.type or ingredient.amount ~= nil then
+          ingredient.name = "construction-work-order"
+        else
+          ingredient[1] = "construction-work-order"
+        end
+      end
+    end
+  end
+
+  process_level(recipe)
+  process_level(recipe.normal)
+  process_level(recipe.expensive)
+end
+
+-- Native foundry recipes for these belts are machine-only paths.  Keep their
+-- ordinary regulated copies unchanged, but make the foundry path consume the
+-- machine form as well.
+if feature_flags.space_age_enabled() then
+  for _, recipe_name in ipairs({
+    "fast-transport-belt",
+    "fast-underground-belt",
+    "express-underground-belt",
+  }) do
+    use_machine_construction_work_order(data.raw.recipe[recipe_name])
+  end
+end
+
 -- Recipes shared by native machines and assembling machines keep their
 -- canonical recipe for the native machine, while the regulated copy is the
 -- assembler route. Both routes must be unlocked together; otherwise a
@@ -1250,6 +1289,24 @@ for _, recipe_name in ipairs({
   "cliff-explosives-regulated",
 }) do
   add_special_paperwork(recipe_name, "construction-permit", 1)
+end
+
+-- Explicit construction paperwork is added after the main regulation pass,
+-- so convert it on machine-facing copies without changing the handcraft
+-- recipe's construction permit.
+for _, recipe_name in ipairs({
+  "explosives",
+  "explosives-regulated",
+  "cliff-explosives",
+  "cliff-explosives-regulated",
+}) do
+  local recipe = data.raw.recipe[recipe_name]
+  if recipe and (recipe_name:find("%-regulated$")
+      or recipe_name == "explosives"
+      or recipe.category == "crafting-regulated"
+      or recipe.category == "advanced-crafting-regulated") then
+    use_machine_construction_work_order(recipe)
+  end
 end
 
 -- Engine manufacture carries direct emissions, so every batch requires
