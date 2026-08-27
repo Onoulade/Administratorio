@@ -1,4 +1,22 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.5
+Date: 2026-08-26
+  Bugfixes:
+    - rotate administrative station fluid input
+    - bootstrap first worker before staffed economy
+  Balancing:
+    - require thematic first-worker paperwork
+  Compatibility:
+    - hook engine for other-mod compatibility, plus day/night inside sealed interiors (#33)
+    - add hook points for other-mod compatibility
+  Docs:
+    - document the mod compatibility engine
+  Internal:
+    - enforce staffed progression reachability
+  Changes:
+    - Merge branch 'main' of https://github.com/Onoulade/Administratorio
+    - working_hours: read day/night from outside a sealed interior
+---------------------------------------------------------------------------------------------------
 Version: 0.6.4
 Date: 2026-08-26
   Bugfixes:
