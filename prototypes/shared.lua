@@ -3,6 +3,7 @@
 
 local shared = {}
 local feature_flags = require("feature_flags")
+local hooks = require("compat.hooks")
 local pneumatic_items = require("prototypes.shared.pneumatic_items")
 local space_age_enabled = feature_flags.space_age_enabled()
 local compatibility_rules = space_age_enabled
@@ -566,6 +567,11 @@ shared.SPACE_AGE_ENABLED = space_age_enabled
 shared.COMPATIBILITY_RULESET = space_age_enabled and "space-age" or "non-space-age"
 
 function shared.get_required_form(recipe_name)
+  local compatibility_form = hooks.resolve("recipe_required_form", recipe_name)
+  if compatibility_form ~= nil then
+    return compatibility_form
+  end
+
   return compatibility_rules.get_required_form(recipe_name)
 end
 

@@ -76,6 +76,8 @@ compatibility.
 | --- | --- | --- | --- |
 | `time_of_day_surface` | `resolve` | Which surface carries the real time of day for a building at `(surface, position)`, and is the spot dark whatever that surface says? | `surface, dark` — or `nil` to fall through |
 | `tube_traversable_entities` | `collect` | Which foreign entities may a pneumatic tube network walk through? | `{[entity_name] = true}` |
+| `recipe_required_form` | `resolve` | Which paperwork form does a compatible recipe require? | `form` — or `nil` to keep the core rule |
+| `recipe_batch_multiplier` | `resolve` | What batch multiplier does a compatible recipe use? | `multiplier` — or `nil` to keep the core rule |
 
 `time_of_day_surface` exists because a mod can freeze the daytime of a surface
 it owns. Factorissimo does: a factory floor sits at noon with the interior

@@ -22,7 +22,13 @@
 --     Original recipe modified in-place -> regulated category, batched, form
 --     Keeps recipe identity and tech unlocks intact
 
+-- Register compatibility answers before loading any core module that may read
+-- a compatibility hook. The registry remains a no-op when no foreign mod is
+-- installed.
+require("compat.init").load("data")
+
 local shared = require("prototypes.shared")
+local hooks = require("compat.hooks")
 local batch_rules = require("prototypes.shared.batch_rules")
 local factoriopedia_merge = require("prototypes.factoriopedia_merge")
 local feature_flags = require("feature_flags")
@@ -535,6 +541,11 @@ local function find_item_like_prototype(name)
 end
 
 local function get_recipe_batch_multiplier(recipe_name, recipe)
+  local compatibility_multiplier = hooks.resolve("recipe_batch_multiplier", recipe_name, recipe)
+  if compatibility_multiplier ~= nil then
+    return compatibility_multiplier
+  end
+
   return batch_rules.resolve(data.raw, recipe_name, recipe, {
     default_multiplier = shared.BATCH_MULTIPLIER_DEFAULT,
     building_multiplier = shared.BATCH_MULTIPLIER_BUILDING,
@@ -1679,7 +1690,4 @@ require("prototypes.final_fixes.science_pack_stripping").apply(data, ITEM_LIKE_P
 require("prototypes.final_fixes.rocket_weights").apply()
 
 -------------------------------------------------------------------------------
--- 14. OTHER MODS
--- Every data-stage compatibility module, each a no-op when its mod is absent.
 -------------------------------------------------------------------------------
-require("compat.init").load("data")
