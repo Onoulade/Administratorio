@@ -621,7 +621,7 @@ data:extend({
     effects = {
       {type = "unlock-recipe", recipe = "trajectory-compliance-array"},
     },
-    prerequisites = {"orbital-compliance-systems"},
+    prerequisites = {"orbital-compliance-systems", "space-science-pack"},
     unit = {
       count = 600,
       ingredients = {
