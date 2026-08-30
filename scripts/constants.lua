@@ -4,10 +4,10 @@ local M = {}
 
 -- Direct entity name -> complaint count lookup (avoids string.find in hot path)
 M.BITER_COMPLAINT_COUNT = {
-  ["small-biter"] = 1, ["medium-biter"] = 3,
-  ["big-biter"] = 6, ["behemoth-biter"] = 10,
-  ["small-spitter"] = 1, ["medium-spitter"] = 3,
-  ["big-spitter"] = 6, ["behemoth-spitter"] = 10,
+  ["small-biter"] = 1, ["medium-biter"] = 2,
+  ["big-biter"] = 3, ["behemoth-biter"] = 4,
+  ["small-spitter"] = 1, ["medium-spitter"] = 2,
+  ["big-spitter"] = 3, ["behemoth-spitter"] = 4,
 }
 
 -- Direct entity name -> taxpayer payout lookup (avoids string.find in hot path)
