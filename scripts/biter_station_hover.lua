@@ -8,14 +8,6 @@ local BUILDING_BORDER = {r = 0.9, g = 0.7, b = 0.2, a = 0.55}
 local TEXT_COLOR      = {r = 0.9, g = 0.7, b = 0.2}
 local COFFEE_INPUT_COLOR = {r = 0.75, g = 0.42, b = 0.18, a = 0.9}
 
-local function zone_box(pos)
-  local r = C.BITER_STATION_RANGE
-  return {
-    left_top     = {x = pos.x - r, y = pos.y - r},
-    right_bottom = {x = pos.x + r, y = pos.y + r},
-  }
-end
-
 local function add_render(player_index, obj)
   if not obj then return end
   local t = storage.biter_station_hover_renders[player_index] or {}
@@ -81,13 +73,12 @@ end
 function M.show_station_zone(player, station)
   clear_renders(player.index)
   local surface = station.surface
-  local box = zone_box(station.position)
 
-  add_render(player.index, rendering.draw_rectangle{
+  add_render(player.index, rendering.draw_circle{
     color        = ZONE_COLOR,
+    radius       = C.BITER_STATION_RANGE,
     width        = 2,
-    left_top     = box.left_top,
-    right_bottom = box.right_bottom,
+    target       = station.position,
     surface      = surface,
     players      = {player},
     draw_on_ground = true,
@@ -95,7 +86,8 @@ function M.show_station_zone(player, station)
 
   local nearby = surface.find_entities_filtered{
     name   = C.BITER_STATION_MANAGED_BUILDINGS,
-    area   = box,
+    position = station.position,
+    radius = C.BITER_STATION_RANGE,
     force  = station.force,
   }
 
@@ -131,22 +123,21 @@ end
 function M.show_building_hover(player, building)
   clear_renders(player.index)
   local surface = building.surface
-  local box = zone_box(building.position)
 
   local stations = surface.find_entities_filtered{
     name  = "biter-station",
-    area  = box,
+    position = building.position,
+    radius = C.BITER_STATION_RANGE,
     force = building.force,
   }
 
   for _, station in ipairs(stations) do
     if station.valid then
-      local sbox = zone_box(station.position)
-      add_render(player.index, rendering.draw_rectangle{
+      add_render(player.index, rendering.draw_circle{
         color        = ZONE_COLOR,
+        radius       = C.BITER_STATION_RANGE,
         width        = 2,
-        left_top     = sbox.left_top,
-        right_bottom = sbox.right_bottom,
+        target       = station.position,
         surface      = surface,
         players      = {player},
         draw_on_ground = true,
