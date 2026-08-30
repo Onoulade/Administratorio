@@ -253,6 +253,13 @@ local function intake_circuit_allows(entity)
   return true
 end
 
+local function intake_has_circuit_condition(entity)
+  if not entity or not entity.valid or not entity.get_control_behavior then return false end
+  local ok, behavior = pcall(function() return entity.get_control_behavior() end)
+  if not ok or not behavior then return false end
+  return behavior.circuit_enable_disable == true and behavior.circuit_condition ~= nil
+end
+
 local function inventory_filter_name(filter)
   if type(filter) == "string" then return filter end
   if type(filter) ~= "table" then return nil end
@@ -304,6 +311,7 @@ local function update_combinator_signals(combinator, pool)
         section.set_slot(slot_idx, {
           value = {type = "item", name = item_name, quality = quality_name},
           min = count,
+          max = count,
         })
         slot_idx = slot_idx + 1
       end
@@ -660,7 +668,112 @@ function M.on_pneumatic_tick()
 
   local networks_changed = {} -- [net_id] = true when pool was modified
 
-  -- Process intakes: remove 1 item from source slot, add to signal pool.
+  -- A constant combinator update is visible to circuit conditions only after
+  -- the engine has advanced its circuit graph.  Remember networks changed by
+  -- the previous handler and give them a full handler interval to settle.
+  local settling_networks = storage.tube_signal_settling
+  storage.tube_signal_settling = {}
+
+  local function process_outtakes()
+    -- Group outtakes by network and process each group in a stable round-robin
+    -- order. Without a per-network cursor, a continuously emptied first
+    -- outtake can claim every item before later outtakes are considered.
+    local outtakes_by_network = {}
+    for uid, entry in pairs(storage.tube_outtakes) do
+      local entity = entry.entity
+      if not entity or not entity.valid then
+        storage.tube_outtakes[uid] = nil
+        storage.tube_network_dirty = true
+      else
+        local net_id = storage.tube_network_cache[uid]
+        if net_id and not storage.tube_network_disabled[net_id] then
+          local group = outtakes_by_network[net_id]
+          if not group then
+            group = {}
+            outtakes_by_network[net_id] = group
+          end
+          group[#group + 1] = {uid = uid, entity = entity}
+        end
+      end
+    end
+
+    for net_id, outtakes in pairs(outtakes_by_network) do
+      table.sort(outtakes, function(a, b) return a.uid < b.uid end)
+
+      local start_index = 1
+      local last_uid = storage.tube_outtake_cursor[net_id]
+      if last_uid then
+        -- Starting at the first greater uid also advances fairly if the
+        -- previously served outtake was removed between scans.
+        for i, outtake in ipairs(outtakes) do
+          if outtake.uid > last_uid then
+            start_index = i
+            break
+          end
+        end
+      end
+
+      for offset = 0, #outtakes - 1 do
+        local index = ((start_index + offset - 1) % #outtakes) + 1
+        local outtake = outtakes[index]
+        local inv = outtake.entity.get_inventory(defines.inventory.chest)
+        if inv and inv.is_empty() then
+          local pool = storage.tube_signals[net_id]
+          if pool then
+            -- Check if the player set a filter on slot 1.
+            local slot_filter = nil
+            if inv.get_filter then
+              local ok, filter = pcall(inv.get_filter, 1)
+              if ok then slot_filter = filter end
+            end
+            local allowed_name = inventory_filter_name(slot_filter)
+
+            -- Pick item: if filtered, only that item; otherwise largest-count-first.
+            local best_key, best_count = nil, 0
+            if allowed_name then
+              for pool_key, count in pairs(pool) do
+                local item_name = parse_pool_key(pool_key)
+                if item_name == allowed_name and count > best_count then
+                  best_key = pool_key
+                  best_count = count
+                end
+              end
+            else
+              for pool_key, count in pairs(pool) do
+                if count > best_count then
+                  best_key = pool_key
+                  best_count = count
+                end
+              end
+            end
+
+            if best_key and best_count > 0 then
+              local item_name, quality_name = parse_pool_key(best_key)
+              local inserted = inv.insert{name = item_name, quality = quality_name, count = 1}
+              if inserted > 0 then
+                pool[best_key] = best_count - inserted
+                if pool[best_key] <= 0 then
+                  pool[best_key] = nil
+                end
+                storage.tube_outtake_cursor[net_id] = outtake.uid
+                networks_changed[net_id] = true
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  -- Drain anything already waiting before evaluating intake conditions.  This
+  -- lets a filtered outtake free capacity without exposing its old signal to
+  -- another intake in the same handler.
+  process_outtakes()
+
+  -- Process intakes after outtakes.  If an outtake changed this network in
+  -- this handler, the native circuit condition still sees the old signal
+  -- snapshot, so do not admit an item until the next handler.  This closes
+  -- the exact window where removing A could make an intake for B see B == 0.
   for uid, entry in pairs(storage.tube_intakes) do
     local entity = entry.entity
     if not entity or not entity.valid then
@@ -676,6 +789,12 @@ function M.on_pneumatic_tick()
     end
     if storage.tube_network_disabled[net_id] then
       set_intake_status_blocked(entity, "overextended")
+      goto next_intake
+    end
+    if intake_has_circuit_condition(entity)
+        and (settling_networks[net_id] or networks_changed[net_id]) then
+      -- The signal publication is still settling.  Leave the source item in
+      -- the intake inventory; the next pass will re-evaluate the condition.
       goto next_intake
     end
     if not intake_circuit_allows(entity) then
@@ -739,94 +858,10 @@ function M.on_pneumatic_tick()
     ::next_intake::
   end
 
-  -- Group outtakes by network and process each group in a stable round-robin
-  -- order. Without a per-network cursor, a continuously emptied first
-  -- outtake can claim every item before later outtakes are considered.
-  local outtakes_by_network = {}
-  for uid, entry in pairs(storage.tube_outtakes) do
-    local entity = entry.entity
-    if not entity or not entity.valid then
-      storage.tube_outtakes[uid] = nil
-      storage.tube_network_dirty = true
-    else
-      local net_id = storage.tube_network_cache[uid]
-      if net_id and not storage.tube_network_disabled[net_id] then
-        local group = outtakes_by_network[net_id]
-        if not group then
-          group = {}
-          outtakes_by_network[net_id] = group
-        end
-        group[#group + 1] = {uid = uid, entity = entity}
-      end
-    end
-  end
-
-  for net_id, outtakes in pairs(outtakes_by_network) do
-    table.sort(outtakes, function(a, b) return a.uid < b.uid end)
-
-    local start_index = 1
-    local last_uid = storage.tube_outtake_cursor[net_id]
-    if last_uid then
-      -- Starting at the first greater uid also advances fairly if the
-      -- previously served outtake was removed between scans.
-      for i, outtake in ipairs(outtakes) do
-        if outtake.uid > last_uid then
-          start_index = i
-          break
-        end
-      end
-    end
-
-    for offset = 0, #outtakes - 1 do
-      local index = ((start_index + offset - 1) % #outtakes) + 1
-      local outtake = outtakes[index]
-      local inv = outtake.entity.get_inventory(defines.inventory.chest)
-      if inv and inv.is_empty() then
-        local pool = storage.tube_signals[net_id]
-        if pool then
-          -- Check if the player set a filter on slot 1.
-          local slot_filter = nil
-          if inv.get_filter then
-            local ok, filter = pcall(inv.get_filter, 1)
-            if ok then slot_filter = filter end
-          end
-          local allowed_name = inventory_filter_name(slot_filter)
-
-          -- Pick item: if filtered, only that item; otherwise largest-count-first.
-          local best_key, best_count = nil, 0
-          if allowed_name then
-            for pool_key, count in pairs(pool) do
-              local item_name = parse_pool_key(pool_key)
-              if item_name == allowed_name and count > best_count then
-                best_key = pool_key
-                best_count = count
-              end
-            end
-          else
-            for pool_key, count in pairs(pool) do
-              if count > best_count then
-                best_key = pool_key
-                best_count = count
-              end
-            end
-          end
-
-          if best_key and best_count > 0 then
-            local item_name, quality_name = parse_pool_key(best_key)
-            local inserted = inv.insert{name = item_name, quality = quality_name, count = 1}
-            if inserted > 0 then
-              pool[best_key] = best_count - inserted
-              if pool[best_key] <= 0 then
-                pool[best_key] = nil
-              end
-              storage.tube_outtake_cursor[net_id] = outtake.uid
-              networks_changed[net_id] = true
-            end
-          end
-        end
-      end
-    end
-  end
+  -- Preserve the old same-handler behaviour: an item admitted from an intake
+  -- may still be delivered immediately when an outtake is available.  This
+  -- second pass cannot affect intake decisions because all intakes are done.
+  process_outtakes()
 
   -- Update circuit combinator signals for changed networks.
   if next(networks_changed) then
@@ -841,6 +876,9 @@ function M.on_pneumatic_tick()
       if net_id and networks_changed[net_id] then
         update_combinator_signals(entry.combinator, storage.tube_signals[net_id])
       end
+    end
+    for net_id in pairs(networks_changed) do
+      storage.tube_signal_settling[net_id] = true
     end
   end
 
@@ -955,6 +993,7 @@ function M.ensure_storage()
   storage.tube_network_disabled = storage.tube_network_disabled or {}
   storage.tube_outtake_cursor = storage.tube_outtake_cursor or {}
   storage.tube_orphan_signals = storage.tube_orphan_signals or {}
+  storage.tube_signal_settling = storage.tube_signal_settling or {}
   if storage.tube_network_dirty == nil then
     storage.tube_network_dirty = true
   end

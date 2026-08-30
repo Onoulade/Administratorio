@@ -80,17 +80,26 @@ local function new_inventory(stack_spec)
     return stack.count
   end
 
+  function inventory.get_filter(_)
+    return inventory.filter
+  end
+
   return inventory
 end
 
-local function new_endpoint(name, inventory, unit_number)
-  return {
+local function new_endpoint(name, inventory, unit_number, behavior)
+  local endpoint = {
     valid = true,
     name = name,
     unit_number = unit_number,
     force = {valid = true, index = 1, technologies = {}},
     get_inventory = function(_, _) return inventory end,
   }
+  if behavior then
+    endpoint.disabled_by_control_behavior = behavior.disabled
+    endpoint.get_control_behavior = function() return behavior end
+  end
+  return endpoint
 end
 
 test("pneumatic transport conserves an item and its quality", function()
@@ -135,6 +144,63 @@ test("legacy unqualified signal-pool entries remain normal quality", function()
   assert_eq(destination[1].name, "work-order", "legacy pool should still emit its item")
   assert_eq(destination[1].quality.name, "normal", "legacy pool entries should decode as normal quality")
   assert_eq(pneumatic.get_network_total(2), 0, "legacy transfer should remain conserved")
+end)
+
+test("intakes do not use a stale circuit snapshot after an outtake", function()
+  local intake_source = new_inventory({name = "paper", count = 1})
+  local outtake_destination = new_inventory()
+  outtake_destination.filter = {name = "work-order"}
+  local intake_behavior = {
+    disabled = false,
+    circuit_enable_disable = true,
+    circuit_condition = {first_signal = {type = "item", name = "paper"}, comparator = "<", constant = 1},
+  }
+  local intake = new_endpoint("tube-intake", intake_source, 301, intake_behavior)
+  local outtake = new_endpoint("tube-outtake", outtake_destination, 302)
+
+  storage = {
+    tube_intakes = {[301] = {entity = intake}},
+    tube_outtakes = {[302] = {entity = outtake}},
+    tube_signals = {[3] = { ["work-order"] = 1, ["paper"] = 1 }},
+    tube_network_cache = {[301] = 3, [302] = 3},
+    tube_network_disabled = {},
+    tube_network_dirty = false,
+  }
+
+  -- The native condition is deliberately left enabled, modelling the brief
+  -- period where the circuit still reports the old work-order signal after
+  -- the player removed it from the filtered outtake.
+  pneumatic.on_pneumatic_tick()
+
+  assert_eq(outtake_destination[1].name, "work-order", "outtake should take the requested item")
+  assert_eq(intake_source[1].name, "paper", "intake should wait for circuit signals to settle")
+  assert_eq(intake_source[1].count, 1, "stale circuit state must not consume the pending item")
+  assert_eq(storage.tube_signals[3]["paper"], 1, "stale circuit state must not duplicate the item")
+end)
+
+test("intakes wait one handler after publishing a changed signal set", function()
+  local intake_source = new_inventory({name = "paper", count = 1})
+  local intake_behavior = {
+    disabled = false,
+    circuit_enable_disable = true,
+    circuit_condition = {first_signal = {type = "item", name = "paper"}, comparator = "<", constant = 1},
+  }
+  local intake = new_endpoint("tube-intake", intake_source, 401, intake_behavior)
+
+  storage = {
+    tube_intakes = {[401] = {entity = intake}},
+    tube_outtakes = {},
+    tube_signals = {[4] = { ["paper"] = 1 }},
+    tube_network_cache = {[401] = 4},
+    tube_network_disabled = {},
+    tube_signal_settling = {[4] = true},
+    tube_network_dirty = false,
+  }
+
+  pneumatic.on_pneumatic_tick()
+
+  assert_eq(intake_source[1].count, 1, "intake should wait while the previous signal update settles")
+  assert_eq(storage.tube_signals[4]["paper"], 1, "settling must not duplicate the item")
 end)
 
 -- Factorissimo compatibility: a tube network crosses a factory wall through the
