@@ -2179,32 +2179,57 @@ local SPACE_TOURISM_VARIANTS = {
     spitter = "small-spitter",
     package_item = "small-spitter-tourism-package",
     tourist_item = "small-space-tourist",
+    departure_item = "small-departing-space-tourist",
     tourism_recipe = "small-spitter-space-tourism",
-    bond_payout = 2,
+    checkout_recipe = "small-space-tourist-checkout",
+    asteroid_snacks = {
+      {type = "item", name = "metallic-asteroid-chunk", amount = 1},
+    },
+    taxpayer_payout = 100,
     energy_required = 8,
   },
   {
     spitter = "medium-spitter",
     package_item = "medium-spitter-tourism-package",
     tourist_item = "medium-space-tourist",
+    departure_item = "medium-departing-space-tourist",
     tourism_recipe = "medium-spitter-space-tourism",
-    bond_payout = 4,
+    checkout_recipe = "medium-space-tourist-checkout",
+    asteroid_snacks = {
+      {type = "item", name = "metallic-asteroid-chunk", amount = 1},
+      {type = "item", name = "carbonic-asteroid-chunk", amount = 1},
+    },
+    taxpayer_payout = 200,
     energy_required = 10,
   },
   {
     spitter = "big-spitter",
     package_item = "big-spitter-tourism-package",
     tourist_item = "big-space-tourist",
+    departure_item = "big-departing-space-tourist",
     tourism_recipe = "big-spitter-space-tourism",
-    bond_payout = 9,
+    checkout_recipe = "big-space-tourist-checkout",
+    asteroid_snacks = {
+      {type = "item", name = "oxide-asteroid-chunk", amount = 1},
+      {type = "item", name = "metallic-asteroid-chunk", amount = 1},
+      {type = "item", name = "carbonic-asteroid-chunk", amount = 1},
+    },
+    taxpayer_payout = 450,
     energy_required = 12,
   },
   {
     spitter = "behemoth-spitter",
     package_item = "behemoth-spitter-tourism-package",
     tourist_item = "behemoth-space-tourist",
+    departure_item = "behemoth-departing-space-tourist",
     tourism_recipe = "behemoth-spitter-space-tourism",
-    bond_payout = 24,
+    checkout_recipe = "behemoth-space-tourist-checkout",
+    asteroid_snacks = {
+      {type = "item", name = "oxide-asteroid-chunk", amount = 2},
+      {type = "item", name = "metallic-asteroid-chunk", amount = 2},
+      {type = "item", name = "carbonic-asteroid-chunk", amount = 2},
+    },
+    taxpayer_payout = 1200,
     energy_required = 16,
   },
 }
@@ -2212,25 +2237,33 @@ local SPACE_TOURISM_VARIANTS = {
 local tourism_recipes = {}
 
 for i, variant in ipairs(SPACE_TOURISM_VARIANTS) do
+  local orbital_ingredients = {
+    {type = "item", name = variant.package_item, amount = 1},
+    {type = "item", name = "orbital-operations-form", amount = 1},
+  }
+  for _, snack in ipairs(variant.asteroid_snacks) do
+    orbital_ingredients[#orbital_ingredients + 1] = {
+      type = snack.type,
+      name = snack.name,
+      amount = snack.amount,
+    }
+  end
+
   tourism_recipes[#tourism_recipes + 1] = {
     type = "recipe",
     name = variant.tourism_recipe,
     category = "orbital-bureaucracy",
     subgroup = "admin-biter-training", order = string.format("b-%c", string.byte("o") + i - 1),
     enabled = false,
-    localised_name = {"", "Monetize ", {"entity-name." .. variant.spitter}, " Space Tourism"},
+    localised_name = {"", "Fulfill ", {"entity-name." .. variant.spitter}, " Space Tourism"},
     localised_description = {
       "",
-      "Convert a captured ",
+      "Feed orbital asteroid samples to a captured ",
       {"entity-name." .. variant.spitter},
-      " into orbital revenue and a paid-up tourist.",
+      " and return a fulfilled tourist for checkout on Nauvis.",
     },
-    ingredients = {
-      {type = "item", name = variant.package_item, amount = 1},
-      {type = "item", name = "orbital-operations-form", amount = 1},
-    },
+    ingredients = orbital_ingredients,
     results = {
-      {type = "item", name = "treasury-bond", amount = variant.bond_payout},
       {type = "item", name = variant.tourist_item, amount = 1},
     },
     main_product = variant.tourist_item,
@@ -2243,6 +2276,37 @@ for i, variant in ipairs(SPACE_TOURISM_VARIANTS) do
       },
     },
   }
+
+  tourism_recipes[#tourism_recipes + 1] = surface_limited({
+    type = "recipe",
+    name = variant.checkout_recipe,
+    category = "bureaucracy-registration",
+    subgroup = "admin-biter-training", order = string.format("b-%c-a", string.byte("o") + i - 1),
+    enabled = false,
+    localised_name = {"", "Check Out Fulfilled ", {"entity-name." .. variant.spitter}, " Space Tourist"},
+    localised_description = {
+      "",
+      "Serve the returning tourist coffee, collect its Nauvis tourism payment, and send it home.",
+    },
+    ingredients = {
+      {type = "item", name = variant.tourist_item, amount = 1},
+      {type = "fluid", name = "liquid-coffee", amount = 10},
+    },
+    results = {
+      {type = "item", name = "taxpayer-money", amount = variant.taxpayer_payout},
+      {
+        type = "item",
+        name = variant.departure_item,
+        amount = 1,
+        ignored_by_productivity = 1,
+        ignored_by_stats = 1,
+      },
+    },
+    main_product = "taxpayer-money",
+    allow_productivity = false,
+    allow_decomposition = false,
+    energy_required = 5,
+  }, "nauvis")
 
 end
 

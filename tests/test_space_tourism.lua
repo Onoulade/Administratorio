@@ -587,6 +587,48 @@ test("spoiled tourism packages hatch back into max-frustration spitters", functi
   assert_eq(tracked.frustration, 600, "hatched spitter should start at 100% frustration")
 end)
 
+test("fulfilled tourist checkout releases the spitter and records Nauvis revenue", function()
+  local variants = {
+    {spitter = "small-spitter", payout = 100},
+    {spitter = "medium-spitter", payout = 200},
+    {spitter = "big-spitter", payout = 450},
+    {spitter = "behemoth-spitter", payout = 1200},
+  }
+
+  for _, variant in ipairs(variants) do
+    local ctx = new_context({
+      desk_name = "admin-station",
+      surface_name = "nauvis",
+    })
+
+    local office = {
+      valid = true,
+      name = "office-desk",
+      position = {x = 4, y = 5},
+      surface = ctx.desk.surface,
+    }
+
+    biters.on_script_trigger_effect({
+      effect_id = "administratorio-" .. variant.spitter .. "-tourism-departure",
+      source_entity = office,
+      surface_index = ctx.desk.surface.index,
+      source_position = office.position,
+    })
+
+    local tracked = nil
+    for _, info in pairs(storage.waiting_biters) do
+      tracked = info
+      break
+    end
+
+    assert_true(tracked ~= nil, variant.spitter .. " checkout should release a tracked tourist")
+    assert_eq(tracked.entity_name, variant.spitter, "checkout should restore the original spitter")
+    assert_eq(tracked.state, "returning_home", "fulfilled tourist should immediately leave to despawn")
+    assert_eq(tracked.entity.force.name, "neutral", "fulfilled tourist should leave peacefully")
+    assert_eq(storage.stats.money_earned, variant.payout, variant.spitter .. " checkout should record its taxpayer-money payout")
+  end
+end)
+
 test("spoiled pentapod eggs hatch into hostile attackers instead of bureaucracy clients", function()
   local ctx = new_context({
     desk_name = "admin-station",

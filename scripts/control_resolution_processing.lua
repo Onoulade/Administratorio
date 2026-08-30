@@ -129,7 +129,6 @@ function M.new(deps)
 
     runtime_debug.run_profiled_section(runtime_snapshot, "resolutions", function()
       deps.biters.process_resolutions(powered_desks)
-      deps.biters.process_space_tourist_returns(powered_desks)
     end)
 
     runtime_debug.run_profiled_section(runtime_snapshot, "frustration", function()

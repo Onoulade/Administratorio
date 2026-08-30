@@ -217,11 +217,11 @@ local SPOILED_SPITTER_HATCH_EFFECTS = {
   ["administratorio-big-spitter-tourism-hatch"] = "big-spitter",
   ["administratorio-behemoth-spitter-tourism-hatch"] = "behemoth-spitter",
 }
-local SPACE_TOURIST_RELEASE_ITEMS = {
-  ["small-space-tourist"] = "small-spitter",
-  ["medium-space-tourist"] = "medium-spitter",
-  ["big-space-tourist"] = "big-spitter",
-  ["behemoth-space-tourist"] = "behemoth-spitter",
+local FULFILLED_TOURIST_DEPARTURE_EFFECTS = {
+  ["administratorio-small-spitter-tourism-departure"] = {entity_name = "small-spitter", payout = 100},
+  ["administratorio-medium-spitter-tourism-departure"] = {entity_name = "medium-spitter", payout = 200},
+  ["administratorio-big-spitter-tourism-departure"] = {entity_name = "big-spitter", payout = 450},
+  ["administratorio-behemoth-spitter-tourism-departure"] = {entity_name = "behemoth-spitter", payout = 1200},
 }
 local CAPTURE_BUREAU_LURE_FLUIDS = {
   {name = "workforce-lure-spores", mode = "workforce"},
@@ -1719,28 +1719,31 @@ function M.process_resolutions(desks)
   end
 end
 
-local function release_space_tourist(desk, inv, tourist_item, entity_name)
-  if not desk or not desk.valid or not inv or not tourist_item or not entity_name then return false end
-  if not desk.surface or desk.surface.name ~= "nauvis" then return false end
+local function release_fulfilled_space_tourist(event)
+  local departure = event and FULFILLED_TOURIST_DEPARTURE_EFFECTS[event.effect_id] or nil
+  if not departure then return false end
 
-  local surface = desk.surface
+  local source_entity = event.source_entity
+  local surface = (source_entity and source_entity.valid and source_entity.surface)
+    or (event.surface_index and game.get_surface(event.surface_index))
+  if not surface or surface.name ~= "nauvis" then return true end
+
+  local anchor = (source_entity and source_entity.valid and source_entity.position)
+    or event.source_position
+    or event.target_position
+    or {x = 0, y = 0}
   local release_anchor = {
-    x = desk.position.x,
-    y = desk.position.y + 3,
+    x = anchor.x,
+    y = anchor.y + 3,
   }
-  local position = surface.find_non_colliding_position(entity_name, release_anchor, 8, 0.5) or release_anchor
-
-  if inv.remove({name = tourist_item, count = 1}) <= 0 then return false end
+  local position = surface.find_non_colliding_position(departure.entity_name, release_anchor, 8, 0.5) or release_anchor
 
   local entity = surface.create_entity{
-    name = entity_name,
+    name = departure.entity_name,
     position = position,
     force = "neutral",
   }
-  if not entity or not entity.valid then
-    inv.insert({name = tourist_item, count = 1})
-    return false
-  end
+  if not entity or not entity.valid then return true end
 
   local info = {
     entity = entity,
@@ -1749,31 +1752,18 @@ local function release_space_tourist(desk, inv, tourist_item, entity_name)
     complaints_filed = true,
     frustration = 0,
     state = "waiting",
+    home_position = {
+      x = position.x,
+      y = position.y + (C.RETURN_WALK_DISTANCE or 200),
+    },
   }
   info.entity_name = entity.name
   track_waiting_biter(entity.unit_number, info)
-  start_return_home(info, entity)
-  return true
-end
-
-function M.process_space_tourist_returns(desks)
-  for _, desk in ipairs(desks or {}) do
-    if desk.valid and desk.surface and desk.surface.name == "nauvis" then
-      local inv = desk.get_inventory(defines.inventory.chest)
-      if inv and not inv.is_empty() then
-        for slot = 1, #inv do
-          local stack = inv[slot]
-          if stack and stack.valid_for_read then
-            local entity_name = SPACE_TOURIST_RELEASE_ITEMS[stack.name]
-            if entity_name and release_space_tourist(desk, inv, stack.name, entity_name) then
-              mark_desk_circuit_dirty(desk.unit_number)
-              break
-            end
-          end
-        end
-      end
-    end
+  start_return_home(info, entity, {force_home_position = true})
+  if storage.stats then
+    storage.stats.money_earned = (storage.stats.money_earned or 0) + departure.payout
   end
+  return true
 end
 
 function M.process_frustration_and_protests(surface)
@@ -1827,6 +1817,9 @@ end
 
 function M.on_script_trigger_effect(event)
   if pentapods.on_script_trigger_effect(event) then
+    return
+  end
+  if release_fulfilled_space_tourist(event) then
     return
   end
   if hatch_spoiled_tourism_package(event) then

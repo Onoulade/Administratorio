@@ -958,6 +958,10 @@ add_tech_unlock("cyan-yellow-bureaucracy", "small-spitter-space-tourism")
 add_tech_unlock("cyan-yellow-bureaucracy", "medium-spitter-space-tourism")
 add_tech_unlock("cyan-yellow-bureaucracy", "big-spitter-space-tourism")
 add_tech_unlock("cyan-yellow-bureaucracy", "behemoth-spitter-space-tourism")
+add_tech_unlock("cyan-yellow-bureaucracy", "small-space-tourist-checkout")
+add_tech_unlock("cyan-yellow-bureaucracy", "medium-space-tourist-checkout")
+add_tech_unlock("cyan-yellow-bureaucracy", "big-space-tourist-checkout")
+add_tech_unlock("cyan-yellow-bureaucracy", "behemoth-space-tourist-checkout")
 add_tech_unlock("cyan-yellow-bureaucracy", "tourism-lure-spores-production")
 
 for _, recipe_name in ipairs({

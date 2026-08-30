@@ -875,10 +875,10 @@ if not (data.raw.item and data.raw.item["formation-center"]) then
 end
 
 local SPACE_TOURISM_VARIANTS = {
-  {spitter = "small-spitter", package_item = "small-spitter-tourism-package", tourist_item = "small-space-tourist", order = "j-k1"},
-  {spitter = "medium-spitter", package_item = "medium-spitter-tourism-package", tourist_item = "medium-space-tourist", order = "j-k2"},
-  {spitter = "big-spitter", package_item = "big-spitter-tourism-package", tourist_item = "big-space-tourist", order = "j-k3"},
-  {spitter = "behemoth-spitter", package_item = "behemoth-spitter-tourism-package", tourist_item = "behemoth-space-tourist", order = "j-k4"},
+  {spitter = "small-spitter", package_item = "small-spitter-tourism-package", tourist_item = "small-space-tourist", departure_item = "small-departing-space-tourist", order = "j-k1"},
+  {spitter = "medium-spitter", package_item = "medium-spitter-tourism-package", tourist_item = "medium-space-tourist", departure_item = "medium-departing-space-tourist", order = "j-k2"},
+  {spitter = "big-spitter", package_item = "big-spitter-tourism-package", tourist_item = "big-space-tourist", departure_item = "big-departing-space-tourist", order = "j-k3"},
+  {spitter = "behemoth-spitter", package_item = "behemoth-spitter-tourism-package", tourist_item = "behemoth-space-tourist", departure_item = "behemoth-departing-space-tourist", order = "j-k4"},
 }
 
 local function spitter_icon_layers(spitter_name, overlays)
@@ -963,14 +963,44 @@ for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
       {icon = item_icons .. "office-building.png", icon_size = 64, scale = 0.3, shift = {-8, 8}},
       {icon = item_icons .. "taxpayer-money.png", icon_size = 64, scale = 0.32, shift = {8, 8}},
     }),
-    localised_name = {"", {"entity-name." .. variant.spitter}, " Space Tourist"},
+    localised_name = {"", "Fulfilled ", {"entity-name." .. variant.spitter}, " Space Tourist"},
     localised_description = {
       "",
-      "Already paid up. Return it to a Nauvis administrative desk so it can wander off and complete the tour.",
+      "Successfully fed assorted asteroid chunks. Check it out through a Nauvis ",
+      {"entity-name.office-desk"},
+      " with coffee to collect the tourism revenue and send it home.",
     },
     subgroup = "admin-biter-training",
     order = variant.order .. "a",
     stack_size = 20,
+  }
+
+  -- The checkout recipe emits this one-tick implementation item alongside
+  -- taxpayer money. Its spoil trigger releases the tourist beside the office
+  -- and lets the runtime send it home without another manual desk handoff.
+  tourism_items[#tourism_items + 1] = {
+    type = "item",
+    name = variant.departure_item,
+    icons = spitter_icon_layers(variant.spitter, {
+      {icon = item_icons .. "office-building.png", icon_size = 64, scale = 0.3, shift = {-8, 8}},
+      {icon = item_icons .. "transit-authorization.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
+    }),
+    hidden = true,
+    hidden_in_factoriopedia = true,
+    stack_size = 1,
+    spoil_ticks = 1,
+    spoil_to_trigger_result = {
+      items_per_trigger = 1,
+      trigger = {
+        type = "direct",
+        action_delivery = {
+          type = "instant",
+          source_effects = {
+            {type = "script", effect_id = "administratorio-" .. variant.spitter .. "-tourism-departure"},
+          },
+        },
+      },
+    },
   }
 end
 

@@ -1492,36 +1492,51 @@ test("gleba yellow paperwork gates orbital spitter tourism with two-color forms"
     {
       package_item = "small-spitter-tourism-package",
       tourist_item = "small-space-tourist",
+      departure_item = "small-departing-space-tourist",
       tourism_recipe = "small-spitter-space-tourism",
+      checkout_recipe = "small-space-tourist-checkout",
       jettison_recipe = "small-space-tourist-jettison",
-      bond_payout = 2,
+      asteroid_snacks = { ["metallic-asteroid-chunk"] = 1 },
+      taxpayer_payout = 100,
     },
     {
       package_item = "medium-spitter-tourism-package",
       tourist_item = "medium-space-tourist",
+      departure_item = "medium-departing-space-tourist",
       tourism_recipe = "medium-spitter-space-tourism",
+      checkout_recipe = "medium-space-tourist-checkout",
       jettison_recipe = "medium-space-tourist-jettison",
-      bond_payout = 4,
+      asteroid_snacks = { ["metallic-asteroid-chunk"] = 1, ["carbonic-asteroid-chunk"] = 1 },
+      taxpayer_payout = 200,
     },
     {
       package_item = "big-spitter-tourism-package",
       tourist_item = "big-space-tourist",
+      departure_item = "big-departing-space-tourist",
       tourism_recipe = "big-spitter-space-tourism",
+      checkout_recipe = "big-space-tourist-checkout",
       jettison_recipe = "big-space-tourist-jettison",
-      bond_payout = 9,
+      asteroid_snacks = { ["oxide-asteroid-chunk"] = 1, ["metallic-asteroid-chunk"] = 1, ["carbonic-asteroid-chunk"] = 1 },
+      taxpayer_payout = 450,
     },
     {
       package_item = "behemoth-spitter-tourism-package",
       tourist_item = "behemoth-space-tourist",
+      departure_item = "behemoth-departing-space-tourist",
       tourism_recipe = "behemoth-spitter-space-tourism",
+      checkout_recipe = "behemoth-space-tourist-checkout",
       jettison_recipe = "behemoth-space-tourist-jettison",
-      bond_payout = 24,
+      asteroid_snacks = { ["oxide-asteroid-chunk"] = 2, ["metallic-asteroid-chunk"] = 2, ["carbonic-asteroid-chunk"] = 2 },
+      taxpayer_payout = 1200,
     },
   }
 
   for _, variant in ipairs(expected) do
     assert_true(items[variant.package_item] ~= nil, variant.package_item .. " missing")
     assert_true(items[variant.tourist_item] ~= nil, variant.tourist_item .. " missing")
+    local departure_item = assert(items[variant.departure_item], variant.departure_item .. " missing")
+    assert_true(departure_item.hidden, variant.departure_item .. " should remain an implementation detail")
+    assert_eq(departure_item.spoil_ticks, 1, variant.departure_item .. " should release immediately after checkout")
 
     local tourism_recipe = assert(recipes[variant.tourism_recipe], variant.tourism_recipe .. " missing")
     assert_eq(tourism_recipe.category, "orbital-bureaucracy", variant.tourism_recipe .. " should use orbital-bureaucracy")
@@ -1531,14 +1546,32 @@ test("gleba yellow paperwork gates orbital spitter tourism with two-color forms"
     assert_true(has_ingredient(tourism_recipe, "orbital-operations-form"), variant.tourism_recipe .. " should use local orbital paperwork")
     assert_true(not has_ingredient(tourism_recipe, "transit-authorization"), variant.tourism_recipe .. " should not import terrestrial paperwork")
     assert_true(not has_ingredient(tourism_recipe, "cyan-yellow-form"), variant.tourism_recipe .. " should not require cyan-yellow-form directly in orbit")
-    assert_true(has_result(tourism_recipe, variant.tourist_item), variant.tourism_recipe .. " should emit a paid tourist")
-    assert_eq(get_result_amount(tourism_recipe, "treasury-bond"), variant.bond_payout,
-      variant.tourism_recipe .. " should pay the expected bond amount")
+    for asteroid_item, amount in pairs(variant.asteroid_snacks) do
+      assert_eq(ingredient_amount(tourism_recipe, asteroid_item), amount,
+        variant.tourism_recipe .. " should consume its size-matched asteroid snack")
+    end
+    assert_true(has_result(tourism_recipe, variant.tourist_item), variant.tourism_recipe .. " should emit a fulfilled tourist")
+    assert_true(not has_result(tourism_recipe, "treasury-bond"),
+      variant.tourism_recipe .. " should defer all revenue until Nauvis checkout")
     assert_true(not has_result(tourism_recipe, "government-grant"),
       variant.tourism_recipe .. " should not award megaproject grants")
     assert_true(not has_result(tourism_recipe, "taxpayer-money"),
       variant.tourism_recipe .. " should not mint loose taxpayer money in orbit")
     assert_true(tech_unlocks_recipe(technologies["cyan-yellow-bureaucracy"], variant.tourism_recipe), "cyan-yellow-bureaucracy should unlock " .. variant.tourism_recipe)
+
+    local checkout = assert(recipes[variant.checkout_recipe], variant.checkout_recipe .. " missing")
+    assert_eq(checkout.category, "bureaucracy-registration", variant.checkout_recipe .. " should run in an Administrative Office Desk")
+    assert_eq(exact_surface_planet(checkout), "nauvis", variant.checkout_recipe .. " should stay on Nauvis")
+    assert_eq(ingredient_amount(checkout, variant.tourist_item), 1, variant.checkout_recipe .. " should consume one fulfilled tourist")
+    assert_eq(get_fluid_ingredient_amount(checkout, "liquid-coffee"), 10, variant.checkout_recipe .. " should serve checkout coffee")
+    assert_eq(get_result_amount(checkout, "taxpayer-money"), variant.taxpayer_payout,
+      variant.checkout_recipe .. " should pay the bond-equivalent taxpayer revenue")
+    assert_eq(get_result_amount(checkout, variant.departure_item), 1,
+      variant.checkout_recipe .. " should release exactly one tourist")
+    assert_true(not has_result(checkout, "treasury-bond"), variant.checkout_recipe .. " should pay taxpayer money, not bonds")
+    assert_eq(checkout.allow_productivity, false, variant.checkout_recipe .. " should not duplicate tourists or revenue")
+    assert_true(tech_unlocks_recipe(technologies["cyan-yellow-bureaucracy"], variant.checkout_recipe),
+      "cyan-yellow-bureaucracy should unlock " .. variant.checkout_recipe)
 
     assert_true(recipes[variant.jettison_recipe] == nil, variant.jettison_recipe .. " should be removed")
     assert_true(not tech_unlocks_recipe(technologies["cyan-yellow-bureaucracy"], variant.jettison_recipe),
