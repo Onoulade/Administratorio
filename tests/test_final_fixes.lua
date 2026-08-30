@@ -381,6 +381,13 @@ data.raw.item["plastic-bar"] = {
   icon = "__base__/graphics/icons/plastic-bar.png",
   icon_size = 64,
 }
+data.raw.item["iron-stick"] = {
+  type = "item",
+  name = "iron-stick",
+  stack_size = 100,
+  icon = "__base__/graphics/icons/iron-stick.png",
+  icon_size = 64,
+}
 data.raw.item["cargo-bay"] = {
   type = "item",
   name = "cargo-bay",
@@ -494,6 +501,14 @@ data.raw.tool["automation-science-pack"] = {
   subgroup = "science-pack",
   stack_size = 200,
   icon = "__base__/graphics/icons/automation-science-pack.png",
+  icon_size = 64,
+}
+data.raw.tool["chemical-science-pack"] = {
+  type = "tool",
+  name = "chemical-science-pack",
+  subgroup = "science-pack",
+  stack_size = 200,
+  icon = "__base__/graphics/icons/chemical-science-pack.png",
   icon_size = 64,
 }
 data.raw.tool["space-science-pack"] = {
@@ -1369,6 +1384,34 @@ recipes["plastic-bar"] = {
   },
 }
 
+recipes["chemical-science-pack"] = {
+  type = "recipe",
+  name = "chemical-science-pack",
+  category = "crafting-with-fluid",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "iron-plate", amount = 1 },
+    { type = "item", name = "sulfur", amount = 1 },
+    { type = "fluid", name = "water", amount = 30 },
+  },
+  results = {
+    { type = "item", name = "chemical-science-pack", amount = 2 },
+  },
+}
+
+recipes["iron-stick"] = {
+  type = "recipe",
+  name = "iron-stick",
+  category = "crafting",
+  enabled = true,
+  ingredients = {
+    { type = "item", name = "iron-plate", amount = 1 },
+  },
+  results = {
+    { type = "item", name = "iron-stick", amount = 2 },
+  },
+}
+
 recipes["sulfur"] = {
   type = "recipe",
   name = "sulfur",
@@ -1933,6 +1976,35 @@ test("heat-pipe batches at 10x", function()
     "heat-pipe should show the 10x overlay")
 end)
 
+test("bulk badges show the final result quantity, not only the policy multiplier", function()
+  local cases = {
+    {recipe = "plastic-bar", product = "plastic-bar", batch = 20, old_multiplier = 10},
+    {recipe = "chemical-science-pack", product = "chemical-science-pack", batch = 4, old_multiplier = 2},
+    {recipe = "sulfur", product = "sulfur", batch = 20, old_multiplier = 10},
+    {recipe = "iron-stick-regulated", product = "iron-stick", batch = 10, old_multiplier = 5},
+  }
+
+  for _, case in ipairs(cases) do
+    local recipe = get_recipe(case.recipe)
+    assert_true(recipe ~= nil, case.recipe .. " missing")
+    assert_eq(get_result_amount(recipe, case.product), case.batch,
+      case.recipe .. " should produce its expected final batch")
+
+    for digit in tostring(case.batch):gmatch(".") do
+      assert_true(has_icon_layer(recipe, "__base__/graphics/icons/signal/signal_" .. digit .. ".png"),
+        case.recipe .. " should show a " .. case.batch .. "x overlay")
+    end
+    if case.old_multiplier ~= case.batch then
+      local old_first_digit = tostring(case.old_multiplier):sub(1, 1)
+      local batch_first_digit = tostring(case.batch):sub(1, 1)
+      if old_first_digit ~= batch_first_digit then
+        assert_true(not has_icon_layer(recipe, "__base__/graphics/icons/signal/signal_" .. old_first_digit .. ".png"),
+          case.recipe .. " should not show its policy multiplier as the batch")
+      end
+    end
+  end
+end)
+
 test("plain pipes are paperwork-free while underground pipes use 5x construction batches", function()
   local pipe = get_recipe("pipe-regulated")
   assert_true(pipe ~= nil, "pipe-regulated missing")
@@ -1956,8 +2028,10 @@ test("plain pipes are paperwork-free while underground pipes use 5x construction
     "underground pipe ingredients should use a 5x batch")
   assert_eq(get_result_amount(underground, "pipe-to-ground"), 10,
     "underground pipe results should use a 5x batch")
-  assert_true(has_icon_layer(underground, "__base__/graphics/icons/signal/signal_5.png"),
-    "underground pipe should show the 5x overlay")
+  assert_true(has_icon_layer(underground, "__base__/graphics/icons/signal/signal_1.png"),
+    "underground pipe should show the 10x overlay")
+  assert_true(has_icon_layer(underground, "__base__/graphics/icons/signal/signal_0.png"),
+    "underground pipe should show the 10x overlay")
 end)
 
 test("fluid-only recipes retain native quantities and do not display a bulk overlay", function()
@@ -2619,8 +2693,10 @@ test("admin building regulated recipes batch and show overlays", function()
   local pipe = get_recipe("pneumatic-pipe-regulated")
   assert_true(pipe ~= nil, "pneumatic-pipe-regulated missing")
   assert_eq(get_result_amount(pipe, "pneumatic-pipe"), 10, "pneumatic-pipe-regulated should use a 5x tool batch")
-  assert_true(has_icon_layer(pipe, "__base__/graphics/icons/signal/signal_5.png"),
-    "pneumatic-pipe-regulated should show the 5x overlay")
+  assert_true(has_icon_layer(pipe, "__base__/graphics/icons/signal/signal_1.png"),
+    "pneumatic-pipe-regulated should show the 10x overlay")
+  assert_true(has_icon_layer(pipe, "__base__/graphics/icons/signal/signal_0.png"),
+    "pneumatic-pipe-regulated should show the 10x overlay")
 
   local intake = get_recipe("tube-intake-regulated")
   assert_true(intake ~= nil, "tube-intake-regulated missing")

@@ -730,7 +730,37 @@ local function get_recipe_base_icons(recipe)
   return nil
 end
 
-local function apply_bulk_recipe_icon_overlay(recipe, multiplier)
+-- Read the quantity from the post-regulation recipe rather than rebuilding it
+-- from the policy multiplier.  A recipe can already produce multiple items per
+-- native craft (plastic and sulfur produce two), so the multiplier alone is
+-- not the batch shown to the player.
+local function get_primary_result_batch(recipe)
+  local target = recipe and (recipe.normal or recipe)
+  if not target then return nil end
+
+  local product_name, product_type = get_primary_result_name_and_type(recipe)
+  if not product_name or product_type ~= "item" then return nil end
+
+  local results = target.results or (target.result and {{
+    name = target.result,
+    amount = target.result_count or 1,
+  }}) or {}
+  for _, result in ipairs(results) do
+    local result_name = result.name or result[1]
+    if result_name == product_name and (result.type == nil or result.type == "item") then
+      if result.amount then return result.amount end
+      if result.amount_min and result.amount_max
+          and result.amount_min == result.amount_max then
+        return result.amount_min
+      end
+      return nil
+    end
+  end
+
+  return nil
+end
+
+local function apply_bulk_recipe_icon_overlay(recipe)
   if not recipe then return end
 
   local _, product_type = get_primary_result_name_and_type(recipe)
@@ -739,11 +769,12 @@ local function apply_bulk_recipe_icon_overlay(recipe, multiplier)
   local icons = get_recipe_base_icons(recipe)
   if not icons then return end
 
-  if multiplier and multiplier > 1 then
-    local multiplier_text = tostring(multiplier)
+  local batch_amount = get_primary_result_batch(recipe)
+  if batch_amount and batch_amount > 1 then
+    local batch_text = tostring(batch_amount)
     local start_x = -14
-    for i = 1, #multiplier_text do
-      local digit = multiplier_text:sub(i, i)
+    for i = 1, #batch_text do
+      local digit = batch_text:sub(i, i)
       table.insert(icons, {
         icon = "__base__/graphics/icons/signal/signal_" .. digit .. ".png",
         icon_size = 64,
@@ -978,7 +1009,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
 
   local multiplier = get_recipe_batch_multiplier(name, recipe)
   regulate_recipe(recipe, operating_form, multiplier)
-  apply_bulk_recipe_icon_overlay(recipe, multiplier)
+  apply_bulk_recipe_icon_overlay(recipe)
 
   ::next_operating_recipe::
 end
@@ -1060,7 +1091,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     -------------------------------------------------------------------------
     recipe.category = regulated_cat
     regulate_recipe(recipe, regulated_paperwork, multiplier)
-    apply_bulk_recipe_icon_overlay(recipe, multiplier)
+    apply_bulk_recipe_icon_overlay(recipe)
     recipe.hide_from_player_crafting = false
 
     -- Inject taxpayer-money for expensive late-game items
@@ -1088,7 +1119,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     regulated.category = regulated_cat
 
     regulate_recipe(regulated, regulated_paperwork, multiplier)
-    apply_bulk_recipe_icon_overlay(regulated, multiplier)
+    apply_bulk_recipe_icon_overlay(regulated)
 
     -- Inject taxpayer-money for expensive late-game items
     local money_cost = shared.TAXPAYER_MONEY_COSTS[name]
@@ -1119,7 +1150,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
       recipe.hide_from_player_crafting = true
     elseif not is_t0 then
       batch_original_with_form(recipe, handcraft_paperwork, multiplier)
-      apply_bulk_recipe_icon_overlay(recipe, multiplier)
+      apply_bulk_recipe_icon_overlay(recipe)
     end
 
   end
@@ -1260,7 +1291,7 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
 
   local multiplier = get_recipe_batch_multiplier(recipe_name, recipe)
   regulate_admin_building(regulated, multiplier, recipe_name)
-  apply_bulk_recipe_icon_overlay(regulated, multiplier)
+  apply_bulk_recipe_icon_overlay(regulated)
 
   table.insert(admin_building_regulated, regulated)
   regulated_factoriopedia_products[recipe_name] = true
