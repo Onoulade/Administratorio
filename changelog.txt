@@ -5,6 +5,7 @@ Date: 2026-08-27
     - localize and gate trajectory jurisdiction
     - prevent circuit-controlled pneumatic intakes from racing signal updates
     - prevent normal-mode protest routing from attacking blocking buildings
+    - keep taxpayer money available in inserter and logistic filter selectors
   Balancing:
     - smooth and boost voluntary miner damage
     - reduce trajectory array power draw

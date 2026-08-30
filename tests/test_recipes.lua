@@ -1060,6 +1060,21 @@ test("coffee beans stack to 50", function()
   assert_eq(bean.stack_size, 50)
 end)
 
+test("taxpayer money stays available in inserter filter selection", function()
+  local money = data.raw.item["taxpayer-money"]
+  assert_true(money ~= nil, "taxpayer-money item missing")
+  assert_true(money.flags ~= nil, "taxpayer-money item flags missing")
+
+  local always_show = false
+  for _, flag in ipairs(money.flags) do
+    if flag == "always-show" then
+      always_show = true
+      break
+    end
+  end
+  assert_true(always_show, "taxpayer-money needs always-show because it has no unlocked production recipe")
+end)
+
 test("coffee-refining does not require work-order", function()
   local r = get_recipe("coffee-refining")
   assert_true(not has_ingredient(r, "work-order"), "coffee refining should not need work-order")

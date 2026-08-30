@@ -43,7 +43,14 @@ data:extend({
   },
 
   -- Money
-  { type = "item", name = "taxpayer-money",   icon = item_icons .. "taxpayer-money.png",   icon_size = 64, subgroup = "admin-money", order = "a", stack_size = 200, fuel_category = "administratorio-taxpayer-money", fuel_value = "500kJ", fuel_emissions_multiplier = 1.5 },
+  {
+    type = "item", name = "taxpayer-money",
+    icon = item_icons .. "taxpayer-money.png", icon_size = 64,
+    subgroup = "admin-money", order = "a", stack_size = 200,
+    flags = {"always-show"},
+    fuel_category = "administratorio-taxpayer-money", fuel_value = "500kJ",
+    fuel_emissions_multiplier = 1.5,
+  },
   { type = "item", name = "treasury-bond",    icon = item_icons .. "treasury-bond.png",    icon_size = 64, subgroup = "admin-money", order = "b", stack_size = 200 },
   { type = "item", name = "government-grant", icon = item_icons .. "government-grant.png", icon_size = 64, subgroup = "admin-money", order = "c", stack_size = 100 },
 
