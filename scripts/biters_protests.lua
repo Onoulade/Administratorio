@@ -1754,6 +1754,14 @@ function M.new(deps)
         end
       end
     end
+
+    -- Normal mode citizens may use a real opening, but they must never make
+    -- one with their teeth.  Destructive route recovery belongs exclusively
+    -- to hard mode, just like every other biter attack on player property.
+    if not hard_mode_enabled() then
+      return defer_desk_route_breach(info, entity)
+    end
+
     info.desk_route_breach_gap_checked_target_unit_number = obstacle.unit_number
     local unit_number = entity.unit_number or info.tracked_unit_number or 0
     info.desk_route_gap_next_check_tick = game.tick
@@ -1794,6 +1802,9 @@ function M.new(deps)
 
   local function process_desk_route_breach(info, entity)
     if not info or info.state ~= "pathfinding" or not entity or not entity.valid then return false end
+    if info.desk_route_breach_attacking and not hard_mode_enabled() then
+      return defer_desk_route_breach(info, entity)
+    end
     if info.desk_route_gap_waypoint then
       entity.active = true
       local timeout = C.DESK_ROUTE_STALL_TICKS or (10 * 60)
@@ -2460,9 +2471,6 @@ function M.new(deps)
       return true
     end
 
-    info.pending_protest_candidates = nil
-    clear_protest_approach(info, candidate.target)
-
     if obstacle_kind == "pipe-breach"
        and not opts.skip_gap
        and game.tick >= (info.protest_pipe_gap_failed_until_tick or 0) then
@@ -2475,6 +2483,7 @@ function M.new(deps)
           defer_protest_target_retry(info, entity, C.PROTEST_PATH_BUSY_RETRY_TICKS or 60, load_factor)
           return true
         end
+        clear_protest_approach(info, candidate.target)
         if begin_protest_approach(
           info,
           entity,
@@ -2486,6 +2495,7 @@ function M.new(deps)
             route_goal = candidate.pos,
           }
         ) then
+          info.pending_protest_candidates = nil
           info.protest_pipe_gap_waypoint = {x = gap_waypoint.x, y = gap_waypoint.y}
           info.protest_pipe_gap_goal = {x = candidate.pos.x, y = candidate.pos.y}
           info.protest_pipe_gap_goal_target = candidate.target
@@ -2498,9 +2508,16 @@ function M.new(deps)
     end
 
     -- Capacity rejection is an administrative failure, not a pathfinding
-    -- obstruction. Such protesters may look for another route or destination,
-    -- but must never demolish a building merely because the desk was full.
-    if info.allow_obstacle_breach == false then
+    -- obstruction. More generally, normal-mode protests only disable their
+    -- selected target; destructive route clearing is a hard-mode escalation.
+    -- In both cases the biter keeps the grievance and retries harmlessly.
+    if info.allow_obstacle_breach == false or not hard_mode_enabled() then
+      if not hard_mode_enabled() and opts.try_next_candidate_on_no_obstacle then
+        -- In normal mode the nearby building is not a breach candidate at all.
+        -- Let the caller validate another protest destination immediately
+        -- instead of repeatedly selecting the same unreachable printer row.
+        return false
+      end
       info.pending_protest_candidates = nil
       clear_protest_approach(info, candidate.target)
       defer_protest_target_retry(
@@ -2512,6 +2529,9 @@ function M.new(deps)
       render.ensure_protest_rendering(info)
       return true
     end
+
+    info.pending_protest_candidates = nil
+    clear_protest_approach(info, candidate.target)
 
     local configured_attacker_limit = load_factor > 1
       and (C.PROTEST_OBSTACLE_ATTACKER_LIMIT_HIGH_LOAD or 1)
@@ -2912,7 +2932,7 @@ function M.new(deps)
       clear_protest_obstacle_attack_runtime(info, entity)
       return true
     end
-    if info.allow_obstacle_breach == false then
+    if info.allow_obstacle_breach == false or not hard_mode_enabled() then
       clear_protest_obstacle_attack_runtime(info, entity)
       defer_protest_target_retry(info, entity, C.PROTEST_OBSTACLE_RETRY_TICKS or (3 * 60))
       return true
@@ -3988,6 +4008,10 @@ function M.new(deps)
     end
 
     if info.state == "pathfinding" and info.desk_route_breach_attacking then
+      if not hard_mode_enabled() then
+        defer_desk_route_breach(info, entity)
+        return
+      end
       info.desk_route_breach_command_pending = nil
       local obstacle = info.desk_route_breach_target
       if not obstacle or not obstacle.valid then
@@ -4110,6 +4134,15 @@ function M.new(deps)
     end
 
     if info.protest_obstacle_attacking then
+      if not hard_mode_enabled() then
+        clear_protest_obstacle_attack_runtime(info, entity)
+        defer_protest_target_retry(
+          info,
+          entity,
+          C.PROTEST_OBSTACLE_RETRY_TICKS or (3 * 60)
+        )
+        return
+      end
       info.protest_obstacle_command_pending = nil
       local obstacle = info.protest_obstacle_target
       if not obstacle or not obstacle.valid then

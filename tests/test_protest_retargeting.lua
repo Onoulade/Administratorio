@@ -584,8 +584,8 @@ test("a wall-side protester bypasses a saturated long-path slot for one capped g
   assert_true(info.protest_pipe_gap_route_active == true, "the gap route should occupy the bounded local recovery slot")
 end)
 
-test("a stale saved path request detaches into an explicit building attack", function()
-  local ctx = new_test_context(false, {
+test("a stale saved path request detaches into an explicit hard-mode building attack", function()
+  local ctx = new_test_context(true, {
     PROTEST_PATH_REQUEST_TIMEOUT_TICKS = 60,
   })
   local target = new_target(ctx.surface, 108, 20, 20)
@@ -982,8 +982,8 @@ test("preserved immediate protest starts moving toward a target immediately", fu
   assert_eq(command.destination.y, info.protest_anchor_position.y, "move command should use the protest anchor y")
 end)
 
-test("preserved immediate protest attacks the nearest eligible blocking building", function()
-  local ctx = new_test_context()
+test("hard-mode protest attacks the nearest eligible blocking building", function()
+  local ctx = new_test_context(true)
   local target = new_target(ctx.surface, 99, 20, 20)
   local pipe = new_obstacle(ctx.surface, 198, 4.5, 4.5, "pipe")
   local underground_pipe = new_obstacle(ctx.surface, 197, 5, 5, "pipe-to-ground")
@@ -1054,6 +1054,84 @@ test("preserved immediate protest attacks the nearest eligible blocking building
   assert_eq(entity.force, game.forces.neutral, "route resumption should restore the managed ceasefire force")
 end)
 
+test("normal-mode protest never attacks a blocking printer", function()
+  local ctx = new_test_context(false)
+  local target = new_target(ctx.surface, 300, 20, 20)
+  local fallback_target = new_target(ctx.surface, 304, 30, 30)
+  local printer = new_obstacle(ctx.surface, 301, 6, 6, "assembling-machine", "printer-t1")
+  ctx.set_protest_targets({target, fallback_target})
+  ctx.set_protest_obstacles({printer})
+
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 4, y = 4},
+    force = "player",
+  }
+  assert_true(ctx.controller.trigger_immediate_protest(
+    entity,
+    ctx.surface,
+    nil,
+    {preserve_entity = true}
+  ), "normal-mode protest should remain managed")
+
+  ctx.controller.on_script_path_request_finished{
+    id = ctx.get_pending_request_id(),
+    path = nil,
+  }
+
+  local info = storage.waiting_biters[entity.unit_number]
+  assert_eq(ctx.get_attack_command_count(), 0,
+    "normal mode must not attack a printer that blocks the protest route")
+  assert_true(info.protest_obstacle_attacking ~= true,
+    "normal mode must not enter destructive route recovery")
+  assert_true(info.pending_path_request_id ~= nil,
+    "blocked normal-mode protesters should validate another destination")
+  assert_eq(info.pending_protest_reserved_target, fallback_target,
+    "normal mode should skip the blocked printer route instead of repeatedly retrying it")
+  assert_eq(entity.force, game.forces.neutral,
+    "blocked normal-mode protesters must stay on the managed ceasefire force")
+end)
+
+test("normal mode disarms a saved printer breach immediately", function()
+  local ctx = new_test_context(false)
+  local target = new_target(ctx.surface, 302, 20, 20)
+  local printer = new_obstacle(ctx.surface, 303, 6, 6, "assembling-machine", "printer-t1")
+  local entity = ctx.surface.create_entity{
+    name = "small-biter",
+    position = {x = 4, y = 4},
+    force = "administratorio-hard-mode-biters",
+  }
+  local info = {
+    state = "protesting",
+    entity = entity,
+    tracked_unit_number = entity.unit_number,
+    target_building = target,
+    protest_obstacle_attacking = true,
+    protest_obstacle_goal = {x = target.position.x, y = target.position.y},
+    protest_obstacle_goal_target = target,
+    protest_obstacle_target = printer,
+    protest_obstacle_target_kind = "building",
+    protest_obstacle_target_unit_number = printer.unit_number,
+  }
+  storage.waiting_biters[entity.unit_number] = info
+  storage.waiting_biter_state_index.protesting[entity.unit_number] = true
+  storage.protest_obstacle_attackers = {[entity.unit_number] = true}
+
+  ctx.controller.on_ai_command_completed{
+    unit_number = entity.unit_number,
+    result = defines.behavior_result.fail,
+  }
+
+  assert_eq(ctx.get_attack_command_count(), 0,
+    "loading a normal-mode breach must not reissue the printer attack")
+  assert_true(info.protest_obstacle_attacking ~= true,
+    "saved normal-mode breach state should be cleared")
+  assert_true(info.protest_path_retry_deferred == true,
+    "the recovered protester should return to harmless retry routing")
+  assert_eq(entity.force, game.forces.neutral,
+    "the recovered protester should immediately regain its ceasefire force")
+end)
+
 test("a full destination never authorizes a soft-mode building breach", function()
   local ctx = new_test_context(false)
   local target = new_target(ctx.surface, 299, 20, 20)
@@ -1117,7 +1195,7 @@ test("normal-load path failure tries the next historic protest candidate when no
 end)
 
 test("building breach selection never turns around to attack an obstruction behind the route", function()
-  local ctx = new_test_context()
+  local ctx = new_test_context(true)
   local target = new_target(ctx.surface, 117, 20, 4)
   local behind = new_obstacle(ctx.surface, 226, 3, 4, "furnace", "stone-furnace")
   local forward = new_obstacle(ctx.surface, 227, 6, 4, "furnace", "stone-furnace")
@@ -1139,7 +1217,7 @@ test("building breach selection never turns around to attack an obstruction behi
 end)
 
 test("failed protest paths may breach one aligned regular pipe without retargeting the protest", function()
-  local ctx = new_test_context()
+  local ctx = new_test_context(true)
   local target = new_target(ctx.surface, 110, 20, 20)
   local pipe = new_obstacle(ctx.surface, 210, 5, 5, "pipe")
   ctx.set_protest_targets({target})
@@ -1346,7 +1424,7 @@ test("a pipe behind a crossed wall is never selected for another breach", functi
 end)
 
 test("an active pipe breacher notices a newly opened wall gap", function()
-  local ctx = new_test_context()
+  local ctx = new_test_context(true)
   local target = new_target(ctx.surface, 166, 20, 6)
   local attacked_pipe = new_obstacle(ctx.surface, 270, 6, 5, "pipe")
   ctx.set_protest_targets({target})
@@ -1410,7 +1488,7 @@ test("underground pipes and transport infrastructure are never breach targets", 
 end)
 
 test("a failed desk route breaches an aligned pipe then resumes the same desk destination", function()
-  local ctx = new_test_context()
+  local ctx = new_test_context(true)
   local pipe = new_obstacle(ctx.surface, 221, 6, 6, "pipe")
   ctx.set_protest_obstacles({pipe})
   local entity = ctx.surface.create_entity{
@@ -1535,7 +1613,7 @@ test("a failed desk route uses an existing pipe-wall gap before breaching", func
 end)
 
 test("a saved desk-route pipe attacker migrates to an existing wall gap", function()
-  local ctx = new_test_context()
+  local ctx = new_test_context(true)
   local attacked_pipe = new_obstacle(ctx.surface, 250, 6, 5, "pipe")
   ctx.set_protest_obstacles({
     new_obstacle(ctx.surface, 249, 6, 4, "pipe"),
@@ -1573,7 +1651,7 @@ test("a saved desk-route pipe attacker migrates to an existing wall gap", functi
 end)
 
 test("protesters saved while protesting a pipe migrate to a real target and breach the old pipe", function()
-  local ctx = new_test_context()
+  local ctx = new_test_context(true)
   local real_target = new_target(ctx.surface, 113, 20, 20)
   local old_pipe_target = new_obstacle(ctx.surface, 223, 6, 6, "pipe")
   old_pipe_target.active = false
@@ -1613,7 +1691,7 @@ test("protesters saved while protesting a pipe migrate to a real target and brea
 end)
 
 test("an existing en-route protester stalled at a pipe enters breach mode", function()
-  local ctx = new_test_context()
+  local ctx = new_test_context(true)
   local real_target = new_target(ctx.surface, 114, 20, 20)
   local pipe = new_obstacle(ctx.surface, 224, 6, 6, "pipe")
   ctx.set_protest_targets({real_target})
@@ -1643,7 +1721,7 @@ test("an existing en-route protester stalled at a pipe enters breach mode", func
 end)
 
 test("a stalled desk command starts a bounded aligned pipe breach without an AI failure event", function()
-  local ctx = new_test_context()
+  local ctx = new_test_context(true)
   local pipe = new_obstacle(ctx.surface, 222, 15, 0, "pipe")
   ctx.set_protest_obstacles({pipe})
   local entity = ctx.surface.create_entity{
@@ -1675,7 +1753,7 @@ test("a stalled desk command starts a bounded aligned pipe breach without an AI 
 end)
 
 test("a surviving obstruction remains under continuous attack after transient command failures", function()
-  local ctx = new_test_context()
+  local ctx = new_test_context(true)
   local target = new_target(ctx.surface, 111, 20, 20)
   local obstacle = new_obstacle(ctx.surface, 215, 6, 6, "furnace", "stone-furnace")
   ctx.set_protest_targets({target})
@@ -1714,7 +1792,7 @@ test("a surviving obstruction remains under continuous attack after transient co
 end)
 
 test("destroying a breach route's grievance target stops pointless demolition and retargets", function()
-  local ctx = new_test_context()
+  local ctx = new_test_context(true)
   local removed_target = new_target(ctx.surface, 115, 20, 20)
   local replacement_target = new_target(ctx.surface, 116, 30, 30)
   local obstacle = new_obstacle(ctx.surface, 225, 6, 6, "furnace", "stone-furnace")
@@ -1746,7 +1824,7 @@ test("destroying a breach route's grievance target stops pointless demolition an
 end)
 
 test("obstruction attacks are capped while excess protesters remain deferred", function()
-  local ctx = new_test_context(false, {
+  local ctx = new_test_context(true, {
     PROTEST_OBSTACLE_ATTACKER_LIMIT = 1,
   })
   local target = new_target(ctx.surface, 109, 20, 20)

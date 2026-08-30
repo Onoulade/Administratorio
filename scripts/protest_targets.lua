@@ -33,8 +33,9 @@ local PROTEST_PROTECTED_NAMES = {
   ["resolution-office"] = true,
 }
 
--- Substantial structures that protesters may deliberately demolish after a
--- protest-target path request proves that they are blocked. Small transport
+-- Substantial structures that hard-mode protesters may deliberately demolish
+-- after a protest-target path request proves that they are blocked. Normal
+-- mode never uses this list for destructive routing. Small transport
 -- infrastructure is intentionally absent: belts, inserters, loaders, pipes,
 -- underground pipes, rails, poles, and combinators are never breach targets.
 local PROTEST_OBSTACLE_BUILDING_TYPES = {
