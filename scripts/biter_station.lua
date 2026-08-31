@@ -108,10 +108,11 @@ local function get_worker_entity_name()
   else return WORKER_ENTITY_NAME end
 end
 
-local function get_dispatch_salary(enablement_count)
-  local tier_salary = get_crafts_tier()
-  if enablement_count == nil then return tier_salary end
-  return math.min(tier_salary, math.max(1, enablement_count))
+local function get_dispatch_salary()
+  -- Labor Efficiency increases the number of buildings a worker can visit
+  -- during one circuit. The circuit still has one paycheck, regardless of
+  -- how many buildings it authorizes.
+  return C.BITER_STATION_SALARY
 end
 local MIN_PHASE_TRAVEL_DISTANCE = 0.75
 local PHASE_STUCK_TIMEOUT_TICKS = 90
@@ -1280,7 +1281,7 @@ local function dispatch_single_station_biter(station, queue)
     return false
   end
 
-  local dispatch_salary = get_dispatch_salary(#queue)
+  local dispatch_salary = get_dispatch_salary()
   local salary_paid = false
   if dispatch_requires_coffee(station) then
     if inv.remove({name = MONEY_ITEM_NAME, count = dispatch_salary}) < dispatch_salary then
@@ -1380,7 +1381,7 @@ local function dispatch_station_biters(station)
       queue_idx = queue_idx + 1
     end
 
-    local salary = get_dispatch_salary(#worker_queue)
+    local salary = get_dispatch_salary()
     if planned_salary + salary > money_count then
       break
     end
@@ -1389,7 +1390,7 @@ local function dispatch_station_biters(station)
   end
 
   if #worker_queues == 0 then
-    if money_count < get_dispatch_salary(math.min(enablements_per_trip, #queue)) then
+    if money_count < get_dispatch_salary() then
       set_station_status(station, "biter-station-no-money")
     else
       set_station_status(station, "biter-station-no-coffee")
@@ -1419,9 +1420,9 @@ local function finish_station_circuit(station_id, station, active_state)
     local inv = get_station_inventory(station)
     if inv then
       if not active_state.salary_paid then
-        local salary = active_state.dispatch_salary
-          or get_dispatch_salary(#(active_state.building_queue or {}))
-        inv.remove({name = MONEY_ITEM_NAME, count = salary})
+        -- Do not trust a serialized salary from an older version that scaled
+        -- the charge with Labor Efficiency or the number of stops.
+        inv.remove({name = MONEY_ITEM_NAME, count = get_dispatch_salary()})
       end
       maybe_reinsert_worker(station)
     end

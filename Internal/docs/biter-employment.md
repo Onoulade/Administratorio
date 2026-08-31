@@ -52,11 +52,13 @@ The biter station manages these building types:
 
 ### Worker Tier and Speed
 
-The biter station has a crafts-per-visit upgrade that affects both worker entity appearance and salary:
+The biter station has a crafts-per-visit upgrade that affects worker entity appearance and throughput:
 
-- **Tier 1** (1-2 crafts): small-biter entity, salary 1
-- **Tier 2** (3-4 crafts): biter-worker-t2 entity, salary 2
-- **Tier 3** (5+ crafts): biter-worker-t3 entity, salary 3
+- **Tier 1** (1-2 crafts): small-biter entity
+- **Tier 2** (3-4 crafts): biter-worker-t2 entity
+- **Tier 3** (5+ crafts): biter-worker-t3 entity
+
+Each worker circuit costs 1 taxpayer-money, regardless of how many buildings it authorizes during that trip.
 
 ### Night Shift
 

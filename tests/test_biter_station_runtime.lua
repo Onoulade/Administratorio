@@ -304,7 +304,7 @@ test("biter station keeps a triggered machine active until recipe progress wraps
   assert_eq(storage.managed_building_run[building.unit_number], nil, "completed recipe authorization should clear runtime state")
 end)
 
-test("labor efficiency charges only for the buildings assigned to a trip", function()
+test("labor efficiency charges one taxpayer money per trip", function()
   storage = {}
   package.loaded["scripts.biter_station"] = nil
   local surface = new_surface()
@@ -328,27 +328,34 @@ test("labor efficiency charges only for the buildings assigned to a trip", funct
   local station = new_station(surface, force, {
     inventory = {['biter-worker'] = 1, ['taxpayer-money'] = 1},
   })
-  local building = new_managed_building(surface, force)
+  local building_one = new_managed_building(surface, force, {unit_number = 20, position = {x = 2, y = 0}})
+  local building_two = new_managed_building(surface, force, {unit_number = 21, position = {x = 4, y = 0}})
+  local building_three = new_managed_building(surface, force, {unit_number = 22, position = {x = 6, y = 0}})
   biter_station.track_station(station)
-  biter_station.track_managed_building(building)
+  biter_station.track_managed_building(building_one)
+  biter_station.track_managed_building(building_two)
+  biter_station.track_managed_building(building_three)
   storage.biter_station_crafts_per_visit = 3
 
   biter_station.update(10)
 
   local active = active_worker()
-  assert_true(active ~= nil, "one funded assignment should dispatch at labor efficiency tier one")
-  assert_eq(#active.building_queue, 1, "worker trip should contain only the building that needs activation")
-  assert_eq(active.dispatch_salary, 1, "one-building trip should reserve one taxpayer money")
+  assert_true(active ~= nil, "one funded assignment should dispatch at labor efficiency tier two")
+  assert_eq(#active.building_queue, 3, "labor efficiency should put three buildings on one worker trip")
+  assert_eq(active.dispatch_salary, 1, "a multi-building trip should reserve one taxpayer money")
 
-  active.biter.position = {x = building.position.x, y = building.position.y}
+  assert_eq(station.inventory.get_item_count("taxpayer-money"), 1, "daytime dispatch should defer the one-trip charge until return")
+  active.current_idx = #(active.building_queue or {}) + 1
+  active.phase = "to_station"
+  active.phase_destination = station.position
+  active.phase_command_radius = 1.25
   active.phase_departed = true
-  biter_station.update(20)
-  assert_eq(active.phase, "to_station", "worker should return after its only assignment")
-
   active.biter.position = {x = station.position.x, y = station.position.y}
-  active.phase_departed = true
+  biter_station.update(20)
+  assert_eq(active.phase, "to_station", "worker should return after its assigned buildings")
+
   biter_station.update(30)
-  assert_eq(station.inventory.get_item_count("taxpayer-money"), 0, "completed one-building trip should charge exactly one taxpayer money")
+  assert_eq(station.inventory.get_item_count("taxpayer-money"), 0, "completed multi-building trip should charge exactly one taxpayer money")
 end)
 
 test("worker skips an unreachable second building instead of freezing in place", function()
