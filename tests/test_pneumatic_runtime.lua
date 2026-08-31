@@ -203,6 +203,32 @@ test("intakes wait one handler after publishing a changed signal set", function(
   assert_eq(storage.tube_signals[4]["paper"], 1, "settling must not duplicate the item")
 end)
 
+test("item-limit circuits use the authoritative pool when native state is stale", function()
+  local intake_source = new_inventory({name = "paper", count = 1})
+  local intake_behavior = {
+    disabled = false,
+    circuit_enable_disable = true,
+    circuit_condition = {first_signal = {type = "item", name = "paper"}, comparator = "<", constant = 1},
+  }
+  local intake = new_endpoint("tube-intake", intake_source, 501, intake_behavior)
+
+  storage = {
+    tube_intakes = {[501] = {entity = intake}},
+    tube_outtakes = {},
+    tube_signals = {[5] = { ["paper"] = 1 }},
+    tube_network_cache = {[501] = 5},
+    tube_network_disabled = {},
+    tube_network_dirty = false,
+  }
+
+  -- disabled == false is the stale native result; the authoritative pool is
+  -- already at the configured limit and must win for this simple condition.
+  pneumatic.on_pneumatic_tick()
+
+  assert_eq(intake_source[1].count, 1, "item-limit circuit must not consume above its limit")
+  assert_eq(storage.tube_signals[5]["paper"], 1, "item-limit circuit must not duplicate the item")
+end)
+
 -- Factorissimo compatibility: a tube network crosses a factory wall through the
 -- linked pump pair, and must not leak into the fluid network behind that pump.
 local function new_fluid_entity(spec)

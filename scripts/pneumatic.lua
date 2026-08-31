@@ -253,11 +253,54 @@ local function intake_circuit_allows(entity)
   return true
 end
 
-local function intake_has_circuit_condition(entity)
-  if not entity or not entity.valid or not entity.get_control_behavior then return false end
+local function get_intake_circuit_condition(entity)
+  if not entity or not entity.valid or not entity.get_control_behavior then return nil end
   local ok, behavior = pcall(function() return entity.get_control_behavior() end)
-  if not ok or not behavior then return false end
-  return behavior.circuit_enable_disable == true and behavior.circuit_condition ~= nil
+  if not ok or not behavior or behavior.circuit_enable_disable ~= true then return nil end
+  return behavior.circuit_condition
+end
+
+local function intake_has_circuit_condition(entity)
+  return get_intake_circuit_condition(entity) ~= nil
+end
+
+local function compare_circuit_value(value, comparator, constant)
+  if comparator == "<" then return value < constant end
+  if comparator == "<=" then return value <= constant end
+  if comparator == "=" then return value == constant end
+  if comparator == ">=" then return value >= constant end
+  if comparator == ">" then return value > constant end
+  if comparator == "!=" then return value ~= constant end
+  return nil
+end
+
+--- Evaluate the safe subset used for item-limit circuits against the script's
+--- authoritative pool.  The native circuit state can lag after a combinator
+--- update, but the pool itself cannot: accepting an item when `item < 1` is
+--- false here would be the duplicate-item race this module is trying to avoid.
+local function intake_authoritative_condition_allows(entity, pool, item_name)
+  local condition = get_intake_circuit_condition(entity)
+  if not condition or condition.second_signal then return true end
+
+  local first_signal = condition.first_signal
+  local constant = condition.constant
+  if not first_signal or first_signal.type ~= "item"
+      or first_signal.name ~= item_name or type(constant) ~= "number" then
+    return true
+  end
+
+  local signal_quality = first_signal.quality
+  local count = 0
+  for pool_key, pool_count in pairs(pool or {}) do
+    local pool_item, pool_quality = parse_pool_key(pool_key)
+    if pool_item == item_name
+        and (not signal_quality or signal_quality == "any" or signal_quality == pool_quality) then
+      count = count + pool_count
+    end
+  end
+
+  local result = compare_circuit_value(count, condition.comparator, constant)
+  return result == nil or result
 end
 
 local function inventory_filter_name(filter)
@@ -828,6 +871,12 @@ function M.on_pneumatic_tick()
 
         if not PNEUMATIC_SET[item_name] then
           set_intake_status_blocked(entity, "invalid-item")
+          goto next_intake
+        end
+
+        if not intake_authoritative_condition_allows(
+            entity, storage.tube_signals[net_id], item_name) then
+          set_intake_status_waiting(entity, "circuit-blocked")
           goto next_intake
         end
 

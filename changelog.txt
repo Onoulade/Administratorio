@@ -5,6 +5,7 @@ Date: 2026-08-27
     - preserve complaint tickets, resolution intermediates, and completed resolutions when a Resolution Office is destroyed, dropping them with a map alert
     - localize and gate trajectory jurisdiction
     - prevent circuit-controlled pneumatic intakes from racing signal updates
+    - enforce item-limit pneumatic circuits against authoritative network contents
     - prevent normal-mode protest routing from attacking blocking buildings
     - keep taxpayer money available in inserter and logistic filter selectors
   Balancing:
