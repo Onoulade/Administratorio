@@ -43,6 +43,7 @@ defines = {
     success = 0,
     fail = 1,
   },
+  entity_status = {working = 1, no_power = 2, idle = 3},
 }
 
 local protest_factory = dofile(mod_root .. "scripts/biters_protests.lua")
@@ -337,7 +338,7 @@ local function new_test_context(hard_mode_enabled, constant_overrides)
       ["resolution-office"] = true,
     },
     protest_target_names = {"office-desk"},
-    protest_target_types = {},
+    protest_target_types = constant_overrides and constant_overrides.PROTEST_TEST_TARGET_TYPES or {},
     adopt_redirected_biter = function(_, entity)
       adopt_count = adopt_count + 1
       return entity
@@ -2075,6 +2076,97 @@ test("ending a protest preserves a target that was already disabled", function()
   ctx.controller.reset_protest_targeting(info, 13)
 
   assert_eq(target.active, false, "a protest must not reactivate a target that was already disabled")
+end)
+
+test("unused furnaces are ignored while lifetime-productive furnaces remain meaningful", function()
+  local ctx = new_test_context(false, {PROTEST_TEST_TARGET_TYPES = {"furnace"}})
+  local unused = new_target(ctx.surface, 201, 4, 4)
+  unused.name, unused.type, unused.products_finished = "stone-furnace", "furnace", 0
+  local productive = new_target(ctx.surface, 202, 12, 12)
+  productive.name, productive.type, productive.products_finished = "steel-furnace", "furnace", 1
+  ctx.set_protest_targets({unused, productive})
+  local entity = ctx.surface.create_entity{name = "small-biter", position = {x = 0, y = 0}, force = "neutral"}
+
+  assert_true(ctx.controller.trigger_immediate_protest(entity, ctx.surface, nil, {preserve_entity = true}))
+  local info = storage.waiting_biters[entity.unit_number]
+  assert_true(info.pending_protest_reserved_target == productive,
+    "a productive furnace should win even when an unused decoy is closer")
+end)
+
+test("activity changes are rechecked against the cached building pool", function()
+  local ctx = new_test_context(false, {PROTEST_TEST_TARGET_TYPES = {"furnace"}})
+  local furnace = new_target(ctx.surface, 210, 8, 8)
+  furnace.name, furnace.type, furnace.products_finished = "stone-furnace", "furnace", 0
+  ctx.set_protest_targets({furnace})
+
+  local first = ctx.surface.create_entity{name = "small-biter", position = {x = 0, y = 0}, force = "neutral"}
+  assert_true(ctx.controller.trigger_immediate_protest(first, ctx.surface, nil, {preserve_entity = true}))
+  assert_true(storage.waiting_biters[first.unit_number].target_building == nil,
+    "an idle furnace must not be selected")
+
+  furnace.products_finished = 1
+  local second = ctx.surface.create_entity{name = "small-biter", position = {x = 1, y = 1}, force = "neutral"}
+  assert_true(ctx.controller.trigger_immediate_protest(second, ctx.surface, nil, {preserve_entity = true}))
+  assert_true(storage.waiting_biters[second.unit_number].pending_protest_reserved_target == furnace,
+    "a furnace that starts producing should be eligible before cache expiry")
+end)
+
+test("labs and mining drills qualify only while their native status is working", function()
+  local ctx = new_test_context(false, {PROTEST_TEST_TARGET_TYPES = {"lab", "mining-drill"}})
+  local idle_lab = new_target(ctx.surface, 203, 3, 3)
+  idle_lab.name, idle_lab.type, idle_lab.status = "lab", "lab", defines.entity_status.idle
+  local stopped_drill = new_target(ctx.surface, 204, 4, 4)
+  stopped_drill.name, stopped_drill.type, stopped_drill.status = "electric-mining-drill", "mining-drill", defines.entity_status.no_power
+  local working_lab = new_target(ctx.surface, 205, 10, 10)
+  working_lab.name, working_lab.type, working_lab.status = "lab", "lab", defines.entity_status.working
+  ctx.set_protest_targets({idle_lab, stopped_drill, working_lab})
+  local entity = ctx.surface.create_entity{name = "small-biter", position = {x = 0, y = 0}, force = "neutral"}
+
+  assert_true(ctx.controller.trigger_immediate_protest(entity, ctx.surface, nil, {preserve_entity = true}))
+  local info = storage.waiting_biters[entity.unit_number]
+  assert_true(info.pending_protest_reserved_target == working_lab,
+    "only a working lab or drill should enter target selection")
+end)
+
+test("debug belt targets bypass meaningful-work filtering", function()
+  local ctx = new_test_context(false, {PROTEST_TEST_TARGET_TYPES = {"transport-belt"}})
+  local belt = new_target(ctx.surface, 206, 6, 6)
+  belt.name, belt.type = "transport-belt", "transport-belt"
+  ctx.set_protest_targets({belt})
+  local entity = ctx.surface.create_entity{name = "small-biter", position = {x = 0, y = 0}, force = "neutral"}
+
+  assert_true(ctx.controller.trigger_immediate_protest(entity, ctx.surface, nil, {preserve_entity = true}))
+  assert_true(storage.waiting_biters[entity.unit_number].pending_protest_reserved_target == belt,
+    "diagnostic belt targets should remain selectable")
+end)
+
+test("only meaningless machines retain targetless protest wandering", function()
+  local ctx = new_test_context(false, {PROTEST_TEST_TARGET_TYPES = {"furnace"}})
+  local unused = new_target(ctx.surface, 207, 4, 4)
+  unused.name, unused.type, unused.products_finished = "stone-furnace", "furnace", 0
+  ctx.set_protest_targets({unused})
+  local entity = ctx.surface.create_entity{name = "small-biter", position = {x = 0, y = 0}, force = "neutral"}
+
+  assert_true(ctx.controller.trigger_immediate_protest(entity, ctx.surface, nil, {preserve_entity = true}))
+  local info = storage.waiting_biters[entity.unit_number]
+  assert_true(info.pending_path_request_id == nil, "an unused furnace must not receive a route reservation")
+  assert_true(info.target_building == nil, "targetless protesters should not claim an unused furnace")
+  assert_true(ctx.get_last_move_command() ~= nil, "the visible targetless wander should remain active")
+end)
+
+test("pneumatic endpoints remain excluded despite furnace or container prototypes", function()
+  local ctx = new_test_context(false, {PROTEST_TEST_TARGET_TYPES = {"furnace", "container"}})
+  local intake = new_target(ctx.surface, 208, 3, 3)
+  intake.name, intake.type, intake.products_finished = "tube-intake", "furnace", 99
+  local outtake = new_target(ctx.surface, 209, 4, 4)
+  outtake.name, outtake.type = "tube-outtake", "container"
+  ctx.set_protest_targets({intake, outtake})
+  local entity = ctx.surface.create_entity{name = "small-biter", position = {x = 0, y = 0}, force = "neutral"}
+
+  assert_true(ctx.controller.trigger_immediate_protest(entity, ctx.surface, nil, {preserve_entity = true}))
+  local info = storage.waiting_biters[entity.unit_number]
+  assert_true(info.target_building == nil, "pneumatic infrastructure must not become a protest target")
+  assert_true(ctx.get_last_move_command() ~= nil, "targetless protesters should continue wandering")
 end)
 
 print(string.format("\n=== PROTEST RETARGETING TESTS ==="))

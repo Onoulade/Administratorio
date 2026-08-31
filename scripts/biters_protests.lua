@@ -268,7 +268,34 @@ function M.new(deps)
     if not target or not target.valid then return false end
     if not target.force or target.force.name ~= "player" then return false end
     if deps.protest_protected_names[target.name] then return false end
-    return true
+    -- Pneumatic endpoints are infrastructure shells (the intake is a furnace
+    -- prototype for inserter validation, and the outtake is a container), not
+    -- productive machines. They have no meaningful work counter of their own.
+    if target.name == "tube-intake" or target.name == "tube-outtake" then
+      return false
+    end
+    if target.type == nil then return true end -- lightweight test/compatibility shim
+    -- Debug belt/inserter targets deliberately bypass meaningful-work checks.
+    if target.type == "transport-belt" or target.type == "underground-belt"
+       or target.type == "splitter" or target.type == "inserter" then
+      return protest_target_type_set[target.type] == true
+    end
+    -- products_finished is Factorio's lifetime CraftingMachine counter. It is
+    -- constant-time and needs no activity-history storage.
+    if target.type == "assembling-machine" or target.type == "furnace" then
+      -- nil is retained for lightweight test/compatibility entity shims; real
+      -- LuaCraftingMachine instances always expose the numeric counter.
+      return target.products_finished == nil or target.products_finished > 0
+    end
+    if target.type == "lab" or target.type == "mining-drill" then
+      return target.status == nil or target.status == defines.entity_status.working
+    end
+    if protest_target_name_set[target.name] then
+      return target.products_finished == nil or target.products_finished > 0
+    end
+    -- Explicit non-crafting names (notably tube endpoints) are not meaningful
+    -- until their owning subsystem supplies a cheap activity counter.
+    return false
   end
 
   local function build_protest_target_cache(surface, tick, targets)
@@ -313,7 +340,13 @@ function M.new(deps)
     local seen = {}
 
     local function add_if_valid(target)
-      if not is_eligible_protest_target(target) then return end
+      -- Cache the configured building pool, not a snapshot of activity. The
+      -- meaningful-work predicate must run at selection time so a furnace or
+      -- assembler that starts producing can become a target without waiting
+      -- for the cache TTL to expire.
+      if not target or not target.valid then return end
+      if not target.force or target.force.name ~= "player" then return end
+      if deps.protest_protected_names[target.name] then return end
       local key = target.unit_number
       if key and seen[key] then return end
 
