@@ -133,6 +133,46 @@ M.SPITTER_COMPLAINT_TIERS = {
   "ticket-loitering", "ticket-vagrancy"
 }
 
+-- Tickets and every item derived from them. Resolution Offices preserve only
+-- these irreplaceable case records when destroyed; ordinary recipe inputs keep
+-- vanilla destruction behaviour.
+M.COMPLAINT_PIPELINE_ITEMS = {
+  ["ticket-landscape"] = true,
+  ["filing-l"] = true,
+  ["resolved-landscape"] = true,
+  ["ticket-smog"] = true,
+  ["filing-s"] = true,
+  ["case-s"] = true,
+  ["resolved-smog"] = true,
+  ["ticket-noise"] = true,
+  ["filing-n"] = true,
+  ["case-n"] = true,
+  ["brief-n"] = true,
+  ["resolved-noise"] = true,
+  ["ticket-unemployment"] = true,
+  ["filing-u"] = true,
+  ["case-u"] = true,
+  ["brief-u"] = true,
+  ["resolved-unemployment"] = true,
+  ["ticket-littering"] = true,
+  ["filing-lt"] = true,
+  ["resolved-littering"] = true,
+  ["ticket-hazmat"] = true,
+  ["filing-h"] = true,
+  ["case-h"] = true,
+  ["resolved-hazmat"] = true,
+  ["ticket-loitering"] = true,
+  ["filing-lo"] = true,
+  ["case-lo"] = true,
+  ["brief-lo"] = true,
+  ["resolved-loitering"] = true,
+  ["ticket-vagrancy"] = true,
+  ["filing-v"] = true,
+  ["case-v"] = true,
+  ["brief-v"] = true,
+  ["resolved-vagrancy"] = true,
+}
+
 -- Entity name -> max complaint tier (1-4) based on size
 M.BITER_MAX_TIER = {
   ["small-biter"] = 1, ["medium-biter"] = 2,

@@ -37,6 +37,7 @@ local rideable_biter = require("scripts.rideable_biter")
 local spawner_population = require("scripts.spawner_population")
 local victory = require("scripts.victory")
 local admin_desk_rotation = require("scripts.admin_desk_rotation")
+local complaint_item_recovery = require("scripts.complaint_item_recovery")
 
 biter_station.set_biters_module(biters)
 biterport.set_biters_module(biters)
@@ -1884,6 +1885,7 @@ end
 
 local function on_entity_died(event)
   local entity = event.entity
+  complaint_item_recovery.on_entity_died(event)
   spawner_population.on_entity_died(entity)
   trajectory_compliance.on_entity_died(event)
   -- These systems own hidden children, registries, or in-flight cargo. Death
@@ -1929,6 +1931,7 @@ local ON_ENTITY_DIED_BASE_FILTERS = {
   {filter = "type", type = "pipe"},
   {filter = "type", type = "train-stop"},
   {filter = "name", name = "admin-station"},
+  {filter = "name", name = "resolution-office"},
   {filter = "name", name = "capture-bureau"},
   {filter = "name", name = "biter-station"},
   {filter = "name", name = "biterport"},
