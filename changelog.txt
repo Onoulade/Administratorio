@@ -1,4 +1,20 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.8
+Date: 2026-09-01
+  Bugfixes:
+    - harden pneumatic item limit circuits
+  Changes:
+    - Halve trajectory compliance array power draw
+    - Balance first-tier module paperwork costs
+    - Improve generated icon symbols
+    - Fix environmental report copy icon
+    - Fix handcrafting paperwork separation
+    - Align planetary administration research icons
+    - Fix admin capacity science gating
+    - Fix biter station trip salary
+    - Filter protests to meaningful active buildings
+    - Preserve complaint paperwork on office destruction
+---------------------------------------------------------------------------------------------------
 Version: 0.6.7
 Date: 2026-08-30
   Bugfixes:
