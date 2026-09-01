@@ -589,6 +589,33 @@ for _, belt_name in ipairs({"fast-transport-belt", "fast-underground-belt", "exp
   }
 end
 
+recipes["fast-splitter"] = {
+  type = "recipe",
+  name = "fast-splitter",
+  category = "pressing",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "splitter", amount = 1 },
+    { type = "item", name = "iron-gear-wheel", amount = 10 },
+    { type = "item", name = "electronic-circuit", amount = 10 },
+  },
+  results = {{ type = "item", name = "fast-splitter", amount = 1 }},
+}
+
+recipes["bulk-inserter"] = {
+  type = "recipe",
+  name = "bulk-inserter",
+  category = "crafting",
+  enabled = false,
+  ingredients = {
+    { type = "item", name = "iron-gear-wheel", amount = 30 },
+    { type = "item", name = "electronic-circuit", amount = 30 },
+    { type = "item", name = "advanced-circuit", amount = 2 },
+    { type = "item", name = "fast-inserter", amount = 2 },
+  },
+  results = {{ type = "item", name = "bulk-inserter", amount = 2 }},
+}
+
 recipes["pipe"] = {
   type = "recipe",
   name = "pipe",
@@ -1965,9 +1992,12 @@ test("repair-pack gets a bulked regulated AM recipe", function()
 end)
 
 test("heat-pipe batches at 10x", function()
-  local regulated = get_recipe("heat-pipe")
+  local original = get_recipe("heat-pipe")
+  local regulated = get_recipe("heat-pipe-regulated")
+  assert_true(original ~= nil, "heat-pipe missing")
   assert_true(regulated ~= nil, "heat-pipe missing")
-  assert_eq(regulated.category, "advanced-crafting-regulated", "heat-pipe category")
+  assert_eq(original.category, "advanced-crafting", "heat-pipe should remain handcraftable")
+  assert_eq(regulated.category, "advanced-crafting-regulated", "heat-pipe regulated category")
   assert_true(has_ingredient(regulated, "work-order"), "heat-pipe missing work-order")
   assert_eq(get_result_amount(regulated, "heat-pipe"), 10, "heat-pipe should batch to 10")
   assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_1.png"),
@@ -2222,31 +2252,49 @@ test("electric compacted rubble remains an unlocked alternate to the canonical b
   assert_eq(electric.factoriopedia_alternative, "compacted-rubble")
 end)
 
-test("electric furnace recipe upgrades to management verbal paperwork", function()
-  local r = get_recipe("electric-furnace")
-  assert_true(r ~= nil, "electric-furnace missing")
-  assert_eq(r.category, "advanced-crafting-regulated", "electric-furnace category")
-  assert_true(has_ingredient(r, "management-verbal-work-order"), "electric-furnace missing management-verbal-work-order")
-  assert_true(not has_ingredient(r, "construction-work-order"), "electric-furnace should not use construction-work-order")
+test("electric furnace stays handcraftable; regulated copy uses management verbal work order", function()
+  local original = get_recipe("electric-furnace")
+  assert_true(original ~= nil, "electric-furnace missing")
+  assert_eq(original.category, "advanced-crafting", "electric-furnace should remain handcraftable")
+  assert_true(has_ingredient(original, "management-approval-verbal"), "electric-furnace missing management-approval-verbal")
+  assert_true(not has_ingredient(original, "management-verbal-work-order"), "electric-furnace handcraft path should not use the regulated work-order form")
+
+  local regulated = get_recipe("electric-furnace-regulated")
+  assert_true(regulated ~= nil, "electric-furnace-regulated missing")
+  assert_eq(regulated.category, "advanced-crafting-regulated", "electric-furnace-regulated category")
+  assert_true(has_ingredient(regulated, "management-verbal-work-order"), "electric-furnace-regulated missing management-verbal-work-order")
+  assert_true(not has_ingredient(regulated, "construction-work-order"), "electric-furnace-regulated should not use construction-work-order")
 end)
 
-test("oil refinery is assembler-craftable without specialist or operating paperwork", function()
-  local r = get_recipe("oil-refinery")
-  assert_true(r ~= nil, "oil-refinery missing")
-  assert_eq(r.category, "crafting-regulated", "oil-refinery category")
-  assert_true(has_ingredient(r, "construction-work-order"), "oil-refinery missing construction-work-order")
-  assert_true(not has_ingredient(r, "chemical-operator"), "oil-refinery should not require chemical-operator")
-  assert_true(not has_ingredient(r, "chemical-handling-work-order"), "oil-refinery should not require chemical-handling-work-order")
-  assert_true(get_recipe("oil-refinery-regulated") == nil, "oil-refinery should use its canonical recipe as the regulated assembler recipe")
+test("oil refinery stays handcraftable and assembler-craftable without specialist paperwork", function()
+  local original = get_recipe("oil-refinery")
+  assert_true(original ~= nil, "oil-refinery missing")
+  assert_eq(original.category, "crafting", "oil-refinery should remain handcraftable")
+  assert_true(has_ingredient(original, "construction-permit"), "oil-refinery missing construction-permit")
+  assert_true(not has_ingredient(original, "chemical-operator"), "oil-refinery should not require chemical-operator")
+  assert_true(not has_ingredient(original, "chemical-handling-work-order"), "oil-refinery should not require chemical-handling-work-order")
+
+  local regulated = get_recipe("oil-refinery-regulated")
+  assert_true(regulated ~= nil, "oil-refinery-regulated missing")
+  assert_eq(regulated.category, "crafting-regulated", "oil-refinery-regulated category")
+  assert_true(has_ingredient(regulated, "construction-work-order"), "oil-refinery-regulated missing construction-work-order")
+  assert_true(not has_ingredient(regulated, "chemical-operator"), "oil-refinery-regulated should not require chemical-operator")
+  assert_true(not has_ingredient(regulated, "chemical-handling-work-order"), "oil-refinery-regulated should not require chemical-handling-work-order")
 end)
 
-test("engine units use baseline paperwork plus carbon offsets", function()
-  local r = get_recipe("engine-unit")
-  assert_true(r ~= nil, "engine-unit missing")
-  assert_eq(r.category, "crafting-regulated", "engine-unit category")
-  assert_true(has_ingredient(r, "work-order"), "engine-unit missing work-order")
-  assert_true(has_ingredient(r, "carbon-offset-certificate-basic"), "engine-unit missing carbon-offset-certificate-basic")
-  assert_true(not has_ingredient(r, "management-verbal-work-order"), "engine-unit should not use management-verbal-work-order")
+test("engine units stay handcraftable with carbon offsets; regulated copy adds baseline paperwork", function()
+  local original = get_recipe("engine-unit")
+  assert_true(original ~= nil, "engine-unit missing")
+  assert_eq(original.category, "crafting", "engine-unit should remain handcraftable")
+  assert_true(not has_ingredient(original, "work-order"), "engine-unit should not require work-order when handcrafted")
+  assert_true(has_ingredient(original, "carbon-offset-certificate-basic"), "engine-unit missing carbon-offset-certificate-basic")
+
+  local regulated = get_recipe("engine-unit-regulated")
+  assert_true(regulated ~= nil, "engine-unit-regulated missing")
+  assert_eq(regulated.category, "crafting-regulated", "engine-unit-regulated category")
+  assert_true(has_ingredient(regulated, "work-order"), "engine-unit-regulated missing work-order")
+  assert_true(has_ingredient(regulated, "carbon-offset-certificate-basic"), "engine-unit-regulated missing carbon-offset-certificate-basic")
+  assert_true(not has_ingredient(regulated, "management-verbal-work-order"), "engine-unit-regulated should not use management-verbal-work-order")
 end)
 
 test("assemblers expose only regulated categories after Space Age migration", function()
@@ -2278,10 +2326,12 @@ test("Space Age shared categories receive regulated assembler copies", function(
   for _, belt_name in ipairs({"fast-transport-belt", "fast-underground-belt", "express-underground-belt"}) do
     local native = get_recipe(belt_name)
     assert_true(native ~= nil, belt_name .. " missing")
-    assert_true(has_ingredient(native, "construction-work-order"),
-      belt_name .. " foundry path should require construction-work-order")
-    assert_true(not has_ingredient(native, "construction-permit"),
-      belt_name .. " foundry path should not require construction-permit")
+    if belt_name ~= "express-underground-belt" then
+      assert_true(has_ingredient(native, "construction-permit"),
+        belt_name .. " handcraft path should require construction-permit")
+      assert_true(not has_ingredient(native, "construction-work-order"),
+        belt_name .. " handcraft path should not require construction-work-order")
+    end
   end
 
   local rocket_fuel = get_recipe("rocket-fuel")
@@ -2297,26 +2347,39 @@ test("Space Age shared categories receive regulated assembler copies", function(
   assert_eq(regulated_electromagnetic.category, "advanced-crafting-regulated", "specialist-machine bootstrap should use AM2")
 end)
 
-test("machine-facing recipes always use combined paperwork", function()
-  local shared = require("prototypes.shared")
-  local shared_machine_categories = {
-    ["electronics"] = true,
-    ["pressing"] = true,
-    ["electronics-with-fluid"] = true,
-    ["metallurgy-or-assembling"] = true,
-    ["organic-or-hand-crafting"] = true,
-    ["organic-or-assembling"] = true,
-    ["electronics-or-assembling"] = true,
-    ["cryogenics-or-assembling"] = true,
-    ["crafting-with-fluid-or-metallurgy"] = true,
+test("handcrafted red logistics keep permits separate from regulated work orders", function()
+  local expected = {
+    ["fast-transport-belt"] = {base = "construction-permit", machine = "construction-work-order"},
+    ["fast-underground-belt"] = {base = "construction-permit", machine = "construction-work-order"},
+    ["fast-splitter"] = {base = "safety-waiver", machine = "safety-work-order"},
+    ["bulk-inserter"] = {base = "safety-waiver", machine = "safety-work-order"},
   }
+
+  for recipe_name, paperwork in pairs(expected) do
+    local original = get_recipe(recipe_name)
+    local regulated = get_recipe(recipe_name .. "-regulated")
+    assert_true(original ~= nil, recipe_name .. " missing")
+    assert_true(regulated ~= nil, recipe_name .. "-regulated missing")
+    assert_true(has_ingredient(original, paperwork.base),
+      recipe_name .. " handcraft path should require " .. paperwork.base)
+    assert_true(not has_ingredient(original, paperwork.machine),
+      recipe_name .. " handcraft path should not require " .. paperwork.machine)
+    assert_true(has_ingredient(regulated, paperwork.machine),
+      recipe_name .. " regulated path should require " .. paperwork.machine)
+    assert_true(not has_ingredient(regulated, paperwork.base),
+      recipe_name .. " regulated path should not retain " .. paperwork.base)
+  end
+end)
+
+test("regulated assembler recipes always use combined paperwork", function()
+  local shared = require("prototypes.shared")
 
   local function assert_machine_paperwork(recipe, recipe_name)
     local base_name = recipe_name:gsub("%-regulated$", "")
     -- Administrative building recipes preserve their explicit construction
     -- and operating paperwork rather than deriving one form from the product
     -- name.  They have dedicated assertions below (for example printer-t2).
-    if shared.is_admin_recipe(base_name) then return end
+    if shared.is_admin_recipe(base_name) or shared.SPACE_PLATFORM_BUILDING_RECIPES[base_name] then return end
     local required_form = shared.get_required_form(base_name)
     local combined_form = shared.get_paperwork_requirements(required_form, true)[1].name
     local base_form = shared.get_paperwork_requirements(required_form, false)[1].name
@@ -2340,9 +2403,6 @@ test("machine-facing recipes always use combined paperwork", function()
 
   for recipe_name, recipe in pairs(recipes) do
     if recipe_name:find("%-regulated$") then
-      assert_machine_paperwork(recipe, recipe_name)
-    elseif shared_machine_categories[recipe.category]
-        and shared.get_required_form(recipe_name) == "construction-permit" then
       assert_machine_paperwork(recipe, recipe_name)
     end
   end
