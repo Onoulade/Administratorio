@@ -41,6 +41,16 @@ local function tech_unlocks_recipe(tech, recipe_name)
   return false
 end
 
+local function recipe_ingredient_amount(recipe, item_name)
+  if not recipe or not recipe.ingredients then return nil end
+  for _, ingredient in ipairs(recipe.ingredients) do
+    if (ingredient.name or ingredient[1]) == item_name then
+      return ingredient.amount or ingredient[2]
+    end
+  end
+  return nil
+end
+
 local technologies = {
   ["laser-weapons-damage-1"] = {name = "laser-weapons-damage-1", enabled = true, hidden = false, unit = {ingredients = {{"automation-science-pack", 1}}}},
   ["laser-weapons-damage-2"] = {name = "laser-weapons-damage-2", enabled = true, hidden = false, prerequisites = {"laser-weapons-damage-1"}, unit = {ingredients = {{"automation-science-pack", 1}}}},
@@ -241,6 +251,13 @@ test("vanilla module recipes use the dedicated admin module category", function(
     assert_true(recipe ~= nil, name .. " recipe missing")
     assert_true(recipe.category == "bureaucracy-modules", name .. " should use bureaucracy-modules")
   end
+end)
+
+test("first-tier speed and efficiency modules use two paperwork inputs", function()
+  assert_true(recipe_ingredient_amount(data.raw.recipe["speed-module"], "basic-excuse") == 2,
+    "speed-module should require two basic excuses")
+  assert_true(recipe_ingredient_amount(data.raw.recipe["efficiency-module"], "crappy-report") == 2,
+    "efficiency-module should require two crappy reports")
 end)
 
 test("premature pentapods of every size keep vanilla attack damage when eggs hatch", function()

@@ -239,7 +239,7 @@ end
 -------------------------------------------------------------------------------
 local module_recipe_overrides = {
   ["speed-module"] = {
-    {type = "item", name = "basic-excuse", amount = 10},
+    {type = "item", name = "basic-excuse", amount = 2},
     {type = "item", name = "electronic-circuit", amount = 5},
     {type = "item", name = "safety-waiver", amount = 1},
   },
@@ -281,7 +281,7 @@ local module_recipe_overrides = {
     {type = "item", name = "management-approval-written", amount = 1},
   },
   ["efficiency-module"] = {
-    {type = "item", name = "crappy-report", amount = 10},
+    {type = "item", name = "crappy-report", amount = 2},
     {type = "item", name = "electronic-circuit", amount = 5},
     {type = "item", name = "safety-waiver", amount = 1},
   },
