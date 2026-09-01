@@ -1440,6 +1440,11 @@ test("Form 27B-6 bulk copying uses the Form 27B-6 icon", function()
     "__administratorio__/graphics/icons/form-27b-6.png")
 end)
 
+test("Environmental Impact Report bulk copying uses the report icon", function()
+  assert_eq(get_recipe("copy-environmental-impact-report").icon,
+    "__administratorio__/graphics/icons/environmental-impact-report.png")
+end)
+
 -- =========================================================================
 -- MODULES
 -- =========================================================================
