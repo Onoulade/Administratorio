@@ -1,4 +1,17 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.7
+Date: 2026-08-30
+  Bugfixes:
+    - keep normal protests non-destructive
+    - prevent pneumatic circuit intake races
+    - align station hover coverage
+    - correct paperwork descriptions
+  Changes:
+    - Rework space tourism payouts
+    - Fix taxpayer money filter selection
+    - Rebalance biter complaint counts
+    - Fix recipe batch icon quantities
+---------------------------------------------------------------------------------------------------
 Version: 0.6.6
 Date: 2026-08-27
   Bugfixes:
