@@ -40,7 +40,7 @@ import sys
 from pathlib import Path
 
 try:
-    from PIL import Image, ImageDraw, ImageFilter, ImageFont
+    from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 except ImportError:
     print("Error: Pillow is required. Install with: pip install Pillow")
     sys.exit(1)
@@ -263,9 +263,13 @@ def make_base_folder(tint=C_MANILA):
     folder_pts = [_sp(0.05, 0.20), _sp(0.27, 0.20), _sp(0.30, 0.13), _sp(0.63, 0.13),
                   _sp(0.94, 0.20), _sp(0.91, 0.95), _sp(0.08, 0.95)]
     draw.polygon(folder_pts, fill=tint, outline=(170, 150, 120, 200))
-    # Tab highlight
+    # A darker tab and front lip preserve the folder silhouette even when a
+    # pale case tint is used.  Previously the body blended into the paper sheet
+    # and the result looked like another loose document.
     lw = max(1, _s(0.03))
-    draw.line([_sp(0.30, 0.13), _sp(0.63, 0.13)], fill=(190, 170, 140, 200), width=lw)
+    folder_edge = _dim(tint, 0.70)
+    draw.line([_sp(0.30, 0.13), _sp(0.63, 0.13)], fill=folder_edge, width=lw)
+    draw.line([_sp(0.06, 0.31), _sp(0.92, 0.31)], fill=(*folder_edge[:3], 150), width=max(1, lw // 2))
     corners = [_sp(0.05, 0.20), _sp(0.94, 0.20), _sp(0.91, 0.95), _sp(0.08, 0.95)]
     geo = {"corners": corners, "tilted": False, "bbox": (_s(0.05), _s(0.13), _s(0.94), _s(0.95))}
     return img, geo
@@ -387,7 +391,13 @@ def _dim(color, factor):
 
 
 def apply_material_finish(img, geo):
-    """Give every document the same warm, slightly worn Factorio-like finish."""
+    """Give every document a warm, lightly worn, dimensional finish.
+
+    The generator works at a larger resolution and downsamples at the end, so
+    a restrained amount of grain and edge work survives as material rather than
+    visual noise.  Keeping this pass shared is important: paper, folders,
+    ledgers, and tickets should feel manufactured by the same bureaucracy.
+    """
     pixels = img.load()
     width, height = img.size
     for y in range(height):
@@ -395,9 +405,12 @@ def apply_material_finish(img, geo):
             r, g, b, a = pixels[x, y]
             if a < 70:
                 continue
-            diagonal_light = 1.045 - 0.085 * ((x + y) / max(1, width + height - 2))
-            paper_grain = 0.018 * math.sin(x * 0.23 + y * 0.11)
-            paper_grain += 0.012 * math.sin(x * 0.07 - y * 0.19)
+            diagonal_light = 1.055 - 0.105 * ((x + y) / max(1, width + height - 2))
+            paper_grain = 0.014 * math.sin(x * 0.23 + y * 0.11)
+            paper_grain += 0.010 * math.sin(x * 0.07 - y * 0.19)
+            # A deterministic hash-like term breaks up the overly regular
+            # sine pattern without introducing a random, non-reproducible build.
+            paper_grain += 0.008 * math.sin((x * 12.9898 + y * 78.233) * 0.17)
             factor = diagonal_light + paper_grain
             pixels[x, y] = (
                 max(0, min(255, int(r * factor))),
@@ -405,6 +418,22 @@ def apply_material_finish(img, geo):
                 max(0, min(255, int(b * factor))),
                 a,
             )
+
+    # Add a few long, translucent fibers.  They are deliberately sparse and
+    # clipped to the existing silhouette so the marks read as paper texture,
+    # not as a generic crosshatch overlay.
+    texture = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    texture_draw = ImageDraw.Draw(texture)
+    fiber_count = max(8, SIZE // 14)
+    for i in range(fiber_count):
+        x = int((i * 47 + 11) % max(1, width - 8))
+        y = int((i * 71 + 17) % max(1, height - 8))
+        length = int(SIZE * (0.16 + (i % 5) * 0.035))
+        color = (255, 255, 255, 15) if i % 3 else (92, 73, 54, 10)
+        texture_draw.line([(x, y), (min(width - 1, x + length), y + (i % 3) - 1)],
+                          fill=color, width=max(1, SIZE // 192))
+    texture.putalpha(ImageChops.multiply(texture.getchannel("A"), img.getchannel("A")))
+    img.alpha_composite(texture)
 
     # A shared bevel makes stacks, ledgers, blanks, and permits feel like one set.
     draw = ImageDraw.Draw(img)
@@ -414,6 +443,16 @@ def apply_material_finish(img, geo):
     draw.line([tl, bl], fill=(255, 248, 220, 105), width=edge)
     draw.line([tr, br], fill=(75, 60, 48, 105), width=edge)
     draw.line([bl, br], fill=(65, 52, 42, 125), width=edge)
+
+    # The lower/right edge gets a soft secondary rim at high resolution.  It
+    # produces a readable bevel after downsampling without a cartoon outline.
+    rim = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    rim_draw = ImageDraw.Draw(rim)
+    rim_draw.line([tr, br], fill=(48, 38, 30, 55), width=max(1, SIZE // 48))
+    rim_draw.line([bl, br], fill=(48, 38, 30, 65), width=max(1, SIZE // 48))
+    rim = rim.filter(ImageFilter.GaussianBlur(max(1, SIZE // 128)))
+    rim.putalpha(ImageChops.multiply(rim.getchannel("A"), img.getchannel("A")))
+    img.alpha_composite(rim)
 
 
 def _pos_offset(pos, symbol_size=16):
@@ -433,6 +472,13 @@ def _pos_offset(pos, symbol_size=16):
     return positions.get(pos, positions["center"])
 
 
+def _shift_mask(mask, dx, dy):
+    """Translate an L-mode mask without wrapping at the canvas edge."""
+    shifted = Image.new("L", mask.size, 0)
+    shifted.paste(mask, (int(dx), int(dy)))
+    return shifted
+
+
 def draw_stripe(img, color, position="top", thickness=7, geo=None):
     """Draw a colored stripe that follows the paper geometry."""
     draw = ImageDraw.Draw(img)
@@ -447,6 +493,8 @@ def draw_stripe(img, color, position="top", thickness=7, geo=None):
         p2 = _lerp(tr, br, t)
         p3 = _lerp(tl, bl, t)
         draw.polygon([p0, p1, p2, p3], fill=color)
+        draw.line([p0, p1], fill=(*color[:3], min(255, color[3] + 20)), width=max(1, SIZE // 96))
+        draw.line([p3, p2], fill=(*_dim(color, 0.62)[:3], min(255, color[3] + 10)), width=max(1, SIZE // 96))
     elif position == "bottom":
         t = thickness / max(1, ((bl[1] - tl[1]) + (br[1] - tr[1])) / 2)
         p0 = _lerp(tl, bl, 1 - t)
@@ -454,6 +502,8 @@ def draw_stripe(img, color, position="top", thickness=7, geo=None):
         p2 = br
         p3 = bl
         draw.polygon([p0, p1, p2, p3], fill=color)
+        draw.line([p0, p1], fill=(*_dim(color, 0.62)[:3], min(255, color[3] + 10)), width=max(1, SIZE // 96))
+        draw.line([p3, p2], fill=(*color[:3], min(255, color[3] + 20)), width=max(1, SIZE // 96))
     elif position == "left":
         t = thickness / max(1, ((tr[0] - tl[0]) + (br[0] - bl[0])) / 2)
         p0 = tl
@@ -461,6 +511,8 @@ def draw_stripe(img, color, position="top", thickness=7, geo=None):
         p2 = _lerp(bl, br, t)
         p3 = bl
         draw.polygon([p0, p1, p2, p3], fill=color)
+        draw.line([p0, p3], fill=(*color[:3], min(255, color[3] + 20)), width=max(1, SIZE // 96))
+        draw.line([p1, p2], fill=(*_dim(color, 0.62)[:3], min(255, color[3] + 10)), width=max(1, SIZE // 96))
     elif position == "right":
         t = thickness / max(1, ((tr[0] - tl[0]) + (br[0] - bl[0])) / 2)
         p0 = _lerp(tl, tr, 1 - t)
@@ -468,6 +520,8 @@ def draw_stripe(img, color, position="top", thickness=7, geo=None):
         p2 = br
         p3 = _lerp(bl, br, 1 - t)
         draw.polygon([p0, p1, p2, p3], fill=color)
+        draw.line([p0, p3], fill=(*_dim(color, 0.62)[:3], min(255, color[3] + 10)), width=max(1, SIZE // 96))
+        draw.line([p1, p2], fill=(*color[:3], min(255, color[3] + 20)), width=max(1, SIZE // 96))
 
 
 def draw_header_bands(img, colors, thickness=7, geo=None):
@@ -495,6 +549,8 @@ def draw_header_bands(img, colors, thickness=7, geo=None):
         draw.polygon(pts, fill=color)
         if index:
             draw.line([pts[0], pts[3]], fill=(45, 38, 34, 150), width=max(1, SIZE // 128))
+        draw.line([pts[0], pts[1]], fill=(*color[:3], min(255, color[3] + 18)), width=max(1, SIZE // 128))
+        draw.line([pts[3], pts[2]], fill=(*_dim(color, 0.62)[:3], min(255, color[3] + 12)), width=max(1, SIZE // 128))
 
 
 def draw_lines(img, color=(180, 175, 165, 120), count=5, geo=None):
@@ -541,6 +597,12 @@ def draw_stamp(img, color, pos="tr", radius=9):
         draw.ellipse([(cx - r2, cy - r2), (cx + r2, cy + r2)],
                      outline=(*color[:3], color[3] // 2), width=max(1, sw // 2))
 
+    # Small broken segments make the mark feel inked onto a rough surface,
+    # instead of a perfect vector circle.  The pattern is fixed for stable PNGs.
+    for start, end in ((18, 46), (112, 142), (205, 232), (286, 316)):
+        draw.arc([(cx - radius, cy - radius), (cx + radius, cy + radius)],
+                 start, end, fill=(*color[:3], max(35, color[3] // 3)), width=max(1, sw // 2))
+
 
 def draw_corner_tab(img, color, corner="tr", tab_size=14, geo=None):
     """Draw a colored corner fold/tab following paper geometry."""
@@ -567,14 +629,15 @@ def draw_clip(img, color=(150, 150, 160, 200)):
     draw = ImageDraw.Draw(img)
     cx = HALF
     s = max(1, SIZE // 64)  # scale factor
-    # Thick pure white halo
-    draw.rounded_rectangle([(cx - 4*s - 2*s, 1*s - 2*s), (cx + 4*s + 2*s, 18*s + 2*s)], radius=4*s,
-                           outline=(255, 255, 255, 255), width=4*s)
-    
+    # A dark offset and a narrow highlight give the clip a metal edge without
+    # the old sticker-like white halo.
+    draw.rounded_rectangle([(cx - 4*s + s, 1*s + s), (cx + 4*s + s, 18*s + s)], radius=3*s,
+                           outline=(35, 30, 28, 120), width=2*s)
     draw.rounded_rectangle([(cx - 4*s, 1*s), (cx + 4*s, 18*s)], radius=3*s,
                            outline=color, width=2*s)
     draw.rounded_rectangle([(cx - 2*s, 4*s), (cx + 2*s, 14*s)], radius=2*s,
                            outline=color, width=1*s)
+    draw.line([(cx - 2*s, 2*s), (cx + 2*s, 2*s)], fill=(245, 248, 255, 170), width=max(1, s))
 
 
 def draw_hole_punches(img, count=2, geo=None):
@@ -588,9 +651,12 @@ def draw_hole_punches(img, count=2, geo=None):
         pos = _lerp(tl, bl, t)
         # Offset slightly into the paper
         p = (pos[0] + _s(0.04), pos[1])
-        # Thick pure white highlight
-        draw.ellipse([(p[0] - r - 2, p[1] - r - 2), (p[0] + r + 2, p[1] + r + 2)], fill=(255, 255, 255, 255))
-        draw.ellipse([(p[0] - r, p[1] - r), (p[0] + r, p[1] + r)], fill=(0, 0, 0, 200))
+        # Punches are holes with a paper rim, not black screws pasted on top.
+        draw.ellipse([(p[0] - r - 1, p[1] - r - 1), (p[0] + r + 1, p[1] + r + 1)],
+                     fill=(241, 237, 225, 210), outline=(95, 82, 70, 150), width=max(1, SIZE // 128))
+        draw.ellipse([(p[0] - r, p[1] - r), (p[0] + r, p[1] + r)], fill=(35, 31, 29, 205))
+        draw.arc([(p[0] - r, p[1] - r), (p[0] + r, p[1] + r)], 200, 330,
+                 fill=(255, 255, 255, 135), width=max(1, SIZE // 128))
 
 
 def draw_post_it(img, color=(255, 255, 50, 255)):
@@ -600,11 +666,14 @@ def draw_post_it(img, color=(255, 255, 50, 255)):
     # Shadow
     sh = max(1, _s(0.01))
     draw.rectangle([(x0 + sh, y0 + sh), (x1 + sh, y1 + sh)], fill=(0, 0, 0, 80))
-    # Thick pure white border
-    bw = max(2, _s(0.02))
-    draw.rectangle([(x0 - bw, y0 - bw), (x1 + bw, y1 + bw)], outline=(255, 255, 255, 255), width=bw)
     # Note
-    draw.rectangle([(x0, y0), (x1, y1)], fill=color, outline=(150, 150, 0, 255))
+    draw.rectangle([(x0, y0), (x1, y1)], fill=color, outline=(150, 130, 20, 235), width=max(1, _s(0.015)))
+    # Folded lower-right corner and a top-edge highlight sell the note as a
+    # second physical layer rather than a floating UI badge.
+    fold = max(2, _s(0.07))
+    draw.polygon([(x1 - fold, y1), (x1, y1 - fold), (x1, y1)], fill=_dim(color, 0.72))
+    draw.line([(x0 + _s(0.02), y0 + _s(0.02)), (x1 - _s(0.03), y0 + _s(0.02))],
+              fill=(255, 255, 220, 145), width=max(1, _s(0.01)))
     # Fake text on note
     for i in range(3):
         ly = y0 + (y1 - y0) * (i + 1) / 5
@@ -623,6 +692,8 @@ def draw_badge(img, letter, bg_color, text_color=(255, 255, 255, 255), pos="bl",
     draw.ellipse([(cx - r - bw, cy - r - bw), (cx + r + bw, cy + r + bw)], fill=(0, 0, 0, 255))
     
     draw.ellipse([(cx - r, cy - r), (cx + r, cy + r)], fill=bg_color)
+    draw.arc([(cx - r + bw, cy - r + bw), (cx + r - bw, cy + r - bw)], 195, 330,
+             fill=(255, 255, 255, 100), width=max(1, bw))
     # Draw letter
     font_size = int(11 * s * size_mult)
     try:
@@ -657,27 +728,35 @@ def _draw_symbol(draw, name, cx, cy, color, size=14):
         draw.line([(cx + hs, cy - hs), (cx - hs, cy + hs)], fill=color, width=w)
 
     elif name == SYM_GEAR:
-        inset = max(2, size // 5)
-        draw.ellipse([(cx - r + inset, cy - r + inset), (cx + r - inset, cy + r - inset)], outline=color, width=w)
+        # A real stepped silhouette is much more legible than a circle with
+        # eight radial spokes, especially when used as the tiny work-order cue.
         tooth = max(2, size // 8)
-        for angle in range(0, 360, 45):
-            rad = math.radians(angle)
-            x1 = cx + int((r - tooth) * math.cos(rad))
-            y1 = cy + int((r - tooth) * math.sin(rad))
-            x2 = cx + int(r * math.cos(rad))
-            y2 = cy + int(r * math.sin(rad))
-            draw.line([(x1, y1), (x2, y2)], fill=color, width=w)
+        gear_pts = []
+        for index in range(32):
+            angle = math.radians(index * 11.25 - 5.625)
+            radius = r if index % 4 in (1, 2) else r - tooth
+            gear_pts.append((cx + int(radius * math.cos(angle)),
+                             cy + int(radius * math.sin(angle))))
+        draw.polygon(gear_pts, fill=color, outline=color)
+        hub = max(2, size // 5)
+        draw.ellipse([(cx - hub, cy - hub), (cx + hub, cy + hub)],
+                     fill=(*color[:3], 65), outline=color, width=max(1, w // 2))
 
     elif name == SYM_PICKAXE:
-        draw.line([(cx - hs, cy + hs), (cx + hs // 2, cy - hs // 2)], fill=color, width=w)
-        d = max(2, size // 4)
-        draw.line([(cx + hs // 2 - d, cy - hs // 2 - d // 2), (cx + hs, cy - hs + d // 2)], fill=color, width=w)
-        draw.line([(cx + hs // 2 + d // 2, cy - hs // 2 + d), (cx + hs - d // 2, cy + d // 2)], fill=color, width=w)
+        handle_w = max(2, size // 8)
+        head_x, head_y = cx + hs // 4, cy - hs // 3
+        draw.line([(cx - hs // 2, cy + hs), (head_x, head_y)], fill=color, width=handle_w)
+        # Two distinct pick points make this read as mining equipment rather
+        # than a random slash or arrow.
+        draw.line([(head_x, head_y), (cx + hs, cy - hs // 2)], fill=color, width=w + max(1, w // 2))
+        draw.line([(head_x, head_y), (cx + hs // 3, cy - hs)], fill=color, width=w + max(1, w // 2))
 
     elif name == SYM_SHIELD:
         pts = [(cx, cy - hs), (cx + hs, cy - hs // 3), (cx + hs - w, cy + hs // 2),
                (cx, cy + hs), (cx - hs + w, cy + hs // 2), (cx - hs, cy - hs // 3)]
-        draw.polygon(pts, outline=color, width=w)
+        draw.polygon(pts, fill=(*color[:3], 55), outline=color, width=w)
+        draw.line([(cx - hs // 2, cy - hs // 5), (cx + hs // 2, cy - hs // 5)],
+                  fill=color, width=max(1, w // 2))
 
     elif name == SYM_STAR:
         pts = []
@@ -696,30 +775,60 @@ def _draw_symbol(draw, name, cx, cy, color, size=14):
             draw.ellipse([(wx - wr, cy + hs // 3), (wx + wr, cy + hs // 3 + wr * 2)], fill=color)
 
     elif name == SYM_FLASK:
+        # Erlenmeyer flask: narrow neck, distinct shoulders, broad base, and
+        # a visible liquid line.  The previous triangle lost the neck at 64px.
         neck = max(2, size // 8)
-        draw.line([(cx - neck, cy - hs), (cx + neck, cy - hs)], fill=color, width=w)
-        draw.line([(cx - neck, cy - hs), (cx - hs + w, cy + hs - w)], fill=color, width=w)
-        draw.line([(cx + neck, cy - hs), (cx + hs - w, cy + hs - w)], fill=color, width=w)
-        draw.line([(cx - hs + w, cy + hs - w), (cx + hs - w, cy + hs - w)], fill=color, width=w)
-        draw.rectangle([(cx - hs + w + 2, cy + 1), (cx + hs - w - 2, cy + hs - w - 1)], fill=(*color[:3], 80))
+        shoulder_y = cy - hs // 4
+        bottom_y = cy + hs
+        flask = [
+            (cx - neck, cy - hs), (cx + neck, cy - hs),
+            (cx + neck, shoulder_y), (cx + hs * 3 // 4, cy + hs // 2),
+            (cx + hs // 2, bottom_y), (cx - hs // 2, bottom_y),
+            (cx - hs * 3 // 4, cy + hs // 2), (cx - neck, shoulder_y),
+        ]
+        draw.polygon(flask, fill=(*color[:3], 65), outline=color, width=w)
+        draw.line([(cx - neck - w, cy - hs), (cx + neck + w, cy - hs)], fill=color, width=w)
+        liquid_y = cy + hs // 3
+        draw.line([(cx - hs * 2 // 3, liquid_y), (cx + hs * 2 // 3, liquid_y)],
+                  fill=color, width=max(1, w // 2))
+        draw.line([(cx - hs // 3, cy + hs * 3 // 5), (cx - hs // 5, cy + hs * 3 // 5)],
+                  fill=(255, 250, 225, 100), width=max(1, w // 2))
 
     elif name == SYM_HAMMER:
-        draw.line([(cx - 1, cy - hs), (cx - 1, cy + hs)], fill=color, width=w)
-        head_h = max(4, size // 3)
-        draw.rectangle([(cx - hs, cy - hs), (cx + w, cy - hs + head_h)], fill=color)
+        handle_w = max(2, size // 9)
+        # Classic carpenter's hammer: an unmistakable horizontal head plus a
+        # single diagonal handle.  Avoiding a claw keeps it readable at 16px.
+        handle_top = (cx, cy - hs // 4)
+        handle_bottom = (cx + hs // 3, cy + hs)
+        draw.line([handle_top, handle_bottom], fill=color, width=handle_w)
+        head_box = [(cx - hs, cy - hs // 2), (cx + hs // 2, cy - hs // 5)]
+        draw.rounded_rectangle(head_box, radius=max(1, w), fill=color, outline=color)
+        draw.line([(cx - hs + w, cy - hs // 2 + w), (cx + hs // 3, cy - hs // 2 + w)],
+                  fill=(255, 250, 225, 85), width=max(1, w // 2))
 
     elif name == SYM_SCALES:
+        beam_y = cy - hs // 4
+        pan_y = cy + hs // 4
         draw.line([(cx, cy - hs), (cx, cy + hs // 2)], fill=color, width=w)
-        draw.line([(cx - hs, cy - hs // 3), (cx + hs, cy - hs // 3)], fill=color, width=w)
-        draw.arc([(cx - hs - w, cy - hs // 3), (cx - hs // 3, cy + hs // 3)], 0, 180, fill=color, width=max(1, w // 2))
-        draw.arc([(cx + hs // 3, cy - hs // 3), (cx + hs + w, cy + hs // 3)], 0, 180, fill=color, width=max(1, w // 2))
+        draw.line([(cx - hs, beam_y), (cx + hs, beam_y)], fill=color, width=w)
+        for side in (-1, 1):
+            pan_x = cx + side * (hs - w)
+            draw.line([(pan_x, beam_y), (pan_x, pan_y)], fill=color, width=max(1, w // 2))
+            pan = [(pan_x - hs // 3, pan_y), (pan_x + hs // 3, pan_y),
+                   (pan_x + hs // 5, pan_y + hs // 4), (pan_x - hs // 5, pan_y + hs // 4)]
+            draw.polygon(pan, fill=(*color[:3], 65), outline=color, width=max(1, w // 2))
         base_w = max(3, size // 5)
         draw.rectangle([(cx - base_w, cy + hs // 2), (cx + base_w, cy + hs)], fill=color)
 
     elif name == SYM_LEAF:
-        draw.ellipse([(cx - hs + w, cy - hs + w), (cx + hs - w, cy + hs - w * 2)], fill=(*color[:3], 100))
-        draw.arc([(cx - hs + w, cy - hs + w), (cx + hs - w, cy + hs - w * 2)], 0, 360, fill=color, width=w)
-        draw.line([(cx, cy - hs + w * 2), (cx, cy + hs - w * 2)], fill=color, width=max(1, w // 2))
+        # Pointed, diagonal leaf with an off-centre vein; the old vertical
+        # oval was easily mistaken for an eye or an oval badge.
+        leaf = [(cx - hs, cy + hs // 3), (cx - hs // 2, cy - hs // 2),
+                (cx + hs, cy - hs), (cx + hs // 2, cy + hs // 3),
+                (cx, cy + hs), (cx - hs // 2, cy + hs // 2)]
+        draw.polygon(leaf, fill=(*color[:3], 85), outline=color, width=w)
+        draw.line([(cx - hs // 2, cy + hs // 2), (cx + hs // 2, cy - hs // 2)],
+                  fill=color, width=max(1, w // 2))
 
     elif name == SYM_LIGHTNING:
         d = max(2, size // 5)
@@ -730,6 +839,10 @@ def _draw_symbol(draw, name, cx, cy, color, size=14):
         draw.ellipse([(cx - hs, cy - hs), (cx + hs, cy + hs // 3)], outline=color, width=w)
         tail = max(2, size // 6)
         draw.polygon([(cx - tail, cy + hs // 3), (cx - hs // 2, cy + hs), (cx + tail * 2, cy + hs // 3 - 1)], fill=color)
+        dot = max(1, size // 12)
+        for offset in (-hs // 3, 0, hs // 3):
+            draw.ellipse([(cx + offset - dot, cy - hs // 4 - dot),
+                          (cx + offset + dot, cy - hs // 4 + dot)], fill=color)
 
     elif name == SYM_LOCK:
         draw.rectangle([(cx - hs // 2, cy), (cx + hs // 2, cy + hs)], fill=color)
@@ -747,10 +860,22 @@ def _draw_symbol(draw, name, cx, cy, color, size=14):
         draw.ellipse([(cx - ew, cy + hs // 2), (cx + ew, cy + hs)], fill=color)
 
     elif name == SYM_QUESTION:
-        draw.arc([(cx - hs // 2, cy - hs), (cx + hs // 2, cy + hs // 4)], 180, 45, fill=color, width=w)
-        draw.line([(cx, cy + hs // 4 - w), (cx, cy + hs // 3 + w)], fill=color, width=w)
-        ew = max(2, size // 7)
-        draw.ellipse([(cx - ew, cy + hs // 2), (cx + ew, cy + hs)], fill=color)
+        # Construct the glyph as one continuous rounded hook plus one round
+        # dot.  A polyline is more stable at tiny sizes than a clipped arc.
+        q_width = max(2, size // 7)
+        hook = [
+            (cx - hs // 2, cy - hs // 3), (cx - hs // 2, cy - hs // 2),
+            (cx - hs // 4, cy - hs), (cx + hs // 4, cy - hs),
+            (cx + hs // 2, cy - hs // 2), (cx + hs // 2, cy - hs // 4),
+            (cx + hs // 5, cy), (cx, cy + hs // 5),
+        ]
+        draw.line(hook, fill=color, width=q_width, joint="curve")
+        for point in hook[1:-1]:
+            draw.ellipse([(point[0] - q_width // 2, point[1] - q_width // 2),
+                          (point[0] + q_width // 2, point[1] + q_width // 2)], fill=color)
+        dot_r = max(2, size // 10)
+        dot_y = cy + hs * 3 // 4
+        draw.ellipse([(cx - dot_r, dot_y - dot_r), (cx + dot_r, dot_y + dot_r)], fill=color)
 
     elif name == SYM_STAMP_CIRCLE:
         draw.ellipse([(cx - r, cy - r), (cx + r, cy + r)], outline=color, width=w + max(1, w // 2))
@@ -761,14 +886,21 @@ def _draw_symbol(draw, name, cx, cy, color, size=14):
         draw.line([(cx + hs // 3, cy + hs // 3), (cx + hs, cy + hs)], fill=color, width=w)
 
     elif name == SYM_PEN:
-        draw.line([(cx - hs, cy + hs), (cx + hs // 2, cy - hs)], fill=color, width=w)
-        nib = max(2, size // 5)
-        draw.polygon([(cx - hs, cy + hs), (cx - hs + nib, cy + hs - w), (cx - hs + w, cy + hs - nib)], fill=color)
+        body_w = max(2, size // 6)
+        body = [(cx - hs, cy + hs // 2), (cx - hs // 2, cy + hs),
+                (cx + hs // 2, cy - hs // 2), (cx + hs // 4, cy - hs)]
+        draw.polygon(body, fill=color, outline=color)
+        nib = [(cx - hs, cy + hs // 2), (cx - hs // 2, cy + hs), (cx - hs + w, cy + hs // 3)]
+        draw.polygon(nib, fill=color)
+        draw.line([(cx - hs // 3, cy + hs // 2), (cx + hs // 3, cy - hs // 3)],
+                  fill=(255, 250, 225, 100), width=max(1, body_w // 2))
 
     elif name == SYM_GAVEL:
-        draw.line([(cx - hs + w, cy + hs - w), (cx + w, cy - w)], fill=color, width=w)
-        head_h = max(4, size // 3)
-        draw.rectangle([(cx - w, cy - hs), (cx + hs - w, cy - hs + head_h)], fill=color)
+        handle_w = max(2, size // 9)
+        draw.line([(cx - hs // 2, cy + hs // 3), (cx + hs // 4, cy - hs // 4)], fill=color, width=handle_w)
+        draw.rounded_rectangle([(cx - hs // 2, cy - hs), (cx + hs, cy - hs // 2)],
+                               radius=max(1, w), fill=color, outline=color)
+        draw.rectangle([(cx - hs // 3, cy + hs // 3), (cx + hs // 2, cy + hs // 2)], fill=color)
 
     elif name == SYM_MEGAPHONE:
         draw.polygon([(cx - hs, cy - w), (cx - hs, cy + w), (cx + hs, cy + hs), (cx + hs, cy - hs)], outline=color, width=w)
@@ -939,9 +1071,27 @@ def _draw_symbol(draw, name, cx, cy, color, size=14):
         draw.arc([(cx + hs - scroll_r, cy + hs - scroll_r - w), (cx + hs, cy + hs)], -90, 90, fill=color, width=w)
 
     elif name == SYM_HANDSHAKE:
-        draw.line([(cx - hs, cy), (cx - w, cy + w * 2)], fill=color, width=w)
-        draw.line([(cx + hs, cy), (cx + w, cy + w * 2)], fill=color, width=w)
-        draw.line([(cx - w, cy + w * 2), (cx + w, cy + w * 2)], fill=color, width=w + max(1, w // 2))
+        # Two cuffs and two interlocking palms.  The centre seam is intentional:
+        # without it the old mark collapsed into a pair of random chevrons.
+        cuff = max(2, size // 5)
+        left_hand = [
+            (cx - hs, cy - hs // 3), (cx - hs // 2, cy - hs // 2),
+            (cx - w, cy - hs // 8), (cx + hs // 5, cy + hs // 5),
+            (cx - hs // 5, cy + hs // 2), (cx - hs // 2, cy + hs // 4),
+            (cx - hs, cy + hs // 3),
+        ]
+        right_hand = [
+            (cx + hs, cy + hs // 3), (cx + hs // 2, cy + hs // 2),
+            (cx + w, cy + hs // 8), (cx - hs // 5, cy - hs // 5),
+            (cx + hs // 5, cy - hs // 2), (cx + hs // 2, cy - hs // 4),
+            (cx + hs, cy - hs // 3),
+        ]
+        draw.polygon(left_hand, fill=(*color[:3], 80), outline=color, width=w)
+        draw.polygon(right_hand, fill=(*color[:3], 80), outline=color, width=w)
+        draw.rectangle([(cx - hs, cy - hs // 3), (cx - hs + cuff, cy + hs // 3)], fill=color)
+        draw.rectangle([(cx + hs - cuff, cy - hs // 3), (cx + hs, cy + hs // 3)], fill=color)
+        draw.line([(cx, cy - hs // 5), (cx - hs // 6, cy + hs // 6)],
+                  fill=(*color[:3], 35), width=max(1, w // 2))
 
     elif name == SYM_BIOHAZARD:
         for angle in [0, 120, 240]:
@@ -955,14 +1105,37 @@ def _draw_symbol(draw, name, cx, cy, color, size=14):
 
 
 def draw_symbol(img, name, color, pos="center", size=14):
-    """Draw a symbol on the image."""
-    draw = ImageDraw.Draw(img)
+    """Draw a compact, inked symbol with a soft cast shadow and keyline."""
     cx, cy = _pos_offset(pos, size)
 
-    # A single offset impression replaces the old sticker-like eight-way halo.
-    off = max(1, SIZE // 96)
-    _draw_symbol(draw, name, cx + off, cy + off, (35, 28, 24, 125), size)
-    _draw_symbol(draw, name, cx, cy, color, size)
+    # Render through an alpha mask so every symbol—lines and filled shapes—gets
+    # the same material treatment.  This is more legible at 64x64 than trying
+    # to add a separate hand-written outline case to each symbol.
+    symbol_layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    _draw_symbol(ImageDraw.Draw(symbol_layer), name, cx, cy, (255, 255, 255, 255), size)
+    mask = symbol_layer.getchannel("A")
+    shadow_mask = _shift_mask(mask, max(1, SIZE // 80), max(1, SIZE // 64))
+    shadow_mask = shadow_mask.filter(ImageFilter.GaussianBlur(max(1, SIZE // 72)))
+    shadow = Image.new("RGBA", img.size, (30, 24, 20, 0))
+    shadow.putalpha(shadow_mask.point(lambda value: int(value * 0.48)))
+    img.alpha_composite(shadow)
+
+    outline_width = max(1, SIZE // 96)
+    outline_mask = mask.filter(ImageFilter.MaxFilter(outline_width * 2 + 1))
+    outline = Image.new("RGBA", img.size, (48, 37, 30, 0))
+    outline.putalpha(outline_mask.point(lambda value: int(value * 0.78)))
+    img.alpha_composite(outline)
+
+    ink = Image.new("RGBA", img.size, (*color[:3], 0))
+    ink.putalpha(mask.point(lambda value: int(value * color[3] / 255)))
+    img.alpha_composite(ink)
+
+    # A narrow upper-left highlight gives filled marks a printed/raised edge
+    # while staying almost invisible on thin line symbols.
+    highlight_mask = ImageChops.subtract(mask, _shift_mask(mask, max(1, SIZE // 160), max(1, SIZE // 160)))
+    highlight = Image.new("RGBA", img.size, (255, 250, 225, 0))
+    highlight.putalpha(highlight_mask.point(lambda value: int(value * 0.24)))
+    img.alpha_composite(highlight)
 
 def draw_watermark(img, name, color):
     """Draw a large, faint symbol as watermark."""
@@ -1697,7 +1870,7 @@ TECH_ICON_DEFS = {
 # ---------------------------------------------------------------------------
 
 # Supersample factor: draw at Nx size, then downscale with LANCZOS for anti-aliasing
-SUPERSAMPLE = 3
+SUPERSAMPLE = 4
 
 
 def _find_perspective_coeffs(src, dst):
@@ -1880,7 +2053,11 @@ def generate_preview(icons, output_dir):
     """Generate a preview grid of all icons."""
     cols = 8
     rows = math.ceil(len(icons) / cols)
-    cell = SIZE + 20
+    # Item icons are 64px while technology artwork is normally 128px.  Use the
+    # actual largest render size so --technology --preview remains useful for
+    # visual QA instead of overlapping every tile.
+    icon_size = max((Image.open(path).size[0] for _, path in icons), default=SIZE)
+    cell = icon_size + 20
     label_h = 14
     preview = Image.new("RGBA", (cols * cell, rows * (cell + label_h)), (40, 40, 40, 255))
     draw = ImageDraw.Draw(preview)
@@ -1901,7 +2078,7 @@ def generate_preview(icons, output_dir):
 
         # Truncate label
         label = name[:14]
-        draw.text((x, y + SIZE + 2), label, fill=(200, 200, 200, 255), font=font)
+        draw.text((x, y + icon_size + 2), label, fill=(200, 200, 200, 255), font=font)
 
     preview_path = os.path.join(output_dir, "_preview.png")
     preview.save(preview_path, "PNG")
