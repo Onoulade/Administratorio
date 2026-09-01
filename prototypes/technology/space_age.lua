@@ -620,6 +620,7 @@ data:extend({
     icon_size = 256,
     effects = {
       {type = "unlock-recipe", recipe = "trajectory-compliance-array"},
+      {type = "nothing", effect_description = {"technology-effect.trajectory-compliance-jurisdiction", "1"}},
     },
     prerequisites = {"orbital-compliance-systems", "space-science-pack"},
     unit = {

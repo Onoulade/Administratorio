@@ -138,6 +138,45 @@ def test_science_pack_bootstrap_gap_is_reported_transitively():
     assert ("chemical-operator-training", "chemical-science-pack") in findings
 
 
+def test_science_ceiling_flags_unnecessary_higher_tier_prerequisites():
+    data_raw = {
+        "technology": {
+            "production-science-pack": {
+                "unit": {
+                    "ingredients": [
+                        {"name": "automation-science-pack"},
+                        {"name": "logistic-science-pack"},
+                        {"name": "chemical-science-pack"},
+                        {"name": "production-science-pack"},
+                    ]
+                },
+            },
+            "admin-station-capacity-4": {
+                "prerequisites": ["production-science-pack"],
+                "unit": {
+                    "ingredients": [
+                        {"name": "automation-science-pack"},
+                        {"name": "logistic-science-pack"},
+                    ]
+                },
+            },
+        },
+        "recipe": {},
+        "item": {},
+        "tool": {},
+    }
+
+    analyzer = progression_report.ProgressionAnalyzer(data_raw)
+
+    assert analyzer.science_ceiling_findings() == [
+        {
+            "technology": "admin-station-capacity-4",
+            "ceiling": "chemical-science-pack",
+            "over_gating_prerequisites": ["production-science-pack"],
+        }
+    ]
+
+
 def test_unlocked_recipe_machine_cycles_are_not_masked_by_internal_recipes():
     data_raw = {
         "technology": {

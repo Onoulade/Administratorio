@@ -376,6 +376,10 @@ test("admin station capacity upgrades are tiered and chain correctly", function(
 
   assert_true(tech_has_prereq("admin-station-capacity-3", "logistic-science-pack"), "capacity III should require logistic science")
   assert_true(tech_has_prereq("admin-station-capacity-5", "chemical-science-pack"), "capacity V should require chemical science")
+  for level = 4, 6 do
+    assert_true(not tech_has_prereq("admin-station-capacity-" .. level, "production-science-pack"),
+      "capacity " .. level .. " should not require production science")
+  end
   assert_true(tech_has_prereq("admin-station-capacity-7", "production-science-pack"), "capacity VII should require production science")
   assert_true(tech_has_prereq("admin-station-capacity-8", "utility-science-pack"), "capacity VIII should require utility science")
   assert_true(tech_uses_pack("admin-station-capacity-8", "utility-science-pack"), "capacity VIII should consume utility science")

@@ -22,6 +22,8 @@ Strict mode:
     required by one of its prerequisite technologies.
   - always fails when a technology uses a science pack in its research
     ingredients but does not transitively depend on that pack's technology.
+  - always fails when a technology has a declared science ceiling but its
+    prerequisite closure includes a higher-tier science-pack technology.
   - the normal audit fails when a visible technology cannot be reached by iteratively
     researching prerequisites and producing its science packs or trigger item.
   - the normal audit fails when a visible combat upgrade only affects ammo categories
@@ -115,6 +117,23 @@ STRUCTURAL_EMPTY_TECHS = {
     # Vanilla parent node for the first module branches; it exists to organize
     # prerequisites while speed/productivity/efficiency own the actual recipes.
     "modules",
+}
+
+# Balance contracts are separate from reachability checks. The admin-station
+# capacity ladder reaches blue science at capacity 3 and stays there through
+# capacity 6; purple science begins at capacity 7.
+SCIENCE_PACK_TIERS = {
+    "automation-science-pack": 1,
+    "logistic-science-pack": 2,
+    "chemical-science-pack": 3,
+    "production-science-pack": 4,
+    "utility-science-pack": 5,
+    "space-science-pack": 6,
+}
+SCIENCE_CEILINGS = {
+    "admin-station-capacity-4": "chemical-science-pack",
+    "admin-station-capacity-5": "chemical-science-pack",
+    "admin-station-capacity-6": "chemical-science-pack",
 }
 
 
@@ -1629,6 +1648,35 @@ class ProgressionAnalyzer:
                     )
         return gaps
 
+    def science_ceiling_findings(self) -> List[Dict]:
+        """Find declared technology tiers over-gated by science prerequisites.
+
+        The other science checks validate missing prerequisites and research
+        reachability. They cannot detect an unnecessary higher-tier
+        prerequisite, because that prerequisite is still valid and eventually
+        researchable. Balance contracts such as the admin-station capacity
+        ladder need this separate, one-sided check.
+        """
+        findings = []
+        for tech_name, ceiling_pack in SCIENCE_CEILINGS.items():
+            if tech_name not in self.technologies or not self.tech_visible(tech_name):
+                continue
+            ceiling = SCIENCE_PACK_TIERS[ceiling_pack]
+            over_gating = sorted(
+                pack_name
+                for pack_name in set(self.prereq_closure(tech_name))
+                if SCIENCE_PACK_TIERS.get(pack_name, 0) > ceiling
+            )
+            if over_gating:
+                findings.append(
+                    {
+                        "technology": tech_name,
+                        "ceiling": ceiling_pack,
+                        "over_gating_prerequisites": over_gating,
+                    }
+                )
+        return findings
+
     def _trigger_is_reachable(self, tech: Dict, tech_key: Tuple[str, ...]) -> bool:
         trigger = tech.get("research_trigger") or {}
         trigger_type = trigger.get("type")
@@ -1923,6 +1971,7 @@ def render_report(
     direct_target_failures: Sequence[Dict],
     parent_pack_gaps: Sequence[Dict],
     pack_prereq_gaps: Sequence[Dict],
+    science_ceiling_findings: Sequence[Dict],
     unreachable_technologies: Sequence[Dict],
     staffed_unreachable_technologies: Sequence[Dict],
     staffing_bootstrap_failures: Sequence[Dict],
@@ -2027,6 +2076,18 @@ def render_report(
     for gap in pack_prereq_gaps:
         lines.append(
             f"  - {gap['technology']} uses {gap['pack']} but does not transitively depend on it"
+        )
+
+    lines.extend(
+        [
+            "",
+            f"Technologies exceeding declared science ceilings: {len(science_ceiling_findings)}",
+        ]
+    )
+    for finding in science_ceiling_findings:
+        lines.append(
+            f"  - {finding['technology']} is capped at {finding['ceiling']} but depends on "
+            f"{', '.join(finding['over_gating_prerequisites'])}"
         )
 
     lines.extend(
@@ -2287,6 +2348,7 @@ def main() -> int:
         direct_target_failures = analyzer.direct_target_findings()
         parent_pack_gaps = analyzer.parent_pack_gaps()
         pack_prereq_gaps = analyzer.pack_prereq_gaps()
+        science_ceiling_findings = analyzer.science_ceiling_findings()
         unreachable_technologies = analyzer.unreachable_technology_findings()
         staffed_unreachable_technologies = analyzer.staffed_unreachable_technology_findings()
         staffing_bootstrap_failures = analyzer.staffing_bootstrap_findings()
@@ -2315,6 +2377,7 @@ def main() -> int:
             direct_target_failures=direct_target_failures,
             parent_pack_gaps=parent_pack_gaps,
             pack_prereq_gaps=pack_prereq_gaps,
+            science_ceiling_findings=science_ceiling_findings,
             unreachable_technologies=unreachable_technologies,
             staffed_unreachable_technologies=staffed_unreachable_technologies,
             staffing_bootstrap_failures=staffing_bootstrap_failures,
@@ -2353,6 +2416,8 @@ def main() -> int:
         # defect. Keeping this outside strict mode ensures the normal
         # Factorio-backed test invocation catches bootstrap cycles too.
         if pack_prereq_gaps:
+            return 1
+        if science_ceiling_findings:
             return 1
         if (
             unreachable_technologies
