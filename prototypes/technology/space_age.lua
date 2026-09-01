@@ -150,7 +150,7 @@ data:extend({
   {
     type = "technology",
     name = "cyan-ink-production",
-    icon = "__administratorio__/graphics/icons/signal-form-stock.png",
+    icon = "__administratorio__/graphics/icons/blank-cyan-form.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "cyan-slurry-production"},
@@ -193,29 +193,19 @@ data:extend({
   },
 
   -- ============================================================
-  -- TIER 2a: GLEBA CONCILIATION BOOTSTRAP
-  -- Capture Bureau egg harvesting, its lure, and its specialist must all exist
-  -- before agricultural science, whose recipe consumes pentapod eggs.
+  -- TIER 2a: GLEBA YELLOW ADMINISTRATION
+  -- Keep the chromatic bootstrap visually and conceptually parallel with
+  -- Vulcanus cyan and Fulgora magenta.
   -- ============================================================
   {
     type = "technology",
-    name = "gleba-conciliation",
-    icon = "__administratorio__/graphics/icons/space-age/conciliation-desk.png",
+    name = "gleba-yellow-administration",
+    icon = "__administratorio__/graphics/icons/blank-yellow-form.png",
     icon_size = 64,
     effects = {
-      {type = "unlock-recipe", recipe = "capture-bureau"},
-      {type = "unlock-recipe", recipe = "capture-bureau-pentapod-eggs"},
-      {type = "unlock-recipe", recipe = "conciliation-desk"},
-      {type = "unlock-recipe", recipe = "conciliation-officer-formation"},
       {type = "unlock-recipe", recipe = "yellow-ink-production"},
-      {type = "unlock-recipe", recipe = "hostile-spore-culture-production"},
-      {type = "unlock-recipe", recipe = "oviposition-lure-spores-production"},
       {type = "unlock-recipe", recipe = "mycelial-form-stock"},
       {type = "unlock-recipe", recipe = "blank-yellow-form-production"},
-      {type = "unlock-recipe", recipe = "symbiosis-record"},
-      {type = "unlock-recipe", recipe = "conciliation-order"},
-      {type = "unlock-recipe", recipe = "management-approval-written-gleba"},
-      {type = "unlock-recipe", recipe = "composted-rubble-recovery-gleba"},
     },
     prerequisites = {"amber-sap-processing", "management-formation"},
     unit = {
@@ -232,6 +222,45 @@ data:extend({
       time = 45,
     },
     order = "h-c",
+  },
+
+  -- ============================================================
+  -- TIER 2b: GLEBA CONCILIATION BOOTSTRAP
+  -- Capture Bureau egg harvesting, its lure, and its specialist must all exist
+  -- before agricultural science, whose recipe consumes pentapod eggs.
+  -- ============================================================
+  {
+    type = "technology",
+    name = "gleba-conciliation",
+    icon = "__administratorio__/graphics/icons/conciliation-order.png",
+    icon_size = 64,
+    effects = {
+      {type = "unlock-recipe", recipe = "capture-bureau"},
+      {type = "unlock-recipe", recipe = "capture-bureau-pentapod-eggs"},
+      {type = "unlock-recipe", recipe = "conciliation-desk"},
+      {type = "unlock-recipe", recipe = "conciliation-officer-formation"},
+      {type = "unlock-recipe", recipe = "hostile-spore-culture-production"},
+      {type = "unlock-recipe", recipe = "oviposition-lure-spores-production"},
+      {type = "unlock-recipe", recipe = "symbiosis-record"},
+      {type = "unlock-recipe", recipe = "conciliation-order"},
+      {type = "unlock-recipe", recipe = "management-approval-written-gleba"},
+      {type = "unlock-recipe", recipe = "composted-rubble-recovery-gleba"},
+    },
+    prerequisites = {"gleba-yellow-administration", "management-formation"},
+    unit = {
+      count = 220,
+      ingredients = {
+        {"automation-science-pack", 1},
+        {"logistic-science-pack", 1},
+        {"chemical-science-pack", 1},
+        {"production-science-pack", 1},
+        {"utility-science-pack", 1},
+        {"space-science-pack", 1},
+        {"administrative-science-pack", 1},
+      },
+      time = 45,
+    },
+    order = "h-c2",
   },
 
   -- ============================================================
@@ -355,7 +384,7 @@ data:extend({
       {type = "unlock-recipe", recipe = "yellow-magenta-form-production"},
       {type = "unlock-recipe", recipe = "anecdotal-data-reprocessing"},
     },
-    prerequisites = {"gleba-conciliation", "fulgora-digital-services", "archive-recombination", "agricultural-science-pack", "electromagnetic-science-pack"},
+    prerequisites = {"gleba-yellow-administration", "fulgora-digital-services", "archive-recombination", "agricultural-science-pack", "electromagnetic-science-pack"},
     unit = {
       count = 380,
       ingredients = {

@@ -688,6 +688,10 @@ test("delegate training and vanilla unlock ownership keep each tech meaningful",
 end)
 
 test("late complaint tiers are split by family and science tier", function()
+  assert_true(technologies["constitutional-law"].icon == "__administratorio__/graphics/icons/filing-u.png",
+    "constitutional-law should use the unemployment filing paperwork icon")
+  assert_true(technologies["constitutional-law"].icon_size == 64,
+    "constitutional-law should use the filing icon size")
   assert_true(tech_unlocks_recipe("noise-ordinances", "noise-final"), "noise-ordinances should unlock noise resolution")
   assert_true(tech_unlocks_recipe("loitering-ordinances", "loitering-final"), "loitering-ordinances should unlock loitering resolution")
   assert_true(tech_unlocks_recipe("constitutional-law", "unemployment-final"), "constitutional-law should unlock unemployment resolution")

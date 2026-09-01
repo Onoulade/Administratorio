@@ -491,7 +491,7 @@ data:extend({
   -- T8a: CONSTITUTIONAL LAW (unemployment resolution)
   {
     type = "technology", name = "constitutional-law",
-    icon = tech_icons .. "constitutional-law.png", icon_size = 256,
+    icon = "__administratorio__/graphics/icons/filing-u.png", icon_size = 64,
     effects = {
       { type = "unlock-recipe", recipe = "filing-unemployment" },
       { type = "unlock-recipe", recipe = "case-unemployment" },

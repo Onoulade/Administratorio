@@ -39,7 +39,7 @@ M.documents = {
   ["carbon-offset-certificate-verified"] = document(2, "compliance", "environmental-compliance"),
   ["chemical-handling-work-order"] = document(2, "work-order", "environmental-compliance"),
   ["blank-cyan-form"] = document(2, "chromatic", "chromatic-printing", {cyan = true}),
-  ["blank-yellow-form"] = document(2, "chromatic", "gleba-conciliation", {yellow = true}),
+  ["blank-yellow-form"] = document(2, "chromatic", "gleba-yellow-administration", {yellow = true}),
   ["blank-magenta-form"] = document(2, "chromatic", "chromatic-printing", {magenta = true}),
 
   ["management-approval-written"] = document(3, "management", "board-meetings"),

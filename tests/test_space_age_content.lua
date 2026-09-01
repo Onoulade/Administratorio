@@ -740,6 +740,10 @@ test("planetary inks are owned by their own pre-science bootstrap technologies",
   local cyan_ink = technologies["cyan-ink-production"]
   local fulgora = technologies["fulgora-salvage-administration"]
   assert_true(chromatic ~= nil, "chromatic-printing missing")
+  assert_eq(cyan_ink.icon, "__administratorio__/graphics/icons/blank-cyan-form.png",
+    "Vulcanus cyan administration should use a cyan paperwork icon")
+  assert_eq(fulgora.icon, "__administratorio__/graphics/icons/blank-magenta-form.png",
+    "Fulgora magenta administration should use a magenta paperwork icon")
   for _, recipe_name in ipairs({
     "chromatic-printer",
     "liquid-black-ink",
@@ -1378,15 +1382,28 @@ test("orbital employee return has no random recovery research", function()
   end
 end)
 
-test("gleba conciliation unlocks the yellow chain and gleba specialist buildings", function()
+test("gleba separates yellow administration from conciliation operations", function()
+  local yellow = technologies["gleba-yellow-administration"]
   local gleba = technologies["gleba-conciliation"]
+  assert_true(yellow ~= nil, "gleba-yellow-administration missing")
   assert_true(gleba ~= nil, "gleba-conciliation missing")
+  assert_eq(yellow.icon, "__administratorio__/graphics/icons/blank-yellow-form.png",
+    "Gleba yellow administration should use a yellow paperwork icon")
+  assert_eq(gleba.icon, "__administratorio__/graphics/icons/conciliation-order.png",
+    "Gleba conciliation should use a conciliation paperwork icon")
   for _, recipe_name in ipairs({
-    "capture-bureau",
-    "conciliation-desk",
     "yellow-ink-production",
     "mycelial-form-stock",
     "blank-yellow-form-production",
+  }) do
+    assert_true(tech_unlocks_recipe(yellow, recipe_name),
+      "gleba-yellow-administration should unlock " .. recipe_name)
+    assert_true(not tech_unlocks_recipe(gleba, recipe_name),
+      "gleba-conciliation should not duplicate yellow administration recipe " .. recipe_name)
+  end
+  for _, recipe_name in ipairs({
+    "capture-bureau",
+    "conciliation-desk",
     "symbiosis-record",
     "conciliation-order",
     "management-approval-written-gleba",
@@ -1402,9 +1419,9 @@ test("gleba conciliation unlocks the yellow chain and gleba specialist buildings
     "Gleba should not add a post-agricultural duplicate officer-formation technology")
   assert_true(recipes["conciliation-officer-formation-gleba"] == nil,
     "specific biter professions should not gain an off-world formation recipe")
-  local has_amber_sap_processing = false
+  local has_yellow_administration = false
   for _, prerequisite in ipairs(gleba.prerequisites or {}) do
-    has_amber_sap_processing = has_amber_sap_processing or prerequisite == "amber-sap-processing"
+    has_yellow_administration = has_yellow_administration or prerequisite == "gleba-yellow-administration"
   end
   assert_true(not tech_has_prerequisite(gleba, "agricultural-science-pack"),
     "the Capture Bureau bootstrap must precede agricultural science")
@@ -1412,8 +1429,10 @@ test("gleba conciliation unlocks the yellow chain and gleba specialist buildings
     "Gleba conciliation must not consume the pack whose eggs it bootstraps")
   assert_true(tech_has_prerequisite(technologies["biochamber"], "gleba-conciliation"),
     "the Biochamber should follow the officer and egg-harvest system in its own recipe")
-  assert_true(has_amber_sap_processing,
-    "gleba-conciliation should follow the local amber sap discovery")
+  assert_true(has_yellow_administration,
+    "gleba-conciliation should follow the yellow administration research")
+  assert_true(tech_has_prerequisite(yellow, "amber-sap-processing"),
+    "gleba yellow administration should follow the local amber sap discovery")
 end)
 
 test("mining amber sap unlocks Gleba bootstrap recipes", function()
@@ -1953,7 +1972,7 @@ test("bicolored paperwork technologies require the matching planet sciences", fu
   assert_true(tech_unlocks_recipe(cyan_magenta, "hardened-data-vault-production"), "cyan-magenta-bureaucracy should unlock hardened-data-vault-production")
 
   local yellow_magenta_prereqs = prerequisite_set(yellow_magenta)
-  assert_true(yellow_magenta_prereqs["gleba-conciliation"], "yellow-magenta-bureaucracy should depend on gleba-conciliation")
+  assert_true(yellow_magenta_prereqs["gleba-yellow-administration"], "yellow-magenta-bureaucracy should depend on gleba-yellow-administration")
   assert_true(yellow_magenta_prereqs["fulgora-digital-services"], "yellow-magenta-bureaucracy should depend on fulgora-digital-services")
   assert_true(yellow_magenta_prereqs["agricultural-science-pack"], "yellow-magenta-bureaucracy should depend on agricultural-science-pack")
   assert_true(yellow_magenta_prereqs["electromagnetic-science-pack"], "yellow-magenta-bureaucracy should depend on electromagnetic-science-pack")

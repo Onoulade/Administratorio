@@ -217,7 +217,7 @@ end)
 test("Space Age planet manifests unlock with their planetary systems", function()
   local expected = {
     ["administratorio-vulcanus-manifest"] = "vulcanus-certification",
-    ["administratorio-gleba-manifest"] = "gleba-conciliation",
+    ["administratorio-gleba-manifest"] = "gleba-yellow-administration",
     ["administratorio-fulgora-archives"] = "archive-recombination",
     ["administratorio-aquilo-manifest"] = "interplanetary-tube-chromatic",
   }
@@ -271,7 +271,7 @@ test("previously undocumented Space Age mechanics have dedicated tips", function
     ["administratorio-space-age-enrollment"] = "worker-formation",
     ["administratorio-offworld-economy"] = "space-platform",
     ["administratorio-management-briefings"] = "management-formation",
-    ["administratorio-yellow-paperwork-spoilage"] = "gleba-conciliation",
+    ["administratorio-yellow-paperwork-spoilage"] = "gleba-yellow-administration",
     ["administratorio-pentapod-bargaining"] = "gleba-conciliation",
     ["administratorio-space-tourism"] = "cyan-yellow-bureaucracy",
     ["administratorio-promethium-administration"] = "promethium-science-pack",

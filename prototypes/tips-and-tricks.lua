@@ -167,11 +167,11 @@ if space_age_enabled then
     research_tip("administratorio-vulcanus-export-charters", vulcanus, "e", "vulcanus-export-charters"),
 
     -- Gleba
-    research_tip("administratorio-gleba-conciliation", gleba, "a", "gleba-conciliation", {
+    research_tip("administratorio-gleba-conciliation", gleba, "a", "gleba-yellow-administration", {
       is_title = true,
     }),
-    research_tip("administratorio-gleba-manifest", gleba, "b", "gleba-conciliation"),
-    research_tip("administratorio-yellow-paperwork-spoilage", gleba, "c", "gleba-conciliation"),
+    research_tip("administratorio-gleba-manifest", gleba, "b", "gleba-yellow-administration"),
+    research_tip("administratorio-yellow-paperwork-spoilage", gleba, "c", "gleba-yellow-administration"),
     research_tip("administratorio-conciliation-desk", gleba, "d", "gleba-conciliation"),
     research_tip("administratorio-capture-bureau", gleba, "e", "gleba-conciliation"),
     research_tip("administratorio-pentapod-bargaining", gleba, "f", "gleba-conciliation"),
