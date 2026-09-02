@@ -122,9 +122,9 @@ This file tracks the actual progression model implemented by the mod, not just t
 | Enemy | Complaint count | Max tier |
 | --- | --- | --- |
 | small biter / spitter | 1 | tier 1 |
-| medium biter / spitter | 3 | tier 2 |
-| big biter / spitter | 6 | tier 3 |
-| behemoth biter / spitter | 10 | tier 4 |
+| medium biter / spitter | 2 | tier 2 |
+| big biter / spitter | 3 | tier 3 |
+| behemoth biter / spitter | 4 | tier 4 |
 
 Frustration threshold is `600` seconds. Protesters disable a random player building until pacified.
 `promise` capsules now pacify a protester for up to `60` seconds while it retries to find an open desk. If no desk frees up before that timer expires, the protest resumes.
@@ -154,7 +154,7 @@ Frustration threshold is `600` seconds. Protesters disable a random player build
 
 - `admin-station` has `inventory_size = 20`.
 - Each waiting zone has 8 biter slots.
-- Big and behemoth citizens generate 6 to 10 tickets each.
+- Big and behemoth citizens generate 3 to 4 tickets each.
 - Practical desk throughput is inventory-limited long before zone capacity is reached.
 
 ### 2. Complaint tech unlocks lag vanilla evolution

@@ -219,17 +219,15 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 | `union-delegate-training` | `biter-employment-office` | Union Delegate specialist |
 | `chemical-operator-training` | `environmental-compliance`, `biter-employment-office` | Chemical Operator specialist (required for chemical plants) |
 | `nuclear-technician-training` | `executive-review`, `production-science-pack` | Nuclear Technician specialist (required for nuclear power) |
-| `biter-labor-efficiency-1` | `biter-employment-office` | 1 craft per visit, biter-worker speed upgrade |
-| `biter-labor-efficiency-2` | `biter-labor-efficiency-1`, `chemical-science-pack` | 2 crafts per visit |
-| `biter-labor-efficiency-3` | `biter-labor-efficiency-2` | 3 crafts per visit |
-| `biter-labor-efficiency-4` | `biter-labor-efficiency-3`, `production-science-pack` | 4 crafts per visit |
+| `biter-labor-efficiency-1` | `biter-employment-office` | 3 managed-machine visits per trip; tier-2 worker entity |
+| `biter-labor-efficiency-2` | `biter-labor-efficiency-1`, `chemical-science-pack` | 5 managed-machine visits per trip; tier-3 worker entity |
 
 ## Biterport Technologies
 
 | Technology | Effect |
 | --- | --- |
 | `biterport-logistics` | Unlocks the biterport building |
-| `biterport-transport-capacity-1/2/3/4/5` | Increases items per worker from 1 to 25 |
+| `biterport-transport-capacity-1/2/3/4` | Increases items per worker from 1 to 25 |
 | `biterport-worker-speed-1` | Unlocks faster biterport workers |
 | `biterport-worker-speed-2` | Unlocks express biterport workers |
 

@@ -14,12 +14,13 @@ An overhaul mod for Factorio 2.0 that replaces military conflict with corporate 
 - **[Technology Tree](technology-tree.md)** — Complete tech tree from discovery triggers through Constitutional Law, including specialization training and capacity upgrades.
 - **[Mod Compatibility](mod-compatibility.md)** — For contributors: the `compat/` hook engine, existing hook points, and how to add compatibility with another mod without touching core logic.
 - **[Advanced Topics](advanced-topics.md)** — Hired Biter (field agents), working hours system, modules, funding chain, coffee economy, train transit, and structural bottlenecks.
+- **[Forward Audit](../forward-audit-2026-09.md)** — Prioritized architecture, performance, testing, balance, documentation, and future-mechanics work.
 
 ## Current State
 
 - **Requires:** Factorio 2.0
 - **Status:** Beta — full progression is playable, with ongoing balance, compatibility, translation, and polish work
-- **Incompatible with:** Space Age, Quality
+- **Compatible with:** Space Age and its optional Quality feature set
 - **Settings:** Working Hours can be disabled for planner mod compatibility
 
 Beta is the public playtesting phase. Treat the core loops as implemented, but keep reporting late-game stalls, migration issues, awkward balance spikes, missing locale coverage, and places where the paperwork stops being funny and starts being merely paperwork.

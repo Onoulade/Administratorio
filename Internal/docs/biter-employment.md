@@ -25,7 +25,6 @@ The `biter-station` (Biter Employment Office) dispatches workers to nearby manag
 
 The biter station manages these building types:
 
-- `union-headquarters`
 - `propaganda-distillery`
 - `corporate-breakroom`
 - `centrifuge`
@@ -35,28 +34,18 @@ The biter station manages these building types:
 ### How It Works
 
 1. Place a `biter-station` building.
-2. It reserves slots in the station inventory — base 10 slots (1 for taxpayer-money, 9 for biter-worker items).
+2. It has 20 filtered inventory slots: 1 for taxpayer-money and 19 for biter-worker items.
 3. Workers are dispatched from the station inventory to nearby managed buildings within a 30-tile radius.
 4. Each worker visits a building, performs one craft (default), and returns.
 5. Salary of 1 taxpayer-money per dispatch is deducted from the station.
-
-### Capacity Upgrades
-
-| Technology | Slot Count |
-| --- | --- |
-| Base | 10 |
-| `biter-station-capacity-1` | 20 |
-| `biter-station-capacity-2` | 30 |
-| `biter-station-capacity-3` | 40 |
-| `biter-station-capacity-4` | 50 |
 
 ### Worker Tier and Speed
 
 The biter station has a crafts-per-visit upgrade that affects worker entity appearance and throughput:
 
-- **Tier 1** (1-2 crafts): small-biter entity
-- **Tier 2** (3-4 crafts): biter-worker-t2 entity
-- **Tier 3** (5+ crafts): biter-worker-t3 entity
+- **Base** (1 machine per trip): small-biter entity
+- **Labor Efficiency I** (3 machines per trip): biter-worker-t2 entity
+- **Labor Efficiency II** (5 machines per trip): biter-worker-t3 entity
 
 Each worker circuit costs 1 taxpayer-money, regardless of how many buildings it authorizes during that trip.
 
@@ -181,7 +170,7 @@ Nauvis-only early-game bureaucratic outpost that summons biters from nearby nest
 1. Build a `field-office`.
 2. It scans for nearby biter nests within 200 tiles.
 3. When a recipe is queued, it summons a biter worker from the nearest spawner.
-4. The biter walks to the office, stands on it, and the office produces at 1.0x speed with 0 pollution.
+4. The biter walks to the office, stands on it, and the office produces at 0.5x speed with 0 pollution.
 5. Each biter works for 2 crafts, then walks back to the spawner and is replaced.
 6. Day or night, the office continues cycling workers as long as it can craft.
 

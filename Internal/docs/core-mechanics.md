@@ -113,9 +113,9 @@ Larger biters file more complaints at higher tiers, but also pay more.
 | Biter Size | Complaint Count | Max Tier | Payout |
 | --- | --- | --- | --- |
 | Small | 1 | 1 (landscape / littering) | 5 taxpayer-money |
-| Medium | 3 | 2 (adds smog / hazmat) | 15 taxpayer-money |
-| Big | 6 | 3 (adds noise / loitering) | 50 taxpayer-money |
-| Behemoth | 10 | 4 (adds unemployment / vagrancy) | 100 taxpayer-money |
+| Medium | 2 | 2 (adds smog / hazmat) | 15 taxpayer-money |
+| Big | 3 | 3 (adds noise / loitering) | 50 taxpayer-money |
+| Behemoth | 4 | 4 (adds unemployment / vagrancy) | 100 taxpayer-money |
 
 ### Resolution Chains
 

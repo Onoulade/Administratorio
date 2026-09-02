@@ -117,7 +117,7 @@ The train system requires paperwork:
 ## Key Structural Bottlenecks
 
 ### 1. Desk Inventory is the Real Complaint Cap
-`admin-station` has `inventory_size = 20`. Each waiting zone has 8 biter slots. Big and behemoth citizens generate 6 to 10 tickets each. Practical desk throughput is inventory-limited long before zone capacity is reached.
+`admin-station` has `inventory_size = 20`. Each waiting zone has 8 biter slots. Big and behemoth citizens generate 3 to 4 tickets each. Practical desk throughput is inventory-limited long before zone capacity is reached.
 
 ### 2. Complaint Tech Unlocks Lag Vanilla Evolution
 Medium enemies can generate tier-2 complaints before `environmental-compliance`. Big enemies can generate tier-3 complaints before `eminent-domain-zoning`. Behemoths can generate tier-4 complaints before `constitutional-law`. Nothing in runtime filters complaint tiers by player tech.
