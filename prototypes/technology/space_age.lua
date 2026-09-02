@@ -648,7 +648,6 @@ data:extend({
     icon = "__base__/graphics/technology/weapon-shooting-speed-1.png",
     icon_size = 256,
     effects = {
-      {type = "unlock-recipe", recipe = "trajectory-compliance-array"},
       {type = "nothing", effect_description = {"technology-effect.trajectory-compliance-jurisdiction", "1"}},
     },
     prerequisites = {"orbital-compliance-systems", "space-science-pack"},
@@ -1455,6 +1454,11 @@ data:extend({
 remove_tech_unlock("biter-employment", "resolution-office")
 remove_tech_unlock("biter-employment", "job-offer-production")
 add_tech_unlock("worker-formation", "resolution-office")
+
+-- The regulated quantum-processor recipe consumes the unified charter made
+-- by chromatic convergence. Put that requirement on the producer technology
+-- itself so every downstream quantum consumer inherits an honest dependency.
+add_tech_prerequisite("quantum-processor", "interplanetary-tube-chromatic")
 
 for technology_name, technology in pairs(data.raw.technology or {}) do
   if technology_name ~= "involuntary-relocation" then

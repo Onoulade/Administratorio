@@ -135,6 +135,7 @@ local technologies = {
   ["electromagnetic-science-pack"] = {type = "technology", name = "electromagnetic-science-pack", effects = {}},
   ["cryogenic-plant"] = {type = "technology", name = "cryogenic-plant", effects = {{type = "unlock-recipe", recipe = "cryogenic-plant"}}, prerequisites = {}},
   ["cryogenic-science-pack"] = {type = "technology", name = "cryogenic-science-pack", effects = {}},
+  ["quantum-processor"] = {type = "technology", name = "quantum-processor", effects = {}, prerequisites = {"cryogenic-science-pack"}},
   ["advanced-asteroid-processing"] = {type = "technology", name = "advanced-asteroid-processing", effects = {}},
   ["after-hours-operations"] = {type = "technology", name = "after-hours-operations", effects = {}},
   ["discovery-bullshit"] = {type = "technology", name = "discovery-bullshit", effects = {}},
@@ -1168,6 +1169,8 @@ test("deviation paperwork and VESM catapult are distinct orbital systems", funct
   local executive_tech = assert(technologies["trajectory-compliance-jurisdiction-3"], "executive jurisdiction missing")
   assert_true(tech_has_prerequisite(junior_tech, "orbital-compliance-systems"),
     "junior jurisdiction must follow orbital compliance systems")
+  assert_true(not tech_unlocks_recipe(junior_tech, "trajectory-compliance-array"),
+    "junior jurisdiction must not repeat the orbital compliance array unlock")
   assert_true(tech_has_prerequisite(senior_tech, "trajectory-compliance-jurisdiction-1"),
     "senior jurisdiction must follow junior jurisdiction")
   assert_true(tech_has_prerequisite(senior_tech, "carbon-fiber"),
@@ -1179,6 +1182,8 @@ test("deviation paperwork and VESM catapult are distinct orbital systems", funct
     if prerequisite == "quantum-processor" then has_quantum_prerequisite = true end
   end
   assert_true(has_quantum_prerequisite, "huge-asteroid jurisdiction must unlock through quantum processing")
+  assert_true(tech_has_prerequisite(technologies["quantum-processor"], "interplanetary-tube-chromatic"),
+    "quantum processing must follow the unified charter consumed by its recipe")
   for _, ingredient in ipairs(executive_tech.unit.ingredients or {}) do
     assert_true((ingredient.name or ingredient[1]) ~= "promethium-science-pack",
       "Promethium-capable hardware cannot require Promethium science")

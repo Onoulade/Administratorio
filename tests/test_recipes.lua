@@ -918,7 +918,7 @@ test("all filing recipes require blank-form and use expected categories", functi
     {"filing-smog", "bureaucracy-resolution"},
     {"filing-noise", "bureaucracy-resolution"},
     {"filing-unemployment", "bureaucracy-resolution"},
-    {"filing-littering", "bureaucracy-resolution"},
+    {"filing-littering", "resolution-handcraft"},
     {"filing-hazmat", "bureaucracy-resolution"},
     {"filing-loitering", "bureaucracy-resolution"},
     {"filing-vagrancy", "bureaucracy-resolution"},
@@ -982,6 +982,7 @@ end)
 
 test("littering-final is simple (no case/brief, just filing + crappy-report)", function()
   local r = get_recipe("littering-final")
+  assert_eq(r.category, "resolution-handcraft")
   assert_true(has_ingredient(r, "filing-lt"))
   assert_true(has_ingredient(r, "crappy-report"))
   assert_eq(#r.ingredients, 2)

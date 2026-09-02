@@ -130,6 +130,10 @@ local PAIRED_PIPELINES = {
     },
     spitter = {
       slug = "littering",
+      -- Littering is the first spitter complaint and unlocks before the
+      -- staffed Resolution Office exists. Keep both stages hand-craftable so
+      -- this bootstrap complaint cannot wait on worker formation.
+      category = "resolution-handcraft",
       ticket = "ticket-littering",
       filing = "filing-lt",
       final = {
