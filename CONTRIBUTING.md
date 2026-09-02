@@ -47,6 +47,19 @@ The runtime scenario starts a temporary local headless server, runs real build
 events, and shuts it down after its assertions pass. Its environment must permit a
 temporary local UDP socket.
 
+Gameplay values repeated in the internal reference are generated from
+`prototypes/shared/gameplay_facts.lua`. After changing those facts, refresh only the
+marked factual sections and review the result:
+
+```sh
+lua tools/generate-reference-docs.lua
+lua tools/generate-reference-docs.lua --check
+```
+
+The normal test suite performs the check automatically. It also rejects obsolete
+technology identifiers from `prototypes/shared/obsolete_identifiers.lua` when they
+appear in maintained documentation or locale files.
+
 ## Commit Structure
 
 Use Conventional Commits:

@@ -15,6 +15,7 @@ local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories
 local generated_animation_speeds = require("prototypes.shared.generated_animation_speeds")
 local building_icons = require("prototypes.shared.building_icons")
 local native_fluid_rotation = require("prototypes.shared.native_fluid_rotation")
+local gameplay_facts = require("prototypes.shared.gameplay_facts")
 local working_hours_enabled = feature_flags.working_hours_enabled()
 local space_age_enabled = feature_flags.space_age_enabled()
 local entity_graphics = "__administratorio__/graphics/entities/"
@@ -174,7 +175,7 @@ local admin_station_base = {
   collision_box = {{-4.4, -4.4}, {4.4, 4.4}},
   selection_box = {{-4.5, -4.5}, {4.5, 4.5}},
   selection_priority = 51,
-  inventory_size = 20,
+  inventory_size = gameplay_facts.admin_station.inventory_size,
   circuit_wire_max_distance = 9,
   fast_replaceable_group = "admin-station",
   circuit_connector = circuit_connector_definitions.create_single(
@@ -287,7 +288,7 @@ biter_station.minable = {mining_time = 0.5, result = "biter-station"}
 biter_station.max_health = 450
 biter_station.collision_box = {{-2.4, -2.4}, {2.4, 2.4}}
 biter_station.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
-biter_station.inventory_size = 20
+biter_station.inventory_size = gameplay_facts.biter_station.inventory_size
 biter_station.inventory_type = "with_filters_and_bar"
 biter_station.rotatable = false
 biter_station.collision_mask = {layers = {
@@ -346,7 +347,7 @@ biterport.minable = {mining_time = 0.5, result = "biterport"}
 biterport.max_health = 450
 biterport.collision_box = {{-2.4, -2.4}, {2.4, 2.4}}
 biterport.selection_box = {{-2.5, -2.5}, {2.5, 2.5}}
-biterport.inventory_size = 9
+biterport.inventory_size = gameplay_facts.biterport.inventory_size
 biterport.inventory_type = "with_filters_and_bar"
 biterport.rotatable = false
 biterport.collision_mask = {layers = {
@@ -1273,11 +1274,26 @@ local function make_worker_biter(name, source_name, localised_name, speed_multip
   return biter
 end
 
-local biter_worker_t2 = make_worker_biter("biter-worker-t2", "small-biter")
-local biter_worker_t3 = make_worker_biter("biter-worker-t3", "small-biter")
-local biterport_worker = make_worker_biter("biterport-worker", "small-biter", {"entity-name.biterport-worker"}, 1.0)
-local biterport_worker_fast = make_worker_biter("biterport-worker-fast", "small-biter", {"entity-name.biterport-worker-fast"}, 1.35)
-local biterport_worker_express = make_worker_biter("biterport-worker-express", "small-biter", {"entity-name.biterport-worker-express"}, 1.7)
+local biter_worker_t2 = make_worker_biter(gameplay_facts.biter_station.labor_efficiency[1].worker_entity, "small-biter")
+local biter_worker_t3 = make_worker_biter(gameplay_facts.biter_station.labor_efficiency[2].worker_entity, "small-biter")
+local biterport_worker = make_worker_biter(
+  gameplay_facts.biterport.base_worker_entity,
+  "small-biter",
+  {"entity-name.biterport-worker"},
+  1.0
+)
+local biterport_worker_fast = make_worker_biter(
+  gameplay_facts.biterport.worker_speed[1].worker_entity,
+  "small-biter",
+  {"entity-name.biterport-worker-fast"},
+  gameplay_facts.biterport.worker_speed[1].multiplier
+)
+local biterport_worker_express = make_worker_biter(
+  gameplay_facts.biterport.worker_speed[2].worker_entity,
+  "small-biter",
+  {"entity-name.biterport-worker-express"},
+  gameplay_facts.biterport.worker_speed[2].multiplier
+)
 
 local function make_hired_biter_unit()
   local biter_table = data.raw["unit"]

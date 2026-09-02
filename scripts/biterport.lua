@@ -25,17 +25,8 @@ local PORT_WALL_OFFSETS = {
 local PORT_DESPAWN_INTERIOR_OFFSET = {x = 0, y = 0}
 local PORT_SPAWN_INTERIOR_OFFSET = {x = 0, y = 0}
 
-local TRANSPORT_TIER_TECHS = {
-  {"biterport-transport-capacity-1", 2},
-  {"biterport-transport-capacity-2", 5},
-  {"biterport-transport-capacity-3", 10},
-  {"biterport-transport-capacity-4", 25},
-}
-
-local SPEED_TIER_TECHS = {
-  {"biterport-worker-speed-2", C.BITERPORT_WORKER_EXPRESS_ENTITY_NAME},
-  {"biterport-worker-speed-1", C.BITERPORT_WORKER_FAST_ENTITY_NAME},
-}
+local TRANSPORT_TIER_TECHS = C.BITERPORT_TRANSPORT_CAPACITY_TIERS
+local SPEED_TIER_TECHS = C.BITERPORT_WORKER_SPEED_TIERS
 
 local SOURCE_CHEST_NAMES = {
   [C.BITERPORT_CRAPPY_PASSIVE_PROVIDER_CHEST] = true,
@@ -282,10 +273,10 @@ local function force_has_researched(force, tech_name)
 end
 
 local function get_transport_capacity_for_force(force)
-  local capacity = 1
+  local capacity = C.BITERPORT_BASE_TRANSPORT_CAPACITY
   for _, tier in ipairs(TRANSPORT_TIER_TECHS) do
-    if force_has_researched(force, tier[1]) then
-      capacity = tier[2]
+    if force_has_researched(force, tier.technology) then
+      capacity = tier.items_per_worker
     else
       break
     end
@@ -302,10 +293,10 @@ local function entity_prototype_exists(name)
 end
 
 local function get_worker_entity_name(force)
-  for _, tier in ipairs(SPEED_TIER_TECHS) do
-    local tech_name, entity_name = tier[1], tier[2]
-    if force_has_researched(force, tech_name) and entity_prototype_exists(entity_name) then
-      return entity_name
+  for index = #SPEED_TIER_TECHS, 1, -1 do
+    local tier = SPEED_TIER_TECHS[index]
+    if force_has_researched(force, tier.technology) and entity_prototype_exists(tier.worker_entity) then
+      return tier.worker_entity
     end
   end
   if entity_prototype_exists(WORKER_ENTITY_NAME) then return WORKER_ENTITY_NAME end

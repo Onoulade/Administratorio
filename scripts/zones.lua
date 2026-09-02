@@ -1,5 +1,6 @@
 -- Waiting zone management: bounds, markers, capacity
 local C = require("scripts.constants")
+local gameplay_facts = require("prototypes.shared.gameplay_facts")
 local M = {}
 
 -- Grid offsets within a 5x5 zone (relative to zone left_top).
@@ -11,9 +12,11 @@ local GRID_OFFSETS = {
   {2.00, 1.10}, {3.00, 2.90}, {3.00, 1.10}, {2.00, 2.90},
   {1.20, 2.00}, {3.80, 2.00}, {2.00, 2.00}, {3.00, 2.00},
 }
-local BASE_ZONE_CAPACITY = 4
+local BASE_ZONE_CAPACITY = gameplay_facts.admin_station.base_waiting_capacity
 local MAX_ZONE_CAPACITY = #GRID_OFFSETS
-local CAPACITY_TECH_PREFIX = "admin-station-capacity-"
+assert(MAX_ZONE_CAPACITY == gameplay_facts.admin_station.max_waiting_capacity,
+  "admin station waiting offsets must match the documented maximum capacity")
+local CAPACITY_TECH_PREFIX = gameplay_facts.admin_station.capacity_technology_prefix
 local DESK_HALF_SIZE = 4.5
 local ZONE_HALF_SIZE = 2.5
 local CORNER_BLOCKER_NAME = "admin-station-corner-blocker"

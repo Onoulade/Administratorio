@@ -207,8 +207,15 @@ runtime source or later gate so changed dependencies can still invalidate it.
 
 ## Documentation Strategy
 
-The hand-written reference currently duplicates constants and technology facts and
-has already drifted. Long term, generate tables for complaint counts/payouts,
-building membership, capacities, and upgrade values from shared dependency-free Lua
-modules. Keep prose hand-written; generate only factual tables. Add a release check
-that rejects obsolete internal identifiers such as removed technology tiers.
+Factual reference sections are now generated from
+`prototypes/shared/gameplay_facts.lua`, the same dependency-free source consumed by
+the data and control stages. Generated tables cover complaint counts and payouts,
+worker yields, managed-building membership, Admin Station and dispatch capacities,
+labor upgrades, Biterport transport and speed upgrades, and pneumatic capacity.
+Surrounding explanations remain hand-written.
+
+Run `lua tools/generate-reference-docs.lua` after changing shared facts. The normal
+test suite runs the equivalent `--check` validation and also rejects identifiers in
+maintained docs or locale files that appear in
+`prototypes/shared/obsolete_identifiers.lua`. Introducing the check immediately
+caught and removed lingering localization for a technology that no longer exists.

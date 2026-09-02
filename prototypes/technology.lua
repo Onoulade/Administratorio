@@ -1,6 +1,7 @@
 local feature_flags = require("feature_flags")
 local shared = require("prototypes.shared")
 local building_icons = require("prototypes.shared.building_icons")
+local gameplay_facts = require("prototypes.shared.gameplay_facts")
 local working_hours_enabled = feature_flags.working_hours_enabled()
 local space_age_enabled = feature_flags.space_age_enabled()
 local tech_icons = "__administratorio__/graphics/technology/"
@@ -572,7 +573,8 @@ data:extend({
     type = "technology", name = "biter-labor-efficiency-1",
     icons = numbered_technology_icon(tech_icons .. "worker-biter.png", 256, 1),
     effects = {
-      { type = "nothing", effect_description = {"technology-effect.biter-labor-efficiency", "3"} },
+      { type = "nothing", effect_description = {"technology-effect.biter-labor-efficiency",
+        tostring(gameplay_facts.biter_station.labor_efficiency[1].visits_per_trip)} },
     },
     prerequisites = {"biter-employment", "chemical-science-pack"},
     unit = { count = 140, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
@@ -582,7 +584,8 @@ data:extend({
     type = "technology", name = "biter-labor-efficiency-2",
     icons = numbered_technology_icon(tech_icons .. "worker-biter.png", 256, 2),
     effects = {
-      { type = "nothing", effect_description = {"technology-effect.biter-labor-efficiency", "5"} },
+      { type = "nothing", effect_description = {"technology-effect.biter-labor-efficiency",
+        tostring(gameplay_facts.biter_station.labor_efficiency[2].visits_per_trip)} },
     },
     prerequisites = {"biter-labor-efficiency-1"},
     unit = { count = 220, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
@@ -610,7 +613,8 @@ data:extend({
   {
     type = "technology", name = "biterport-transport-capacity-1",
     icons = biterport_upgrade_icons("capacity", 1),
-    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity", "2"} }},
+    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity",
+      tostring(gameplay_facts.biterport.transport_capacity[1].items_per_worker)} }},
     prerequisites = {"biterport-logistics"},
     unit = { count = 90, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },
     order = "c-h9b"
@@ -618,7 +622,8 @@ data:extend({
   {
     type = "technology", name = "biterport-transport-capacity-2",
     icons = biterport_upgrade_icons("capacity", 2),
-    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity", "5"} }},
+    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity",
+      tostring(gameplay_facts.biterport.transport_capacity[2].items_per_worker)} }},
     prerequisites = {"biterport-transport-capacity-1"},
     unit = { count = 140, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "c-h9c"
@@ -626,7 +631,8 @@ data:extend({
   {
     type = "technology", name = "biterport-transport-capacity-3",
     icons = biterport_upgrade_icons("capacity", 3),
-    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity", "10"} }},
+    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity",
+      tostring(gameplay_facts.biterport.transport_capacity[3].items_per_worker)} }},
     prerequisites = {"biterport-transport-capacity-2"},
     unit = { count = 220, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 40 },
     order = "c-h9d"
@@ -634,7 +640,8 @@ data:extend({
   {
     type = "technology", name = "biterport-transport-capacity-4",
     icons = biterport_upgrade_icons("capacity", 4),
-    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity", "25"} }},
+    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity",
+      tostring(gameplay_facts.biterport.transport_capacity[4].items_per_worker)} }},
     prerequisites = {"biterport-transport-capacity-3", "chemical-science-pack"},
     unit = { count = 320, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 50 },
     order = "c-h9e"
@@ -643,7 +650,8 @@ data:extend({
   {
     type = "technology", name = "biterport-worker-speed-1",
     icons = biterport_upgrade_icons("speed", 1),
-    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-worker-speed", "35%"} }},
+    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-worker-speed",
+      tostring(math.floor((gameplay_facts.biterport.worker_speed[1].multiplier - 1) * 100 + 0.5)) .. "%"} }},
     prerequisites = {"biterport-logistics"},
     unit = { count = 140, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "c-i1"
@@ -651,7 +659,8 @@ data:extend({
   {
     type = "technology", name = "biterport-worker-speed-2",
     icons = biterport_upgrade_icons("speed", 2),
-    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-worker-speed", "70%"} }},
+    effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-worker-speed",
+      tostring(math.floor((gameplay_facts.biterport.worker_speed[2].multiplier - 1) * 100 + 0.5)) .. "%"} }},
     prerequisites = {"biterport-worker-speed-1", "chemical-science-pack"},
     unit = { count = 240, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 45 },
     order = "c-i2"
@@ -733,9 +742,9 @@ local pneumatic_cap_packs = {
 }
 local pneumatic_cap_counts = {60, 120, 200, 320}
 local pneumatic_cap_times = {20, 30, 45, 60}
-local pneumatic_cap_bonuses = {15, 25, 50, 100}
+local pneumatic_capacity_tiers = gameplay_facts.pneumatic.capacity
 
-for level = 1, 4 do
+for level = 1, #pneumatic_capacity_tiers do
   local name = "pneumatic-capacity-" .. level
   local prerequisites = {}
   if level == 1 then
@@ -756,7 +765,8 @@ for level = 1, 4 do
     name = name,
     icons = {{icon = "__base__/graphics/icons/pipe.png", icon_size = 64, tint = {r=0.85, g=0.75, b=0.55, a=1}}},
     effects = {
-      { type = "nothing", effect_description = {"technology-effect.pneumatic-capacity", tostring(pneumatic_cap_bonuses[level])} }
+      { type = "nothing", effect_description = {"technology-effect.pneumatic-capacity",
+        tostring(pneumatic_capacity_tiers[level].bonus)} }
     },
     prerequisites = prerequisites,
     unit = {
@@ -795,7 +805,9 @@ local capacity_extra_prereqs = {
   "utility-science-pack",
 }
 
-for level = 1, 8 do
+local admin_station_capacity_tiers = gameplay_facts.admin_station.max_waiting_capacity
+  - gameplay_facts.admin_station.base_waiting_capacity
+for level = 1, admin_station_capacity_tiers do
   local name = "admin-station-capacity-" .. level
   local prerequisites = {}
   if level == 1 then

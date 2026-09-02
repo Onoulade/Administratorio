@@ -1,13 +1,11 @@
 local M = {}
 local feature_flags = require("feature_flags")
 local hooks = require("compat.hooks")
+local biter_station_buildings = require("prototypes.shared.biter_station_buildings")
+local gameplay_facts = require("prototypes.shared.gameplay_facts")
 local WORKING_HOURS_ENABLED = feature_flags.working_hours_enabled()
 
-local MANAGED_BUILDINGS = {
-  "office-desk",
-  "corporate-breakroom",
-  "union-headquarters",
-}
+local MANAGED_BUILDINGS = gameplay_facts.working_hours.managed_buildings
 
 local MANAGED_BUILDING_SET = {}
 for _, name in ipairs(MANAGED_BUILDINGS) do
@@ -16,13 +14,7 @@ end
 
 -- These buildings are night-gated by biter-station dispatch coffee instead of
 -- their own overtime exemption module.
-local WORKER_STATION_MANAGED_BUILDINGS = {
-  ["propaganda-distillery"] = true,
-  ["corporate-breakroom"] = true,
-  ["centrifuge"] = true,
-  ["oil-refinery"] = true,
-  ["printer-t2"] = true,
-}
+local WORKER_STATION_MANAGED_BUILDINGS = biter_station_buildings.as_set()
 
 local NIGHT_OVERLAY_COLOR = {r = 1, g = 0.92, b = 0.65}
 
@@ -66,7 +58,8 @@ local function surface_daytime_is_night(surface)
   end
   -- 30% of the day closed, centered on midnight (0.5)
   local daytime = surface.daytime
-  return daytime >= 0.35 and daytime < 0.65
+  return daytime >= gameplay_facts.working_hours.night_start
+    and daytime < gameplay_facts.working_hours.night_end
 end
 
 -- Some mods put buildings on a surface whose time of day is frozen -- a sealed

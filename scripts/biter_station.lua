@@ -48,7 +48,7 @@ local WORKER_ITEM_NAME = feature_flags.space_age_enabled() and "worker-biter" or
 local LEGACY_WORKER_ITEM_NAME = feature_flags.space_age_enabled() and "biter-worker" or nil
 local MONEY_ITEM_NAME = "taxpayer-money"
 local COFFEE_FLUID_NAME = "liquid-coffee"
-local WORKER_ENTITY_NAME = "small-biter"
+local WORKER_ENTITY_NAME = C.BITER_STATION_BASE_WORKER_ENTITY
 
 local function get_worker_count(inv)
   local count = inv.get_item_count(WORKER_ITEM_NAME)
@@ -85,11 +85,11 @@ local function get_crafts_per_visit_for_force(force)
   end
 
   local technologies = force.technologies
-  if technologies and technologies["biter-labor-efficiency-2"] and technologies["biter-labor-efficiency-2"].researched then
-    return 5
-  end
-  if technologies and technologies["biter-labor-efficiency-1"] and technologies["biter-labor-efficiency-1"].researched then
-    return 3
+  for index = #C.BITER_STATION_LABOR_EFFICIENCY, 1, -1 do
+    local tier = C.BITER_STATION_LABOR_EFFICIENCY[index]
+    if technologies and technologies[tier.technology] and technologies[tier.technology].researched then
+      return tier.visits_per_trip
+    end
   end
   return C.BITER_STATION_CRAFTS_PER_VISIT
 end
@@ -111,16 +111,18 @@ end
 
 local function get_crafts_tier(force)
   local crafts = get_crafts_per_visit_for_force(force)
-  if crafts >= 5 then return 3
-  elseif crafts >= 3 then return 2
-  else return 1 end
+  for index = #C.BITER_STATION_LABOR_EFFICIENCY, 1, -1 do
+    if crafts >= C.BITER_STATION_LABOR_EFFICIENCY[index].visits_per_trip then
+      return index + 1
+    end
+  end
+  return 1
 end
 
 local function get_worker_entity_name(force)
   local tier = get_crafts_tier(force)
-  if tier == 3 then return "biter-worker-t3"
-  elseif tier == 2 then return "biter-worker-t2"
-  else return WORKER_ENTITY_NAME end
+  local upgrade = C.BITER_STATION_LABOR_EFFICIENCY[tier - 1]
+  return upgrade and upgrade.worker_entity or WORKER_ENTITY_NAME
 end
 
 local function get_dispatch_salary()

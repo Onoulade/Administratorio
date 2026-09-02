@@ -1,30 +1,16 @@
 -- Shared runtime constants for control scripts
 local feature_flags = require("feature_flags")
+local gameplay_facts = require("prototypes.shared.gameplay_facts")
 local M = {}
 
 -- Direct entity name -> complaint count lookup (avoids string.find in hot path)
-M.BITER_COMPLAINT_COUNT = {
-  ["small-biter"] = 1, ["medium-biter"] = 2,
-  ["big-biter"] = 3, ["behemoth-biter"] = 4,
-  ["small-spitter"] = 1, ["medium-spitter"] = 2,
-  ["big-spitter"] = 3, ["behemoth-spitter"] = 4,
-}
+M.BITER_COMPLAINT_COUNT = gameplay_facts.biter_entity_map("complaint_count")
 
 -- Direct entity name -> taxpayer payout lookup (avoids string.find in hot path)
-M.BITER_PAYOUT = {
-  ["small-biter"] = 5, ["medium-biter"] = 15,
-  ["big-biter"] = 50, ["behemoth-biter"] = 100,
-  ["small-spitter"] = 5, ["medium-spitter"] = 15,
-  ["big-spitter"] = 50, ["behemoth-spitter"] = 100,
-}
+M.BITER_PAYOUT = gameplay_facts.biter_entity_map("payout")
 
 -- How many biter-worker items a hired biter yields (larger = more workers)
-M.BITER_WORKER_YIELD = {
-  ["small-biter"] = 1, ["medium-biter"] = 2,
-  ["big-biter"] = 3, ["behemoth-biter"] = 5,
-  ["small-spitter"] = 1, ["medium-spitter"] = 2,
-  ["big-spitter"] = 3, ["behemoth-spitter"] = 5,
-}
+M.BITER_WORKER_YIELD = gameplay_facts.biter_entity_map("worker_yield")
 
 M.PROTEST_THRESHOLD = 600 -- seconds of waiting before protest (~10 minutes)
 M.HARD_MODE_PROTEST_RATIO = 0.70
@@ -174,12 +160,7 @@ M.COMPLAINT_PIPELINE_ITEMS = {
 }
 
 -- Entity name -> max complaint tier (1-4) based on size
-M.BITER_MAX_TIER = {
-  ["small-biter"] = 1, ["medium-biter"] = 2,
-  ["big-biter"] = 3, ["behemoth-biter"] = 4,
-  ["small-spitter"] = 1, ["medium-spitter"] = 2,
-  ["big-spitter"] = 3, ["behemoth-spitter"] = 4,
-}
+M.BITER_MAX_TIER = gameplay_facts.biter_entity_map("max_tier")
 
 -- Entity name -> is spitter (for complaint type selection)
 M.IS_SPITTER = {
@@ -241,12 +222,14 @@ M.FIELD_OFFICE_SPAWNER_CACHE_TTL = 30 * 60 -- ticks between background spawner c
 M.FIELD_OFFICE_UPDATE_SHARDS = 6      -- each office is checked once per 30 ticks at a 5-tick cadence
 
 -- Biter station: one active worker biter performs rounds of managed machines.
-M.BITER_STATION_RANGE = 30
-M.BITER_STATION_BASE_SLOTS = 20
+M.BITER_STATION_RANGE = gameplay_facts.biter_station.range
+M.BITER_STATION_BASE_SLOTS = gameplay_facts.biter_station.inventory_size
 M.BITER_STATION_CHECK_TICKS = 10
-M.BITER_STATION_CRAFTS_PER_VISIT = 1
-M.BITER_STATION_SALARY = 1
-M.BITER_STATION_NIGHT_COFFEE_PER_DISPATCH = 5
+M.BITER_STATION_CRAFTS_PER_VISIT = gameplay_facts.biter_station.base_visits_per_trip
+M.BITER_STATION_BASE_WORKER_ENTITY = gameplay_facts.biter_station.base_worker_entity
+M.BITER_STATION_SALARY = gameplay_facts.biter_station.salary_per_dispatch
+M.BITER_STATION_NIGHT_COFFEE_PER_DISPATCH = gameplay_facts.biter_station.night_coffee_per_dispatch
+M.BITER_STATION_LABOR_EFFICIENCY = gameplay_facts.biter_station.labor_efficiency
 M.BITER_STATION_BITER_DESPAWN_TICKS = 5 * 60
 M.BITER_STATION_ARRIVAL_RADIUS = 2.5
 -- Buildings that idle without a biter dispatched from a biter-station.
@@ -258,17 +241,20 @@ M.BITER_STATION_MANAGED_BUILDING_SET = require("prototypes.shared.biter_station_
 -- Biterport: walking-worker construction/logistics network.
 M.BITERPORT_NAME = "biterport"
 M.BITERPORT_HIDDEN_ROBOPORT_NAME = "biterport-hidden-roboport"
-M.BITERPORT_WORKER_ENTITY_NAME = "biterport-worker"
-M.BITERPORT_WORKER_FAST_ENTITY_NAME = "biterport-worker-fast"
-M.BITERPORT_WORKER_EXPRESS_ENTITY_NAME = "biterport-worker-express"
-M.BITERPORT_WORKER_SLOTS = 8
-M.BITERPORT_INVENTORY_SLOTS = M.BITERPORT_WORKER_SLOTS + 1
-M.BITERPORT_LOGISTICS_RADIUS = 25
-M.BITERPORT_LOGISTICS_CONNECTION_DISTANCE = 50
-M.BITERPORT_CONSTRUCTION_RADIUS = 55
+M.BITERPORT_WORKER_ENTITY_NAME = gameplay_facts.biterport.base_worker_entity
+M.BITERPORT_WORKER_FAST_ENTITY_NAME = gameplay_facts.biterport.worker_speed[1].worker_entity
+M.BITERPORT_WORKER_EXPRESS_ENTITY_NAME = gameplay_facts.biterport.worker_speed[2].worker_entity
+M.BITERPORT_WORKER_SLOTS = gameplay_facts.biterport.worker_slots
+M.BITERPORT_INVENTORY_SLOTS = gameplay_facts.biterport.inventory_size
+M.BITERPORT_LOGISTICS_RADIUS = gameplay_facts.biterport.logistics_radius
+M.BITERPORT_LOGISTICS_CONNECTION_DISTANCE = gameplay_facts.biterport.connection_distance
+M.BITERPORT_CONSTRUCTION_RADIUS = gameplay_facts.biterport.construction_radius
 M.BITERPORT_CHECK_TICKS = 30
-M.BITERPORT_WORKER_SALARY = 1
-M.BITERPORT_NIGHT_COFFEE_PER_DISPATCH = 5
+M.BITERPORT_WORKER_SALARY = gameplay_facts.biterport.salary_per_dispatch
+M.BITERPORT_NIGHT_COFFEE_PER_DISPATCH = gameplay_facts.biterport.night_coffee_per_dispatch
+M.BITERPORT_BASE_TRANSPORT_CAPACITY = gameplay_facts.biterport.base_transport_capacity
+M.BITERPORT_TRANSPORT_CAPACITY_TIERS = gameplay_facts.biterport.transport_capacity
+M.BITERPORT_WORKER_SPEED_TIERS = gameplay_facts.biterport.worker_speed
 M.BITERPORT_ARRIVAL_RADIUS = 1.5
 M.BITERPORT_WORKER_DESPAWN_TICKS = 5 * 60
 M.BITERPORT_RETURN_COOLDOWN_TICKS = 30
@@ -283,13 +269,11 @@ M.BITERPORT_CRAPPY_STORAGE_CHEST = "paperwork-storage-chest"
 M.BITERPORT_CRAPPY_REQUESTER_CHEST = "paperwork-requester-chest"
 
 -- Pneumatic tube network capacity (shared items per network).
-M.TUBE_BASE_CAPACITY = 10
-M.TUBE_CAPACITY_TECHS = {
-  ["pneumatic-capacity-1"] = 15,   -- total 25
-  ["pneumatic-capacity-2"] = 25,   -- total 50
-  ["pneumatic-capacity-3"] = 50,   -- total 100
-  ["pneumatic-capacity-4"] = 100,  -- total 200
-}
+M.TUBE_BASE_CAPACITY = gameplay_facts.pneumatic.base_capacity
+M.TUBE_CAPACITY_TECHS = {}
+for _, tier in ipairs(gameplay_facts.pneumatic.capacity) do
+  M.TUBE_CAPACITY_TECHS[tier.technology] = tier.bonus
+end
 -- Tiles a network may reach from any one of its endpoints, as the crow flies.
 -- A Factorissimo wall closes the current radius off and opens a new one on the
 -- far side, so the reach outdoors and the reach inside a factory add up.
@@ -479,7 +463,7 @@ M.HIRED_BITER_SCAN_COOLDOWN = 300  -- ticks between nest scans (~5 seconds)
 M.HIRED_BITER_ARRIVE_RADIUS = 5    -- tiles: "arrived at position" threshold
 M.HIRED_BITER_UNIT_NAME     = "hired-biter-unit"
 M.HIRED_BITER_REMOTE_NAME   = "hired-biter-command-capsule"
-M.HIRED_BITER_NOTICE_CAPACITY = 20
+M.HIRED_BITER_NOTICE_CAPACITY = gameplay_facts.hired_biter.eviction_notice_capacity
 M.HIRED_BITER_INVENTORY_SLOTS = 4
 
 return M

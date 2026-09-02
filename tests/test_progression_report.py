@@ -145,9 +145,13 @@ def _load_staffed_provider_items() -> Tuple[str, ...]:
     source of truth used by both data-stage and runtime code; reading its
     literal list here keeps the progression audit synchronized with the game.
     """
-    source_path = REPO_ROOT / "prototypes" / "shared" / "biter_station_buildings.lua"
+    source_path = REPO_ROOT / "prototypes" / "shared" / "gameplay_facts.lua"
     source = source_path.read_text()
-    match = re.search(r"M\.names\s*=\s*\{(.*?)\n\}", source, re.S)
+    match = re.search(
+        r"managed_buildings\s*=\s*\{(.*?)\n\s*\},\n\s*labor_efficiency",
+        source,
+        re.S,
+    )
     if not match:
         raise AssertionError(f"Could not find staffed provider list in {source_path}")
     return tuple(re.findall(r'^\s*"([^"]+)",\s*$', match.group(1), re.M))
