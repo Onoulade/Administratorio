@@ -105,6 +105,7 @@ game = {
   connected_players = {},
   forces = {
     player = {},
+    second_player_force = {},
   },
 }
 
@@ -114,6 +115,7 @@ storage = {
 }
 
 local noop = function() end
+local warned_forces = {}
 
 local runtime_debug = {
   begin_snapshot = function()
@@ -130,7 +132,9 @@ local deps = {
   update_tracked_unit_group_debug = noop,
   trains = {on_tick = noop},
   strip_weapons = noop,
-  warn_force_about_evolution_complaints = noop,
+  warn_force_about_evolution_complaints = function(force)
+    warned_forces[#warned_forces + 1] = force
+  end,
   working_hours = {
     is_enabled = function() return false end,
     rebuild_registry = noop,
@@ -169,6 +173,8 @@ test("startup cleanup restocks crash pieces with starter tools and paperwork", f
   assert_true(chest_2_inventory.cleared, "crash chest 2 should be cleared")
   assert_true(next(chest_1_inventory.items) == nil, "crash chest 1 should stay empty if present")
   assert_true(next(chest_2_inventory.items) == nil, "crash chest 2 should stay empty if present")
+  assert_eq(#warned_forces, 2, "evolution warnings should be evaluated for every force")
+  assert_true(warned_forces[1] ~= warned_forces[2], "each force should be evaluated independently")
 end)
 
 print(string.format("\n=== STARTUP CLEANUP TESTS ==="))

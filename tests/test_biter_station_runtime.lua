@@ -335,7 +335,7 @@ test("labor efficiency charges one taxpayer money per trip", function()
   biter_station.track_managed_building(building_one)
   biter_station.track_managed_building(building_two)
   biter_station.track_managed_building(building_three)
-  storage.biter_station_crafts_per_visit = 3
+  force.technologies["biter-labor-efficiency-1"] = {researched = true}
 
   biter_station.update(10)
 
@@ -389,7 +389,7 @@ test("worker skips an unreachable second building instead of freezing in place",
   biter_station.track_station(station)
   biter_station.track_managed_building(building_one)
   biter_station.track_managed_building(building_two)
-  storage.biter_station_crafts_per_visit = 2
+  force.technologies["biter-labor-efficiency-1"] = {researched = true}
 
   biter_station.update(10)
 
@@ -409,6 +409,78 @@ test("worker skips an unreachable second building instead of freezing in place",
   assert_true(active.biter.valid, "worker should not be destroyed when a building is unreachable")
   assert_true(active.biter.commandable.has_command, "worker should receive a new command instead of freezing in place")
   assert_eq(station.custom_status.label[1], "gui.biter-station-building-unreachable", "station should surface the pathing failure")
+end)
+
+test("labor efficiency research is isolated per force", function()
+  storage = {}
+  package.loaded["scripts.biter_station"] = nil
+  local surface = new_surface()
+  local upgraded_force = {
+    name = "upgraded",
+    valid = true,
+    set_cease_fire = function() end,
+    technologies = {
+      ["biter-labor-efficiency-1"] = {researched = true},
+    },
+  }
+  local base_force = {
+    name = "base",
+    valid = true,
+    set_cease_fire = function() end,
+    technologies = {},
+  }
+  game = {
+    tick = 0,
+    surfaces = {surface},
+    forces = {
+      upgraded = upgraded_force,
+      base = base_force,
+      enemy = {name = "enemy", valid = true, set_cease_fire = function() end},
+      neutral = {name = "neutral", valid = true, set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, valid = true, set_cease_fire = function() end, technologies = {}}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biter_station = require("scripts.biter_station")
+  local upgraded_station = new_station(surface, upgraded_force, {unit_number = 10})
+  local base_station = new_station(surface, base_force, {unit_number = 11, position = {x = 100, y = 0}})
+  biter_station.track_station(upgraded_station)
+  biter_station.track_station(base_station)
+
+  for i = 1, 3 do
+    biter_station.track_managed_building(new_managed_building(surface, upgraded_force, {
+      unit_number = 20 + i,
+      position = {x = i * 2, y = 0},
+    }))
+    biter_station.track_managed_building(new_managed_building(surface, base_force, {
+      unit_number = 30 + i,
+      position = {x = 100 + i * 2, y = 0},
+    }))
+  end
+
+  biter_station.update(10)
+
+  local upgraded_active
+  local base_active
+  for _, state in pairs(storage.biter_station_biter or {}) do
+    if state.station_id == upgraded_station.unit_number then upgraded_active = state end
+    if state.station_id == base_station.unit_number then base_active = state end
+  end
+
+  assert_true(upgraded_active ~= nil, "upgraded force should dispatch a worker")
+  assert_true(base_active ~= nil, "base force should dispatch a worker")
+  assert_eq(#upgraded_active.building_queue, 3,
+    "upgraded force should authorize three buildings per trip")
+  assert_eq(#base_active.building_queue, 1,
+    "unresearched force should remain at one building per trip")
+  assert_eq(upgraded_active.worker_entity_name, "biter-worker-t2",
+    "upgraded force should use its researched worker tier")
+  assert_eq(base_active.worker_entity_name, "small-biter",
+    "unresearched force should keep the base worker tier")
 end)
 
 test("managed building is claimed by the nearest station in overlapping coverage", function()

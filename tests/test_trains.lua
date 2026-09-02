@@ -196,12 +196,12 @@ local function new_surface()
   return surface
 end
 
-local function new_station(surface, direction, position)
+local function new_station(surface, direction, position, name)
   local behavior = {}
   local station = {
     valid = true,
     type = "train-stop",
-    name = "train-stop",
+    name = name or "train-stop",
     position = {x = position.x, y = position.y},
     direction = direction,
     force = "player",
@@ -256,6 +256,26 @@ test("new train stops place permit chests on the leading rail-side corner for al
     assert_eq(station._behavior.circuit_enable_disable, false, "circuit enable/disable should stay locked off")
     assert_eq(station._behavior.set_trains_limit, false, "circuit train limits should stay locked off")
   end
+end)
+
+test("public train stops stay permit-free when the registry is rebuilt", function()
+  local surface = new_surface()
+  new_runtime(surface)
+  local station = new_station(
+    surface,
+    defines.direction.north,
+    {x = 4, y = 8},
+    "public-train-stop"
+  )
+
+  trains.on_init()
+
+  assert_eq(storage.stations[station.unit_number], nil,
+    "public stop should not enter the transit-permit registry")
+  assert_eq(#surface.created_entities, 0,
+    "registry rebuild should not create a permit chest for a public stop")
+  assert_eq(station.trains_limit, nil,
+    "public stop train limit should remain under normal player/circuit control")
 end)
 
 test("legacy overlapping permit chests are moved beside the rail and keep their contents", function()

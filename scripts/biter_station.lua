@@ -79,6 +79,21 @@ end
 
 local get_station_inventory
 
+local function get_crafts_per_visit_for_force(force)
+  if not force or not force.valid then
+    return C.BITER_STATION_CRAFTS_PER_VISIT
+  end
+
+  local technologies = force.technologies
+  if technologies and technologies["biter-labor-efficiency-2"] and technologies["biter-labor-efficiency-2"].researched then
+    return 5
+  end
+  if technologies and technologies["biter-labor-efficiency-1"] and technologies["biter-labor-efficiency-1"].researched then
+    return 3
+  end
+  return C.BITER_STATION_CRAFTS_PER_VISIT
+end
+
 local function apply_station_inventory(station)
   local inv = get_station_inventory(station)
   if not inv then return end
@@ -94,15 +109,15 @@ local function apply_station_inventory(station)
   end
 end
 
-local function get_crafts_tier()
-  local crafts = storage and storage.biter_station_crafts_per_visit or C.BITER_STATION_CRAFTS_PER_VISIT
+local function get_crafts_tier(force)
+  local crafts = get_crafts_per_visit_for_force(force)
   if crafts >= 5 then return 3
   elseif crafts >= 3 then return 2
   else return 1 end
 end
 
-local function get_worker_entity_name()
-  local tier = get_crafts_tier()
+local function get_worker_entity_name(force)
+  local tier = get_crafts_tier(force)
   if tier == 3 then return "biter-worker-t3"
   elseif tier == 2 then return "biter-worker-t2"
   else return WORKER_ENTITY_NAME end
@@ -1117,7 +1132,7 @@ end
 local function spawn_station_biter(station)
   if not station or not station.valid then return nil end
 
-  local actual_entity_name = get_worker_entity_name()
+  local actual_entity_name = get_worker_entity_name(station.force)
   local spawn_origin = station_interior_position(station)
   local spawn_pos = station.surface.find_non_colliding_position(actual_entity_name, spawn_origin, 1, 0.25)
   if not spawn_pos then
@@ -1191,7 +1206,9 @@ local function recreate_missing_active_biter(active_state, station, tick)
     or nil
   if not position then return nil end
 
-  local entity_name = active_state.worker_entity_name or get_worker_entity_name()
+  local entity_name = active_state.worker_entity_name or get_worker_entity_name(
+    active_state.force or (station and station.force)
+  )
   local spawn_pos = surface.find_non_colliding_position(entity_name, position, 2, 0.25) or position
   local force = get_biter_force()
   if (not force or not force.valid or force.name == "enemy") and station and station.valid then
@@ -1236,8 +1253,8 @@ local function claim_queue_for_biter(queue, biter_unit_number)
   end
 end
 
-local function get_enablements_per_trip()
-  return math.max(1, storage.biter_station_crafts_per_visit or C.BITER_STATION_CRAFTS_PER_VISIT)
+local function get_enablements_per_trip(force)
+  return math.max(1, get_crafts_per_visit_for_force(force))
 end
 
 maybe_reinsert_worker = function(station)
@@ -1367,7 +1384,7 @@ local function dispatch_station_biters(station)
     return 0
   end
 
-  local enablements_per_trip = get_enablements_per_trip()
+  local enablements_per_trip = get_enablements_per_trip(station.force)
   local worker_queues = {}
   local queue_idx = 1
   local planned_salary = 0
@@ -1702,9 +1719,6 @@ function M.ensure_storage()
   storage.biter_station_coffee_inputs = storage.biter_station_coffee_inputs or {}
   storage.managed_building_registry = storage.managed_building_registry or {}
   storage.managed_building_run = storage.managed_building_run or {}
-  if storage.biter_station_crafts_per_visit == nil then
-    storage.biter_station_crafts_per_visit = C.BITER_STATION_CRAFTS_PER_VISIT
-  end
   normalize_active_biter_storage()
 end
 
@@ -1980,21 +1994,6 @@ function M.on_ai_command_completed(event)
   handle_unreachable_destination(active_state, entity, station_id, event.tick or game.tick)
 end
 
-local function get_crafts_per_visit_for_force(force)
-  if not force or not force.valid then
-    return C.BITER_STATION_CRAFTS_PER_VISIT
-  end
-
-  local technologies = force.technologies
-  if technologies and technologies["biter-labor-efficiency-2"] and technologies["biter-labor-efficiency-2"].researched then
-    return 5
-  end
-  if technologies and technologies["biter-labor-efficiency-1"] and technologies["biter-labor-efficiency-1"].researched then
-    return 3
-  end
-  return C.BITER_STATION_CRAFTS_PER_VISIT
-end
-
 local function sync_station_recipe_unlock(force)
   if not force or not force.valid then return end
 
@@ -2013,10 +2012,6 @@ end
 function M.sync_research(force)
   M.ensure_storage()
   sync_station_recipe_unlock(force)
-
-  local force_crafts = get_crafts_per_visit_for_force(force)
-  local current = storage.biter_station_crafts_per_visit or C.BITER_STATION_CRAFTS_PER_VISIT
-  storage.biter_station_crafts_per_visit = math.max(current, force_crafts)
 end
 
 function M.on_research_finished(research)
@@ -2037,14 +2032,8 @@ function M.on_research_finished(research)
     return
   end
 
-  if name ~= "biter-labor-efficiency-1" and name ~= "biter-labor-efficiency-2" then
-    return
-  end
-
-  storage.biter_station_crafts_per_visit = C.BITER_STATION_CRAFTS_PER_VISIT
-  for _, force in pairs(game.forces) do
-    M.sync_research(force)
-  end
+  -- Labor-efficiency effects are derived from the owning force when a worker
+  -- is dispatched, so those technologies require no serialized-state update.
 end
 
 function M.rebuild_registry()
@@ -2136,11 +2125,6 @@ function M.update(tick)
   advance_active_biters(tick)
   despawn_released_biters(tick)
   initial_dispatch_check()
-end
-
-function M.sanitize_external_links()
-  M.ensure_storage()
-  sanitize_station_worker_registry_links()
 end
 
 return M

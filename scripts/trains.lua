@@ -135,6 +135,11 @@ end
 -- Create the chest and register it to storage
 local function setup_station(station)
   if not station or not station.valid then return end
+  -- Public stops are deliberately exempt from transit paperwork. Keep the
+  -- exemption here, rather than only in the build-event wrapper, because
+  -- on_init/on_configuration_changed rebuild the registry by calling this
+  -- helper directly for every train stop on every surface.
+  if station.name == BYPASS_TRAIN_STOP_NAME then return end
 
   storage.stations = storage.stations or {}
   local chest_position = get_chest_position(station)

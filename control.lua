@@ -466,6 +466,8 @@ end
 -- ============================================================
 
 local function init_storage()
+  -- Legacy global research cache. Labor efficiency is now derived per force.
+  storage.biter_station_crafts_per_visit = nil
   storage.waiting_biters = storage.waiting_biters or {}
   storage.waiting_biter_state_index = storage.waiting_biter_state_index or {}
   if storage.waiting_biter_state_index_built == nil then
@@ -693,7 +695,6 @@ local function on_init()
   biterport.rebuild_registry()
   hired_biter.ensure_storage()
   rideable_biter.rebuild_registry()
-  storage.biter_station_crafts_per_visit = C.BITER_STATION_CRAFTS_PER_VISIT
   for _, force in pairs(game.forces) do
     biter_station.sync_research(force)
   end
@@ -797,7 +798,6 @@ local function on_configuration_changed(event)
   biter_station.rebuild_registry()
   biterport.rebuild_registry()
   rideable_biter.rebuild_registry()
-  storage.biter_station_crafts_per_visit = C.BITER_STATION_CRAFTS_PER_VISIT
   for _, force in pairs(game.forces) do
     biter_station.sync_research(force)
   end
@@ -2241,9 +2241,6 @@ local function on_main_tick(event)
     needs_load_bugged_biter_cleanup = false
     cleanup_legacy_resolved_biter_releases()
   end
-  runtime_debug.run_profiled_external_sections("biter_station_sanitize", function()
-    biter_station.sanitize_external_links()
-  end)
   resolution_processing.on_tick(event)
   pentapods.process_money_baits(event.tick)
   runtime_debug.run_profiled_external_sections("hired_biter", function()
