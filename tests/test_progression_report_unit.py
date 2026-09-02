@@ -340,10 +340,98 @@ def test_staffing_cycle_blocks_first_worker_and_is_reported():
     ]
 
 
+def test_direct_unlock_uses_machine_fixed_point_across_recipe_cycles():
+    data_raw = {
+        "technology": {
+            "parts": {
+                "effects": [
+                    {"type": "unlock-recipe", "recipe": "cyclic-part"},
+                    {"type": "unlock-recipe", "recipe": "real-part"},
+                ],
+            },
+            "machine": {
+                "prerequisites": ["parts"],
+                "effects": [{"type": "unlock-recipe", "recipe": "machine"}],
+            },
+        },
+        "recipe": {
+            "cyclic-part": {
+                "enabled": False,
+                "ingredients": [{"name": "part"}],
+                "results": [{"name": "part"}],
+            },
+            "real-part": {
+                "enabled": False,
+                "ingredients": [],
+                "results": [{"name": "part"}],
+            },
+            "machine": {
+                "enabled": False,
+                "ingredients": [{"name": "part"}],
+                "results": [{"name": "machine"}],
+            },
+        },
+        "item": {
+            "part": {},
+            "machine": {"place_result": "machine"},
+        },
+        "assembling-machine": {},
+        "character": {"character": {"crafting_categories": ["crafting"]}},
+        "tool": {},
+    }
+
+    analyzer = progression_report.ProgressionAnalyzer(data_raw)
+
+    assert analyzer.direct_target_findings() == []
+
+
+def test_direct_unlock_reports_only_exact_ancestor_recipe_duplicates():
+    data_raw = {
+        "technology": {
+            "first": {
+                "effects": [{"type": "unlock-recipe", "recipe": "machine"}],
+            },
+            "second": {
+                "prerequisites": ["first"],
+                "effects": [{"type": "unlock-recipe", "recipe": "machine"}],
+            },
+        },
+        "recipe": {
+            "machine": {
+                "enabled": False,
+                "ingredients": [],
+                "results": [{"name": "machine"}],
+            },
+        },
+        "item": {"machine": {"place_result": "machine"}},
+        "assembling-machine": {},
+        "character": {"character": {"crafting_categories": ["crafting"]}},
+        "tool": {},
+    }
+
+    analyzer = progression_report.ProgressionAnalyzer(data_raw)
+
+    assert analyzer.direct_target_findings() == [
+        {
+            "type": "recipe_already_unlocked",
+            "technology": "second",
+            "recipe": "machine",
+            "targets": ["machine"],
+            "before_targets": [],
+            "after_targets": [],
+            "delayed_resolution": None,
+            "missing_paths": [],
+            "ancestor_unlockers": ["first"],
+        }
+    ]
+
+
 if __name__ == "__main__":
     test_building_provider_cycle_is_reported_as_unresolvable()
     test_science_pack_bootstrap_gap_is_reported_transitively()
     test_unlocked_recipe_machine_cycles_are_not_masked_by_internal_recipes()
     test_item_reachability_distinguishes_runtime_and_ui_items_from_orphans()
     test_staffing_cycle_blocks_first_worker_and_is_reported()
+    test_direct_unlock_uses_machine_fixed_point_across_recipe_cycles()
+    test_direct_unlock_reports_only_exact_ancestor_recipe_duplicates()
     print("Progression analyzer unit test passed.")

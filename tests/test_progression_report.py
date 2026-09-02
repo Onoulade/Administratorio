@@ -912,6 +912,17 @@ class ProgressionAnalyzer:
         )
 
     def direct_target_findings(self) -> List[Dict]:
+        """Report target recipes whose unlock does not produce a usable target.
+
+        This deliberately uses the machine fixed point. A recursive recipe
+        walk is order-dependent around recycling, alternate regulated recipes,
+        and returned ingredients: visiting one cyclic alternative can memoize
+        an item as unavailable before a valid sibling route is considered.
+
+        Output availability before a technology is not itself suspicious.
+        Technologies routinely unlock alternate ways to make an existing item.
+        Only an exact recipe already unlocked by an ancestor is redundant.
+        """
         findings: List[Dict] = []
         for tech_name in sorted(self.technologies):
             if not self.tech_visible(tech_name):
@@ -930,29 +941,55 @@ class ProgressionAnalyzer:
                 if not output_targets:
                     continue
 
+                ancestor_unlockers = sorted(
+                    ancestor
+                    for ancestor in self.prereq_closure(tech_name)
+                    if recipe_name in self.unlocks_by_tech.get(ancestor, ())
+                )
+                if ancestor_unlockers:
+                    findings.append(
+                        {
+                            "type": "recipe_already_unlocked",
+                            "technology": tech_name,
+                            "recipe": recipe_name,
+                            "targets": output_targets,
+                            "before_targets": [],
+                            "after_targets": [],
+                            "delayed_resolution": None,
+                            "missing_paths": [],
+                            "ancestor_unlockers": ancestor_unlockers,
+                        }
+                    )
+                    continue
+
                 before_targets = sorted(
-                    target for target in output_targets if self.craftable(target, before_key)
+                    target
+                    for target in output_targets
+                    if self.machine_craftable(target, before_key)
                 )
                 after_targets = sorted(
-                    target for target in output_targets if self.craftable(target, after_key)
+                    target
+                    for target in output_targets
+                    if self.machine_craftable(target, after_key)
                 )
 
                 if any(target not in before_targets for target in after_targets):
                     continue
 
-                if before_targets and (self.technologies[tech_name].get("research_trigger") or {}).get("type") == "mine-entity":
+                # A newly unlocked alternate recipe for an already obtainable
+                # target is useful, not a premature unlock.
+                if before_targets:
                     continue
 
                 delayed_resolution = None
-                finding_type = "already_accessible_before_unlock" if before_targets else "blocked_after_unlock"
-                if not before_targets:
-                    delayed_resolution = self.find_reachable_resolution(
-                        after_key,
-                        tech_name,
-                        output_targets,
-                    )
-                    if delayed_resolution is not None:
-                        finding_type = "delayed_until_reachable_tech"
+                finding_type = "blocked_after_unlock"
+                delayed_resolution = self.find_reachable_resolution(
+                    after_key,
+                    tech_name,
+                    output_targets,
+                )
+                if delayed_resolution is not None:
+                    finding_type = "delayed_until_reachable_tech"
                 findings.append(
                     {
                         "type": finding_type,
@@ -963,10 +1000,11 @@ class ProgressionAnalyzer:
                         "after_targets": after_targets,
                         "delayed_resolution": delayed_resolution,
                         "missing_paths": (
-                            self.missing_ingredient_paths(recipe_name, after_key)
+                            self.machine_missing_ingredient_paths(recipe_name, after_key)
                             if finding_type == "blocked_after_unlock"
                             else []
                         ),
+                        "ancestor_unlockers": [],
                     }
                 )
         return findings
@@ -986,7 +1024,9 @@ class ProgressionAnalyzer:
                 continue
             candidate_after = self.combined_eval_key(base_key, candidate)
             craftable_targets = sorted(
-                target for target in targets if self.craftable(target, candidate_after)
+                target
+                for target in targets
+                if self.machine_craftable(target, candidate_after)
             )
             if craftable_targets:
                 return {
@@ -2002,10 +2042,10 @@ def render_report(
         for finding in direct_target_failures
         if finding["type"].startswith("delayed_until_")
     ]
-    premature_failures = [
+    redundant_unlocks = [
         finding
         for finding in direct_target_failures
-        if finding["type"] == "already_accessible_before_unlock"
+        if finding["type"] == "recipe_already_unlocked"
     ]
     unresolved_recipe_machine_failures = [
         finding
@@ -2314,14 +2354,16 @@ def render_report(
     lines.extend(
         [
             "",
-            f"Direct target unlocks already accessible before unlock: {len(premature_failures)}",
+            f"Direct target recipes already unlocked by an ancestor: {len(redundant_unlocks)}",
         ]
     )
-    for finding in premature_failures:
+    for finding in redundant_unlocks:
         lines.append(
             f"  - {finding['technology']} -> {finding['recipe']} ({', '.join(finding['targets'])})"
         )
-        lines.append(f"    Craftable before unlock: {', '.join(finding['before_targets'])}")
+        lines.append(
+            f"    Already unlocked by: {', '.join(finding['ancestor_unlockers'])}"
+        )
 
     lines.extend(
         [
@@ -2409,6 +2451,11 @@ def main() -> int:
             for finding in unlocked_recipe_machine_failures
             if finding["type"] == "blocked_after_unlock"
         ]
+        unresolved_direct_target_failures = [
+            finding
+            for finding in direct_target_failures
+            if finding["type"] in {"blocked_after_unlock", "delayed_until_reachable_tech"}
+        ]
 
         if missing_building_recipes:
             return 1
@@ -2431,6 +2478,7 @@ def main() -> int:
             or workforce_unlock_gating_failures
             or permanent_recipe_machine_cycle_failures
             or unresolved_recipe_machine_failures
+            or unresolved_direct_target_failures
             or building_provider_dependency_failures
             or item_reachability_failures
             or staffed_item_reachability_failures
