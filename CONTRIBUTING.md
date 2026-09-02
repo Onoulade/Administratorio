@@ -56,9 +56,7 @@ lua tools/generate-reference-docs.lua
 lua tools/generate-reference-docs.lua --check
 ```
 
-The normal test suite performs the check automatically. It also rejects obsolete
-technology identifiers from `prototypes/shared/obsolete_identifiers.lua` when they
-appear in maintained documentation or locale files.
+The normal test suite performs the generated-section check automatically.
 
 ## Commit Structure
 

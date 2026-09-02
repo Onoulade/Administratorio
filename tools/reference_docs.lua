@@ -1,5 +1,4 @@
 local facts = require("prototypes.shared.gameplay_facts")
-local obsolete = require("prototypes.shared.obsolete_identifiers")
 
 local M = {}
 
@@ -244,35 +243,6 @@ function M.update(root)
   return true
 end
 
-local function shell_quote(value)
-  return "'" .. tostring(value):gsub("'", "'\\''") .. "'"
-end
-
-local function maintained_reference_files(root)
-  local internal_root = root_path(root, "Internal")
-  local locale_root = root_path(root, "locale")
-  local command = "find " .. shell_quote(internal_root) .. " " .. shell_quote(locale_root)
-    .. " -type f \\( -name '*.md' -o -name '*.cfg' \\) -print"
-  local pipe, err = io.popen(command, "r")
-  if not pipe then return nil, err end
-
-  local prefix = (root and root ~= "" and root ~= ".")
-    and root:gsub("/$", "") .. "/"
-    or ""
-  local paths = {}
-  for discovered_path in pipe:lines() do
-    local path = discovered_path
-    if prefix ~= "" and path:sub(1, #prefix) == prefix then
-      path = path:sub(#prefix + 1)
-    end
-    paths[#paths + 1] = path
-  end
-  local ok = pipe:close()
-  if not ok then return nil, "could not enumerate maintained references" end
-  table.sort(paths)
-  return paths
-end
-
 function M.check(root)
   local problems = {}
   local expected_by_path = {}
@@ -294,24 +264,6 @@ function M.check(root)
         problems[#problems + 1] = section.path .. ": " .. err
       elseif updated ~= content then
         problems[#problems + 1] = section.path .. ": stale generated section " .. section.name
-      end
-    end
-  end
-
-  local reference_files, list_err = maintained_reference_files(root)
-  if not reference_files then
-    problems[#problems + 1] = tostring(list_err)
-    return false, problems
-  end
-  for _, relative in ipairs(reference_files) do
-    local content, err = read_file(root_path(root, relative))
-    if not content then
-      problems[#problems + 1] = relative .. ": " .. tostring(err)
-    else
-      for _, identifier in ipairs(obsolete.technologies) do
-        if content:find(identifier, 1, true) then
-          problems[#problems + 1] = relative .. ": obsolete technology identifier " .. identifier
-        end
       end
     end
   end

@@ -215,7 +215,5 @@ labor upgrades, Biterport transport and speed upgrades, and pneumatic capacity.
 Surrounding explanations remain hand-written.
 
 Run `lua tools/generate-reference-docs.lua` after changing shared facts. The normal
-test suite runs the equivalent `--check` validation and also rejects identifiers in
-maintained docs or locale files that appear in
-`prototypes/shared/obsolete_identifiers.lua`. Introducing the check immediately
-caught and removed lingering localization for a technology that no longer exists.
+test suite runs the equivalent `--check` validation, so edits to a shared value fail
+until every generated reference section is refreshed.

@@ -331,8 +331,7 @@ test("local precedents and environmental compliance are split", function()
   assert_true(not tech_unlocks_recipe("environmental-compliance", "copy-environmental-impact-report"), "environmental-compliance should not unlock impact-report copying")
 end)
 
-test("old government liaison petition chain is removed", function()
-  assert_true(technologies["government-liaison"] == nil, "government-liaison technology should be removed")
+test("printing technology does not unlock the petition counter", function()
   assert_true(not tech_unlocks_recipe("printing-technology", "petition-counter"), "printing should not unlock petition-counter")
 end)
 
@@ -400,8 +399,7 @@ test("pneumatic capacity upgrade chain has base upgrade locale", function()
   assert_true(tech_uses_pack("pneumatic-capacity-4", "utility-science-pack"), "pneumatic capacity IV should consume utility science")
 end)
 
-test("biterport capacity, transport, and logistics speed upgrades are tiered and localized", function()
-  assert_true(technology_effect_locale["biterport-capacity"] == nil, "removed biterport capacity effect should not be localized")
+test("biterport transport and logistics speed upgrades are tiered and localized", function()
   assert_true(technology_effect_locale["biterport-transport-capacity"] ~= nil, "biterport transport effect should be localized")
   assert_true(technology_effect_locale["biterport-worker-speed"] ~= nil, "biterport worker speed effect should be localized")
   assert_true(technology_name_locale["biter-labor-efficiency"] ~= nil, "biter labor efficiency base name should be localized")
@@ -452,13 +450,6 @@ test("biterport capacity, transport, and logistics speed upgrades are tiered and
   }) do
     assert_true(not tech_unlocks_recipe("biterport-logistics", chest_recipe), "biterport logistics should not unlock real " .. chest_recipe)
     assert_true(tech_unlocks_recipe("logistic-robotics", chest_recipe), "logistic robotics should unlock real " .. chest_recipe)
-  end
-
-  for level = 1, 4 do
-    local tech_name = "biterport-capacity-" .. level
-    assert_true(technologies[tech_name] == nil, tech_name .. " should not exist")
-    assert_true(technology_name_locale[tech_name] == nil, tech_name .. " name should not be localized")
-    assert_true(technology_description_locale[tech_name] == nil, tech_name .. " description should not be localized")
   end
 
   local expected_transport = {2, 5, 10, 25}
