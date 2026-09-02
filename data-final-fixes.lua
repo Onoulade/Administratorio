@@ -1105,6 +1105,16 @@ for name, recipe in pairs(data.raw["recipe"]) do
       apply_bulk_recipe_icon_overlay(recipe)
     end
 
+    -- `advanced-crafting` is machine-only in the real engine: the character
+    -- prototype does not own that category. Administratorio intentionally
+    -- preserves a handcraft route for non-fluid recipes, so the canonical
+    -- recipe must actually use the character's `crafting` category. Mocked
+    -- prototype tests previously kept the native category and therefore hid
+    -- this regression from the Factorio-backed progression audit.
+    if cat == "advanced-crafting" then
+      recipe.category = "crafting"
+    end
+
   end
 
   ::continue::
