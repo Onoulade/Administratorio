@@ -26,6 +26,27 @@ runtime migrations, and late-game polish are still fair game for iteration.
 Player-facing changes should be described clearly in commit subjects because they
 feed the Factorio changelog.
 
+## Validation
+
+Run the fast Lua and Python checks after every change:
+
+```sh
+./tests/run-tests.sh --repo-root .
+```
+
+Before release, provide a Factorio 2.0 binary to add the real prototype dump,
+planet-escape analysis, supported-configuration matrix, and control-stage runtime
+scenario:
+
+```sh
+./tests/run-tests.sh --repo-root . \
+  --factorio-bin /path/to/factorio
+```
+
+The runtime scenario starts a temporary local headless server, runs real build
+events, and shuts it down after its assertions pass. Its environment must permit a
+temporary local UDP socket.
+
 ## Commit Structure
 
 Use Conventional Commits:

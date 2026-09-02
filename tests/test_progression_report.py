@@ -167,7 +167,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--strict",
         action="store_true",
-        help="Exit non-zero when direct target unlock viability findings exist.",
+        help="Also fail on parent-pack regressions, orphan combat upgrades, and duplicate science-pack producers.",
     )
     parser.add_argument(
         "--keep-temp",
