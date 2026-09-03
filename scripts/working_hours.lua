@@ -464,6 +464,44 @@ function M.is_night(surface, position)
   return is_surface_night(surface, position)
 end
 
+local function resolve_daytime_state(surface, position)
+  if not surface or not surface.valid then return nil, false, false end
+
+  local outside, dark = time_of_day_surface(surface, position)
+  if dark then return 0.5, true, true end
+  if not outside or not outside.valid then outside = surface end
+
+  local daytime = outside.daytime or 0
+  return daytime, false, surface_daytime_is_night(outside)
+end
+
+local function daytime_to_clock_value(daytime)
+  return math.floor((((daytime + 0.5) % 1) * 100) + 0.5)
+end
+
+-- Return the same resolved daytime used by the working-hours checks. The
+-- second return value marks a sealed interior that is dark regardless of the
+-- source surface's daytime, so circuit clocks can agree with office shutdowns.
+function M.get_daytime(surface, position)
+  local daytime, forced_night = resolve_daytime_state(surface, position)
+  return daytime, forced_night
+end
+
+-- Return the resolved daytime and Working Hours night state in one hook
+-- lookup. This avoids resolving compatibility surfaces twice per clock tick.
+function M.get_daytime_state(surface, position)
+  local daytime, forced_night, surface_night = resolve_daytime_state(surface, position)
+  if daytime == nil then return nil, false end
+  return daytime, forced_night or surface_night
+end
+
+-- The clock uses a midnight-centered 0–100 cycle. Working Hours are open
+-- from the end of the night window to the start of the night window.
+function M.get_day_shift_bounds()
+  return daytime_to_clock_value(gameplay_facts.working_hours.night_end),
+    daytime_to_clock_value(gameplay_facts.working_hours.night_start)
+end
+
 function M.entity_has_overtime_exemption(entity)
   return has_overtime_exemption(entity)
 end

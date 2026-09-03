@@ -163,6 +163,14 @@ def main() -> None:
         raise FileNotFoundError(f"Factorio binary not found: {factorio_bin}")
 
     base = run_case(factorio_bin, space_age=False, working_hours=True)
+    assert "administrative-clock" in base.get("item", {}), "Working Hours should expose the Administrative Clock item"
+    assert "administrative-clock" in base.get("constant-combinator", {}), "Working Hours should expose the Administrative Clock entity"
+    assert base["item"]["administrative-clock"]["subgroup"] == "circuit-network", "Administrative Clock should be grouped with circuit-network devices"
+    assert base["item"]["administrative-clock"]["order"] == "c[combinators]-e[administrative-clock]", "Administrative Clock should appear beside the combinators"
+    assert base["recipe"]["administrative-clock"]["subgroup"] == "circuit-network", "Administrative Clock recipe should be grouped with circuit-network devices"
+    assert "signal-daytime" in base.get("virtual-signal", {}), "Working Hours should expose the daytime signal"
+    assert "signal-day-shift-start" in base.get("virtual-signal", {}), "Working Hours should expose the shift-start signal"
+    assert "signal-day-shift-end" in base.get("virtual-signal", {}), "Working Hours should expose the shift-end signal"
     assert "optical-fibre" not in base.get("item", {}), "base-only load must not expose a missing fibre entity"
     assert "inference-token" not in base.get("fluid", {}), "base-only load must not expose orphan AI fluid"
     assert "unstaffed-operations-waiver" not in base.get("module", {}), (
@@ -170,6 +178,11 @@ def main() -> None:
     )
 
     no_working_hours = run_case(factorio_bin, space_age=True, working_hours=False)
+    assert "administrative-clock" not in no_working_hours.get("item", {}), "disabled Working Hours must not expose the Administrative Clock item"
+    assert "administrative-clock" not in no_working_hours.get("constant-combinator", {}), "disabled Working Hours must not expose the Administrative Clock entity"
+    assert "signal-daytime" not in no_working_hours.get("virtual-signal", {}), "disabled Working Hours must not expose the daytime signal"
+    assert "signal-day-shift-start" not in no_working_hours.get("virtual-signal", {}), "disabled Working Hours must not expose the shift-start signal"
+    assert "signal-day-shift-end" not in no_working_hours.get("virtual-signal", {}), "disabled Working Hours must not expose the shift-end signal"
     assert_space_age_category_migrations_are_regulated(no_working_hours)
     assert "unstaffed-operations" not in no_working_hours.get("technology", {}), (
         "disabled Working Hours must not expose a technology whose recipe does not exist"

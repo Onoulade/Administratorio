@@ -35,6 +35,12 @@ data:extend({
   { type = "item", name = "transit-permit-chest",      icons = building_icons.transit_permit_chest(), subgroup = "admin-transit", order = "a", stack_size = 50 },
 })
 
+if working_hours_enabled then
+  data:extend({
+    { type = "item", name = "administrative-clock", icons = {{icon = "__base__/graphics/icons/constant-combinator.png", icon_size = 64, tint = {r = 0.25, g = 0.75, b = 1.0, a = 1.0}}}, subgroup = "circuit-network", order = "c[combinators]-e[administrative-clock]", place_result = "administrative-clock", stack_size = 50 },
+  })
+end
+
 if space_age_enabled then
   data:extend({
   { type = "item", name = "optical-fibre",              icons = {{icon = "__base__/graphics/icons/pipe.png", icon_size = 64, tint = {r = 0.35, g = 0.8, b = 1.0, a = 1}}}, subgroup = "admin-ai", order = "a", place_result = "optical-fibre",           stack_size = 100 },

@@ -17,6 +17,7 @@ local biters = require("scripts.biters")
 local pentapods = require("scripts.pentapods")
 local trains = require("scripts.trains")
 local working_hours = require("scripts.working_hours")
+local administrative_clock = require("scripts.administrative_clock")
 local field_office = require("scripts.field_office")
 local field_office_hover = require("scripts.field_office_hover")
 local planetary_unlocks = require("scripts.planetary_unlocks")
@@ -509,6 +510,7 @@ local function init_storage()
   if WORKING_HOURS_ENABLED then
     working_hours.ensure_storage()
   end
+  administrative_clock.ensure_storage()
   field_office.ensure_storage()
   spawner_population.ensure_storage()
   biter_station.ensure_storage()
@@ -689,6 +691,7 @@ local function on_init()
   if WORKING_HOURS_ENABLED then
     working_hours.rebuild_registry()
   end
+  administrative_clock.rebuild_registry()
   field_office.rebuild_registry()
   spawner_population.rebuild()
   biter_station.rebuild_registry()
@@ -793,6 +796,7 @@ local function on_configuration_changed(event)
   if WORKING_HOURS_ENABLED then
     working_hours.rebuild_registry()
   end
+  administrative_clock.rebuild_registry()
   field_office.rebuild_registry()
   spawner_population.rebuild()
   biter_station.rebuild_registry()
@@ -1159,6 +1163,7 @@ local function on_entity_built_inner(event)
     if WORKING_HOURS_ENABLED then
       working_hours.track_entity(entity)
     end
+    administrative_clock.track_entity(entity)
     if entity.name == "field-office" then
       unlock_field_office_deployment(entity.force)
       field_office.track_entity(entity)
@@ -1252,6 +1257,7 @@ local function on_entity_removed(event)
   if WORKING_HOURS_ENABLED then
     working_hours.untrack_entity(entity)
   end
+  administrative_clock.untrack_entity(entity)
   if entity.name == "field-office" then
     field_office.untrack_entity(entity)
   end
@@ -1913,6 +1919,7 @@ local function on_entity_died(event)
   if WORKING_HOURS_ENABLED then
     working_hours.untrack_entity(entity)
   end
+  administrative_clock.untrack_entity(entity)
   if entity.name == "field-office" then
     field_office.untrack_entity(entity)
   end
@@ -1940,6 +1947,7 @@ local ON_ENTITY_DIED_BASE_FILTERS = {
   {filter = "name", name = "field-office"},
   {filter = "name", name = "corporate-breakroom"},
   {filter = "name", name = "union-headquarters"},
+  {filter = "name", name = "administrative-clock"},
 }
 
 -- Keep death-event coverage in lockstep with every configured protest target.
@@ -2250,6 +2258,7 @@ local function on_main_tick(event)
     rideable_biter.update(event.tick)
   end)
   territorial_arbitration.on_tick(event)
+  administrative_clock.update()
 end
 
 local function on_trajectory_compliance_tick(event)

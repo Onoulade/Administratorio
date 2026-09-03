@@ -1226,6 +1226,13 @@ add_tech_prerequisite("uranium-processing", "board-meetings")
 add_tech_prerequisite("uranium-processing", "nuclear-technician-training")
 add_tech_prerequisite("after-hours-operations", "executive-review")
 
+if working_hours_enabled then
+  -- The clock is a circuit-network instrument, so it follows the vanilla
+  -- circuit technology instead of adding a second technology card for a
+  -- small scheduling utility.
+  add_tech_unlock("circuit-network", "administrative-clock")
+end
+
 for _, tech_name in ipairs({
   "advanced-material-processing-2",
   "solar-energy",

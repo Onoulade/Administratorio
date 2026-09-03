@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.9
+Date: 2026-09-03
+  Features:
+    - add an Administrative Clock that exposes 0–100 daytime, Working Hours, and day-shift boundaries over the circuit network
+---------------------------------------------------------------------------------------------------
 Version: 0.6.8
 Date: 2026-09-01
   Bugfixes:

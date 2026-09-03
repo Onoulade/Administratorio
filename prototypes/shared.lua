@@ -199,6 +199,7 @@ shared.ADMIN_BUILDINGS = {
   ["mechanical-printer"] = true,
   ["tube-intake"] = true,
   ["tube-outtake"] = true,
+  ["administrative-clock"] = true,
   ["pneumatic-pipe"] = true,
   ["pneumatic-pipe-to-ground"] = true,
 }

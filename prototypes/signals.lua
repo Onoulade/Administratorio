@@ -1,4 +1,5 @@
 local icon_layers = require("prototypes.shared.icon_layers")
+local feature_flags = require("feature_flags")
 
 local complaint_signals = {
   { name = "signal-complaint-l",  ticket = "ticket-landscape",     order = "z[admin]-a[l]" },
@@ -48,5 +49,40 @@ signals[#signals + 1] = {
   subgroup = "virtual-signal",
   order = "z[admin]-z",
 }
+
+if feature_flags.working_hours_enabled() then
+  signals[#signals + 1] = {
+    type = "virtual-signal",
+    name = "signal-daytime",
+    icon = "__base__/graphics/icons/signal/signal-hourglass.png",
+    icon_size = 64,
+    subgroup = "virtual-signal",
+    order = "z[admin]-za",
+  }
+  signals[#signals + 1] = {
+    type = "virtual-signal",
+    name = "signal-working-hours",
+    icon = "__base__/graphics/icons/signal/signal_green.png",
+    icon_size = 64,
+    subgroup = "virtual-signal",
+    order = "z[admin]-zb",
+  }
+  signals[#signals + 1] = {
+    type = "virtual-signal",
+    name = "signal-day-shift-start",
+    icon = "__base__/graphics/icons/signal/signal_1.png",
+    icon_size = 64,
+    subgroup = "virtual-signal",
+    order = "z[admin]-zc",
+  }
+  signals[#signals + 1] = {
+    type = "virtual-signal",
+    name = "signal-day-shift-end",
+    icon = "__base__/graphics/icons/signal/signal_2.png",
+    icon_size = 64,
+    subgroup = "virtual-signal",
+    order = "z[admin]-zd",
+  }
+end
 
 data:extend(signals)

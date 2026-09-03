@@ -125,6 +125,20 @@ local building_recipes = {
   not_in_space(entity_recipe("tube-outtake",               { type = "recipe", subgroup = "admin-infrastructure", order = "g-g", enabled = false, allow_quality = false, ingredients = {{type="item", name="iron-plate", amount=5}, {type="item", name="pipe", amount=2}, {type="item", name="electronic-circuit", amount=2}, {type="item", name="compacted-rubble", amount=3}}, results = {{type="item", name="tube-outtake", amount=1}},             energy_required = 3 })),
 }
 
+if feature_flags.working_hours_enabled() then
+  building_recipes[#building_recipes + 1] = entity_recipe("administrative-clock", {
+    type = "recipe",
+    subgroup = "circuit-network", order = "c[combinators]-e[administrative-clock]", enabled = false,
+    ingredients = {
+      {type="item", name="iron-plate", amount=5},
+      {type="item", name="iron-gear-wheel", amount=2},
+      {type="item", name="electronic-circuit", amount=2},
+    },
+    results = {{type="item", name="administrative-clock", amount=1}},
+    energy_required = 5,
+  })
+end
+
 data:extend(building_recipes)
 
 local pneumatic_intake_recipes = {}

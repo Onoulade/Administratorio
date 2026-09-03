@@ -662,6 +662,7 @@ test("delegate training and vanilla unlock ownership keep each tech meaningful",
     assert_true(tech_unlocks_recipe("circuit-network", recipe_name), "circuit network should keep its vanilla " .. recipe_name .. " unlock")
     assert_true(not tech_unlocks_recipe("advanced-combinators", recipe_name), "advanced combinators should not duplicate the vanilla " .. recipe_name .. " unlock")
   end
+  assert_true(tech_unlocks_recipe("circuit-network", "administrative-clock"), "circuit network should unlock the Administrative Clock")
   assert_true(tech_unlocks_recipe("electric-energy-distribution-1", "medium-electric-pole"), "electric-energy-distribution-1 should keep the medium pole unlock")
   assert_true(tech_unlocks_recipe("electric-energy-distribution-1", "big-electric-pole"), "electric-energy-distribution-1 should keep the big pole unlock")
   assert_true(not tech_unlocks_recipe("electric-energy-distribution-2", "medium-electric-pole"), "electric-energy-distribution-2 should not duplicate the medium pole unlock")
