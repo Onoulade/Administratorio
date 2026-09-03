@@ -97,12 +97,17 @@ run_python_tests() {
   for test_file in "$TEST_DIR"/test_*.py; do
     [ -f "$test_file" ] || continue
     printf '==> %s\n' "$(basename "$test_file")"
-    if [ "$(basename "$test_file")" = "test_progression_report.py" ] || [ "$(basename "$test_file")" = "test_planet_escape.py" ] || [ "$(basename "$test_file")" = "test_factorio_config_matrix.py" ] || [ "$(basename "$test_file")" = "test_factorio_runtime_smoke.py" ]; then
+    test_name=$(basename "$test_file")
+    if [ "$test_name" = "test_progression_report.py" ] || [ "$test_name" = "test_planet_escape.py" ] || [ "$test_name" = "test_factorio_config_matrix.py" ] || [ "$test_name" = "test_factorio_runtime_smoke.py" ]; then
       if [ -z "$FACTORIO_BIN" ]; then
-        printf 'Skipping %s; --factorio-bin was not provided.\n' "$(basename "$test_file")"
+        printf 'Skipping %s; --factorio-bin was not provided.\n' "$test_name"
         continue
       fi
-      "$PYTHON_BIN" "$test_file" --factorio-bin "$FACTORIO_BIN" "$@"
+      if [ "$test_name" = "test_planet_escape.py" ]; then
+        "$PYTHON_BIN" "$test_file" --factorio-bin "$FACTORIO_BIN" --enforce-import-policy "$@"
+      else
+        "$PYTHON_BIN" "$test_file" --factorio-bin "$FACTORIO_BIN" "$@"
+      fi
     else
       "$PYTHON_BIN" "$test_file" "$@"
     fi

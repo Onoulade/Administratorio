@@ -36,7 +36,7 @@ Verification actually run:
   - `~/Library/Application Support/Steam/steamapps/common/Factorio/factorio.app/Contents/MacOS/factorio`
   - Reported version: Factorio 2.0.76, build 84451, mac-arm64, Steam, Space Age.
 - Space Age planet escape analyzer command:
-  - `python3 tests/test_planet_escape.py --factorio-bin "~/Library/Application Support/Steam/steamapps/common/Factorio/factorio.app/Contents/MacOS/factorio" --show-steps --import-depth 2`
+  - `python3 tests/test_planet_escape.py --factorio-bin "~/Library/Application Support/Steam/steamapps/common/Factorio/factorio.app/Contents/MacOS/factorio" --enforce-import-policy --show-steps --import-depth 2`
   - Result: passed.
   - Generated report path:
     - `/var/folders/6j/hmy0cn8s4zj369_0jzj21t940000gn/T/administratorio-planet-escape-rocayff4/script-output/administratorio-planet-escape-report.txt`

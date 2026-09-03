@@ -159,32 +159,24 @@ These are hypotheses, not automatic nerfs:
 - `unified-operations-charter` has narrow demand for a capstone form. Prefer a few
   meaningful late recipes over blanket ingredient injection.
 
-## Priority 5 — Progression Diagnostics To Resolve
+## Priority 5 — Progression Diagnostics Resolved
 
-The planet-escape analyzer also reports imports outside its policy for Gleba
-(`coal`, `crude-oil`, `politician-fluid`, `processing-unit`, `redundant-rubble`,
-and `rocket-fuel`) and for Vulcanus (`processing-unit` and `rocket-fuel`) under
-the default rocket targets. The normal suite currently generates that report
-without `--enforce-import-policy`. Decide whether those starts promise local
-escape or only deadlock-free imported escape, then either repair the local
-graphs or encode the intended imports and enforce the policy in the main suite.
+The progression report now computes material and machine reachability as a
+cycle-safe fixed point. It distinguishes an output already available through an
+alternative recipe from the exact recipe unlocked by a technology, and its direct
+unlock diagnostics are enforced failures rather than informational output. The
+Factorio 2.0.77 report has zero blocked direct unlocks, zero delayed direct unlocks,
+zero redundant exact unlocks, and zero machine-unlock delays after repairing the
+affected prerequisites and unlock placement.
 
-The real-data report still lists direct unlocks that are not immediately usable.
-They are informational because runtime sources, specialist staffing, and deliberate
-later bureaucracy can make them valid. Review and classify each into an explicit
-allowlist with a reason, or fix its prerequisite/unlock placement:
-
-- Biolab and Captive Biter Spawner;
-- Construction Robot;
-- Heat Exchanger and Steam Turbine at Heating Tower;
-- Mech Armor and Power Armor MK2;
-- Nuclear Reactor and Centrifuge;
-- Synthetic Personnel Bureau and Unstaffed Operations Waiver;
-- senior/executive Trajectory Compliance Arrays;
-- turbo belts, underground belts, and splitters.
-
-Do not simply suppress the report. An allowlist entry should name the intended
-runtime source or later gate so changed dependencies can still invalidate it.
+The planet-escape analyzer now models global force research, local trigger
+research, runtime-acquired planet resources, spoilage, machine providers, generated
+recycler routes, and finite arrival manifests. Gleba, Vulcanus, and Fulgora each
+have quantified import budgets documented in their in-game tips. Separate targets
+share infrastructure, and targets already constructed as dependencies are not
+charged twice. `tests/run-tests.sh` always supplies `--enforce-import-policy` when
+a Factorio binary is available, so an infeasible target, undeclared import, or
+quantity overrun fails the ordinary suite.
 
 ## Mechanics That Fit, After Stability Work
 

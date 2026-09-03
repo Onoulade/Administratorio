@@ -182,6 +182,7 @@ PLANET_RUNTIME_RESOURCES = {
     "vulcanus": {"territorial-deed"},
     "gleba": {"pentapod-egg"},
 }
+ENFORCED_PLANET_CONTRACTS = {"vulcanus", "gleba", "fulgora"}
 EXPLICIT_IMPORT_ALLOWLISTS = {
     planet_name: set(budgets)
     for planet_name, budgets in PLANET_IMPORT_BUDGETS.items()
@@ -379,7 +380,7 @@ def classify_imports(imports: Counter, item_index: Dict[str, Dict]) -> Dict[str,
 
 
 def import_policy_violations(planet_name: str, imports: Counter, item_index: Dict[str, Dict]) -> List[str]:
-    if planet_name in {"nauvis", "aquilo"}:
+    if planet_name not in ENFORCED_PLANET_CONTRACTS:
         return []
     budgets = PLANET_IMPORT_BUDGETS.get(planet_name, Counter())
     violations = []
@@ -1756,7 +1757,11 @@ def main() -> int:
                         f"{planet_name}: {format_fraction(amount)}x {target_name} has unresolved deadlocks: "
                         + ", ".join(sorted(plan["deadlocks"]))
                     )
-                if args.enforce_import_policy and not plan["feasible_with_manifest"]:
+                if (
+                    args.enforce_import_policy
+                    and planet_name in ENFORCED_PLANET_CONTRACTS
+                    and not plan["feasible_with_manifest"]
+                ):
                     failures.append(
                         f"{planet_name}: {format_fraction(amount)}x {target_name} "
                         "is not feasible with the finite arrival manifest"
