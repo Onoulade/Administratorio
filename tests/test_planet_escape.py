@@ -129,14 +129,62 @@ PLANETARY_EXPORT_IMPORTS = {
     "industrial-charter", "offworld-metallurgy-charter",
     "conciliation-order", "electromagnetic-operating-license", "data-recovery-order",
 }
-PUBLIC_FINANCE_IMPORTS = {"government-grant"}
+PUBLIC_FINANCE_IMPORTS = {"treasury-bond", "government-grant"}
 EXECUTIVE_PAPERWORK_IMPORTS = {"management-approval-written"}
 VULCANUS_SUPPORT_IMPORTS = {"good-excuse"}
+# Arrival manifests are feasibility seeds, not free local production. The
+# quantity planner still records every use as an import. Values are finite so
+# policy enforcement can catch a route that silently turns one emergency
+# document into a bulk supply chain.
+PLANET_IMPORT_BUDGETS = {
+    "vulcanus": Counter({
+        "printer-t1": 1,
+        "corporate-breakroom": 1,
+        "licensed-notary": 8,
+        "chemical-operator": 4,
+        "union-delegate": 2,
+        "treasury-bond": 3,
+        "government-grant": 1,
+        "taxpayer-money": 8,
+        **{name: 8 for name in SPECIALIST_MANAGER_IMPORTS},
+    }),
+    "gleba": Counter({
+        "printer-t1": 1,
+        "chromatic-printer": 1,
+        "greenhouse": 1,
+        "clerical-trainee": 4,
+        "conciliation-officer": 8,
+        "chemical-operator": 4,
+        "union-delegate": 2,
+        "treasury-bond": 3,
+        "government-grant": 1,
+        "taxpayer-money": 20,
+        **{name: 8 for name in SPECIALIST_MANAGER_IMPORTS},
+    }),
+    "fulgora": Counter({
+        "corporate-breakroom": 1,
+        "relay-clerk": 8,
+        "chemical-operator": 4,
+        "government-grant": 1,
+        "management-approval-written": 1,
+        **{name: 8 for name in SPECIALIST_MANAGER_IMPORTS},
+    }),
+    "aquilo": Counter({
+        "printer-t1": 1,
+        **{name: 8 for name in STAFFING_IMPORTS},
+        **{name: 8 for name in PLANETARY_EXPORT_IMPORTS},
+        **{name: 4 for name in CAPSTONE_IMPORTS},
+    }),
+}
+PLANET_RUNTIME_RESOURCES = {
+    # Territorial arbitration and pentapod bargaining are control-stage
+    # acquisition paths rather than recipes in data.raw.
+    "vulcanus": {"territorial-deed"},
+    "gleba": {"pentapod-egg"},
+}
 EXPLICIT_IMPORT_ALLOWLISTS = {
-    "vulcanus": {"licensed-notary", "chemical-operator", "territorial-deed"} | SPECIALIST_MANAGER_IMPORTS | PUBLIC_FINANCE_IMPORTS | EXECUTIVE_PAPERWORK_IMPORTS | VULCANUS_SUPPORT_IMPORTS,
-    "gleba": {"clerical-trainee", "conciliation-officer", "chemical-operator"} | SPECIALIST_MANAGER_IMPORTS | PUBLIC_FINANCE_IMPORTS,
-    "fulgora": {"relay-clerk", "clerical-trainee", "chemical-operator"} | SPECIALIST_MANAGER_IMPORTS | PUBLIC_FINANCE_IMPORTS | EXECUTIVE_PAPERWORK_IMPORTS,
-    "aquilo": STAFFING_IMPORTS | PLANETARY_EXPORT_IMPORTS | CAPSTONE_IMPORTS,
+    planet_name: set(budgets)
+    for planet_name, budgets in PLANET_IMPORT_BUDGETS.items()
 }
 
 
@@ -169,7 +217,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--enforce-import-policy",
         action="store_true",
-        help="Fail when Vulcanus, Gleba, or Fulgora needs an import outside its explicit staffing, conflict, public-finance, and terminal-paperwork allowlist.",
+        help="Fail when a target is infeasible with its finite arrival manifest or exceeds a declared import quantity budget.",
     )
     parser.add_argument(
         "--keep-temp",
@@ -333,8 +381,16 @@ def classify_imports(imports: Counter, item_index: Dict[str, Dict]) -> Dict[str,
 def import_policy_violations(planet_name: str, imports: Counter, item_index: Dict[str, Dict]) -> List[str]:
     if planet_name in {"nauvis", "aquilo"}:
         return []
-    allowlist = EXPLICIT_IMPORT_ALLOWLISTS.get(planet_name, set())
-    return sorted(material_name for material_name in imports if material_name not in allowlist)
+    budgets = PLANET_IMPORT_BUDGETS.get(planet_name, Counter())
+    violations = []
+    for material_name, required in sorted(imports.items()):
+        allowed = budgets.get(material_name, 0)
+        if required > allowed:
+            violations.append(
+                f"{material_name} ({format_fraction(required)} required, "
+                f"{format_fraction(Fraction(allowed))} allowed)"
+            )
+    return violations
 
 
 def load_planet_properties() -> Dict[str, Dict[str, int]]:
@@ -360,12 +416,22 @@ def recipe_enabled_from_start(recipe: Dict) -> bool:
 
 
 def recipe_visible(recipe: Dict) -> bool:
-    return not recipe.get("hidden", False) and not recipe.get("hide_from_player_crafting", False)
+    # hide_from_player_crafting only removes a recipe from character crafting.
+    # Regulated and other machine-only recipes remain real production routes.
+    if not recipe.get("hidden", False):
+        return True
+    # Quality generates hidden recycling recipes because the recycler selects
+    # them automatically; hidden here is UI state, not engine inaccessibility.
+    return recipe_category(recipe) == "recycling" and str(recipe.get("name", "")).endswith("-recycling")
 
 
 def recipe_category(recipe: Dict) -> str:
     level = recipe_level(recipe)
     return level.get("category") or recipe.get("category") or "crafting"
+
+
+def recipe_is_recycling_route(recipe_name: str, recipe: Dict) -> bool:
+    return recipe_category(recipe) == "recycling" or recipe_name.endswith("-recycling")
 
 
 def recipe_ingredients(recipe: Dict) -> List[Tuple[str, str, Fraction]]:
@@ -588,6 +654,10 @@ class PlanetEscapeAnalyzer:
                     if crop_name in self.item_index:
                         resources[planet_name].add(crop_name)
 
+            resources[planet_name].update(
+                PLANET_RUNTIME_RESOURCES.get(planet_name, set())
+            )
+
         return {planet: sorted(resources[planet]) for planet in resources}
 
     def _build_machine_categories_by_item(self) -> Dict[str, Set[str]]:
@@ -721,6 +791,33 @@ class PlanetEscapeAnalyzer:
             stack.extend(tech.get("prerequisites", []) or [])
         return researched
 
+    def _technology_belongs_to_other_planet(
+        self,
+        tech_name: str,
+        planet_name: str,
+        researched: Set[str],
+    ) -> bool:
+        prefix = "planet-discovery-"
+        if not tech_name.startswith(prefix):
+            return False
+        return tech_name != f"{prefix}{planet_name}" and tech_name not in researched
+
+    def _mine_trigger_is_local(self, planet_name: str, entity_name: Optional[str]) -> bool:
+        if not entity_name:
+            return False
+        if entity_name in self.local_entity_names_by_planet.get(planet_name, set()):
+            return True
+        local_resources = set(self.local_resources_by_planet.get(planet_name, ()))
+        for proto_group in self.data_raw.values():
+            if not isinstance(proto_group, dict):
+                continue
+            entity = proto_group.get(entity_name)
+            if not isinstance(entity, dict):
+                continue
+            if local_resources.intersection(result_names(entity.get("minable") or {})):
+                return True
+        return False
+
     def _entity_placeable_item(self, entity_name: str) -> Optional[str]:
         for proto_type in (
             "assembling-machine",
@@ -749,6 +846,14 @@ class PlanetEscapeAnalyzer:
 
     @lru_cache(maxsize=None)
     def researched_technologies(self, planet_name: str) -> Tuple[str, ...]:
+        """Return the global research frontier available for a planet start.
+
+        Science is researched by the force, not by the current surface. Once
+        the current planet has been discovered, science-based descendants are
+        therefore gated by technology prerequisites rather than by whether the
+        same planet can manufacture every historical science pack. Triggered
+        technologies still require their local action or craftable trigger.
+        """
         researched: Set[str] = self._initial_researched_technologies(planet_name)
         log.info("[%s] Starting tech research with %d initial technologies", planet_name, len(researched))
         log.debug("[%s] Initial techs: %s", planet_name, ", ".join(sorted(researched)))
@@ -757,14 +862,25 @@ class PlanetEscapeAnalyzer:
         while True:
             iteration += 1
             progress = False
-            available_recipes = self.available_recipes_from_research(planet_name, tuple(sorted(researched)))
-            available_key = tuple(sorted(available_recipes))
+            available_recipes = self.available_recipes_from_research(
+                planet_name, tuple(sorted(researched))
+            )
+            craftable, _, _ = self._craftable_state(
+                planet_name,
+                tuple(sorted(available_recipes)),
+                include_manifest=True,
+            )
+            craftable_set = set(craftable)
             prev_count = len(researched)
 
             for tech_name, tech in self.technologies.items():
                 if tech_name in researched:
                     continue
                 if tech.get("hidden") or tech.get("enabled", True) is False:
+                    continue
+                if self._technology_belongs_to_other_planet(
+                    tech_name, planet_name, researched
+                ):
                     continue
 
                 prerequisites = [
@@ -777,13 +893,27 @@ class PlanetEscapeAnalyzer:
 
                 trigger = tech.get("research_trigger") or {}
                 if trigger:
-                    # Any non-science-pack research (trigger-based) is considered
-                    # unlockable immediately once prerequisites are met — the
-                    # player will naturally mine/craft/build things on the planet.
-                    researched.add(tech_name)
-                    progress = True
-                    log.debug("[%s] Unlocked %s via research trigger (%s)",
-                              planet_name, tech_name, trigger.get("type", "?"))
+                    trigger_type = trigger.get("type")
+                    trigger_ready = False
+                    if trigger_type == "mine-entity":
+                        trigger_ready = self._mine_trigger_is_local(
+                            planet_name, trigger.get("entity")
+                        )
+                    elif trigger_type == "craft-item":
+                        trigger_ready = trigger.get("item") in craftable_set
+                    elif trigger_type == "build-entity":
+                        trigger_ready = trigger.get("entity") in craftable_set
+                    elif trigger_type == "capture-spawner":
+                        trigger_ready = planet_name == "nauvis"
+                    if trigger_ready:
+                        researched.add(tech_name)
+                        progress = True
+                        log.debug(
+                            "[%s] Unlocked %s via research trigger (%s)",
+                            planet_name,
+                            tech_name,
+                            trigger_type or "?",
+                        )
                     continue
 
                 unit = tech.get("unit", {}) or {}
@@ -797,9 +927,11 @@ class PlanetEscapeAnalyzer:
                 if not science_packs:
                     continue
 
-                if all(self.craftable_with_recipes(planet_name, pack, available_key) for pack in science_packs):
-                    researched.add(tech_name)
-                    progress = True
+                # The progression analyzer separately proves that each science
+                # technology depends on the technology introducing its packs.
+                # Here those packs may be consumed by labs on any surface.
+                researched.add(tech_name)
+                progress = True
 
             if not progress:
                 log.info("[%s] Tech research converged after %d iterations with %d technologies",
@@ -828,87 +960,84 @@ class PlanetEscapeAnalyzer:
 
     @lru_cache(maxsize=None)
     def craftable_with_recipes(self, planet_name: str, material_name: str, available_key: Tuple[str, ...]) -> bool:
-        # Deliberate staffing, conflict, public-finance, and terminal-paperwork
-        # seeds are part of the landing manifest. Treat them as available while
-        # deciding which local technologies can be researched; otherwise one
-        # authorized import makes every downstream native science pack impossible.
-        local_materials = set(self.local_resources_by_planet[planet_name])
-        local_materials.update(EXPLICIT_IMPORT_ALLOWLISTS.get(planet_name, set()))
-        available = set(available_key)
-        producing = [
-            recipe_name
-            for recipe_name in available
-            if any(result_name == material_name for result_name, _, _ in recipe_results(self.recipes[recipe_name]))
-        ]
-        visiting: Set[str] = set()
-
-        def rec(target: str) -> bool:
-            if target in local_materials:
-                return True
-            if target in visiting:
-                return False
-
-            candidate_recipes = [
-                recipe_name
-                for recipe_name in available
-                if any(result_name == target for result_name, _, _ in recipe_results(self.recipes[recipe_name]))
-            ]
-            if not candidate_recipes:
-                return False
-
-            visiting.add(target)
-            for recipe_name in candidate_recipes:
-                if all(rec(ingredient_name) for ingredient_name, _, _ in recipe_ingredients(self.recipes[recipe_name])):
-                    visiting.remove(target)
-                    return True
-            visiting.remove(target)
-            return False
-
-        if material_name in local_materials:
-            return True
-        if not producing:
-            return False
-        return rec(material_name)
+        craftable, _, _ = self._craftable_state(
+            planet_name, available_key, include_manifest=True
+        )
+        return material_name in set(craftable)
 
     def available_recipes(self, planet_name: str) -> Tuple[str, ...]:
         researched = self.researched_technologies(planet_name)
         return self.available_recipes_from_research(planet_name, researched)
 
-    def craftable_outputs(self, planet_name: str) -> List[str]:
-        available_key = self.available_recipes(planet_name)
-        local_resources = set(self.local_resources_by_planet[planet_name])
-
-        # Build the set of craftable outputs iteratively, respecting that
-        # recipes need buildings and buildings need to be craftable too.
-        craftable: Set[str] = set(local_resources)
+    @lru_cache(maxsize=None)
+    def _craftable_state(
+        self,
+        planet_name: str,
+        available_key: Tuple[str, ...],
+        include_manifest: bool,
+    ) -> Tuple[Tuple[str, ...], Tuple[str, ...], Tuple[str, ...]]:
+        """Compute a cycle-safe material/machine/category fixed point."""
+        craftable: Set[str] = set(self.local_resources_by_planet[planet_name])
+        if include_manifest:
+            craftable.update(PLANET_IMPORT_BUDGETS.get(planet_name, Counter()))
+        available_categories = set(self.hand_crafting_categories)
+        usable_recipes: Set[str] = set()
 
         changed = True
         while changed:
             changed = False
-            # Which building categories are available given current craftable set?
-            available_categories = set(self.hand_crafting_categories)
-            for item_name in craftable:
-                if item_name in self.machine_categories_by_item:
-                    available_categories.update(self.machine_categories_by_item[item_name])
+            for item_name in tuple(craftable):
+                spoil_result = (self.item_index.get(item_name) or {}).get("spoil_result")
+                if spoil_result and spoil_result not in craftable:
+                    craftable.add(spoil_result)
+                    changed = True
+                for category in self.machine_categories_by_item.get(item_name, ()):
+                    if category not in available_categories:
+                        available_categories.add(category)
+                        changed = True
 
-            # Which recipes can we actually run?
-            usable_recipes = [
-                recipe_name for recipe_name in available_key
-                if recipe_category(self.recipes[recipe_name]) in available_categories
-            ]
+            for recipe_name in available_key:
+                if recipe_name in usable_recipes:
+                    continue
+                recipe = self.recipes[recipe_name]
+                if recipe_category(recipe) not in available_categories:
+                    continue
+                if any(
+                    ingredient_name not in craftable
+                    for ingredient_name, _, _ in recipe_ingredients(recipe)
+                ):
+                    continue
+                usable_recipes.add(recipe_name)
+                changed = True
+                for result_name, _, _ in recipe_results(recipe):
+                    if result_name not in craftable:
+                        craftable.add(result_name)
+                        changed = True
 
-            for recipe_name in usable_recipes:
-                ingredients = recipe_ingredients(self.recipes[recipe_name])
-                if all(ing_name in craftable for ing_name, _, _ in ingredients):
-                    for result_name, _, _ in recipe_results(self.recipes[recipe_name]):
-                        if result_name not in craftable:
-                            craftable.add(result_name)
-                            changed = True
+        return (
+            tuple(sorted(craftable)),
+            tuple(sorted(usable_recipes)),
+            tuple(sorted(available_categories)),
+        )
 
-        return sorted(craftable)
+    def craftable_outputs(self, planet_name: str) -> List[str]:
+        craftable, _, _ = self._craftable_state(
+            planet_name,
+            self.available_recipes(planet_name),
+            include_manifest=False,
+        )
+        return list(craftable)
+
+    def feasible_outputs(self, planet_name: str) -> List[str]:
+        craftable, _, _ = self._craftable_state(
+            planet_name,
+            self.available_recipes(planet_name),
+            include_manifest=True,
+        )
+        return list(craftable)
 
     def accessible_buildings(self, planet_name: str) -> List[str]:
-        outputs = set(self.craftable_outputs(planet_name))
+        outputs = set(self.feasible_outputs(planet_name))
         return sorted(item_name for item_name in outputs if item_name in self.machine_categories_by_item)
 
     def unknown_resources(self, planet_name: str) -> List[str]:
@@ -924,6 +1053,168 @@ class PlanetEscapeAnalyzer:
                 return amount
         raise KeyError(f"{recipe_name} does not produce {material_name}")
 
+    @lru_cache(maxsize=None)
+    def _feasible_plan_sources(
+        self, planet_name: str
+    ) -> Tuple[Dict[str, Optional[str]], Dict[str, str]]:
+        """Choose stable, cycle-safe witnesses for every feasible output.
+
+        A source is assigned only when an output first becomes reachable. This
+        gives every dependency edge a strict discovery order and prevents
+        productive/recycling loops from repeatedly lowering a fractional cost.
+        """
+        available_key = self.available_recipes(planet_name)
+        local = set(self.local_resources_by_planet[planet_name])
+        manifest = PLANET_IMPORT_BUDGETS.get(planet_name, Counter())
+        sources: Dict[str, Optional[str]] = {name: None for name in local | set(manifest)}
+        reachable = set(sources)
+
+        categories = set(self.hand_crafting_categories)
+        category_providers: Dict[str, str] = {}
+        changed = True
+        while changed:
+            changed = False
+            for item_name in sorted(reachable):
+                spoil_result = (self.item_index.get(item_name) or {}).get("spoil_result")
+                if spoil_result and spoil_result not in reachable:
+                    reachable.add(spoil_result)
+                    sources[spoil_result] = f"@spoil:{item_name}"
+                    changed = True
+                for category in sorted(self.machine_categories_by_item.get(item_name, ())):
+                    if category not in categories:
+                        category_providers[category] = item_name
+                        categories.add(category)
+                        changed = True
+
+            for recipe_name in sorted(
+                available_key,
+                key=lambda name: (
+                    recipe_is_recycling_route(name, self.recipes[name]),
+                    bool(self.recipes[name].get("hidden")),
+                    name,
+                ),
+            ):
+                recipe = self.recipes[recipe_name]
+                if recipe_category(recipe) not in categories:
+                    continue
+                ingredients = recipe_ingredients(recipe)
+                if any(name not in reachable for name, _, _ in ingredients):
+                    continue
+                for result_name, _, _ in recipe_results(recipe):
+                    if result_name not in reachable:
+                        reachable.add(result_name)
+                        sources[result_name] = recipe_name
+                        changed = True
+                    elif (
+                        result_name in manifest
+                        and result_name in self.machine_categories_by_item
+                        and sources[result_name] is None
+                    ):
+                        # An imported bootstrap machine may be able to reproduce
+                        # itself once it has opened its own crafting category.
+                        sources[result_name] = recipe_name
+                    elif (
+                        sources.get(result_name)
+                        and not sources[result_name].startswith("@")
+                        and recipe_is_recycling_route(
+                            sources[result_name], self.recipes[sources[result_name]]
+                        )
+                        and not recipe_is_recycling_route(recipe_name, recipe)
+                    ):
+                        # Generated recycling is a valid fallback, but prefer a
+                        # deliberate production recipe once one becomes reachable.
+                        sources[result_name] = recipe_name
+
+        return sources, category_providers
+
+    def _plan_from_feasible_witness(
+        self, planet_name: str, target_name: str, amount: Fraction
+    ) -> Dict:
+        sources, category_providers = self._feasible_plan_sources(planet_name)
+        local_outputs = set(self.craftable_outputs(planet_name))
+        manifest = PLANET_IMPORT_BUDGETS.get(planet_name, Counter())
+        imports = Counter()
+        recipes = Counter()
+        categories: Set[str] = set()
+        building_categories: Set[str] = set()
+        expanded_categories: Set[str] = set()
+        expanded_providers: Set[str] = set()
+        visiting: Set[str] = set()
+        steps: List[str] = []
+
+        def rec(material_name: str, required_amount: Fraction, indent: int = 0) -> None:
+            prefix = "  " * indent
+            if material_name in local_outputs:
+                steps.append(f"{prefix}use local {format_fraction(required_amount)}x {material_name}")
+                return
+            if material_name in manifest:
+                remaining_budget = max(
+                    Fraction(0),
+                    Fraction(manifest[material_name]) - imports[material_name],
+                )
+                imported_amount = min(required_amount, remaining_budget)
+                if imported_amount:
+                    imports[material_name] += imported_amount
+                    steps.append(
+                        f"{prefix}import {format_fraction(imported_amount)}x {material_name}"
+                    )
+                    required_amount -= imported_amount
+                if required_amount <= 0:
+                    return
+            if material_name in visiting:
+                steps.append(f"{prefix}reuse established {material_name} route")
+                return
+
+            source = sources.get(material_name)
+            if source and source.startswith("@spoil:"):
+                source_item = source.split(":", 1)[1]
+                steps.append(f"{prefix}spoil {source_item} into {material_name}")
+                rec(source_item, required_amount, indent + 1)
+                return
+            if not source:
+                imports[material_name] += required_amount
+                steps.append(f"{prefix}import {format_fraction(required_amount)}x {material_name}")
+                return
+
+            recipe = self.recipes[source]
+            produced_amount = self.result_amount_for(source, material_name)
+            crafts_needed = required_amount / produced_amount
+            recipes[source] += crafts_needed
+            category = recipe_category(recipe)
+            categories.add(category)
+            steps.append(
+                f"{prefix}craft {format_fraction(crafts_needed)}x {source} "
+                f"for {format_fraction(required_amount)}x {material_name}"
+            )
+
+            visiting.add(material_name)
+            if category not in self.hand_crafting_categories and category not in expanded_categories:
+                expanded_categories.add(category)
+                building_categories.add(category)
+                provider = category_providers.get(category)
+                if provider and provider not in expanded_providers:
+                    expanded_providers.add(provider)
+                    steps.append(f"{prefix}  establish {category} with {provider}")
+                    rec(provider, Fraction(1), indent + 2)
+            for ingredient_name, _, ingredient_amount in recipe_ingredients(recipe):
+                rec(ingredient_name, ingredient_amount * crafts_needed, indent + 1)
+            visiting.remove(material_name)
+
+        rec(target_name, amount)
+        return {
+            "imports": imports,
+            "deadlocks": set(),
+            "recipes": recipes,
+            "categories": categories,
+            "building_categories": building_categories,
+            "steps": tuple(steps),
+            "import_usage": {},
+            "craftable": not imports,
+            "feasible_with_manifest": True,
+            "target": target_name,
+            "amount": amount,
+        }
+
     def plan_target(self, planet_name: str, target_name: str, amount: Fraction) -> Dict:
         available_key = self.available_recipes(planet_name)
         accessible_buildings = set(self.accessible_buildings(planet_name))
@@ -931,25 +1222,18 @@ class PlanetEscapeAnalyzer:
         # if the recipe graph has cycles (e.g. water ↔ steam).
         locally_craftable = set(self.craftable_outputs(planet_name))
 
-        # Compute which recipe categories are physically possible on this planet.
-        # A category is possible if it's hand-craftable, or at least one building
-        # providing it has a recipe available on this planet (not blocked by
-        # surface conditions).
-        planet_possible_categories = set(self.hand_crafting_categories)
-        for building_item, categories in self.machine_categories_by_item.items():
-            # Check if the building's item recipe is available on this planet
-            building_recipe = self.recipes.get(building_item)
-            if building_recipe and self._recipe_available_on_planet(building_recipe, planet_name):
-                planet_possible_categories.update(categories)
-                continue
-            # Also check entity surface conditions directly
-            for proto_type in MACHINE_TYPES:
-                entity = self.data_raw.get(proto_type, {}).get(building_item)
-                if entity:
-                    entity_conditions = entity.get("surface_conditions") or []
-                    if not entity_conditions or condition_matches(entity_conditions, self.planet_properties[planet_name]):
-                        planet_possible_categories.update(categories)
-                    break
+        # A recipe category is possible only when the fixed point can actually
+        # construct at least one provider from local resources plus the finite
+        # arrival manifest. Merely having a provider prototype is not enough.
+        feasible_outputs, _, feasible_categories = self._craftable_state(
+            planet_name, available_key, include_manifest=True
+        )
+        feasible_output_set = set(feasible_outputs)
+        planet_possible_categories = set(feasible_categories)
+        if target_name in feasible_output_set:
+            return self._plan_from_feasible_witness(
+                planet_name, target_name, amount
+            )
         _rec_calls = [0]
         _rec_cache_hits = [0]
         _rec_max_depth = [0]
@@ -1159,9 +1443,58 @@ class PlanetEscapeAnalyzer:
                  planet_name, target_name, elapsed, _rec_calls[0], _rec_cache_hits[0],
                  _rec_max_depth[0], len(_resolved_materials))
         plan["craftable"] = not plan["imports"] and not plan["deadlocks"]
+        plan["feasible_with_manifest"] = target_name in feasible_output_set
         plan["target"] = target_name
         plan["amount"] = amount
         return plan
+
+
+def merge_target_imports(
+    target: Counter,
+    source: Counter,
+    analyzer: PlanetEscapeAnalyzer,
+) -> None:
+    """Merge one target into a shared escape manifest.
+
+    Buildings and staffing establish reusable production capacity, so separate
+    targets share the largest requirement. Consumable imports remain additive.
+    """
+    for material_name, amount in source.items():
+        reusable = (
+            material_name in analyzer.machine_categories_by_item
+            or classify_import(material_name, analyzer.item_index.get(material_name))
+            == "staffing"
+        )
+        if reusable:
+            target[material_name] = max(target[material_name], amount)
+        else:
+            target[material_name] += amount
+
+
+def non_redundant_target_plans(
+    plans: Sequence[Dict], analyzer: PlanetEscapeAnalyzer
+) -> List[Dict]:
+    """Drop targets already produced as a dependency of another target plan."""
+    retained = []
+    for index, plan in enumerate(plans):
+        covered_elsewhere = False
+        for other_index, other in enumerate(plans):
+            if index == other_index:
+                continue
+            produced = Fraction(0)
+            for recipe_name, crafts in other.get("recipes", Counter()).items():
+                recipe = analyzer.recipes.get(recipe_name)
+                if not recipe:
+                    continue
+                for result_name, _, result_amount in recipe_results(recipe):
+                    if result_name == plan["target"]:
+                        produced += crafts * result_amount
+            if produced >= plan["amount"]:
+                covered_elsewhere = True
+                break
+        if not covered_elsewhere:
+            retained.append(plan)
+    return retained
 
 
 def _render_import_usage(
@@ -1241,8 +1574,8 @@ def render_planet_section(
     aggregate_imports: Counter = Counter()
     aggregate_deadlocks: Set[str] = set()
     needed_building_categories: Set[str] = set()
-    for plan in target_plans:
-        merge_counter(aggregate_imports, plan["imports"])
+    for plan in non_redundant_target_plans(target_plans, analyzer):
+        merge_target_imports(aggregate_imports, plan["imports"], analyzer)
         aggregate_deadlocks.update(plan["deadlocks"])
         needed_building_categories.update(plan["building_categories"])
 
@@ -1250,6 +1583,11 @@ def render_planet_section(
         "",
         f"[{planet_name}]",
         f"Local resources ({len(local_resources)}): {', '.join(local_resources) if local_resources else '(none)'}",
+        "Finite arrival manifest: "
+        + (
+            ", ".join(render_counter(PLANET_IMPORT_BUDGETS.get(planet_name, Counter())))
+            or "(none)"
+        ),
         f"Researchable technologies ({len(researched)}): {', '.join(researched) if researched else '(none)'}",
         f"Available recipes ({len(available_recipes)}): {', '.join(available_recipes[:40]) if available_recipes else '(none)'}",
     ]
@@ -1265,13 +1603,13 @@ def render_planet_section(
         lines.append(f"... plus {len(accessible_outputs) - 60} more outputs")
 
     lines.append(
-        f"Accessible buildings without imports ({len(accessible_buildings)}): "
+        f"Accessible buildings with arrival manifest ({len(accessible_buildings)}): "
         f"{', '.join(accessible_buildings) if accessible_buildings else '(none)'}"
     )
 
     lines.append("Escape target analysis:")
     for plan in target_plans:
-        status = "craftable locally" if plan["craftable"] else "requires imports/deadlock resolution"
+        status = "craftable locally" if plan["craftable"] else "requires declared arrival imports"
         lines.append(f"  - {format_fraction(plan['amount'])}x {plan['target']}: {status}")
         if plan["imports"]:
             lines.append(f"    Imports: {', '.join(render_counter(plan['imports']))}")
@@ -1418,11 +1756,24 @@ def main() -> int:
                         f"{planet_name}: {format_fraction(amount)}x {target_name} has unresolved deadlocks: "
                         + ", ".join(sorted(plan["deadlocks"]))
                     )
+                if args.enforce_import_policy and not plan["feasible_with_manifest"]:
+                    failures.append(
+                        f"{planet_name}: {format_fraction(amount)}x {target_name} "
+                        "is not feasible with the finite arrival manifest"
+                    )
 
             if args.enforce_import_policy:
                 aggregate = Counter()
-                for target_name, amount in targets:
-                    merge_counter(aggregate, analyzer.plan_target(planet_name, target_name, amount)["imports"])
+                plans = [
+                    analyzer.plan_target(planet_name, target_name, amount)
+                    for target_name, amount in targets
+                ]
+                for plan in non_redundant_target_plans(plans, analyzer):
+                    merge_target_imports(
+                        aggregate,
+                        plan["imports"],
+                        analyzer,
+                    )
                 violations = import_policy_violations(planet_name, aggregate, analyzer.item_index)
                 if violations:
                     failures.append(
