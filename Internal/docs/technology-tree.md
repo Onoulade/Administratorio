@@ -115,13 +115,15 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 
 ### Smog Abatement (`smog-abatement`)
 
-- **Prerequisites:** `environmental-compliance`
+- **Complaint:** Tier 2 biter complaints from medium-or-larger biters
+- **Prerequisites:** `environmental-compliance`, `charcoal-production`, `printing-technology`
 - **Science:** 90 auto + 90 logistic + 90 admin science-pack (30s)
 - **Unlocks:** `filing-smog`, `case-smog`, `smog-final`
 
 ### Hazmat Response (`hazmat-response`)
 
-- **Prerequisites:** `environmental-compliance`
+- **Complaint:** Tier 2 spitter complaints from medium-or-larger spitters
+- **Prerequisites:** `environmental-compliance`, `chemical-operator-training`, `chemical-science-pack`, `littering-resolution`
 - **Science:** 100 auto + 100 logistic + 100 admin science-pack (30s)
 - **Unlocks:** `filing-hazmat`, `case-hazmat`, `hazmat-final`
 
@@ -193,19 +195,29 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 
 ### Noise Ordinances (`noise-ordinances`)
 
-- **Prerequisites:** `federal-regulation`, `utility-science-pack`
+- **Complaint:** Tier 3 biter complaints from big-or-larger biters
+- **Prerequisites:** `eminent-domain-zoning`, `environmental-compliance`, `production-science-pack`, `smog-abatement`
 - **Unlocks:** `filing-noise`, `case-noise`, `noise-final`
 
 ### Loitering Ordinances (`loitering-ordinances`)
 
-- **Prerequisites:** `federal-regulation`, `utility-science-pack`
+- **Complaint:** Tier 3 spitter complaints from big-or-larger spitters
+- **Prerequisites:** `board-meetings`, `hazmat-response`, `production-science-pack`
 - **Unlocks:** `filing-loitering`, `case-loitering`, `loitering-final`
 
 ### Constitutional Law (`constitutional-law`)
 
-- **Prerequisites:** `federal-regulation`, `production-science-pack`
+- **Complaint:** Tier 4 biter complaints from behemoth biters only
+- **Prerequisites:** `federal-regulation`, `noise-ordinances`, `production-science-pack`
 - **Science:** 260 auto + 260 logistic + 260 chemical + 260 production + 260 admin science-pack (60s)
-- **Unlocks:** `filing-unemployment`, `case-unemployment`, `unemployment-final`, `filing-vagrancy`, `case-vagrancy`, `vagrancy-final`
+- **Unlocks:** `filing-unemployment`, `case-unemployment`, `unemployment-final`
+
+### Vagrancy Ordinances (`vagrancy-ordinances`)
+
+- **Complaint:** Tier 4 spitter complaints from behemoth spitters only
+- **Prerequisites:** `loitering-ordinances`, `production-science-pack`
+- **Science:** 320 auto + 320 logistic + 320 chemical + 320 production + 320 admin science-pack (60s)
+- **Unlocks:** `filing-vagrancy`, `case-vagrancy`, `vagrancy-final`
 
 ### Creative Accounting (`creative-accounting`)
 

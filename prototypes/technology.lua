@@ -210,7 +210,7 @@ data:extend({
   -- STREAMLINED WORK ORDERS (direct draft-to-work-order printing at T1/T2 printers)
   {
     type = "technology", name = "streamlined-work-orders",
-    icon = tech_icons .. "streamlined-work-orders.png", icon_size = 128,
+    icon = "__administratorio__/graphics/icons/work-order.png", icon_size = 64,
     effects = {
       { type = "unlock-recipe", recipe = "safety-work-order-printing" },
       { type = "unlock-recipe", recipe = "construction-work-order-printing" }
@@ -321,7 +321,7 @@ data:extend({
       { type = "unlock-recipe", recipe = "case-smog" },
       { type = "unlock-recipe", recipe = "smog-final" }
     },
-    prerequisites = {"environmental-compliance", "charcoal-production"},
+    prerequisites = {"environmental-compliance", "charcoal-production", "printing-technology"},
     unit = { count = 90, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "d-b"
   },
@@ -334,7 +334,7 @@ data:extend({
       { type = "unlock-recipe", recipe = "case-hazmat" },
       { type = "unlock-recipe", recipe = "hazmat-final" }
     },
-    prerequisites = {"environmental-compliance", "chemical-operator-training", "chemical-science-pack"},
+    prerequisites = {"environmental-compliance", "chemical-operator-training", "chemical-science-pack", "littering-resolution"},
     unit = { count = 100, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "d-c"
   },
@@ -390,7 +390,7 @@ data:extend({
   -- T5c: BOARD MEETINGS (executive committee layer inside the Union HQ)
   {
     type = "technology", name = "board-meetings",
-    icon = tech_icons .. "board-meetings.png", icon_size = 128,
+    icon = "__administratorio__/graphics/icons/management-written-proposal.png", icon_size = 64,
     effects = {
       { type = "unlock-recipe", recipe = "management-written-proposal" },
       { type = "unlock-recipe", recipe = "management-written-1st-printing" }
@@ -402,7 +402,7 @@ data:extend({
   -- T6a: EXECUTIVE REVIEW (written approvals and signed directives)
   {
     type = "technology", name = "executive-review",
-    icon = tech_icons .. "executive-review.png", icon_size = 128,
+    icon = "__administratorio__/graphics/icons/management-written-work-order.png", icon_size = 64,
     effects = {
       { type = "unlock-recipe", recipe = "management-written-work-order-production" }
     },
@@ -413,7 +413,7 @@ data:extend({
   -- T6b: RADIOLOGICAL COMPLIANCE (centrifuge-family operating paperwork)
   {
     type = "technology", name = "radiological-compliance",
-    icon = tech_icons .. "radiological-compliance.png", icon_size = 128,
+    icon = "__administratorio__/graphics/icons/radiological-work-order.png", icon_size = 64,
     effects = {
       { type = "unlock-recipe", recipe = "radiological-work-order-production" }
     },
@@ -435,7 +435,7 @@ data:extend({
   {
     type = "technology", name = "work-order-duplication",
     icons = {
-      {icon = tech_icons .. "work-order-duplication.png", icon_size = 128},
+      {icon = "__administratorio__/graphics/icons/work-order.png", icon_size = 64},
       {icon = "__base__/graphics/icons/copy-paste-tool.png", icon_size = 64, scale = 0.35, shift = {16, 16}},
     },
     effects = {
@@ -455,7 +455,7 @@ data:extend({
   -- T7c: FEDERAL REGULATION (codify policy into formal law)
   {
     type = "technology", name = "federal-regulation",
-    icon = tech_icons .. "federal-regulation.png", icon_size = 128,
+    icon = "__administratorio__/graphics/icons/regulation.png", icon_size = 64,
     effects = {
       { type = "unlock-recipe", recipe = "regulation-production" }
     },
@@ -472,7 +472,7 @@ data:extend({
       { type = "unlock-recipe", recipe = "case-noise" },
       { type = "unlock-recipe", recipe = "noise-final" }
     },
-    prerequisites = {"eminent-domain-zoning", "environmental-compliance", "production-science-pack", "smog-abatement", "hazmat-response"},
+    prerequisites = {"eminent-domain-zoning", "environmental-compliance", "production-science-pack", "smog-abatement"},
     unit = { count = 185, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "g-d"
   },
@@ -485,20 +485,20 @@ data:extend({
       { type = "unlock-recipe", recipe = "case-loitering" },
       { type = "unlock-recipe", recipe = "loitering-final" }
     },
-    prerequisites = {"board-meetings", "utility-science-pack", "production-science-pack"},
-    unit = { count = 185, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"utility-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    prerequisites = {"board-meetings", "hazmat-response", "production-science-pack"},
+    unit = { count = 185, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "g-e"
   },
   -- T8a: CONSTITUTIONAL LAW (unemployment resolution)
   {
     type = "technology", name = "constitutional-law",
-    icon = "__administratorio__/graphics/icons/filing-u.png", icon_size = 64,
+    icon = tech_icons .. "constitutional-law.png", icon_size = 256,
     effects = {
       { type = "unlock-recipe", recipe = "filing-unemployment" },
       { type = "unlock-recipe", recipe = "case-unemployment" },
       { type = "unlock-recipe", recipe = "unemployment-final" }
     },
-    prerequisites = {"federal-regulation", "production-science-pack"},
+    prerequisites = {"federal-regulation", "noise-ordinances", "production-science-pack"},
     unit = { count = 260, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "h-a"
   },
@@ -511,8 +511,8 @@ data:extend({
       { type = "unlock-recipe", recipe = "case-vagrancy" },
       { type = "unlock-recipe", recipe = "vagrancy-final" }
     },
-    prerequisites = {"constitutional-law", "utility-science-pack", "production-science-pack"},
-    unit = { count = 320, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"utility-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    prerequisites = {"loitering-ordinances", "production-science-pack"},
+    unit = { count = 320, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "h-b"
   },
   -- PNEUMATIC FORM TRANSPORT (first green-science paperwork logistics)
@@ -711,7 +711,7 @@ data:extend({
       { type = "unlock-recipe", recipe = "hired-biter-capsule" },
       { type = "unlock-recipe", recipe = "hired-biter-command-capsule" },
     },
-    prerequisites = {"biter-employment", "loitering-ordinances", "biter-labor-efficiency-2", "executive-review"},
+    prerequisites = {"biter-employment", "loitering-ordinances", "biter-labor-efficiency-2", "executive-review", "utility-science-pack"},
     unit = { count = 500, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"utility-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "f-i"
   },
@@ -1149,8 +1149,6 @@ add_tech_prerequisite("health-and-safety", "chemical-science-pack")
   add_tech_prerequisite("nuclear-technician-training", "production-science-pack")
   add_tech_prerequisite("eminent-domain-zoning", "production-science-pack")
   add_tech_prerequisite("constitutional-law", "production-science-pack")
-  add_tech_prerequisite("loitering-ordinances", "utility-science-pack")
-  add_tech_prerequisite("vagrancy-ordinances", "utility-science-pack")
   add_tech_prerequisite("power-armor-mk2", "utility-science-pack")
   add_tech_prerequisite("robotics", "federal-regulation")
 
