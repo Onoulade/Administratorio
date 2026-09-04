@@ -1753,6 +1753,13 @@ local function find_deconstruction_job(network, tick)
          and entity.type ~= "entity-ghost"
          and entity.type ~= "tile-ghost"
          and entity.type ~= "deconstructible-tile-proxy"
+         -- Loose item entities have a separate pickup implementation below.
+         -- Once snapshot_loose_item_deconstruction marks one for cleanup it
+         -- also appears in the generic to_be_deconstructed query.  Letting it
+         -- through here treats the item like a mineable building; the worker
+         -- then walks into/pushes it and can be dispatched repeatedly without
+         -- ever consuming the item.
+         and entity.type ~= "item-entity"
          and position_in_network_radius(network, entity.position, C.BITERPORT_CONSTRUCTION_RADIUS) then
         local worker_port = choose_worker_port(network, entity.position, entity.position, tick)
         if worker_port then

@@ -262,6 +262,7 @@ local function new_surface()
   local surface = {
     index = 1,
     chests = {},
+    loose_items = {},
     hidden = {},
     created = {},
   }
@@ -271,6 +272,17 @@ local function new_surface()
   end
 
   function surface.find_entities_filtered(params)
+    if (params.type == "item-entity" or params.to_be_deconstructed) and params.area then
+      local entities = {}
+      for _, item in ipairs(surface.loose_items) do
+        if item.valid and within(params.area, item.position) then
+          if not params.to_be_deconstructed or item.to_be_deconstructed() then
+            entities[#entities + 1] = item
+          end
+        end
+      end
+      return entities
+    end
     if params.type == "logistic-container" and params.area then
       local entities = {}
       for _, chest in ipairs(surface.chests) do
@@ -431,17 +443,50 @@ local function new_chest(surface, unit_number, position, logistic_mode, items, r
   return chest
 end
 
-local function new_port(surface, force, workers, money)
+local function new_loose_item(surface, unit_number, position, name, count, marked)
+  local item = {
+    valid = true,
+    unit_number = unit_number,
+    name = "item-on-ground",
+    type = "item-entity",
+    position = position,
+    surface = surface,
+    force = nil,
+    bounding_box = {
+      left_top = {x = position.x - 0.15, y = position.y - 0.15},
+      right_bottom = {x = position.x + 0.15, y = position.y + 0.15},
+    },
+    stack = {
+      valid_for_read = true,
+      name = name,
+      count = count or 1,
+    },
+    marked_for_deconstruction = marked == true,
+  }
+  function item.to_be_deconstructed()
+    return item.marked_for_deconstruction
+  end
+  function item.order_deconstruction()
+    item.marked_for_deconstruction = true
+  end
+  function item.destroy()
+    item.valid = false
+  end
+  surface.loose_items[#surface.loose_items + 1] = item
+  return item
+end
+
+local function new_port(surface, force, workers, money, unit_number, position)
   local inventory = new_inventory(6, {
-    ["biter-logistics-formation"] = workers or 1,
-    ["taxpayer-money"] = money or 1,
+    ["biter-logistics-formation"] = workers == nil and 1 or workers,
+    ["taxpayer-money"] = money == nil and 1 or money,
   })
   local port = {
     valid = true,
-    unit_number = 10,
+    unit_number = unit_number or 10,
     name = "biterport",
     type = "container",
-    position = {x = 0, y = 0},
+    position = position or {x = 0, y = 0},
     surface = surface,
     force = force,
     direction = defines.direction.north,
@@ -530,6 +575,116 @@ local function advance_worker_to(active, position, tick, biterport)
   biterport.on_ai_command_completed{unit_number = active.biter_unit_number, tick = tick}
   biterport.update(tick + 1)
 end
+
+test("biterport picks up marked loose items instead of treating them as buildings", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+
+  local surface = new_surface()
+  local force = {
+    name = "player",
+    technologies = {},
+    set_cease_fire = function() end,
+  }
+  game = {
+    tick = 0,
+    connected_players = {},
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 1, 1)
+  -- Tick 30 selects the north-west subdivision of the construction scan.
+  local loose_item = new_loose_item(surface, 40, {x = -35, y = -35}, "wood", 1, true)
+
+  biterport.ensure_storage()
+  biterport.track_port(port)
+  biterport.update(30)
+
+  local active = first_active_worker()
+  assert_true(active ~= nil, "marked loose item should dispatch a worker")
+  assert_eq(active.job.deconstruction_type, "loose_item",
+    "marked loose item must use the dedicated pickup job")
+  assert_eq(port.inventory.get_item_count("taxpayer-money"), 0,
+    "the pickup should consume one dispatch salary")
+
+  advance_worker_to(active, loose_item.position, 30, biterport)
+  active = first_active_worker()
+  advance_worker_to(active, loose_item.position, 31, biterport)
+  assert_true(not loose_item.valid, "loose item should be picked up and removed")
+end)
+
+test("biterport transports items across connected biterports", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+
+  local surface = new_surface()
+  local force = {
+    name = "player",
+    technologies = {},
+    set_cease_fire = function() end,
+  }
+  game = {
+    tick = 0,
+    connected_players = {},
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biterport = require("scripts.biterport")
+  local source_port = new_port(surface, force, 0, 0, 10, {x = 0, y = 0})
+  local target_port = new_port(surface, force, 1, 1, 11, {x = 40, y = 0})
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {
+    ["red-circuit"] = 1,
+  })
+  provider.force = force
+  local requester = new_chest(surface, 31, {x = 42, y = 0}, "requester", {}, {
+    {name = "red-circuit", count = 1},
+  })
+  requester.force = force
+
+  biterport.ensure_storage()
+  biterport.track_port(source_port)
+  biterport.track_port(target_port)
+  biterport.update(30)
+
+  local active = first_active_worker()
+  assert_true(active ~= nil, "connected ports should dispatch a logistics worker")
+  assert_eq(active.home_port_id, target_port.unit_number,
+    "the funded port should dispatch the cross-port delivery")
+  assert_eq(active.job.source.unit_number, provider.unit_number,
+    "cross-port delivery should source from the provider port")
+  assert_eq(active.job.target.unit_number, requester.unit_number,
+    "cross-port delivery should target the requester port")
+
+  advance_worker_to(active, provider.position, 30, biterport)
+  active = first_active_worker()
+  advance_worker_to(active, requester.position, 31, biterport)
+
+  assert_eq(requester.inventory.get_item_count("red-circuit"), 1,
+    "requester at the second port should receive the item")
+  assert_eq(provider.inventory.get_item_count("red-circuit"), 0,
+    "provider at the first port should lose the delivered item")
+end)
 
 test("biterport uses symmetric entrances and central all-sided coffee input", function()
   storage = {}
