@@ -1,5 +1,29 @@
 ---------------------------------------------------------------------------------------------------
 Version: 0.6.9
+Date: 2026-09-04
+  Bugfixes:
+    - align progression unlock prerequisites
+    - complete shipped translation coverage
+    - preserve transit and force invariants
+    - restore intended handcraft routes
+  Docs:
+    - generate factual references from shared data
+    - refresh references and add forward audit
+  Internal:
+    - enforce first-planet escape contracts
+    - model finite planet escape manifests
+    - make unlock diagnostics cycle-safe
+    - remove obsolete identifier tombstones
+    - add real control-stage smoke coverage
+  Changes:
+    - Fix pneumatic pipe fast replacement
+    - Fix biterport loose item pickup starvation
+    - Fix Slop Refinery form handling
+    - Replace layered technology icons
+    - Add circuit-network administrative clock
+    - Fix biter complaint progression and icons
+---------------------------------------------------------------------------------------------------
+Version: 0.6.9
 Date: 2026-09-03
   Features:
     - add an Administrative Clock that exposes 0–100 daytime, Working Hours, and day-shift boundaries over the circuit network
