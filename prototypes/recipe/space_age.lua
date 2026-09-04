@@ -2338,17 +2338,17 @@ for _, item_name in ipairs(interplanetary_payloads.all()) do
 end
 data:extend(dispatch_recipes)
 
--- Slop synthesis, generated straight from the paperwork taxonomy. Cost and
--- hallucination volume both scale with the rank being slopped: rank 0-1 emits a
--- trickle, the Administratorium rank 2-3 tier emits a flood. That is the
--- balance governor for the late tier and thematically exact -- the harder the
--- document, the more the machine invents.
+-- Slop synthesis, generated straight from the paperwork taxonomy. The blank
+-- form recipe is the citation-producing sink: it consumes a blank form and
+-- slop to produce citations.
+-- Every other recipe consumes one blank form and returns the requested document.
 local slop_rules = require("prototypes.shared.slop_rules")
 
 local slop_recipes = {}
 for _, tier in ipairs({"base", "advanced"}) do
   for _, item_name in ipairs(slop_rules.documents_for_tier(tier)) do
-    slop_recipes[#slop_recipes + 1] = {
+    local is_blank_form_recycling = item_name == "blank-form"
+    local recipe = {
       type = "recipe",
       name = slop_rules.recipe_name(item_name),
       category = "slop-refining",
@@ -2361,18 +2361,21 @@ for _, tier in ipairs({"base", "advanced"}) do
       enabled = false,
       localised_name = {"item-name." .. item_name},
       ingredients = {
-        {type = "item", name = slop_rules.SLOP_ITEM, amount = slop_rules.slop_cost(item_name)},
         {type = "item", name = "blank-form", amount = 1},
+        {type = "item", name = slop_rules.SLOP_ITEM,
+          amount = is_blank_form_recycling and 2 or slop_rules.slop_cost(item_name)},
       },
-      results = {
+      results = is_blank_form_recycling and {
+        {type = "item", name = slop_rules.CITATION_ITEM, amount = 1,
+          ignored_by_productivity = 1},
+      } or {
         {type = "item", name = item_name, amount = 1},
-        {type = "item", name = slop_rules.CITATION_ITEM, amount = slop_rules.citation_yield(item_name),
-          ignored_by_productivity = slop_rules.citation_yield(item_name)},
       },
-      main_product = item_name,
+      main_product = is_blank_form_recycling and slop_rules.CITATION_ITEM or item_name,
       allow_decomposition = false,
       energy_required = 4 + slop_rules.slop_cost(item_name) / 2,
     }
+    slop_recipes[#slop_recipes + 1] = recipe
   end
 end
 data:extend(slop_recipes)

@@ -322,6 +322,38 @@ local function get_result_probability(recipe, item_name)
   return nil
 end
 
+test("slop refinery converts blank forms into fabricated citations", function()
+  local recipe = recipes["slop-synthesis-blank-form"]
+  assert_true(recipe ~= nil, "blank-form slop recipe missing")
+  assert_eq(recipe.category, "slop-refining")
+  assert_eq(ingredient_amount(recipe, "blank-form"), 1,
+    "blank-form slop recipe should consume one blank form")
+  assert_eq(ingredient_amount(recipe, "administrative-slop"), 2,
+    "blank-form slop recipe should consume two administrative slop")
+  assert_eq(get_result_amount(recipe, "fabricated-citations"), 1,
+    "blank-form slop recipe should produce one fabricated citation")
+  assert_true(not has_result(recipe, "blank-form"),
+    "blank-form slop recipe should consume the form rather than return it")
+  assert_eq(item_result_count(recipe), 1)
+  assert_eq(recipe.main_product, "fabricated-citations")
+end)
+
+test("other slop refinery recipes consume one form and return only their document", function()
+  local found_other_recipe = false
+  for recipe_name, recipe in pairs(recipes) do
+    if recipe_name:match("^slop%-synthesis%-") and recipe_name ~= "slop-synthesis-blank-form" then
+      found_other_recipe = true
+      assert_eq(ingredient_amount(recipe, "blank-form"), 1,
+        recipe_name .. " should consume one blank form")
+      assert_true(not has_result(recipe, "fabricated-citations"),
+        recipe_name .. " should not produce fabricated citations")
+      assert_eq(item_result_count(recipe), 1,
+        recipe_name .. " should have only its requested document as output")
+    end
+  end
+  assert_true(found_other_recipe, "expected at least one non-blank-form slop recipe")
+end)
+
 local function tech_unlocks_recipe(technology, recipe_name)
   if not technology or not technology.effects then return false end
   for _, effect in ipairs(technology.effects) do
