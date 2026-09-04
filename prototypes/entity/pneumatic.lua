@@ -79,7 +79,7 @@ local pneumatic_underground = table.deepcopy(data.raw["pipe-to-ground"]["pipe-to
 pneumatic_underground.name = "pneumatic-pipe-to-ground"
 pneumatic_underground.minable.result = "pneumatic-pipe-to-ground"
 pneumatic_underground.placeable_by = placeable_by_item("pneumatic-pipe-to-ground")
-pneumatic_underground.fast_replaceable_group = "pneumatic-pipe-to-ground"
+pneumatic_underground.fast_replaceable_group = "pneumatic-pipe"
 pneumatic_underground.icons = {{icon = "__base__/graphics/icons/pipe-to-ground.png", icon_size = 64, tint = pneumatic_tint}}
 pneumatic_underground.icon = nil
 pneumatic_underground.icon_size = nil
