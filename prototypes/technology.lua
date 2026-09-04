@@ -1,35 +1,9 @@
 local feature_flags = require("feature_flags")
 local shared = require("prototypes.shared")
-local building_icons = require("prototypes.shared.building_icons")
 local gameplay_facts = require("prototypes.shared.gameplay_facts")
 local working_hours_enabled = feature_flags.working_hours_enabled()
 local space_age_enabled = feature_flags.space_age_enabled()
 local tech_icons = "__administratorio__/graphics/technology/"
-
-local function numbered_technology_icon(icon, icon_size, number, tint)
-  local badge_shift = icon_size >= 128 and {32, 32} or {8, 8}
-  return {
-    {icon = icon, icon_size = icon_size, tint = tint},
-    {
-      icon = "__base__/graphics/icons/signal/signal_" .. number .. ".png",
-      icon_size = 64,
-      scale = 0.38,
-      shift = badge_shift,
-    },
-  }
-end
-
-local function biterport_upgrade_icons(kind, level)
-  local kind_icon = kind == "capacity"
-    and "__base__/graphics/icons/signal/signal-stack-size.png"
-    or "__base__/graphics/icons/signal/signal-speed.png"
-  return {
-    {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, tint = {r=0.45, g=0.85, b=0.55, a=1}},
-    {icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64, scale = 0.46, shift = {7, -6}},
-    {icon = kind_icon, icon_size = 64, scale = 0.25, shift = {-10, 10}},
-    {icon = "__base__/graphics/icons/signal/signal_" .. level .. ".png", icon_size = 64, scale = 0.25, shift = {10, 10}},
-  }
-end
 
 local function eminent_domain_zoning_effects()
   local effects = {
@@ -95,11 +69,7 @@ data:extend({
   -- FIELD OFFICE DEPLOYMENT (triggered when the first field office is crafted)
   {
     type = "technology", name = "field-office-deployment",
-    icons = (function()
-      local icons = building_icons.field_office()
-      icons[#icons + 1] = {icon = "__administratorio__/graphics/icons/provisional-approval.png", icon_size = 64, scale = 0.36, shift = {8, 8}}
-      return icons
-    end)(),
+    icon = tech_icons .. "field-office-deployment-v2.png", icon_size = 256,
     effects = {
       { type = "unlock-recipe", recipe = "provisional-approval-production" },
       { type = "unlock-recipe", recipe = "promise-production" },
@@ -434,10 +404,7 @@ data:extend({
   -- T7b: WORK ORDER DUPLICATION (industrial printer copies every work-order family)
   {
     type = "technology", name = "work-order-duplication",
-    icons = {
-      {icon = "__administratorio__/graphics/icons/work-order.png", icon_size = 64},
-      {icon = "__base__/graphics/icons/copy-paste-tool.png", icon_size = 64, scale = 0.35, shift = {16, 16}},
-    },
+    icon = tech_icons .. "work-order-duplication-v3.png", icon_size = 256,
     effects = {
       { type = "unlock-recipe", recipe = "copy-work-order" },
       { type = "unlock-recipe", recipe = "copy-safety-work-order" },
@@ -571,7 +538,7 @@ data:extend({
   },
   {
     type = "technology", name = "biter-labor-efficiency-1",
-    icons = numbered_technology_icon(tech_icons .. "worker-biter.png", 256, 1),
+    icon = tech_icons .. "biter-labor-efficiency-v3.png", icon_size = 256,
     effects = {
       { type = "nothing", effect_description = {"technology-effect.biter-labor-efficiency",
         tostring(gameplay_facts.biter_station.labor_efficiency[1].visits_per_trip)} },
@@ -582,7 +549,7 @@ data:extend({
   },
   {
     type = "technology", name = "biter-labor-efficiency-2",
-    icons = numbered_technology_icon(tech_icons .. "worker-biter.png", 256, 2),
+    icon = tech_icons .. "biter-labor-efficiency-v3.png", icon_size = 256,
     effects = {
       { type = "nothing", effect_description = {"technology-effect.biter-labor-efficiency",
         tostring(gameplay_facts.biter_station.labor_efficiency[2].visits_per_trip)} },
@@ -594,10 +561,7 @@ data:extend({
   -- BITERPORT LOGISTICS (walking construction/logistics before true robots)
   {
     type = "technology", name = "biterport-logistics",
-    icons = {
-      {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, tint = {r=0.45, g=0.85, b=0.55, a=1}},
-      {icon = "__administratorio__/graphics/icons/biterport.png", icon_size = 64, scale = 0.5, shift = {8, 8}},
-    },
+    icon = tech_icons .. "biterport-logistics-v3.png", icon_size = 256,
     effects = {
       { type = "unlock-recipe", recipe = "biterport" },
       { type = "unlock-recipe", recipe = "biter-logistics-formation" },
@@ -612,7 +576,7 @@ data:extend({
   -- BITERPORT TRANSPORT CAPACITY (increase items carried per logistics trip)
   {
     type = "technology", name = "biterport-transport-capacity-1",
-    icons = biterport_upgrade_icons("capacity", 1),
+    icon = tech_icons .. "biterport-transport-capacity-v3.png", icon_size = 256,
     effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity",
       tostring(gameplay_facts.biterport.transport_capacity[1].items_per_worker)} }},
     prerequisites = {"biterport-logistics"},
@@ -621,7 +585,7 @@ data:extend({
   },
   {
     type = "technology", name = "biterport-transport-capacity-2",
-    icons = biterport_upgrade_icons("capacity", 2),
+    icon = tech_icons .. "biterport-transport-capacity-v3.png", icon_size = 256,
     effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity",
       tostring(gameplay_facts.biterport.transport_capacity[2].items_per_worker)} }},
     prerequisites = {"biterport-transport-capacity-1"},
@@ -630,7 +594,7 @@ data:extend({
   },
   {
     type = "technology", name = "biterport-transport-capacity-3",
-    icons = biterport_upgrade_icons("capacity", 3),
+    icon = tech_icons .. "biterport-transport-capacity-v3.png", icon_size = 256,
     effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity",
       tostring(gameplay_facts.biterport.transport_capacity[3].items_per_worker)} }},
     prerequisites = {"biterport-transport-capacity-2"},
@@ -639,7 +603,7 @@ data:extend({
   },
   {
     type = "technology", name = "biterport-transport-capacity-4",
-    icons = biterport_upgrade_icons("capacity", 4),
+    icon = tech_icons .. "biterport-transport-capacity-v3.png", icon_size = 256,
     effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-transport-capacity",
       tostring(gameplay_facts.biterport.transport_capacity[4].items_per_worker)} }},
     prerequisites = {"biterport-transport-capacity-3", "chemical-science-pack"},
@@ -649,7 +613,7 @@ data:extend({
   -- BITERPORT WORKER SPEED (swap dispatched logistics workers to faster unit prototypes)
   {
     type = "technology", name = "biterport-worker-speed-1",
-    icons = biterport_upgrade_icons("speed", 1),
+    icon = tech_icons .. "biterport-worker-speed-v3.png", icon_size = 256,
     effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-worker-speed",
       tostring(math.floor((gameplay_facts.biterport.worker_speed[1].multiplier - 1) * 100 + 0.5)) .. "%"} }},
     prerequisites = {"biterport-logistics"},
@@ -658,7 +622,7 @@ data:extend({
   },
   {
     type = "technology", name = "biterport-worker-speed-2",
-    icons = biterport_upgrade_icons("speed", 2),
+    icon = tech_icons .. "biterport-worker-speed-v3.png", icon_size = 256,
     effects = {{ type = "nothing", effect_description = {"technology-effect.biterport-worker-speed",
       tostring(math.floor((gameplay_facts.biterport.worker_speed[2].multiplier - 1) * 100 + 0.5)) .. "%"} }},
     prerequisites = {"biterport-worker-speed-1", "chemical-science-pack"},
@@ -824,7 +788,7 @@ for level = 1, admin_station_capacity_tiers do
   admin_station_capacity_techs[#admin_station_capacity_techs + 1] = {
     type = "technology",
     name = name,
-    icons = numbered_technology_icon(tech_icons .. "admin-station-capacity.png", 256, level),
+    icon = tech_icons .. "admin-station-capacity-v2.png", icon_size = 256,
     effects = {
       { type = "nothing", effect_description = {"technology-effect.admin-station-capacity", tostring(level)} }
     },

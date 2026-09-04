@@ -353,16 +353,13 @@ test("administrative bureaucracy owns only the early greenhouse wood bootstrap",
 end)
 
 test("admin station capacity upgrades are tiered and chain correctly", function()
-  local expected_icon = "__administratorio__/graphics/technology/admin-station-capacity.png"
+  local expected_icon = "__administratorio__/graphics/technology/admin-station-capacity-v2.png"
   for level = 1, 8 do
     local tech_name = "admin-station-capacity-" .. level
-    local icons = technologies[tech_name].icons
     assert_true(technologies[tech_name] ~= nil, tech_name .. " should exist")
     assert_true(tech_has_effect(tech_name, "nothing"), tech_name .. " should expose a scripted-effect marker")
-    assert_true(icons and icons[1].icon == expected_icon, tech_name .. " should use the building-based technology icon")
-    assert_true(icons[1].icon_size == 256, tech_name .. " should use the 256px technology icon size")
-    assert_true(icons[2].icon == "__base__/graphics/icons/signal/signal_" .. level .. ".png",
-      tech_name .. " should display its capacity tier")
+    assert_true(technologies[tech_name].icon == expected_icon, tech_name .. " should use the dedicated technology icon")
+    assert_true(technologies[tech_name].icon_size == 256, tech_name .. " should use the 256px technology icon size")
 
     if level == 1 then
       assert_true(tech_has_prereq(tech_name, "administrative-bureaucracy"), tech_name .. " should start from administrative-bureaucracy")
@@ -692,8 +689,8 @@ test("late complaint tiers follow their family chains and use complaint icons", 
     assert_true(technologies[tech_name].icon_size == 64,
       tech_name .. " should use a flat normal-document icon")
   end
-  assert_true(technologies["work-order-duplication"].icons[1].icon == "__administratorio__/graphics/icons/work-order.png",
-    "work-order-duplication should use a flat normal-document icon")
+  assert_true(technologies["work-order-duplication"].icon == "__administratorio__/graphics/technology/work-order-duplication-v3.png",
+    "work-order-duplication should use its dedicated technology icon")
   assert_true(tech_unlocks_recipe("noise-ordinances", "noise-final"), "noise-ordinances should unlock noise resolution")
   assert_true(tech_unlocks_recipe("loitering-ordinances", "loitering-final"), "loitering-ordinances should unlock loitering resolution")
   assert_true(tech_unlocks_recipe("constitutional-law", "unemployment-final"), "constitutional-law should unlock unemployment resolution")

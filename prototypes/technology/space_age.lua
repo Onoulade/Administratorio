@@ -1,6 +1,7 @@
 local feature_flags = require("feature_flags")
 local manager_briefings = require("prototypes.shared.manager_briefings")
 local working_hours_enabled = feature_flags.working_hours_enabled()
+local tech_icons = "__administratorio__/graphics/technology/"
 
 local function add_tech_unlock(technology_name, recipe_name)
   local technology = data.raw["technology"] and data.raw["technology"][technology_name]
@@ -527,10 +528,8 @@ data:extend({
   {
     type = "technology",
     name = "management-formation",
-    icons = {
-      {icon = "__base__/graphics/icons/medium-biter.png", icon_size = 64, tint = {r=0.45, g=0.55, b=1.0, a=1}},
-      {icon = "__base__/graphics/icons/big-biter.png", icon_size = 64, scale = 0.4, shift = {8, 8}},
-    },
+    icon = tech_icons .. "management-formation-v3.png",
+    icon_size = 256,
     effects = {
       {type = "unlock-recipe", recipe = "clerical-trainee-formation"},
       {type = "unlock-recipe", recipe = "management-trainee-formation"},
@@ -559,10 +558,8 @@ data:extend({
   {
     type = "technology",
     name = "specialized-formation",
-    icons = {
-      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, tint = {r=0.35, g=1.0, b=0.85, a=1}},
-      {icon = "__administratorio__/graphics/icons/management-approval-written.png", icon_size = 64, scale = 0.4, shift = {8, 8}},
-    },
+    icon = tech_icons .. "specialized-formation-v3.png",
+    icon_size = 256,
     effects = {
       {type = "unlock-recipe", recipe = "astronaut-formation"},
     },
@@ -616,8 +613,8 @@ data:extend({
   {
     type = "technology",
     name = "orbital-compliance-systems",
-    icon = "__base__/graphics/icons/radar.png",
-    icon_size = 64,
+    icon = "__administratorio__/graphics/icons/trajectory-compliance-array-v3.png",
+    icon_size = 256,
     effects = {
       {type = "unlock-recipe", recipe = "trajectory-compliance-array"},
       {type = "unlock-recipe", recipe = "orbital-deviation-order"},
@@ -645,7 +642,7 @@ data:extend({
   {
     type = "technology",
     name = "trajectory-compliance-jurisdiction-1",
-    icon = "__base__/graphics/technology/weapon-shooting-speed-1.png",
+    icon = "__administratorio__/graphics/icons/trajectory-compliance-array-v3.png",
     icon_size = 256,
     effects = {
       {type = "nothing", effect_description = {"technology-effect.trajectory-compliance-jurisdiction", "1"}},
@@ -669,10 +666,8 @@ data:extend({
   {
     type = "technology",
     name = "trajectory-compliance-jurisdiction-2",
-    icons = {
-      {icon = "__base__/graphics/technology/weapon-shooting-speed-1.png", icon_size = 256},
-      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.5, shift = {32, 32}},
-    },
+    icon = "__administratorio__/graphics/icons/trajectory-compliance-array-v3.png",
+    icon_size = 256,
     effects = {
       {type = "unlock-recipe", recipe = "senior-trajectory-compliance-array"},
     },
@@ -698,10 +693,8 @@ data:extend({
   {
     type = "technology",
     name = "trajectory-compliance-jurisdiction-3",
-    icons = {
-      {icon = "__base__/graphics/technology/weapon-shooting-speed-1.png", icon_size = 256},
-      {icon = "__space-age__/graphics/icons/quantum-processor.png", icon_size = 64, scale = 0.5, shift = {32, 32}},
-    },
+    icon = "__administratorio__/graphics/icons/trajectory-compliance-array-v3.png",
+    icon_size = 256,
     effects = {
       {type = "unlock-recipe", recipe = "executive-trajectory-compliance-array"},
     },
@@ -783,10 +776,8 @@ for level, seconds in ipairs(trajectory_speed_seconds) do
   trajectory_speed_techs[#trajectory_speed_techs + 1] = {
     type = "technology",
     name = "trajectory-compliance-speed-" .. level,
-    icons = {
-      {icon = "__base__/graphics/technology/weapon-shooting-speed-1.png", icon_size = 256},
-      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.45, shift = {32, 32}},
-    },
+    icon = "__administratorio__/graphics/icons/trajectory-compliance-array-v3.png",
+    icon_size = 256,
     effects = {
       {
         type = "gun-speed",
@@ -847,10 +838,8 @@ for level, count in ipairs(orbital_employment_damage_counts) do
   orbital_employment_damage_techs[#orbital_employment_damage_techs + 1] = {
     type = "technology",
     name = "orbital-employment-damage-" .. level,
-    icons = {
-      {icon = "__space-age__/graphics/technology/railgun-damage.png", icon_size = 256},
-      {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.5, shift = {32, 32}},
-    },
+    icon = "__administratorio__/graphics/icons/orbital-employment-catapult-v3.png",
+    icon_size = 256,
     effects = {
       {
         type = "ammo-damage",
@@ -909,10 +898,8 @@ for level, count in ipairs(orbital_employment_capacity_counts) do
   orbital_employment_capacity_techs[#orbital_employment_capacity_techs + 1] = {
     type = "technology",
     name = "orbital-employment-capacity-" .. level,
-    icons = {
-      {icon = "__space-age__/graphics/technology/railgun-damage.png", icon_size = 256},
-      {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.5, shift = {32, 32}},
-    },
+    icon = "__administratorio__/graphics/icons/orbital-employment-catapult-v3.png",
+    icon_size = 256,
     effects = {
       {
         type = "nothing",
@@ -1096,10 +1083,8 @@ for level = 2, 5 do
   trunk_capacity_techs[#trunk_capacity_techs + 1] = {
     type = "technology",
     name = "interplanetary-tube-capacity-" .. level,
-    icons = {
-      {icon = trunk_icon, icon_size = 64, tint = trunk_tint},
-      {icon = "__base__/graphics/icons/signal/signal_" .. level .. ".png", icon_size = 64, scale = 0.35, shift = {8, 8}},
-    },
+    icon = tech_icons .. "interplanetary-tube-capacity-v2.png",
+    icon_size = 256,
     effects = {
       {type = "nothing", effect_description = {"technology-effect.interplanetary-tube-capacity",
         tostring(trunk_capacity_values[index]), tostring(trunk_transit_seconds[index])}},
@@ -1129,10 +1114,8 @@ data:extend({
   {
     type = "technology",
     name = "interplanetary-tube-additional-terminus-1",
-    icons = {
-      {icon = terminus_additional_icon, icon_size = 64, tint = terminus_additional_tint},
-      {icon = "__base__/graphics/icons/signal/signal_1.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
-    },
+    icon = tech_icons .. "interplanetary-tube-additional-terminus-v2.png",
+    icon_size = 256,
     effects = {
       {type = "nothing", effect_description = {"technology-effect.interplanetary-tube-additional-terminus"}},
     },
@@ -1152,10 +1135,8 @@ data:extend({
   {
     type = "technology",
     name = "interplanetary-tube-additional-terminus-2",
-    icons = {
-      {icon = terminus_additional_icon, icon_size = 64, tint = terminus_additional_tint},
-      {icon = "__base__/graphics/icons/signal/signal_2.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
-    },
+    icon = tech_icons .. "interplanetary-tube-additional-terminus-v2.png",
+    icon_size = 256,
     effects = {
       {type = "nothing", effect_description = {"technology-effect.interplanetary-tube-additional-terminus"}},
     },
@@ -1176,7 +1157,8 @@ data:extend({
   {
     type = "technology",
     name = "interplanetary-tube-additional-terminus-3",
-    icons = {{icon = terminus_additional_icon, icon_size = 64, tint = terminus_additional_tint}},
+    icon = tech_icons .. "interplanetary-tube-additional-terminus-v2.png",
+    icon_size = 256,
     effects = {
       {type = "nothing", effect_description = {"technology-effect.interplanetary-tube-additional-terminus"}},
     },

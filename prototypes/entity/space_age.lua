@@ -1245,10 +1245,10 @@ orbital_biter_projectile.action = {
 local orbital_employment_catapult = table.deepcopy(data.raw["ammo-turret"]["railgun-turret"])
 orbital_employment_catapult.name = "orbital-employment-catapult"
 orbital_employment_catapult.icon = nil
-orbital_employment_catapult.icons = {
-  {icon = "__space-age__/graphics/icons/railgun-turret.png", icon_size = 64},
-  {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
-}
+orbital_employment_catapult.icons = {{
+  icon = item_icons .. "orbital-employment-catapult-v3.png",
+  icon_size = 256,
+}}
 orbital_employment_catapult.minable = {mining_time = 0.5, result = "orbital-employment-catapult"}
 orbital_employment_catapult.placeable_by = placeable_by_item("orbital-employment-catapult")
 orbital_employment_catapult.next_upgrade = nil

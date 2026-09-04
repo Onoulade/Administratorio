@@ -29,38 +29,19 @@ local trajectory_tiers = {
   junior = {},
   senior = {
     tint = {r = 0.72, g = 0.88, b = 1, a = 1},
-    overlay = "__base__/graphics/icons/behemoth-biter.png",
   },
   executive = {
     tint = {r = 1, g = 0.72, b = 0.34, a = 1},
-    overlay = "__space-age__/graphics/icons/quantum-processor.png",
   },
 }
 
 function M.trajectory_array(tier)
   local spec = assert(trajectory_tiers[tier], "unknown trajectory array tier: " .. tostring(tier))
-  local icons = {
-    {icon = "__base__/graphics/icons/gun-turret.png", icon_size = 64, tint = spec.tint},
-  }
-
-  if spec.overlay then
-    icons[#icons + 1] = {
-      icon = item_icons .. "management-approval-written.png",
-      icon_size = 64,
-      scale = 0.28,
-      shift = {-9, 9},
-    }
-    icons[#icons + 1] = {icon = spec.overlay, icon_size = 64, scale = 0.34, shift = {9, 9}}
-  else
-    icons[#icons + 1] = {
-      icon = item_icons .. "management-approval-written.png",
-      icon_size = 64,
-      scale = 0.36,
-      shift = {8, 8},
-    }
-  end
-
-  return icons
+  return {{
+    icon = item_icons .. "trajectory-compliance-array-v3.png",
+    icon_size = 256,
+    tint = spec.tint,
+  }}
 end
 
 return M
