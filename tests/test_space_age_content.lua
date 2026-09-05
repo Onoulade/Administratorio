@@ -1113,7 +1113,7 @@ end)
 test("MMMM meetings cheaply brief one reusable manager on any planet", function()
   local manager = assert(items["middle-management-managing-manager"], "regular MMMM missing")
   assert_eq(manager.type, "item")
-  assert_eq(manager.stack_size, 20)
+  assert_eq(manager.stack_size, 1)
 
   local briefing_specs = {
     training = {material = "iron-gear-wheel", amount = 1},
@@ -1129,7 +1129,7 @@ test("MMMM meetings cheaply brief one reusable manager on any planet", function(
     local recipe_name = "middle-management-" .. key .. "-briefing"
     local briefed = assert(items[item_name], item_name .. " missing")
     local meeting = assert(recipes[recipe_name], recipe_name .. " missing")
-    assert_eq(briefed.stack_size, 5)
+    assert_eq(briefed.stack_size, 1)
     assert_eq(briefed.spoil_ticks, 3 * 60 * 60)
     assert_eq(briefed.spoil_result, "middle-management-managing-manager")
     assert_eq(meeting.energy_required, 5)

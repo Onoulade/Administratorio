@@ -21,7 +21,7 @@ local manager_items = {
     },
     subgroup = "admin-biter-management",
     order = "j-j",
-    stack_size = 20,
+    stack_size = 1,
   },
 }
 
@@ -35,7 +35,7 @@ for _, briefing in ipairs(manager_briefings.BRIEFINGS) do
     },
     subgroup = "admin-biter-management",
     order = briefing.order,
-    stack_size = 5,
+    stack_size = 1,
     spoil_ticks = manager_briefings.SPOIL_TICKS,
     spoil_result = manager_briefings.REGULAR_MANAGER,
   }
@@ -60,7 +60,7 @@ for _, courier in ipairs(manager_couriers.COURIERS) do
     },
     subgroup = "admin-biter-management",
     order = courier.order,
-    stack_size = 5,
+    stack_size = 1,
     spoil_ticks = manager_couriers.SPOIL_TICKS,
     spoil_result = manager_couriers.SPOIL_RESULT,
   }
@@ -79,7 +79,7 @@ data:extend({
     },
     subgroup = "admin-biter-training",
     order = "j-a",
-    stack_size = 20
+    stack_size = 1
   },
   {
     type = "item",
@@ -90,7 +90,7 @@ data:extend({
     },
     subgroup = "admin-biter-training",
     order = "j-a2",
-    stack_size = 20
+    stack_size = 1
   },
   {
     type = "item",
@@ -101,7 +101,7 @@ data:extend({
     },
     subgroup = "admin-biter-training",
     order = "j-b",
-    stack_size = 20
+    stack_size = 1
   },
   {
     type = "item",
@@ -112,7 +112,7 @@ data:extend({
     },
     subgroup = "admin-biter-training",
     order = "j-c",
-    stack_size = 20
+    stack_size = 1
   },
   {
     type = "item",
@@ -123,7 +123,7 @@ data:extend({
     },
     subgroup = "admin-biter-training",
     order = "j-c1",
-    stack_size = 20
+    stack_size = 1
   },
   {
     type = "item",
@@ -134,7 +134,7 @@ data:extend({
     },
     subgroup = "admin-biter-operations",
     order = "j-e",
-    stack_size = 20
+    stack_size = 1
   },
   {
     type = "item",
@@ -145,7 +145,7 @@ data:extend({
     },
     subgroup = "admin-biter-operations",
     order = "j-f",
-    stack_size = 20
+    stack_size = 1
   },
   {
     type = "item",
@@ -156,7 +156,7 @@ data:extend({
     },
     subgroup = "admin-biter-operations",
     order = "j-g",
-    stack_size = 20
+    stack_size = 1
   },
   {
     type = "item",
@@ -167,7 +167,7 @@ data:extend({
     },
     subgroup = "admin-biter-operations",
     order = "j-h",
-    stack_size = 20
+    stack_size = 1
   },
   {
     type = "ammo",
@@ -265,7 +265,7 @@ data:extend({
     magazine_size = 1,
     subgroup = "admin-biter-management",
     order = "j-j",
-    stack_size = 20
+    stack_size = 1
   },
   {
     type = "item",
@@ -938,7 +938,7 @@ for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
     },
     subgroup = "admin-biter-training",
     order = variant.order,
-    stack_size = 20,
+    stack_size = 1,
     spoil_ticks = 18000,
     spoil_to_trigger_result = {
       items_per_trigger = 1,
@@ -970,7 +970,7 @@ for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
     },
     subgroup = "admin-biter-training",
     order = variant.order .. "a",
-    stack_size = 20,
+    stack_size = 1,
   }
 
   -- The checkout recipe emits this one-tick implementation item alongside

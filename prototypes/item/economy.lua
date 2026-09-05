@@ -84,16 +84,16 @@ data:extend({
   {
     type = "item", name = "union-delegate",
     icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=0.45, g=0.55, b=1.0, a=1}),
-    subgroup = "admin-biter-management", order = "a", stack_size = 10
+    subgroup = "admin-biter-management", order = "a", stack_size = 1
   },
   {
     type = "item", name = "chemical-operator",
     icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=1.0, g=0.75, b=0.25, a=1}),
-    subgroup = "admin-biter-operations", order = "a", stack_size = 10
+    subgroup = "admin-biter-operations", order = "a", stack_size = 1
   },
   {
     type = "item", name = "nuclear-technician",
     icons = biter_role_icons("__base__/graphics/icons/medium-biter.png", {r=0.35, g=1.0, b=0.85, a=1}),
-    subgroup = "admin-biter-operations", order = "b", stack_size = 10
+    subgroup = "admin-biter-operations", order = "b", stack_size = 1
   },
 })
