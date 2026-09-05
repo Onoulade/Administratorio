@@ -579,6 +579,10 @@ test("charcoal production has its own late office technology", function()
 end)
 
 test("midgame office branches are split into separate pipelines", function()
+  assert_true(tech_has_prereq("corporate-hospitality", "biter-employment-office"),
+    "corporate-hospitality should require the employment office before exposing the breakroom")
+  assert_true(not tech_has_prereq("biter-employment-office", "industrial-propaganda"),
+    "biter-employment-office should not be delayed behind industrial propaganda")
   assert_true(tech_unlocks_recipe("corporate-hospitality", "corporate-breakroom"), "corporate-hospitality should unlock the breakroom")
   assert_true(tech_unlocks_recipe("corporate-hospitality", "greenhouse-discovery"), "corporate-hospitality should unlock coffee discovery")
   assert_true(tech_unlocks_recipe("corporate-hospitality", "coffee-refining"), "corporate-hospitality should unlock coffee refining")

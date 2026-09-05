@@ -71,8 +71,8 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 
 ### Biter Employment Office (`biter-employment-office`)
 
-- **Prerequisites:** `industrial-printing`, `local-precedents`
-- **Science:** 90 auto + 90 logistic + 90 chemical + 90 admin science-pack (30s)
+- **Prerequisites:** `biter-employment`, `fluid-handling`
+- **Science:** 140 auto + 140 logistic + 140 admin science-pack (30s)
 - **Unlocks:** `biter-station`
 
 ### Streamlined Work Orders (`streamlined-work-orders`)

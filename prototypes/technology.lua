@@ -237,7 +237,7 @@ data:extend({
       { type = "unlock-recipe", recipe = "watercooler-gossip-production" },
       { type = "unlock-recipe", recipe = "office-drama-recycling" }
     },
-    prerequisites = {"administrative-bureaucracy"},
+    prerequisites = {"administrative-bureaucracy", "biter-employment-office"},
     unit = { count = 70, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "c-c"
   },
@@ -1289,7 +1289,9 @@ end
 
   add_tech_prerequisite("rideable-biter", "corporate-hospitality")
   add_tech_prerequisite("rideable-biter", "verbal-approvals")
-  add_tech_prerequisite("biter-employment-office", "industrial-propaganda")
+  -- Corporate Hospitality consumes biter-station dispatch, so the office
+  -- must be available before the breakroom is exposed to the player.
+  add_tech_prerequisite("corporate-hospitality", "biter-employment-office")
   -- refined-nonsense is crafted in the corporate-breakroom (watercooler-gossip
   -- category), so propaganda can't unlock before corporate-hospitality.
   add_tech_prerequisite("industrial-propaganda", "corporate-hospitality")
