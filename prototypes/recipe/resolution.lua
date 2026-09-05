@@ -6,6 +6,8 @@ local function fluid(name, amount)
   return {type = "fluid", name = name, amount = amount}
 end
 
+local feature_flags = require("feature_flags")
+
 local function append_all(target, values)
   if not values then return end
   for _, value in ipairs(values) do
@@ -338,3 +340,47 @@ for _, pair in ipairs(PAIRED_PIPELINES) do
 end
 
 data:extend(recipes)
+
+-- Chromatic fast tracks are a parallel Space Age route through the complaint
+-- system. They keep the ordinary black-paper pipelines meaningful while
+-- letting specialized forms resolve a complaint in one direct craft.
+if feature_flags.space_age_enabled() then
+  local fast_tracks = {
+    -- Simple complaints use one jurisdiction's paperwork.
+    {slug = "landscape", ticket = "ticket-landscape", form = "blank-cyan-form", result = "resolved-landscape", order = "e-a"},
+    {slug = "littering", ticket = "ticket-littering", form = "blank-yellow-form", result = "resolved-littering", order = "e-b"},
+
+    -- More severe complaints combine the jurisdictions implicated by the case.
+    {slug = "smog", ticket = "ticket-smog", form = "cyan-yellow-form", result = "resolved-smog", order = "e-c"},
+    {slug = "hazmat", ticket = "ticket-hazmat", form = "yellow-magenta-form", result = "resolved-hazmat", order = "e-d"},
+    {slug = "noise", ticket = "ticket-noise", form = "cyan-magenta-form", result = "resolved-noise", order = "e-e"},
+    {slug = "loitering", ticket = "ticket-loitering", form = "yellow-magenta-form", result = "resolved-loitering", order = "e-f"},
+
+    -- Behemoth complaints require the full chromatic authority.
+    {slug = "unemployment", ticket = "ticket-unemployment", form = "trichromatic-permit", result = "resolved-unemployment", order = "e-g"},
+    {slug = "vagrancy", ticket = "ticket-vagrancy", form = "trichromatic-permit", result = "resolved-vagrancy", order = "e-h"},
+  }
+
+  local fast_track_recipes = {}
+  for _, track in ipairs(fast_tracks) do
+    fast_track_recipes[#fast_track_recipes + 1] = {
+      type = "recipe",
+      name = "chromatic-" .. track.slug .. "-resolution",
+      category = "bureaucracy-resolution",
+      enabled = false,
+      -- The normal resolution recipe is the product's canonical Factoriopedia
+      -- page; this direct route remains an alternate recipe on that page.
+      factoriopedia_alternative = track.slug .. "-final",
+      subgroup = subgroup_for_slug(track.slug),
+      order = track.order,
+      ingredients = {
+        item(track.ticket, 1),
+        item(track.form, 1),
+      },
+      results = {{type = "item", name = track.result, amount = 1}},
+      energy_required = 2,
+    }
+  end
+
+  data:extend(fast_track_recipes)
+end

@@ -13,6 +13,17 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
+CHROMATIC_FAST_TRACKS = (
+    "chromatic-landscape-resolution",
+    "chromatic-littering-resolution",
+    "chromatic-smog-resolution",
+    "chromatic-hazmat-resolution",
+    "chromatic-noise-resolution",
+    "chromatic-loitering-resolution",
+    "chromatic-unemployment-resolution",
+    "chromatic-vagrancy-resolution",
+)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -152,6 +163,23 @@ def assert_space_age_category_migrations_are_regulated(data_raw: dict) -> None:
         )
 
 
+def assert_chromatic_fast_tracks_are_space_age_only(base: dict, space_age: dict) -> None:
+    """Keep the colored complaint route out of base-only Administratorio."""
+    for name in CHROMATIC_FAST_TRACKS:
+        assert name not in base.get("technology", {}), (
+            f"base-only load must not expose Space Age technology {name}"
+        )
+        assert name not in base.get("recipe", {}), (
+            f"base-only load must not expose Space Age recipe {name}"
+        )
+        assert name in space_age.get("technology", {}), (
+            f"Space Age load must expose technology {name}"
+        )
+        assert name in space_age.get("recipe", {}), (
+            f"Space Age load must expose recipe {name}"
+        )
+
+
 def main() -> None:
     args = parse_args()
     if not args.factorio_bin:
@@ -163,6 +191,8 @@ def main() -> None:
         raise FileNotFoundError(f"Factorio binary not found: {factorio_bin}")
 
     base = run_case(factorio_bin, space_age=False, working_hours=True)
+    space_age = run_case(factorio_bin, space_age=True, working_hours=True)
+    assert_chromatic_fast_tracks_are_space_age_only(base, space_age)
     assert "administrative-clock" in base.get("item", {}), "Working Hours should expose the Administrative Clock item"
     assert "administrative-clock" in base.get("constant-combinator", {}), "Working Hours should expose the Administrative Clock entity"
     assert base["item"]["administrative-clock"]["subgroup"] == "circuit-network", "Administrative Clock should be grouped with circuit-network devices"

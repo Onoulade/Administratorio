@@ -719,6 +719,123 @@ data:extend({
   },
 })
 
+-- Each colored complaint fast track has its own research step. The paperwork
+-- technology supplies the form; this follow-up technology supplies the
+-- planet-specific science requirement and unlocks only its matching recipe.
+local chromatic_resolution_technologies = {
+  {
+    name = "chromatic-landscape-resolution",
+    icon = "__administratorio__/graphics/icons/blank-cyan-form.png",
+    prerequisites = {"cyan-ink-production", "metallurgic-science-pack"},
+    science_packs = {"metallurgic-science-pack"},
+    count = 140,
+    order = "h-g1",
+  },
+  {
+    name = "chromatic-littering-resolution",
+    icon = "__administratorio__/graphics/icons/blank-yellow-form.png",
+    prerequisites = {"gleba-yellow-administration", "agricultural-science-pack"},
+    science_packs = {"agricultural-science-pack"},
+    count = 160,
+    order = "h-g2",
+  },
+  {
+    name = "chromatic-smog-resolution",
+    icon = "__administratorio__/graphics/icons/cyan-yellow-form.png",
+    prerequisites = {"cyan-yellow-bureaucracy", "metallurgic-science-pack", "agricultural-science-pack"},
+    science_packs = {"metallurgic-science-pack", "agricultural-science-pack"},
+    count = 240,
+    order = "h-g3",
+  },
+  {
+    name = "chromatic-hazmat-resolution",
+    icon = "__administratorio__/graphics/icons/yellow-magenta-form.png",
+    prerequisites = {"yellow-magenta-bureaucracy", "agricultural-science-pack", "electromagnetic-science-pack"},
+    science_packs = {"agricultural-science-pack", "electromagnetic-science-pack"},
+    count = 260,
+    order = "h-g4",
+  },
+  {
+    name = "chromatic-noise-resolution",
+    icon = "__administratorio__/graphics/icons/cyan-magenta-form.png",
+    prerequisites = {"cyan-magenta-bureaucracy", "metallurgic-science-pack", "electromagnetic-science-pack"},
+    science_packs = {"metallurgic-science-pack", "electromagnetic-science-pack"},
+    count = 260,
+    order = "h-g5",
+  },
+  {
+    name = "chromatic-loitering-resolution",
+    icon = "__administratorio__/graphics/icons/yellow-magenta-form.png",
+    prerequisites = {"yellow-magenta-bureaucracy", "agricultural-science-pack", "electromagnetic-science-pack"},
+    science_packs = {"agricultural-science-pack", "electromagnetic-science-pack"},
+    count = 280,
+    order = "h-g6",
+  },
+  {
+    name = "chromatic-unemployment-resolution",
+    icon = "__administratorio__/graphics/icons/trichromatic-permit.png",
+    prerequisites = {
+      "interplanetary-tube-chromatic",
+      "metallurgic-science-pack",
+      "agricultural-science-pack",
+      "electromagnetic-science-pack",
+      "cryogenic-science-pack",
+    },
+    science_packs = {
+      "metallurgic-science-pack",
+      "agricultural-science-pack",
+      "electromagnetic-science-pack",
+      "cryogenic-science-pack",
+    },
+    count = 420,
+    order = "h-g7",
+  },
+  {
+    name = "chromatic-vagrancy-resolution",
+    icon = "__administratorio__/graphics/icons/trichromatic-permit.png",
+    prerequisites = {
+      "interplanetary-tube-chromatic",
+      "metallurgic-science-pack",
+      "agricultural-science-pack",
+      "electromagnetic-science-pack",
+      "cryogenic-science-pack",
+    },
+    science_packs = {
+      "metallurgic-science-pack",
+      "agricultural-science-pack",
+      "electromagnetic-science-pack",
+      "cryogenic-science-pack",
+    },
+    count = 440,
+    order = "h-g8",
+  },
+}
+
+local chromatic_resolution_technology_prototypes = {}
+for _, definition in ipairs(chromatic_resolution_technologies) do
+  local ingredients = {{"administrative-science-pack", 1}}
+  for _, science_pack in ipairs(definition.science_packs) do
+    ingredients[#ingredients + 1] = {science_pack, 1}
+  end
+
+  chromatic_resolution_technology_prototypes[#chromatic_resolution_technology_prototypes + 1] = {
+    type = "technology",
+    name = definition.name,
+    icon = definition.icon,
+    icon_size = 64,
+    effects = {{type = "unlock-recipe", recipe = definition.name}},
+    prerequisites = definition.prerequisites,
+    unit = {
+      count = definition.count,
+      ingredients = ingredients,
+      time = 45,
+    },
+    order = definition.order,
+  }
+end
+
+data:extend(chromatic_resolution_technology_prototypes)
+
 -- Trajectory compliance speed upgrades
 local trajectory_speed_seconds = {4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0, 0.5}
 local trajectory_speed_counts = {200, 350, 550, 800, 1000, 1500, 2250, 3000, 4000}

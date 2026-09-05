@@ -232,7 +232,9 @@ dofile(mod_root .. "prototypes/recipe/buildings.lua")
 dofile(mod_root .. "prototypes/recipe/economy.lua")
 dofile(mod_root .. "prototypes/item/space_age.lua")
 dofile(mod_root .. "prototypes/item/capsules-and-fluids.lua")
+dofile(mod_root .. "prototypes/item/resolution.lua")
 dofile(mod_root .. "prototypes/recipe/space_age.lua")
+dofile(mod_root .. "prototypes/recipe/resolution.lua")
 dofile(mod_root .. "prototypes/recipe/planetary_abundance.lua")
 dofile(mod_root .. "prototypes/technology/space_age.lua")
 dofile(mod_root .. "prototypes/signals.lua")
@@ -553,6 +555,41 @@ test("Space Age resolution office unlock waits for the first worker", function()
   assert_true(not has_unlock(employment, "job-offer-production"))
   assert_true(has_unlock(formation, "resolution-office"))
   assert_true(has_unlock(formation, "job-offer-production"))
+end)
+
+test("colored paperwork adds one-step fast tracks for every complaint", function()
+  local fast_tracks = {
+    {name = "chromatic-landscape-resolution", ticket = "ticket-landscape", form = "blank-cyan-form", result = "resolved-landscape", source = "cyan-ink-production", science = {"metallurgic-science-pack"}},
+    {name = "chromatic-littering-resolution", ticket = "ticket-littering", form = "blank-yellow-form", result = "resolved-littering", source = "gleba-yellow-administration", science = {"agricultural-science-pack"}},
+    {name = "chromatic-smog-resolution", ticket = "ticket-smog", form = "cyan-yellow-form", result = "resolved-smog", source = "cyan-yellow-bureaucracy", science = {"metallurgic-science-pack", "agricultural-science-pack"}},
+    {name = "chromatic-hazmat-resolution", ticket = "ticket-hazmat", form = "yellow-magenta-form", result = "resolved-hazmat", source = "yellow-magenta-bureaucracy", science = {"agricultural-science-pack", "electromagnetic-science-pack"}},
+    {name = "chromatic-noise-resolution", ticket = "ticket-noise", form = "cyan-magenta-form", result = "resolved-noise", source = "cyan-magenta-bureaucracy", science = {"metallurgic-science-pack", "electromagnetic-science-pack"}},
+    {name = "chromatic-loitering-resolution", ticket = "ticket-loitering", form = "yellow-magenta-form", result = "resolved-loitering", source = "yellow-magenta-bureaucracy", science = {"agricultural-science-pack", "electromagnetic-science-pack"}},
+    {name = "chromatic-unemployment-resolution", ticket = "ticket-unemployment", form = "trichromatic-permit", result = "resolved-unemployment", source = "interplanetary-tube-chromatic", science = {"metallurgic-science-pack", "agricultural-science-pack", "electromagnetic-science-pack", "cryogenic-science-pack"}},
+    {name = "chromatic-vagrancy-resolution", ticket = "ticket-vagrancy", form = "trichromatic-permit", result = "resolved-vagrancy", source = "interplanetary-tube-chromatic", science = {"metallurgic-science-pack", "agricultural-science-pack", "electromagnetic-science-pack", "cryogenic-science-pack"}},
+  }
+
+  for _, track in ipairs(fast_tracks) do
+    local recipe = assert(recipes[track.name], track.name .. " missing")
+    assert_eq(recipe.category, "bureaucracy-resolution", track.name .. " should use the Resolution Office")
+    assert_eq(recipe.energy_required, 2, track.name .. " should be faster than the ordinary chain")
+    assert_eq(#recipe.ingredients, 2, track.name .. " should have only ticket + colored form inputs")
+    assert_eq(ingredient_amount(recipe, track.ticket), 1, track.name .. " should consume one ticket")
+    assert_eq(ingredient_amount(recipe, track.form), 1, track.name .. " should consume one colored form")
+    assert_eq(get_result_amount(recipe, track.result), 1, track.name .. " should produce one resolved complaint")
+    local technology = assert(technologies[track.name], track.name .. " technology missing")
+    assert_true(has_unlock(technology, track.name), track.name .. " technology should unlock only its matching recipe")
+    assert_true(tech_has_prerequisite(technology, track.source),
+      track.name .. " should be gated behind " .. track.source)
+    assert_true(not has_unlock(technologies[track.source], track.name),
+      track.source .. " should not directly unlock " .. track.name)
+    for _, science_pack in ipairs(track.science) do
+      assert_true(tech_has_prerequisite(technology, science_pack),
+        track.name .. " should require " .. science_pack .. " as a prerequisite")
+      assert_true(tech_uses_pack(technology, science_pack),
+        track.name .. " should consume " .. science_pack)
+    end
+  end
 end)
 
 test("Space Age worker formation stays before chemical science", function()
