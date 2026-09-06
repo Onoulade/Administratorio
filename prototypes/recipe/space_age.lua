@@ -2359,7 +2359,8 @@ for _, tier in ipairs({"base", "advanced"}) do
       -- player's own crafting menu.
       hide_from_player_crafting = true,
       enabled = false,
-      localised_name = {"item-name." .. item_name},
+      localised_name = is_blank_form_recycling and {"recipe-name.fabricate-citations"}
+        or {"item-name." .. item_name},
       ingredients = {
         {type = "item", name = "blank-form", amount = 1},
         {type = "item", name = slop_rules.SLOP_ITEM,
