@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.10
+Date: 2026-09-06
+  Changes:
+    - Unify biter worker items
+    - Rename blank-form citation recipe
+    - Fix Corporate Hospitality research progression
+    - Limit biter personnel items to single-item stacks
+    - Gate chromatic complaint techs behind Space Age
+---------------------------------------------------------------------------------------------------
 Version: 0.6.9
 Date: 2026-09-04
   Bugfixes:
