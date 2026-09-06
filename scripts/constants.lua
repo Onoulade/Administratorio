@@ -9,7 +9,7 @@ M.BITER_COMPLAINT_COUNT = gameplay_facts.biter_entity_map("complaint_count")
 -- Direct entity name -> taxpayer payout lookup (avoids string.find in hot path)
 M.BITER_PAYOUT = gameplay_facts.biter_entity_map("payout")
 
--- How many biter-worker items a hired biter yields (larger = more workers)
+-- How many worker-biter items a hired biter yields (larger = more workers)
 M.BITER_WORKER_YIELD = gameplay_facts.biter_entity_map("worker_yield")
 
 M.PROTEST_THRESHOLD = 600 -- seconds of waiting before protest (~10 minutes)

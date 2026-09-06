@@ -1119,7 +1119,7 @@ test("rideable biter uses paperwork and coffee in its assignment recipe", functi
   local r = get_recipe("rideable-biter")
   assert_true(r ~= nil, "rideable-biter recipe missing")
   assert_eq(r.category, "biter-training", "rideable biter should be assigned at the formation center")
-  assert_true(has_ingredient(r, "biter-worker"), "rideable biter should require a biter worker")
+  assert_true(has_ingredient(r, "worker-biter"), "rideable biter should require a trained biter")
   assert_true(has_ingredient(r, "management-verbal-work-order"), "rideable biter should require assignment paperwork")
   assert_true(has_ingredient(r, "liquid-coffee"), "rideable biter should require training coffee")
   assert_true(not has_ingredient(r, "taxpayer-money"), "rideable biter training should not directly consume taxpayer money")
@@ -1131,8 +1131,8 @@ test("biterport logistics uses dedicated formations instead of station workers",
   local r = get_recipe("biter-logistics-formation")
   assert_true(r ~= nil, "biter-logistics-formation recipe missing")
   assert_eq(r.category, "biter-training", "logistics formations should be organized at the formation center")
-  assert_true(has_ingredient(r, "biter-worker"), "formations should be trained from ordinary biter workers")
-  assert_eq(get_ingredient_amount(r, "biter-worker"), 1)
+  assert_true(has_ingredient(r, "worker-biter"), "formations should be trained from ordinary trained biters")
+  assert_eq(get_ingredient_amount(r, "worker-biter"), 1)
   assert_true(has_ingredient(r, "management-verbal-work-order"), "formations should require management paperwork")
   assert_true(has_ingredient(r, "form-27b-6"), "formations should use available standardized paperwork")
   assert_true(has_ingredient(r, "liquid-coffee"), "formations should require training coffee")
@@ -1202,7 +1202,7 @@ test("all biter training recipes use the formation center category", function()
     local recipe = get_recipe(recipe_name)
     assert_true(recipe ~= nil, recipe_name .. " recipe missing")
     assert_eq(recipe.category, "biter-training", recipe_name .. " should run only in the formation center")
-    assert_true(has_ingredient(recipe, "biter-worker"), recipe_name .. " should consume a biter worker")
+    assert_true(has_ingredient(recipe, "worker-biter"), recipe_name .. " should consume a trained biter")
   end
 end)
 
@@ -1217,13 +1217,13 @@ test("biter training is one worker to one biter output using only paperwork and 
   }) do
     local recipe = get_recipe(recipe_name)
     local result_name = get_result_name(recipe)
-    assert_eq(get_ingredient_amount(recipe, "biter-worker"), 1, recipe_name .. " should consume exactly one biter worker")
+    assert_eq(get_ingredient_amount(recipe, "worker-biter"), 1, recipe_name .. " should consume exactly one trained biter")
     assert_eq(get_result_amount(recipe, result_name), 1, recipe_name .. " should produce exactly one trained biter output")
 
     for _, ingredient in ipairs(recipe.ingredients or {}) do
       local ingredient_type = ingredient.type or "item"
       local ingredient_name = ingredient.name or ingredient[1]
-      local allowed = ingredient_name == "biter-worker"
+      local allowed = ingredient_name == "worker-biter"
         or (ingredient_type == "fluid" and ingredient_name == "liquid-coffee")
         or (ingredient_type == "item" and shared.PAPERWORK_ITEMS[ingredient_name])
       assert_true(allowed, recipe_name .. " has non-paperwork training ingredient: " .. tostring(ingredient_name))

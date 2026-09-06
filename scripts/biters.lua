@@ -933,15 +933,15 @@ local function maybe_attempt_nauvis_enrollment_offer(desk_id, info, inv)
   if not is_offer_recruitable_entity(entity.name) then return false end
 
   -- Base-only Administratorio hires every resolved biter or spitter directly
-  -- into the legacy reusable worker pool. Space Age instead enrolls only
+  -- into the reusable worker pool. Space Age instead enrolls only
   -- biters, then routes them through the explicit workforce-formation chain.
   if not SPACE_AGE_ENABLED then
     local worker_count = (C.BITER_WORKER_YIELD and C.BITER_WORKER_YIELD[entity.name]) or 1
-    if not inv.can_insert or not inv.can_insert({name = "biter-worker", count = worker_count}) then
+    if not inv.can_insert or not inv.can_insert({name = "worker-biter", count = worker_count}) then
       return false
     end
     if inv.remove({name = "job-offer", count = 1}) <= 0 then return false end
-    return finalize_hired_biter_conversion(desk_id, info, inv, "biter-worker", worker_count)
+    return finalize_hired_biter_conversion(desk_id, info, inv, "worker-biter", worker_count)
   end
 
   if C.IS_SPITTER[entity.name] then return false end

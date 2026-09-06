@@ -1,7 +1,7 @@
 local feature_flags = require("feature_flags")
 local planets = require("prototypes.shared.space_age_planets")
 local space_age_enabled = feature_flags.space_age_enabled()
-local worker_item_name = space_age_enabled and "worker-biter" or "biter-worker"
+local worker_item_name = "worker-biter"
 
 local function entity_recipe(name, recipe)
   recipe.name = name

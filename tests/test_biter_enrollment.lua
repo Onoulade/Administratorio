@@ -392,14 +392,14 @@ test("Space Age resolutions outside Nauvis do not mint taxpayer money", function
   end)
 end)
 
-test("base-only hiring produces the legacy worker directly", function()
+test("base-only hiring produces the canonical worker directly", function()
   local base_biters = load_biters_module(false)
   local ctx = new_context({job_offer_count = 1, entity_name = "small-spitter", frustration = 500})
   base_biters.process_resolutions({ctx.desk})
 
   assert_true(ctx.entity.valid == false, "base-only hired citizen should be removed from the world")
   assert_eq(ctx.inventory._removed["job-offer"], 1, "base-only hire should consume the offer")
-  assert_eq(ctx.inventory._added["biter-worker"], 1, "base-only hire should produce the reusable worker")
+  assert_eq(ctx.inventory._added["worker-biter"], 1, "base-only hire should produce the reusable worker")
   assert_true(ctx.inventory._added["taxpayer-money"] == nil, "base-only hire should replace the cash payout")
   assert_true(ctx.inventory._added["enrolled-biter"] == nil, "base-only hire should not use Space Age enrollment")
 end)

@@ -83,17 +83,6 @@ data:extend({
   },
   {
     type = "item",
-    name = "worker-biter",
-    icons = {
-      {icon = "__base__/graphics/icons/small-biter.png", icon_size = 64, tint = {r = 0.62, g = 1, b = 0.62, a = 1}},
-      {icon = item_icons .. "work-order.png", icon_size = 64, scale = 0.32, shift = {8, 8}},
-    },
-    subgroup = "admin-biter-training",
-    order = "j-a2",
-    stack_size = 1
-  },
-  {
-    type = "item",
     name = "clerical-trainee",
     icons = {
       {icon = "__base__/graphics/icons/medium-biter.png", icon_size = 64, tint = {r = 0.72, g = 0.88, b = 1, a = 1}},

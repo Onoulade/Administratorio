@@ -1270,10 +1270,10 @@ if data.raw["technology"]["logistic-system"] then
 end
 
 -- Buildings that require biter-workers or specialists need employment tech
--- Space Age changes the workforce item from the directly-created
--- `biter-worker` to the Formation Center's `worker-biter`.  Keep every recipe
--- that consumes that item behind worker-formation; otherwise the technology
--- card appears before the first machine-usable worker can exist.
+-- Space Age's enrolled-biter formation now shares the canonical worker-biter
+-- item with base mode. Keep every recipe that consumes it behind
+-- worker-formation; otherwise the technology card appears before the first
+-- machine-usable worker can exist.
 if space_age_enabled then
   for _, tech_name in ipairs({
     "rideable-biter",

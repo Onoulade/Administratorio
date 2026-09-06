@@ -44,8 +44,8 @@ local function has_unstaffed_operations_waiver(entity)
     and inventory.get_item_count("unstaffed-operations-waiver") > 0
     or false
 end
-local WORKER_ITEM_NAME = feature_flags.space_age_enabled() and "worker-biter" or "biter-worker"
-local LEGACY_WORKER_ITEM_NAME = feature_flags.space_age_enabled() and "biter-worker" or nil
+local WORKER_ITEM_NAME = "worker-biter"
+local LEGACY_WORKER_ITEM_NAME = "biter-worker"
 local MONEY_ITEM_NAME = "taxpayer-money"
 local COFFEE_FLUID_NAME = "liquid-coffee"
 local WORKER_ENTITY_NAME = C.BITER_STATION_BASE_WORKER_ENTITY

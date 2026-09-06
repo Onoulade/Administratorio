@@ -7,7 +7,7 @@ end
 
 local icon_tints = require("prototypes.shared.icon_tints")
 local space_age_enabled = require("feature_flags").space_age_enabled()
-local worker_item_name = space_age_enabled and "worker-biter" or "biter-worker"
+local worker_item_name = "worker-biter"
 
 local function rgba(r, g, b, a)
   return {r = r, g = g, b = b, a = a or 1}

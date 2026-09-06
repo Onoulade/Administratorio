@@ -61,9 +61,19 @@ data:extend({
     subgroup = "admin-biter-training", order = "b-a", stack_size = 20
   },
   {
+    type = "item", name = "worker-biter",
+    icons = biter_role_icons("__base__/graphics/icons/small-biter.png", {r=0.75, g=0.95, b=0.65, a=1}),
+    subgroup = "admin-biter-training", order = "b-b", stack_size = 1,
+    localised_name = {"item-name.worker-biter"},
+    localised_description = {"item-description.worker-biter"},
+  },
+  {
+    -- Compatibility item for saves created before worker-biter was unified.
     type = "item", name = "biter-worker",
     icons = biter_role_icons("__base__/graphics/icons/small-biter.png", {r=0.75, g=0.95, b=0.65, a=1}),
-    subgroup = "admin-biter-training", order = "b-b", stack_size = 1
+    stack_size = 1,
+    hidden = true,
+    hidden_in_factoriopedia = true,
   },
   {
     type = "item", name = "biter-logistics-formation",
