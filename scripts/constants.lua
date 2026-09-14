@@ -231,6 +231,7 @@ M.BITER_STATION_NIGHT_COFFEE_PER_DISPATCH = gameplay_facts.biter_station.night_c
 M.BITER_STATION_LABOR_EFFICIENCY = gameplay_facts.biter_station.labor_efficiency
 M.BITER_STATION_BITER_DESPAWN_TICKS = 5 * 60
 M.BITER_STATION_ARRIVAL_RADIUS = 2.5
+M.BITER_STATION_UNREACHABLE_RETRY_TICKS = 10 * 60
 -- Buildings that idle without a biter dispatched from a biter-station.
 -- Note: union-headquarters is intentionally NOT here — it consumes a biter
 -- as a recipe ingredient, so it does not also need ongoing dispatch.

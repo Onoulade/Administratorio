@@ -39,6 +39,7 @@ defines = {
   inventory = {chest = 1},
   command = {go_to_location = 1},
   distraction = {none = 0},
+  behavior_result = {fail = 1, success = 2},
 }
 
 package.loaded["scripts.working_hours"] = nil
@@ -346,6 +347,7 @@ test("labor efficiency charges one taxpayer money per trip", function()
 
   assert_eq(station.inventory.get_item_count("taxpayer-money"), 1, "daytime dispatch should defer the one-trip charge until return")
   active.current_idx = #(active.building_queue or {}) + 1
+  active.successful_visits = #active.building_queue
   active.phase = "to_station"
   active.phase_destination = station.position
   active.phase_command_radius = 1.25
@@ -403,12 +405,182 @@ test("worker skips an unreachable second building instead of freezing in place",
   assert_eq(active.current_idx, 2, "arriving at the first building should advance the queue")
   assert_eq(active.phase, "to_building", "worker should now be heading to the second building")
 
-  biter_station.on_ai_command_completed{unit_number = active.biter_unit_number, tick = 25, result = "fail"}
+  local first_destination = active.phase_destination
+  biter_station.on_ai_command_completed{
+    unit_number = active.biter_unit_number,
+    tick = 25,
+    result = defines.behavior_result.fail,
+  }
+
+  assert_eq(active.current_idx, 2, "worker should try another face before skipping the building")
+  assert_true(active.phase_destination.x ~= first_destination.x
+    or active.phase_destination.y ~= first_destination.y, "failed approach point must not be reissued")
+
+  for tick = 26, 40 do
+    if active.current_idx > 2 then break end
+    biter_station.on_ai_command_completed{
+      unit_number = active.biter_unit_number,
+      tick = tick,
+      result = defines.behavior_result.fail,
+    }
+  end
 
   assert_eq(active.current_idx, 3, "an unreachable second building should be skipped, not retried forever")
   assert_true(active.biter.valid, "worker should not be destroyed when a building is unreachable")
   assert_true(active.biter.commandable.has_command, "worker should receive a new command instead of freezing in place")
   assert_eq(station.custom_status.label[1], "gui.biter-station-building-unreachable", "station should surface the pathing failure")
+  assert_true(storage.biter_station_unreachable_buildings[building_two.unit_number] > 40,
+    "unreachable building should enter a dispatch cooldown")
+end)
+
+test("failed-only trip refunds salary and does not immediately redispatch", function()
+  storage = {}
+  package.loaded["scripts.biter_station"] = nil
+  local surface = new_surface()
+  local force = {name = "player", valid = true, set_cease_fire = function() end, technologies = {}}
+  game = {
+    tick = 0,
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", valid = true, set_cease_fire = function() end},
+      neutral = {name = "neutral", valid = true, set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, valid = true, set_cease_fire = function() end, technologies = {}}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biter_station = require("scripts.biter_station")
+  local station = new_station(surface, force, {
+    inventory = {["biter-worker"] = 1, ["taxpayer-money"] = 2},
+  })
+  local building = new_managed_building(surface, force, {position = {x = 15, y = 0}})
+  building.bounding_box = {
+    left_top = {x = 14.5, y = -0.5},
+    right_bottom = {x = 15.5, y = 0.5},
+  }
+  biter_station.track_station(station)
+  biter_station.track_managed_building(building)
+  biter_station.update(10)
+
+  local active = active_worker()
+  assert_true(active ~= nil, "station should dispatch its worker")
+  -- Model a night dispatch, which reserves its salary before the trip because
+  -- coffee and payment are committed together.
+  station.inventory.remove({name = "taxpayer-money", count = 1})
+  active.salary_paid = true
+  for tick = 11, 30 do
+    if active.phase ~= "to_building" then break end
+    biter_station.on_ai_command_completed{
+      unit_number = active.biter_unit_number,
+      tick = tick,
+      result = defines.behavior_result.fail,
+    }
+  end
+  assert_eq(active.phase, "to_station", "failed-only trip should return after bounded alternate approaches")
+
+  active.phase_departed = true
+  active.biter.position = {x = active.phase_destination.x, y = active.phase_destination.y}
+  game.tick = 40
+  biter_station.update(40)
+
+  assert_eq(station.inventory.get_item_count("taxpayer-money"), 2,
+    "a trip that authorized no machines must not consume taxpayer money")
+  assert_true(active_worker() == nil, "cooldown should prevent immediate redispatch to the failed building")
+  assert_eq(station.inventory.get_item_count("worker-biter"), 1, "worker item should return to the station")
+end)
+
+test("managed building resumes an interrupted authorized craft without replacement", function()
+  storage = {}
+  package.loaded["scripts.biter_station"] = nil
+  local surface = new_surface()
+  local force = {name = "player", valid = true, set_cease_fire = function() end, technologies = {}}
+  game = {
+    tick = 0,
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", valid = true, set_cease_fire = function() end},
+      neutral = {name = "neutral", valid = true, set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, valid = true, set_cease_fire = function() end, technologies = {}}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biter_station = require("scripts.biter_station")
+  local station = new_station(surface, force)
+  local building = new_managed_building(surface, force)
+  biter_station.track_station(station)
+  biter_station.track_managed_building(building)
+  biter_station.update(10)
+  local active = active_worker()
+  active.biter.position = {x = building.position.x, y = building.position.y}
+  biter_station.update(20)
+  assert_true(building.active, "worker visit should authorize a craft")
+
+  storage.working_hours_state = {
+    [building.unit_number] = {reason = "protest"},
+  }
+  building.active = false
+  biter_station.update(30)
+  assert_eq(building.active, false, "active protest should keep the authorized craft paused")
+
+  storage.working_hours_state[building.unit_number].reason = nil
+  biter_station.update(40)
+
+  assert_true(building.active, "existing authorization should resume after the external shutdown is released")
+  assert_eq(storage.managed_building_run[building.unit_number].crafts_remaining, 1,
+    "interruption must not consume the authorized craft")
+end)
+
+test("stale worker claim self-heals without mining the managed building", function()
+  storage = {}
+  package.loaded["scripts.biter_station"] = nil
+  local surface = new_surface()
+  local force = {name = "player", valid = true, set_cease_fire = function() end, technologies = {}}
+  game = {
+    tick = 0,
+    surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", valid = true, set_cease_fire = function() end},
+      neutral = {name = "neutral", valid = true, set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, valid = true, set_cease_fire = function() end, technologies = {}}
+      game.forces[name] = created
+      return created
+    end,
+  }
+
+  local biter_station = require("scripts.biter_station")
+  local station = new_station(surface, force, {
+    inventory = {["biter-worker"] = 2, ["taxpayer-money"] = 2},
+  })
+  local building = new_managed_building(surface, force)
+  biter_station.track_station(station)
+  biter_station.track_managed_building(building)
+  biter_station.update(10)
+  local abandoned = active_worker()
+  local stale_worker_id = abandoned.biter_unit_number
+  abandoned.biter.destroy()
+  storage.biter_station_biter[stale_worker_id] = nil
+  storage.biter_station_active_by_station[station.unit_number] = nil
+  storage.biter_station_worker_units[stale_worker_id] = nil
+
+  biter_station.update(20)
+
+  local replacement = active_worker()
+  assert_true(replacement ~= nil and replacement.biter_unit_number ~= stale_worker_id,
+    "orphaned claim should clear and dispatch a replacement worker")
+  assert_eq(storage.managed_building_run[building.unit_number].claimed_by, replacement.biter_unit_number,
+    "replacement should own the recovered building claim")
 end)
 
 test("labor efficiency research is isolated per force", function()
@@ -479,7 +651,7 @@ test("labor efficiency research is isolated per force", function()
     "unresearched force should remain at one building per trip")
   assert_eq(upgraded_active.worker_entity_name, "biter-worker-t2",
     "upgraded force should use its researched worker tier")
-  assert_eq(base_active.worker_entity_name, "small-biter",
+  assert_eq(base_active.worker_entity_name, "biter-worker-t1",
     "unresearched force should keep the base worker tier")
 end)
 

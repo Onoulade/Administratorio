@@ -25,7 +25,7 @@ M.biter_station = {
   salary_per_dispatch = 1,
   night_coffee_per_dispatch = 5,
   base_visits_per_trip = 1,
-  base_worker_entity = "small-biter",
+  base_worker_entity = "biter-worker-t1",
   managed_buildings = {
     "propaganda-distillery",
     "corporate-breakroom",

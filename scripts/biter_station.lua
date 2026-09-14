@@ -135,6 +135,7 @@ local MIN_PHASE_TRAVEL_DISTANCE = 0.75
 local PHASE_STUCK_TIMEOUT_TICKS = 90
 local ABANDON_STUCK_TICKS = 1800
 local PROGRESS_DISTANCE_SQUARED = 1.0
+local MAX_PHASE_PATH_FAILURES = 8
 
 local maybe_reinsert_worker
 local clear_active_queue_claims
@@ -571,6 +572,10 @@ local function distance_squared(pos1, pos2)
   return dx * dx + dy * dy
 end
 
+local function copy_position(position)
+  return position and {x = position.x, y = position.y} or nil
+end
+
 local function station_has_worker_space(station)
   local inv = get_station_inventory(station)
   if not inv then return false end
@@ -682,10 +687,18 @@ local function clamp(value, min_value, max_value)
   return value
 end
 
-local function resolve_command_destination(biter, destination, radius)
+local function resolve_command_destination(biter, destination, radius, failed_destinations)
   local target_position = resolve_destination_position(destination)
   if not target_position then return nil end
   if not biter or not biter.valid then return target_position end
+
+  local function usable(position)
+    if not position then return false end
+    for _, failed in ipairs(failed_destinations or {}) do
+      if distance_squared(position, failed) <= 0.25 * 0.25 then return false end
+    end
+    return true
+  end
 
   if destination and destination.valid and destination.bounding_box then
     local box = destination.bounding_box
@@ -739,7 +752,7 @@ local function resolve_command_destination(biter, destination, radius)
         1.0,
         0.25
       )
-      if approach then
+      if usable(approach) then
         local dist = distance_squared(from, approach)
         if dist < best_dist then
           best_dist = dist
@@ -757,12 +770,13 @@ local function resolve_command_destination(biter, destination, radius)
       math.max(2.0, (radius or C.BITER_STATION_ARRIVAL_RADIUS) + 2.0),
       0.25
     )
-    if fallback then
+    if usable(fallback) then
       return fallback
     end
   end
 
-  return target_position
+  if usable(target_position) then return target_position end
+  return nil
 end
 
 local function issue_move_command(biter, destination, radius)
@@ -795,6 +809,7 @@ local function begin_phase_move(active_state, biter, phase, destination, radius,
   active_state.phase_radius = radius
   active_state.phase_command_radius = math.max(0.5, (radius or 0) * 0.5)
   active_state.phase_arrived_tick = nil
+  active_state.phase_failed_destinations = nil
   active_state.last_progress_tick = tick or game.tick
   active_state.last_progress_position = {x = biter.position.x, y = biter.position.y}
   clear_pending_path_request(active_state)
@@ -970,6 +985,18 @@ local function cleanup_active_biter(active_state, tick, release_entity, reason)
     return
   end
   local station_id = active_state.station_id
+  local station = storage.biter_stations and storage.biter_stations[station_id] or nil
+
+  -- A trip that never reached any assigned building did no paid work. Night
+  -- dispatches reserve salary up front, so return it; daytime dispatches defer
+  -- salary until a successful circuit and therefore need no refund.
+  local successful_visits = active_state.successful_visits
+  if successful_visits == nil then successful_visits = 1 end -- serialized pre-fix trip
+  if successful_visits <= 0 and active_state.salary_paid and station and station.valid then
+    local inv = get_station_inventory(station)
+    if inv then inv.insert({name = MONEY_ITEM_NAME, count = active_state.dispatch_salary or get_dispatch_salary()}) end
+    active_state.salary_paid = false
+  end
 
   clear_active_queue_claims(active_state)
   destroy_overlay(active_state)
@@ -977,7 +1004,6 @@ local function cleanup_active_biter(active_state, tick, release_entity, reason)
   clear_pending_path_request(active_state)
 
   if reason == "biter-invalid" or reason == "stuck" then
-    local station = storage.biter_stations and storage.biter_stations[station_id] or nil
     if station and station.valid then
       maybe_reinsert_worker(station)
     end
@@ -1114,11 +1140,18 @@ local function build_building_queue(station)
       local run_state = storage.managed_building_run[building.unit_number]
       local is_running = run_state and (run_state.crafts_remaining or 0) > 0
       local is_claimed = run_state and run_state.claimed_by ~= nil
+      local retry_tick = storage.biter_station_unreachable_buildings[building.unit_number]
+      if retry_tick and game.tick >= retry_tick then
+        storage.biter_station_unreachable_buildings[building.unit_number] = nil
+        retry_tick = nil
+      end
+      local is_temporarily_unreachable = retry_tick ~= nil
       local is_blocked = is_building_blocked_by_working_hours(building)
       local has_recipe = building_has_recipe(building)
       local is_preferred_station = station_is_preferred_for_building(station, building)
 
-      if has_recipe and not is_running and not is_claimed and not is_blocked and is_preferred_station then
+      if has_recipe and not is_running and not is_claimed and not is_blocked
+         and not is_temporarily_unreachable and is_preferred_station then
         filtered[#filtered + 1] = building
       end
     end
@@ -1335,6 +1368,7 @@ local function dispatch_single_station_biter(station, queue)
     current_idx = 1,
     dispatch_salary = dispatch_salary,
     salary_paid = salary_paid,
+    successful_visits = 0,
     overlay_id = create_worker_overlay(biter),
     phase = "to_building",
   }
@@ -1438,10 +1472,14 @@ local function finish_station_circuit(station_id, station, active_state)
   if station and station.valid then
     local inv = get_station_inventory(station)
     if inv then
-      if not active_state.salary_paid then
+      local successful_visits = active_state.successful_visits
+      if successful_visits == nil then successful_visits = 1 end -- serialized pre-fix trip
+      if successful_visits > 0 and not active_state.salary_paid then
         -- Do not trust a serialized salary from an older version that scaled
         -- the charge with Labor Efficiency or the number of stops.
         inv.remove({name = MONEY_ITEM_NAME, count = get_dispatch_salary()})
+      elseif successful_visits <= 0 and active_state.salary_paid then
+        inv.insert({name = MONEY_ITEM_NAME, count = active_state.dispatch_salary or get_dispatch_salary()})
       end
       maybe_reinsert_worker(station)
     end
@@ -1474,8 +1512,22 @@ local function advance_running_buildings()
     elseif not entity or not entity.valid then
       storage.managed_building_run[unit_number] = nil
     else
+      -- Recover claims orphaned by an invalidated/recreated worker. Without
+      -- this, the machine remains absent from every future dispatch queue until
+      -- the player mines and replaces it.
+      if run_state.claimed_by and not storage.biter_station_biter[run_state.claimed_by] then
+        run_state.claimed_by = nil
+      end
       local crafts_remaining = run_state.crafts_remaining or 0
       if crafts_remaining > 0 then
+        -- Protests pause an authorization; they do not consume it. Reassert the
+        -- appropriate active state every cycle so the same craft resumes as
+        -- soon as the final protest claim is released.
+        if is_building_blocked_by_working_hours(entity) then
+          entity.active = false
+          goto continue
+        end
+        entity.active = true
         local recipe = entity.get_recipe and entity.get_recipe() or nil
         if not recipe then
           entity.active = false
@@ -1583,7 +1635,9 @@ local function advance_active_biters(tick)
           local arrived = phase_has_departed(active_state, biter, tick)
             and phase_is_arrived(active_state, biter, building.position, C.BITER_STATION_ARRIVAL_RADIUS)
           if arrived then
-            activate_building_for_visit(building, biter.unit_number)
+            if activate_building_for_visit(building, biter.unit_number) then
+              active_state.successful_visits = (active_state.successful_visits or 0) + 1
+            end
             active_state.current_idx = active_state.current_idx + 1
             local next_building = queue[active_state.current_idx]
             if next_building and next_building.valid then
@@ -1721,6 +1775,7 @@ function M.ensure_storage()
   storage.biter_station_coffee_inputs = storage.biter_station_coffee_inputs or {}
   storage.managed_building_registry = storage.managed_building_registry or {}
   storage.managed_building_run = storage.managed_building_run or {}
+  storage.biter_station_unreachable_buildings = storage.biter_station_unreachable_buildings or {}
   normalize_active_biter_storage()
 end
 
@@ -1852,6 +1907,7 @@ function M.untrack_managed_building(entity)
 
   local unit_number = entity.unit_number
   storage.managed_building_registry[unit_number] = nil
+  storage.biter_station_unreachable_buildings[unit_number] = nil
 
   local run_state = storage.managed_building_run[unit_number]
   if run_state then
@@ -1938,6 +1994,8 @@ local function handle_unreachable_destination(active_state, entity, station_id, 
     local building = queue[active_state.current_idx]
     if building and building.valid and building.unit_number then
       clear_building_claim(building.unit_number, active_state.biter_unit_number)
+      storage.biter_station_unreachable_buildings[building.unit_number] = tick
+        + (C.BITER_STATION_UNREACHABLE_RETRY_TICKS or (10 * 60))
     end
     active_state.current_idx = active_state.current_idx + 1
 
@@ -1991,6 +2049,24 @@ function M.on_ai_command_completed(event)
   if defines.behavior_result and event.result ~= defines.behavior_result.fail then
     issue_move_command(entity, destination, retry_radius)
     return
+  end
+
+  if active_state.phase == "to_building" then
+    -- A collision-free point can still be outside the navigable region. Try
+    -- other faces of the same machine before declaring the stop unreachable;
+    -- this keeps one bad edge point from throwing away an otherwise valid trip.
+    local failed = active_state.phase_failed_destinations or {}
+    active_state.phase_failed_destinations = failed
+    failed[#failed + 1] = copy_position(destination)
+    local queue = active_state.building_queue or {}
+    local building = queue[active_state.current_idx]
+    local alternative = #failed < MAX_PHASE_PATH_FAILURES
+      and resolve_command_destination(entity, building, active_state.phase_radius, failed)
+    if alternative then
+      active_state.phase_destination = copy_position(alternative)
+      issue_move_command(entity, alternative, retry_radius)
+      return
+    end
   end
 
   handle_unreachable_destination(active_state, entity, station_id, event.tick or game.tick)

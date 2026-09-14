@@ -1250,7 +1250,7 @@ local paperwork_requester_chest = make_paperwork_logistic_chest(
   {r = 0.38, g = 0.66, b = 1.0, a = 1.0}
 )
 
-local function make_worker_biter(name, source_name, localised_name, speed_multiplier)
+local function make_worker_biter(name, source_name, localised_name, speed_multiplier, factory_pathing)
   local unit_table = data.raw["unit"]
   if not unit_table or not unit_table[source_name] then return nil end
   local biter = table.deepcopy(unit_table[source_name])
@@ -1260,6 +1260,17 @@ local function make_worker_biter(name, source_name, localised_name, speed_multip
   biter.placeable_by = nil
   biter.hidden_in_factoriopedia = true
   biter.collision_box = {{-0.18, -0.18}, {0.18, 0.18}}
+  if factory_pathing then
+    -- Employment Office workers are authorization tokens with legs, not combat
+    -- units. Let them cross ordinary factory footprints and one another so a
+    -- dense belt/inserter/pole layout cannot deadlock dispatch. They still obey
+    -- water and trains, and belts cannot drag them away from their route.
+    biter.collision_mask = {
+      layers = {water_tile = true, train = true},
+      not_colliding_with_itself = true,
+    }
+    biter.has_belt_immunity = true
+  end
   biter.selection_box = {{-0.35, -0.45}, {0.35, 0.25}}
   add_worker_biter_helmet_overlay(biter)
   unit_ai_settings.apply_managed_prototype_settings(biter)
@@ -1274,8 +1285,9 @@ local function make_worker_biter(name, source_name, localised_name, speed_multip
   return biter
 end
 
-local biter_worker_t2 = make_worker_biter(gameplay_facts.biter_station.labor_efficiency[1].worker_entity, "small-biter")
-local biter_worker_t3 = make_worker_biter(gameplay_facts.biter_station.labor_efficiency[2].worker_entity, "small-biter")
+local biter_worker_t1 = make_worker_biter(gameplay_facts.biter_station.base_worker_entity, "small-biter", nil, nil, true)
+local biter_worker_t2 = make_worker_biter(gameplay_facts.biter_station.labor_efficiency[1].worker_entity, "small-biter", nil, nil, true)
+local biter_worker_t3 = make_worker_biter(gameplay_facts.biter_station.labor_efficiency[2].worker_entity, "small-biter", nil, nil, true)
 local biterport_worker = make_worker_biter(
   gameplay_facts.biterport.base_worker_entity,
   "small-biter",
@@ -1357,6 +1369,7 @@ add_entity(biter_station_wall_blocker)
 add_entity(biterport_wall_blocker)
 add_entity(hidden_biterport_roboport)
 add_entity(biterport_placement_preview)
+add_entity(biter_worker_t1)
 add_entity(biter_worker_t2)
 add_entity(biter_worker_t3)
 add_entity(biterport_worker)
