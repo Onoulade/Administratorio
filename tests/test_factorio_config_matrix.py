@@ -10,6 +10,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from test_progression_report import ProgressionAnalyzer, recipe_ingredients, recipe_results
+
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -23,6 +25,21 @@ CHROMATIC_FAST_TRACKS = (
     "chromatic-unemployment-resolution",
     "chromatic-vagrancy-resolution",
 )
+
+EVOLUTION_MILESTONE_RESOLUTIONS = {
+    "administratorio-medium-complaints": (
+        "filing-smog", "case-smog", "smog-final",
+        "filing-hazmat", "case-hazmat", "hazmat-final",
+    ),
+    "administratorio-large-complaints": (
+        "filing-noise", "case-noise", "noise-final",
+        "filing-loitering", "case-loitering", "loitering-final",
+    ),
+    "administratorio-behemoth-complaints": (
+        "filing-unemployment", "case-unemployment", "unemployment-final",
+        "filing-vagrancy", "case-vagrancy", "vagrancy-final",
+    ),
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -180,6 +197,70 @@ def assert_chromatic_fast_tracks_are_space_age_only(base: dict, space_age: dict)
         )
 
 
+def assert_milestone_resolutions_are_operable(data_raw: dict, configuration: str) -> None:
+    """Prove every paired resolution chain can run when its evolution cap lifts."""
+    analyzer = ProgressionAnalyzer(data_raw)
+    reachable = set(analyzer.researchable_tech_key())
+    staffed_reachable = set(analyzer.staffed_researchable_tech_key())
+
+    for technology_name, recipe_names in EVOLUTION_MILESTONE_RESOLUTIONS.items():
+        assert technology_name in reachable, (
+            f"{configuration}: {technology_name} is not reachable through actual science production"
+        )
+        assert technology_name in staffed_reachable, (
+            f"{configuration}: {technology_name} is not reachable with runtime staffing enforced"
+        )
+
+        technology_key = analyzer.tech_eval_key(technology_name, include_self=True)
+        unlocked_here = set(analyzer.unlocks_by_tech.get(technology_name, ()))
+        machine_items = set(analyzer.machine_state(technology_key)[0])
+        staffed_items = set(analyzer.staffed_machine_state(technology_key)[0])
+
+        for recipe_name in recipe_names:
+            assert recipe_name in analyzer.recipes, (
+                f"{configuration}: {technology_name} references missing recipe {recipe_name}"
+            )
+            assert recipe_name in unlocked_here, (
+                f"{configuration}: {recipe_name} is not unlocked by {technology_name}"
+            )
+
+            recipe = analyzer.recipes[recipe_name]
+            unavailable_ingredients = [
+                ingredient_name
+                for ingredient_name, _ in recipe_ingredients(recipe)
+                if ingredient_name not in analyzer.root_materials
+                and ingredient_name not in machine_items
+            ]
+            unavailable_staffed_ingredients = [
+                ingredient_name
+                for ingredient_name, _ in recipe_ingredients(recipe)
+                if ingredient_name not in analyzer.root_materials
+                and ingredient_name not in staffed_items
+            ]
+            assert not unavailable_ingredients, (
+                f"{configuration}: {recipe_name} unlocks before ingredients are producible: "
+                + ", ".join(unavailable_ingredients)
+            )
+            assert not unavailable_staffed_ingredients, (
+                f"{configuration}: {recipe_name} unlocks before staffed production can supply: "
+                + ", ".join(unavailable_staffed_ingredients)
+            )
+            assert analyzer.recipe_machine_usable(recipe_name, technology_key), (
+                f"{configuration}: {recipe_name} has no usable machine at {technology_name}: "
+                + "; ".join(analyzer.recipe_machine_blockers(recipe_name, technology_key))
+            )
+            assert analyzer.staffed_recipe_machine_usable(recipe_name, technology_key), (
+                f"{configuration}: {recipe_name} cannot run with runtime staffing enforced at "
+                f"{technology_name}"
+            )
+
+            for result_name, _ in recipe_results(recipe):
+                assert result_name in machine_items and result_name in staffed_items, (
+                    f"{configuration}: {recipe_name} cannot produce {result_name} at "
+                    f"{technology_name}"
+                )
+
+
 def main() -> None:
     args = parse_args()
     if not args.factorio_bin:
@@ -192,6 +273,8 @@ def main() -> None:
 
     base = run_case(factorio_bin, space_age=False, working_hours=True)
     space_age = run_case(factorio_bin, space_age=True, working_hours=True)
+    assert_milestone_resolutions_are_operable(base, "base game")
+    assert_milestone_resolutions_are_operable(space_age, "Space Age")
     assert_chromatic_fast_tracks_are_space_age_only(base, space_age)
     assert "administrative-clock" in base.get("item", {}), "Working Hours should expose the Administrative Clock item"
     assert "administrative-clock" in base.get("constant-combinator", {}), "Working Hours should expose the Administrative Clock entity"
@@ -208,6 +291,7 @@ def main() -> None:
     )
 
     no_working_hours = run_case(factorio_bin, space_age=True, working_hours=False)
+    assert_milestone_resolutions_are_operable(no_working_hours, "Space Age without Working Hours")
     assert "administrative-clock" not in no_working_hours.get("item", {}), "disabled Working Hours must not expose the Administrative Clock item"
     assert "administrative-clock" not in no_working_hours.get("constant-combinator", {}), "disabled Working Hours must not expose the Administrative Clock entity"
     assert "signal-daytime" not in no_working_hours.get("virtual-signal", {}), "disabled Working Hours must not expose the daytime signal"

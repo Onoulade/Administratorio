@@ -762,6 +762,16 @@ class ProgressionAnalyzer:
         staffed_provider_items = set(STAFFED_PROVIDER_ITEMS)
         staffing_items = self.workforce_item_names()
         craftable_items: Set[str] = set(self.root_materials)
+        # Base Administratorio converts a fully resolved visitor into the
+        # canonical worker item at runtime once biter-employment is researched.
+        # Space Age has an explicit worker-biter-formation recipe instead, so
+        # its workforce remains governed by the ordinary recipe graph.
+        if (
+            "biter-employment" in tech_key
+            and "worker-biter" in self.item_index
+            and not self.producing_recipes.get("worker-biter")
+        ):
+            craftable_items.add("worker-biter")
         craftable_recipes: Set[str] = set()
         available_categories: Set[str] = set(self.root_crafting_categories)
         if any(
