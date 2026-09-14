@@ -46,6 +46,7 @@ defines = {
   },
   command = {go_to_location = 1},
   distraction = {none = 0},
+  behavior_result = {fail = 1, success = 2},
 }
 
 package.loaded["scripts.working_hours"] = nil
@@ -1530,6 +1531,106 @@ test("legendary biterports scale construction range, preserve ghost grade, and p
     "a legendary port should reach a ghost at 80 tiles; normal construction radius is only 55")
   local active = first_active_worker()
   assert_eq(active.job.item_quality, "legendary", "construction job must reserve the ghost's exact grade")
+end)
+
+local function new_path_failure_job()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+  local surface = new_surface()
+  local force = {name = "player", valid = true, technologies = {}, set_cease_fire = function() end}
+  game = {
+    tick = 0, connected_players = {}, surfaces = {surface},
+    forces = {player = force},
+    create_force = function(name)
+      local created = {name = name, valid = true, technologies = {}, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 1, 1)
+  local provider = new_chest(surface, 30, {x = 10, y = 0}, "passive-provider", {inserter = 1})
+  provider.force = force
+  local ghost = {
+    valid = true, type = "entity-ghost", ghost_name = "inserter",
+    ghost_prototype = {name = "inserter", items_to_place_this = {{name = "inserter"}}},
+    position = {x = 20, y = 0}, surface = surface, force = force,
+    direction = defines.direction.north,
+    bounding_box = {left_top = {x = 19.85, y = -0.15}, right_bottom = {x = 20.15, y = 0.15}},
+  }
+  function ghost.silent_revive()
+    ghost.valid = false
+    return nil, {valid = true, name = "inserter"}
+  end
+  biterport.track_port(port)
+  assert_true(biterport.on_entity_built{entity = ghost, tick = 30})
+  return biterport, first_active_worker(), provider, ghost, port, surface, force
+end
+
+local function fail_worker_path(biterport, active, tick)
+  active.biter.commandable.has_command = false
+  biterport.on_ai_command_completed{
+    unit_number = active.biter_unit_number, tick = tick, result = defines.behavior_result.fail,
+  }
+end
+
+test("failed construction approach changes route and still builds exactly once", function()
+  local biterport, active, provider, ghost, port = new_path_failure_job()
+  advance_worker_to(active, provider.position, 31, biterport)
+  assert_eq(active.phase, "to_target")
+  local first_destination = active.phase_destination
+  fail_worker_path(biterport, active, 33)
+  assert_true(active.phase_destination.x ~= first_destination.x
+    or active.phase_destination.y ~= first_destination.y, "failed approach must not be reissued")
+  assert_eq(active.carried_stack.count, 1, "rerouting must preserve cargo")
+  assert_eq(provider.inventory.get_item_count("inserter"), 0)
+  assert_eq(port.inventory.get_item_count("taxpayer-money"), 0, "rerouting must not charge another salary")
+
+  advance_worker_to(active, active.phase_destination, 34, biterport)
+  assert_true(active.job.built, "alternate approach should complete construction")
+  assert_true(not ghost.valid, "ghost should be revived")
+  assert_eq(active.carried_stack, nil, "construction should consume exactly one item")
+  assert_eq(active.phase, "returning")
+  assert_eq(active.phase_failed_destinations, nil, "new leg must forget the previous leg's failures")
+end)
+
+test("unreachable construction restores its ghost and material after bounded retries", function()
+  local biterport, active, provider, ghost = new_path_failure_job()
+  advance_worker_to(active, provider.position, 31, biterport)
+  for tick = 33, 60 do
+    if active.phase ~= "to_target" then break end
+    fail_worker_path(biterport, active, tick)
+  end
+  assert_eq(active.phase, "returning", "unreachable approach must not loop indefinitely")
+  assert_true(ghost.valid and ghost.force.name == "player", "unbuilt ghost should be available again")
+  assert_eq(provider.inventory.get_item_count("inserter"), 1, "material must be returned exactly once")
+  assert_eq(active.carried_stack, nil)
+end)
+
+test("unreachable pickup returns without taking the construction material", function()
+  local biterport, active, provider, ghost = new_path_failure_job()
+  for tick = 31, 60 do
+    if active.phase ~= "to_pickup" then break end
+    fail_worker_path(biterport, active, tick)
+  end
+  assert_eq(active.phase, "returning")
+  assert_eq(provider.inventory.get_item_count("inserter"), 1)
+  assert_eq(active.carried_stack, nil)
+  assert_true(ghost.valid and ghost.force.name == "player")
+end)
+
+test("unreachable return port switches ports and does not cycle between blocked ports", function()
+  local biterport, active, provider, ghost, home, surface, force = new_path_failure_job()
+  local other = new_port(surface, force, 0, 0, 11, {x = 40, y = 0})
+  biterport.track_port(other)
+  advance_worker_to(active, provider.position, 31, biterport)
+  advance_worker_to(active, active.phase_destination, 33, biterport)
+  assert_eq(active.return_port_id, home.unit_number)
+  fail_worker_path(biterport, active, 35)
+  assert_eq(active.return_port_id, other.unit_number, "blocked home should select another port")
+  fail_worker_path(biterport, active, 36)
+  assert_eq(active.phase, "orphaned_returning", "both blocked ports should leave the existing orphan recovery in charge")
+  assert_eq(active.return_port_id, nil)
 end)
 
 test("biterport migration normalizes legacy item grades and cache keys", function()

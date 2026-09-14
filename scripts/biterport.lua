@@ -49,6 +49,7 @@ local LOGISTIC_CHEST_NAMES = {
 
 local MIN_PHASE_TRAVEL_DISTANCE = 0.75
 local PHASE_STUCK_TIMEOUT_TICKS = 120
+local MAX_PHASE_PATH_FAILURES = 12
 local function copy_position(pos)
   return pos and {x = pos.x, y = pos.y} or nil
 end
@@ -1885,10 +1886,18 @@ local function position_reaches_entity(position, entity, radius)
     and position.y <= box.right_bottom.y + pad
 end
 
-local function resolve_command_destination(biter, destination, radius)
+local function resolve_command_destination(biter, destination, radius, failed_destinations)
   local target_position = resolve_destination_position(destination)
   if not target_position then return nil end
   if not biter or not biter.valid then return target_position end
+
+  local function usable(position)
+    if not position then return false end
+    for _, failed in ipairs(failed_destinations or {}) do
+      if distance_squared(position, failed) <= 0.25 * 0.25 then return false end
+    end
+    return true
+  end
 
   local box = destination and (destination.valid == nil or destination.valid) and safe_entity_field(destination, "bounding_box") or nil
   if box then
@@ -1931,10 +1940,16 @@ local function resolve_command_destination(biter, destination, radius)
       {x = left, y = bottom},
       {x = right, y = bottom},
     }
+    -- A collision-free edge can still be unreachable (for example, a narrow
+    -- gap between assemblers). Ghosts may also be approached through their
+    -- footprint; construction already moves the worker clear before revival.
+    if failed_destinations and destination.type == "entity-ghost" then
+      candidates[#candidates + 1] = target_position
+    end
     local best_pos, best_dist = nil, math.huge
     for _, candidate in ipairs(candidates) do
       local approach = biter.surface.find_non_colliding_position(biter.name, candidate, 1.0, 0.25)
-      if approach then
+      if usable(approach) then
         local dist = distance_squared(from, approach)
         if dist < best_dist then
           best_pos = approach
@@ -1950,10 +1965,11 @@ local function resolve_command_destination(biter, destination, radius)
       math.max(2.0, (radius or C.BITERPORT_ARRIVAL_RADIUS) + 2.0),
       0.25
     )
-    if fallback then return fallback end
+    if usable(fallback) then return fallback end
   end
 
-  return target_position
+  if usable(target_position) then return target_position end
+  return nil
 end
 
 local function construction_destination(job)
@@ -2030,6 +2046,7 @@ local function begin_phase_move(active, phase, destination, radius, tick)
   active.phase_radius = radius
   active.phase_command_radius = math.max(0.5, (radius or 0) * 0.5)
   active.phase_arrived_tick = nil
+  active.phase_failed_destinations = nil
   return issue_move_command(biter, command_destination, active.phase_command_radius)
 end
 
@@ -2242,12 +2259,14 @@ end
 local function nearest_valid_port(active)
   local biter = active and active.biter
   local home = active and active.home_port_id and storage.biterports[active.home_port_id]
-  if home and home.valid and port_has_worker_space(home) then return home end
+  local blocked = active and active.unreachable_return_ports or {}
+  if home and home.valid and not blocked[home.unit_number] and port_has_worker_space(home) then return home end
   if not biter or not biter.valid then return nil end
 
   local best, best_score = nil, math.huge
   for _, port in pairs(storage.biterports or {}) do
     if port and port.valid
+       and not blocked[port.unit_number]
        and port.surface == biter.surface
        and port.force == active.force
        and port_has_worker_space(port) then
@@ -3147,6 +3166,36 @@ function M.on_ai_command_completed(event)
   local destination = active.phase_destination
   if destination and phase_is_arrived(active, biter, destination, active.phase_command_radius) then
     active.phase_arrived_tick = event.tick or game.tick
+  elseif destination and defines.behavior_result and event.result == defines.behavior_result.fail then
+    -- Do not resubmit an unreachable point indefinitely. Remember failures
+    -- for this leg and try a different approach before abandoning the job.
+    local failed = active.phase_failed_destinations or {}
+    active.phase_failed_destinations = failed
+    failed[#failed + 1] = copy_position(destination)
+    local job = active.job
+    local target
+    if active.phase == "to_pickup" then
+      target = job and (job.source_destination or job.source)
+    elseif active.phase == "to_target" then
+      target = job and (job.kind == "construction" and construction_destination(job)
+        or job.target_destination or job.target)
+    elseif active.phase == "dispose_items" then
+      target = job and job.target
+    elseif active.phase == "returning" then
+      target = destination
+    end
+    local alternative = #failed < MAX_PHASE_PATH_FAILURES
+      and resolve_command_destination(biter, target, active.phase_radius, failed)
+    if alternative then
+      active.phase_destination = copy_position(alternative)
+      issue_move_command(biter, alternative, active.phase_command_radius)
+    elseif active.phase == "returning" then
+      active.unreachable_return_ports = active.unreachable_return_ports or {}
+      if active.return_port_id then active.unreachable_return_ports[active.return_port_id] = true end
+      start_return(active, event.tick or game.tick)
+    else
+      fail_job_and_return(active, event.tick or game.tick)
+    end
   elseif destination then
     issue_move_command(biter, destination, active.phase_command_radius)
   end
