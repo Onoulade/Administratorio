@@ -160,7 +160,7 @@ data:extend({
   {
     type = "research-achievement",
     name = "constitutional-scholar",
-    technology = "constitutional-law",
+    technology = "administratorio-behemoth-complaints",
     icon = icons .. "regulation.png",
     icon_size = 64,
     order = "e[mastery]-a",

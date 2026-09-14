@@ -90,7 +90,6 @@ M.HARD_MODE_ATTACK_DAMAGE = 20
 M.HARD_MODE_ATTACK_DAMAGE_TICKS = 30
 M.DESK_SLOT_COMMAND_RADIUS = 0.5
 M.DESK_SLOT_ARRIVAL_DISTANCE = 1.0
-M.EVOLUTION_COMPLAINT_WARNING_OFFSET = 0.05
 M.GROUP_REDIRECTS_PER_TICK = 8
 M.REGISTRATION_WALKIN_SCAN_TICKS = 5
 M.ADMIN_STATION_NEST_EXCLUSION_RADIUS = 32
@@ -369,51 +368,6 @@ M.AI_SERVER_MAX_TEMPERATURE = 1000
 M.AI_SERVER_HEAT_PER_TICK = 1 / 75
 -- Reaching this stops the server outright rather than throttling it.
 M.AI_SERVER_STALL_TEMPERATURE = 950
-
-M.EVOLUTION_COMPLAINT_WARNINGS = {
-  {
-    id = "smog",
-    threshold = 0.20,
-    technology = "smog-abatement",
-    complaints = {"ticket-smog"},
-  },
-  {
-    id = "littering",
-    threshold = 0.25,
-    technology = "littering-resolution",
-    complaints = {"ticket-littering"},
-  },
-  {
-    id = "hazmat",
-    threshold = 0.40,
-    technology = "hazmat-response",
-    complaints = {"ticket-hazmat"},
-  },
-  {
-    id = "noise",
-    threshold = 0.50,
-    technology = "noise-ordinances",
-    complaints = {"ticket-noise"},
-  },
-  {
-    id = "loitering",
-    threshold = 0.50,
-    technology = "loitering-ordinances",
-    complaints = {"ticket-loitering"},
-  },
-  {
-    id = "unemployment",
-    threshold = 0.90,
-    technology = "constitutional-law",
-    complaints = {"ticket-unemployment"},
-  },
-  {
-    id = "vagrancy",
-    threshold = 0.90,
-    technology = "vagrancy-ordinances",
-    complaints = {"ticket-vagrancy"},
-  },
-}
 
 function M.get_individual_frust_tier(info)
   local pct = info.frustration / M.PROTEST_THRESHOLD

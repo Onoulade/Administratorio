@@ -1067,6 +1067,8 @@ test("workforce progression is split by role and orbital scope", function()
     "worker formation should remain available before the orbital bootstrap")
   assert_true(tech_has_prerequisite(management, "eminent-domain-zoning"),
     "management formation should follow the policy supply used by regular MMMMs")
+  assert_true(tech_has_prerequisite(management, "production-science-pack"),
+    "management formation should explicitly follow the production science it consumes")
   assert_true(tech_has_prerequisite(management, "repair-pack"),
     "management formation should follow the repair packs used by staffing briefings")
   assert_true(tech_uses_pack(management, "production-science-pack"),

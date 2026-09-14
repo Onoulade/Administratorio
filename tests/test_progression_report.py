@@ -2377,6 +2377,28 @@ def render_report(
     return "\n".join(lines) + "\n"
 
 
+def is_expected_space_platform_bootstrap_finding(
+    analyzer: ProgressionAnalyzer, finding: Dict
+) -> bool:
+    """Recognize the native platform bootstrap boundary.
+
+    Space-platform research unlocks the asteroid machines before the player
+    has the orbital employment chain that supplies their permit. The player
+    creates the platform first, then researches space science by building the
+    collector there. The prototype graph therefore reports a delayed machine
+    provider even though the in-game sequence is intentional and finite.
+    Keep this visible in the report, but do not treat it as a deadlock.
+    """
+    if finding.get("technology") != "space-platform":
+        return False
+    if finding.get("type") != "delayed_until_reachable_tech":
+        return False
+    if (finding.get("delayed_resolution") or {}).get("technology") != "space-science-pack":
+        return False
+    trigger = analyzer.technologies.get("space-platform", {}).get("research_trigger") or {}
+    return trigger.get("type") == "create-space-platform"
+
+
 def main() -> int:
     args = parse_args()
     mod_name = repo_name()
@@ -2455,6 +2477,7 @@ def main() -> int:
             finding
             for finding in direct_target_failures
             if finding["type"] in {"blocked_after_unlock", "delayed_until_reachable_tech"}
+            and not is_expected_space_platform_bootstrap_finding(analyzer, finding)
         ]
 
         if missing_building_recipes:

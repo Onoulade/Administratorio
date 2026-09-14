@@ -113,19 +113,12 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 - **Science:** 95 auto + 95 logistic + 95 admin science-pack (30s)
 - **Unlocks:** `environmental-impact-report`, `chemical-handling-work-order-production`, `carbon-offset-certificate-verified`
 
-### Smog Abatement (`smog-abatement`)
+### Medium Complaint Administration (`administratorio-medium-complaints`)
 
-- **Complaint:** Tier 2 biter complaints from medium-or-larger biters
-- **Prerequisites:** `environmental-compliance`, `charcoal-production`, `printing-technology`
-- **Science:** 90 auto + 90 logistic + 90 admin science-pack (30s)
-- **Unlocks:** `filing-smog`, `case-smog`, `smog-final`
-
-### Hazmat Response (`hazmat-response`)
-
-- **Complaint:** Tier 2 spitter complaints from medium-or-larger spitters
-- **Prerequisites:** `environmental-compliance`, `chemical-operator-training`, `chemical-science-pack`, `littering-resolution`
+- **Prerequisites:** environmental compliance, chemical-operator training, industrial propaganda, printing, and biter employment
 - **Science:** 100 auto + 100 logistic + 100 admin science-pack (30s)
-- **Unlocks:** `filing-hazmat`, `case-hazmat`, `hazmat-final`
+- **Unlocks:** smog and hazmat resolution chains; raises the evolution ceiling from 20% to 45%
+- **Progression gate:** required before chemical science
 
 ### Nest Expropriation (`nest-expropriation`)
 
@@ -177,47 +170,35 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 
 ### Eminent Domain & Zoning (`eminent-domain-zoning`)
 
-- **Prerequisites:** `executive-review`, `processing-unit`, `production-science-pack`
-- **Science:** 210 auto + 210 logistic + 210 chemical + 210 production + 210 admin science-pack (60s)
+- **Prerequisites:** `executive-review`, `processing-unit`
+- **Science:** 210 auto + 210 logistic + 210 chemical + 210 admin science-pack (60s)
 - **Unlocks:** `white-paper-production`, `policy-production`, `slush-fund-production`
 
 ### Work Order Duplication (`work-order-duplication`)
 
-- **Prerequisites:** `industrial-printing`, `radiological-compliance`, `processing-unit`, `production-science-pack`
-- **Science:** 180 auto + 180 logistic + 180 chemical + 180 production + 180 admin science-pack (60s)
+- **Prerequisites:** `industrial-printing`, `radiological-compliance`, `processing-unit`, `synthetic-stationery`
+- **Science:** 180 auto + 180 logistic + 180 chemical + 180 admin science-pack (60s)
 - **Unlocks:** copy recipes for all 8 work-order families
 
 ### Federal Regulation (`federal-regulation`)
 
-- **Prerequisites:** `eminent-domain-zoning`
-- **Science:** 240 auto + 240 logistic + 240 chemical + 240 production + 240 admin science-pack (60s)
+- **Prerequisites:** `eminent-domain-zoning`, `work-order-duplication`
+- **Science:** 175 auto + 175 logistic + 175 chemical + 175 admin science-pack (60s)
 - **Unlocks:** `regulation`
 
-### Noise Ordinances (`noise-ordinances`)
+### Large Complaint Administration (`administratorio-large-complaints`)
 
-- **Complaint:** Tier 3 biter complaints from big-or-larger biters
-- **Prerequisites:** `eminent-domain-zoning`, `environmental-compliance`, `production-science-pack`, `smog-abatement`
-- **Unlocks:** `filing-noise`, `case-noise`, `noise-final`
+- **Prerequisites:** medium complaints, federal regulation, information management, and health and safety
+- **Science:** 200 auto + 200 logistic + 200 chemical + 200 admin science-pack (60s)
+- **Unlocks:** noise and loitering resolution chains; raises the evolution ceiling from 45% to 60%
+- **Progression gate:** required before production and utility science
 
-### Loitering Ordinances (`loitering-ordinances`)
+### Behemoth Complaint Administration (`administratorio-behemoth-complaints`)
 
-- **Complaint:** Tier 3 spitter complaints from big-or-larger spitters
-- **Prerequisites:** `board-meetings`, `hazmat-response`, `production-science-pack`
-- **Unlocks:** `filing-loitering`, `case-loitering`, `loitering-final`
-
-### Constitutional Law (`constitutional-law`)
-
-- **Complaint:** Tier 4 biter complaints from behemoth biters only
-- **Prerequisites:** `federal-regulation`, `noise-ordinances`, `production-science-pack`
-- **Science:** 260 auto + 260 logistic + 260 chemical + 260 production + 260 admin science-pack (60s)
-- **Unlocks:** `filing-unemployment`, `case-unemployment`, `unemployment-final`
-
-### Vagrancy Ordinances (`vagrancy-ordinances`)
-
-- **Complaint:** Tier 4 spitter complaints from behemoth spitters only
-- **Prerequisites:** `loitering-ordinances`, `production-science-pack`
-- **Science:** 320 auto + 320 logistic + 320 chemical + 320 production + 320 admin science-pack (60s)
-- **Unlocks:** `filing-vagrancy`, `case-vagrancy`, `vagrancy-final`
+- **Base science:** 400 auto + logistic + chemical + production + utility + admin science-pack (60s)
+- **Space Age science:** the base set plus space, metallurgic, electromagnetic, and agricultural science; no cryogenic science
+- **Unlocks:** unemployment and vagrancy resolution chains; removes the evolution ceiling
+- **Progression gate:** required before Aquilo discovery in Space Age and before space science in the base game
 
 ### Creative Accounting (`creative-accounting`)
 

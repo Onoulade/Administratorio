@@ -73,6 +73,7 @@ vanilla_tech("logistic-science-pack", nil, nil, {"automation-science-pack", "log
 vanilla_tech("chemical-science-pack", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
 vanilla_tech("production-science-pack", {"productivity-module"}, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
 vanilla_tech("utility-science-pack", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "utility-science-pack"})
+vanilla_tech("space-science-pack", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack", "utility-science-pack"})
 
 vanilla_tech("steel-processing", nil, nil, {"automation-science-pack", "logistic-science-pack"})
 vanilla_tech("electronics", nil, nil, {"automation-science-pack"})
@@ -80,7 +81,7 @@ vanilla_tech("fluid-handling", nil, nil, {"automation-science-pack", "logistic-s
 vanilla_tech("advanced-circuit", nil, nil, {"automation-science-pack", "logistic-science-pack"})
 vanilla_tech("plastics", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
 vanilla_tech("sulfur-processing", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
-vanilla_tech("processing-unit", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
+vanilla_tech("processing-unit", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
 vanilla_tech("productivity-module", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
 vanilla_tech("speed-module", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
 vanilla_tech("electric-engine", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
@@ -300,7 +301,7 @@ test("industrial printing owns printer-t2 and bulk copy unlocks", function()
   assert_true(tech_has_prereq("industrial-printing", "advanced-circuit"), "industrial-printing should require advanced circuits")
 end)
 
-test("work order duplication is the purple-science copy upgrade", function()
+test("work order duplication moves to blue science for large complaint preparation", function()
   assert_true(tech_unlocks_recipe("work-order-duplication", "copy-work-order"), "work-order-duplication should unlock work-order copying")
   assert_true(tech_unlocks_recipe("work-order-duplication", "copy-safety-work-order"), "work-order-duplication should unlock safety work-order copying")
   assert_true(tech_unlocks_recipe("work-order-duplication", "copy-construction-work-order"), "work-order-duplication should unlock construction work-order copying")
@@ -312,8 +313,9 @@ test("work order duplication is the purple-science copy upgrade", function()
   assert_true(tech_has_prereq("work-order-duplication", "industrial-printing"), "work-order-duplication should require industrial-printing")
   assert_true(tech_has_prereq("work-order-duplication", "radiological-compliance"), "work-order-duplication should require radiological-compliance")
   assert_true(tech_has_prereq("work-order-duplication", "processing-unit"), "work-order-duplication should require processing units")
-  assert_true(tech_has_prereq("work-order-duplication", "production-science-pack"), "work-order-duplication should require production science")
-  assert_true(tech_uses_pack("work-order-duplication", "production-science-pack"), "work-order-duplication should use production science")
+  assert_true(not tech_has_prereq("work-order-duplication", "production-science-pack"), "work-order-duplication should be available before production science")
+  assert_true(not tech_uses_pack("work-order-duplication", "production-science-pack"), "work-order-duplication should use blue science or earlier")
+  assert_true(tech_uses_pack("work-order-duplication", "chemical-science-pack"), "work-order-duplication should use chemical science")
 end)
 
 test("local precedents and environmental compliance are split", function()
@@ -551,7 +553,7 @@ test("rideable biter gets its own tech while automobilism stays the late car unl
   assert_true(tech_has_prereq("automobilism", "utility-science-pack"), "automobilism should require utility science")
   assert_true(tech_uses_pack("automobilism", "utility-science-pack"), "automobilism should consume utility science")
   assert_true(not tech_has_prereq("automobilism", "formation-center"), "automobilism should not require formation-center anymore")
-  assert_true(not tech_depends_on("automobilism", "biter-employment"), "automobilism should no longer depend on biter employment")
+  assert_true(tech_depends_on("automobilism", "administratorio-large-complaints"), "utility-tier automobilism should follow the mandatory large complaint milestone")
   assert_true(data.raw.recipe.car.enabled == true, "vanilla car recipe should remain tech-disabled by base data in the harness")
   assert_true(technology_name_locale["rideable-biter"] ~= nil, "rideable-biter tech name should be localized")
   assert_true(technology_description_locale["rideable-biter"] ~= nil, "rideable-biter tech description should be localized")
@@ -680,39 +682,39 @@ test("delegate training and vanilla unlock ownership keep each tech meaningful",
   assert_true(not tech_unlocks_recipe("rocket-silo", "speed-module-3"), "rocket-silo should not duplicate speed module 3")
 end)
 
-test("late complaint tiers follow their family chains and use complaint icons", function()
-  assert_true(technologies["constitutional-law"].icon == "__administratorio__/graphics/technology/constitutional-law.png",
-    "constitutional-law should use its dedicated complaint technology icon")
-  assert_true(technologies["constitutional-law"].icon_size == 256,
-    "constitutional-law should use the technology icon size")
-  for _, tech_name in ipairs({"littering-resolution", "smog-abatement", "hazmat-response", "noise-ordinances", "loitering-ordinances", "vagrancy-ordinances"}) do
-    assert_true((technologies[tech_name].icon or ""):find("/graphics/technology/", 1, true) ~= nil,
-      tech_name .. " should use a diagonal-stack complaint technology icon")
-  end
+test("enemy-size milestones unlock paired complaints and gate science", function()
+  local medium = "administratorio-medium-complaints"
+  local large = "administratorio-large-complaints"
+  local behemoth = "administratorio-behemoth-complaints"
+  assert_true(technologies[medium].unit.count == 100 and technologies[medium].unit.time == 30, "medium milestone should use the planned research cost")
+  assert_true(technologies[large].unit.count == 200 and technologies[large].unit.time == 60, "large milestone should use the planned research cost")
+  assert_true(technologies[behemoth].unit.count == 400 and technologies[behemoth].unit.time == 60, "behemoth milestone should use the planned research cost")
   for _, tech_name in ipairs({"streamlined-work-orders", "board-meetings", "executive-review", "radiological-compliance", "federal-regulation"}) do
     assert_true(technologies[tech_name].icon_size == 64,
       tech_name .. " should use a flat normal-document icon")
   end
   assert_true(technologies["work-order-duplication"].icon == "__administratorio__/graphics/technology/work-order-duplication-v3.png",
     "work-order-duplication should use its dedicated technology icon")
-  assert_true(tech_unlocks_recipe("noise-ordinances", "noise-final"), "noise-ordinances should unlock noise resolution")
-  assert_true(tech_unlocks_recipe("loitering-ordinances", "loitering-final"), "loitering-ordinances should unlock loitering resolution")
-  assert_true(tech_unlocks_recipe("constitutional-law", "unemployment-final"), "constitutional-law should unlock unemployment resolution")
-  assert_true(tech_unlocks_recipe("vagrancy-ordinances", "vagrancy-final"), "vagrancy-ordinances should unlock vagrancy resolution")
-  assert_true(tech_uses_pack("loitering-ordinances", "production-science-pack"), "loitering-ordinances should use production science")
-  assert_true(tech_uses_pack("constitutional-law", "production-science-pack"), "constitutional-law should use production science")
-  assert_true(not tech_uses_pack("constitutional-law", "utility-science-pack"), "constitutional-law should not use utility science")
-  assert_true(tech_uses_pack("vagrancy-ordinances", "production-science-pack"), "vagrancy-ordinances should use production science")
-  assert_true(not tech_uses_pack("loitering-ordinances", "utility-science-pack"), "loitering-ordinances should not use utility science")
-  assert_true(not tech_uses_pack("vagrancy-ordinances", "utility-science-pack"), "vagrancy-ordinances should not use utility science")
-  assert_true(tech_has_prereq("smog-abatement", "printing-technology"), "smog-abatement should follow the biter complaint chain")
-  assert_true(tech_has_prereq("hazmat-response", "littering-resolution"), "hazmat-response should follow the spitter complaint chain")
-  assert_true(tech_has_prereq("noise-ordinances", "smog-abatement"), "noise-ordinances should require the previous biter tier")
-  assert_true(not tech_has_prereq("noise-ordinances", "hazmat-response"), "noise-ordinances should not require the previous spitter tier")
-  assert_true(tech_has_prereq("loitering-ordinances", "hazmat-response"), "loitering-ordinances should require the previous spitter tier")
-  assert_true(tech_has_prereq("constitutional-law", "noise-ordinances"), "constitutional-law should require the previous biter tier")
-  assert_true(tech_has_prereq("vagrancy-ordinances", "loitering-ordinances"), "vagrancy-ordinances should require the previous spitter tier")
-  assert_true(not tech_has_prereq("vagrancy-ordinances", "constitutional-law"), "vagrancy-ordinances should not require the previous biter tier")
+  for _, recipe in ipairs({"filing-smog", "case-smog", "smog-final", "filing-hazmat", "case-hazmat", "hazmat-final"}) do
+    assert_true(tech_unlocks_recipe(medium, recipe), medium .. " should unlock " .. recipe)
+  end
+  for _, recipe in ipairs({"filing-noise", "case-noise", "noise-final", "filing-loitering", "case-loitering", "loitering-final"}) do
+    assert_true(tech_unlocks_recipe(large, recipe), large .. " should unlock " .. recipe)
+  end
+  for _, recipe in ipairs({"filing-unemployment", "case-unemployment", "unemployment-final", "filing-vagrancy", "case-vagrancy", "vagrancy-final"}) do
+    assert_true(tech_unlocks_recipe(behemoth, recipe), behemoth .. " should unlock " .. recipe)
+  end
+  for _, legacy in ipairs({"smog-abatement", "hazmat-response", "noise-ordinances", "loitering-ordinances", "constitutional-law", "vagrancy-ordinances"}) do
+    assert_true(technologies[legacy].hidden and technologies[legacy].enabled == false, legacy .. " should remain as a hidden migration record")
+    assert_true(#(technologies[legacy].effects or {}) == 0, legacy .. " should no longer own recipe effects")
+  end
+  assert_true(tech_has_prereq("chemical-science-pack", medium), "medium complaints should gate chemical science")
+  assert_true(tech_has_prereq("production-science-pack", large), "large complaints should gate production science")
+  assert_true(tech_has_prereq("utility-science-pack", large), "large complaints should gate utility science")
+  assert_true(tech_has_prereq("space-science-pack", behemoth), "behemoth complaints should gate base-game space science")
+  assert_true(tech_has_prereq(large, medium), "large complaints should require the medium milestone")
+  assert_true(tech_has_prereq(behemoth, large), "behemoth complaints should require the large milestone")
+  assert_true(not tech_has_prereq(medium, "charcoal-production"), "medium complaints should accept ordinary mined coal")
   assert_true(tech_has_prereq("hired-biter-fieldwork", "utility-science-pack"), "hired-biter-fieldwork should own its utility science requirement")
 end)
 
@@ -730,12 +732,8 @@ test("science tier heads and inherited pack requirements are enforced", function
   assert_true(tech_has_prereq("environmental-compliance", "fluid-handling"), "environmental-compliance should require fluid handling")
   assert_true(tech_has_prereq("board-meetings", "health-and-safety"), "board-meetings should require health-and-safety")
   assert_true(tech_has_prereq("board-meetings", "chemical-science-pack"), "board-meetings should require chemical science")
-  assert_true(tech_has_prereq("eminent-domain-zoning", "production-science-pack"), "eminent-domain-zoning should require production science")
-  assert_true(tech_has_prereq("constitutional-law", "production-science-pack"), "constitutional-law should require production science")
-  assert_true(tech_has_prereq("loitering-ordinances", "production-science-pack"), "loitering-ordinances should require production science")
-  assert_true(not tech_has_prereq("loitering-ordinances", "utility-science-pack"), "loitering-ordinances should not require utility science")
-  assert_true(tech_has_prereq("vagrancy-ordinances", "production-science-pack"), "vagrancy-ordinances should require production science")
-  assert_true(not tech_has_prereq("vagrancy-ordinances", "utility-science-pack"), "vagrancy-ordinances should not require utility science")
+  assert_true(not tech_has_prereq("eminent-domain-zoning", "production-science-pack"), "eminent-domain-zoning should move to chemical science")
+  assert_true(not tech_uses_pack("eminent-domain-zoning", "production-science-pack"), "eminent-domain-zoning should not consume production science")
   assert_true(not tech_has_prereq("electric-mining-drill", "printing-technology"), "electric-mining-drill should not require printing-technology")
   assert_true(not tech_has_prereq("stone-wall", "printing-technology"), "stone-wall should not require printing-technology")
 
@@ -745,12 +743,12 @@ test("science tier heads and inherited pack requirements are enforced", function
   assert_pack_superset("environmental-compliance", "fluid-handling")
   assert_pack_superset("environmental-compliance", "steel-processing")
   assert_pack_superset("radiological-compliance", "battery")
-  assert_pack_superset("vagrancy-ordinances", "loitering-ordinances")
+  assert_pack_superset("administratorio-large-complaints", "administratorio-medium-complaints")
+  assert_pack_superset("administratorio-behemoth-complaints", "administratorio-large-complaints")
 
   if technologies["after-hours-operations"] then
     assert_true(tech_has_prereq("after-hours-operations", "federal-regulation"), "after-hours-operations should require federal-regulation")
     assert_pack_superset("after-hours-operations", "federal-regulation")
-    assert_pack_subset("after-hours-operations", "federal-regulation")
   end
 end)
 

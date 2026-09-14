@@ -1,9 +1,66 @@
 local feature_flags = require("feature_flags")
 local shared = require("prototypes.shared")
 local gameplay_facts = require("prototypes.shared.gameplay_facts")
+local evolution_milestones = require("prototypes.shared.evolution_milestones")
 local working_hours_enabled = feature_flags.working_hours_enabled()
 local space_age_enabled = feature_flags.space_age_enabled()
 local tech_icons = "__administratorio__/graphics/technology/"
+
+local function milestone_unlock_effects(index)
+  local effects = {}
+  for _, recipe in ipairs(evolution_milestones.MILESTONES[index].recipes) do
+    effects[#effects + 1] = {type = "unlock-recipe", recipe = recipe}
+  end
+  return effects
+end
+
+local function legacy_complaint_technology(name, icon, icon_size, prerequisites, unit, order)
+  return {
+    type = "technology",
+    name = name,
+    icon = icon,
+    icon_size = icon_size,
+    effects = {},
+    prerequisites = prerequisites,
+    unit = unit,
+    enabled = false,
+    hidden = true,
+    order = order,
+  }
+end
+
+local function behemoth_milestone_prerequisites()
+  local prerequisites = {
+    "administratorio-large-complaints",
+    "production-science-pack",
+    "utility-science-pack",
+  }
+  if space_age_enabled then
+    prerequisites[#prerequisites + 1] = "space-science-pack"
+    prerequisites[#prerequisites + 1] = "metallurgic-science-pack"
+    prerequisites[#prerequisites + 1] = "electromagnetic-science-pack"
+    prerequisites[#prerequisites + 1] = "agricultural-science-pack"
+  end
+  return prerequisites
+end
+
+local function behemoth_milestone_ingredients()
+  local ingredients = {
+    {"automation-science-pack", 1},
+    {"logistic-science-pack", 1},
+    {"chemical-science-pack", 1},
+    {"production-science-pack", 1},
+    {"utility-science-pack", 1},
+    {"administrative-science-pack", 1},
+  }
+  if space_age_enabled then
+    table.insert(ingredients, 6, {"space-science-pack", 1})
+    table.insert(ingredients, 7, {"metallurgic-science-pack", 1})
+    table.insert(ingredients, 8, {"electromagnetic-science-pack", 1})
+    table.insert(ingredients, 9, {"agricultural-science-pack", 1})
+  end
+  return ingredients
+end
 
 local function eminent_domain_zoning_effects()
   local effects = {
@@ -282,32 +339,31 @@ data:extend({
     unit = { count = 95, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "d-a"
   },
-  -- T4b: SMOG ABATEMENT (air-pollution complaint chain)
+  -- The first growth permit unlocks both medium-enemy complaint chains before
+  -- chemical science. Native evolution remains capped at 20% until it is done.
   {
-    type = "technology", name = "smog-abatement",
+    type = "technology", name = "administratorio-medium-complaints",
     icon = tech_icons .. "smog-abatement.png", icon_size = 128,
-    effects = {
-      { type = "unlock-recipe", recipe = "filing-smog" },
-      { type = "unlock-recipe", recipe = "case-smog" },
-      { type = "unlock-recipe", recipe = "smog-final" }
+    effects = milestone_unlock_effects(1),
+    prerequisites = {
+      "environmental-compliance", "chemical-operator-training",
+      "industrial-propaganda", "printing-technology", "biter-employment",
     },
-    prerequisites = {"environmental-compliance", "charcoal-production", "printing-technology"},
-    unit = { count = 90, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    unit = { count = 100, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "d-b"
   },
-  -- T4c: HAZMAT RESPONSE (hazard-material complaint chain)
-  {
-    type = "technology", name = "hazmat-response",
-    icon = tech_icons .. "hazmat-response.png", icon_size = 128,
-    effects = {
-      { type = "unlock-recipe", recipe = "filing-hazmat" },
-      { type = "unlock-recipe", recipe = "case-hazmat" },
-      { type = "unlock-recipe", recipe = "hazmat-final" }
-    },
-    prerequisites = {"environmental-compliance", "chemical-operator-training", "chemical-science-pack", "littering-resolution"},
-    unit = { count = 100, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
-    order = "d-c"
-  },
+  legacy_complaint_technology(
+    "smog-abatement", tech_icons .. "smog-abatement.png", 128,
+    {"environmental-compliance", "printing-technology"},
+    {count = 90, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30},
+    "d-b1"
+  ),
+  legacy_complaint_technology(
+    "hazmat-response", tech_icons .. "hazmat-response.png", 128,
+    {"environmental-compliance", "chemical-operator-training", "littering-resolution"},
+    {count = 100, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30},
+    "d-b2"
+  ),
   -- T4d: NEST EXPROPRIATION (eviction notices for territorial expansion)
   {
     type = "technology", name = "nest-expropriation",
@@ -397,8 +453,8 @@ data:extend({
     icon = tech_icons .. "eminent-domain-zoning.png", icon_size = 256,
     localised_description = space_age_enabled and {"technology-description.eminent-domain-zoning-space-age"} or nil,
     effects = eminent_domain_zoning_effects(),
-    prerequisites = {"executive-review", "processing-unit", "production-science-pack"},
-    unit = { count = 210, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    prerequisites = {"executive-review", "processing-unit"},
+    unit = { count = 210, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "g-a"
   },
   -- T7b: WORK ORDER DUPLICATION (industrial printer copies every work-order family)
@@ -415,8 +471,8 @@ data:extend({
       { type = "unlock-recipe", recipe = "copy-chemical-handling-work-order" },
       { type = "unlock-recipe", recipe = "copy-radiological-work-order" }
     },
-    prerequisites = {"industrial-printing", "radiological-compliance", "processing-unit", "production-science-pack", "synthetic-stationery"},
-    unit = { count = 180, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    prerequisites = {"industrial-printing", "radiological-compliance", "processing-unit", "synthetic-stationery"},
+    unit = { count = 180, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "g-b"
   },
   -- T7c: FEDERAL REGULATION (codify policy into formal law)
@@ -426,62 +482,53 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "regulation-production" }
     },
-    prerequisites = {"eminent-domain-zoning", "work-order-duplication", "production-science-pack"},
-    unit = { count = 175, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    prerequisites = {"eminent-domain-zoning", "work-order-duplication"},
+    unit = { count = 175, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "g-c"
   },
-  -- T7d: NOISE ORDINANCES (noise complaint resolution)
   {
-    type = "technology", name = "noise-ordinances",
+    type = "technology", name = "administratorio-large-complaints",
     icon = tech_icons .. "noise-ordinances.png", icon_size = 128,
-    effects = {
-      { type = "unlock-recipe", recipe = "filing-noise" },
-      { type = "unlock-recipe", recipe = "case-noise" },
-      { type = "unlock-recipe", recipe = "noise-final" }
+    effects = milestone_unlock_effects(2),
+    prerequisites = {
+      "administratorio-medium-complaints", "federal-regulation",
+      "information-management", "health-and-safety",
     },
-    prerequisites = {"eminent-domain-zoning", "environmental-compliance", "production-science-pack", "smog-abatement"},
-    unit = { count = 185, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    unit = { count = 200, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "g-d"
   },
-  -- T7e: LOITERING ORDINANCES (loitering complaint resolution)
+  legacy_complaint_technology(
+    "noise-ordinances", tech_icons .. "noise-ordinances.png", 128,
+    {"eminent-domain-zoning", "environmental-compliance", "production-science-pack"},
+    {count = 185, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60},
+    "g-d1"
+  ),
+  legacy_complaint_technology(
+    "loitering-ordinances", tech_icons .. "loitering-ordinances.png", 128,
+    {"board-meetings", "production-science-pack"},
+    {count = 185, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60},
+    "g-d2"
+  ),
   {
-    type = "technology", name = "loitering-ordinances",
-    icon = tech_icons .. "loitering-ordinances.png", icon_size = 128,
-    effects = {
-      { type = "unlock-recipe", recipe = "filing-loitering" },
-      { type = "unlock-recipe", recipe = "case-loitering" },
-      { type = "unlock-recipe", recipe = "loitering-final" }
-    },
-    prerequisites = {"board-meetings", "hazmat-response", "production-science-pack"},
-    unit = { count = 185, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
-    order = "g-e"
-  },
-  -- T8a: CONSTITUTIONAL LAW (unemployment resolution)
-  {
-    type = "technology", name = "constitutional-law",
+    type = "technology", name = "administratorio-behemoth-complaints",
     icon = tech_icons .. "constitutional-law.png", icon_size = 256,
-    effects = {
-      { type = "unlock-recipe", recipe = "filing-unemployment" },
-      { type = "unlock-recipe", recipe = "case-unemployment" },
-      { type = "unlock-recipe", recipe = "unemployment-final" }
-    },
-    prerequisites = {"federal-regulation", "noise-ordinances", "production-science-pack"},
-    unit = { count = 260, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
+    effects = milestone_unlock_effects(3),
+    prerequisites = behemoth_milestone_prerequisites(),
+    unit = {count = 400, ingredients = behemoth_milestone_ingredients(), time = 60},
     order = "h-a"
   },
-  -- T8b: VAGRANCY ORDINANCES (vagrancy complaint resolution)
-  {
-    type = "technology", name = "vagrancy-ordinances",
-    icon = tech_icons .. "vagrancy-ordinances.png", icon_size = 128,
-    effects = {
-      { type = "unlock-recipe", recipe = "filing-vagrancy" },
-      { type = "unlock-recipe", recipe = "case-vagrancy" },
-      { type = "unlock-recipe", recipe = "vagrancy-final" }
-    },
-    prerequisites = {"loitering-ordinances", "production-science-pack"},
-    unit = { count = 320, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
-    order = "h-b"
-  },
+  legacy_complaint_technology(
+    "constitutional-law", tech_icons .. "constitutional-law.png", 256,
+    {"federal-regulation", "production-science-pack"},
+    {count = 260, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60},
+    "h-a1"
+  ),
+  legacy_complaint_technology(
+    "vagrancy-ordinances", tech_icons .. "vagrancy-ordinances.png", 128,
+    {"production-science-pack"},
+    {count = 320, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"production-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60},
+    "h-a2"
+  ),
   -- PNEUMATIC FORM TRANSPORT (first green-science paperwork logistics)
   {
     type = "technology", name = "pneumatic-form-transport",
@@ -675,7 +722,7 @@ data:extend({
       { type = "unlock-recipe", recipe = "hired-biter-capsule" },
       { type = "unlock-recipe", recipe = "hired-biter-command-capsule" },
     },
-    prerequisites = {"biter-employment", "loitering-ordinances", "biter-labor-efficiency-2", "executive-review", "utility-science-pack"},
+    prerequisites = {"biter-employment", "administratorio-large-complaints", "biter-labor-efficiency-2", "executive-review", "utility-science-pack"},
     unit = { count = 500, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"utility-science-pack", 1}, {"administrative-science-pack", 1}}, time = 60 },
     order = "f-i"
   },
@@ -1111,8 +1158,6 @@ add_tech_prerequisite("health-and-safety", "chemical-science-pack")
   add_tech_prerequisite("biter-labor-efficiency-2", "chemical-science-pack")
   add_tech_prerequisite("admin-station-capacity-3", "chemical-science-pack")
   add_tech_prerequisite("nuclear-technician-training", "production-science-pack")
-  add_tech_prerequisite("eminent-domain-zoning", "production-science-pack")
-  add_tech_prerequisite("constitutional-law", "production-science-pack")
   add_tech_prerequisite("power-armor-mk2", "utility-science-pack")
   add_tech_prerequisite("robotics", "federal-regulation")
 
@@ -1120,6 +1165,12 @@ add_tech_prerequisite("information-management", "advanced-circuit")
 add_tech_prerequisite("environmental-compliance", "fluid-handling")
 add_tech_prerequisite("environmental-compliance", "steel-processing")
 add_tech_prerequisite("radiological-compliance", "battery")
+add_tech_prerequisite("chemical-science-pack", "administratorio-medium-complaints")
+add_tech_prerequisite("production-science-pack", "administratorio-large-complaints")
+add_tech_prerequisite("utility-science-pack", "administratorio-large-complaints")
+if not space_age_enabled then
+  add_tech_prerequisite("space-science-pack", "administratorio-behemoth-complaints")
+end
 
 -- Vanilla branches that now consume mod paperwork need matching bureaucracy
 -- prerequisites so they unlock only when their recipes are actually usable.

@@ -116,7 +116,7 @@ test("certification technologies retain native costs and gain one administrative
     ["quality-module-2"] = "industrial-propaganda",
     ["quality-module-3"] = "health-and-safety",
     ["epic-quality"] = "executive-review",
-    ["legendary-quality"] = "constitutional-law",
+    ["legendary-quality"] = "administratorio-behemoth-complaints",
   }
   for name, prerequisite in pairs(expected_prerequisites) do
     local technology = data_api.raw.technology[name]

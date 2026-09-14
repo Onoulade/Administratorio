@@ -99,13 +99,15 @@ This file tracks the actual progression model implemented by the mod, not just t
 
 | Tech | Main unlocks | Progression meaning |
 | --- | --- | --- |
-| `environmental-compliance` | breakroom, coffee refining, verbal approvals, treasury bonds, petrochemical permit, smog + hazmat resolution, eviction notices | First real funding, coffee economy, and process-industry permitting |
+| `environmental-compliance` | petrochemical permits and verified environmental reports | First process-industry permitting |
 | `health-and-safety` | union HQ, justification, narrative, written approvals, radiological work order, government grants | Opens late-form, centrifuge paperwork, and grant chain |
 | `board-meetings` | written management proposal + heavy printer approval pass | Opens the executive committee layer inside Union HQ |
-| `eminent-domain-zoning` | white paper, policy, verified certificates, noise + loitering resolution, slush fund | High-bureaucracy policy tier |
+| `eminent-domain-zoning` | white paper, policy, slush fund | Blue-science policy support for large complaints |
 | `federal-regulation` | regulation | Formal law layer for the final complaint tier |
 | `creative-accounting` | tax audit | Converts slush funds back into official revenue through a dedicated late-game funding loop |
-| `constitutional-law` | unemployment + vagrancy resolution | Final complaint tier |
+| `administratorio-medium-complaints` | smog + hazmat resolution; 45% evolution ceiling | Required before chemical science |
+| `administratorio-large-complaints` | noise + loitering resolution; 60% evolution ceiling | Required before production and utility science |
+| `administratorio-behemoth-complaints` | unemployment + vagrancy resolution; removes ceiling | Required before Aquilo, or base-game space science |
 
 ## Complaint Unlock Ladder
 
@@ -113,9 +115,9 @@ This file tracks the actual progression model implemented by the mod, not just t
 | --- | --- | --- |
 | `landscape` | start | filing -> final |
 | `littering` | `littering-resolution` | filing -> final |
-| `smog` + `hazmat` | `environmental-compliance` | filing -> case -> final |
-| `noise` + `loitering` | `eminent-domain-zoning` | filing -> case -> final |
-| `unemployment` + `vagrancy` | `constitutional-law` | filing -> case -> final |
+| `smog` + `hazmat` | `administratorio-medium-complaints` | filing -> case -> final |
+| `noise` + `loitering` | `administratorio-large-complaints` | filing -> case -> final |
+| `unemployment` + `vagrancy` | `administratorio-behemoth-complaints` | filing -> case -> final |
 
 ### Runtime complaint generation
 
@@ -169,12 +171,11 @@ Frustration threshold is `600` seconds. Protesters disable a random player build
 | Capacity upgrades | 8 (`admin-station-capacity-1` through `admin-station-capacity-8`) |
 <!-- END GENERATED: admin-station-facts -->
 
-### 2. Complaint tech unlocks lag vanilla evolution
+### 2. Research gates enemy evolution
 
-- Medium enemies can generate tier-2 complaints before `environmental-compliance`.
-- Big enemies can generate tier-3 complaints before `eminent-domain-zoning`.
-- Behemoths can generate tier-4 complaints before `constitutional-law`.
-- Nothing in runtime filters complaint tiers by player tech.
+- Evolution is capped at 20%, 45%, and 60% until the medium, large, and behemoth complaint milestones are researched.
+- Blocked gains are discarded. Raising a ceiling does not create an immediate catch-up spike.
+- The most advanced player force controls the shared cap; Gleba evolution remains independent.
 
 ### 3. Taxpayer funding depends on complaint stability
 

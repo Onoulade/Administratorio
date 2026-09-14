@@ -134,8 +134,8 @@ The train system requires paperwork:
 ### 1. Desk Inventory is the Real Complaint Cap
 The generated Admin Station facts in [Core Mechanics](core-mechanics.md#admin-station) are the source for inventory and waiting capacity. Big and behemoth citizens generate several tickets each, so practical desk throughput can become inventory-limited before waiting capacity is exhausted.
 
-### 2. Complaint Tech Unlocks Lag Vanilla Evolution
-Medium enemies can generate tier-2 complaints before `environmental-compliance`. Big enemies can generate tier-3 complaints before `eminent-domain-zoning`. Behemoths can generate tier-4 complaints before `constitutional-law`. Nothing in runtime filters complaint tiers by player tech.
+### 2. Complaint Milestones Gate Evolution
+Native biter evolution stops at 20%, 45%, and 60% until the matching medium, large, and behemoth administration milestones are researched. Each milestone unlocks both biter and spitter resolution chains before permitting the new size. Blocked evolution is discarded rather than applied after research.
 
 ### 3. Taxpayer Funding Depends on Complaint Stability
 `taxpayer-money` is needed for bonds, grants, breakrooms, Union HQ expansion, and some late regulated recipes. Any disruption in complaint resolution directly slows tech progression.

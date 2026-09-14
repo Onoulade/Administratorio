@@ -537,7 +537,7 @@ data:extend({
     },
     -- The orbital briefing is one of this tech's unlocks, so its rocket-fuel
     -- input must be researched before the card becomes available.
-    prerequisites = {"worker-formation", "union-delegate-training", "eminent-domain-zoning", "rocket-fuel"},
+    prerequisites = {"worker-formation", "union-delegate-training", "eminent-domain-zoning", "rocket-fuel", "production-science-pack"},
     unit = {
       count = 280,
       ingredients = {
@@ -1069,6 +1069,7 @@ add_tech_prerequisite("quantum-processor", "carbon-fiber")
 add_tech_prerequisite("metallurgic-science-pack", "cyan-ink-production")
 add_tech_prerequisite("agricultural-science-pack", "gleba-conciliation")
 add_tech_prerequisite("electromagnetic-science-pack", "fulgora-salvage-administration")
+add_tech_prerequisite("planet-discovery-aquilo", "administratorio-behemoth-complaints")
 add_tech_prerequisite("cryogenic-plant", "aquilo-cryogenic-administration")
 add_tech_unlock("calcite-processing", "dubious-data-analysis-vulcanus")
 add_tech_unlock("calcite-processing", "paper-production-vulcanus")

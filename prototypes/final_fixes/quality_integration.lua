@@ -10,7 +10,7 @@ local CERTIFICATION_TECHS = {
   ["quality-module-2"] = {prerequisite = "industrial-propaganda"},
   ["quality-module-3"] = {prerequisite = "health-and-safety"},
   ["epic-quality"] = {prerequisite = "executive-review"},
-  ["legendary-quality"] = {prerequisite = "constitutional-law"},
+  ["legendary-quality"] = {prerequisite = "administratorio-behemoth-complaints"},
 }
 
 local QUALITY_MODULE_RECIPES = {

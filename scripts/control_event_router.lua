@@ -89,6 +89,9 @@ function M.register(deps)
   if deps.on_entity_spawned then
     script.on_event(defines.events.on_entity_spawned, deps.on_entity_spawned)
   end
+  if deps.on_chunk_generated then
+    script.on_event(defines.events.on_chunk_generated, deps.on_chunk_generated)
+  end
   script.on_event(defines.events.on_entity_died, deps.on_entity_died, deps.on_entity_died_filters)
   script.on_event(defines.events.on_script_trigger_effect, deps.on_script_trigger_effect)
   script.on_event(defines.events.on_ai_command_completed, deps.on_ai_command_completed)
@@ -101,6 +104,14 @@ function M.register(deps)
   script.on_event(defines.events.on_gui_click, deps.on_gui_click)
   script.on_event(defines.events.on_gui_closed, deps.on_gui_closed)
   script.on_event(defines.events.on_research_finished, deps.on_research_finished)
+  script.on_event(defines.events.on_research_reversed, deps.on_research_reversed)
+  script.on_event(defines.events.on_force_created, deps.on_force_changed)
+  script.on_event(defines.events.on_force_reset, deps.on_force_changed)
+  script.on_event(defines.events.on_forces_merged, deps.on_force_changed)
+  script.on_event(defines.events.on_player_changed_force, deps.on_force_changed)
+  script.on_event(defines.events.on_surface_created, deps.on_surface_changed)
+  script.on_event(defines.events.on_surface_imported, deps.on_surface_changed)
+  script.on_event(defines.events.on_surface_deleted, deps.on_surface_deleted)
 
   -- Each system declares the cadence its own behaviour needs. Sharing an
   -- interval with another system is allowed and has no effect on either.

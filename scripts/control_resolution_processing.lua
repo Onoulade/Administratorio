@@ -66,12 +66,6 @@ function M.new(deps)
       end
     end)
 
-    runtime_debug.run_profiled_section(runtime_snapshot, "evolution_warnings", function()
-      for _, force in pairs(game.forces) do
-        deps.warn_force_about_evolution_complaints(force)
-      end
-    end)
-
     runtime_debug.run_profiled_section(runtime_snapshot, "working_hours_refresh", function()
       if needs_loaded_working_hours_refresh then
         if deps.working_hours.is_enabled() then

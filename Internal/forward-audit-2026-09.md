@@ -30,9 +30,9 @@ candidate mechanic.
 3. **Cross-force labor research leak.** Biter-station trip capacity and worker tier
    were serialized as one global maximum. They are now derived from the station's
    force at dispatch time; derived research state is no longer stored.
-4. **Cross-force evolution notices.** The once-per-second warning pass evaluated
-   only `game.forces.player`; it now evaluates every force and lets the existing
-   eligibility guard discard irrelevant forces.
+4. **Cross-force evolution progression.** Research-gated evolution now derives
+   its shared ceiling from the most advanced force that owns a player, including
+   offline players, while ignoring neutral and mod-internal forces.
 5. **Redundant hot-path cleanup.** Biter-station link sanitation ran inside the
    10-tick station update and again every 60 ticks. The duplicate pass and its dead
    profiler row were removed.

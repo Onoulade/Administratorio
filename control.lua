@@ -39,6 +39,7 @@ local spawner_population = require("scripts.spawner_population")
 local victory = require("scripts.victory")
 local admin_desk_rotation = require("scripts.admin_desk_rotation")
 local complaint_item_recovery = require("scripts.complaint_item_recovery")
+local evolution_gating = require("scripts.evolution_gating")
 
 biter_station.set_biters_module(biters)
 biterport.set_biters_module(biters)
@@ -483,7 +484,6 @@ local function init_storage()
   storage.desk_return_positions = storage.desk_return_positions or {}
   storage.desk_circuit_dirty = storage.desk_circuit_dirty or {}
   storage.capture_bureau_ports = storage.capture_bureau_ports or {}
-  storage.evolution_complaint_warnings = storage.evolution_complaint_warnings or {}
   storage.stations = storage.stations or {}
   storage.achievements = storage.achievements or {}
   storage.path_requests = storage.path_requests or {}
@@ -592,24 +592,6 @@ local function set_biter_ceasefire()
   end
 end
 
-local function format_percent_text(value)
-  return string.format("%.1f", value * 100)
-end
-
-local function build_complaint_warning_caption(complaints)
-  if not complaints or #complaints == 0 then
-    return {"", "complaints"}
-  end
-  if #complaints == 1 then
-    return {"item-name." .. complaints[1]}
-  end
-  return {
-    "message.evolution-complaint-pair",
-    {"item-name." .. complaints[1]},
-    {"item-name." .. complaints[2]},
-  }
-end
-
 local function parse_version(version)
   if type(version) ~= "string" then return nil end
   local major, minor, patch = version:match("^(%d+)%.(%d+)%.(%d+)")
@@ -644,39 +626,6 @@ local function warn_about_pre_040_save(event)
   end
 end
 
-local function warn_force_about_evolution_complaints(force)
-  if not force or not force.valid or #force.connected_players == 0 then return end
-  local enemy = game.forces["enemy"]
-  if not enemy or not enemy.valid then return end
-
-  local evolution = enemy.get_evolution_factor(game.surfaces[1]) or 0
-  local force_warnings = storage.evolution_complaint_warnings[force.index]
-  if not force_warnings then
-    force_warnings = {}
-    storage.evolution_complaint_warnings[force.index] = force_warnings
-  end
-
-  for _, warning in ipairs(C.EVOLUTION_COMPLAINT_WARNINGS) do
-    local warning_threshold = warning.threshold - C.EVOLUTION_COMPLAINT_WARNING_OFFSET
-    if evolution >= warning_threshold and not force_warnings[warning.id] then
-      local technology = force.technologies[warning.technology]
-      if technology and not technology.researched then
-        local message_key = evolution >= warning.threshold
-          and "message.evolution-complaint-overdue"
-          or "message.evolution-complaint-warning"
-        force.print({
-          message_key,
-          format_percent_text(evolution),
-          string.format("%.0f", warning.threshold * 100),
-          build_complaint_warning_caption(warning.complaints),
-          {"technology-name." .. warning.technology},
-        })
-        force_warnings[warning.id] = true
-      end
-    end
-  end
-end
-
 local function on_init()
   init_storage()
   rebuild_desk_cache()
@@ -702,6 +651,7 @@ local function on_init()
     biter_station.sync_research(force)
   end
   set_biter_ceasefire()
+  evolution_gating.on_init()
   trains.on_init()
   for _, player in pairs(game.players) do
     normalize_player_admin_station_items(player)
@@ -809,6 +759,7 @@ local function on_configuration_changed(event)
     normalize_player_admin_station_items(player)
     normalize_player_admin_station_quickbar(player)
   end
+  evolution_gating.migrate_existing_save()
   sync_all_regulated_recipe_unlocks()
   pneumatic.sync_all_intake_recipe_unlocks()
   planetary_unlocks.sync_all()
@@ -837,6 +788,11 @@ local function on_research_finished(event)
   if research.name == "pneumatic-form-transport" then
     pneumatic.sync_intake_recipe_unlocks(research.force)
   end
+  evolution_gating.on_research_changed()
+end
+
+local function on_research_reversed(_event)
+  evolution_gating.on_research_changed()
 end
 
 local function unlock_field_office_deployment(force)
@@ -1844,6 +1800,7 @@ local function on_unit_added_to_group(event)
 end
 
 local function on_entity_spawned(event)
+  if evolution_gating.reject_disallowed_spawn(event) then return end
   spawner_population.on_entity_spawned(event)
 end
 
@@ -2262,6 +2219,7 @@ local function on_main_tick(event)
 end
 
 local function on_trajectory_compliance_tick(event)
+  evolution_gating.on_tick(event)
   trajectory_compliance.on_tick(event)
 end
 
@@ -2320,7 +2278,6 @@ resolution_processing = control_resolution_processing_factory.new({
   strip_weapons = strip_weapons,
   trains = trains,
   update_tracked_unit_group_debug = update_tracked_unit_group_debug,
-  warn_force_about_evolution_complaints = warn_force_about_evolution_complaints,
   working_hours = working_hours,
 })
 
@@ -2359,6 +2316,11 @@ control_event_router.register({
   on_player_respawned = on_player_respawned,
   on_player_reverse_selected_area = on_player_reverse_selected_area,
   on_research_finished = on_research_finished,
+  on_research_reversed = on_research_reversed,
+  on_chunk_generated = evolution_gating.on_chunk_generated,
+  on_surface_changed = evolution_gating.on_surface_changed,
+  on_surface_deleted = evolution_gating.on_surface_deleted,
+  on_force_changed = evolution_gating.on_force_changed,
   on_player_selected_area = on_player_selected_area,
   on_protest_pacing_tick = on_protest_pacing_tick,
   on_rocket_launched = on_rocket_launched,

@@ -128,9 +128,11 @@ Each complaint pair requires a specific technology to unlock. Resolved complaint
 | --- | --- | --- |
 | `landscape` | start | filing → final |
 | `littering` | `littering-resolution` | filing → final |
-| `smog` + `hazmat` | `environmental-compliance` | filing → case → final |
-| `noise` + `loitering` | `eminent-domain-zoning` | filing → case → final |
-| `unemployment` + `vagrancy` | `constitutional-law` | filing → case → final |
+| `smog` + `hazmat` | `administratorio-medium-complaints` | filing → case → final |
+| `noise` + `loitering` | `administratorio-large-complaints` | filing → case → final |
+| `unemployment` + `vagrancy` | `administratorio-behemoth-complaints` | filing → case → final |
+
+Native biter evolution is capped at 20% initially, 45% after Medium Complaint Administration, and 60% after Large Complaint Administration. Behemoth Complaint Administration removes the cap. Evolution accumulated while capped is discarded.
 
 ### Admin Station
 
