@@ -1077,6 +1077,8 @@ local function on_entity_built_inner(event)
   -- Handle pneumatic endpoint support entities.
   elseif pneumatic.is_pneumatic_building(entity) then
     pneumatic.add_pneumatic_supports(entity)
+  elseif entity.name == C.TUBE_PUMP_NAME then
+    pneumatic.add_tube_pump_supports(entity)
   elseif entity.name == territorial_arbitration.POST_NAME then
     if not territorial_arbitration.on_entity_built(entity, event.player_index and game.get_player(event.player_index)) then
       return
@@ -1234,6 +1236,8 @@ local function on_entity_removed(event)
     return
   elseif pneumatic.is_pneumatic_building(entity) then
     pneumatic.delete_pneumatic_supports(entity)
+  elseif entity.name == C.TUBE_PUMP_NAME then
+    pneumatic.delete_tube_pump_supports(entity)
   elseif entity.name == "pneumatic-pipe" or entity.name == "pneumatic-pipe-to-ground" then
     pneumatic.ensure_storage()
     storage.tube_network_dirty = true
@@ -1242,6 +1246,12 @@ end
 
 local function on_pre_entity_removed(event)
   cleanup_removed_admin_desk(event.entity)
+end
+
+local function on_player_rotated_entity(event)
+  if event.entity and event.entity.valid and event.entity.name == C.TUBE_PUMP_NAME then
+    pneumatic.refresh_tube_pump_supports(event.entity)
+  end
 end
 
 local function on_toggle_runtime_debug(event)
@@ -1885,6 +1895,8 @@ local function on_entity_died(event)
   cleanup_removed_admin_desk(entity)
   if pneumatic.is_pneumatic_building(entity) then
     pneumatic.delete_pneumatic_supports(entity)
+  elseif entity.name == C.TUBE_PUMP_NAME then
+    pneumatic.delete_tube_pump_supports(entity)
   end
   trains.on_removed(entity)
 end
@@ -1905,6 +1917,7 @@ local ON_ENTITY_DIED_BASE_FILTERS = {
   {filter = "name", name = "corporate-breakroom"},
   {filter = "name", name = "union-headquarters"},
   {filter = "name", name = "administrative-clock"},
+  {filter = "name", name = "tube-pump"},
 }
 
 -- Keep death-event coverage in lockstep with every configured protest target.
@@ -2315,6 +2328,7 @@ control_event_router.register({
   on_pre_entity_removed = on_pre_entity_removed,
   on_player_respawned = on_player_respawned,
   on_player_reverse_selected_area = on_player_reverse_selected_area,
+  on_player_rotated_entity = on_player_rotated_entity,
   on_research_finished = on_research_finished,
   on_research_reversed = on_research_reversed,
   on_chunk_generated = evolution_gating.on_chunk_generated,

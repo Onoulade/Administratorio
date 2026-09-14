@@ -79,6 +79,7 @@ local function pneumatic_form_transport_effects()
     { type = "unlock-recipe", recipe = "pneumatic-pipe-to-ground" },
     { type = "unlock-recipe", recipe = "tube-intake" },
     { type = "unlock-recipe", recipe = "tube-outtake" },
+    { type = "unlock-recipe", recipe = "tube-pump" },
   }
 
   local pneumatic_item_names = {}

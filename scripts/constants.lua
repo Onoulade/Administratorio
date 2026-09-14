@@ -283,6 +283,7 @@ M.PNEUMATIC_BUILDINGS = {
   ["tube-intake"] = true,
   ["tube-outtake"] = true,
 }
+M.TUBE_PUMP_NAME = "tube-pump"
 
 -- All items eligible for pneumatic tube transport.
 -- Defined in a dependency-free module so data-stage descriptions and runtime

@@ -103,7 +103,24 @@ local TRAVERSABLE_NETWORK_ENTITIES = hooks.collect("tube_traversable_entities", 
   ["pneumatic-pipe"] = true,
   ["pneumatic-pipe-to-ground"] = true,
   ["pneumatic-hidden-network-pipe"] = true,
+  ["tube-pump-port-0"] = true,
+  ["tube-pump-port-4"] = true,
+  ["tube-pump-port-8"] = true,
+  ["tube-pump-port-12"] = true,
 })
+
+local function tube_pump_ports(entity)
+  local x, y = entity.position.x, entity.position.y
+  local direction = entity.direction
+  if direction == defines.direction.east then
+    return {{x = x - 0.5, y = y}, {x = x + 0.5, y = y}}
+  elseif direction == defines.direction.south then
+    return {{x = x, y = y - 0.5}, {x = x, y = y + 0.5}}
+  elseif direction == defines.direction.west then
+    return {{x = x + 0.5, y = y}, {x = x - 0.5, y = y}}
+  end
+  return {{x = x, y = y + 0.5}, {x = x, y = y - 0.5}}
+end
 
 --- BFS through fluidbox connections starting from a hidden network pipe.
 --- Returns network_id, over_extended.
@@ -497,6 +514,60 @@ function M.delete_pneumatic_supports(entity)
   storage.tube_network_dirty = true
 end
 
+function M.add_tube_pump_supports(entity)
+  if not entity or not entity.valid or entity.name ~= C.TUBE_PUMP_NAME then return end
+  M.ensure_storage()
+  entity.active = false
+  local ports = {}
+  for index, position in ipairs(tube_pump_ports(entity)) do
+    local port_name = "tube-pump-port-" .. (index == 2 and entity.direction or (entity.direction + 8) % 16)
+    local existing = entity.surface.find_entities_filtered{
+      name = port_name, position = position, radius = 0.2,
+    }[1]
+    local pipe = existing or entity.surface.create_entity{
+      name = port_name, position = position, force = entity.force,
+    }
+    if pipe then pipe.destructible = false end
+    ports[index] = pipe
+  end
+  storage.tube_pumps[entity.unit_number] = {entity = entity, ports = ports}
+  storage.tube_network_dirty = true
+end
+
+function M.refresh_tube_pump_supports(entity)
+  if not entity or not entity.valid or entity.name ~= C.TUBE_PUMP_NAME then return end
+  M.ensure_storage()
+  local entry = storage.tube_pumps[entity.unit_number]
+  if entry then
+    for _, pipe in ipairs(entry.ports or {}) do
+      if pipe and pipe.valid then pipe.destroy() end
+    end
+  end
+  storage.tube_pumps[entity.unit_number] = nil
+  M.add_tube_pump_supports(entity)
+end
+
+function M.delete_tube_pump_supports(entity)
+  if not entity then return end
+  M.ensure_storage()
+  local entry = storage.tube_pumps[entity.unit_number]
+  if entry then
+    for _, pipe in ipairs(entry.ports or {}) do
+      if pipe and pipe.valid then pipe.destroy() end
+    end
+  end
+  -- Also clean by position for old saves or partially-created supports.
+  if entity.surface then
+    for _, position in ipairs(tube_pump_ports(entity)) do
+      for _, pipe in ipairs(entity.surface.find_entities_filtered{
+        name = {"tube-pump-port-0", "tube-pump-port-4", "tube-pump-port-8", "tube-pump-port-12"}, position = position, radius = 0.2,
+      }) do pipe.destroy() end
+    end
+  end
+  storage.tube_pumps[entity.unit_number] = nil
+  storage.tube_network_dirty = true
+end
+
 -------------------------------------------------------------------------------
 -- NETWORK DETECTION
 -------------------------------------------------------------------------------
@@ -620,6 +691,12 @@ function M.rebuild_network_cache()
   M.ensure_storage()
   local old_cache = storage.tube_network_cache or {}
   local old_anchors = {}
+  for uid, entry in pairs(storage.tube_pumps) do
+    for index = 1, 2 do
+      local net = old_cache["pump:" .. uid .. ":" .. index]
+      if net and entry.entity and entry.entity.valid then old_anchors[net] = entry.entity end
+    end
+  end
   for uid, entry in pairs(storage.tube_intakes) do
     local old_net_id = old_cache[uid]
     if old_net_id and entry.entity and entry.entity.valid then
@@ -634,6 +711,7 @@ function M.rebuild_network_cache()
   end
 
   storage.tube_network_cache = {}
+  storage.tube_pump_network_cache = {}
   storage.tube_network_disabled = {} -- [network_id] = true if over-extended
 
   -- Also clean up stale entries and rebuild network_pipe references.
@@ -682,6 +760,32 @@ function M.rebuild_network_cache()
     end
   end
 
+  for uid, entry in pairs(storage.tube_pumps) do
+    if not entry.entity or not entry.entity.valid then
+      storage.tube_pumps[uid] = nil
+    else
+      entry.ports = entry.ports or {}
+      local ports = entry.ports
+      local networks = {}
+      for index, position in ipairs(tube_pump_ports(entry.entity)) do
+        local pipe = ports[index]
+        if not pipe or not pipe.valid then
+          pipe = entry.entity.surface.find_entities_filtered{
+            name = "tube-pump-port-" .. (index == 2 and entry.entity.direction or (entry.entity.direction + 8) % 16), position = position, radius = 0.2,
+          }[1]
+          entry.ports[index] = pipe
+        end
+        if pipe and pipe.valid then
+          local net_id, over = bfs_network_id(pipe)
+          networks[index] = net_id
+          storage.tube_network_cache["pump:" .. uid .. ":" .. index] = net_id
+          if over and net_id then storage.tube_network_disabled[net_id] = true end
+        end
+      end
+      storage.tube_pump_network_cache[uid] = networks
+    end
+  end
+
   M.remap_network_state(old_cache, old_anchors)
 
   -- A topology edit can move a pool without an intake or outtake transfer, so
@@ -710,6 +814,59 @@ function M.on_pneumatic_tick()
   end
 
   local networks_changed = {} -- [net_id] = true when pool was modified
+
+  -- Pumps bridge the rear network to the front network. Native inserter
+  -- allow/block filters select forms; disabling filters allows every form.
+  for uid, entry in pairs(storage.tube_pumps) do
+    local pump = entry.entity
+    if not pump or not pump.valid then
+      storage.tube_pumps[uid] = nil
+      storage.tube_network_dirty = true
+    else
+      local source_net = storage.tube_pump_network_cache[uid]
+        and storage.tube_pump_network_cache[uid][1]
+      local destination_net = storage.tube_pump_network_cache[uid]
+        and storage.tube_pump_network_cache[uid][2]
+      if source_net and destination_net and source_net ~= destination_net
+          and not storage.tube_network_disabled[source_net]
+          and not storage.tube_network_disabled[destination_net]
+          and M.get_network_total(destination_net) < M.get_network_capacity(pump.force) then
+        local filters = {}
+        if pump.use_filters then
+          for slot = 1, pump.filter_slot_count do
+            local name = inventory_filter_name(pump.get_filter(slot))
+            if name then filters[name] = true end
+          end
+        end
+        local source_pool = storage.tube_signals[source_net]
+        if source_pool then
+          local selected_key
+          for pool_key, count in pairs(source_pool) do
+            local item_name = parse_pool_key(pool_key)
+            local allowed = not pump.use_filters or (pump.inserter_filter_mode == "blacklist" and not filters[item_name])
+              or (pump.inserter_filter_mode ~= "blacklist" and filters[item_name])
+            if count > 0 and allowed
+                and PNEUMATIC_SET[item_name] then
+              selected_key = pool_key
+              break
+            end
+          end
+          if selected_key then
+            local destination_pool = storage.tube_signals[destination_net]
+            if not destination_pool then
+              destination_pool = {}
+              storage.tube_signals[destination_net] = destination_pool
+            end
+            destination_pool[selected_key] = (destination_pool[selected_key] or 0) + 1
+            source_pool[selected_key] = source_pool[selected_key] - 1
+            if source_pool[selected_key] <= 0 then source_pool[selected_key] = nil end
+            networks_changed[source_net] = true
+            networks_changed[destination_net] = true
+          end
+        end
+      end
+    end
+  end
 
   -- A constant combinator update is visible to circuit conditions only after
   -- the engine has advanced its circuit graph.  Remember networks changed by
@@ -1037,12 +1194,14 @@ end
 function M.ensure_storage()
   storage.tube_intakes = storage.tube_intakes or {}
   storage.tube_outtakes = storage.tube_outtakes or {}
+  storage.tube_pumps = storage.tube_pumps or {}
   storage.tube_signals = storage.tube_signals or {}
   storage.tube_network_cache = storage.tube_network_cache or {}
   storage.tube_network_disabled = storage.tube_network_disabled or {}
   storage.tube_outtake_cursor = storage.tube_outtake_cursor or {}
   storage.tube_orphan_signals = storage.tube_orphan_signals or {}
   storage.tube_signal_settling = storage.tube_signal_settling or {}
+  storage.tube_pump_network_cache = storage.tube_pump_network_cache or {}
   if storage.tube_network_dirty == nil then
     storage.tube_network_dirty = true
   end
@@ -1054,10 +1213,23 @@ function M.rebuild_all()
   M.ensure_storage()
   storage.tube_intakes = {}
   storage.tube_outtakes = {}
+  -- Remove supports from earlier container-based pump prototypes, too.
+  for _, entry in pairs(storage.tube_pumps) do
+    for _, port in pairs(entry.ports or {}) do
+      if port.valid then port.destroy() end
+    end
+  end
+  storage.tube_pumps = {}
 
   -- Destroy legacy hidden inserters; tube endpoints now rely on their own inventories.
   for _, surface in pairs(game.surfaces) do
     destroy_legacy_hidden_inserters(surface)
+  end
+
+  for _, surface in pairs(game.surfaces) do
+    for _, entity in ipairs(surface.find_entities_filtered{name = C.TUBE_PUMP_NAME}) do
+      if entity.valid then M.add_tube_pump_supports(entity) end
+    end
   end
 
   for _, surface in pairs(game.surfaces) do

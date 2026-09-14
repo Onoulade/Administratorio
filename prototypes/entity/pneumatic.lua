@@ -229,6 +229,72 @@ local tube_outtake = {
   picture = tube_sprite("__administratorio__/graphics/entities/pneumatic/outtake.png"),
 }
 
+-- Tube Pump: a scripted, one-way bridge between two separate pneumatic
+-- networks. An inactive inserter supplies native rotation and multiple filters.
+local function pump_picture(filename, width, height, shift)
+  return {
+    filename = filename,
+    priority = "high",
+    width = width,
+    height = height,
+    scale = 0.5,
+    shift = shift,
+    tint = pneumatic_tint,
+  }
+end
+
+local tube_pump = {
+  type = "inserter",
+  name = "tube-pump",
+  icons = {{icon = "__base__/graphics/icons/pump.png", icon_size = 64, tint = pneumatic_tint}},
+  flags = {"placeable-neutral", "placeable-player", "player-creation"},
+  minable = {mining_time = 0.3, result = "tube-pump"},
+  placeable_by = placeable_by_item("tube-pump"),
+  fast_replaceable_group = "pneumatic-pump",
+  rotatable = true,
+  max_health = 250,
+  corpse = "small-remnants",
+  collision_box = {{-0.4, -0.9}, {0.4, 0.9}},
+  selection_box = {{-0.5, -1}, {0.5, 1}},
+  filter_count = 5,
+  energy_source = {type = "void"},
+  extension_speed = 0.01,
+  rotation_speed = 0.01,
+  pickup_position = {0, 1.5},
+  insert_position = {0, -1.5},
+  draw_held_item = false,
+  draw_inserter_arrow = true,
+  circuit_wire_max_distance = 9,
+  circuit_connector = table.deepcopy(circuit_connector_definitions["inserter"]),
+  -- Vanilla pump artwork faces opposite our scripted output direction.
+  -- Swap whole frames (including their dimensions and shifts), not the ports.
+  platform_picture = {
+    north = pump_picture("__base__/graphics/entity/pump/pump-south.png", 114, 160, util.by_pixel(12.5, -8)),
+    east = pump_picture("__base__/graphics/entity/pump/pump-west.png", 131, 111, util.by_pixel(-0.25, 1.25)),
+    south = pump_picture("__base__/graphics/entity/pump/pump-north.png", 103, 164, util.by_pixel(8, -0.85)),
+    west = pump_picture("__base__/graphics/entity/pump/pump-east.png", 130, 109, util.by_pixel(-0.5, 1.75)),
+  },
+}
+
+-- One outward connection per invisible port: adjacent halves never connect.
+local pump_port = table.deepcopy(pneumatic_hidden_network_pipe)
+pump_port.name = "tube-pump-port"
+for key in pairs(pump_port.pictures) do
+  pump_port.pictures[key] = {filename = "__core__/graphics/empty.png", width = 1, height = 1}
+end
+pump_port.fluid_box.pipe_connections = {
+  {direction = defines.direction.north, position = {0, 0}, connection_category = "pneumatic-forms"},
+}
+pump_port.fluid_box.pipe_covers = nil
+pump_port.pipe_covers = nil
+-- Pipe entities do not rotate at runtime, so each port orientation is explicit.
+for _, direction in ipairs({0, 4, 8, 12}) do
+  local oriented = table.deepcopy(pump_port)
+  oriented.name = "tube-pump-port-" .. direction
+  oriented.fluid_box.pipe_connections[1].direction = direction
+  data:extend({oriented})
+end
+
 -- Hidden Constant Combinator for tube network circuit signals
 local tube_network_combinator = {
   type = "constant-combinator",
@@ -279,6 +345,6 @@ tube_intake_network_port.circuit_wire_connection_points = {
 
 data:extend({
   pneumatic_pipe, pneumatic_underground, pneumatic_hidden_network_pipe,
-  tube_intake, tube_outtake,
+  tube_intake, tube_outtake, tube_pump,
   tube_network_combinator, tube_intake_network_port,
 })
