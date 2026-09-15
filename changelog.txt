@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.12
+Date: 2026-09-15
+  Bugfixes:
+    - group administrative science with science packs
+  Changes:
+    - Fix Space Age office workforce bootstrap
+    - Prevent protests at field offices
+---------------------------------------------------------------------------------------------------
 Version: 0.6.11
 Date: 2026-09-14
   Features:
