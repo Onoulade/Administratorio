@@ -51,7 +51,10 @@ if space_age_enabled then
     subgroup = "admin-biter-buildings", order = "a-f",
     enabled = false,
     ingredients = {
-      {type="item", name="office-desk", amount=2},
+      -- The Field Office is the temporary workforce bridge.  It can draft
+      -- the first Job Offer and resolutions without a permanent worker, so
+      -- it must be the prerequisite for forming that first permanent worker.
+      {type="item", name="field-office", amount=1},
       {type="item", name="printer-t1", amount=1},
       {type="item", name="electronic-circuit", amount=20},
       {type="item", name="construction-permit", amount=2},
@@ -77,19 +80,16 @@ else
   })
 end
 
--- Space Age recruits an enrolled biter first and only turns it into a usable
--- worker at the Formation Center.  Requiring a worker to build the office
--- desk would therefore make the desk -> formation center -> worker chain
--- circular.  The base game keeps the worker ingredient because its direct
--- hiring path does not use the Space Age enrollment intermediate.
+-- A permanent office is staffed infrastructure in every game mode.  On Space
+-- Age, the Field Office provides the non-permanent bootstrap: it drafts a Job
+-- Offer, resolves a citizen, and supports the Formation Center that turns the
+-- resulting enrolled biter into this first permanent worker.
 local office_desk_ingredients = {
   {type="item", name="iron-plate", amount=20},
   {type="item", name="iron-gear-wheel", amount=10},
   {type="item", name="electronic-circuit", amount=10},
+  {type="item", name=worker_item_name, amount=1},
 }
-if not space_age_enabled then
-  office_desk_ingredients[#office_desk_ingredients + 1] = {type="item", name=worker_item_name, amount=1}
-end
 
 local building_recipes = {
   -- Core Admin Buildings -> admin-biter-buildings

@@ -503,7 +503,6 @@ data:extend({
     icon = "__base__/graphics/technology/worker-robots-speed.png",
     icon_size = 256,
     effects = {
-      {type = "unlock-recipe", recipe = "job-offer-production"},
       {type = "unlock-recipe", recipe = "worker-biter-formation"},
     },
     -- Basic workers are the bootstrap for specialist training and must be
@@ -1547,12 +1546,13 @@ data:extend({
   },
 })
 
--- In Space Age the employment office cannot make a resolution office until
--- the Formation Center has produced the first machine-usable worker.  Keep
--- the office unlock aligned with that actual provider instead of exposing a
--- recipe that is impossible to craft at biter-employment.
+-- The Field Office can draft the first Job Offer and resolutions before a
+-- permanent worker exists, so Biter Employment must unlock that bootstrap.
+-- The staffed Resolution Office itself remains delayed until Worker Formation:
+-- it is not needed for the first hire, and cannot be constructed until the
+-- resulting worker exists.
+add_tech_unlock("biter-employment", "job-offer-production")
 remove_tech_unlock("biter-employment", "resolution-office")
-remove_tech_unlock("biter-employment", "job-offer-production")
 add_tech_unlock("worker-formation", "resolution-office")
 
 -- The regulated quantum-processor recipe consumes the unified charter made

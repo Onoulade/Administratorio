@@ -521,11 +521,13 @@ test("worker-biter exists as the enrolled-to-workforce intermediate", function()
     "worker formation should contain only the enrollee and provisional approval")
 end)
 
-test("Space Age office desks keep the workforce bootstrap acyclic", function()
-  assert_true(not has_ingredient(recipes["office-desk"], "biter-worker"),
-    "Space Age office desks must not require the worker they help produce")
-  assert_true(has_ingredient(recipes["formation-center"], "office-desk"),
-    "the Formation Center should still be built from office desks")
+test("Space Age office desks are permanently staffed without blocking the workforce bootstrap", function()
+  assert_true(has_ingredient(recipes["office-desk"], "worker-biter"),
+    "Space Age office desks should require a permanent biter worker")
+  assert_true(has_ingredient(recipes["formation-center"], "field-office"),
+    "the Formation Center should use the Field Office workforce bridge")
+  assert_true(not has_ingredient(recipes["formation-center"], "office-desk"),
+    "the Formation Center must not depend on the staffed office it helps bootstrap")
 end)
 
 test("Space Age workforce output is accepted by employment recipes", function()
@@ -546,15 +548,15 @@ test("Space Age workforce output is accepted by employment recipes", function()
   end
 end)
 
-test("Space Age resolution office unlock waits for the first worker", function()
+test("Space Age Biter Employment unlocks the Job Offer bootstrap", function()
   local employment = data.raw.technology["biter-employment"]
   local formation = data.raw.technology["worker-formation"]
   assert_true(employment ~= nil)
   assert_true(formation ~= nil)
   assert_true(not has_unlock(employment, "resolution-office"))
-  assert_true(not has_unlock(employment, "job-offer-production"))
+  assert_true(has_unlock(employment, "job-offer-production"))
   assert_true(has_unlock(formation, "resolution-office"))
-  assert_true(has_unlock(formation, "job-offer-production"))
+  assert_true(not has_unlock(formation, "job-offer-production"))
 end)
 
 test("colored paperwork adds one-step fast tracks for every complaint", function()
@@ -1028,7 +1030,10 @@ test("workforce progression is split by role and orbital scope", function()
   assert_true(specialized ~= nil, "specialized-formation missing")
   assert_true(orbital ~= nil, "orbital-employment-infrastructure missing")
   assert_true(compliance ~= nil, "orbital-compliance-systems missing")
-  assert_true(tech_unlocks_recipe(worker, "job-offer-production"), "worker-formation should unlock job-offer-production")
+  assert_true(tech_unlocks_recipe(data.raw.technology["biter-employment"], "job-offer-production"),
+    "biter-employment should unlock job-offer-production")
+  assert_true(not tech_unlocks_recipe(worker, "job-offer-production"),
+    "worker-formation should not delay the Job Offer bootstrap")
   assert_true(tech_unlocks_recipe(worker, "worker-biter-formation"), "worker-formation should unlock worker-biter-formation")
   assert_true(not tech_unlocks_recipe(worker, "clerical-trainee-formation"),
     "worker-formation should not expose clerical training before MMMM briefings exist")
