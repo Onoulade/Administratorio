@@ -91,6 +91,13 @@ test("obstruction attacks include buildings but permanently exclude transport in
   assert_true(not set["inserter"], "inserters should never be obstruction attack targets")
 end)
 
+test("field offices are protected from protests", function()
+  local protest_targets = load_protest_targets(nil)
+  local protected = protest_targets.get_protected_names()
+
+  assert_true(protected["field-office"], "field offices should never be protest targets")
+end)
+
 print(("Protest target tests: %d passed, %d failed"):format(passed, failed))
 if failed > 0 then
   for _, err in ipairs(errors) do
