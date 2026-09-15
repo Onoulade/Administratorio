@@ -1,4 +1,16 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.11
+Date: 2026-09-14
+  Features:
+    - gate evolution behind complaint milestones
+  Bugfixes:
+    - recover blocked worker dispatch
+    - recover workers from unreachable approach points
+  Internal:
+    - verify milestone resolution supply chains
+  Changes:
+    - Add rotatable filtered tube pump with corrected vanilla artwork
+---------------------------------------------------------------------------------------------------
 Version: 0.6.10
 Date: 2026-09-06
   Changes:
