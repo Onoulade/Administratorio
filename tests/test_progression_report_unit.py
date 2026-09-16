@@ -79,6 +79,65 @@ def test_building_provider_cycle_is_reported_as_unresolvable():
     } in findings
 
 
+def test_building_ingredient_unlocked_only_by_descendant_is_reported():
+    data_raw = {
+        "item": {
+            "office-desk": {
+                "type": "item",
+                "subgroup": "admin-buildings",
+                "place_result": "office-desk",
+            },
+            "worker-biter": {
+                "type": "item",
+                "subgroup": "admin-biter-training",
+            },
+        },
+        "character": {
+            "character": {"crafting_categories": ["crafting"]},
+        },
+        "technology": {
+            "biter-employment": {
+                "effects": [{"type": "unlock-recipe", "recipe": "office-desk"}],
+            },
+            "worker-formation": {
+                "prerequisites": ["biter-employment"],
+                "effects": [
+                    {"type": "unlock-recipe", "recipe": "worker-biter-formation"}
+                ],
+            },
+        },
+        "recipe": {
+            "office-desk": {
+                "enabled": False,
+                "ingredients": [
+                    {"type": "item", "name": "worker-biter", "amount": 1}
+                ],
+                "results": [{"type": "item", "name": "office-desk", "amount": 1}],
+            },
+            "worker-biter-formation": {
+                "enabled": False,
+                "ingredients": [],
+                "results": [{"type": "item", "name": "worker-biter", "amount": 1}],
+            },
+        },
+        "assembling-machine": {},
+        "tool": {},
+    }
+
+    analyzer = progression_report.ProgressionAnalyzer(data_raw)
+
+    assert analyzer.building_provider_dependency_findings() == [
+        {
+            "type": "requires_descendant_provider",
+            "technology": "biter-employment",
+            "recipe": "office-desk",
+            "building": "office-desk",
+            "ingredient": "worker-biter",
+            "delayed_resolution": {"technology": "worker-formation"},
+        }
+    ]
+
+
 def test_science_pack_bootstrap_gap_is_reported_transitively():
     # This mirrors Factorio's final post-inheritance prototypes: the worker
     # bootstrap's blue-pack requirement also makes the specialist training
@@ -428,6 +487,7 @@ def test_direct_unlock_reports_only_exact_ancestor_recipe_duplicates():
 
 if __name__ == "__main__":
     test_building_provider_cycle_is_reported_as_unresolvable()
+    test_building_ingredient_unlocked_only_by_descendant_is_reported()
     test_science_pack_bootstrap_gap_is_reported_transitively()
     test_unlocked_recipe_machine_cycles_are_not_masked_by_internal_recipes()
     test_item_reachability_distinguishes_runtime_and_ui_items_from_orphans()

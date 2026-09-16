@@ -589,9 +589,11 @@ test("worker-biter exists as the enrolled-to-workforce intermediate", function()
     "worker formation should contain only the enrollee and provisional approval")
 end)
 
-test("Space Age office desks are permanently staffed without blocking the workforce bootstrap", function()
-  assert_true(has_ingredient(recipes["office-desk"], "worker-biter"),
-    "Space Age office desks should require a permanent biter worker")
+test("Space Age office desks use the ordinary hire available at their unlock", function()
+  assert_true(has_ingredient(recipes["office-desk"], "enrolled-biter"),
+    "Space Age office desks should require the enrolled biter produced by ordinary hiring")
+  assert_true(not has_ingredient(recipes["office-desk"], "worker-biter"),
+    "Space Age office desks must not require the trained biter unlocked by Worker Formation")
   assert_true(has_ingredient(recipes["formation-center"], "field-office"),
     "the Formation Center should use the Field Office workforce bridge")
   assert_true(not has_ingredient(recipes["formation-center"], "office-desk"),

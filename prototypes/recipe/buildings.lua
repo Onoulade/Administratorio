@@ -2,6 +2,7 @@ local feature_flags = require("feature_flags")
 local planets = require("prototypes.shared.space_age_planets")
 local space_age_enabled = feature_flags.space_age_enabled()
 local worker_item_name = "worker-biter"
+local office_staff_item_name = space_age_enabled and "enrolled-biter" or worker_item_name
 
 local function entity_recipe(name, recipe)
   recipe.name = name
@@ -80,15 +81,15 @@ else
   })
 end
 
--- A permanent office is staffed infrastructure in every game mode.  On Space
--- Age, the Field Office provides the non-permanent bootstrap: it drafts a Job
--- Offer, resolves a citizen, and supports the Formation Center that turns the
--- resulting enrolled biter into this first permanent worker.
+-- A permanent office is staffed infrastructure in every game mode. Space Age
+-- hiring first produces an enrolled biter, so the office must consume that
+-- ordinary hire at Biter Employment rather than the trained worker unlocked
+-- later by Worker Formation. Base mode hires worker-biter directly.
 local office_desk_ingredients = {
   {type="item", name="iron-plate", amount=20},
   {type="item", name="iron-gear-wheel", amount=10},
   {type="item", name="electronic-circuit", amount=10},
-  {type="item", name=worker_item_name, amount=1},
+  {type="item", name=office_staff_item_name, amount=1},
 }
 
 local building_recipes = {
