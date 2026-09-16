@@ -124,7 +124,12 @@ local technologies = {
   ["administrative-science-research"] = {type = "technology", name = "administrative-science-research", effects = {}},
   ["metallurgic-science-pack"] = {type = "technology", name = "metallurgic-science-pack", effects = {}},
   ["foundry"] = {type = "technology", name = "foundry", effects = {{type = "unlock-recipe", recipe = "foundry"}}, prerequisites = {}},
-  ["calcite-processing"] = {type = "technology", name = "calcite-processing", effects = {}},
+  ["calcite-processing"] = {
+    type = "technology",
+    name = "calcite-processing",
+    effects = {},
+    research_trigger = {type = "mine-entity", entity = "calcite"},
+  },
   ["printing-technology"] = {type = "technology", name = "printing-technology", effects = {}},
   ["industrial-propaganda"] = {type = "technology", name = "industrial-propaganda", effects = {}},
   ["corporate-hospitality"] = {type = "technology", name = "corporate-hospitality", effects = {}},
@@ -469,6 +474,69 @@ local function tech_depends_on_or_equals(technology_name, prerequisite_name, see
   end
   return false
 end
+
+test("recipes consuming auto-mined resources unlock after their mining technology", function()
+  local mining_technology_by_item = {}
+
+  local function add_mined_item(technology_name, item_name)
+    if not item_name then return end
+    mining_technology_by_item[item_name] = mining_technology_by_item[item_name] or {}
+    table.insert(mining_technology_by_item[item_name], technology_name)
+  end
+
+  for technology_name, technology in pairs(technologies) do
+    local trigger = technology.research_trigger
+    if trigger and trigger.type == "mine-entity" and trigger.entity then
+      local resource = data.raw.resource and data.raw.resource[trigger.entity]
+      local minable = resource and resource.minable
+      if minable and minable.result then
+        add_mined_item(technology_name, minable.result)
+      elseif minable and minable.results then
+        for _, result in ipairs(minable.results) do
+          add_mined_item(technology_name, result.name or result[1])
+        end
+      else
+        -- The lightweight fixture does not load vanilla resource prototypes;
+        -- Space Age's native resource and item share a name in that case.
+        add_mined_item(technology_name, trigger.entity)
+      end
+    end
+  end
+
+  local recipe_unlockers = {}
+  for technology_name, technology in pairs(technologies) do
+    for _, effect in ipairs(technology.effects or {}) do
+      if effect.type == "unlock-recipe" then
+        recipe_unlockers[effect.recipe] = recipe_unlockers[effect.recipe] or {}
+        table.insert(recipe_unlockers[effect.recipe], technology_name)
+      end
+    end
+  end
+
+  local checked = 0
+  for recipe_name, recipe in pairs(recipes) do
+    if not recipe.hidden then
+      for _, ingredient in ipairs(recipe.ingredients or {}) do
+        local ingredient_name = ingredient.name or ingredient[1]
+        local mining_technologies = mining_technology_by_item[ingredient_name]
+        if mining_technologies then
+          for _, unlocker_name in ipairs(recipe_unlockers[recipe_name] or {}) do
+            for _, mining_technology_name in ipairs(mining_technologies) do
+              assert_true(tech_depends_on_or_equals(unlocker_name, mining_technology_name),
+                recipe_name .. " unlocks before mining " .. ingredient_name .. " via " .. unlocker_name)
+            end
+          end
+          if #(recipe_unlockers[recipe_name] or {}) > 0 then
+            checked = checked + 1
+          end
+          break
+        end
+      end
+    end
+  end
+
+  assert_true(checked > 0, "the auto-mined resource unlock-order audit should cover at least one unlocked recipe")
+end)
 
 test("couriers, cannon, waiver, and bureau unlock only after their real inputs", function()
   local couriers = assert(technologies["egg-courier-formation"], "egg courier technology missing")
@@ -829,6 +897,7 @@ test("planetary inks are owned by their own pre-science bootstrap technologies",
     "blank-cyan-form-production",
     "permit-draft",
     "inspection-docket",
+    "dubious-data-analysis-vulcanus",
   }) do
     assert_true(tech_unlocks_recipe(cyan_ink, recipe_name), "cyan-ink-production should unlock " .. recipe_name)
     assert_true(not tech_unlocks_recipe(fulgora, recipe_name),
@@ -864,14 +933,13 @@ test("vulcanus early bootstrap supplies inputs, not duplicated finished paperwor
   local propaganda = technologies["industrial-propaganda"]
   assert_true(calcite ~= nil, "calcite-processing missing")
   assert_true(propaganda ~= nil, "industrial-propaganda missing")
-  assert_true(tech_unlocks_recipe(calcite, "dubious-data-analysis-vulcanus"), "calcite-processing should unlock dubious-data-analysis-vulcanus")
   assert_true(tech_unlocks_recipe(calcite, "paper-production-vulcanus"), "calcite-processing should unlock paper-production-vulcanus")
   assert_true(tech_unlocks_recipe(calcite, "carbon-offset-certificate-basic-vulcanus"), "calcite-processing should unlock carbon-offset-certificate-basic-vulcanus")
   assert_true(has_ingredient(recipes["carbon-offset-certificate-basic-vulcanus"], "blank-form"),
     "Vulcanus certificates should retain a real paperwork cost")
   assert_eq(recipes["carbon-offset-certificate-basic-vulcanus"].energy_required, 3,
     "Vulcanus certificates should be slower than the canonical bootstrap route")
-  assert_true(tech_unlocks_recipe(propaganda, "redundant-rubble-recovery-vulcanus"), "industrial-propaganda should unlock the local rubble bridge")
+  assert_true(tech_unlocks_recipe(calcite, "redundant-rubble-recovery-vulcanus"), "calcite-processing should unlock the local rubble bridge")
   assert_eq(get_result_amount(recipes["redundant-rubble-recovery-vulcanus"], "redundant-rubble"), 5,
     "the rubble bridge should make the generic paperwork chain possible")
   assert_eq(recipes["provisional-approval-vulcanus"], nil, "Vulcanus should use the canonical provisional approval recipe")
@@ -966,9 +1034,7 @@ end)
 
 test("vulcanus chemistry unlocks local stimulant and paper shortcuts", function()
   local calcite = technologies["calcite-processing"]
-  local propaganda = technologies["industrial-propaganda"]
   assert_true(calcite ~= nil, "calcite-processing missing")
-  assert_true(propaganda ~= nil, "industrial-propaganda missing")
   for _, recipe_name in ipairs({
     "liquid-stimulant-production",
     "liquid-coffee-vulcanus",
@@ -977,11 +1043,8 @@ test("vulcanus chemistry unlocks local stimulant and paper shortcuts", function(
   }) do
     assert_true(tech_unlocks_recipe(calcite, recipe_name), "calcite-processing should unlock " .. recipe_name)
   end
-  for _, recipe_name in ipairs({
-    "refined-nonsense-production-vulcanus",
-  }) do
-    assert_true(tech_unlocks_recipe(propaganda, recipe_name), "industrial-propaganda should unlock " .. recipe_name)
-  end
+  assert_true(tech_unlocks_recipe(calcite, "refined-nonsense-production-vulcanus"),
+    "calcite-processing should unlock refined-nonsense-production-vulcanus")
   for _, recipe_name in ipairs({
     "liquid-stimulant-production",
     "liquid-coffee-vulcanus",
