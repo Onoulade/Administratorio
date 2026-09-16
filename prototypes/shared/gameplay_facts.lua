@@ -18,6 +18,10 @@ M.admin_station = {
   capacity_technology_prefix = "admin-station-capacity-",
 }
 
+M.field_office = {
+  worker_entity = "field-office-worker",
+}
+
 M.biter_station = {
   inventory_size = 20,
   money_slots = 1,

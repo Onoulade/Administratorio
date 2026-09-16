@@ -11,6 +11,13 @@ local function assert_true(value, message) if not value then error(message or "a
 local function assert_eq(actual, expected, message)
   if actual ~= expected then error((message or "") .. " - expected " .. tostring(expected) .. ", got " .. tostring(actual), 2) end
 end
+local function mask_has_layer(mask, layer)
+  if mask.layers then return mask.layers[layer] == true end
+  for _, name in ipairs(mask) do
+    if name == layer then return true end
+  end
+  return false
+end
 
 local mod_root = debug.getinfo(1, "S").source:match("@(.*/)"):gsub("tests/$", "")
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
@@ -22,6 +29,13 @@ util = {table = {deepcopy = function(value)
   return copy
 end}}
 kg, grams, tons = 1, 0.001, 1000
+package.preload["collision-mask-util"] = function()
+  return {
+    get_default_mask = function()
+      return {layers = {item = true, object = true, player = true, water_tile = true}}
+    end,
+  }
+end
 
 local function ingredient_names(recipe)
   local names = {}
@@ -104,11 +118,32 @@ test("rocket weights apply defaults and explicit overrides", function()
   assert_eq(data.raw.item["construction-work-order"].weight, 3 * kg, "weight pass should be idempotent")
 end)
 
-test("collision masks add the admin layer and module categories without duplication", function()
+test("collision masks separate worker obstacles from passable infrastructure", function()
   local masks = require("prototypes.final_fixes.collision_masks")
   data = {raw = {
     item = {}, ["module-category"] = {speed = {}, productivity = {}},
     chest = {box = {name = "box", type = "container", collision_mask = {"item"}, collision_box = {{-1, -1}, {1, 1}}, module_slots = 1}},
+    ["assembling-machine"] = {
+      machine = {name = "machine", type = "assembling-machine", collision_mask = {"item", "object"}, collision_box = {{-1, -1}, {1, 1}}},
+      default_mask_machine = {name = "default-mask-machine", type = "assembling-machine", collision_box = {{-1, -1}, {1, 1}}},
+    },
+    ["electric-pole"] = {
+      pole = {name = "pole", type = "electric-pole", collision_mask = {"object"}, collision_box = {{-0.2, -0.2}, {0.2, 0.2}}},
+    },
+    inserter = {
+      inserter = {name = "inserter", type = "inserter", collision_mask = {"object"}, collision_box = {{-0.2, -0.2}, {0.2, 0.2}}},
+    },
+    ["transport-belt"] = {
+      belt = {name = "belt", type = "transport-belt", collision_mask = {"object"}, collision_box = {{-0.4, -0.4}, {0.4, 0.4}}},
+    },
+    container = {
+      station = {name = "biter-station", type = "container", collision_mask = {"administratorio_station_footprint"}, collision_box = {{-2, -2}, {2, 2}}},
+      biterport = {name = "biterport", type = "container", collision_mask = {"administratorio_station_footprint"}, collision_box = {{-2, -2}, {2, 2}}},
+      admin = {name = "admin-station", type = "container", collision_mask = {"administratorio_station_footprint"}, collision_box = {{-4, -4}, {4, 4}}},
+    },
+    furnace = {
+      bureau = {name = "capture-bureau", type = "furnace", collision_mask = {"administratorio_station_footprint"}, collision_box = {{-4, -4}, {4, 4}}},
+    },
     character = {character = {name = "character", collision_mask = {"player"}, collision_box = {{-1, -1}, {1, 1}}}},
     tile = {
       water = {name = "water", collision_mask = {layers = {water_tile = true}}},
@@ -117,6 +152,16 @@ test("collision masks add the admin layer and module categories without duplicat
   }}
   masks.apply(data, true)
   assert_true(data.raw.chest.box.collision_mask.layers.administratorio_station_footprint)
+  assert_true(data.raw.chest.box.collision_mask.layers.administratorio_worker_obstacle)
+  assert_true(data.raw["assembling-machine"].machine.collision_mask.layers.administratorio_worker_obstacle)
+  assert_true(data.raw["assembling-machine"].default_mask_machine.collision_mask.layers.administratorio_worker_obstacle)
+  assert_true(not mask_has_layer(data.raw["electric-pole"].pole.collision_mask, "administratorio_worker_obstacle"))
+  assert_true(not mask_has_layer(data.raw.inserter.inserter.collision_mask, "administratorio_worker_obstacle"))
+  assert_true(not mask_has_layer(data.raw["transport-belt"].belt.collision_mask, "administratorio_worker_obstacle"))
+  assert_true(not mask_has_layer(data.raw.container.station.collision_mask, "administratorio_worker_obstacle"))
+  assert_true(not mask_has_layer(data.raw.container.biterport.collision_mask, "administratorio_worker_obstacle"))
+  assert_true(not mask_has_layer(data.raw.container.admin.collision_mask, "administratorio_worker_obstacle"))
+  assert_true(not mask_has_layer(data.raw.furnace.bureau.collision_mask, "administratorio_worker_obstacle"))
   assert_true(data.raw.tile.water.collision_mask.layers.administratorio_worker_terrain)
   assert_true(not data.raw.tile.dirt.collision_mask.layers.administratorio_worker_terrain)
   assert_eq(#data.raw.chest.box.allowed_module_categories, 2)

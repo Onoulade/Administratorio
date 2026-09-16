@@ -251,6 +251,8 @@ test("field office summons workers during the night", function()
   field_office.update(0)
 
   assert_true(surface.created_entities[1] ~= nil, "nighttime office should summon a worker")
+  assert_eq(surface.created_entities[1].name, C.FIELD_OFFICE_WORKER_ENTITY_NAME,
+    "field-office commuters should use the factory-pathing worker prototype")
   assert_eq(storage.field_office_state[office.unit_number].phase, "calling",
     "nighttime office should enter the calling phase")
   assert_eq(office.custom_status.label[1], "gui.field-office-calling",

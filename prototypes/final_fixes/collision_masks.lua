@@ -6,6 +6,7 @@ local M = {}
 
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
 local WORKER_TERRAIN_COLLISION_LAYER = "administratorio_worker_terrain"
+local WORKER_OBSTACLE_COLLISION_LAYER = "administratorio_worker_obstacle"
 local NIGHT_WORK_BUILDINGS = {
   ["office-desk"] = true,
   ["corporate-breakroom"] = true,
@@ -49,6 +50,41 @@ local ADMIN_STATION_EXCLUDED_FLAGS = {
   ["not-on-map"] = true,
   ["placeable-off-grid"] = true,
 }
+local WORKER_PASSABLE_NAMES = {
+  -- These buildings use hidden blockers to model walls while keeping their
+  -- waiting/work areas navigable to managed biters.
+  ["admin-station"] = true,
+  ["capture-bureau"] = true,
+  ["biter-station"] = true,
+  ["biterport"] = true,
+  ["biterport-placement-preview"] = true,
+}
+local WORKER_PASSABLE_TYPES = {
+  ["character"] = true, ["combat-robot"] = true, ["construction-robot"] = true,
+  ["corpse"] = true, ["entity-ghost"] = true, ["explosion"] = true,
+  ["fire"] = true, ["highlight-box"] = true, ["item-entity"] = true,
+  ["logistic-robot"] = true, ["optimized-decorative"] = true, ["particle"] = true,
+  ["particle-source"] = true, ["projectile"] = true, ["rocket-silo-rocket"] = true,
+  ["segment"] = true, ["segmented-unit"] = true, ["smoke"] = true,
+  ["smoke-with-trigger"] = true, ["speech-bubble"] = true, ["spider-leg"] = true,
+  ["spider-unit"] = true, ["stream"] = true, ["tile-ghost"] = true,
+  ["unit"] = true, ["resource"] = true, ["fish"] = true,
+
+  -- Narrow factory infrastructure is intentionally traversable.
+  ["transport-belt"] = true, ["underground-belt"] = true, ["splitter"] = true,
+  ["loader"] = true, ["loader-1x1"] = true, ["linked-belt"] = true,
+  ["lane-splitter"] = true, ["inserter"] = true, ["electric-pole"] = true,
+  ["land-mine"] = true, ["display-panel"] = true,
+
+  -- Workers may cross rails, but the train collision layer still blocks trains.
+  ["straight-rail"] = true, ["curved-rail-a"] = true, ["curved-rail-b"] = true,
+  ["half-diagonal-rail"] = true, ["elevated-straight-rail"] = true,
+  ["elevated-curved-rail-a"] = true, ["elevated-curved-rail-b"] = true,
+  ["elevated-half-diagonal-rail"] = true, ["rail-ramp"] = true,
+  ["rail-support"] = true, ["legacy-straight-rail"] = true,
+  ["legacy-curved-rail"] = true, ["rail-signal"] = true,
+  ["rail-chain-signal"] = true,
+}
 
 local function collision_box_is_zero(box)
   return box and box[1] and box[2]
@@ -78,6 +114,26 @@ local function normalize_collision_mask(mask)
   return normalized
 end
 
+local collision_mask_util
+local default_collision_masks = {}
+local function default_collision_mask_for(prototype_type)
+  if not prototype_type then return nil end
+  local cached = default_collision_masks[prototype_type]
+  if cached ~= nil then return cached or nil end
+
+  collision_mask_util = collision_mask_util or require("collision-mask-util")
+  local ok, mask = pcall(collision_mask_util.get_default_mask, prototype_type)
+  default_collision_masks[prototype_type] = ok and mask or false
+  return ok and mask or nil
+end
+
+local function materialize_collision_mask(prototype)
+  if prototype.collision_mask then
+    return normalize_collision_mask(prototype.collision_mask)
+  end
+  return normalize_collision_mask(default_collision_mask_for(prototype.type))
+end
+
 local function has_excluded_flag(prototype)
   for _, flag in ipairs(prototype.flags or {}) do
     if ADMIN_STATION_EXCLUDED_FLAGS[flag] then return true end
@@ -93,6 +149,16 @@ local function should_add_admin_station_layer(prototype)
     and prototype.collision_mask
     and prototype.collision_box
     and not collision_box_is_zero(prototype.collision_box)
+end
+
+local function should_add_worker_obstacle_layer(prototype)
+  return prototype
+    and not WORKER_PASSABLE_NAMES[prototype.name]
+    and not WORKER_PASSABLE_TYPES[prototype.type]
+    and not has_excluded_flag(prototype)
+    and prototype.collision_box
+    and not collision_box_is_zero(prototype.collision_box)
+    and (prototype.collision_mask or default_collision_mask_for(prototype.type))
 end
 
 local function build_standard_module_categories(data)
@@ -131,6 +197,11 @@ function M.apply(data, working_hours_enabled)
       if should_add_admin_station_layer(prototype) then
         prototype.collision_mask = normalize_collision_mask(prototype.collision_mask)
         prototype.collision_mask.layers[ADMIN_STATION_COLLISION_LAYER] = true
+      end
+
+      if should_add_worker_obstacle_layer(prototype) then
+        prototype.collision_mask = materialize_collision_mask(prototype)
+        prototype.collision_mask.layers[WORKER_OBSTACLE_COLLISION_LAYER] = true
       end
 
       if prototype and type(prototype.module_slots) == "number" and prototype.module_slots > 0 then

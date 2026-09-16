@@ -12,6 +12,7 @@ local M = {}
 local BITER_FORCE_NAME = "administratorio-biters"
 local SPAWNER_TYPES = {"unit-spawner"}
 local ENTITY_NAME = "field-office"
+local WORKER_ENTITY_NAME = C.FIELD_OFFICE_WORKER_ENTITY_NAME or "field-office-worker"
 local CRAFTS_PER_BITER = 2
 local PLACEMENT_RANGE_COLOR = {r = 0.25, g = 0.85, b = 0.35, a = 0.75}
 local PLACEMENT_NEST_COLOR = {r = 1.0, g = 0.45, b = 0.25, a = 0.9}
@@ -347,11 +348,11 @@ local function spawn_worker_biter(office, spawner)
   end
 
   local surface = office.surface
-  local spawn_pos = surface.find_non_colliding_position("small-biter", spawner.position, 5, 0.5)
+  local spawn_pos = surface.find_non_colliding_position(WORKER_ENTITY_NAME, spawner.position, 5, 0.5)
   if not spawn_pos then return nil end
 
   local biter = surface.create_entity{
-    name = "small-biter",
+    name = WORKER_ENTITY_NAME,
     position = spawn_pos,
     force = get_biter_force(),
   }
@@ -495,7 +496,7 @@ local function recreate_missing_worker(state, office, tick)
     or nil
   if not position then return nil end
 
-  local entity_name = state.worker_entity_name or "small-biter"
+  local entity_name = state.worker_entity_name or WORKER_ENTITY_NAME
   local spawn_pos = surface.find_non_colliding_position(entity_name, position, 2, 0.25) or position
   local biter = surface.create_entity{
     name = entity_name,

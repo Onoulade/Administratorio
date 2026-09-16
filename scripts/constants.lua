@@ -208,6 +208,7 @@ M.PETITION_COUNTER_BONUS_PER_EXTRA_NEST = 0.02
 M.PETITION_COUNTER_MAX_BONUS_PROGRESS_PER_SCAN = 0.08
 
 -- Field office: proximity check for nearby biter spawners
+M.FIELD_OFFICE_WORKER_ENTITY_NAME = gameplay_facts.field_office.worker_entity
 M.FIELD_OFFICE_SPAWNER_RANGE = 200    -- tiles: max distance to a biter spawner
 M.FIELD_OFFICE_PLACEMENT_PREVIEW_TICKS = 30 -- refresh held-item range overlays every 0.5 seconds
 M.FIELD_OFFICE_PLACEMENT_PREVIEW_NEST_LIMIT = 32 -- max nest markers to draw while holding a field office

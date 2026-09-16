@@ -24,6 +24,7 @@ local sound_path = "__administratorio__/sound/buildings/"
 local biter_building_icons = "__administratorio__/graphics/icons/"
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
 local WORKER_TERRAIN_COLLISION_LAYER = "administratorio_worker_terrain"
+local WORKER_OBSTACLE_COLLISION_LAYER = "administratorio_worker_obstacle"
 local OFFICE_DESK_SPEED = working_hours_enabled and 1.0 or 0.75
 local BREAKROOM_SPEED = working_hours_enabled and 1.0 or 0.75
 local UNION_HQ_SPEED = working_hours_enabled and 1.0 or 0.75
@@ -408,7 +409,7 @@ local function make_hidden_wall_blocker(name, icon)
       object = true,
       player = true,
       water_tile = true,
-      [WORKER_TERRAIN_COLLISION_LAYER] = true,
+      [WORKER_OBSTACLE_COLLISION_LAYER] = true,
     }},
     selection_box = {{0, 0}, {0, 0}},
     selectable_in_game = false,
@@ -922,7 +923,12 @@ local admin_station_corner_blocker = {
   flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "placeable-off-grid"},
   max_health = 1,
   collision_box = {{-0.5, -0.5}, {0.5, 0.5}},
-  collision_mask = {layers = {object = true, player = true, water_tile = true}},
+  collision_mask = {layers = {
+    object = true,
+    player = true,
+    water_tile = true,
+    [WORKER_OBSTACLE_COLLISION_LAYER] = true,
+  }},
   selection_box = {{0, 0}, {0, 0}},
   selectable_in_game = false,
   picture = {
@@ -1268,12 +1274,16 @@ local function make_worker_biter(name, source_name, localised_name, speed_multip
   biter.collision_box = {{-0.18, -0.18}, {0.18, 0.18}}
   if factory_pathing then
     -- Employment Office workers are authorization tokens with legs, not combat
-    -- units. Let them cross ordinary factory footprints and one another so a
-    -- dense belt/inserter/pole layout cannot deadlock dispatch. A dedicated
-    -- terrain layer keeps them out of water without colliding with the Office,
-    -- while the train layer still keeps them off occupied rails.
+    -- units. Let them cross belts, inserters, poles, and one another without
+    -- walking through solid machines. Dedicated layers distinguish terrain
+    -- and machinery from the staffed buildings whose hidden blockers define
+    -- their walkable interiors. The train layer keeps workers off rolling stock.
     biter.collision_mask = {
-      layers = {[WORKER_TERRAIN_COLLISION_LAYER] = true, train = true},
+      layers = {
+        [WORKER_TERRAIN_COLLISION_LAYER] = true,
+        [WORKER_OBSTACLE_COLLISION_LAYER] = true,
+        train = true,
+      },
       not_colliding_with_itself = true,
     }
     biter.has_belt_immunity = true
@@ -1295,23 +1305,33 @@ end
 local biter_worker_t1 = make_worker_biter(gameplay_facts.biter_station.base_worker_entity, "small-biter", nil, nil, true)
 local biter_worker_t2 = make_worker_biter(gameplay_facts.biter_station.labor_efficiency[1].worker_entity, "small-biter", nil, nil, true)
 local biter_worker_t3 = make_worker_biter(gameplay_facts.biter_station.labor_efficiency[2].worker_entity, "small-biter", nil, nil, true)
+local field_office_worker = make_worker_biter(
+  gameplay_facts.field_office.worker_entity,
+  "small-biter",
+  {"entity-name.small-biter"},
+  nil,
+  true
+)
 local biterport_worker = make_worker_biter(
   gameplay_facts.biterport.base_worker_entity,
   "small-biter",
   {"entity-name.biterport-worker"},
-  1.0
+  1.0,
+  true
 )
 local biterport_worker_fast = make_worker_biter(
   gameplay_facts.biterport.worker_speed[1].worker_entity,
   "small-biter",
   {"entity-name.biterport-worker-fast"},
-  gameplay_facts.biterport.worker_speed[1].multiplier
+  gameplay_facts.biterport.worker_speed[1].multiplier,
+  true
 )
 local biterport_worker_express = make_worker_biter(
   gameplay_facts.biterport.worker_speed[2].worker_entity,
   "small-biter",
   {"entity-name.biterport-worker-express"},
-  gameplay_facts.biterport.worker_speed[2].multiplier
+  gameplay_facts.biterport.worker_speed[2].multiplier,
+  true
 )
 
 local function make_hired_biter_unit()
@@ -1379,6 +1399,7 @@ add_entity(biterport_placement_preview)
 add_entity(biter_worker_t1)
 add_entity(biter_worker_t2)
 add_entity(biter_worker_t3)
+add_entity(field_office_worker)
 add_entity(biterport_worker)
 add_entity(biterport_worker_fast)
 add_entity(biterport_worker_express)
