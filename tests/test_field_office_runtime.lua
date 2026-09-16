@@ -240,6 +240,23 @@ test("field office prototype has no module inventory", function()
     "field office must not opt into installed module effects")
 end)
 
+test("field office worker keeps vanilla biter visuals", function()
+  local file = assert(io.open(mod_root .. "prototypes/entity/admin-buildings.lua", "r"))
+  local source = file:read("*a")
+  file:close()
+
+  local managed_factory = source:match("local function make_managed_biter.-local function make_helmeted_worker_biter")
+  local helmeted_factory = source:match("local function make_helmeted_worker_biter.-local biter_worker_t1")
+  local field_worker = source:match("local field_office_worker = make_managed_biter%b()")
+  assert_true(managed_factory ~= nil, "managed biter factory should exist")
+  assert_true(not managed_factory:find("add_worker_biter_helmet_overlay", 1, true),
+    "managed pathing must not implicitly add worker visuals")
+  assert_true(helmeted_factory ~= nil and helmeted_factory:find("add_worker_biter_helmet_overlay", 1, true),
+    "helmeted workers should add their overlay explicitly")
+  assert_true(field_worker ~= nil and field_worker:find("gameplay_facts.field_office.worker_entity", 1, true),
+    "field-office commuters must use the unhelmeted managed biter factory")
+end)
+
 test("field office summons workers during the night", function()
   reset()
   local spawner = {valid = true, position = {x = 40, y = 50}}

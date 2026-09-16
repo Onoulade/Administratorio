@@ -1262,7 +1262,7 @@ local paperwork_requester_chest = make_paperwork_logistic_chest(
   {r = 0.38, g = 0.66, b = 1.0, a = 1.0}
 )
 
-local function make_worker_biter(name, source_name, localised_name, speed_multiplier, factory_pathing)
+local function make_managed_biter(name, source_name, localised_name, speed_multiplier, factory_pathing)
   local unit_table = data.raw["unit"]
   if not unit_table or not unit_table[source_name] then return nil end
   local biter = table.deepcopy(unit_table[source_name])
@@ -1289,7 +1289,6 @@ local function make_worker_biter(name, source_name, localised_name, speed_multip
     biter.has_belt_immunity = true
   end
   biter.selection_box = {{-0.35, -0.45}, {0.35, 0.25}}
-  add_worker_biter_helmet_overlay(biter)
   unit_ai_settings.apply_managed_prototype_settings(biter)
   if speed_multiplier then
     if biter.movement_speed then
@@ -1302,31 +1301,37 @@ local function make_worker_biter(name, source_name, localised_name, speed_multip
   return biter
 end
 
-local biter_worker_t1 = make_worker_biter(gameplay_facts.biter_station.base_worker_entity, "small-biter", nil, nil, true)
-local biter_worker_t2 = make_worker_biter(gameplay_facts.biter_station.labor_efficiency[1].worker_entity, "small-biter", nil, nil, true)
-local biter_worker_t3 = make_worker_biter(gameplay_facts.biter_station.labor_efficiency[2].worker_entity, "small-biter", nil, nil, true)
-local field_office_worker = make_worker_biter(
+local function make_helmeted_worker_biter(name, source_name, localised_name, speed_multiplier, factory_pathing)
+  local biter = make_managed_biter(name, source_name, localised_name, speed_multiplier, factory_pathing)
+  if biter then add_worker_biter_helmet_overlay(biter) end
+  return biter
+end
+
+local biter_worker_t1 = make_helmeted_worker_biter(gameplay_facts.biter_station.base_worker_entity, "small-biter", nil, nil, true)
+local biter_worker_t2 = make_helmeted_worker_biter(gameplay_facts.biter_station.labor_efficiency[1].worker_entity, "small-biter", nil, nil, true)
+local biter_worker_t3 = make_helmeted_worker_biter(gameplay_facts.biter_station.labor_efficiency[2].worker_entity, "small-biter", nil, nil, true)
+local field_office_worker = make_managed_biter(
   gameplay_facts.field_office.worker_entity,
   "small-biter",
   {"entity-name.small-biter"},
   nil,
   true
 )
-local biterport_worker = make_worker_biter(
+local biterport_worker = make_helmeted_worker_biter(
   gameplay_facts.biterport.base_worker_entity,
   "small-biter",
   {"entity-name.biterport-worker"},
   1.0,
   true
 )
-local biterport_worker_fast = make_worker_biter(
+local biterport_worker_fast = make_helmeted_worker_biter(
   gameplay_facts.biterport.worker_speed[1].worker_entity,
   "small-biter",
   {"entity-name.biterport-worker-fast"},
   gameplay_facts.biterport.worker_speed[1].multiplier,
   true
 )
-local biterport_worker_express = make_worker_biter(
+local biterport_worker_express = make_helmeted_worker_biter(
   gameplay_facts.biterport.worker_speed[2].worker_entity,
   "small-biter",
   {"entity-name.biterport-worker-express"},
