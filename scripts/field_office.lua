@@ -20,6 +20,7 @@ local UNREACHABLE_RETRY_TICKS = 10 * 60
 local CALLING_PROGRESS_DISTANCE_SQUARED = 0.04
 local CALLING_STUCK_TICKS = 5 * 60
 local CALLING_TIMEOUT_TICKS = 45 * 60
+local MAX_RETURN_RETRIES = 3
 local release_biter
 local set_office_status
 
@@ -65,29 +66,12 @@ local function get_biter_force()
   return game.forces[BITER_FORCE_NAME] or game.forces["neutral"]
 end
 
-local function safe_unit_parent_group(unit)
-  if not unit or not unit.valid or not unit.commandable then return nil end
-  local ok, group = pcall(function() return unit.commandable.parent_group end)
-  if ok and group and group.valid then return group end
-  return nil
-end
-
-local function safe_unit_spawner(unit)
-  if not unit or not unit.valid or not unit.commandable then return nil end
-  local ok, spawner = pcall(function() return unit.commandable.spawner end)
-  if ok and spawner and spawner.valid then return spawner end
-  return nil
-end
-
-local function release_or_destroy_returned_worker(unit)
+-- Field-office workers are freshly created by spawn_worker_biter; they are not
+-- borrowed entities with a native AI owner. Destroy them after the visible
+-- return trip to keep dispatch population-neutral and avoid idle orphans.
+local function destroy_returned_worker(unit)
   if not unit or not unit.valid then return end
-  local group = safe_unit_parent_group(unit)
-  local spawner = safe_unit_spawner(unit)
-  if group or spawner then
-    unit_ai_settings.release_as_regular_enemy(unit)
-  else
-    unit.destroy()
-  end
+  unit.destroy()
 end
 
 function M.ensure_storage()
@@ -341,6 +325,19 @@ local function find_worker_destination(surface, worker_name, office, from_positi
     or office.position
 end
 
+-- A spawner's own tile is solid, so it cannot be the exact walking target.
+-- Pick a real standing position nearby or the worker can stop outside the
+-- arrival threshold and retain its population lease forever.
+local function find_return_destination(surface, worker_name, spawner)
+  local position = surface.find_non_colliding_position(
+    worker_name,
+    spawner.position,
+    C.FIELD_OFFICE_RETURN_SEARCH_RADIUS or 6,
+    0.5
+  ) or spawner.position
+  return {x = position.x, y = position.y}
+end
+
 local function spawn_worker_biter(office, spawner)
   if not office or not office.valid or not spawner or not spawner.valid then return nil end
   if not spawner_population.can_lease_new_unit(spawner) then
@@ -542,13 +539,13 @@ release_biter = function(state, tick)
   clear_pending_path_request(state)
 
   local return_destination = nil
-  -- Command biter to walk back to spawner (or wander if spawner gone)
+  -- Command the worker to a walkable position beside its home spawner.
   if state.spawner and state.spawner.valid then
-    return_destination = {x = state.spawner.position.x, y = state.spawner.position.y}
+    return_destination = find_return_destination(state.biter.surface, state.biter.name, state.spawner)
     state.biter.commandable.set_command({
       type = defines.command.go_to_location,
       destination = return_destination,
-      radius = 3,
+      radius = C.RETURN_ARRIVAL_DISTANCE or 2.5,
       distraction = defines.distraction.none,
     })
   end
@@ -556,8 +553,8 @@ release_biter = function(state, tick)
   state.biter.active = true
   state.biter.destructible = false
 
-  -- Track until the biter actually reaches home. The timeout is only used to
-  -- refresh stale movement commands, not to delete a still-travelling worker.
+  -- Track until the worker reaches home. Stale commands are retried a few
+  -- times, then bounded cleanup prevents an unreachable trip holding a lease.
   M.ensure_storage()
   storage.field_office_releasing[state.biter.unit_number] = {
     entity = state.biter,
@@ -565,6 +562,7 @@ release_biter = function(state, tick)
     return_destination = return_destination,
     arrival_check_tick = tick + (C.RETURN_MIN_TRAVEL_TICKS or 0),
     despawn_tick = tick + C.FIELD_OFFICE_BITER_DESPAWN_TICKS,
+    retry_count = 0,
   }
 
   destroy_overlay(state)
@@ -675,8 +673,8 @@ end
 function M.update(tick, runtime_profile)
   M.ensure_storage()
 
-  -- Field Office workers are only handed back when Factorio still recognizes
-  -- a real enemy AI owner. Script-created orphan workers are removed on return.
+  -- Workers retain their nest population lease while visibly walking home.
+  -- Arrival or a bounded stale-return fallback always releases that lease.
   run_profiled(runtime_profile, "field_office_releasing", function()
     for biter_id, info in pairs(storage.field_office_releasing) do
       if not info.entity or not info.entity.valid then
@@ -686,10 +684,21 @@ function M.update(tick, runtime_profile)
           and tick >= (info.arrival_check_tick or 0)
           and distance_squared(info.entity.position, info.return_destination) <= (C.RETURN_ARRIVAL_DISTANCE or 2.5) ^ 2 then
         spawner_population.untrack_unit(biter_id)
-        release_or_destroy_returned_worker(info.entity)
+        destroy_returned_worker(info.entity)
         storage.field_office_releasing[biter_id] = nil
       elseif tick >= info.despawn_tick then
-        if info.return_destination then
+        info.retry_count = (info.retry_count or 0) + 1
+        if info.return_destination and info.retry_count <= MAX_RETURN_RETRIES then
+          -- Refresh the target in case the old standing spot became blocked.
+          -- This also repairs stale saves whose target was the solid center of
+          -- the spawner rather than a reachable position beside it.
+          if info.spawner and info.spawner.valid then
+            info.return_destination = find_return_destination(
+              info.entity.surface,
+              info.entity.name,
+              info.spawner
+            )
+          end
           info.entity.force = get_biter_force()
           info.entity.active = true
           info.entity.destructible = false
@@ -702,7 +711,7 @@ function M.update(tick, runtime_profile)
           info.despawn_tick = tick + C.FIELD_OFFICE_BITER_DESPAWN_TICKS
         else
           spawner_population.untrack_unit(biter_id)
-          release_or_destroy_returned_worker(info.entity)
+          destroy_returned_worker(info.entity)
           storage.field_office_releasing[biter_id] = nil
         end
       end

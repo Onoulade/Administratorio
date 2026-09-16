@@ -460,7 +460,7 @@ test("field office skips a full nest for a farther nest with available biters on
   assert_eq(office.custom_status.label[1], "gui.field-office-calling", "office should summon on the first attempt instead of reporting no workers available")
 end)
 
-test("released field office worker is not destroyed before reaching its spawner", function()
+test("released field office worker returns to a walkable position beside its spawner", function()
   reset()
   local spawner = {valid = true, position = {x = 40, y = 50}}
   local surface = new_surface({spawner})
@@ -479,6 +479,10 @@ test("released field office worker is not destroyed before reaching its spawner"
   field_office.update(60)
   assert_true(storage.field_office_releasing[biter.unit_number] ~= nil, "released worker should be tracked while returning")
   assert_eq(biter.destructible, false, "returning worker should be protected from incidental removal")
+  local return_info = storage.field_office_releasing[biter.unit_number]
+  assert_true(return_info.return_destination.x ~= spawner.position.x
+      or return_info.return_destination.y ~= spawner.position.y,
+    "returning worker should not be ordered into the spawner's solid center")
 
   biter.position = {x = office.position.x, y = office.position.y}
   local command_count = #biter.commands
@@ -487,10 +491,77 @@ test("released field office worker is not destroyed before reaching its spawner"
   assert_true(storage.field_office_releasing[biter.unit_number] ~= nil, "returning worker should remain tracked until arrival")
   assert_true(#biter.commands > command_count, "stale return should reissue the home command")
 
-  biter.position = {x = spawner.position.x, y = spawner.position.y}
+  biter.position = {
+    x = return_info.return_destination.x,
+    y = return_info.return_destination.y,
+  }
   field_office.update(60 + C.FIELD_OFFICE_BITER_DESPAWN_TICKS + 5)
-  assert_true(not biter.valid, "script-created worker without an enemy AI owner should be destroyed after returning")
+  assert_true(not biter.valid, "script-created worker should be destroyed after returning")
   assert_true(storage.field_office_releasing[biter.unit_number] == nil, "arrived worker should leave the releasing tracker")
+end)
+
+test("stuck returning field office worker eventually frees its nest population lease", function()
+  reset()
+  local spawner = {valid = true, position = {x = 40, y = 50}}
+  local surface = new_surface({spawner})
+  local office = new_office(surface, 6, 100)
+  field_office.track_entity(office)
+
+  field_office.update(0)
+  local biter = surface.created_entities[1]
+  biter.position = {x = office.position.x, y = office.position.y}
+  field_office.update(30)
+  office.products_finished = 2
+  field_office.update(60)
+
+  local available, used = spawner_population.get_capacity(spawner)
+  assert_eq(used, 1, "returning worker should hold its lease during the visible trip home")
+  assert_eq(available, 6)
+
+  -- Reproduce a persisted record from the affected version: it aimed at the
+  -- spawner's solid center and had no bounded-retry field yet.
+  local return_info = storage.field_office_releasing[biter.unit_number]
+  return_info.return_destination = {x = spawner.position.x, y = spawner.position.y}
+  return_info.retry_count = nil
+
+  field_office.update(60 + C.FIELD_OFFICE_BITER_DESPAWN_TICKS)
+  assert_true(return_info.return_destination.x ~= spawner.position.x
+      or return_info.return_destination.y ~= spawner.position.y,
+    "legacy return records should be redirected to a walkable position")
+
+  -- Keep the mock worker frozen far from every refreshed destination. After
+  -- the bounded retries, cleanup must remove both the entity and its lease.
+  for retry = 2, 4 do
+    field_office.update(60 + retry * C.FIELD_OFFICE_BITER_DESPAWN_TICKS)
+  end
+
+  available, used = spawner_population.get_capacity(spawner)
+  assert_true(not biter.valid, "permanently stuck returning worker should be removed")
+  assert_true(storage.field_office_releasing[biter.unit_number] == nil,
+    "stuck worker should leave the releasing tracker")
+  assert_eq(used, 0, "stuck worker cleanup should release the nest population slot")
+  assert_eq(available, 7)
+end)
+
+test("field office worker whose home nest vanished is cleaned up after one return interval", function()
+  reset()
+  local spawner = {valid = true, position = {x = 40, y = 50}}
+  local surface = new_surface({spawner})
+  local office = new_office(surface, 6, 100)
+  field_office.track_entity(office)
+
+  field_office.update(0)
+  local biter = surface.created_entities[1]
+  biter.position = {x = office.position.x, y = office.position.y}
+  field_office.update(30)
+  office.products_finished = 2
+  spawner.valid = false
+  field_office.update(60)
+
+  field_office.update(60 + C.FIELD_OFFICE_BITER_DESPAWN_TICKS)
+  assert_true(not biter.valid, "worker with no surviving home nest should be removed")
+  assert_true(storage.field_office_releasing[biter.unit_number] == nil,
+    "orphan worker should leave the releasing tracker")
 end)
 
 test("field office worker stays on site during low power", function()
