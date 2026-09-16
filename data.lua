@@ -9,12 +9,17 @@
 -- 1. AUTOPLACE CONTROLS (must be registered before resources reference them)
 -------------------------------------------------------------------------------
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
+local WORKER_TERRAIN_COLLISION_LAYER = "administratorio_worker_terrain"
 local feature_flags = require("feature_flags")
 
 data:extend({
   {
     type = "collision-layer",
     name = ADMIN_STATION_COLLISION_LAYER
+  },
+  {
+    type = "collision-layer",
+    name = WORKER_TERRAIN_COLLISION_LAYER
   },
   {
     type = "autoplace-control",

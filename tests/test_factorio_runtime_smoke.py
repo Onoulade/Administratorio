@@ -19,6 +19,7 @@ SMOKE_MOD_NAME = "administratorio-runtime-smoke"
 SCENARIO_CONTROL = r'''
 local regular_stop
 local public_stop
+local worker_station
 
 local function fail(message)
   error("Administratorio runtime smoke failure: " .. message)
@@ -42,6 +43,21 @@ script.on_init(function()
   }
   if not regular_stop or not regular_stop.valid then fail("could not create regular train stop") end
   if not public_stop or not public_stop.valid then fail("could not create public train stop") end
+
+  worker_station = surface.create_entity{
+    name = "biter-station",
+    position = {24, 0},
+    force = force,
+  }
+  if not worker_station or not worker_station.valid then fail("could not create Biter Employment Office") end
+
+  local water_tiles = {}
+  for x = 38, 42 do
+    for y = -2, 2 do
+      water_tiles[#water_tiles + 1] = {name = "water", position = {x, y}}
+    end
+  end
+  surface.set_tiles(water_tiles)
 
   regular_stop.trains_limit = 7
   public_stop.trains_limit = 7
@@ -73,6 +89,16 @@ script.on_nth_tick(30, function()
   end
   if public_stop.trains_limit ~= 7 then
     fail("public stop train limit was overwritten")
+  end
+
+  for _, worker_name in ipairs({"biter-worker-t1", "biter-worker-t2", "biter-worker-t3"}) do
+    local spawn = surface.find_non_colliding_position(worker_name, worker_station.position, 1, 0.25)
+    if not spawn then
+      fail(worker_name .. " cannot spawn inside the Biter Employment Office")
+    end
+    if surface.can_place_entity{name = worker_name, position = {40.5, 0.5}, force = game.forces.player} then
+      fail(worker_name .. " can cross water")
+    end
   end
 
   helpers.write_file("administratorio-runtime-smoke.txt", "PASS\n", false)

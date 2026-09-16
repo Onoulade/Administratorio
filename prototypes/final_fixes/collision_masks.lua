@@ -5,6 +5,7 @@
 local M = {}
 
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
+local WORKER_TERRAIN_COLLISION_LAYER = "administratorio_worker_terrain"
 local NIGHT_WORK_BUILDINGS = {
   ["office-desk"] = true,
   ["corporate-breakroom"] = true,
@@ -111,6 +112,20 @@ end
 
 function M.apply(data, working_hours_enabled)
   local standard_module_categories = build_standard_module_categories(data)
+
+  -- Employment workers ignore factory footprints, including the Employment
+  -- Office they spawn inside. Give water tiles a worker-only layer instead of
+  -- putting water_tile on the workers, which also collides with the Office.
+  for _, tile in pairs(data.raw.tile or {}) do
+    if tile.collision_mask then
+      local mask = normalize_collision_mask(tile.collision_mask)
+      if mask.layers.water_tile then
+        mask.layers[WORKER_TERRAIN_COLLISION_LAYER] = true
+      end
+      tile.collision_mask = mask
+    end
+  end
+
   for _, prototype_set in pairs(data.raw) do
     for _, prototype in pairs(prototype_set) do
       if should_add_admin_station_layer(prototype) then

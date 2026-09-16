@@ -23,6 +23,7 @@ local scrubber_graphics = entity_graphics .. "scrubber/"
 local sound_path = "__administratorio__/sound/buildings/"
 local biter_building_icons = "__administratorio__/graphics/icons/"
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
+local WORKER_TERRAIN_COLLISION_LAYER = "administratorio_worker_terrain"
 local OFFICE_DESK_SPEED = working_hours_enabled and 1.0 or 0.75
 local BREAKROOM_SPEED = working_hours_enabled and 1.0 or 0.75
 local UNION_HQ_SPEED = working_hours_enabled and 1.0 or 0.75
@@ -403,7 +404,12 @@ local function make_hidden_wall_blocker(name, icon)
     flags = {"not-on-map", "not-blueprintable", "not-deconstructable", "placeable-off-grid"},
     max_health = 1,
     collision_box = {{-0.5, -0.5}, {0.5, 0.5}},
-    collision_mask = {layers = {object = true, player = true, water_tile = true}},
+    collision_mask = {layers = {
+      object = true,
+      player = true,
+      water_tile = true,
+      [WORKER_TERRAIN_COLLISION_LAYER] = true,
+    }},
     selection_box = {{0, 0}, {0, 0}},
     selectable_in_game = false,
     picture = {
@@ -1263,10 +1269,11 @@ local function make_worker_biter(name, source_name, localised_name, speed_multip
   if factory_pathing then
     -- Employment Office workers are authorization tokens with legs, not combat
     -- units. Let them cross ordinary factory footprints and one another so a
-    -- dense belt/inserter/pole layout cannot deadlock dispatch. They still obey
-    -- water and trains, and belts cannot drag them away from their route.
+    -- dense belt/inserter/pole layout cannot deadlock dispatch. A dedicated
+    -- terrain layer keeps them out of water without colliding with the Office,
+    -- while the train layer still keeps them off occupied rails.
     biter.collision_mask = {
-      layers = {water_tile = true, train = true},
+      layers = {[WORKER_TERRAIN_COLLISION_LAYER] = true, train = true},
       not_colliding_with_itself = true,
     }
     biter.has_belt_immunity = true

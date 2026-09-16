@@ -110,9 +110,15 @@ test("collision masks add the admin layer and module categories without duplicat
     item = {}, ["module-category"] = {speed = {}, productivity = {}},
     chest = {box = {name = "box", type = "container", collision_mask = {"item"}, collision_box = {{-1, -1}, {1, 1}}, module_slots = 1}},
     character = {character = {name = "character", collision_mask = {"player"}, collision_box = {{-1, -1}, {1, 1}}}},
+    tile = {
+      water = {name = "water", collision_mask = {layers = {water_tile = true}}},
+      dirt = {name = "dirt", collision_mask = {layers = {ground_tile = true}}},
+    },
   }}
   masks.apply(data, true)
   assert_true(data.raw.chest.box.collision_mask.layers.administratorio_station_footprint)
+  assert_true(data.raw.tile.water.collision_mask.layers.administratorio_worker_terrain)
+  assert_true(not data.raw.tile.dirt.collision_mask.layers.administratorio_worker_terrain)
   assert_eq(#data.raw.chest.box.allowed_module_categories, 2)
   masks.apply(data, true)
   assert_eq(#data.raw.chest.box.allowed_module_categories, 2, "collision pass should be idempotent")
