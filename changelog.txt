@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.14
+Date: 2026-09-16
+  Bugfixes:
+    - staff offices with enrolled biters
+  Docs:
+    - refresh progression and Space Age documentation
+  Changes:
+    - Update README.md
+---------------------------------------------------------------------------------------------------
 Version: 0.6.13
 Date: 2026-09-16
   Features:
