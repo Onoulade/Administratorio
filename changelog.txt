@@ -1,4 +1,15 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.13
+Date: 2026-09-16
+  Features:
+    - improve managed biter factory pathing
+  Bugfixes:
+    - release stalled worker population leases
+    - keep field office biters unhelmeted
+    - restore biter office worker dispatch
+  Changes:
+    - Fix Space Age resource recipe unlock gates
+---------------------------------------------------------------------------------------------------
 Version: 0.6.12
 Date: 2026-09-15
   Bugfixes:
