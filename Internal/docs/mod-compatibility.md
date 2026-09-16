@@ -12,9 +12,13 @@ compat/
   factorissimo/
     data.lua                data-stage half (prototype changes)
     runtime.lua             control-stage half (remote calls, hook answers)
+  aai_loaders/
+    data.lua                loader recipe form and batch integration
 ```
 
 ## The idea
+
+The shipped integrations currently cover Factorissimo and AAI Loaders. Factorissimo adapts day/night checks inside enclosed factories and makes compatible wall pumps traversable by pneumatic-network scans. AAI Loaders receives the correct paperwork requirements and loader-specific batch multipliers. Both integrations are optional and activate only when their target mod is present.
 
 Core modules never name another mod. Instead they read a **hook point** — a
 named question with a default answer of their own:

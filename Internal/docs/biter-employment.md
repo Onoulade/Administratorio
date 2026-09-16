@@ -4,7 +4,7 @@
 
 When you resolve a biter's complaint with a **Job Offer** in the Biter Administration Desk inventory, the biter leaves as hired labor instead of paying taxpayer money.
 
-With Space Age enabled, hiring has one extra Nauvis step: a successful offer creates an **Enrolled Biter**, and the Formation Center trains that item into a **Worker Biter**. Office Desks remain bootstrap-safe so you can build the Formation Center before you have a Worker Biter. The Space Age offer is consumed when the enrollment attempt is made and has a 75% chance at or below 50% frustration, 50% above 50% through 75%, 25% above 75% through 90%, and no chance above 90%.
+With Space Age enabled, hiring has one extra Nauvis step: a successful offer creates an **Enrolled Biter**, and the Formation Center trains that item into a **Worker Biter**. The Field Office is the bootstrap bridge that lets you establish this route before a permanent worker exists; the Office Desk is research-gated behind `biter-employment`. The Space Age offer is consumed when the enrollment attempt is made and has a 75% chance at or below 50% frustration, 50% above 50% through 75%, 25% above 75% through 90%, and no chance above 90%.
 
 ### Worker Yield by Biter Type
 
@@ -207,12 +207,13 @@ Nauvis-only early-game bureaucratic outpost that summons biters from nearby nest
 
 ### How It Works
 
-1. Build a `field-office`.
-2. It scans for nearby biter nests within 200 tiles.
-3. When a recipe is queued, it summons a biter worker from the nearest spawner.
-4. The biter walks to the office, stands on it, and the office produces at 0.5x speed with 0 pollution.
-5. Each biter works for 2 crafts, then walks back to the spawner and is replaced.
-6. Day or night, the office continues cycling workers as long as it can craft.
+1. Research `steam-power`, then craft a `field-office`.
+2. Place it on Nauvis within 200 tiles of a biter nest.
+3. Its first craft triggers `field-office-deployment`, unlocking provisional approvals, promises, and the Biter Administration Desk.
+4. When a recipe is queued, it summons a biter worker from the nearest spawner.
+5. The biter walks to the office, stands on it, and the office produces at 0.5x speed with 0 pollution.
+6. Each biter works for 2 crafts, then walks back to the spawner and is replaced.
+7. Day or night, the office continues cycling workers as long as it can craft.
 
 ### Behavior
 
@@ -225,4 +226,4 @@ Nauvis-only early-game bureaucratic outpost that summons biters from nearby nest
 
 ### Use Case
 
-Field Office bridges the gap between having no biter workers and having a fully staffed biter station. It lets you start producing at key buildings without hiring workers through complaint resolution first.
+Field Office bridges the gap between having no biter workers and having a fully staffed biter station. It lets you produce the early approvals and establish the first complaint desk before hiring workers through complaint resolution. It is the temporary office; the permanent office still requires research, because apparently even biters need a credentialing process.

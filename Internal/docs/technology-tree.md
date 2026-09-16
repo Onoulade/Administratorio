@@ -1,6 +1,6 @@
 # Technology Tree
 
-The entire research tree is reworked around bureaucratic milestones instead of military ones. New branches for paperwork throughput, renewable wood and coal, approvals, public finance, queue capacity, workforce management, logistics formations, and the late complaint families.
+The entire research tree is reworked around bureaucratic milestones instead of military ones. New branches cover paperwork throughput, renewable wood and coal, approvals, public finance, queue capacity, workforce management, logistics formations, Space Age jurisdictions, and the late complaint families. Science counts and prerequisites below describe the current prototype graph; the in-game technology cards remain the final authority when another mod changes vanilla research.
 
 ## Trigger Technologies (Discovery)
 
@@ -27,6 +27,13 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 - **Prerequisites:** `administrative-science-research`
 - **Science:** 20 automation + 20 admin science-pack (15s)
 - **Unlocks:** `printer-t1`
+
+### Steam Power and Field Office (`steam-power` → `field-office-deployment`)
+
+- `steam-power` unlocks the `field-office` recipe.
+- Crafting the first Field Office triggers `field-office-deployment`; this is a craft trigger, not a research card.
+- The trigger unlocks provisional approvals, promises, and the Biter Administration Desk.
+- `printing-technology` and `biter-employment` depend on this deployment milestone, so the Office Desk is not an opening handcraft.
 
 ## Early Game
 
@@ -74,6 +81,11 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 - **Prerequisites:** `biter-employment`, `fluid-handling`
 - **Science:** 140 auto + 140 logistic + 140 admin science-pack (30s)
 - **Unlocks:** `biter-station`
+
+### Biter Employment (`biter-employment`)
+
+- **Unlocks:** `office-desk`, `job-offer-production`, and the base-game `resolution-office`.
+- **Space Age:** `job-offer-production` remains here, while `worker-formation` supplies the Resolution Office unlock after the Formation Center route exists.
 
 ### Streamlined Work Orders (`streamlined-work-orders`)
 
@@ -267,3 +279,59 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 - Available well before the vanilla car
 - Cannot be picked back up once placed — assignment is permanent
 - Run out of funding for 10 minutes and it reverts to a regular biter and files a complaint
+
+## Space Age
+
+Space Age progression is a set of jurisdiction branches rather than one straight ladder. Each planet first bootstraps its local paperwork before its science pack becomes part of the wider bureaucracy.
+
+### Planetary Branches
+
+| Branch | Technologies | Main unlocks |
+| --- | --- | --- |
+| Shared pre-planet | `chromatic-printing` | Chromatic Printer, black ink, shared colored-form framework |
+| Vulcanus | `cyan-ink-production`, `vulcanus-certification`, `vulcanus-export-charters` | Cyan paperwork, Notary Office, Territorial Arbitration Post, local and off-world metallurgy charters |
+| Gleba | `amber-sap-processing`, `gleba-yellow-administration`, `gleba-conciliation` | Yellow paperwork, Conciliation Desk, Capture Bureau modes, biological exception paperwork |
+| Fulgora | `fulgora-salvage-administration`, `fulgora-digital-services`, `archive-recombination` | Magenta salvage, Digital Services Bureau, electromagnetic paperwork, archive reassignment |
+| Cross-planet | `cyan-yellow-bureaucracy`, `cyan-magenta-bureaucracy`, `yellow-magenta-bureaucracy` | Pairwise colored forms, tourism and cross-jurisdiction data/permit routes |
+| Aquilo | `aquilo-cryogenic-administration` | Laser Printer, solid transfer media, cryogenic operations license, Cryoprint Technician |
+
+### Workforce and Orbital Branches
+
+| Technology family | Unlocks |
+| --- | --- |
+| `worker-formation` | Worker Biter formation and, in Space Age, the staffed Resolution Office route |
+| `management-formation` | Clerical, management, and reusable cross-planet manager briefings |
+| `specialized-formation` | Astronaut formation for platform administration |
+| `orbital-employment-infrastructure` | Administrative Space Station and platform paperwork production |
+| `orbital-compliance-systems` | Trajectory Compliance Array, deviation orders, Orbital Miner Deployment Catapult, and VESM formation |
+| `trajectory-compliance-jurisdiction-1..3` | Array range and asteroid-size authority: Junior, Senior, then Executive |
+| `trajectory-compliance-speed-1..9` | Array cooldown from 4.5 seconds down to 0.5 seconds |
+| `orbital-employment-damage-1..5` | VESM mining damage from 206.25 to 481.25 per second |
+| `orbital-employment-capacity-1..4` | One through five simultaneous miners per asteroid |
+
+### Interplanetary Paperwork
+
+| Technology family | Main unlocks |
+| --- | --- |
+| `interplanetary-tube-network` | Interplanetary Terminus and the black-paperwork trunk; three forms in flight at the base trunk tier |
+| `interplanetary-tube-capacity-2..5` | Raises in-flight capacity to 5, 10, 15, and 20 while reducing transit time |
+| `interplanetary-tube-additional-terminus-1..3` | Adds parallel terminus capacity; the third tier is infinite |
+| `interplanetary-tube-chromatic` | Colored and composite trunk payloads, advanced charter payloads, and Promethium research charters |
+| `bureaucratic-transcendence` | Public Train Stop: no transit chest, no per-arrival authorization, no paperwork train limit |
+
+### Aquilo Endgame Systems
+
+- `aquilo-ai-inference` unlocks the AI Server, Slop Refinery, Heat Exhaust, Optic Fibre, and rank 0–1 uncolored slop paperwork.
+- `administratorium-slop-synthesis` adds rank 2–3 uncolored paperwork and fabricated citation handling. Slop never creates colored forms.
+- `unstaffed-operations` unlocks an unstaffed-operations waiver when Working Hours is enabled. The technology is absent when that startup setting is disabled.
+- `synthetic-personnel` unlocks the Synthetic Personnel Bureau and synthesis for Licensed Notaries, Conciliation Officers, Relay Clerks, and Cryoprint Technicians.
+- `egg-courier-formation` keeps eggs on Nauvis while trained couriers carry authorization off-world.
+- `involuntary-relocation` unlocks the Cannon, Receiver, transfer orders, and staff cargo recipes. It is a request-and-match system, not a manually aimed cannon.
+
+### Space Age Complaint Fast Tracks
+
+The eight chromatic complaint technologies are separate follow-up research rather than automatic unlocks:
+
+`chromatic-landscape-resolution`, `chromatic-littering-resolution`, `chromatic-smog-resolution`, `chromatic-hazmat-resolution`, `chromatic-noise-resolution`, `chromatic-loitering-resolution`, `chromatic-unemployment-resolution`, and `chromatic-vagrancy-resolution`.
+
+Each adds its matching colored or composite complaint recipe and requires the relevant planet science. The final two require the full interplanetary chromatic tier and cryogenic science.

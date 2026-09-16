@@ -112,7 +112,40 @@
 
 ### Field Office (`field-office`)
 
-See [biter-employment.md](biter-employment.md)
+Unlocked by `steam-power`; the first craft triggers `field-office-deployment`. See [Biter Employment](biter-employment.md#field-office) for its nest range, worker cycle, and bootstrap role.
+
+## Space Age Buildings
+
+Space Age adds planet-specific offices and orbital infrastructure. Most of these are deliberately local: importing a colored form does not grant the jurisdiction that produces it, because apparently paperwork can cross space more easily than authority.
+
+### Planetary Offices
+
+| Building | Surface | Role |
+| --- | --- | --- |
+| `chromatic-printer` | Vulcanus, Gleba, Fulgora | Prints black and planet-colored paperwork; Aquilo uses the Laser Printer instead. |
+| `notary-office` | Vulcanus | Certifies seals, charters, endorsements, and Vulcanus fallback paperwork; consumes a Licensed Notary on placement. |
+| `territorial-arbitration-post` | Vulcanus | Uses Territorial Resettlement Orders and Liquid Lie to shrink demolisher territory toward a Territorial Deed. Territory regrows without maintenance. |
+| `conciliation-desk` | Gleba | Finalizes yellow-form biological exceptions and launch shortcuts; consumes a Conciliation Officer on placement. |
+| `capture-bureau` | Nauvis or Gleba, recipe-dependent | Uses lure spores to attract biters, spitters, or Gleba pentapods. Active lure consumes 1 per second within 48 tiles. |
+| `digital-services-bureau` | Fulgora | High-speed, 24/7 Fulgora office for digital certificates, archive recovery, and electromagnetic paperwork; consumes a Relay Clerk on placement. |
+| `archive-recombination-bureau` | Fulgora | Recycler-style archive reassignment: three same-rank, color-safe candidates each roll independently at 25%, so output can be zero to three forms. |
+| `laser-printer` | Aquilo or space platform | Solid-media printer with no liquid inputs; handles legacy, chromatic, multicolor, and orbital printing. |
+
+### Aquilo and Interplanetary Administration
+
+- **AI Server (`ai-server`):** Aquilo compute building that turns electricity into Inference Tokens and emits real heat into the vanilla heat network. It stops when heat cannot be dumped; tokens travel only through Optic Fibre.
+- **Heat Exhaust (`heat-exhaust`):** Caps a heat network by voiding surplus heat. It is a safety valve, not a more efficient power plant.
+- **Slop Refinery (`slop-refinery`):** Converts Inference Tokens into Administrative Slop, then slop into uncolored fabricated paperwork and Fabricated Citations. It does not create colored paperwork.
+- **Synthetic Personnel Bureau (`synthetic-personnel-bureau`):** Synthesizes Licensed Notaries, Conciliation Officers, Relay Clerks, and Cryoprint Technicians from eggs, inference, and slop; its constraint is power, not a mysterious shortage of forms.
+- **Interplanetary Terminus (`interplanetary-terminus`):** Ships paperwork through a shared, slow trunk. Base research handles black paperwork; the chromatic Aquilo tier handles colored and composite forms. Everything else still travels by rocket.
+- **Involuntary Relocation Cannon / Receiver:** The cannon sends biter-family staff in batches; a receiver requests them with transfer orders and circuit signals. There is no target selector, and eggs are never relocated.
+
+### Orbital Infrastructure
+
+- **Administrative Space Station (`administrative-space-station`):** Produces renewable platform paperwork from asteroid materials. Each orbital facility also needs an Orbital Infrastructure Permit.
+- **Trajectory Compliance Array (`trajectory-compliance-array`), Senior, and Executive variants:** Consume routine or priority orbital deviation orders to push asteroids outward. Their jurisdiction covers progressively larger asteroids and longer ranges.
+- **Orbital Miner Deployment Catapult (`orbital-employment-catapult`):** Fires Voluntary Exploration Space Miners through a narrow 18° corridor, up to 56 tiles. Miners attach to asteroids, harvest vanilla-equivalent yield, and return reusable ammunition as employee chunks are collected.
+- **Public Train Stop:** Unlocked by `bureaucratic-transcendence`. It behaves like a vanilla train stop and bypasses the ordinary Transit Permit Chest, per-arrival authorization consumption, and paperwork-based train limit.
 
 ---
 
@@ -137,6 +170,8 @@ See [biter-employment.md](biter-employment.md)
 - Destination Station requires a permit (limit = permits in chest)
 - Train consumes one transit-authorization on arrival
 
+`bureaucratic-transcendence` unlocks the Public Train Stop, which is the form-free exception for large rail networks.
+
 ---
 
 ## Pneumatic Tube Network
@@ -151,6 +186,7 @@ The pneumatic system was reworked from fluid-based transport to a script-managed
 - Dispensed at outtakes
 - Network topology detected via BFS through hidden network pipes (max radius 120 tiles)
 - Underground pipe range: 16 tiles
+- Tube Pump: rotatable one-way bridge between two pneumatic networks, with up to five optional form filters
 - Capacity is shared by the whole connected network and expands through research.
 
 <!-- BEGIN GENERATED: pneumatic-capacity-facts -->

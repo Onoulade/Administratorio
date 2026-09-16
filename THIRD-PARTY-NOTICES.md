@@ -81,6 +81,32 @@ is available from the project linked above.
 
 ---
 
+## Hurricane046
+
+- Creator: **Hurricane046** — <https://mods.factorio.com/user/Hurricane046>
+
+### Artwork attribution
+
+The following Administratorio assets are taken from or based on Hurricane046's
+mod artwork: **Resolution Office**, **Propaganda Distillery**, **AI Server**,
+**Interplanetary Terminus**, **Slop Refinery**, and **Synthetic Personnel
+Bureau**. The README and in-game documentation keep this attribution visible;
+the exact upstream licensing terms should be preserved when redistributing
+derivatives.
+
+## Krastorio 2
+
+- Project: <https://mods.factorio.com/mod/Krastorio2>
+
+### Artwork attribution
+
+The **Office Desk** and **Greenhouse** assets are taken from Krastorio 2 mod
+assets. This entry records the source explicitly so the attribution does not
+get lost when the buildings are renamed or their surrounding paperwork is
+rewritten.
+
+---
+
 ## Notes for future contributors
 
 Moshine's entity graphics live in a separate `Moshine-assets` mod and are **not**

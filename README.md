@@ -74,6 +74,7 @@ The result is the same factory problem at a larger scale: more planets, more jur
 - **Space Age** is optional. The base-game progression remains available without it.
 - **Quality** is optional and supported independently of Space Age. Its native quality grades remain meaningful without silently turning paperwork into magic.
 - **Factorissimo** compatibility is included for working-hours time handling and pneumatic tube networks through factory walls.
+- **AAI Loaders** compatibility carries the correct paperwork requirements and loader-specific batch behavior.
 - The mod includes a compatibility hook layer so supported integrations can be added without tangling the core systems into an unholy dependency scrapbook.
 
 ## Getting started
@@ -83,7 +84,7 @@ The result is the same factory problem at a larger scale: more planets, more jur
 3. Research **Steam Power** to unlock the **Field Office** recipe.
 4. Mine **Redundant Rubble** and **Bullshit Ore** to trigger the two early discoveries, then use the unlocked paperwork to keep the bootstrap moving.
 5. Craft and place your first Field Office near a biter nest. This triggers **Field Office Deployment**, which unlocks provisional approvals and the **Biter Administration Desk**. The Field Office is your early bootstrap workforce; the permanent Office Desk is still waiting for research.
-6. Research **Administrative Bureaucracy**, **Rubble Compaction** and then **Biter Employment**. This is when the **Office Desk** and **Resolution Office** become available; bureaucracy has finally approved bureaucracy.
+6. Research **Administrative Bureaucracy**, **Rubble Compaction** and then **Biter Employment**. This unlocks the **Office Desk**; in the base game it also unlocks the **Resolution Office**, while Space Age moves that staffed-office unlock to **Worker Formation**. Bureaucracy has finally approved bureaucracy.
 7. Establish complaint filing and resolution before expanding the factory too aggressively.
 8. Keep paper, ink and the required forms buffered. The machine may be hungry for iron, but the bureaucracy is hungry for stationery.
 

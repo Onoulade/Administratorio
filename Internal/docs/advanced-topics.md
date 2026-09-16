@@ -12,10 +12,12 @@ The **Hired Biter** is a controllable worker entity that you deploy via capsule 
 ### Control
 Hold the **Field Agent Deployment Order** (`hired-biter-command-capsule`) and use:
 - **Left-click** on the ground: toggle selection of hired biters at cursor position
-- **Left-click** on a nest (after loading eviction notices): send selected biters to that nest
-- **Right-click** on the ground: set waypoint for all selected biters
-- **Shift+right-click** on the ground: append waypoint (multi-waypoint)
-- **Shift+left-click** on a supply entity: load eviction notices from that entity
+- **Right-click** on the ground: set a waypoint for all selected biters
+- **Shift+right-click** on the ground: append a waypoint
+- **Shift+right-click** on a chest: append a supply stop for eviction notices
+- **Shift+left-click** on a chest: immediately load eviction notices
+
+Once stocked, agents scan for enemy spawners automatically; waypoints and supply stops control the route, not the target nest directly.
 
 ### Behavior States
 
@@ -123,11 +125,32 @@ Each step requires the previous output plus additional paperwork and administrat
 
 ## Train Transit System
 
-The train system requires paperwork:
+The ordinary train system requires paperwork:
 1. Each train stop auto-generates a `transit-permit-chest` on the rail-facing side.
 2. The chest starts empty; fill it with `transit-authorization` items.
 3. Each train arriving at the station consumes one transit-authorization.
 4. Limit = permits in chest.
+
+The `bureaucratic-transcendence` technology unlocks the Public Train Stop. It has no permit chest, consumes no forms, and does not tie train limit to paperwork; it behaves like a vanilla train stop. This is the mod's one officially sanctioned shortcut.
+
+## Space Age Operations
+
+### The Interplanetary Trunk
+
+`interplanetary-tube-network` unlocks the Interplanetary Terminus for black paperwork. The trunk is a shared, slow pool rather than instant logistics: the base tier allows three forms in flight, with 30-second transit. Capacity research raises simultaneous forms to 5, 10, 15, and 20 while reducing transit to 15, 5, 2, and 1 seconds. Additional-Terminus research adds parallel endpoints, and the third tier becomes infinite.
+
+`interplanetary-tube-chromatic` extends the trunk to cyan, yellow, magenta, and composite paperwork after the Aquilo branch is established. Other goods still need rockets.
+
+### Aquilo Inference and Slop
+
+The AI Server makes Inference Tokens from electricity and sends them over Optic Fibre to a Slop Refinery. Server heat uses the ordinary heat network, so insufficient cooling stops production. `aquilo-ai-inference` produces rank 0–1 uncolored paperwork; `administratorium-slop-synthesis` adds rank 2–3 uncolored paperwork after Promethium science. Neither technology creates colored forms.
+
+### Personnel, Couriers, and Relocation
+
+- `synthetic-personnel` adds power-hungry specialist synthesis, removing the need to ferry every Notary, Conciliation Officer, Relay Clerk, or Cryoprint Technician from Nauvis.
+- `egg-courier-formation` keeps biter eggs on Nauvis and sends trained couriers carrying authorization instead.
+- `involuntary-relocation` adds Cannon/Receiver logistics for biter-family staff. Load transfer orders into receivers, request cargo with circuit signals, and let any matching cannon on another planet answer; there is no target selection.
+- `unstaffed-operations`, when Working Hours is enabled, authorizes managed machines to run without a dispatched station worker. It does not replace ordinary workforce formation everywhere.
 
 ## Key Structural Bottlenecks
 

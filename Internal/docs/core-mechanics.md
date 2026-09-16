@@ -18,14 +18,15 @@ Your first hour is less about automation and more about reading fine print. Foll
 1. Gather `wood` and `coal`.
 2. Handcraft `paper` and `ink`.
 3. Use the starting `mechanical-printer` to print `blank-form` and `blank-approval`.
-4. Handcraft `office-desk`.
-5. Hand-mine `redundant-rubble` to trigger `discovery-redundant-rubble`.
-6. Use the desk to make `provisional-approval`.
-7. Handcraft `admin-station` and `resolution-office`.
-8. Hand-mine `bullshit-ore` to trigger `discovery-bullshit`.
-9. Use a stone furnace plus `carbon-offset-certificate-basic` to batch-smelt plates and `dubious-data`.
-10. Use the desk to make `basic-excuse`.
-11. Process landscape complaints for the first steady `taxpayer-money`.
+4. Research `steam-power`, then craft the `field-office`.
+5. Hand-mine `redundant-rubble` and `bullshit-ore` to trigger the two discovery technologies.
+6. Place the Field Office within 200 tiles of a biter nest. Its first craft triggers `field-office-deployment`, unlocking provisional approvals, promises, and the `admin-station`.
+7. Research `printing-technology`, `administrative-bureaucracy`, `rubble-compaction`, and the supporting automation technologies as they become available.
+8. Research `biter-employment` to unlock the `office-desk`, `job-offer` production, and the base-game `resolution-office`.
+9. Use a stone furnace plus `carbon-offset-certificate-basic` to batch-smelt plates and `dubious-data`, then produce excuses and complaint paperwork.
+10. Process landscape complaints for the first steady `taxpayer-money`.
+
+With Space Age enabled, the Field Office also bridges the first hire: `biter-employment` unlocks job offers, while `worker-formation` unlocks the staffed Resolution Office after the Formation Center route is established. The Office Desk is deliberately not a handcraft bootstrap building. Bureaucracy has standards now. Allegedly.
 
 **Tip:** The bottleneck is always paper and ink early on. Queue a coal-smoked furnace with `carbon-offset-certificate-basic` immediately — it's your first reliable throughput multiplier.
 
@@ -34,11 +35,10 @@ Your first hour is less about automation and more about reading fine print. Foll
 The research pipeline blends vanilla progression with the mod's administrative layer:
 
 1. Craft a `lab` to trigger vanilla `automation-science-pack`.
-2. That unlocks `automation-science-pack` and, via mod hook, `research-grant-approval-production`.
-3. Produce `administrative-science-pack` at the `office-desk`.
-4. Research `automation` to unlock `work-order-production` and the early combined work-order recipes.
-5. Research `administrative-science-research` to unlock `administrative-science-pack-production`.
-6. Research `printing-technology` to unlock `printer-t1`.
+2. Research `automation` to unlock `work-order-production` and the early combined work-order recipes.
+3. Research `administrative-science-research` to unlock `administrative-science-pack-production`.
+4. Produce `administrative-science-pack` through the available bureaucracy category. The Field Office covers the early bootstrap; the Office Desk takes over after `biter-employment`.
+5. Research `printing-technology` to unlock `printer-t1`.
 
 ### Bureaucracy Loop
 
@@ -83,7 +83,7 @@ Some machines require a specific operating document on top of the base work-orde
 
 ## 3. Complaints Replace Combat
 
-Biters don't raid your walls. They get intercepted and rerouted to your **Bitter Administration Desk**, where they queue up as neutral citizens and file complaint tickets about landscape, smog, noise, and unemployment. You process each ticket through a **Resolution Office** chain, and the satisfied citizen leaves paying you in **Taxpayer Money**.
+Biters don't raid your walls. They get intercepted and rerouted to your **Biter Administration Desk**, where they queue up as neutral citizens and file complaint tickets about landscape, smog, noise, and unemployment. You process each ticket through a **Resolution Office** chain, and the satisfied citizen leaves paying you in **Taxpayer Money**.
 
 It's restorative justice with positive externalities.
 

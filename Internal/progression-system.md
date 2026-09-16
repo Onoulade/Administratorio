@@ -11,23 +11,21 @@ This file tracks the actual progression model implemented by the mod, not just t
 1. Gather `wood` and `coal`.
 2. Handcraft `paper` and `ink`.
 3. Use the starting `mechanical-printer` to print `blank-form` and `blank-approval`.
-4. Handcraft `office-desk`.
-5. Hand-mine `redundant-rubble` to trigger `discovery-redundant-rubble`.
-6. Use the desk to make `provisional-approval`.
-7. Handcraft `admin-station` and `resolution-office`.
-8. Hand-mine `bullshit-ore` to trigger `discovery-bullshit`.
-9. Use a stone furnace plus `carbon-offset-certificate-basic` to batch-smelt plates and `dubious-data`.
-10. Use the desk to make `basic-excuse`.
-11. Process landscape complaints for the first steady `taxpayer-money`.
+4. Research `steam-power`, then craft and place the `field-office` near a biter nest.
+5. Hand-mine `redundant-rubble` and `bullshit-ore` to trigger both discovery technologies.
+6. Craft the first Field Office recipe to trigger `field-office-deployment`, which unlocks provisional approvals, promises, and the `admin-station`.
+7. Research the printing, greenhouse, rubble-compaction, and automation branches as they become available.
+8. Research `biter-employment` to unlock the `office-desk`, `job-offer` production, and the base-game `resolution-office`.
+9. Use the Field Office and early paperwork chain to establish complaint processing, then collect the first steady `taxpayer-money`.
+
+With Space Age enabled, `worker-formation` moves the Resolution Office unlock behind the Formation Center route; the Field Office remains the early bridge that makes the first hire possible.
 
 ### Science loop
 
 1. Craft a `lab` to trigger vanilla `automation-science-pack`.
-2. That unlocks `automation-science-pack` and, via mod hook, `research-grant-approval-production`.
-3. Produce `automation-science-pack`.
-4. Research `automation` to unlock `work-order-production` and the early combined work-order recipes.
-5. Research `administrative-science-research` to unlock `administrative-science-pack-production`.
-6. Produce `administrative-science-pack` at the `office-desk`.
+2. Research `automation` to unlock `work-order-production` and the early combined work-order recipes.
+3. Research `administrative-science-research` to unlock `administrative-science-pack-production`.
+4. Produce `administrative-science-pack` through the available bureaucracy category: the Field Office covers the early bootstrap, and the Office Desk takes over after `biter-employment`.
 
 ### Bureaucracy loop
 
@@ -50,6 +48,12 @@ This file tracks the actual progression model implemented by the mod, not just t
 | `propaganda-distillery` | `propaganda-distillery` | Lie, misinformation, slush fund, justification chain |
 | `union-headquarters` | `union-negotiation`, `bureaucracy-policy` | Union approval, grants, verified certificates, narrative, written approvals, policy work, tax audits |
 | `admin-station` | storage + complaint desk | Holds tickets, resolved items, and payouts |
+| `field-office` | `bureaucracy-registration`, `bureaucratic-bootstrap` | Nauvis-only temporary workforce; unlocked by Steam Power and triggers Field Office Deployment on its first craft |
+| `formation-center` | `biter-training` | Converts enrolled biters into workers and trains managers or specialists |
+| `biter-station` | worker dispatch | Sends hired workers to managed machines; night dispatches consume coffee |
+| `biterport` | walking logistics | Provides biter logistics and construction networks |
+
+Space Age adds `chromatic-printer`, `laser-printer`, `notary-office`, `territorial-arbitration-post`, `conciliation-desk`, `capture-bureau`, `digital-services-bureau`, `archive-recombination-bureau`, `administrative-space-station`, the three trajectory-compliance arrays, `orbital-employment-catapult`, `interplanetary-terminus`, `ai-server`, `heat-exhaust`, `slop-refinery`, `synthetic-personnel-bureau`, and the involuntary relocation Cannon/Receiver pair. Their behavior is documented in [Buildings & Structures](docs/buildings-and-structures.md).
 
 ## Assembler Form Tiers
 
@@ -90,17 +94,21 @@ This file tracks the actual progression model implemented by the mod, not just t
 | --- | --- | --- |
 | `administrative-bureaucracy` | `greenhouse`, `greenhouse-wood` | Early red-science renewable wood bootstrap |
 | `littering-resolution` | `crappy-report-production`, `filing-littering`, `littering-final` | First spitter support |
-| `pneumatic-form-transport` | `compacted-rubble-production`, pneumatic buildings | Form logistics and rubble compression |
-| `local-precedents` | `printer-t2`, copy recipes, `useless-documentation-production`, `form-27b-6` | Real midgame paperwork acceleration |
+| `rubble-compaction` | `compacted-rubble-production` | Standardized rubble for infrastructure and pneumatic transport |
+| `pneumatic-form-transport` | pneumatic buildings and intake recipes | Form logistics through shared tube networks |
+| `industrial-printing` | `printer-t2`, bulk copy recipes | Real midgame paperwork acceleration |
+| `local-precedents` | `useless-documentation-production`, `form-27b-6` | Local legal fiction and the precedent archive |
 | `streamlined-work-orders` | direct draft-to-work-order printing | Throughput upgrade for early combined forms |
-| `industrial-propaganda` | distillery, lie / misinformation chain, coffee discovery, blank directives | Opens the true admin economy |
+| `industrial-propaganda` | distillery, lie / misinformation chain, refined nonsense, credentials | Opens the true admin economy |
+| `corporate-hospitality` | breakroom, coffee discovery/refining, gossip, verbal approvals | Separates the coffee chain from propaganda |
 
 ### Chemical and late stage
 
 | Tech | Main unlocks | Progression meaning |
 | --- | --- | --- |
 | `environmental-compliance` | petrochemical permits and verified environmental reports | First process-industry permitting |
-| `health-and-safety` | union HQ, justification, narrative, written approvals, radiological work order, government grants | Opens late-form, centrifuge paperwork, and grant chain |
+| `health-and-safety` | justification, narrative, OSHA scrubbing, violation recycling | Opens workplace-safety paperwork |
+| `public-finance` | Union HQ, grants, union approval, treasury bonds | Opens the funding and executive administration chain |
 | `board-meetings` | written management proposal + heavy printer approval pass | Opens the executive committee layer inside Union HQ |
 | `eminent-domain-zoning` | white paper, policy, slush fund | Blue-science policy support for large complaints |
 | `federal-regulation` | regulation | Formal law layer for the final complaint tier |
