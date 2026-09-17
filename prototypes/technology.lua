@@ -79,7 +79,6 @@ local function pneumatic_form_transport_effects()
     { type = "unlock-recipe", recipe = "pneumatic-pipe-to-ground" },
     { type = "unlock-recipe", recipe = "tube-intake" },
     { type = "unlock-recipe", recipe = "tube-outtake" },
-    { type = "unlock-recipe", recipe = "tube-pump" },
   }
 
   local pneumatic_item_names = {}
@@ -538,6 +537,17 @@ data:extend({
     prerequisites = {"printing-technology", "logistic-science-pack", "rubble-compaction"},
     unit = { count = 40, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20 },
     order = "a-p"
+  },
+  -- POWERED TUBE PUMP (blue-science bridge between separate tube networks)
+  {
+    type = "technology", name = "tube-pump",
+    icons = {{icon = "__base__/graphics/icons/pump.png", icon_size = 64, tint = {r=0.85, g=0.75, b=0.55, a=1}}},
+    effects = {
+      { type = "unlock-recipe", recipe = "tube-pump" },
+    },
+    prerequisites = {"pneumatic-form-transport", "chemical-science-pack"},
+    unit = { count = 100, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    order = "a-p-a"
   },
   -- BITER EMPLOYMENT (hire resolved biters as workers — red + admin science only)
   {

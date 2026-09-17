@@ -728,6 +728,11 @@ test("science tier heads and inherited pack requirements are enforced", function
   assert_true(tech_has_prereq("information-management", "advanced-circuit"), "information-management should require advanced-circuit")
   assert_true(tech_has_prereq("pneumatic-form-transport", "logistic-science-pack"), "pneumatic-form-transport should require logistic science")
   assert_true(tech_uses_pack("pneumatic-form-transport", "logistic-science-pack"), "pneumatic-form-transport should use logistic science")
+  assert_true(tech_has_prereq("tube-pump", "pneumatic-form-transport"), "tube-pump should require pneumatic transport")
+  assert_true(tech_has_prereq("tube-pump", "chemical-science-pack"), "tube-pump should require chemical science")
+  assert_true(tech_uses_pack("tube-pump", "chemical-science-pack"), "tube-pump should use chemical science")
+  assert_true(tech_unlocks_recipe("tube-pump", "tube-pump"), "tube-pump technology should unlock the tube pump recipe")
+  assert_true(not tech_unlocks_recipe("pneumatic-form-transport", "tube-pump"), "green science should not unlock the tube pump recipe")
   assert_true(tech_has_prereq("public-finance", "chemical-science-pack"), "public-finance should require chemical science")
   assert_true(tech_has_prereq("environmental-compliance", "fluid-handling"), "environmental-compliance should require fluid handling")
   assert_true(tech_has_prereq("board-meetings", "health-and-safety"), "board-meetings should require health-and-safety")
@@ -752,11 +757,12 @@ test("science tier heads and inherited pack requirements are enforced", function
   end
 end)
 
-test("only pneumatic capacity upgrades depend on pneumatic form transport", function()
+test("only pneumatic upgrades depend on pneumatic form transport", function()
+  local expected = { ["pneumatic-capacity-1"] = true, ["tube-pump"] = true }
   for tech_name, tech in pairs(data.raw.technology) do
     for _, prereq in ipairs(tech.prerequisites or {}) do
       if prereq == "pneumatic-form-transport" then
-        assert_true(tech_name == "pneumatic-capacity-1", tech_name .. " should not require pneumatic-form-transport")
+        assert_true(expected[tech_name], tech_name .. " should not require pneumatic-form-transport")
       end
     end
   end

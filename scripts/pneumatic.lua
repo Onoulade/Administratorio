@@ -12,6 +12,10 @@ local C = require("scripts.constants")
 local hooks = require("compat.hooks")
 local M = {}
 
+-- The scripted pump does not perform native inserter movements, so charge its
+-- electric buffer explicitly for each form moved between networks.
+local TUBE_PUMP_ENERGY_PER_TRANSFER = 100 -- joules
+
 -------------------------------------------------------------------------------
 -- HELPERS
 -------------------------------------------------------------------------------
@@ -828,6 +832,7 @@ function M.on_pneumatic_tick()
       local destination_net = storage.tube_pump_network_cache[uid]
         and storage.tube_pump_network_cache[uid][2]
       if source_net and destination_net and source_net ~= destination_net
+          and pump.energy >= TUBE_PUMP_ENERGY_PER_TRANSFER
           and not storage.tube_network_disabled[source_net]
           and not storage.tube_network_disabled[destination_net]
           and M.get_network_total(destination_net) < M.get_network_capacity(pump.force) then
@@ -860,6 +865,7 @@ function M.on_pneumatic_tick()
             destination_pool[selected_key] = (destination_pool[selected_key] or 0) + 1
             source_pool[selected_key] = source_pool[selected_key] - 1
             if source_pool[selected_key] <= 0 then source_pool[selected_key] = nil end
+            pump.energy = pump.energy - TUBE_PUMP_ENERGY_PER_TRANSFER
             networks_changed[source_net] = true
             networks_changed[destination_net] = true
           end

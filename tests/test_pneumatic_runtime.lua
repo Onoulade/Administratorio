@@ -102,6 +102,38 @@ local function new_endpoint(name, inventory, unit_number, behavior)
   return endpoint
 end
 
+test("tube pumps require and consume electricity", function()
+  local pump = {
+    valid = true,
+    unit_number = 601,
+    energy = 99,
+    force = {valid = true, index = 1, technologies = {}},
+    use_filters = false,
+    filter_slot_count = 5,
+  }
+
+  storage = {
+    tube_intakes = {},
+    tube_outtakes = {},
+    tube_pumps = {[601] = {entity = pump}},
+    tube_signals = {[6] = {["work-order"] = 1}},
+    tube_network_cache = {},
+    tube_pump_network_cache = {[601] = {6, 7}},
+    tube_network_disabled = {},
+    tube_network_dirty = false,
+  }
+
+  pneumatic.on_pneumatic_tick()
+  assert_eq(storage.tube_signals[6]["work-order"], 1, "an unpowered pump must leave the source unchanged")
+  assert_eq(storage.tube_signals[7], nil, "an unpowered pump must not create destination cargo")
+
+  pump.energy = 100
+  pneumatic.on_pneumatic_tick()
+  assert_eq(storage.tube_signals[6]["work-order"], nil, "a powered pump should remove one source item")
+  assert_eq(storage.tube_signals[7]["work-order"], 1, "a powered pump should deliver one item")
+  assert_eq(pump.energy, 0, "each transfer should consume 100 J")
+end)
+
 test("pneumatic transport conserves an item and its quality", function()
   local source = new_inventory({name = "work-order", quality = "legendary", count = 1})
   local destination = new_inventory()

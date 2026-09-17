@@ -111,6 +111,11 @@ test("tube pump exposes multiple filters and vanilla pump artwork", function()
   assert_eq(pump.filter_count, 5)
   assert_eq(pump.rotatable, true)
   assert_eq(pump.collision_box[1][2], -0.9)
+  assert_eq(pump.energy_source.type, "electric")
+  assert_eq(pump.energy_source.usage_priority, "secondary-input")
+  assert_eq(pump.energy_source.buffer_capacity, "1kJ")
+  assert_eq(pump.energy_per_movement, "100J")
+  assert_eq(pump.energy_per_rotation, "100J")
   local artwork = {
     north = {"south", 114, 160, 12.5, -8},
     east = {"west", 131, 111, -0.25, 1.25},
