@@ -594,6 +594,8 @@ test("Space Age office desks use the ordinary hire available at their unlock", f
     "Space Age office desks should require the enrolled biter produced by ordinary hiring")
   assert_true(not has_ingredient(recipes["office-desk"], "worker-biter"),
     "Space Age office desks must not require the trained biter unlocked by Worker Formation")
+  assert_eq(get_result_amount(recipes["office-desk"], "office-desk"), 1,
+    "one enrolled biter should staff exactly one Administrative Office Desk")
   assert_true(has_ingredient(recipes["formation-center"], "field-office"),
     "the Formation Center should use the Field Office workforce bridge")
   assert_true(not has_ingredient(recipes["formation-center"], "office-desk"),

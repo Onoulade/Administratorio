@@ -1927,8 +1927,8 @@ test("regulated admin buildings follow semantic building and biter defaults", fu
     "ordinary production buildings should batch at 2x")
   assert_eq(get_result_amount(get_recipe("field-office-regulated"), "field-office"), 1,
     "biter-subgroup buildings should stay at native 1x")
-  assert_eq(get_result_amount(get_recipe("office-desk-regulated"), "office-desk"), 2,
-    "recipes consuming biter workers should preserve their native output")
+  assert_eq(get_result_amount(get_recipe("office-desk-regulated"), "office-desk"), 1,
+    "one biter staff member should produce exactly one office desk")
   assert_eq(get_result_amount(get_recipe("formation-center-regulated"), "formation-center"), 1,
     "Space Age biter buildings should stay at native 1x")
 end)

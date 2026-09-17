@@ -99,7 +99,7 @@ local building_recipes = {
     type = "recipe",
     subgroup = "admin-biter-buildings", order = "a-b", enabled = false,
     ingredients = office_desk_ingredients,
-    results = {{type="item", name="office-desk", amount=2}},
+    results = {{type="item", name="office-desk", amount=1}},
     energy_required = 10,
   })),
   not_in_space(entity_recipe("biter-station",             { type = "recipe", subgroup = "admin-biter-logistics", order = "b", enabled = false, ingredients = {{type="item", name="iron-plate", amount=10}, {type="item", name="electronic-circuit", amount=5}, {type="item", name="provisional-approval", amount=2}, {type="item", name="taxpayer-money", amount=20}}, results = {{type="item", name="biter-station", amount=1}}, energy_required = 10 })),
