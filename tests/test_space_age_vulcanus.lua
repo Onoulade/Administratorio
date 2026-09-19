@@ -367,18 +367,26 @@ test("orbital employment catapult deploys powered voluntary space miners", funct
     assert_true(effect.type ~= "damage",
       "VESM projectiles must not carry quality-scalable impact damage")
   end
-  assert_eq(projectile.animation.layers[1].scale, 0.92,
-    "projectile body should scale the real biter layer")
-  assert_eq(projectile.animation.layers[1].shift.x, 0.46,
-    "projectile layer anchors must scale with the sprite")
-  assert_eq(projectile.animation.layers[1].shift.y, -0.92,
-    "projectile layer anchors must remain aligned after scaling")
+  assert_eq(projectile.animation.filename,
+    "__administratorio__/graphics/entities/orbital-astronaut/run.png")
+  assert_eq(projectile.animation.frame_count, 16)
+  assert_eq(projectile.animation.direction_count, 16)
+  assert_eq(projectile.animation.scale, 0.48,
+    "projectile should use the generated orbital astronaut at its authored scale")
 
   local attack = assert(data.raw.animation["orbital-manager-attack"])
-  assert_eq(attack.layers[1].shift.x, 0.46,
-    "attached manager attack layers must use the same scaled anchor")
-  assert_eq(attack.layers[1].animation_speed, 1,
+  assert_eq(attack.filename,
+    "__administratorio__/graphics/entities/orbital-astronaut/attack.png")
+  assert_eq(attack.frame_count, 11)
+  assert_eq(attack.animation_speed, 1,
     "runtime render objects should own each manager's animation clock")
+  for direction_index = 1, 15 do
+    local direction_attack = assert(data.raw.animation[
+      string.format("orbital-manager-attack-%02d", direction_index)
+    ])
+    assert_eq(direction_attack.y, direction_index * 240,
+      "each generated attack direction should select its own normalized row")
+  end
 
   local chunk = assert(data.raw["asteroid-chunk"]["returning-orbital-employee"],
     "returning employee asteroid chunk missing")
@@ -391,6 +399,8 @@ test("orbital employment catapult deploys powered voluntary space miners", funct
       "returning employee orientation variant missing")
     assert_eq(oriented.minable.result, "voluntary-exploration-space-miner")
     assert_eq(oriented.graphics_set.rotation_speed, 0)
+    assert_eq(oriented.graphics_set.sprite.y, direction_index * 144,
+      "returning employee should retain its generated facing")
     assert_true(oriented.hidden_in_factoriopedia,
       "orientation variants must not clutter Factoriopedia")
   end

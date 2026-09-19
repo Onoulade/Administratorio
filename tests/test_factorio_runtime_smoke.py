@@ -25,6 +25,8 @@ local worker_belt
 local worker_pole
 local worker_machine
 local worker_special_blockers = {}
+local rideable
+local rider
 
 local function fail(message)
   error("Administratorio runtime smoke failure: " .. message)
@@ -105,10 +107,50 @@ script.on_init(function()
   public_stop.trains_limit = 7
   script.raise_script_built{entity = regular_stop}
   script.raise_script_built{entity = public_stop}
+
+  rideable = surface.create_entity{
+    name = "rideable-biter",
+    position = {60, 0},
+    force = force,
+  }
+  rider = surface.create_entity{
+    name = "character",
+    position = {60, 0},
+    force = force,
+  }
+  if not rideable or not rideable.valid then fail("could not create rideable biter") end
+  if not rider or not rider.valid then fail("could not create rideable-biter rider") end
+  script.raise_script_built{entity = rideable}
+  rideable.set_driver(rider)
 end)
 
 script.on_nth_tick(30, function()
   local surface = game.surfaces[1]
+  if game.tick == 90 then
+    local mounted = surface.find_entities_filtered{
+      name = "rideable-biter-mounted",
+      position = {60, 0},
+      radius = 1,
+    }
+    if #mounted ~= 1 then fail("occupied rideable biter did not swap to mounted art") end
+    if mounted[1].get_driver() ~= rider then fail("rideable-biter visual swap lost its driver") end
+    mounted[1].set_driver(nil)
+    rideable = mounted[1]
+    return
+  elseif game.tick == 150 then
+    local empty = surface.find_entities_filtered{
+      name = "rideable-biter",
+      position = {60, 0},
+      radius = 1,
+    }
+    if #empty ~= 1 then fail("empty rideable biter did not restore ordinary art") end
+    if empty[1].get_driver() ~= nil then fail("empty rideable biter retained a driver") end
+    helpers.write_file("administratorio-runtime-smoke.txt", "PASS\n", false)
+    return
+  elseif game.tick ~= 30 then
+    return
+  end
+
   local regular_chests = surface.find_entities_filtered{
     name = "transit-permit-chest",
     position = regular_stop.position,
@@ -187,8 +229,6 @@ script.on_nth_tick(30, function()
       end
     end
   end
-
-  helpers.write_file("administratorio-runtime-smoke.txt", "PASS\n", false)
 end)
 '''
 
@@ -279,7 +319,7 @@ def main() -> None:
             "--start-server-load-scenario",
             f"{SMOKE_MOD_NAME}/runtime-smoke",
             "--until-tick",
-            "60",
+            "180",
         ]
         marker = root / "script-output" / "administratorio-runtime-smoke.txt"
         process = subprocess.Popen(

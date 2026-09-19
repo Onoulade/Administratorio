@@ -34,7 +34,7 @@ local function biter_sound(path_prefix, count, min_volume, max_volume, max_count
   }
 end
 
-local function rideable_biter_run_animation()
+local function regular_biter_run_animation()
   if not (util and util.sprite_load) then return nil end
 
   local scale = 0.7
@@ -98,6 +98,41 @@ local function rideable_biter_run_animation()
   }
 end
 
+local function mounted_biter_run_animation()
+  local generated = {
+    filename = "__administratorio__/graphics/entities/rideable-biter/run.png",
+    width = 192,
+    height = 144,
+    frame_count = 16,
+    direction_count = 16,
+    line_length = 16,
+    scale = 0.72,
+    animation_speed = 3.0,
+    allow_forced_downscale = true,
+    surface = "nauvis",
+    usage = "enemy",
+  }
+  if not (util and util.sprite_load) then return generated end
+
+  return {
+    layers = {
+      generated,
+      util.sprite_load("__base__/graphics/entity/biter/biter-run-shadow", {
+        slice = 8,
+        frame_count = 16,
+        direction_count = 16,
+        draw_as_shadow = true,
+        scale = 0.35,
+        multiply_shift = 0.7,
+        animation_speed = 3.0,
+        allow_forced_downscale = true,
+        surface = "nauvis",
+        usage = "enemy",
+      }),
+    },
+  }
+end
+
 local function make_rideable_biter()
   local base_car = data.raw["car"] and data.raw["car"]["car"]
   local biter = data.raw["unit"] and (data.raw["unit"]["medium-biter"] or data.raw["unit"]["small-biter"])
@@ -150,6 +185,7 @@ local function make_rideable_biter()
   }}
   vehicle.stop_trigger_speed = nil
   vehicle.working_sound = {
+    sound = biter_sound("__base__/sound/creatures/biter-roar-mid", 7, 0.12, 0.22, 1),
     activate_sound = biter_sound("__base__/sound/creatures/biter-roar-mid", 7, 0.2, 0.35, 1),
     deactivate_sound = biter_sound("__base__/sound/creatures/biter-call", 5, 0.12, 0.22, 1),
   }
@@ -161,7 +197,7 @@ local function make_rideable_biter()
     vehicle.energy_source.smoke = nil
   end
 
-  vehicle.animation = rideable_biter_run_animation()
+  vehicle.animation = regular_biter_run_animation()
   if not vehicle.animation and biter.run_animation then
     vehicle.animation = deepcopy(biter.run_animation)
   end
@@ -171,5 +207,10 @@ end
 
 local rideable_biter = make_rideable_biter()
 if rideable_biter then
-  data:extend({rideable_biter})
+  local mounted_rideable_biter = deepcopy(rideable_biter)
+  mounted_rideable_biter.name = "rideable-biter-mounted"
+  mounted_rideable_biter.placeable_by = nil
+  mounted_rideable_biter.hidden_in_factoriopedia = true
+  mounted_rideable_biter.animation = mounted_biter_run_animation()
+  data:extend({rideable_biter, mounted_rideable_biter})
 end

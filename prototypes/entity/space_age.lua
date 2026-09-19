@@ -1079,99 +1079,70 @@ local executive_trajectory_compliance_array = make_trajectory_compliance_array({
   input_flow_limit = "325kW",
 })
 
-local fallback_manager_animation = {
-  filename = "__base__/graphics/icons/behemoth-biter.png",
-  width = 64,
-  height = 64,
-  frame_count = 1,
-  direction_count = 1,
-}
-local manager_unit = data.raw.unit and data.raw.unit["behemoth-biter"] or {
-  run_animation = fallback_manager_animation,
-  attack_parameters = {animation = fallback_manager_animation},
-}
+local orbital_astronaut_graphics = entity_graphics .. "orbital-astronaut/"
+local ORBITAL_ASTRONAUT_SCALE = 0.48
+local ORBITAL_ASTRONAUT_DIRECTIONS = 16
+local ORBITAL_ASTRONAUT_RUN_FRAMES = 16
+local ORBITAL_ASTRONAUT_ATTACK_FRAMES = 11
 
-local function scale_layer_shift(layer, scale_factor)
-  local shift = layer.shift
-  if not shift then return end
-  if shift.x ~= nil or shift.y ~= nil then
-    shift.x = (shift.x or 0) * scale_factor
-    shift.y = (shift.y or 0) * scale_factor
-  else
-    shift[1] = (shift[1] or 0) * scale_factor
-    shift[2] = (shift[2] or 0) * scale_factor
-  end
+local function orbital_astronaut_run_animation(animation_speed)
+  return {
+    filename = orbital_astronaut_graphics .. "run.png",
+    width = 192,
+    height = 144,
+    frame_count = ORBITAL_ASTRONAUT_RUN_FRAMES,
+    direction_count = ORBITAL_ASTRONAUT_DIRECTIONS,
+    line_length = ORBITAL_ASTRONAUT_RUN_FRAMES,
+    scale = ORBITAL_ASTRONAUT_SCALE,
+    animation_speed = animation_speed,
+    allow_forced_downscale = true,
+    surface = "space",
+    usage = "enemy",
+  }
 end
 
-local function scale_animation_layers(animation, scale_factor, animation_speed)
-  local result = table.deepcopy(animation)
-  for _, layer in ipairs(result.layers or {result}) do
-    layer.scale = (layer.scale or 1) * scale_factor
-    scale_layer_shift(layer, scale_factor)
-    if animation_speed then layer.animation_speed = animation_speed end
-  end
-  return result
+local function orbital_astronaut_attack_name(direction_index)
+  if direction_index == 0 then return "orbital-manager-attack" end
+  return string.format("orbital-manager-attack-%02d", direction_index)
 end
 
-local function make_manager_attack_animation(source_animation, scale_factor, animation_speed)
-  local animation = {type = "animation", name = "orbital-manager-attack", layers = {}}
-  for _, source_layer in ipairs(source_animation.layers or {source_animation}) do
-    local layer = table.deepcopy(source_layer)
-    if layer.filenames then
-      layer.filename = layer.filenames[1]
-      layer.filenames = nil
-      layer.lines_per_file = nil
-      layer.slice = nil
-    end
-    layer.direction_count = nil
-    layer.scale = (layer.scale or 1) * scale_factor
-    scale_layer_shift(layer, scale_factor)
-    layer.animation_speed = animation_speed
-    animation.layers[#animation.layers + 1] = layer
-  end
-  return animation
+-- AnimationPrototype is not directional, so expose one 11-frame animation per
+-- facing. Runtime rendering swaps the prototype when an asteroid crosses the
+-- next sixteenth-turn boundary.
+local manager_attack_animations = {}
+for direction_index = 0, ORBITAL_ASTRONAUT_DIRECTIONS - 1 do
+  manager_attack_animations[#manager_attack_animations + 1] = {
+    type = "animation",
+    name = orbital_astronaut_attack_name(direction_index),
+    filename = orbital_astronaut_graphics .. "attack.png",
+    x = 0,
+    y = direction_index * 240,
+    width = 192,
+    height = 240,
+    frame_count = ORBITAL_ASTRONAUT_ATTACK_FRAMES,
+    line_length = ORBITAL_ASTRONAUT_ATTACK_FRAMES,
+    scale = ORBITAL_ASTRONAUT_SCALE,
+    animation_speed = 1,
+    allow_forced_downscale = true,
+    surface = "space",
+    usage = "enemy",
+  }
 end
+data:extend(manager_attack_animations)
 
-local function make_manager_still_sprite(source_animation, direction_index, scale_factor)
-  local sprite = {layers = {}}
-  for _, source_layer in ipairs(source_animation.layers or {source_animation}) do
-    local layer = table.deepcopy(source_layer)
-    local frame_count = layer.frame_count or 1
-    local line_length = layer.line_length or frame_count
-    local first_frame = direction_index * frame_count
-    local first_row = math.floor(first_frame / line_length)
-    local first_column = first_frame % line_length
-
-    if layer.filenames then
-      local lines_per_file = layer.lines_per_file or 1
-      local file_index = math.floor(first_row / lines_per_file) + 1
-      layer.filename = layer.filenames[file_index]
-      layer.y = (layer.y or 0) + (first_row % lines_per_file) * layer.height
-      layer.filenames = nil
-      layer.lines_per_file = nil
-      layer.slice = nil
-    else
-      layer.y = (layer.y or 0) + first_row * layer.height
-    end
-
-    layer.x = (layer.x or 0) + first_column * layer.width
-    layer.direction_count = nil
-    layer.frame_count = nil
-    layer.line_length = nil
-    layer.animation_speed = nil
-    layer.scale = (layer.scale or 1) * scale_factor
-    scale_layer_shift(layer, scale_factor)
-    sprite.layers[#sprite.layers + 1] = layer
-  end
-  return sprite
+local function orbital_astronaut_still_sprite(direction_index)
+  return {
+    filename = orbital_astronaut_graphics .. "run.png",
+    x = 0,
+    y = direction_index * 144,
+    width = 192,
+    height = 144,
+    scale = ORBITAL_ASTRONAUT_SCALE,
+    allow_forced_downscale = true,
+    surface = "space",
+    usage = "enemy",
+  }
 end
-
-local manager_attack_animation = make_manager_attack_animation(
-  manager_unit.attack_parameters.animation,
-  0.46,
-  1
-)
-data:extend({manager_attack_animation})
 
 -- A deployed VESM rides the asteroid until demolition, then becomes one more
 -- native collectible chunk. Mining that chunk returns the miner directly to
@@ -1190,7 +1161,7 @@ for direction_index = 0, 15 do
   returning_employee_chunk.icon = nil
   returning_employee_chunk.icons = {
     {icon = "__space-age__/graphics/icons/metallic-asteroid-chunk.png", icon_size = 64},
-    {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64, scale = 0.48, shift = {4, -2}},
+    {icon = item_icons .. "orbital-astronaut.png", icon_size = 256, scale = 0.12, shift = {4, -2}},
     {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.28, shift = {9, 7}},
   }
   returning_employee_chunk.minable = {
@@ -1200,7 +1171,7 @@ for direction_index = 0, 15 do
   }
   returning_employee_chunk.graphics_set = {
     rotation_speed = 0,
-    sprite = make_manager_still_sprite(manager_unit.run_animation, direction_index, 0.46),
+    sprite = orbital_astronaut_still_sprite(direction_index),
   }
   returning_employee_chunk.dying_trigger_effect = {
     type = "create-explosion",
@@ -1224,7 +1195,7 @@ orbital_biter_projectile.acceleration = 0
 orbital_biter_projectile.max_speed = 0.36
 orbital_biter_projectile.turn_speed = 0.08
 orbital_biter_projectile.turning_speed_increases_exponentially_with_projectile_speed = nil
-orbital_biter_projectile.animation = scale_animation_layers(manager_unit.run_animation, 0.46, 0.18)
+orbital_biter_projectile.animation = orbital_astronaut_run_animation(0.18)
 orbital_biter_projectile.shadow = nil
 orbital_biter_projectile.smoke = nil
 orbital_biter_projectile.action = {

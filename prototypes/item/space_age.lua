@@ -107,7 +107,7 @@ data:extend({
     type = "item",
     name = "astronaut",
     icons = {
-      {icon = "__base__/graphics/icons/big-biter.png", icon_size = 64},
+      {icon = item_icons .. "orbital-astronaut.png", icon_size = 256},
       {icon = item_icons .. "transit-authorization.png", icon_size = 64, scale = 0.35, shift = {8, 8}},
     },
     subgroup = "admin-biter-training",
@@ -217,7 +217,7 @@ data:extend({
     type = "ammo",
     name = manager_briefings.VESM,
     icons = {
-      {icon = "__base__/graphics/icons/behemoth-biter.png", icon_size = 64},
+      {icon = item_icons .. "orbital-astronaut.png", icon_size = 256},
       {icon = "__base__/graphics/icons/electric-mining-drill.png", icon_size = 64, scale = 0.42, shift = {8, 8}},
     },
     ammo_category = "orbital-biter-ballistics",

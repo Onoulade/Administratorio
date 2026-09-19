@@ -49,6 +49,9 @@ function M.register(deps)
   script.on_event(defines.events.on_player_respawned, deps.on_player_respawned)
   script.on_event(defines.events.on_player_joined_game, deps.on_player_joined_game)
   script.on_event(defines.events.on_player_left_game, deps.on_player_left_game)
+  if deps.on_player_driving_changed_state then
+    script.on_event(defines.events.on_player_driving_changed_state, deps.on_player_driving_changed_state)
+  end
   script.on_event(defines.events.on_player_crafted_item, deps.on_player_crafted_item)
   script.on_event(defines.events.on_player_cursor_stack_changed, deps.on_player_cursor_stack_changed)
   script.on_event(defines.events.on_selected_entity_changed, deps.on_selected_entity_changed)

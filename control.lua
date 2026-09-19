@@ -2320,6 +2320,7 @@ control_event_router.register({
   on_relocation_cannon_tick = on_relocation_cannon_tick,
   relocation_cannon_check_ticks = C.RELOCATION_CANNON_CHECK_TICKS,
   on_player_created = on_player_created,
+  on_player_driving_changed_state = rideable_biter.on_player_driving_changed_state,
   on_player_cursor_stack_changed = on_player_cursor_stack_changed,
   on_player_joined_game = on_player_joined_game,
   on_player_left_game = on_player_left_game,

@@ -108,7 +108,7 @@ local MANAGER_ATTACHMENT_RADII = {
 local MANAGER_ATTACK_ANIMATION = "orbital-manager-attack"
 local MANAGER_ANIMATION_SPEED = 0.24
 local MANAGER_ORIENTATION_INTERVAL = 4
-local MANAGER_VISUAL_VERSION = 7
+local MANAGER_VISUAL_VERSION = 8
 local MANAGER_RENDER_LAYER = "186"
 
 local OUTCOME_ATTACHED = "attached"
@@ -228,10 +228,14 @@ local function salvage_chunks(size, family, target_position, destination)
   return chunks
 end
 
-local function returning_chunk_name(orientation)
+local function direction_index_for_orientation(orientation)
   local normalized = (orientation or 0) % 1
-  local direction = math.floor(normalized * RETURNING_CHUNK_DIRECTIONS + 0.5)
+  return math.floor(normalized * RETURNING_CHUNK_DIRECTIONS + 0.5)
     % RETURNING_CHUNK_DIRECTIONS
+end
+
+local function returning_chunk_name(orientation)
+  local direction = direction_index_for_orientation(orientation)
   if direction == 0 then return RETURNING_CHUNK end
   return string.format("%s-orientation-%02d", RETURNING_CHUNK, direction)
 end
@@ -325,6 +329,7 @@ local function destroy_worker_visual(worker)
   destroy_render_object(visual)
   if worker then
     worker.visual = nil
+    worker.visual_direction = nil
     worker.visual_version = nil
   end
 end
@@ -362,6 +367,11 @@ local function snapshot_worker_orientations(workers, target, tick)
   end
 end
 
+local function manager_attack_animation(direction)
+  if direction == 0 then return MANAGER_ATTACK_ANIMATION end
+  return string.format("%s-%02d", MANAGER_ATTACK_ANIMATION, direction)
+end
+
 local function attach_worker_visual(worker, target, index)
   if not rendering or not rendering.draw_animation then return nil end
   local tick = (game and game.tick) or worker.attached_tick or 0
@@ -370,13 +380,18 @@ local function attach_worker_visual(worker, target, index)
   local size = asteroid_identity(target.name)
   local surface_radius = MANAGER_ATTACHMENT_RADII[size] or 0.75
   local radius = surface_radius * (0.55 + 0.08 * math.sqrt(index))
+  local orientation = current_worker_orientation(worker, target, tick)
+  local direction = direction_index_for_orientation(orientation)
+  worker.visual_direction = direction
   return rendering.draw_animation{
-    animation = MANAGER_ATTACK_ANIMATION,
+    animation = manager_attack_animation(direction),
     target = {
       entity = target,
       offset = {math.cos(angle) * radius, math.sin(angle) * radius},
     },
-    orientation = current_worker_orientation(worker, target, tick),
+    -- The generated art already contains all sixteen facings. Keeping the
+    -- render orientation fixed avoids rotating Factorio's isometric pixels.
+    orientation = 0,
     surface = target.surface,
     animation_speed = MANAGER_ANIMATION_SPEED,
     animation_offset = (index - 1) * 2.75,
@@ -398,7 +413,12 @@ end
 local function update_worker_visual_orientation(worker, target, tick)
   local visual = worker and worker.visual
   if visual and visual.valid then
-    visual.orientation = current_worker_orientation(worker, target, tick)
+    local orientation = current_worker_orientation(worker, target, tick)
+    local direction = direction_index_for_orientation(orientation)
+    if worker.visual_direction ~= direction then
+      visual.animation = manager_attack_animation(direction)
+      worker.visual_direction = direction
+    end
   end
 end
 

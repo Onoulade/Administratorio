@@ -678,7 +678,7 @@ test("impact attaches a worker and damage begins on the next quarter-second work
   assert_eq(#hub.inserted, 0, "attached workers cannot teleport home")
 end)
 
-test("attached manager visuals arrive randomly rotated and render above their asteroid", function()
+test("attached manager visuals use the generated facing and render above their asteroid", function()
   local _, _, surface, force = new_world()
   local catapult = new_source(surface, force)
   local asteroid = new_target("asteroid", "big-metallic-asteroid", nil, surface)
@@ -703,11 +703,17 @@ test("attached manager visuals arrive randomly rotated and render above their as
   for _, candidate in pairs(storage.trajectory_compliance.assaults) do assault = candidate end
   local worker = assault.workers[1]
   assert_true(worker.arrival_orientation >= 0 and worker.arrival_orientation < 1)
-  assert_near(captured.orientation, worker.arrival_orientation, 1e-9,
-    "manager should arrive at its stored random absolute orientation")
+  local direction = math.floor(worker.arrival_orientation * 16 + 0.5) % 16
+  local expected_animation = direction == 0
+      and "orbital-manager-attack"
+    or string.format("orbital-manager-attack-%02d", direction)
+  assert_eq(captured.animation, expected_animation,
+    "manager should arrive using its nearest generated facing")
+  assert_eq(captured.orientation, 0,
+    "pre-rotated isometric frames must not be rotated a second time")
 end)
 
-test("attached manager visual accumulates the asteroid sprite rotation", function()
+test("attached manager visual follows asteroid rotation through generated facings", function()
   local _, _, surface, force = new_world()
   local catapult = new_source(surface, force)
   local asteroid = new_target("asteroid", "big-metallic-asteroid", nil, surface)
@@ -716,6 +722,7 @@ test("attached manager visual accumulates the asteroid sprite rotation", functio
     draw_animation = function(spec)
       visual = {
         valid = true,
+        animation = spec.animation,
         orientation = spec.orientation,
         destroy = function() end,
       }
@@ -724,14 +731,19 @@ test("attached manager visual accumulates the asteroid sprite rotation", functio
   }
 
   fire_biter(catapult, asteroid, {tick = 100})
-  local initial_orientation = visual.orientation
+  local assault
+  for _, candidate in pairs(storage.trajectory_compliance.assaults) do assault = candidate end
+  local worker = assault.workers[1]
+  worker.arrival_orientation = 0.03
+  worker.visual_direction = 0
+  visual.animation = "orbital-manager-attack"
   module.on_tick({tick = 104})
   rendering = nil
 
-  local expected = (initial_orientation
-    + 4 * module.ASTEROID_ROTATION_SPEEDS.big) % 1
-  assert_near(visual.orientation, expected, 1e-9,
-    "manager facing should follow the asteroid graphics spin without positional drift")
+  assert_eq(visual.animation, "orbital-manager-attack-01",
+    "manager facing should advance when asteroid rotation crosses a direction boundary")
+  assert_eq(visual.orientation, 0,
+    "generated directions should remain pixel-aligned")
 end)
 
 test("multiple managers receive distinct animated positions and phases", function()
