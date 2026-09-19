@@ -95,6 +95,16 @@ local RIDEABLE_BITER_PASSABLE_TYPES = {
   ["tree"] = true,
   ["inserter"] = true,
   ["electric-pole"] = true,
+  -- Rolling stock must keep its vanilla mask. The rideable biter already
+  -- collides with trains via the train layer, and rail ramps/supports gain
+  -- the rideable layer (cars are blocked by them). Giving stock the same
+  -- layer would make locomotives/wagons collide with ramps/supports and
+  -- block elevated rail access.
+  ["locomotive"] = true,
+  ["cargo-wagon"] = true,
+  ["fluid-wagon"] = true,
+  ["artillery-wagon"] = true,
+  ["infinity-cargo-wagon"] = true,
 }
 
 local function collision_box_is_zero(box)

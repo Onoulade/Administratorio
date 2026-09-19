@@ -196,5 +196,66 @@ test("collision masks separate worker obstacles from passable infrastructure", f
   assert_eq(#data.raw.chest.box.allowed_module_categories, 2, "collision pass should be idempotent")
 end)
 
+test("rolling stock keeps vanilla mask so trains can use rail ramps", function()
+  package.loaded["prototypes.final_fixes.collision_masks"] = nil
+  local masks = require("prototypes.final_fixes.collision_masks")
+  local function layers(names)
+    local result = {layers = {}}
+    for _, name in ipairs(names) do result.layers[name] = true end
+    return result
+  end
+  local function collides(mask_a, mask_b)
+    for layer in pairs(mask_a.layers or {}) do
+      if mask_b.layers and mask_b.layers[layer] then return true end
+    end
+    return false
+  end
+  -- Vanilla masks: stock is train-only, ramps/supports block cars via is_object.
+  local stock_box = {{-0.6, -1.8}, {0.6, 1.8}}
+  local ramp_mask = layers({"elevated_rail", "object", "rail", "rail_support", "is_lower_object", "is_object"})
+  local support_mask = layers({"object", "rail", "rail_support", "is_lower_object", "is_object"})
+  local stock_mask = layers({"train"})
+  data = {raw = {
+    item = {}, ["module-category"] = {},
+    locomotive = {
+      loco = {name = "loco", type = "locomotive", collision_mask = layers({"train"}), collision_box = stock_box},
+      default_loco = {name = "default-loco", type = "locomotive", collision_box = stock_box},
+    },
+    ["cargo-wagon"] = {
+      wagon = {name = "wagon", type = "cargo-wagon", collision_mask = layers({"train"}), collision_box = stock_box},
+    },
+    ["fluid-wagon"] = {
+      wagon = {name = "wagon", type = "fluid-wagon", collision_mask = layers({"train"}), collision_box = stock_box},
+    },
+    ["artillery-wagon"] = {
+      wagon = {name = "wagon", type = "artillery-wagon", collision_mask = layers({"train"}), collision_box = stock_box},
+    },
+    ["rail-ramp"] = {
+      ramp = {name = "ramp", type = "rail-ramp", collision_mask = ramp_mask, collision_box = {{-1, -3}, {1, 3}}},
+    },
+    ["rail-support"] = {
+      support = {name = "support", type = "rail-support", collision_mask = support_mask, collision_box = {{-1, -1}, {1, 1}}},
+    },
+    car = {
+      rideable = {name = "rideable-biter", type = "car", collision_mask = layers({"administratorio_rideable_biter_collision", "train"}), collision_box = {{-0.3, -0.4}, {0.3, 0.4}}},
+    },
+  }}
+  masks.apply(data, false)
+  local loco = data.raw.locomotive.loco.collision_mask
+  assert_true(not mask_has_layer(loco, "administratorio_rideable_biter_collision"), "locomotive must not gain the rideable layer")
+  assert_true(not mask_has_layer(data.raw.locomotive.default_loco.collision_mask, "administratorio_rideable_biter_collision"), "default-mask locomotive must not gain the rideable layer")
+  assert_true(not mask_has_layer(data.raw["cargo-wagon"].wagon.collision_mask, "administratorio_rideable_biter_collision"), "cargo wagon must not gain the rideable layer")
+  assert_true(not mask_has_layer(data.raw["fluid-wagon"].wagon.collision_mask, "administratorio_rideable_biter_collision"), "fluid wagon must not gain the rideable layer")
+  assert_true(not mask_has_layer(data.raw["artillery-wagon"].wagon.collision_mask, "administratorio_rideable_biter_collision"), "artillery wagon must not gain the rideable layer")
+  local ramp = data.raw["rail-ramp"].ramp.collision_mask
+  local support = data.raw["rail-support"].support.collision_mask
+  assert_true(not collides(loco, ramp), "locomotive must not collide with rail ramps")
+  assert_true(not collides(loco, support), "locomotive must not collide with rail supports")
+  assert_true(not collides(stock_mask, ramp), "default stock mask must not collide with rail ramps")
+  -- The rideable biter still collides with ramps/supports like a car does.
+  assert_true(collides(data.raw.car.rideable.collision_mask, ramp), "rideable biter must stay blocked by rail ramps")
+  assert_true(collides(data.raw.car.rideable.collision_mask, support), "rideable biter must stay blocked by rail supports")
+end)
+
 print(("Final-fix module tests: %d passed, %d failed"):format(passed, failed))
 if failed > 0 then for _, err in ipairs(errors) do print(" - " .. err) end; os.exit(1) end
