@@ -1661,6 +1661,22 @@ else
   mod_root = "./"
 end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
+package.preload["collision-mask-util"] = function()
+  return {
+    get_default_mask = function(prototype_type)
+      if prototype_type == "car" then
+        return {layers = {player = true, car = true, train = true, is_object = true}}
+      end
+      return {layers = {item = true, object = true, player = true, water_tile = true}}
+    end,
+    masks_collide = function(mask_a, mask_b)
+      for layer in pairs(mask_a.layers or {}) do
+        if mask_b.layers and mask_b.layers[layer] then return true end
+      end
+      return false
+    end,
+  }
+end
 local shared = require("prototypes.shared")
 local factoriopedia_merge = require("prototypes.factoriopedia_merge")
 local generated_recipe_renames = {}

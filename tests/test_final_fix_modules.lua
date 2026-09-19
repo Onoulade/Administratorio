@@ -31,8 +31,17 @@ end}}
 kg, grams, tons = 1, 0.001, 1000
 package.preload["collision-mask-util"] = function()
   return {
-    get_default_mask = function()
+    get_default_mask = function(prototype_type)
+      if prototype_type == "car" then
+        return {layers = {player = true, car = true, train = true, is_object = true}}
+      end
       return {layers = {item = true, object = true, player = true, water_tile = true}}
+    end,
+    masks_collide = function(mask_a, mask_b)
+      for layer in pairs(mask_a.layers or {}) do
+        if mask_b.layers and mask_b.layers[layer] then return true end
+      end
+      return false
     end,
   }
 end
@@ -122,19 +131,26 @@ test("collision masks separate worker obstacles from passable infrastructure", f
   local masks = require("prototypes.final_fixes.collision_masks")
   data = {raw = {
     item = {}, ["module-category"] = {speed = {}, productivity = {}},
-    chest = {box = {name = "box", type = "container", collision_mask = {"item"}, collision_box = {{-1, -1}, {1, 1}}, module_slots = 1}},
+    chest = {box = {name = "box", type = "container", collision_mask = {"item", "player"}, collision_box = {{-1, -1}, {1, 1}}, module_slots = 1}},
     ["assembling-machine"] = {
-      machine = {name = "machine", type = "assembling-machine", collision_mask = {"item", "object"}, collision_box = {{-1, -1}, {1, 1}}},
+      machine = {name = "machine", type = "assembling-machine", collision_mask = {"item", "object", "player"}, collision_box = {{-1, -1}, {1, 1}}},
       default_mask_machine = {name = "default-mask-machine", type = "assembling-machine", collision_box = {{-1, -1}, {1, 1}}},
     },
     ["electric-pole"] = {
-      pole = {name = "pole", type = "electric-pole", collision_mask = {"object"}, collision_box = {{-0.2, -0.2}, {0.2, 0.2}}},
+      pole = {name = "pole", type = "electric-pole", collision_mask = {"object", "player"}, collision_box = {{-0.2, -0.2}, {0.2, 0.2}}},
     },
     inserter = {
-      inserter = {name = "inserter", type = "inserter", collision_mask = {"object"}, collision_box = {{-0.2, -0.2}, {0.2, 0.2}}},
+      inserter = {name = "inserter", type = "inserter", collision_mask = {"object", "player"}, collision_box = {{-0.2, -0.2}, {0.2, 0.2}}},
+    },
+    tree = {
+      tree = {name = "tree", type = "tree", collision_mask = {"object", "player"}, collision_box = {{-0.4, -0.4}, {0.4, 0.4}}},
     },
     ["transport-belt"] = {
       belt = {name = "belt", type = "transport-belt", collision_mask = {"object"}, collision_box = {{-0.4, -0.4}, {0.4, 0.4}}},
+    },
+    car = {
+      car = {name = "car", type = "car", collision_box = {{-0.7, -1}, {0.7, 1}}},
+      rideable = {name = "rideable-biter", type = "car", collision_mask = {layers = {administratorio_rideable_biter_collision = true, train = true}}, collision_box = {{-0.3, -0.4}, {0.3, 0.4}}},
     },
     container = {
       station = {name = "biter-station", type = "container", collision_mask = {"administratorio_station_footprint"}, collision_box = {{-2, -2}, {2, 2}}},
@@ -146,7 +162,7 @@ test("collision masks separate worker obstacles from passable infrastructure", f
     },
     character = {character = {name = "character", collision_mask = {"player"}, collision_box = {{-1, -1}, {1, 1}}}},
     tile = {
-      water = {name = "water", collision_mask = {layers = {water_tile = true}}},
+      water = {name = "water", collision_mask = {layers = {water_tile = true, player = true}}},
       dirt = {name = "dirt", collision_mask = {layers = {ground_tile = true}}},
     },
   }}
@@ -164,6 +180,17 @@ test("collision masks separate worker obstacles from passable infrastructure", f
   assert_true(not mask_has_layer(data.raw.furnace.bureau.collision_mask, "administratorio_worker_obstacle"))
   assert_true(data.raw.tile.water.collision_mask.layers.administratorio_worker_terrain)
   assert_true(not data.raw.tile.dirt.collision_mask.layers.administratorio_worker_terrain)
+  assert_true(data.raw.chest.box.collision_mask.layers.administratorio_rideable_biter_collision)
+  assert_true(data.raw["assembling-machine"].machine.collision_mask.layers.administratorio_rideable_biter_collision)
+  assert_true(data.raw.car.car.collision_mask.layers.administratorio_rideable_biter_collision)
+  assert_true(data.raw.car.rideable.collision_mask.layers.administratorio_rideable_biter_collision)
+  assert_true(not data.raw.car.rideable.collision_mask.layers.administratorio_worker_obstacle)
+  assert_true(data.raw.tile.water.collision_mask.layers.administratorio_rideable_biter_collision)
+  assert_true(not mask_has_layer(data.raw.tile.dirt.collision_mask, "administratorio_rideable_biter_collision"))
+  assert_true(not mask_has_layer(data.raw.tree.tree.collision_mask, "administratorio_rideable_biter_collision"))
+  assert_true(not mask_has_layer(data.raw.inserter.inserter.collision_mask, "administratorio_rideable_biter_collision"))
+  assert_true(not mask_has_layer(data.raw["electric-pole"].pole.collision_mask, "administratorio_rideable_biter_collision"))
+  assert_true(not mask_has_layer(data.raw["transport-belt"].belt.collision_mask, "administratorio_rideable_biter_collision"))
   assert_eq(#data.raw.chest.box.allowed_module_categories, 2)
   masks.apply(data, true)
   assert_eq(#data.raw.chest.box.allowed_module_categories, 2, "collision pass should be idempotent")

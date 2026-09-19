@@ -77,6 +77,17 @@ test("empty rideable biter uses the ordinary biter body and shadow", function()
   end
 end)
 
+test("rideable biter ignores terrain friction and uses its selective collision layer", function()
+  local empty = assert(data.raw.car["rideable-biter"])
+  local mounted = assert(data.raw.car["rideable-biter-mounted"])
+  for _, vehicle in ipairs({empty, mounted}) do
+    assert_eq(vehicle.terrain_friction_modifier, 0)
+    assert_true(vehicle.collision_mask.layers.administratorio_rideable_biter_collision)
+    assert_true(vehicle.collision_mask.layers.train)
+    assert_true(vehicle.collision_mask.consider_tile_transitions)
+  end
+end)
+
 test("mounted rideable biter combines generated rider art with the ordinary shadow", function()
   local mounted = assert(data.raw.car["rideable-biter-mounted"])
   assert_eq(#mounted.animation.layers, 2)

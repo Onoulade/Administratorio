@@ -11,6 +11,7 @@
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
 local WORKER_TERRAIN_COLLISION_LAYER = "administratorio_worker_terrain"
 local WORKER_OBSTACLE_COLLISION_LAYER = "administratorio_worker_obstacle"
+local RIDEABLE_BITER_COLLISION_LAYER = "administratorio_rideable_biter_collision"
 local feature_flags = require("feature_flags")
 
 data:extend({
@@ -25,6 +26,10 @@ data:extend({
   {
     type = "collision-layer",
     name = WORKER_OBSTACLE_COLLISION_LAYER
+  },
+  {
+    type = "collision-layer",
+    name = RIDEABLE_BITER_COLLISION_LAYER
   },
   {
     type = "autoplace-control",

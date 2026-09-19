@@ -7,6 +7,7 @@ local M = {}
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
 local WORKER_TERRAIN_COLLISION_LAYER = "administratorio_worker_terrain"
 local WORKER_OBSTACLE_COLLISION_LAYER = "administratorio_worker_obstacle"
+local RIDEABLE_BITER_COLLISION_LAYER = "administratorio_rideable_biter_collision"
 local NIGHT_WORK_BUILDINGS = {
   ["office-desk"] = true,
   ["corporate-breakroom"] = true,
@@ -58,6 +59,11 @@ local WORKER_PASSABLE_NAMES = {
   ["biter-station"] = true,
   ["biterport"] = true,
   ["biterport-placement-preview"] = true,
+  -- These use the train layer to remain solid to managed biters. Do not add
+  -- the general worker-obstacle layer, because trees also carry that layer
+  -- and the mounted biter must be able to step through them.
+  ["rideable-biter"] = true,
+  ["rideable-biter-mounted"] = true,
 }
 local WORKER_PASSABLE_TYPES = {
   ["character"] = true, ["combat-robot"] = true, ["construction-robot"] = true,
@@ -84,6 +90,11 @@ local WORKER_PASSABLE_TYPES = {
   ["rail-support"] = true, ["legacy-straight-rail"] = true,
   ["legacy-curved-rail"] = true, ["rail-signal"] = true,
   ["rail-chain-signal"] = true,
+}
+local RIDEABLE_BITER_PASSABLE_TYPES = {
+  ["tree"] = true,
+  ["inserter"] = true,
+  ["electric-pole"] = true,
 }
 
 local function collision_box_is_zero(box)
@@ -134,6 +145,21 @@ local function materialize_collision_mask(prototype)
   return normalize_collision_mask(default_collision_mask_for(prototype.type))
 end
 
+local function masks_collide(mask_a, mask_b)
+  if collision_mask_util and collision_mask_util.masks_collide then
+    return collision_mask_util.masks_collide(mask_a, mask_b)
+  end
+  for layer in pairs(mask_a.layers or {}) do
+    if mask_b.layers and mask_b.layers[layer] then return true end
+  end
+  return false
+end
+
+local function collides_with_standard_car(mask)
+  local car_mask = normalize_collision_mask(default_collision_mask_for("car"))
+  return car_mask and masks_collide(normalize_collision_mask(mask), car_mask)
+end
+
 local function has_excluded_flag(prototype)
   for _, flag in ipairs(prototype.flags or {}) do
     if ADMIN_STATION_EXCLUDED_FLAGS[flag] then return true end
@@ -159,6 +185,19 @@ local function should_add_worker_obstacle_layer(prototype)
     and prototype.collision_box
     and not collision_box_is_zero(prototype.collision_box)
     and (prototype.collision_mask or default_collision_mask_for(prototype.type))
+end
+
+local function should_add_rideable_biter_layer(prototype)
+  if not prototype
+    or RIDEABLE_BITER_PASSABLE_TYPES[prototype.type]
+    or not prototype.collision_box
+    or collision_box_is_zero(prototype.collision_box)
+  then
+    return false
+  end
+
+  local mask = prototype.collision_mask or default_collision_mask_for(prototype.type)
+  return mask and collides_with_standard_car(mask)
 end
 
 local function build_standard_module_categories(data)
@@ -188,6 +227,9 @@ function M.apply(data, working_hours_enabled)
       if mask.layers.water_tile then
         mask.layers[WORKER_TERRAIN_COLLISION_LAYER] = true
       end
+      if collides_with_standard_car(mask) then
+        mask.layers[RIDEABLE_BITER_COLLISION_LAYER] = true
+      end
       tile.collision_mask = mask
     end
   end
@@ -202,6 +244,11 @@ function M.apply(data, working_hours_enabled)
       if should_add_worker_obstacle_layer(prototype) then
         prototype.collision_mask = materialize_collision_mask(prototype)
         prototype.collision_mask.layers[WORKER_OBSTACLE_COLLISION_LAYER] = true
+      end
+
+      if should_add_rideable_biter_layer(prototype) then
+        prototype.collision_mask = materialize_collision_mask(prototype)
+        prototype.collision_mask.layers[RIDEABLE_BITER_COLLISION_LAYER] = true
       end
 
       if prototype and type(prototype.module_slots) == "number" and prototype.module_slots > 0 then

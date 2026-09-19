@@ -23,6 +23,7 @@ local worker_station
 local worker_inserter
 local worker_belt
 local worker_pole
+local worker_tree
 local worker_machine
 local worker_special_blockers = {}
 local rideable
@@ -73,9 +74,15 @@ script.on_init(function()
     position = {34, 0},
     force = force,
   }
+  worker_tree = surface.create_entity{
+    name = "tree-01",
+    position = {36, 0},
+    force = game.forces.neutral,
+  }
   if not worker_inserter or not worker_inserter.valid then fail("could not create worker-path inserter") end
   if not worker_belt or not worker_belt.valid then fail("could not create worker-path belt") end
   if not worker_pole or not worker_pole.valid then fail("could not create worker-path power pole") end
+  if not worker_tree or not worker_tree.valid then fail("could not create rideable-biter tree obstacle") end
 
   local water_tiles = {}
   for x = 38, 42 do
@@ -227,6 +234,32 @@ script.on_nth_tick(30, function()
       if surface.find_non_colliding_position(worker_name, blocker_spec.position, 0.1, 0.05) then
         fail(worker_name .. " can walk through " .. blocker_spec.name)
       end
+    end
+  end
+
+  for _, rideable_name in ipairs({"rideable-biter", "rideable-biter-mounted"}) do
+    local prototype = prototypes.entity[rideable_name]
+    if not prototype then fail(rideable_name .. " prototype is missing") end
+    if prototype.terrain_friction_modifier ~= 0 then
+      fail(rideable_name .. " is still affected by terrain friction")
+    end
+    if not prototype.collision_mask.layers.administratorio_rideable_biter_collision then
+      fail(rideable_name .. " lacks its selective collision layer")
+    end
+    if not surface.can_place_entity{name = rideable_name, position = worker_tree.position, force = force} then
+      fail(rideable_name .. " cannot walk over trees")
+    end
+    if not surface.can_place_entity{name = rideable_name, position = worker_inserter.position, force = force} then
+      fail(rideable_name .. " cannot walk over inserters")
+    end
+    if not surface.can_place_entity{name = rideable_name, position = worker_pole.position, force = force} then
+      fail(rideable_name .. " cannot walk over power poles")
+    end
+    if surface.can_place_entity{name = rideable_name, position = worker_machine.position, force = force} then
+      fail(rideable_name .. " can walk through solid machines")
+    end
+    if surface.can_place_entity{name = rideable_name, position = {40.5, 0.5}, force = force} then
+      fail(rideable_name .. " can cross water")
     end
   end
 end)
