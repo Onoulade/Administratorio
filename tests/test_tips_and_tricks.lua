@@ -158,6 +158,22 @@ test("biterport tip unlocks with biterport-logistics technology", function()
   )
 end)
 
+test("stranded worker recovery is documented when either dispatch building is used", function()
+  local item = tip("administratorio-orphaned-workers")
+  assert_true(
+    trigger_contains(item.trigger, "build-entity", "entity", "biter-station"),
+    "orphan recovery tip should unlock from building a biter station"
+  )
+  assert_true(
+    trigger_contains(item.trigger, "build-entity", "entity", "biterport"),
+    "orphan recovery tip should unlock from building a biterport"
+  )
+  assert_true(
+    english_tips_locale:find("starts gaining frustration at the same rate as a regular complaint visitor", 1, true) ~= nil,
+    "orphan recovery tip should explain the frustration grace period"
+  )
+end)
+
 test("previously orphaned core mechanic tips unlock with their mechanics", function()
   local expected = {
     ["administratorio-bullshit-economy"] = "discovery-bullshit",

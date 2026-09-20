@@ -2,6 +2,7 @@ local C = require("scripts.constants")
 local quality = require("scripts.quality")
 local working_hours = require("scripts.working_hours")
 local unit_ai_settings = require("scripts.unit_ai_settings")
+local orphaned_worker = require("scripts.orphaned_worker")
 
 local M = {}
 local biters_module = nil
@@ -2298,13 +2299,13 @@ local function start_return(active, tick)
         distraction = defines.distraction.none,
       })
     end
-    local protested = turn_worker_into_protester(active, tick)
-    worker_debug_log("start-return-protest-result", active, "protested=" .. tostring(protested))
+    orphaned_worker.begin(active, active.biter, "logistics", tick, active.force)
     return true
   end
   worker_debug_log("start-return-retarget-port", active, "port=" .. tostring(port.unit_number) .. " port_pos=" .. debug_position(port.position))
   active.return_port_id = port.unit_number
   active.orphan_return_started_tick = nil
+  orphaned_worker.clear(active, active.biter, active.force)
   return begin_phase_move(
     active,
     "returning",
@@ -2342,6 +2343,7 @@ turn_worker_into_protester = function(active, tick)
   local biters = biters_module
   if biters and biters.trigger_immediate_protest then
     if biters.trigger_immediate_protest(biter, biter.surface, nil, {preserve_entity = true}) then
+      orphaned_worker.clear(active, biter, active.force)
       worker_debug_log("turn-protester-success", active)
       unmark_worker_unit(active.biter_unit_number)
       unregister_active_worker(active)
@@ -2353,20 +2355,27 @@ turn_worker_into_protester = function(active, tick)
 end
 
 local function advance_orphaned_return(active, tick)
+  if orphaned_worker.should_retry(active, tick) then
+    active.unreachable_return_ports = nil
+  end
   local port = nearest_valid_port(active)
   if port and port.valid then
     worker_debug_log("orphan-retarget-port", active, "port=" .. tostring(port.unit_number) .. " port_pos=" .. debug_position(port.position))
     active.return_port_id = port.unit_number
     active.orphan_return_started_tick = nil
+    orphaned_worker.clear(active, active.biter, active.force)
     begin_phase_move(active, "returning", port_despawn_position(port), C.BITERPORT_ARRIVAL_RADIUS, tick)
     return "retargeted"
   end
 
   active.phase = "orphaned_returning"
   active.orphan_return_started_tick = active.orphan_return_started_tick or current_tick(tick)
-  local protested = turn_worker_into_protester(active, tick)
-  worker_debug_log("orphan-protest-result", active, "protested=" .. tostring(protested))
-  return "protesting"
+  if orphaned_worker.update(active, active.biter, "logistics", tick, active.force) then
+    local protested = turn_worker_into_protester(active, tick)
+    worker_debug_log("orphan-protest-result", active, "protested=" .. tostring(protested))
+    return protested and "protesting" or "orphaned"
+  end
+  return "orphaned"
 end
 
 local function finish_worker(active, tick, return_worker)

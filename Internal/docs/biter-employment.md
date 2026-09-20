@@ -93,6 +93,8 @@ Hover over the biter station to see:
 
 The station runs on a hidden "worker force" (`administratorio-biters`) with ceasefires against player, enemy, and neutral forces. Workers are small-biter entities with custom pathfinding, dispatched via go-to commands with distraction = none. They check for jobs, phase-travel to the target building, perform the craft, then return.
 
+If a returning worker loses its station, every compatible station is full, or the return route cannot be found, it becomes orphaned instead of protesting immediately. An orphan raises a player map alert, remains recoverable by any reachable station with worker inventory space, and accumulates frustration using the normal individual frustration tiers. Blocked stations are retried every 10 seconds. Rebuilding a station, clearing its route, or freeing a worker slot recovers the worker; reaching the normal protest threshold converts it into a protester.
+
 ## Biterport
 
 A roboport, but staffed by walking biters instead of flying robots. Progress.
@@ -188,6 +190,7 @@ Like the biter station, biterports require the per-dispatch liquid-coffee amount
 - No construction robots — workers place ghost entities themselves.
 - Chest-based logistics, not logistic network system.
 - Workers can be overwhelmed if too many requests are active.
+- A worker that loses every reachable port raises an alert and accumulates normal frustration before protesting. It retries blocked ports every 10 seconds and can be recovered by restoring any reachable port with worker space.
 - True construction/logistic robotics (vanilla robots) are late-game, gated by utility science.
 
 ### Status Display

@@ -2,6 +2,7 @@ local C = require("scripts.constants")
 local feature_flags = require("feature_flags")
 local working_hours = require("scripts.working_hours")
 local unit_ai_settings = require("scripts.unit_ai_settings")
+local orphaned_worker = require("scripts.orphaned_worker")
 
 local M = {}
 local biters_module = nil
@@ -139,6 +140,7 @@ local MAX_PHASE_PATH_FAILURES = 8
 
 local maybe_reinsert_worker
 local clear_active_queue_claims
+local handle_unreachable_destination
 
 local function debug_position(pos)
   if not pos then return "[nil]" end
@@ -588,7 +590,8 @@ end
 local function nearest_valid_station(active_state)
   local biter = active_state and active_state.biter
   local current = active_state and active_state.station_id and storage.biter_stations[active_state.station_id]
-  if current and current.valid and station_has_worker_space(current) then return current end
+  local blocked = active_state and active_state.unreachable_return_stations or {}
+  if current and current.valid and not blocked[current.unit_number] and station_has_worker_space(current) then return current end
   if not biter or not biter.valid then return nil end
 
   local station_force = active_state.force
@@ -597,6 +600,7 @@ local function nearest_valid_station(active_state)
   local best, best_score = nil, math.huge
   for _, station in pairs(storage.biter_stations or {}) do
     if station and station.valid
+       and not blocked[station.unit_number]
        and station.surface == biter.surface
        and (not station_force or station.force == station_force)
        and station_has_worker_space(station) then
@@ -819,9 +823,21 @@ end
 local function begin_orphan_station_return(active_state, biter, tick)
   if not active_state or not biter or not biter.valid then return end
   station_worker_debug_log("begin-orphan-return", active_state)
+  local previous_station_id = active_state.station_id
+  local biter_unit_number = active_state.biter_unit_number
+  if previous_station_id and storage.biter_station_active_by_station then
+    local station_map = storage.biter_station_active_by_station[previous_station_id]
+    if station_map and biter_unit_number then
+      station_map[biter_unit_number] = nil
+      if not next(station_map) then
+        storage.biter_station_active_by_station[previous_station_id] = nil
+      end
+    end
+  end
   active_state.phase = "orphaned_returning"
   active_state.station = nil
   active_state.station_id = nil
+  mark_station_worker_unit(biter_unit_number, nil)
   active_state.phase_started_tick = tick or game.tick
   active_state.orphan_return_started_tick = active_state.orphan_return_started_tick or (tick or game.tick)
   active_state.phase_destination = nil
@@ -834,6 +850,7 @@ local function begin_orphan_station_return(active_state, biter, tick)
       distraction = defines.distraction.none,
     })
   end
+  orphaned_worker.begin(active_state, biter, "station", tick, active_state.force)
 end
 
 local function turn_station_worker_into_protester(active_state, tick)
@@ -858,6 +875,7 @@ local function turn_station_worker_into_protester(active_state, tick)
   local biters = biters_module
   if biters and biters.trigger_immediate_protest then
     if biters.trigger_immediate_protest(biter, biter.surface, nil, {preserve_entity = true}) then
+      orphaned_worker.clear(active_state, biter, active_state.force)
       station_worker_debug_log("turn-protester-success", active_state)
       unmark_station_worker_unit(active_state.biter_unit_number)
       unregister_active_biter_state(active_state)
@@ -869,19 +887,26 @@ local function turn_station_worker_into_protester(active_state, tick)
 end
 
 local function advance_orphaned_station_return(active_state, biter, tick)
+  if orphaned_worker.should_retry(active_state, tick) then
+    active_state.unreachable_return_stations = nil
+  end
   local station = nearest_valid_station(active_state)
   if station and station.valid then
     station_worker_debug_log("orphan-retarget-station", active_state, "station=" .. tostring(station.unit_number) .. " station_pos=" .. debug_position(station.position))
     reassign_active_station(active_state, station)
     active_state.orphan_return_started_tick = nil
+    orphaned_worker.clear(active_state, biter, active_state.force)
     begin_phase_move(active_state, biter, "to_station", station_interior_position(station), C.BITER_STATION_ARRIVAL_RADIUS, tick)
     return "retargeted"
   end
 
   begin_orphan_station_return(active_state, biter, tick)
-  local protested = turn_station_worker_into_protester(active_state, tick)
-  station_worker_debug_log("orphan-protest-result", active_state, "protested=" .. tostring(protested))
-  return "protesting"
+  if orphaned_worker.update(active_state, biter, "station", tick, active_state.force) then
+    local protested = turn_station_worker_into_protester(active_state, tick)
+    station_worker_debug_log("orphan-protest-result", active_state, "protested=" .. tostring(protested))
+    return protested and "protesting" or "orphaned"
+  end
+  return "orphaned"
 end
 
 local function check_and_update_progress(active_state, biter, tick)
@@ -1615,8 +1640,7 @@ local function advance_active_biters(tick)
     refresh_active_biter_snapshot(active_state, biter)
 
     if active_state.phase ~= "orphaned_returning" and check_and_update_progress(active_state, biter, tick) then
-      cleanup_active_biter(active_state, tick, false, "stuck")
-      if station and station.valid then refresh_station_status(station) end
+      handle_unreachable_destination(active_state, biter, station_id, tick)
       goto continue
     end
 
@@ -1983,7 +2007,7 @@ end
 -- go_to_location command (which otherwise leaves the biter standing still
 -- forever with no feedback). Surfaces the failure on the station's status
 -- the same way a missing worker/money/coffee condition does.
-local function handle_unreachable_destination(active_state, entity, station_id, tick)
+handle_unreachable_destination = function(active_state, entity, station_id, tick)
   local station = station_id and storage.biter_stations and storage.biter_stations[station_id] or nil
   if station and station.valid then
     set_station_status(station, "biter-station-building-unreachable")
@@ -2021,10 +2045,13 @@ local function handle_unreachable_destination(active_state, entity, station_id, 
     return
   end
 
-  -- The station itself (or the walk back to it) is unreachable. Don't
-  -- re-target the same unreachable station; give up on the trip cleanly.
+  -- The station itself (or the walk back to it) is unreachable. Remember it
+  -- temporarily so another station can accept the worker; if none can, the
+  -- normal orphan frustration grace period begins.
+  active_state.unreachable_return_stations = active_state.unreachable_return_stations or {}
+  if station_id then active_state.unreachable_return_stations[station_id] = true end
   begin_orphan_station_return(active_state, entity, tick)
-  turn_station_worker_into_protester(active_state, tick)
+  advance_orphaned_station_return(active_state, entity, tick)
 end
 
 function M.on_ai_command_completed(event)

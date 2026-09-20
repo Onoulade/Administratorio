@@ -170,6 +170,7 @@ M.IS_SPITTER = {
 -- Individual frustration tier thresholds (fraction of PROTEST_THRESHOLD)
 M.FRUST_TIER_THRESHOLDS = {0.25, 0.50, 0.75}
 M.FRUST_GROWTH_RATES    = {1.5,  1.2,  1.0,  0.8}   -- individual growth/s per tier
+M.ORPHANED_WORKER_RETRY_TICKS = 10 * 60
 
 M.ZONE_DIRECTIONS = {
   defines.direction.north,

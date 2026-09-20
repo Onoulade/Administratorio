@@ -41,6 +41,7 @@ defines = {
   distraction = {none = 0},
   behavior_result = {fail = 1, success = 2},
 }
+local C = require("scripts.constants")
 
 package.loaded["scripts.working_hours"] = nil
 package.preload["scripts.working_hours"] = function()
@@ -727,7 +728,7 @@ test("biter station stays minable while workers are active", function()
   assert_eq(station.minable, true, "biter station should remain minable while a worker is out")
 end)
 
-test("almost-returned station worker protests instead of despawning after host removal", function()
+test("almost-returned station worker gains frustration before protesting after host removal", function()
   storage = {}
   package.loaded["scripts.biter_station"] = nil
   package.loaded["scripts.biters"] = nil
@@ -781,12 +782,19 @@ test("almost-returned station worker protests instead of despawning after host r
   biter_station.on_ai_command_completed{unit_number = active.biter_unit_number, tick = 20}
   biter_station.update(30)
 
-  assert_true(protested_entity == worker_entity, "orphaned worker should protest immediately when no host has space")
+  assert_true(protested_entity == nil, "orphaned worker should receive a frustration grace period")
   assert_true(worker_entity.valid, "orphaned worker should not despawn at the removed station position")
+  local orphan = active_worker()
+  assert_true(orphan ~= nil, "orphaned worker should remain recoverable during the grace period")
+  orphan.orphan_frustration = C.PROTEST_THRESHOLD - 1
+  orphan.orphan_frust_accum = 0
+  orphan.orphan_last_frustration_tick = 30
+  biter_station.update(150)
+  assert_true(protested_entity == worker_entity, "orphaned worker should protest after reaching full frustration")
   assert_true(active_worker() == nil, "converted protester should leave station active worker tracking")
 end)
 
-test("non-returning orphaned station worker protests immediately without a host", function()
+test("non-returning orphaned station worker gains frustration without a host", function()
   storage = {}
   package.loaded["scripts.biter_station"] = nil
   package.loaded["scripts.biters"] = nil
@@ -833,7 +841,12 @@ test("non-returning orphaned station worker protests immediately without a host"
 
   biter_station.untrack_station(station, 10)
   assert_eq(active.phase, "orphaned_returning", "finished non-returning worker should become orphaned")
-  assert_true(protested_entity == worker_entity, "orphaned worker should become a protester immediately")
+  assert_true(protested_entity == nil, "orphaned worker should not protest immediately")
+  active.orphan_frustration = C.PROTEST_THRESHOLD - 1
+  active.orphan_frust_accum = 0
+  active.orphan_last_frustration_tick = 10
+  biter_station.update(130)
+  assert_true(protested_entity == worker_entity, "orphaned worker should protest after its grace period")
   assert_true(active_worker() == nil, "converted protester should leave station active worker tracking")
 end)
 

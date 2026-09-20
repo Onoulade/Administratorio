@@ -48,6 +48,7 @@ defines = {
   distraction = {none = 0},
   behavior_result = {fail = 1, success = 2},
 }
+local C = require("scripts.constants")
 
 package.loaded["scripts.working_hours"] = nil
 local function disabled_working_hours()
@@ -1308,7 +1309,7 @@ test("biterport stays minable while workers are active", function()
   assert_eq(port.minable, true, "biterport should remain minable while a worker is out")
 end)
 
-test("almost-returned biterport worker protests instead of despawning after host removal", function()
+test("almost-returned biterport worker gains frustration before protesting after host removal", function()
   storage = {}
   package.loaded["scripts.biterport"] = nil
   package.loaded["scripts.biters"] = nil
@@ -1370,12 +1371,17 @@ test("almost-returned biterport worker protests instead of despawning after host
   biterport.on_ai_command_completed{unit_number = active.biter_unit_number, tick = 60}
   biterport.update(70)
 
-  assert_true(protested_entity == worker_entity, "orphaned worker should protest immediately when no host has space")
+  assert_true(protested_entity == nil, "orphaned worker should receive a frustration grace period")
   assert_true(worker_entity.valid, "orphaned worker should not despawn at the removed host position")
+  active.orphan_frustration = C.PROTEST_THRESHOLD - 1
+  active.orphan_frust_accum = 0
+  active.orphan_last_frustration_tick = 70
+  biterport.update(190)
+  assert_true(protested_entity == worker_entity, "orphaned worker should protest after reaching full frustration")
   assert_eq(active_worker_count(), 0, "converted protester should leave biterport active worker tracking")
 end)
 
-test("non-returning orphaned biterport worker protests immediately without a host", function()
+test("non-returning orphaned biterport worker gains frustration without a host", function()
   storage = {}
   package.loaded["scripts.biterport"] = nil
   package.loaded["scripts.biters"] = nil
@@ -1430,7 +1436,12 @@ test("non-returning orphaned biterport worker protests immediately without a hos
 
   biterport.untrack_port(port, 30)
   assert_eq(active.phase, "orphaned_returning", "failed non-returning worker should become orphaned")
-  assert_true(protested_entity == worker_entity, "orphaned worker should become a protester immediately")
+  assert_true(protested_entity == nil, "orphaned worker should not protest immediately")
+  active.orphan_frustration = C.PROTEST_THRESHOLD - 1
+  active.orphan_frust_accum = 0
+  active.orphan_last_frustration_tick = 30
+  biterport.update(150)
+  assert_true(protested_entity == worker_entity, "orphaned worker should protest after its grace period")
   assert_eq(active_worker_count(), 0, "converted protester should leave biterport active worker tracking")
 end)
 
@@ -1631,6 +1642,13 @@ test("unreachable return port switches ports and does not cycle between blocked 
   fail_worker_path(biterport, active, 36)
   assert_eq(active.phase, "orphaned_returning", "both blocked ports should leave the existing orphan recovery in charge")
   assert_eq(active.return_port_id, nil)
+
+  local rescue = new_port(surface, force, 0, 0, 12, {x = 20, y = 20})
+  biterport.track_port(rescue)
+  biterport.update(37)
+  assert_eq(active.phase, "returning", "a newly available port should recover the orphan before it protests")
+  assert_eq(active.return_port_id, rescue.unit_number, "the orphan should route to the newly available port")
+  assert_true(active.orphan_frustration == nil, "successful recovery should clear orphan frustration")
 end)
 
 test("biterport migration normalizes legacy item grades and cache keys", function()
