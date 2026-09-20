@@ -271,6 +271,8 @@ test("the base trunk tier carries regular paperwork and no colored forms", funct
     assert_true(not chromatic[name], name .. " is a regular payload and must not be chromatic")
   end
   assert_true(contains(payloads.regular, "blank-form"), "regular payloads should carry blank forms")
+  assert_true(contains(payloads.regular, "provisional-work-order"),
+    "provisional work orders should travel through the base trunk")
   assert_true(contains(payloads.regular, "taxpayer-money"), "regular payloads should carry taxpayer money")
 end)
 

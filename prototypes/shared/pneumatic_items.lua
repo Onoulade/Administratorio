@@ -16,6 +16,7 @@ M.names = {
   "blank-form", "blank-approval", "blank-directive",
   "treasury-bond", "government-grant",
   "safety-work-order", "construction-work-order",
+  "provisional-work-order",
   "management-verbal-work-order", "management-written-work-order",
   "research-grant-work-order", "chemical-handling-work-order",
   "radiological-work-order",
