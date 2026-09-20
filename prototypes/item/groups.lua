@@ -14,7 +14,7 @@ data:extend({
     type = "item-group",
     name = "admin-infrastructure-group",
     order = "zb",
-    icon = item_icons .. "office-building.png",
+    icon = item_icons .. "dubious-data.png",
     icon_size = 64
   },
   {
