@@ -23,6 +23,13 @@ local function spawner_limit(spawner)
   return math.max(0, math.floor(limit))
 end
 
+local function lease_limit(spawner, override)
+  if type(override) == "number" then
+    return math.max(0, math.floor(override))
+  end
+  return spawner_limit(spawner)
+end
+
 function M.ensure_storage()
   storage.spawner_population = storage.spawner_population or {}
   storage.spawner_population_unit_links = storage.spawner_population_unit_links or {}
@@ -170,24 +177,25 @@ function M.detach_unit(entity, spawner)
 end
 
 -- Reserves capacity for a newly-created managed worker. One currently owned
--- nest unit is retired when necessary, making this a population transfer rather
--- than an extra biter. Returns false when every slot is already leased.
-function M.can_lease_new_unit(spawner)
+-- nest unit is retired when necessary. A subsystem may provide its own lease
+-- ceiling without changing the native spawner limit; leases above that native
+-- limit therefore remain temporary and must be released by their owner.
+function M.can_lease_new_unit(spawner, limit_override)
   ensure_ready()
   local record = ensure_record(spawner)
   if not record then return false end
-  local limit = spawner_limit(spawner)
+  local limit = lease_limit(spawner, limit_override)
   return not limit or count_entries(record.detached) < limit
 end
 
-function M.lease_new_unit(entity, spawner)
+function M.lease_new_unit(entity, spawner, limit_override)
   if not entity or not entity.valid or not entity.unit_number then return false end
   ensure_ready()
   local record = ensure_record(spawner)
   if not record then return false end
   prune_invalid_owned(record)
 
-  if not M.can_lease_new_unit(spawner) then
+  if not M.can_lease_new_unit(spawner, limit_override) then
     return false
   end
 
@@ -336,8 +344,8 @@ end
 -- Returns the capacity that script-managed systems (currently complaints and
 -- Field Offices) may lease from this nest. Native owned units do not reduce
 -- availability: lease_new_unit retires one of them when a slot is transferred.
-function M.get_capacity(spawner)
-  local total = spawner_limit(spawner)
+function M.get_capacity(spawner, limit_override)
+  local total = lease_limit(spawner, limit_override)
   local _, used = M.get_counts(spawner)
   if total == nil then return nil, used, nil end
   return math.max(0, total - used), used, total

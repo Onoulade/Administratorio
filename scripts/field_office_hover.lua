@@ -1,5 +1,4 @@
 local field_office = require("scripts.field_office")
-local spawner_population = require("scripts.spawner_population")
 
 local M = {}
 
@@ -83,7 +82,7 @@ function M.show_nest(player, spawner)
   destroy_gui(player)
   if not spawner or not spawner.valid then return end
 
-  local available, used, total = spawner_population.get_capacity(spawner)
+  local available, used, total = field_office.get_spawner_capacity(spawner)
   available = available or 0
   total = total or used
   local frame = player.gui.left.add{

@@ -415,12 +415,12 @@ test("field office falls back to an unbiased search when the hive-facing side is
     "office should still be able to call a worker via the far, open face")
 end)
 
-test("field offices share their home nest population limit across update shards", function()
+test("field offices share a ten-worker home nest limit across update shards", function()
   reset()
   local spawner = {valid = true, position = {x = 40, y = 50}}
   local surface = new_surface({spawner})
   local offices = {}
-  for i = 1, 10 do
+  for i = 1, 13 do
     local office = new_office(surface, 30 + i, 100)
     office.position = {x = i * 4, y = 20}
     offices[#offices + 1] = office
@@ -431,7 +431,7 @@ test("field offices share their home nest population limit across update shards"
     field_office.update(tick)
   end
 
-  assert_eq(#surface.created_entities, 7, "one nest should not lease more workers than its population limit")
+  assert_eq(#surface.created_entities, 10, "one nest should not lease more than ten field-office workers")
   local calling = 0
   local unavailable = 0
   for _, office in ipairs(offices) do
@@ -441,8 +441,62 @@ test("field offices share their home nest population limit across update shards"
       unavailable = unavailable + 1
     end
   end
-  assert_eq(calling, 7, "available nest slots should each dispatch one worker")
+  assert_eq(calling, 10, "available nest slots should each dispatch one worker")
   assert_eq(unavailable, 3, "excess offices should wait for a leased slot to return")
+end)
+
+test("all ten field office workers return, despawn, and release their nest leases", function()
+  reset()
+  local spawner = {valid = true, position = {x = 40, y = 50}}
+  local surface = new_surface({spawner})
+  local offices = {}
+  for i = 1, C.FIELD_OFFICE_WORKERS_PER_NEST do
+    local office = new_office(surface, 30 + i, 100)
+    office.position = {x = i * 4, y = 20}
+    offices[#offices + 1] = office
+    field_office.track_entity(office)
+  end
+
+  for tick = 0, 55, 5 do field_office.update(tick) end
+  assert_eq(#surface.created_entities, C.FIELD_OFFICE_WORKERS_PER_NEST)
+
+  for _, office in ipairs(offices) do
+    local state = storage.field_office_state[office.unit_number]
+    state.biter.position = {x = office.position.x, y = office.position.y}
+  end
+  for tick = 60, 85, 5 do field_office.update(tick) end
+
+  for _, office in ipairs(offices) do office.products_finished = 2 end
+  for tick = 90, 115, 5 do field_office.update(tick) end
+
+  local releasing = 0
+  for _, info in pairs(storage.field_office_releasing) do
+    releasing = releasing + 1
+    info.entity.position = {
+      x = info.return_destination.x,
+      y = info.return_destination.y,
+    }
+  end
+  assert_eq(releasing, C.FIELD_OFFICE_WORKERS_PER_NEST,
+    "every completed worker should remain tracked during its visible return")
+  local available, used = field_office.get_spawner_capacity(spawner)
+  assert_eq(available, 0)
+  assert_eq(used, C.FIELD_OFFICE_WORKERS_PER_NEST)
+
+  -- Prevent the now-idle offices from immediately summoning replacements while
+  -- the releasing pass verifies that every returned entity and lease is gone.
+  for _, office in ipairs(offices) do office.get_recipe = function() return nil end end
+  field_office.update(60 + C.RETURN_MIN_TRAVEL_TICKS + 115)
+
+  assert_true(next(storage.field_office_releasing) == nil,
+    "all returned workers should leave the releasing tracker")
+  for _, biter in ipairs(surface.created_entities) do
+    assert_true(not biter.valid, "every returned field-office worker should be destroyed")
+  end
+  available, used = field_office.get_spawner_capacity(spawner)
+  assert_eq(available, C.FIELD_OFFICE_WORKERS_PER_NEST,
+    "all ten nest leases should be reusable after workers return")
+  assert_eq(used, 0, "returned workers must not leak population leases")
 end)
 
 test("field office skips a full nest for a farther nest with available biters on the first attempt", function()
@@ -450,6 +504,14 @@ test("field office skips a full nest for a farther nest with available biters on
   local full_spawner = {valid = true, position = {x = 12, y = 20}, prototype = {max_count_of_owned_units = 0}}
   local available_spawner = {valid = true, position = {x = 100, y = 20}}
   local surface = new_surface({full_spawner, available_spawner})
+  for unit_number = 1, C.FIELD_OFFICE_WORKERS_PER_NEST do
+    local worker = {valid = true, unit_number = 2000 + unit_number}
+    assert_true(spawner_population.lease_new_unit(
+      worker,
+      full_spawner,
+      C.FIELD_OFFICE_WORKERS_PER_NEST
+    ))
+  end
   local office = new_office(surface, 6, 100)
   office.position = {x = 10, y = 20}
   field_office.track_entity(office)
@@ -457,6 +519,8 @@ test("field office skips a full nest for a farther nest with available biters on
   field_office.update(0)
 
   assert_eq(#surface.created_entities, 1, "the nearer full nest should not block spawning from the farther available nest")
+  assert_true(storage.field_office_state[office.unit_number].spawner == available_spawner,
+    "the dispatched worker should hold a lease from the farther available nest")
   assert_eq(office.custom_status.label[1], "gui.field-office-calling", "office should summon on the first attempt instead of reporting no workers available")
 end)
 
@@ -731,14 +795,14 @@ test("field office population summary aggregates and sorts per-nest capacity", f
   assert_true(spawner_population.lease_new_unit(leased_worker, nearer))
 
   local summary = field_office.get_nearby_population_summary(office)
-  assert_eq(summary.available, 10, "aggregate availability should subtract active leases")
+  assert_eq(summary.available, 19, "aggregate availability should subtract active leases")
   assert_eq(summary.used, 1)
-  assert_eq(summary.total, 11)
+  assert_eq(summary.total, 20)
   assert_eq(#summary.nests, 2)
   assert_true(summary.nests[1].entity == nearer, "per-nest rows should be nearest first")
-  assert_eq(summary.nests[1].available, 6)
+  assert_eq(summary.nests[1].available, 9)
   assert_eq(summary.nests[1].used, 1)
-  assert_eq(summary.nests[1].total, 7)
+  assert_eq(summary.nests[1].total, 10)
   assert_eq(field_office.get_nearby_office_count(nearer), 1)
 end)
 

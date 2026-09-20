@@ -24,6 +24,18 @@ local MAX_RETURN_RETRIES = 3
 local release_biter
 local set_office_status
 
+local function can_lease_worker(spawner)
+  return spawner_population.can_lease_new_unit(spawner, C.FIELD_OFFICE_WORKERS_PER_NEST)
+end
+
+local function lease_worker(unit, spawner)
+  return spawner_population.lease_new_unit(unit, spawner, C.FIELD_OFFICE_WORKERS_PER_NEST)
+end
+
+local function get_worker_capacity(spawner)
+  return spawner_population.get_capacity(spawner, C.FIELD_OFFICE_WORKERS_PER_NEST)
+end
+
 local function ensure_runtime_profile_section(runtime_profile, key)
   if not runtime_profile then return nil end
   local section = runtime_profile[key]
@@ -168,7 +180,7 @@ local function find_nearest_spawner(surface, position, range)
   for _, s in ipairs(spawners) do
     if s.valid then
       local distance = distance_squared(s.position, position)
-      if spawner_population.can_lease_new_unit(s) then
+      if can_lease_worker(s) then
         if not nearest_distance or distance < nearest_distance then
           nearest = s
           nearest_distance = distance
@@ -340,7 +352,7 @@ end
 
 local function spawn_worker_biter(office, spawner)
   if not office or not office.valid or not spawner or not spawner.valid then return nil end
-  if not spawner_population.can_lease_new_unit(spawner) then
+  if not can_lease_worker(spawner) then
     return nil, nil, "capacity"
   end
 
@@ -354,7 +366,7 @@ local function spawn_worker_biter(office, spawner)
     force = get_biter_force(),
   }
   if not biter or not biter.valid then return nil end
-  if not spawner_population.lease_new_unit(biter, spawner) then
+  if not lease_worker(biter, spawner) then
     biter.destroy()
     return nil, nil, "capacity"
   end
@@ -1025,6 +1037,7 @@ end
 
 M.is_field_office = is_field_office
 M.get_spawner_range = field_office_spawner_range
+M.get_spawner_capacity = get_worker_capacity
 
 function M.get_nearby_population_summary(office)
   local summary = {available = 0, used = 0, total = 0, nests = {}}
@@ -1039,9 +1052,9 @@ function M.get_nearby_population_summary(office)
 
   for _, spawner in ipairs(spawners) do
     if spawner.valid then
-      local available, used, total = spawner_population.get_capacity(spawner)
-      -- Vanilla unit spawners always have a finite population limit. Keep the
-      -- panel useful for modded spawners whose prototype omits it as well.
+      local available, used, total = get_worker_capacity(spawner)
+      -- Keep the panel useful if a future capacity provider cannot report a
+      -- finite per-nest limit.
       available = available or 0
       total = total or used
       summary.available = summary.available + available

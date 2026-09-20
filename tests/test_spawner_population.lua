@@ -179,6 +179,22 @@ test("new worker is refused when all nest slots are already leased", function()
   assert_true(second.valid, "caller retains control of a refused worker entity")
 end)
 
+test("caller-specific lease ceiling can exceed the native spawner limit", function()
+  local spawner = new_spawner(75, 7)
+  reset({})
+  for unit_number = 1, 10 do
+    assert_true(limiter.lease_new_unit(new_unit(100 + unit_number, nil), spawner, 10),
+      "the first ten field-office-style leases should be accepted")
+  end
+  assert_true(not limiter.lease_new_unit(new_unit(111, nil), spawner, 10),
+    "the caller-specific ceiling must still reject an eleventh lease")
+
+  local available, used, total = limiter.get_capacity(spawner, 10)
+  assert_eq(available, 0)
+  assert_eq(used, 10)
+  assert_eq(total, 10)
+end)
+
 test("capacity reports leases as used and leaves native roamers available", function()
   local spawner = new_spawner(80, 4)
   local native = new_unit(17, spawner)

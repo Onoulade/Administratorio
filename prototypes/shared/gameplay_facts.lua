@@ -20,6 +20,7 @@ M.admin_station = {
 
 M.field_office = {
   worker_entity = "field-office-worker",
+  workers_per_nest = 10,
 }
 
 M.biter_station = {
