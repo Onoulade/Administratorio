@@ -75,6 +75,7 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 - **Prerequisites:** `local-precedents`, `rubble-compaction`, `filing-logistics`
 - **Science:** 90 auto + 90 logistic + 90 chemical + 90 admin science-pack (30s)
 - **Unlocks:** pneumatic pipes, tube intakes/outtakes, all pneumatic intake recipes
+- **Payload scope:** all core administrative payloads and, with Space Age, every finished planetary document. Raw heatproof, mycelial, and signal form stock is excluded. Interplanetary payload eligibility remains a separate whitelist.
 
 ### Biter Employment Office (`biter-employment-office`)
 

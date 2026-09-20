@@ -202,4 +202,6 @@ The pneumatic system was reworked from fluid-based transport to a script-managed
 
 ### Transportable Items
 
-All paperwork items, complaint tickets, resolved items, currency items (taxpayer-money, treasury-bond, government-grant), and intermediate documents (paper, ink, credentials, data, good-excuse, justification, narrative, policy, regulation, white-paper, useless-documentation, refined-nonsense) can flow through pneumatic tubes.
+All core paperwork items, complaint tickets, resolved items, currency items (taxpayer-money, treasury-bond, government-grant), and intermediate documents (paper, ink, credentials, data, good-excuse, justification, narrative, policy, regulation, white-paper, useless-documentation, refined-nonsense) can flow through pneumatic tubes.
+
+With Space Age enabled, local pneumatic networks also accept every finished planetary document, including colored forms, permits, dockets, licenses, orders, certificates, deeds, contracts, and charters. The three unfinished stationery materials—`heatproof-form-stock`, `mycelial-form-stock`, and `signal-form-stock`—remain ordinary belt cargo. Local tube eligibility is independent of the narrower interplanetary payload whitelist.

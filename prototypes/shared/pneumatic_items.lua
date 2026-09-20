@@ -38,9 +38,37 @@ M.names = {
   "useless-documentation", "refined-nonsense", "job-offer",
 }
 
-function M.as_set()
+-- Finished Space Age documents may use local pneumatic networks. Form-stock
+-- materials are deliberately absent: heatproof-form-stock,
+-- mycelial-form-stock, and signal-form-stock remain ordinary belt cargo.
+-- Keep this separate from M.names because the interplanetary trunk uses the
+-- core list as its base tier and admits only its explicit chromatic exports.
+M.space_age_names = {
+  "blank-cyan-form", "blank-yellow-form", "blank-magenta-form",
+  "cyan-yellow-form", "cyan-magenta-form", "yellow-magenta-form",
+  "permit-draft", "inspection-docket", "symbiosis-record",
+  "conciliation-order", "archive-recovery-permit",
+  "digital-processing-certificate", "electromagnetic-operating-license",
+  "data-recovery-order", "hardened-data-vault", "trichromatic-permit",
+  "unified-operations-charter", "public-transportation-contract",
+  "cryogenic-operations-license", "promethium-research-charter",
+  "embossed-seal", "industrial-charter", "territorial-resettlement-order",
+  "territorial-deed", "thermal-process-license", "calcite-reagent-waiver",
+  "offworld-metallurgy-charter", "orbital-infrastructure-permit",
+}
+
+function M.all(space_age_enabled)
+  local names = {}
+  for _, name in ipairs(M.names) do names[#names + 1] = name end
+  if space_age_enabled then
+    for _, name in ipairs(M.space_age_names) do names[#names + 1] = name end
+  end
+  return names
+end
+
+function M.as_set(space_age_enabled)
   local set = {}
-  for _, name in ipairs(M.names) do
+  for _, name in ipairs(M.all(space_age_enabled)) do
     set[name] = true
   end
   return set

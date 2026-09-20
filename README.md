@@ -44,7 +44,7 @@ Workers require salaries. Night dispatches require coffee. The union is real, an
 
 ### Build a logistics network made of paperwork
 
-Research **Pneumatic Form Transport** to send administrative items through a script-managed tube network. Tube Intakes feed the network, Outtakes retrieve filtered items, and Pumps move paperwork between connected networks. Capacity and throughput grow through research, because even documents need an upgrade path.
+Research **Pneumatic Form Transport** to send administrative items through a script-managed tube network. Tube Intakes feed the network, Outtakes retrieve filtered items, and Pumps move paperwork between connected networks. With Space Age enabled, every finished planetary document can use local tubes; raw heatproof, mycelial and signal form stock remains ordinary belt cargo. This local eligibility does not expand the separate interplanetary trunk whitelist. Capacity and throughput grow through research, because even documents need an upgrade path.
 
 Trains also participate in the civic order: stations use transit authorization paperwork unless you eventually earn the privilege of bureaucratic transcendence.
 

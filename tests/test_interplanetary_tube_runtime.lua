@@ -289,6 +289,16 @@ test("colored paperwork and Space Age charters are chromatic-tier only", functio
   end
 end)
 
+test("planet-specific finished forms stay out of the interplanetary trunk", function()
+  local payload_set = payloads.as_set()
+  for _, name in ipairs({
+    "permit-draft", "inspection-docket", "data-recovery-order",
+    "public-transportation-contract", "orbital-infrastructure-permit",
+  }) do
+    assert_true(not payload_set[name], name .. " should remain local pneumatic cargo")
+  end
+end)
+
 test("every trunk payload has a dispatch recipe name and the set covers both tiers", function()
   local all = payloads.all()
   assert_eq(#all, #payloads.regular + #payloads.chromatic, "all() should be the union of both tiers")

@@ -103,7 +103,7 @@ shared.PAPERWORK_ITEMS = {
 -- administrative goods. Used by both data stage (recipe generation if any)
 -- and control stage (intake inserter filter setup).
 -------------------------------------------------------------------------------
-shared.PNEUMATIC_ITEMS = pneumatic_items.as_set()
+shared.PNEUMATIC_ITEMS = pneumatic_items.as_set(space_age_enabled)
 
 -------------------------------------------------------------------------------
 -- COMBINED FORMS

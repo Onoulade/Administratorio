@@ -5,6 +5,7 @@ Date: 2026-09-20
     - allow ten workers per nest
     - ignore terrain and narrow obstacles
     - integrate rider and astronaut sprites
+    - allow finished Space Age documents through local pneumatic tubes
   Bugfixes:
     - place bureaucratic promise in weapons tab
     - keep rolling stock off the rideable-biter collision layer
@@ -16,6 +17,8 @@ Date: 2026-09-20
     - Gate tube pumps behind power and blue science
     - Gate nest expropriation behind blue science
     - Require safety paperwork for every inserter beyond the basic electric inserter
+  Docs:
+    - document local pneumatic payload eligibility and the separate interplanetary whitelist
 ---------------------------------------------------------------------------------------------------
 Version: 0.6.14
 Date: 2026-09-16

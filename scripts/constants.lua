@@ -293,7 +293,7 @@ M.TUBE_PUMP_NAME = "tube-pump"
 -- All items eligible for pneumatic tube transport.
 -- Defined in a dependency-free module so data-stage descriptions and runtime
 -- intake validation always agree.
-M.PNEUMATIC_ITEMS = require("prototypes.shared.pneumatic_items").names
+M.PNEUMATIC_ITEMS = require("prototypes.shared.pneumatic_items").all(feature_flags.space_age_enabled())
 
 -- All items eligible for the interplanetary trunk, and the subset that only the
 -- Aquilo chromatic tier may carry.

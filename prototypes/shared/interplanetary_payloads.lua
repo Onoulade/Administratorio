@@ -1,17 +1,18 @@
 -- Interplanetary trunk payloads shared by the data stage and runtime.
 -- Keep this module dependency-free: Factorio loads it in both contexts.
 --
--- The base tier carries exactly the local pneumatic payload set: ~80 black-ink
--- forms, tickets, filings, cases, briefs, paper, ink, and taxpayer money.  The
--- chromatic tier adds the colored set on Aquilo.  Nothing else ever crosses the
--- trunk: rockets keep every other cargo.
+-- The base tier carries the core pneumatic payload set: ~80 black-ink forms,
+-- tickets, filings, cases, briefs, paper, ink, and taxpayer money. Local tubes
+-- also accept finished planetary paperwork, but the trunk admits only the
+-- explicit chromatic exports below. Nothing else ever crosses the trunk:
+-- rockets keep every other cargo.
 
 local pneumatic_items = require("prototypes.shared.pneumatic_items")
 
 local M = {}
 
--- Regular black-ink paperwork. Identical to the local tube payload by design;
--- a second taxonomy would drift from the first one the moment either changed.
+-- Regular black-ink paperwork. This is the base-game subset of the local tube
+-- payloads; Space Age planetary paperwork is local-only unless listed below.
 M.regular = pneumatic_items.names
 
 M.chromatic = {

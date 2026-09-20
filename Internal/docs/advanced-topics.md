@@ -141,6 +141,8 @@ The `bureaucratic-transcendence` technology unlocks the Public Train Stop. It ha
 
 `interplanetary-tube-chromatic` extends the trunk to cyan, yellow, magenta, and composite paperwork after the Aquilo branch is established. Other goods still need rockets.
 
+Local pneumatic networks use a broader rule: every finished Space Age document may travel within its current surface, while `heatproof-form-stock`, `mycelial-form-stock`, and `signal-form-stock` remain belt cargo. This does not make planet-specific permits, orders, licenses, deeds, or contracts valid interplanetary payloads; cross-planet transport still follows the explicit base and chromatic trunk lists above.
+
 ### Aquilo Inference and Slop
 
 The AI Server makes Inference Tokens from electricity and sends them over Optic Fibre to a Slop Refinery. Server heat uses the ordinary heat network, so insufficient cooling stops production. `aquilo-ai-inference` produces rank 0–1 uncolored paperwork; `administratorium-slop-synthesis` adds rank 2–3 uncolored paperwork after Promethium science. Neither technology creates colored forms.

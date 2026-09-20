@@ -2070,6 +2070,22 @@ test("Aquilo bootstrap precedes cryogenic science and the chromatic trunk follow
     "transfer emulsion must have a pre-Cryogenic-Plant provider")
 end)
 
+test("local pneumatic tubes accept finished Space Age forms but not form stock", function()
+  local pneumatic_items = require("prototypes.shared.pneumatic_items")
+  local shared = require("prototypes.shared")
+  for _, item_name in ipairs(pneumatic_items.space_age_names) do
+    local recipe_name = "pneumatic-intake-" .. item_name
+    assert_true(shared.PNEUMATIC_ITEMS[item_name], item_name .. " missing from the Space Age payload set")
+    assert_true(recipes[recipe_name] ~= nil, recipe_name .. " missing")
+  end
+
+  for _, item_name in ipairs({"heatproof-form-stock", "mycelial-form-stock", "signal-form-stock"}) do
+    assert_true(not shared.PNEUMATIC_ITEMS[item_name], item_name .. " should not be a pneumatic payload")
+    assert_true(recipes["pneumatic-intake-" .. item_name] == nil,
+      item_name .. " should remain ordinary belt cargo")
+  end
+end)
+
 test("Administratorium expedition closes the administrative progression loop", function()
   local technology = assert(technologies["promethium-science-pack"], "promethium-science-pack missing")
   local prerequisites = {}
