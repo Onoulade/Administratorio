@@ -1,4 +1,20 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.15
+Date: 2026-09-20
+  Features:
+    - allow ten workers per nest
+    - ignore terrain and narrow obstacles
+    - integrate rider and astronaut sprites
+  Bugfixes:
+    - place bureaucratic promise in weapons tab
+    - keep rolling stock off the rideable-biter collision layer
+  Changes:
+    - Reorder wood and charcoal recipes
+    - Change administrative tab icon to dubious data
+    - Add orphaned worker frustration grace period
+    - Fix office desk recipe output quantity
+    - Gate tube pumps behind power and blue science
+---------------------------------------------------------------------------------------------------
 Version: 0.6.14
 Date: 2026-09-16
   Bugfixes:
