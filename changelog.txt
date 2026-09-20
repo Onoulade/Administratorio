@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.16
+Date: 2026-09-20
+  Internal:
+    - exclude tools from release archives
+  Changes:
+    - Remove field office requirement from formation center
+    - Require safety paperwork for upgraded inserters
+    - Fix stuck biters reserving admin slots
+---------------------------------------------------------------------------------------------------
 Version: 0.6.15
 Date: 2026-09-20
   Features:
