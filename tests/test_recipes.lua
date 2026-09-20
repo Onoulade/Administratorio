@@ -1042,6 +1042,18 @@ test("greenhouse recipes use admin-greenhouse category", function()
   end
 end)
 
+test("greenhouse wood is grouped with vanilla intermediate recipes", function()
+  local r = get_recipe("greenhouse-wood")
+  assert_eq(r.subgroup, "admin-intermediate")
+  assert_eq(r.order, "b2", "greenhouse wood should sit next to the metal plate recipes")
+end)
+
+test("charcoal production is grouped with vanilla intermediate recipes", function()
+  local r = get_recipe("charcoal-production")
+  assert_eq(r.subgroup, "admin-intermediate")
+  assert_eq(r.order, "b3", "charcoal should sit next to the metal plate and wood recipes")
+end)
+
 test("greenhouse wood growth is moderately accelerated", function()
   local r = get_recipe("greenhouse-wood")
   assert_eq(get_result_amount(r, "wood"), 12)

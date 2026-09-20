@@ -5,8 +5,10 @@ local function bulk_copy_recipe(name, recipe)
 end
 
 data:extend({
+  -- Renewable wood -> vanilla Intermediate Products, next to the metal plates
+  { type = "recipe", name = "greenhouse-wood",      category = "admin-greenhouse", enabled = false, subgroup = "admin-intermediate", order = "b2", ingredients = {{type="fluid", name="water", amount=100}},                                                                      results = {{type="item", name="wood", amount=12}},                                                  energy_required = 24 },
+
   -- Greenhouse & Coffee -> admin-raw
-  { type = "recipe", name = "greenhouse-wood",      category = "admin-greenhouse", enabled = false, subgroup = "admin-raw", order = "a-a", ingredients = {{type="fluid", name="water", amount=100}},                                                                      results = {{type="item", name="wood", amount=12}},                                                  energy_required = 24 },
   {
     type = "recipe", name = "greenhouse-discovery", category = "admin-greenhouse", enabled = false,
     icon = "__administratorio__/graphics/icons/coffee-bean.png", icon_size = 32,
@@ -62,6 +64,6 @@ data:extend({
   { type = "recipe", name = "compacted-rubble-production", category = "smelting-basic", enabled = false, subgroup = "admin-data-economy", order = "c-b", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="redundant-rubble", amount=5}}, results = {{type="item", name="compacted-rubble", amount=5}}, energy_required = 16 },
 
   -- Charcoal Production: alternate recipe for vanilla coal -> admin-intermediate
-  { type = "recipe", name = "charcoal-production", category = "smelting-basic", enabled = false, subgroup = "admin-intermediate", order = "e", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="wood", amount=30}}, results = {{type="item", name="coal", amount=8}}, energy_required = 30, allow_decomposition = false },
+  { type = "recipe", name = "charcoal-production", category = "smelting-basic", enabled = false, subgroup = "admin-intermediate", order = "b3", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="wood", amount=30}}, results = {{type="item", name="coal", amount=8}}, energy_required = 30, allow_decomposition = false },
 
 })
