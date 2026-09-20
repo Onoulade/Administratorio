@@ -602,6 +602,17 @@ recipes["fast-splitter"] = {
   results = {{ type = "item", name = "fast-splitter", amount = 1 }},
 }
 
+for _, inserter_name in ipairs({"long-handed-inserter", "fast-inserter"}) do
+  recipes[inserter_name] = {
+    type = "recipe",
+    name = inserter_name,
+    category = "crafting",
+    enabled = false,
+    ingredients = {{ type = "item", name = "iron-plate", amount = 1 }},
+    results = {{ type = "item", name = inserter_name, amount = 1 }},
+  }
+end
+
 recipes["bulk-inserter"] = {
   type = "recipe",
   name = "bulk-inserter",
@@ -2363,11 +2374,13 @@ test("Space Age shared categories receive regulated assembler copies", function(
   assert_eq(regulated_electromagnetic.category, "advanced-crafting-regulated", "specialist-machine bootstrap should use AM2")
 end)
 
-test("handcrafted red logistics keep permits separate from regulated work orders", function()
+test("handcrafted upgraded logistics keep permits separate from regulated work orders", function()
   local expected = {
     ["fast-transport-belt"] = {base = "construction-permit", machine = "construction-work-order"},
     ["fast-underground-belt"] = {base = "construction-permit", machine = "construction-work-order"},
     ["fast-splitter"] = {base = "safety-waiver", machine = "safety-work-order"},
+    ["long-handed-inserter"] = {base = "safety-waiver", machine = "safety-work-order"},
+    ["fast-inserter"] = {base = "safety-waiver", machine = "safety-work-order"},
     ["bulk-inserter"] = {base = "safety-waiver", machine = "safety-work-order"},
   }
 
