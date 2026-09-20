@@ -71,6 +71,10 @@ local function new_test_context(hard_mode_enabled, constant_overrides)
   local adopt_count = 0
   local desk_route_command_count = 0
   local last_desk_route_destination = nil
+  local release_calls = 0
+  local last_released_entity = nil
+  local released_desk_slots = {}
+  local unindexed_desk_biters = {}
 
   local surface
   surface = {
@@ -240,7 +244,9 @@ local function new_test_context(hard_mode_enabled, constant_overrides)
       reassign_slot = function() end,
       get_zone_position = function() return nil end,
       get_queue_pos = function() return {x = 0, y = 0} end,
-      release_slot = function() end,
+      release_slot = function(desk_id, unit_number)
+        released_desk_slots[#released_desk_slots + 1] = {desk_id = desk_id, unit_number = unit_number}
+      end,
       get_available_slots = function() return 0 end,
     },
     working_hours = {
@@ -291,7 +297,9 @@ local function new_test_context(hard_mode_enabled, constant_overrides)
       info.tracked_unit_number = new_unit_number
     end,
     mark_desk_circuit_dirty = function() end,
-    unindex_biter_from_desk = function() end,
+    unindex_biter_from_desk = function(desk_id, unit_number)
+      unindexed_desk_biters[#unindexed_desk_biters + 1] = {desk_id = desk_id, unit_number = unit_number}
+    end,
     index_biter_to_desk = function() end,
     get_desk_waiting_destination = function() return {x = 0, y = 0} end,
     issue_desk_route_command = function(_, destination)
@@ -353,6 +361,14 @@ local function new_test_context(hard_mode_enabled, constant_overrides)
     remember_home_spawner = function() end,
     send_biter_to_station_with_targets = function() end,
     start_return_home = function() end,
+    release_as_regular_enemy = function(entity)
+      release_calls = release_calls + 1
+      last_released_entity = entity
+      entity.force = game.forces.enemy
+      entity.active = true
+      entity.destructible = true
+      return true
+    end,
     background_state_shard_count = 1,
     protest_debug_status_ticks = 10 * 60,
   }
@@ -403,6 +419,18 @@ local function new_test_context(hard_mode_enabled, constant_overrides)
     end,
     get_last_desk_route_destination = function()
       return last_desk_route_destination
+    end,
+    get_release_calls = function()
+      return release_calls
+    end,
+    get_last_released_entity = function()
+      return last_released_entity
+    end,
+    get_released_desk_slots = function()
+      return released_desk_slots
+    end,
+    get_unindexed_desk_biters = function()
+      return unindexed_desk_biters
     end,
   }
 end
@@ -904,7 +932,7 @@ test("high protest load processes one deterministic pacing shard at a time", fun
   assert_eq(ctx.get_protest_render_count(), 1, "only the current pacing shard should run expensive protest maintenance")
 end)
 
-test("triggering an immediate protest renders even before a target is assigned", function()
+test("triggering an immediate protest releases the biter when no target exists", function()
   local ctx = new_test_context()
   ctx.set_protest_targets({})
 
@@ -917,13 +945,13 @@ test("triggering an immediate protest renders even before a target is assigned",
   ctx.controller.trigger_immediate_protest(entity, ctx.surface)
 
   local info = storage.waiting_biters[entity.unit_number]
-  assert_true(info ~= nil, "immediate protest should register the worker as a waiting biter")
-  assert_eq(info.state, "protesting", "registered worker should be protesting")
-  assert_true(ctx.get_protest_render_count() > 0, "immediate protest should render protest text without a target")
-  assert_true(ctx.get_protest_notify_count() > 0, "immediate protest should notify using the protester when no target exists")
+  assert_true(info == nil, "a protester without an eligible building should leave managed tracking")
+  assert_eq(ctx.get_release_calls(), 1, "a protester without a target should return to regular enemy AI")
+  assert_true(ctx.get_last_released_entity() == entity, "the adopted biter should be the released entity")
+  assert_eq(ctx.get_protest_notify_count(), 0, "a released targetless biter should not raise a protest alert")
 end)
 
-test("preserved immediate protest keeps the existing worker entity", function()
+test("preserved targetless protest releases the existing worker entity", function()
   local ctx = new_test_context()
   ctx.set_protest_targets({})
 
@@ -936,13 +964,13 @@ test("preserved immediate protest keeps the existing worker entity", function()
   assert_true(ctx.controller.trigger_immediate_protest(entity, ctx.surface, nil, {preserve_entity = true}), "preserved protest should succeed")
 
   local info = storage.waiting_biters[entity.unit_number]
-  assert_true(info ~= nil, "preserved protest should track the same unit number")
-  assert_true(info.entity == entity, "preserved protest should keep the existing entity")
+  assert_true(info == nil, "preserved targetless protest should not remain tracked")
   assert_true(entity.valid, "preserved protest should not destroy the worker entity")
   assert_eq(ctx.get_adopt_count(), 0, "preserved protest should not use the clone/adopt path")
+  assert_true(ctx.get_last_released_entity() == entity, "the preserved worker should be released directly")
 end)
 
-test("preserved immediate protest wanders when no target is available", function()
+test("preserved immediate protest does not wander when no target is available", function()
   local ctx = new_test_context()
   ctx.set_protest_targets({})
 
@@ -954,11 +982,9 @@ test("preserved immediate protest wanders when no target is available", function
 
   assert_true(ctx.controller.trigger_immediate_protest(entity, ctx.surface, nil, {preserve_entity = true}), "preserved protest should succeed")
 
-  local info = storage.waiting_biters[entity.unit_number]
-  assert_true(info ~= nil, "preserved targetless protest should still be tracked")
-  assert_true(info.target_building == nil, "targetless protest should not claim a missing building")
-  assert_true(ctx.get_last_move_command() ~= nil, "targetless protest should receive a wander command")
-  assert_true(info.protest_anchor_position ~= nil, "targetless protest should keep a wander anchor")
+  assert_true(storage.waiting_biters[entity.unit_number] == nil, "targetless protest should be untracked")
+  assert_true(ctx.get_last_move_command() == nil, "targetless protest should not receive a synthetic wander command")
+  assert_eq(entity.force, game.forces.enemy, "released targetless protester should return to the enemy force")
 end)
 
 test("preserved immediate protest starts moving toward a target immediately", function()
@@ -1488,9 +1514,11 @@ test("underground pipes and transport infrastructure are never breach targets", 
   assert_true(entity.active == false, "a blocked protester with no eligible breach should remain inactive")
 end)
 
-test("a failed desk route breaches an aligned pipe then resumes the same desk destination", function()
+test("a failed desk route releases its reservation and starts a protest", function()
   local ctx = new_test_context(true)
+  local target = new_target(ctx.surface, 220, 20, 20)
   local pipe = new_obstacle(ctx.surface, 221, 6, 6, "pipe")
+  ctx.set_protest_targets({target})
   ctx.set_protest_obstacles({pipe})
   local entity = ctx.surface.create_entity{
     name = "biterport-worker",
@@ -1514,33 +1542,20 @@ test("a failed desk route breaches an aligned pipe then resumes the same desk de
     result = defines.behavior_result.fail,
   }
 
-  assert_true(info.desk_route_breach_attacking == true, "the failed desk route should enter controlled breach mode")
-  assert_eq(ctx.get_last_attack_command().target, pipe, "desk routing should breach the aligned regular pipe")
-  assert_eq(info.desk_id, 999, "breach mode must preserve the administrative destination")
-
-  ctx.controller.on_ai_command_completed{
-    unit_number = entity.unit_number,
-    result = defines.behavior_result.success,
-  }
-  assert_eq(ctx.get_attack_command_count(), 2, "a successful desk-route bite should immediately continue on a surviving pipe")
-  assert_eq(info.desk_route_breach_command_failures, 0, "a successful bite must not count as a desk-route failure")
-
-  ctx.controller.on_ai_command_completed{
-    unit_number = entity.unit_number,
-    result = defines.behavior_result.fail,
-  }
-  assert_eq(ctx.get_attack_command_count(), 3, "a transient desk-route attack failure should continue immediately")
-  assert_eq(ctx.get_last_attack_command().target, pipe, "the desk breacher must stay focused on the surviving pipe")
-
-  ctx.controller.on_protest_target_removed(pipe)
-  assert_true(info.desk_route_breach_attacking ~= true, "destroying the pipe should leave breach mode")
-  assert_eq(ctx.get_desk_route_command_count(), 1, "destroying the pipe should resume the desk route exactly once")
-  assert_eq(ctx.get_last_desk_route_destination(), destination, "the resumed command should use the original desk destination")
-  assert_eq(entity.force, game.forces.neutral, "the visitor should regain its managed force after the breach")
+  local protest_info = storage.waiting_biters[entity.unit_number]
+  assert_true(protest_info ~= nil, "a reachable protest target should keep the failed visitor managed")
+  assert_eq(protest_info.state, "protesting", "a failed desk route should transition directly to protest")
+  assert_true(protest_info.desk_id == nil, "the failed visitor must release its desk assignment")
+  assert_eq(#ctx.get_released_desk_slots(), 1, "the failed route should release exactly one desk slot")
+  assert_eq(ctx.get_released_desk_slots()[1].desk_id, 999, "the released slot should belong to the failed destination")
+  assert_eq(ctx.get_attack_command_count(), 0, "a failed desk route must not attack pipes on the way to administration")
+  assert_true(protest_info.pending_path_request_id ~= nil, "the failed visitor should validate a route to a protest building")
 end)
 
-test("an inactive stalled desk route with no forward wall is reissued", function()
+test("an inactive stalled desk route releases its reservation", function()
   local ctx = new_test_context()
+  local target = new_target(ctx.surface, 220, 20, 20)
+  ctx.set_protest_targets({target})
   local entity = ctx.surface.create_entity{
     name = "biterport-worker",
     position = {x = 4, y = 4},
@@ -1565,13 +1580,17 @@ test("an inactive stalled desk route with no forward wall is reissued", function
 
   ctx.controller.process_frustration_and_protests(ctx.surface)
 
-  assert_eq(ctx.get_desk_route_command_count(), 1, "the stalled visitor should receive a fresh desk route")
-  assert_eq(ctx.get_last_desk_route_destination(), destination, "the retry must preserve the assigned desk destination")
-  assert_true(entity.active == true, "the stalled visitor should be reactivated")
+  local protest_info = storage.waiting_biters[entity.unit_number]
+  assert_true(protest_info ~= nil and protest_info.state == "protesting", "a stalled visitor should protest instead of retrying the desk")
+  assert_true(protest_info.desk_id == nil, "the stalled visitor should no longer reserve a desk")
+  assert_eq(ctx.get_desk_route_command_count(), 0, "the stalled visitor must not receive another desk route")
+  assert_eq(#ctx.get_released_desk_slots(), 1, "stall recovery should release the reserved slot")
 end)
 
-test("a failed desk route uses an existing pipe-wall gap before breaching", function()
+test("a failed desk route does not attempt pipe-wall gap recovery", function()
   local ctx = new_test_context()
+  local target = new_target(ctx.surface, 239, 20, 20)
+  ctx.set_protest_targets({target})
   ctx.set_protest_obstacles({
     new_obstacle(ctx.surface, 240, 6, 4, "pipe"),
     new_obstacle(ctx.surface, 241, 6, 5, "pipe"),
@@ -1600,21 +1619,17 @@ test("a failed desk route uses an existing pipe-wall gap before breaching", func
     result = defines.behavior_result.fail,
   }
 
-  assert_eq(ctx.get_attack_command_count(), 0, "an existing wall gap must suppress a redundant desk-route pipe attack")
-  assert_true(info.desk_route_gap_waypoint ~= nil, "the visitor should retain the temporary gap waypoint")
-  assert_eq(ctx.get_desk_route_command_count(), 1, "the visitor should receive one route command through the gap")
-
-  ctx.controller.on_ai_command_completed{
-    unit_number = entity.unit_number,
-    result = defines.behavior_result.success,
-  }
-  assert_true(info.desk_route_gap_waypoint == nil, "reaching the gap should clear the desk waypoint")
-  assert_eq(ctx.get_desk_route_command_count(), 2, "reaching the gap should resume the original desk route")
-  assert_eq(ctx.get_last_desk_route_destination(), destination, "the post-gap command should retain the desk destination")
+  local protest_info = storage.waiting_biters[entity.unit_number]
+  assert_true(protest_info ~= nil and protest_info.state == "protesting", "the failed visitor should protest")
+  assert_eq(ctx.get_attack_command_count(), 0, "desk admission failure should never attack a pipe")
+  assert_eq(ctx.get_desk_route_command_count(), 0, "desk admission failure should not route through a detected gap")
+  assert_eq(#ctx.get_released_desk_slots(), 1, "the failed route should free its reservation")
 end)
 
-test("a saved desk-route pipe attacker migrates to an existing wall gap", function()
+test("a saved desk-route pipe attacker releases its reservation and protests", function()
   local ctx = new_test_context(true)
+  local target = new_target(ctx.surface, 248, 20, 20)
+  ctx.set_protest_targets({target})
   local attacked_pipe = new_obstacle(ctx.surface, 250, 6, 5, "pipe")
   ctx.set_protest_obstacles({
     new_obstacle(ctx.surface, 249, 6, 4, "pipe"),
@@ -1645,10 +1660,12 @@ test("a saved desk-route pipe attacker migrates to an existing wall gap", functi
 
   ctx.controller.process_frustration_and_protests(ctx.surface)
 
-  assert_true(info.desk_route_breach_attacking ~= true, "saved breach state should stop attacking once a usable gap is detected")
-  assert_true(info.desk_route_gap_waypoint ~= nil, "saved breach state should migrate to the gap waypoint")
-  assert_eq(ctx.get_desk_route_command_count(), 1, "migration should issue one neutral route command through the gap")
-  assert_eq(entity.force, game.forces.neutral, "the migrated visitor should immediately leave the hostile breach force")
+  local protest_info = storage.waiting_biters[entity.unit_number]
+  assert_true(protest_info ~= nil and protest_info.state == "protesting", "saved desk breachers should migrate to protest state")
+  assert_true(storage.desk_route_breach_attackers[entity.unit_number] == nil, "migration should release the breach-attacker slot")
+  assert_true(protest_info.desk_id == nil, "migration should release the desk reservation")
+  assert_eq(ctx.get_attack_command_count(), 0, "migration must not continue the pipe attack")
+  assert_eq(#ctx.get_released_desk_slots(), 1, "migration should release the reserved desk slot")
 end)
 
 test("protesters saved while protesting a pipe migrate to a real target and breach the old pipe", function()
@@ -1721,8 +1738,10 @@ test("an existing en-route protester stalled at a pipe enters breach mode", func
   assert_eq(info.protest_obstacle_goal_target, real_target, "stall recovery must retain the real building as its objective")
 end)
 
-test("a stalled desk command starts a bounded aligned pipe breach without an AI failure event", function()
+test("a stalled desk command releases its slot without attacking an aligned pipe", function()
   local ctx = new_test_context(true)
+  local target = new_target(ctx.surface, 221, 20, 20)
+  ctx.set_protest_targets({target})
   local pipe = new_obstacle(ctx.surface, 222, 15, 0, "pipe")
   ctx.set_protest_obstacles({pipe})
   local entity = ctx.surface.create_entity{
@@ -1748,9 +1767,11 @@ test("a stalled desk command starts a bounded aligned pipe breach without an AI 
 
   ctx.controller.process_frustration_and_protests(ctx.surface)
 
-  assert_true(info.desk_route_breach_attacking == true, "a route with no meaningful progress should enter controlled breach mode")
-  assert_eq(ctx.get_last_attack_command().target, pipe, "stall recovery should choose only the aligned ordinary pipe")
-  assert_eq(info.desk_id, 1000, "stall recovery must keep the original desk assignment")
+  local protest_info = storage.waiting_biters[entity.unit_number]
+  assert_true(protest_info ~= nil and protest_info.state == "protesting", "a stalled desk visitor should become a protester")
+  assert_true(protest_info.desk_id == nil, "a stalled visitor must release its desk reservation")
+  assert_eq(ctx.get_attack_command_count(), 0, "desk stall recovery must not attack an aligned pipe")
+  assert_eq(#ctx.get_released_desk_slots(), 1, "desk stall recovery should release the reserved slot")
 end)
 
 test("a surviving obstruction remains under continuous attack after transient command failures", function()
@@ -2101,8 +2122,9 @@ test("activity changes are rechecked against the cached building pool", function
 
   local first = ctx.surface.create_entity{name = "small-biter", position = {x = 0, y = 0}, force = "neutral"}
   assert_true(ctx.controller.trigger_immediate_protest(first, ctx.surface, nil, {preserve_entity = true}))
-  assert_true(storage.waiting_biters[first.unit_number].target_building == nil,
-    "an idle furnace must not be selected")
+  assert_true(storage.waiting_biters[first.unit_number] == nil,
+    "a biter with only an idle furnace available should be released")
+  assert_eq(ctx.get_release_calls(), 1, "the targetless first biter should return to engine control")
 
   furnace.products_finished = 1
   local second = ctx.surface.create_entity{name = "small-biter", position = {x = 1, y = 1}, force = "neutral"}
@@ -2140,7 +2162,7 @@ test("debug belt targets bypass meaningful-work filtering", function()
     "diagnostic belt targets should remain selectable")
 end)
 
-test("only meaningless machines retain targetless protest wandering", function()
+test("only meaningless machines cause a targetless protester to be released", function()
   local ctx = new_test_context(false, {PROTEST_TEST_TARGET_TYPES = {"furnace"}})
   local unused = new_target(ctx.surface, 207, 4, 4)
   unused.name, unused.type, unused.products_finished = "stone-furnace", "furnace", 0
@@ -2148,10 +2170,9 @@ test("only meaningless machines retain targetless protest wandering", function()
   local entity = ctx.surface.create_entity{name = "small-biter", position = {x = 0, y = 0}, force = "neutral"}
 
   assert_true(ctx.controller.trigger_immediate_protest(entity, ctx.surface, nil, {preserve_entity = true}))
-  local info = storage.waiting_biters[entity.unit_number]
-  assert_true(info.pending_path_request_id == nil, "an unused furnace must not receive a route reservation")
-  assert_true(info.target_building == nil, "targetless protesters should not claim an unused furnace")
-  assert_true(ctx.get_last_move_command() ~= nil, "the visible targetless wander should remain active")
+  assert_true(storage.waiting_biters[entity.unit_number] == nil, "an unused furnace must not retain a managed protester")
+  assert_eq(ctx.get_release_calls(), 1, "the targetless protester should return to engine control")
+  assert_true(ctx.get_last_move_command() == nil, "a released protester should not receive a wander command")
 end)
 
 test("pneumatic endpoints remain excluded despite furnace or container prototypes", function()
@@ -2164,9 +2185,9 @@ test("pneumatic endpoints remain excluded despite furnace or container prototype
   local entity = ctx.surface.create_entity{name = "small-biter", position = {x = 0, y = 0}, force = "neutral"}
 
   assert_true(ctx.controller.trigger_immediate_protest(entity, ctx.surface, nil, {preserve_entity = true}))
-  local info = storage.waiting_biters[entity.unit_number]
-  assert_true(info.target_building == nil, "pneumatic infrastructure must not become a protest target")
-  assert_true(ctx.get_last_move_command() ~= nil, "targetless protesters should continue wandering")
+  assert_true(storage.waiting_biters[entity.unit_number] == nil, "pneumatic infrastructure must not retain a protester")
+  assert_eq(ctx.get_release_calls(), 1, "a protester with only pneumatic endpoints should be released")
+  assert_true(ctx.get_last_move_command() == nil, "a released protester should not continue wandering")
 end)
 
 print(string.format("\n=== PROTEST RETARGETING TESTS ==="))

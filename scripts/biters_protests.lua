@@ -520,6 +520,8 @@ function M.new(deps)
   local clear_protest_obstacle_attack_runtime
   local clear_desk_route_breach_runtime
   local assign_protest_target
+  local release_unassigned_protester
+  local abandon_failed_desk_route
 
   local function protect_protesting_biter(info, entity, reason, opts)
     if not info or info.state ~= "protesting" or not entity or not entity.valid then return false end
@@ -1656,23 +1658,6 @@ function M.new(deps)
     entity.active = false
   end
 
-  local function count_active_desk_route_breach_attackers()
-    storage.desk_route_breach_attackers = storage.desk_route_breach_attackers or {}
-    local count = 0
-    for unit_number in pairs(storage.desk_route_breach_attackers) do
-      local info = storage.waiting_biters and storage.waiting_biters[unit_number]
-      if info
-         and (info.desk_route_breach_attacking or info.desk_route_gap_waypoint)
-         and info.entity
-         and info.entity.valid then
-        count = count + 1
-      else
-        storage.desk_route_breach_attackers[unit_number] = nil
-      end
-    end
-    return count
-  end
-
   clear_desk_route_breach_runtime = function(info, entity)
     if not info then return end
     local unit_number = info.tracked_unit_number
@@ -1715,210 +1700,18 @@ function M.new(deps)
     entity.active = false
   end
 
-  local function defer_desk_route_breach(info, entity)
-    clear_desk_route_breach_runtime(info, entity)
-    local retry_ticks = C.DESK_ROUTE_BREACH_RETRY_TICKS or (2 * 60)
-    local unit_number = info.tracked_unit_number
-      or (entity and entity.valid and entity.unit_number)
-      or 0
-    info.next_desk_route_breach_retry_tick = game.tick + retry_ticks + (unit_number % 60)
-    if entity and entity.valid then
-      entity.active = false
-    end
-    return true
-  end
-
-  local function issue_desk_route_breach_command(info, entity)
-    local target = info and info.desk_route_breach_target or nil
-    local commandable = entity and entity.valid and entity.commandable or nil
-    if not target or not target.valid or not commandable or not commandable.set_command then return false end
-    commandable.set_command({
-      type = defines.command.attack,
-      target = target,
-      distraction = defines.distraction.none,
-    })
-    info.desk_route_breach_command_pending = true
-    info.next_desk_route_breach_command_tick = game.tick
-      + (C.PROTEST_OBSTACLE_COMMAND_RETRY_TICKS or 60)
-    info.desk_route_breach_reselect_tick = game.tick
-      + (C.DESK_ROUTE_BREACH_RETRY_TICKS or (2 * 60))
-    return true
-  end
-
-  local function issue_desk_gap_route(info, entity, obstacle, gap_waypoint)
-    info.desk_route_gap_waypoint = {x = gap_waypoint.x, y = gap_waypoint.y}
-    info.desk_route_gap_obstacle = obstacle
-    info.desk_route_gap_started_tick = game.tick
-    if deps.issue_desk_route_command(entity, gap_waypoint) then
-      local unit_number = entity.unit_number or info.tracked_unit_number
-      if unit_number then
-        storage.desk_route_breach_attackers = storage.desk_route_breach_attackers or {}
-        storage.desk_route_breach_attackers[unit_number] = true
-      end
-      return true
-    end
-    info.desk_route_gap_waypoint = nil
-    info.desk_route_gap_obstacle = nil
-    info.desk_route_gap_started_tick = nil
-    return false
-  end
-
-  local function begin_desk_route_breach(info, entity, selected_obstacle, opts)
-    if not info or info.state ~= "pathfinding" or not info.desk_dest then return false end
-    if not entity or not entity.valid then return false end
-    opts = opts or {}
-
-    local obstacle = selected_obstacle or find_aligned_pipe_breach(entity, info.desk_dest)
-    if not obstacle then
-      return defer_desk_route_breach(info, entity)
-    end
-
-    local attacker_limit = math.max(1, C.DESK_ROUTE_BREACH_ATTACKER_LIMIT or 2)
-    if count_active_desk_route_breach_attackers() >= attacker_limit then
-      return defer_desk_route_breach(info, entity)
-    end
-
-    if not opts.skip_gap
-       and game.tick >= (info.desk_route_gap_failed_until_tick or 0) then
-      local gap_waypoint = find_pipe_wall_gap_waypoint(entity, info.desk_dest, obstacle)
-      if gap_waypoint then
-        if issue_desk_gap_route(info, entity, obstacle, gap_waypoint) then
-          return true
-        end
-      end
-    end
-
-    -- Normal mode citizens may use a real opening, but they must never make
-    -- one with their teeth.  Destructive route recovery belongs exclusively
-    -- to hard mode, just like every other biter attack on player property.
-    if not hard_mode_enabled() then
-      return defer_desk_route_breach(info, entity)
-    end
-
-    info.desk_route_breach_gap_checked_target_unit_number = obstacle.unit_number
-    local unit_number = entity.unit_number or info.tracked_unit_number or 0
-    info.desk_route_gap_next_check_tick = game.tick
-      + (C.PROTEST_PIPE_GAP_RECHECK_TICKS or (2 * 60))
-      + (unit_number % 60)
-
-    local attack_force = deps.get_hard_mode_attack_force and deps.get_hard_mode_attack_force()
-      or (game.forces and game.forces.enemy)
-      or deps.get_biter_force()
-    entity.force = attack_force
-    entity.destructible = true
-    entity.active = true
-    info.desk_route_breach_attacking = true
-    info.desk_route_breach_target = obstacle
-    info.desk_route_breach_target_unit_number = obstacle.unit_number
-    info.desk_route_breach_command_failures = 0
-    info.next_desk_route_breach_retry_tick = nil
-    storage.desk_route_breach_attackers = storage.desk_route_breach_attackers or {}
-    storage.desk_route_breach_attackers[unit_number] = true
-    if not issue_desk_route_breach_command(info, entity) then
-      return defer_desk_route_breach(info, entity)
-    end
-    return true
-  end
-
-  local function resume_desk_route_after_breach(info, entity)
-    clear_desk_route_breach_runtime(info, entity)
-    if info.state == "pathfinding" and info.desk_id and info.desk_dest then
-      local dx = entity.position.x - info.desk_dest.x
-      local dy = entity.position.y - info.desk_dest.y
-      info.desk_route_started_tick = game.tick
-      info.desk_route_last_progress_tick = game.tick
-      info.desk_route_best_distance_sq = dx * dx + dy * dy
-      return deps.issue_desk_route_command(entity, info.desk_dest) == true
-    end
-    return false
-  end
-
-  local function process_desk_route_breach(info, entity)
+  local function process_desk_route(info, entity)
     if not info or info.state ~= "pathfinding" or not entity or not entity.valid then return false end
-    if info.desk_route_breach_attacking and not hard_mode_enabled() then
-      return defer_desk_route_breach(info, entity)
-    end
-    if info.desk_route_gap_waypoint then
-      entity.active = true
-      local timeout = C.DESK_ROUTE_STALL_TICKS or (10 * 60)
-      if game.tick - (info.desk_route_gap_started_tick or game.tick) < timeout then
-        return true
-      end
-      local obstacle = info.desk_route_gap_obstacle
-      info.desk_route_gap_waypoint = nil
-      info.desk_route_gap_obstacle = nil
-      info.desk_route_gap_started_tick = nil
-      info.desk_route_gap_failed_until_tick = game.tick
-        + (C.DESK_ROUTE_BREACH_RETRY_TICKS or (2 * 60))
-      return begin_desk_route_breach(
-        info,
-        entity,
-        obstacle and obstacle.valid and obstacle or nil,
-        {skip_gap = true}
-      )
-    end
-    if info.desk_route_breach_attacking then
-      local target = info.desk_route_breach_target
-      if not target or not target.valid then
-        resume_desk_route_after_breach(info, entity)
-        return true
-      end
-      if not is_attackable_pipe_breach(target, entity) then
-        return defer_desk_route_breach(info, entity)
-      end
-
-      if info.desk_route_breach_gap_checked_target_unit_number ~= target.unit_number
-         or game.tick >= (info.desk_route_gap_next_check_tick or 0) then
-        info.desk_route_breach_gap_checked_target_unit_number = target.unit_number
-        local unit_number = entity.unit_number or info.tracked_unit_number or 0
-        info.desk_route_gap_next_check_tick = game.tick
-          + (C.PROTEST_PIPE_GAP_RECHECK_TICKS or (2 * 60))
-          + (unit_number % 60)
-        local gap_waypoint = find_pipe_wall_gap_waypoint(entity, info.desk_dest, target)
-        if gap_waypoint then
-          clear_desk_route_breach_runtime(info, entity)
-          if not issue_desk_gap_route(info, entity, target, gap_waypoint) then
-            return begin_desk_route_breach(info, entity, target, {skip_gap = true})
-          end
-          return true
-        end
-      end
-
-      entity.active = true
-      if game.tick < (info.next_desk_route_breach_command_tick or 0) then
-        return true
-      end
-      info.desk_route_breach_command_pending = nil
-      -- Some unit prototypes perform one bite without completing the command.
-      -- Reassert the exact same target on a bounded heartbeat. The global
-      -- breach-attacker cap bounds both native path work and combat updates.
-      issue_desk_route_breach_command(info, entity)
-      return true
-    end
-
-    if info.next_desk_route_breach_retry_tick then
-      if game.tick < info.next_desk_route_breach_retry_tick then
-        entity.active = false
-        return true
-      end
-      info.next_desk_route_breach_retry_tick = nil
-      local retry_obstacle = find_aligned_pipe_breach(entity, info.desk_dest)
-      if retry_obstacle then
-        return begin_desk_route_breach(info, entity, retry_obstacle)
-      end
-      -- The blocking segment may now be behind us because another visitor
-      -- opened the wall. Retry the preserved desk route instead of repeatedly
-      -- asking the breach selector to attack a wall that was already crossed.
-      entity.active = true
-      return resume_desk_route_after_breach(info, entity)
+    if info.desk_route_breach_attacking
+       or info.desk_route_gap_waypoint
+       or info.next_desk_route_breach_retry_tick then
+      return abandon_failed_desk_route(info, entity, "legacy-desk-route-blocked")
     end
 
     -- A sealed go_to_location command can remain "in progress" indefinitely
     -- instead of emitting an AI failure. Detect that contour-search without
     -- adding any per-tick work: pathfinding states already visit this sharded
-    -- maintenance pass. Genuine progress resets the clock; only a nearby pipe
-    -- in the forward destination corridor can turn a stalled route into a
-    -- controlled breach.
+    -- maintenance pass. Genuine progress resets the clock.
     local dest = info.desk_dest
     if not dest then return false end
     local dx = entity.position.x - dest.x
@@ -1927,7 +1720,7 @@ function M.new(deps)
     local stall_ticks = C.DESK_ROUTE_STALL_TICKS or (10 * 60)
     if not info.desk_route_started_tick then
       -- Existing saves predate route timing. Treat those routes as old enough
-      -- to inspect immediately, while still requiring a nearby aligned pipe.
+      -- to inspect immediately.
       info.desk_route_started_tick = game.tick - stall_ticks
       info.desk_route_last_progress_tick = game.tick - stall_ticks
       info.desk_route_best_distance_sq = distance
@@ -1944,24 +1737,7 @@ function M.new(deps)
        < stall_ticks then
       return false
     end
-    local attacker_limit = math.max(1, C.DESK_ROUTE_BREACH_ATTACKER_LIMIT or 2)
-    if count_active_desk_route_breach_attackers() >= attacker_limit then
-      return defer_desk_route_breach(info, entity)
-    end
-    local obstacle = find_aligned_pipe_breach(entity, dest)
-    if obstacle then
-      return begin_desk_route_breach(info, entity, obstacle)
-    end
-    -- A command can become inactive after crossing a newly opened wall
-    -- without emitting a failure event. Reissuing only after the normal stall
-    -- window keeps this bounded while ensuring the visitor does not freeze at
-    -- the first interior waypoint forever.
-    info.desk_route_started_tick = game.tick
-    info.desk_route_last_progress_tick = game.tick
-    info.desk_route_best_distance_sq = distance
-    entity.active = true
-    deps.issue_desk_route_command(entity, dest)
-    return true
+    return abandon_failed_desk_route(info, entity, "desk-route-stalled")
   end
 
   local function get_protest_spacing_score(target, pos, exclude_unit_number, snapshot)
@@ -2114,55 +1890,56 @@ function M.new(deps)
     return true
   end
 
-  local function issue_targetless_protest_wander_command(info, entity, surface)
-    if not info or not entity or not entity.valid then
-      protest_debug_log("targetless-wander-skip-invalid-entity", info, entity)
-      return false
+  release_unassigned_protester = function(info, entity, reason)
+    if not info or not entity or not entity.valid then return false end
+    local unit_number = info.tracked_unit_number or entity.unit_number
+    local desk_id = info.desk_id
+
+    protest_debug_log("release-unassigned", info, entity, "reason=" .. tostring(reason))
+    reset_protest_targeting(info, unit_number)
+    clear_pending_protest_candidates(info)
+    clear_pacified_runtime(info)
+    render.destroy_protest_rendering(info)
+    render.destroy_pacified_rendering(info)
+
+    if desk_id then
+      deps.unindex_biter_from_desk(desk_id, unit_number)
+      zones.release_slot(desk_id, unit_number)
+      deps.mark_desk_circuit_dirty(desk_id)
     end
-    surface = surface or entity.surface
-    if not surface then
-      protest_debug_log("targetless-wander-skip-no-surface", info, entity)
-      return false
+    info.desk_id = nil
+    info.desk_dest = nil
+    if unit_number then
+      deps.untrack_waiting_biter(unit_number, info)
     end
-
-    local origin = info.protest_anchor_position or entity.position
-    local pos = nil
-    local min_radius = 3
-    local max_radius = 8
-
-    for _ = 1, C.PROTEST_WANDER_ATTEMPTS do
-      local angle = math.random() * (math.pi * 2)
-      local radius = min_radius + math.random() * (max_radius - min_radius)
-      local probe = {
-        x = origin.x + math.cos(angle) * radius,
-        y = origin.y + math.sin(angle) * radius,
-      }
-      pos = surface.find_non_colliding_position(entity.name, probe, 2, 0.5)
-      if pos and distance_sq(pos, entity.position) > 1 then break end
-      pos = nil
+    if deps.release_as_regular_enemy then
+      deps.release_as_regular_enemy(entity)
     end
-
-    pos = pos or surface.find_non_colliding_position(entity.name, origin, 6, 0.5)
-    if not pos then
-      protest_debug_log("targetless-wander-skip-no-position", info, entity, "origin=" .. debug_pos(origin))
-      return false
-    end
-
-    schedule_next_protest_step(info)
-    info.protest_anchor_position = {x = pos.x, y = pos.y}
-    info.protest_last_command_tick = game.tick
-    info.protest_step_deadline_tick = game.tick + C.PROTEST_STEP_ACTIVE_TICKS
-    info.protest_parked = nil
-    protect_protesting_biter(info, entity, "wander-targetless")
-
-    entity.commandable.set_command({
-      type = defines.command.go_to_location,
-      destination = pos,
-      radius = 0.5,
-      distraction = defines.distraction.none,
-    })
-    protest_debug_log("targetless-wander-command-issued", info, entity, "origin=" .. debug_pos(origin) .. " dest=" .. debug_pos(pos))
     return true
+  end
+
+  abandon_failed_desk_route = function(info, entity, reason)
+    if not info or not entity or not entity.valid then return false end
+    local unit_number = info.tracked_unit_number or entity.unit_number
+    local desk_id = info.desk_id
+
+    protest_debug_log("desk-route-failed", info, entity, "reason=" .. tostring(reason))
+    clear_desk_route_breach_runtime(info, entity)
+    if desk_id then
+      zones.release_slot(desk_id, unit_number)
+      deps.unindex_biter_from_desk(desk_id, unit_number)
+      deps.mark_desk_circuit_dirty(desk_id)
+    end
+    info.desk_id = nil
+    info.desk_dest = nil
+    if unit_number then
+      deps.untrack_waiting_biter(unit_number, info)
+    end
+
+    return controller.trigger_immediate_protest(entity, entity.surface, info, {
+      preserve_entity = true,
+      allow_obstacle_breach = false,
+    })
   end
 
   local function update_arrived_protest(info, entity)
@@ -2622,7 +2399,7 @@ function M.new(deps)
       return true
     end
     if not info.protest_path_retry_deferred then
-      issue_targetless_protest_wander_command(info, entity, surface or entity.surface)
+      release_unassigned_protester(info, entity, "protest-route-no-target")
     end
     return true
   end
@@ -3317,9 +3094,8 @@ function M.new(deps)
     local removed_snapshot = snapshot_protest_target(target)
     local fallback_surface = target.surface
 
-    -- Desk-bound visitors keep the desk as their destination. Destroying the
-    -- assigned pipe merely resumes that route; it does not convert the pipe
-    -- into a protest target or wake unrelated visitors.
+    -- Migrate any saved desk-route breacher whose obstruction disappeared.
+    -- Failed desk travel no longer keeps a reservation or attacks pipes.
     for unit_number in pairs(storage.desk_route_breach_attackers or {}) do
       local info = storage.waiting_biters and storage.waiting_biters[unit_number]
       if info and info.desk_route_breach_attacking then
@@ -3328,7 +3104,7 @@ function M.new(deps)
           or (target.unit_number
             and info.desk_route_breach_target_unit_number == target.unit_number)
         if same_obstacle and info.entity and info.entity.valid then
-          resume_desk_route_after_breach(info, info.entity)
+          abandon_failed_desk_route(info, info.entity, "legacy-desk-obstacle-removed")
         end
       else
         storage.desk_route_breach_attackers[unit_number] = nil
@@ -3519,10 +3295,14 @@ function M.new(deps)
     protest_debug_log("trigger-immediate-tracked", info, entity, "preserve=" .. tostring(opts.preserve_entity == true))
 
     local assigned = assign_protest_target(surface, info, entity)
-    if assigned and opts.preserve_entity then
-      begin_pending_protest_approach(info, entity)
-    elseif opts.preserve_entity and not info.protest_path_retry_deferred then
-      issue_targetless_protest_wander_command(info, entity, surface)
+    if assigned then
+      if opts.preserve_entity then
+        begin_pending_protest_approach(info, entity)
+      end
+    elseif not info.protest_path_retry_deferred then
+      release_unassigned_protester(info, entity, "immediate-protest-no-target")
+      protest_debug_log("trigger-immediate-released", info, entity, "assigned=false")
+      return true
     end
     protest_debug_log("trigger-immediate-finish", info, entity, "assigned=" .. tostring(assigned))
     render.ensure_protest_rendering(info)
@@ -3728,7 +3508,9 @@ function M.new(deps)
 
         if info.state == "pathfinding" or info.state == "waiting" then
           if info.state == "pathfinding" then
-            process_desk_route_breach(info, info.entity)
+            if process_desk_route(info, info.entity) then
+              goto continue_biter
+            end
           end
           accumulate_biter_frustration(info, info.entity, "waiting-or-pathfinding")
 
@@ -3741,7 +3523,10 @@ function M.new(deps)
             info.desk_id = nil
             info.desk_dest = nil
             info.promise_retry_until_tick = nil
-            if assign_protest_target(surface, info, info.entity) then
+            if not assign_protest_target(surface, info, info.entity)
+               and not info.protest_path_retry_deferred then
+              release_unassigned_protester(info, info.entity, "frustration-no-protest-target")
+              goto continue_biter
             end
           end
         elseif info.state == "pacified" then
@@ -3759,7 +3544,11 @@ function M.new(deps)
               deps.set_waiting_biter_state(info, "protesting")
               info.frustration = get_protest_threshold()
               protect_protesting_biter(info, info.entity, "promise-expired")
-              assign_protest_target(surface, info, info.entity)
+              if not assign_protest_target(surface, info, info.entity)
+                 and not info.protest_path_retry_deferred then
+                release_unassigned_protester(info, info.entity, "promise-expired-no-protest-target")
+                goto continue_biter
+              end
             end
           else
             maintain_pacified_entity(info, info.entity)
@@ -3817,12 +3606,14 @@ function M.new(deps)
             if not info.pending_path_request_id and game.tick >= (info.next_protest_target_retry_tick or 0) then
               if not assign_protest_target(surface, info, info.entity)
                  and not info.protest_path_retry_deferred then
-                issue_targetless_protest_wander_command(info, info.entity, surface)
+                release_unassigned_protester(info, info.entity, "processing-no-protest-target")
+                goto continue_biter
               end
             elseif not info.pending_path_request_id
                and not info.protest_path_retry_deferred
                and game.tick >= (info.next_protest_wander_tick or 0) then
-              issue_targetless_protest_wander_command(info, info.entity, surface)
+              release_unassigned_protester(info, info.entity, "processing-targetless-protester")
+              goto continue_biter
             end
             if info.protest_path_retry_deferred then
               info.entity.active = false
@@ -3838,7 +3629,11 @@ function M.new(deps)
             end
             if not info.arrived_at_building and not info.entity.active and not info.pending_path_request_id then
               if not resume_en_route_protest(info, info.entity) then
-                assign_protest_target(surface, info, info.entity)
+                if not assign_protest_target(surface, info, info.entity)
+                   and not info.protest_path_retry_deferred then
+                  release_unassigned_protester(info, info.entity, "processing-route-ended-no-target")
+                  goto continue_biter
+                end
               end
             end
           end
@@ -3912,12 +3707,14 @@ function M.new(deps)
         if not info.pending_path_request_id and game.tick >= (info.next_protest_target_retry_tick or 0) then
           if not assign_protest_target(surface, info, info.entity)
              and not info.protest_path_retry_deferred then
-            issue_targetless_protest_wander_command(info, info.entity, surface)
+            release_unassigned_protester(info, info.entity, "pacing-no-protest-target")
+            goto continue_protester
           end
         elseif not info.pending_path_request_id
            and not info.protest_path_retry_deferred
            and game.tick >= (info.next_protest_wander_tick or 0) then
-          issue_targetless_protest_wander_command(info, info.entity, surface)
+          release_unassigned_protester(info, info.entity, "pacing-targetless-protester")
+          goto continue_protester
         end
         if info.protest_path_retry_deferred then
           info.entity.active = false
@@ -3933,7 +3730,11 @@ function M.new(deps)
         render.ensure_protest_rendering(info)
         if not info.arrived_at_building and not info.pending_path_request_id and not info.entity.active then
           if not resume_en_route_protest(info, info.entity) then
-            assign_protest_target(surface, info, info.entity)
+            if not assign_protest_target(surface, info, info.entity)
+               and not info.protest_path_retry_deferred then
+              release_unassigned_protester(info, info.entity, "pacing-route-ended-no-target")
+              goto continue_protester
+            end
           end
         end
         if info.arrived_at_building then
@@ -3971,7 +3772,10 @@ function M.new(deps)
             deps.set_waiting_biter_state(info, "protesting")
             info.frustration = get_protest_threshold()
             protect_protesting_biter(info, info.entity, "pacing-promise-expired")
-            assign_protest_target(surface, info, info.entity)
+            if not assign_protest_target(surface, info, info.entity)
+               and not info.protest_path_retry_deferred then
+              release_unassigned_protester(info, info.entity, "pacing-promise-expired-no-target")
+            end
           end
         else
           maintain_pacified_entity(info, info.entity)
@@ -4014,56 +3818,11 @@ function M.new(deps)
       )
     end
 
-    if info.state == "pathfinding" and info.desk_route_gap_waypoint then
-      local obstacle = info.desk_route_gap_obstacle
-      info.desk_route_gap_waypoint = nil
-      info.desk_route_gap_obstacle = nil
-      info.desk_route_gap_started_tick = nil
-      if event.result == defines.behavior_result.success then
-        info.desk_route_gap_failed_until_tick = nil
-        local dx = entity.position.x - info.desk_dest.x
-        local dy = entity.position.y - info.desk_dest.y
-        info.desk_route_started_tick = game.tick
-        info.desk_route_last_progress_tick = game.tick
-        info.desk_route_best_distance_sq = dx * dx + dy * dy
-        deps.issue_desk_route_command(entity, info.desk_dest)
-      else
-        info.desk_route_gap_failed_until_tick = game.tick
-          + (C.DESK_ROUTE_BREACH_RETRY_TICKS or (2 * 60))
-        begin_desk_route_breach(
-          info,
-          entity,
-          obstacle and obstacle.valid and obstacle or nil,
-          {skip_gap = true}
-        )
-      end
-      return
-    end
-
-    if info.state == "pathfinding" and info.desk_route_breach_attacking then
-      if not hard_mode_enabled() then
-        defer_desk_route_breach(info, entity)
-        return
-      end
-      info.desk_route_breach_command_pending = nil
-      local obstacle = info.desk_route_breach_target
-      if not obstacle or not obstacle.valid then
-        resume_desk_route_after_breach(info, entity)
-      else
-        -- Both success and transient failure can follow one completed bite.
-        -- A still-valid assigned obstruction remains the command target until
-        -- it is destroyed; do not insert a visible retry pause between bites.
-        info.desk_route_breach_command_failures = 0
-        entity.active = true
-        if not issue_desk_route_breach_command(info, entity) then
-          defer_desk_route_breach(info, entity)
-        end
-      end
-      return
-    end
-
-    if info.state == "pathfinding" and event.result == defines.behavior_result.fail then
-      begin_desk_route_breach(info, entity)
+    if info.state == "pathfinding"
+       and (event.result == defines.behavior_result.fail
+         or info.desk_route_gap_waypoint
+         or info.desk_route_breach_attacking) then
+      abandon_failed_desk_route(info, entity, "desk-route-command-failed")
       return
     end
 
@@ -4212,7 +3971,7 @@ function M.new(deps)
       end
       if not assign_protest_target(entity.surface, info, entity)
          and not info.protest_path_retry_deferred then
-        issue_targetless_protest_wander_command(info, entity, entity.surface)
+        release_unassigned_protester(info, entity, "completed-protest-route-no-target")
       end
       return
     end
@@ -4235,7 +3994,7 @@ function M.new(deps)
 
     if not assign_protest_target(entity.surface, info, entity)
        and not info.protest_path_retry_deferred then
-      issue_targetless_protest_wander_command(info, entity, entity.surface)
+      release_unassigned_protester(info, entity, "failed-protest-route-no-target")
     end
   end
 
@@ -4343,7 +4102,7 @@ function M.new(deps)
     end
     if not request_next_protest_target_path(info, entity, request.candidate_index + 1)
        and not info.protest_path_retry_deferred then
-      issue_targetless_protest_wander_command(info, entity, entity.surface)
+      release_unassigned_protester(info, entity, "no-reachable-protest-target")
     end
   end
 

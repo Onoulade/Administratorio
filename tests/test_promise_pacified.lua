@@ -798,7 +798,7 @@ test("pacified biter returns to full frustration when promise expires", function
   assert_eq(info.frustration, 600, "expired pacified biter should return to full protest frustration")
 end)
 
-test("hard mode starts protests at the normal threshold but only 70 percent capacity", function()
+test("hard mode starts protests at the normal threshold then releases when no target exists", function()
   local ctx = new_test_context{hard_mode = true}
   local entity = ctx.surface.create_entity{
     name = "small-biter",
@@ -823,7 +823,8 @@ test("hard mode starts protests at the normal threshold but only 70 percent capa
 
   assert_eq(info.state, "protesting", "hard mode should protest at the same frustration threshold as normal mode")
   assert_eq(math.floor(info.frustration / ctx.hard_mode_capacity * 100), 70, "hard mode protest threshold should be 70 percent of the larger capacity")
-  assert_eq(ctx.get_release_calls(), 0, "hard mode should not attack at the protest threshold")
+  assert_eq(ctx.get_release_calls(), 1, "a hard-mode protester without a target should return to engine control")
+  assert_true(storage.waiting_biters[24] == nil, "the released targetless protester should no longer be managed")
 end)
 
 test("hard mode protesting biter attacks a building while staying in protest mode at full capacity", function()
@@ -1215,7 +1216,7 @@ test("protesting biter resumes movement when a successful approach command ends 
   assert_true(entity.active == true, "protesting biter should stay active while resuming its approach")
 end)
 
-test("stale protest path callback ignores invalid target entities", function()
+test("stale protest path callback releases a biter with no valid target", function()
   local ctx = new_test_context()
   local entity = ctx.surface.create_entity{
     name = "small-biter",
@@ -1258,7 +1259,8 @@ test("stale protest path callback ignores invalid target entities", function()
   assert_eq(storage.path_requests[55], nil, "completed path request should be cleared")
   assert_eq(info.pending_path_request_id, nil, "stale path request should not stay pending")
   assert_eq(info.pending_protest_candidates, nil, "invalid stale candidate should be discarded after callback")
-  assert_eq(info.next_protest_target_retry_tick, 200 + 5 * 60, "stale invalid candidate should fall back to the normal protest retry timer")
+  assert_true(storage.waiting_biters[21] == nil, "a protester with no remaining valid candidate should be untracked")
+  assert_eq(ctx.get_release_calls(), 1, "the targetless protester should return to engine control")
 end)
 
 print(string.format("\n=== PROMISE PACIFIED TESTS ==="))
