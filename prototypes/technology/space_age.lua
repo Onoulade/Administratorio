@@ -506,8 +506,7 @@ data:extend({
       {type = "unlock-recipe", recipe = "worker-biter-formation"},
     },
     -- Basic workers are the bootstrap for specialist training and must be
-    -- available before the staffed propaganda/coffee economy. The first
-    -- formation uses only an early field-office approval, so the Formation
+    -- available before the staffed propaganda/coffee economy. The Formation
     -- Center is the only workforce prerequisite and this route remains
     -- finite.
     prerequisites = {"formation-center"},

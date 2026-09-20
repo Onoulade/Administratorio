@@ -52,10 +52,6 @@ if space_age_enabled then
     subgroup = "admin-biter-buildings", order = "a-f",
     enabled = false,
     ingredients = {
-      -- The Field Office is the temporary workforce bridge.  It can draft
-      -- the first Job Offer and resolutions without a permanent worker, so
-      -- it must be the prerequisite for forming that first permanent worker.
-      {type="item", name="field-office", amount=1},
       {type="item", name="printer-t1", amount=1},
       {type="item", name="electronic-circuit", amount=20},
       {type="item", name="construction-permit", amount=2},

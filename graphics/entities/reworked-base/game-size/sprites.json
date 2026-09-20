@@ -1,0 +1,725 @@
+{
+  "note": "Standard sprites use scale=1; hr sprites use scale=0.5. Width follows prototype tile footprint, height preserves generated aspect ratio. Transparent border is 2 game pixels. Ground-anchor shifts and runtime installation are separate from this size export.",
+  "assets": {
+    "tube-intake": {
+      "source_crop": [
+        113,
+        17,
+        1058,
+        1187
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/tube-intake.png",
+        "width": 36,
+        "height": 44,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          34,
+          42
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/tube-intake.png",
+        "width": 72,
+        "height": 87,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          68,
+          83
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "tube-outtake": {
+      "source_crop": [
+        191,
+        118,
+        895,
+        1060
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/tube-outtake.png",
+        "width": 36,
+        "height": 47,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          34,
+          45
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/tube-outtake.png",
+        "width": 72,
+        "height": 94,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          68,
+          90
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "mechanical-printer": {
+      "source_crop": [
+        124,
+        71,
+        1150,
+        1130
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/mechanical-printer.png",
+        "width": 68,
+        "height": 70,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          66,
+          68
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/mechanical-printer.png",
+        "width": 136,
+        "height": 140,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          132,
+          136
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "printer-t1": {
+      "source_crop": [
+        207,
+        199,
+        1005,
+        1083
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/printer-t1.png",
+        "width": 68,
+        "height": 75,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          66,
+          73
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/printer-t1.png",
+        "width": 136,
+        "height": 150,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          132,
+          146
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "administrative-space-station": {
+      "source_crop": [
+        203,
+        153,
+        1055,
+        1084
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/administrative-space-station.png",
+        "width": 100,
+        "height": 109,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          98,
+          107
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/administrative-space-station.png",
+        "width": 200,
+        "height": 218,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          196,
+          214
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "chromatic-printer": {
+      "source_crop": [
+        148,
+        135,
+        1121,
+        1121
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/chromatic-printer.png",
+        "width": 100,
+        "height": 101,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          98,
+          99
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/chromatic-printer.png",
+        "width": 200,
+        "height": 203,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          196,
+          199
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "conciliation-desk": {
+      "source_crop": [
+        138,
+        100,
+        1116,
+        1115
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/conciliation-desk.png",
+        "width": 100,
+        "height": 104,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          98,
+          102
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/conciliation-desk.png",
+        "width": 200,
+        "height": 207,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          196,
+          203
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "digital-services-bureau": {
+      "source_crop": [
+        158,
+        148,
+        1097,
+        1094
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/digital-services-bureau.png",
+        "width": 100,
+        "height": 101,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          98,
+          99
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/digital-services-bureau.png",
+        "width": 200,
+        "height": 201,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          196,
+          197
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "heat-exhaust": {
+      "source_crop": [
+        32,
+        32,
+        1183,
+        1208
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/heat-exhaust.png",
+        "width": 100,
+        "height": 102,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          98,
+          100
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/heat-exhaust.png",
+        "width": 200,
+        "height": 204,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          196,
+          200
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "laser-printer": {
+      "source_crop": [
+        184,
+        227,
+        1069,
+        1109
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/laser-printer.png",
+        "width": 100,
+        "height": 100,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          98,
+          98
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/laser-printer.png",
+        "width": 200,
+        "height": 199,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          196,
+          195
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "notary-office": {
+      "source_crop": [
+        109,
+        98,
+        1147,
+        1125
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/notary-office.png",
+        "width": 100,
+        "height": 99,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          98,
+          97
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/notary-office.png",
+        "width": 200,
+        "height": 198,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          196,
+          194
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "printer-t2": {
+      "source_crop": [
+        92,
+        26,
+        1160,
+        1177
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/printer-t2.png",
+        "width": 100,
+        "height": 107,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          98,
+          105
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/printer-t2.png",
+        "width": 200,
+        "height": 215,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          196,
+          211
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "biter-station": {
+      "source_crop": [
+        42,
+        19,
+        1334,
+        1120
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/biter-station.png",
+        "width": 164,
+        "height": 140,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          162,
+          138
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/biter-station.png",
+        "width": 328,
+        "height": 281,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          324,
+          277
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "biterport": {
+      "source_crop": [
+        64,
+        70,
+        1212,
+        1124
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/biterport.png",
+        "width": 164,
+        "height": 151,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          162,
+          149
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/biterport.png",
+        "width": 328,
+        "height": 302,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          324,
+          298
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "corporate-breakroom": {
+      "source_crop": [
+        81,
+        90,
+        1172,
+        1160
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/corporate-breakroom.png",
+        "width": 164,
+        "height": 161,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          162,
+          159
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/corporate-breakroom.png",
+        "width": 328,
+        "height": 322,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          324,
+          318
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "formation-center": {
+      "source_crop": [
+        42,
+        42,
+        1275,
+        1162
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/formation-center.png",
+        "width": 164,
+        "height": 149,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          162,
+          147
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/formation-center.png",
+        "width": 328,
+        "height": 299,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          324,
+          295
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "involuntary-relocation-cannon": {
+      "source_crop": [
+        176,
+        162,
+        970,
+        1178
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/involuntary-relocation-cannon.png",
+        "width": 164,
+        "height": 209,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          162,
+          207
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/involuntary-relocation-cannon.png",
+        "width": 328,
+        "height": 417,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          324,
+          413
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "territorial-arbitration-post": {
+      "source_crop": [
+        172,
+        141,
+        1085,
+        1082
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/territorial-arbitration-post.png",
+        "width": 228,
+        "height": 235,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          226,
+          233
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/territorial-arbitration-post.png",
+        "width": 456,
+        "height": 470,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          452,
+          466
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "union-headquarters": {
+      "source_crop": [
+        18,
+        7,
+        1218,
+        1255
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/union-headquarters.png",
+        "width": 228,
+        "height": 237,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          226,
+          235
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/union-headquarters.png",
+        "width": 456,
+        "height": 474,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          452,
+          470
+        ],
+        "pixels_per_tile": 64
+      }
+    },
+    "admin-station": {
+      "source_crop": [
+        56,
+        39,
+        1197,
+        1211
+      ],
+      "standard": {
+        "file": "graphics/entities/reworked-base/game-size/admin-station.png",
+        "width": 292,
+        "height": 300,
+        "scale": 1,
+        "frame_count": 1,
+        "content_rect": [
+          2,
+          2,
+          290,
+          298
+        ],
+        "pixels_per_tile": 32
+      },
+      "high_resolution": {
+        "file": "graphics/entities/reworked-base/game-size/hr/admin-station.png",
+        "width": 584,
+        "height": 600,
+        "scale": 0.5,
+        "frame_count": 1,
+        "content_rect": [
+          4,
+          4,
+          580,
+          596
+        ],
+        "pixels_per_tile": 64
+      }
+    }
+  }
+}
