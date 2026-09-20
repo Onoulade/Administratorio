@@ -18,3 +18,12 @@ Internal export-ignore
 Internal/** export-ignore
 tests export-ignore
 tests/** export-ignore
+tools export-ignore
+tools/** export-ignore
+
+# Factorio Mod Portal rejects executable/script files in uploaded mods
+*.exe export-ignore
+*.bat export-ignore
+*.ps1 export-ignore
+*.sh export-ignore
+*.py export-ignore
