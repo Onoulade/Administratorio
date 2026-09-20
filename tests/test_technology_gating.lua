@@ -726,6 +726,8 @@ test("science tier heads and inherited pack requirements are enforced", function
   assert_true(tech_has_prereq("office-agriculture", "logistic-science-pack"), "office-agriculture should require logistic science")
   assert_true(tech_has_prereq("charcoal-production", "chemical-science-pack"), "charcoal-production should require chemical science")
   assert_true(tech_has_prereq("information-management", "advanced-circuit"), "information-management should require advanced-circuit")
+  assert_true(tech_has_prereq("nest-expropriation", "chemical-science-pack"), "nest expropriation should require chemical science")
+  assert_true(tech_uses_pack("nest-expropriation", "chemical-science-pack"), "nest expropriation should use chemical science")
   assert_true(tech_has_prereq("pneumatic-form-transport", "logistic-science-pack"), "pneumatic-form-transport should require logistic science")
   assert_true(tech_uses_pack("pneumatic-form-transport", "logistic-science-pack"), "pneumatic-form-transport should use logistic science")
   assert_true(tech_has_prereq("tube-pump", "pneumatic-form-transport"), "tube-pump should require pneumatic transport")

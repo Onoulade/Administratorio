@@ -371,8 +371,8 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "eviction-notice-production" }
     },
-    prerequisites = {"information-management", "industrial-propaganda", "nest-pacification"},
-    unit = { count = 90, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
+    prerequisites = {"information-management", "industrial-propaganda", "nest-pacification", "chemical-science-pack"},
+    unit = { count = 90, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 30 },
     order = "d-d"
   },
   {

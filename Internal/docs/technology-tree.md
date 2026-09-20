@@ -134,8 +134,8 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 
 ### Nest Expropriation (`nest-expropriation`)
 
-- **Prerequisites:** `information-management`, `industrial-propaganda`
-- **Science:** 90 auto + 90 logistic + 90 admin science-pack (30s)
+- **Prerequisites:** `information-management`, `industrial-propaganda`, `nest-pacification`, `chemical-science-pack`
+- **Science:** 90 auto + 90 logistic + 90 chemical + 90 admin science-pack (30s)
 - **Unlocks:** `eviction-notice-production`
 
 ### Synthetic Stationery (`synthetic-stationery`)
