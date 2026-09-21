@@ -500,8 +500,8 @@ data:extend({
   {
     type = "technology",
     name = "worker-formation",
-    icon = "__base__/graphics/technology/worker-robots-speed.png",
-    icon_size = 256,
+    icon = "__administratorio__/graphics/entities/scrubber/base/scrubber-icon.png",
+    icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "worker-biter-formation"},
     },
