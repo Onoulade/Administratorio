@@ -161,13 +161,13 @@ local function make_rideable_biter()
   vehicle.braking_power = "900kW"
   vehicle.friction = 0.024
   vehicle.terrain_friction_modifier = 0
-  -- A final-fixes pass adds this dedicated layer to everything a normal car
-  -- collides with except trees, inserters, and electric poles. This preserves
-  -- water, vehicle, character, and solid-building collisions without making
-  -- the biter catch on the narrow infrastructure it can step over.
+  -- Final fixes add separate layers to solid entities and impassable tiles.
+  -- Keeping them separate lets shore buildings overlap water without making
+  -- either passable to the mounted biter.
   vehicle.collision_mask = {
     layers = {
       administratorio_rideable_biter_collision = true,
+      administratorio_rideable_biter_terrain = true,
       train = true,
     },
     consider_tile_transitions = true,

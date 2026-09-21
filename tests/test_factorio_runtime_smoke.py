@@ -92,6 +92,28 @@ script.on_init(function()
   end
   surface.set_tiles(water_tiles)
 
+  local pump_shore = {}
+  for x = 68, 73 do
+    for y = -12, 12 do
+      pump_shore[#pump_shore + 1] = {
+        name = x < 70 and "grass-1" or "water",
+        position = {x, y},
+      }
+    end
+  end
+  surface.set_tiles(pump_shore)
+  local pump_spot_found = false
+  for y = -8, 8 do
+    if surface.can_place_entity{
+      name = "offshore-pump", position = {69.5, y + 0.5},
+      direction = defines.direction.east, force = force,
+    } then
+      pump_spot_found = true
+      break
+    end
+  end
+  if not pump_spot_found then fail("offshore pump has no valid shoreline placement") end
+
   worker_machine = surface.create_entity{
     name = "assembling-machine-1",
     position = {46, 0},
@@ -245,6 +267,9 @@ script.on_nth_tick(30, function()
     end
     if not prototype.collision_mask.layers.administratorio_rideable_biter_collision then
       fail(rideable_name .. " lacks its selective collision layer")
+    end
+    if not prototype.collision_mask.layers.administratorio_rideable_biter_terrain then
+      fail(rideable_name .. " lacks its terrain collision layer")
     end
     if not surface.can_place_entity{name = rideable_name, position = worker_tree.position, force = force} then
       fail(rideable_name .. " cannot walk over trees")

@@ -8,6 +8,7 @@ local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
 local WORKER_TERRAIN_COLLISION_LAYER = "administratorio_worker_terrain"
 local WORKER_OBSTACLE_COLLISION_LAYER = "administratorio_worker_obstacle"
 local RIDEABLE_BITER_COLLISION_LAYER = "administratorio_rideable_biter_collision"
+local RIDEABLE_BITER_TERRAIN_LAYER = "administratorio_rideable_biter_terrain"
 local NIGHT_WORK_BUILDINGS = {
   ["office-desk"] = true,
   ["corporate-breakroom"] = true,
@@ -105,6 +106,11 @@ local RIDEABLE_BITER_PASSABLE_TYPES = {
   ["fluid-wagon"] = true,
   ["artillery-wagon"] = true,
   ["infinity-cargo-wagon"] = true,
+  -- Spider legs are transient walkers, not solid building footprints.
+  ["spider-leg"] = true,
+  -- Asteroid collectors are only placeable on space platforms, where the
+  -- rideable biter cannot travel. Keep their native overlap rules intact.
+  ["asteroid-collector"] = true,
 }
 
 local function collision_box_is_zero(box)
@@ -207,7 +213,12 @@ local function should_add_rideable_biter_layer(prototype)
   end
 
   local mask = prototype.collision_mask or default_collision_mask_for(prototype.type)
-  return mask and collides_with_standard_car(mask)
+  if not mask then return false end
+  mask = normalize_collision_mask(mask)
+  -- The mounted biter already has the train layer. Entities carrying it
+  -- need no extra layer, which would otherwise change their collisions with
+  -- walkable infrastructure such as underground pipes.
+  return not mask.layers.train and collides_with_standard_car(mask)
 end
 
 local function build_standard_module_categories(data)
@@ -238,7 +249,7 @@ function M.apply(data, working_hours_enabled)
         mask.layers[WORKER_TERRAIN_COLLISION_LAYER] = true
       end
       if collides_with_standard_car(mask) then
-        mask.layers[RIDEABLE_BITER_COLLISION_LAYER] = true
+        mask.layers[RIDEABLE_BITER_TERRAIN_LAYER] = true
       end
       tile.collision_mask = mask
     end

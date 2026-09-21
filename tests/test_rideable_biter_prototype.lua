@@ -83,6 +83,7 @@ test("rideable biter ignores terrain friction and uses its selective collision l
   for _, vehicle in ipairs({empty, mounted}) do
     assert_eq(vehicle.terrain_friction_modifier, 0)
     assert_true(vehicle.collision_mask.layers.administratorio_rideable_biter_collision)
+    assert_true(vehicle.collision_mask.layers.administratorio_rideable_biter_terrain)
     assert_true(vehicle.collision_mask.layers.train)
     assert_true(vehicle.collision_mask.consider_tile_transitions)
   end

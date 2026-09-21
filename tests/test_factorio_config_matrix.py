@@ -125,6 +125,39 @@ def run_case(factorio_bin: Path, *, space_age: bool, working_hours: bool) -> dic
         return dump_data(factorio_bin, root)
 
 
+def assert_rideable_layers_preserve_native_collisions(data_raw: dict) -> None:
+    """The biter's selective layers must not change unrelated placement rules."""
+    object_layer = "administratorio_rideable_biter_collision"
+    terrain_layer = "administratorio_rideable_biter_terrain"
+    for name, tile in data_raw.get("tile", {}).items():
+        layers = tile.get("collision_mask", {}).get("layers", {})
+        assert object_layer not in layers, f"tile {name} has the biter's entity layer"
+
+    targets = []
+    for prototype_type, prototypes in data_raw.items():
+        if prototype_type == "tile" or not isinstance(prototypes, dict):
+            continue
+        for name, prototype in prototypes.items():
+            if not isinstance(prototype, dict) or not prototype.get("collision_box"):
+                continue
+            layers = prototype.get("collision_mask", {}).get("layers", {})
+            if name.startswith("rideable-biter"):
+                continue
+            assert terrain_layer not in layers, (
+                f"{prototype_type}/{name} has the biter's terrain layer"
+            )
+            if layers.get(object_layer):
+                targets.append((prototype_type, name, set(layers)))
+
+    for index, (left_type, left_name, left_layers) in enumerate(targets):
+        for right_type, right_name, right_layers in targets[index:]:
+            shared_layers = (left_layers & right_layers) - {object_layer}
+            assert shared_layers, (
+                f"biter layer newly makes {left_type}/{left_name} collide with "
+                f"{right_type}/{right_name}"
+            )
+
+
 def assert_space_age_category_migrations_are_regulated(data_raw: dict) -> None:
     """Audit every Space Age category that can otherwise bypass an assembler."""
     shared_categories = {
@@ -273,6 +306,8 @@ def main() -> None:
 
     base = run_case(factorio_bin, space_age=False, working_hours=True)
     space_age = run_case(factorio_bin, space_age=True, working_hours=True)
+    assert_rideable_layers_preserve_native_collisions(base)
+    assert_rideable_layers_preserve_native_collisions(space_age)
     assert_milestone_resolutions_are_operable(base, "base game")
     assert_milestone_resolutions_are_operable(space_age, "Space Age")
     assert_chromatic_fast_tracks_are_space_age_only(base, space_age)
@@ -291,6 +326,7 @@ def main() -> None:
     )
 
     no_working_hours = run_case(factorio_bin, space_age=True, working_hours=False)
+    assert_rideable_layers_preserve_native_collisions(no_working_hours)
     assert_milestone_resolutions_are_operable(no_working_hours, "Space Age without Working Hours")
     assert "administrative-clock" not in no_working_hours.get("item", {}), "disabled Working Hours must not expose the Administrative Clock item"
     assert "administrative-clock" not in no_working_hours.get("constant-combinator", {}), "disabled Working Hours must not expose the Administrative Clock entity"

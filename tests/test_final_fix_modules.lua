@@ -145,12 +145,27 @@ test("collision masks separate worker obstacles from passable infrastructure", f
     tree = {
       tree = {name = "tree", type = "tree", collision_mask = {"object", "player"}, collision_box = {{-0.4, -0.4}, {0.4, 0.4}}},
     },
+    ["offshore-pump"] = {
+      pump = {name = "offshore-pump", type = "offshore-pump",
+        collision_mask = {layers = {object = true, train = true, is_object = true, is_lower_object = true}},
+        collision_box = {{-0.6, -1.05}, {0.6, 0.3}}},
+    },
+    ["pipe-to-ground"] = {
+      pipe = {name = "pipe-to-ground", type = "pipe-to-ground",
+        collision_mask = {layers = {item = true, car = true, water_tile = true}},
+        collision_box = {{-0.4, -0.4}, {0.4, 0.4}}},
+    },
+    ["spider-leg"] = {
+      leg = {name = "spider-leg", type = "spider-leg",
+        collision_mask = {layers = {player = true, rail = true}},
+        collision_box = {{-0.2, -0.2}, {0.2, 0.2}}},
+    },
     ["transport-belt"] = {
       belt = {name = "belt", type = "transport-belt", collision_mask = {"object"}, collision_box = {{-0.4, -0.4}, {0.4, 0.4}}},
     },
     car = {
       car = {name = "car", type = "car", collision_box = {{-0.7, -1}, {0.7, 1}}},
-      rideable = {name = "rideable-biter", type = "car", collision_mask = {layers = {administratorio_rideable_biter_collision = true, train = true}}, collision_box = {{-0.3, -0.4}, {0.3, 0.4}}},
+      rideable = {name = "rideable-biter", type = "car", collision_mask = {layers = {administratorio_rideable_biter_collision = true, administratorio_rideable_biter_terrain = true, train = true}}, collision_box = {{-0.3, -0.4}, {0.3, 0.4}}},
     },
     container = {
       station = {name = "biter-station", type = "container", collision_mask = {"administratorio_station_footprint"}, collision_box = {{-2, -2}, {2, 2}}},
@@ -160,7 +175,7 @@ test("collision masks separate worker obstacles from passable infrastructure", f
     furnace = {
       bureau = {name = "capture-bureau", type = "furnace", collision_mask = {"administratorio_station_footprint"}, collision_box = {{-4, -4}, {4, 4}}},
     },
-    character = {character = {name = "character", collision_mask = {"player"}, collision_box = {{-1, -1}, {1, 1}}}},
+    character = {character = {name = "character", type = "character", collision_mask = {layers = {player = true, train = true, is_object = true}}, collision_box = {{-1, -1}, {1, 1}}}},
     tile = {
       water = {name = "water", collision_mask = {layers = {water_tile = true, player = true}}},
       dirt = {name = "dirt", collision_mask = {layers = {ground_tile = true}}},
@@ -182,11 +197,23 @@ test("collision masks separate worker obstacles from passable infrastructure", f
   assert_true(not data.raw.tile.dirt.collision_mask.layers.administratorio_worker_terrain)
   assert_true(data.raw.chest.box.collision_mask.layers.administratorio_rideable_biter_collision)
   assert_true(data.raw["assembling-machine"].machine.collision_mask.layers.administratorio_rideable_biter_collision)
-  assert_true(data.raw.car.car.collision_mask.layers.administratorio_rideable_biter_collision)
+  assert_true(not mask_has_layer(data.raw.car.car.collision_mask, "administratorio_rideable_biter_collision"))
   assert_true(data.raw.car.rideable.collision_mask.layers.administratorio_rideable_biter_collision)
   assert_true(not data.raw.car.rideable.collision_mask.layers.administratorio_worker_obstacle)
-  assert_true(data.raw.tile.water.collision_mask.layers.administratorio_rideable_biter_collision)
-  assert_true(not mask_has_layer(data.raw.tile.dirt.collision_mask, "administratorio_rideable_biter_collision"))
+  assert_true(data.raw.tile.water.collision_mask.layers.administratorio_rideable_biter_terrain)
+  assert_true(not data.raw.tile.water.collision_mask.layers.administratorio_rideable_biter_collision)
+  assert_true(not data.raw["offshore-pump"].pump.collision_mask.layers.administratorio_rideable_biter_collision)
+  assert_true(not data.raw["offshore-pump"].pump.collision_mask.layers.administratorio_rideable_biter_terrain)
+  local collides = package.preload["collision-mask-util"]().masks_collide
+  assert_true(not collides(data.raw["offshore-pump"].pump.collision_mask, data.raw.tile.water.collision_mask),
+    "offshore pump must remain placeable beside water")
+  assert_true(collides(data.raw["offshore-pump"].pump.collision_mask, data.raw.car.rideable.collision_mask),
+    "mounted biter must still collide with offshore pumps")
+  assert_true(not collides(data.raw.character.character.collision_mask, data.raw["pipe-to-ground"].pipe.collision_mask),
+    "character must still walk over underground pipes")
+  assert_true(not collides(data.raw["spider-leg"].leg.collision_mask, data.raw["pipe-to-ground"].pipe.collision_mask),
+    "spider legs must still cross underground pipes")
+  assert_true(not mask_has_layer(data.raw.tile.dirt.collision_mask, "administratorio_rideable_biter_terrain"))
   assert_true(not mask_has_layer(data.raw.tree.tree.collision_mask, "administratorio_rideable_biter_collision"))
   assert_true(not mask_has_layer(data.raw.inserter.inserter.collision_mask, "administratorio_rideable_biter_collision"))
   assert_true(not mask_has_layer(data.raw["electric-pole"].pole.collision_mask, "administratorio_rideable_biter_collision"))
