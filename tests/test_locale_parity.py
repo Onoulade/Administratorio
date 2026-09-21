@@ -60,6 +60,18 @@ def main() -> None:
                     f"expected {sorted(expected)}, got {sorted(actual)}"
                 )
 
+    # Factorio looks up the unsuffixed name for an upgrade series as well as
+    # each numbered technology name. Catch a missing family key in all locales.
+    technology_families = {
+        re.sub(r"-\d+$", "", key)
+        for section, key in english
+        if section == "technology-name" and re.search(r"-\d+$", key)
+    }
+    for family in sorted(technology_families):
+        for language in LANGUAGES:
+            if ("technology-name", family) not in locales[language]:
+                failures.append(f"{language} missing upgrade family: technology-name.{family}")
+
     assert not failures, "\n" + "\n".join(failures)
     print(
         "Locale parity passed: "

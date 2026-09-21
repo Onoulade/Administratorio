@@ -898,7 +898,7 @@ tourism_items[#tourism_items + 1] = {
     {icon = item_icons .. "admin-desk.png", icon_size = 64, tint = {r = 0.75, g = 1, b = 0.7, a = 1}},
     {icon = "__space-age__/graphics/icons/pentapod-egg.png", icon_size = 64, scale = 0.4, shift = {8, 8}},
   },
-  localised_name = {"", "Captured Pentapod Specimen"},
+  localised_name = {"item-name.captured-pentapod-specimen"},
   localised_description = {
     "",
     "Internal Gleba hostile-acquisitions stock. The ",
@@ -918,7 +918,7 @@ for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
       {icon = item_icons .. "admin-desk.png", icon_size = 64, scale = 0.32, shift = {-8, 8}},
       {icon = item_icons .. "transit-authorization.png", icon_size = 64, scale = 0.3, shift = {8, 8}},
     }),
-    localised_name = {"", {"entity-name." .. variant.spitter}, " Tourism Package"},
+    localised_name = {"item-name." .. variant.package_item},
     localised_description = {
       "",
       "Captured for orbital sightseeing. It spoils like an egg, so launch it fast and process it at an ",
@@ -950,7 +950,7 @@ for _, variant in ipairs(SPACE_TOURISM_VARIANTS) do
       {icon = item_icons .. "office-building.png", icon_size = 64, scale = 0.3, shift = {-8, 8}},
       {icon = item_icons .. "taxpayer-money.png", icon_size = 64, scale = 0.32, shift = {8, 8}},
     }),
-    localised_name = {"", "Fulfilled ", {"entity-name." .. variant.spitter}, " Space Tourist"},
+    localised_name = {"item-name." .. variant.tourist_item},
     localised_description = {
       "",
       "Successfully fed assorted asteroid chunks. Check it out through a Nauvis ",

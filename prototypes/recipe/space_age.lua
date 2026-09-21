@@ -528,7 +528,7 @@ data:extend({
     name = "capture-bureau-workforce",
     category = "hostile-acquisition",
     enabled = false,
-    localised_name = {"", "Capture Bureau: Workforce Intake"},
+    localised_name = {"recipe-name.capture-bureau-workforce"},
     localised_description = {
       "",
       "Attract nearby Nauvis biters and convert them directly into ",
@@ -573,7 +573,7 @@ data:extend({
     name = "capture-bureau-tourism",
     category = "hostile-acquisition",
     enabled = false,
-    localised_name = {"", "Capture Bureau: Spitter Tourism Intake"},
+    localised_name = {"recipe-name.capture-bureau-tourism"},
     localised_description = {
       "",
       "Attract nearby Nauvis spitters and itemize them for offworld tourism before they spoil.",
@@ -596,7 +596,7 @@ data:extend({
     name = "capture-bureau-pentapod-eggs",
     category = "hostile-acquisition",
     enabled = false,
-    localised_name = {"", "Capture Bureau: Pentapod Egg Harvest"},
+    localised_name = {"recipe-name.capture-bureau-pentapod-eggs"},
     localised_description = {
       "",
       "Attract nearby Gleba pentapods and process them into fresh ",
@@ -2255,7 +2255,7 @@ for i, variant in ipairs(SPACE_TOURISM_VARIANTS) do
     category = "orbital-bureaucracy",
     subgroup = "admin-biter-training", order = string.format("b-%c", string.byte("o") + i - 1),
     enabled = false,
-    localised_name = {"", "Fulfill ", {"entity-name." .. variant.spitter}, " Space Tourism"},
+    localised_name = {"recipe-name." .. variant.tourism_recipe},
     localised_description = {
       "",
       "Feed orbital asteroid samples to a captured ",
@@ -2283,7 +2283,7 @@ for i, variant in ipairs(SPACE_TOURISM_VARIANTS) do
     category = "bureaucracy-registration",
     subgroup = "admin-biter-training", order = string.format("b-%c-a", string.byte("o") + i - 1),
     enabled = false,
-    localised_name = {"", "Check Out Fulfilled ", {"entity-name." .. variant.spitter}, " Space Tourist"},
+    localised_name = {"recipe-name." .. variant.checkout_recipe},
     localised_description = {
       "",
       "Serve the returning tourist coffee, collect its Nauvis tourism payment, and send it home.",

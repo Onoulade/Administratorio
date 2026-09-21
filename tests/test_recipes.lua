@@ -1907,6 +1907,14 @@ end)
 -------------------------------------------------------------------------------
 -- 4. REPORT
 -------------------------------------------------------------------------------
+test("every registered core prototype has a name in every shipped locale", function()
+  local locale_helpers = require("tests.locale_helpers")
+  for _, language in ipairs({"en", "fr", "ru"}) do
+    local missing = locale_helpers.missing_prototype_names(mod_root, language, all_prototypes)
+    assert_true(#missing == 0, language .. " missing names: " .. table.concat(missing, ", "))
+  end
+end)
+
 print(string.format("\n=== ADMINISTRATORIO RECIPE TESTS ==="))
 print(string.format("Passed: %d  Failed: %d  Total: %d", passed, failed, passed + failed))
 

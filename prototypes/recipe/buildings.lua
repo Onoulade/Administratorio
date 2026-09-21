@@ -150,6 +150,7 @@ for _, item_name in ipairs(pneumatic_item_names) do
   local recipe = {
     type = "recipe",
     name = "pneumatic-intake-" .. item_name,
+    localised_name = {"recipe-name.pneumatic-intake", {"item-name." .. item_name}},
     category = "pneumatic-intake",
     enabled = false,
     hidden = true,

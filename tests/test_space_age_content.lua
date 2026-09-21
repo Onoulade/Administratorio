@@ -194,8 +194,10 @@ data = {
   },
 }
 
+local registered_prototypes = {}
 function data:extend(prototypes)
   for _, proto in ipairs(prototypes) do
+    registered_prototypes[#registered_prototypes + 1] = proto
     data.raw[proto.type] = data.raw[proto.type] or {}
     data.raw[proto.type][proto.name] = proto
     if proto.type == "recipe" then
@@ -221,6 +223,10 @@ else
   mod_root = "./"
 end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
+
+-- Include the shared categories and item groups in the name coverage audit.
+dofile(mod_root .. "prototypes/categories.lua")
+dofile(mod_root .. "prototypes/item/groups.lua")
 
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 local manager_couriers = require("prototypes.shared.manager_couriers")
@@ -2237,6 +2243,13 @@ test("planet-local space age recipes stay free of raw taxpayer money off Nauvis"
 end)
 
 local locale_helpers = require("tests.locale_helpers")
+
+test("every registered Space Age prototype has a name in every shipped locale", function()
+  for _, language in ipairs({"en", "fr", "ru"}) do
+    local missing = locale_helpers.missing_prototype_names(mod_root, language, registered_prototypes)
+    assert_true(#missing == 0, language .. " missing names: " .. table.concat(missing, ", "))
+  end
+end)
 
 test("every Space Age technology has a name and description in every shipped locale", function()
   local missing = {}

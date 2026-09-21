@@ -205,8 +205,10 @@ data = {
   },
 }
 
+local registered_prototypes = {}
 function data:extend(prototypes)
   for _, proto in ipairs(prototypes) do
+    registered_prototypes[#registered_prototypes + 1] = proto
     data.raw[proto.type] = data.raw[proto.type] or {}
     data.raw[proto.type][proto.name] = proto
   end
@@ -854,6 +856,14 @@ test("aquilo chromatic trunk and multicolor paperwork stay on Aquilo", function(
     "promethium research charter should be issued in vacuum")
   assert_true(has_ingredient(data.raw.recipe["laser-printer"], "cryoprint-technician"),
     "laser-printer should require cryoprint-technician")
+end)
+
+test("Space Age entity prototypes have names in every shipped locale", function()
+  local locale_helpers = require("tests.locale_helpers")
+  for _, language in ipairs({"en", "fr", "ru"}) do
+    local missing = locale_helpers.missing_prototype_names(mod_root, language, registered_prototypes)
+    assert_true(#missing == 0, language .. " missing names: " .. table.concat(missing, ", "))
+  end
 end)
 
 if failed > 0 then
