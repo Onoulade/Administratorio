@@ -1,4 +1,14 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.6.17
+Date: 2026-09-21
+  Bugfixes:
+    - preserve shoreline placement and native collisions
+  Balancing:
+    - gate nest expropriation behind blue science
+  Changes:
+    - Allow planetary forms in local tubes
+    - Allow provisional work orders in tubes
+---------------------------------------------------------------------------------------------------
 Version: 0.6.16
 Date: 2026-09-20
   Internal:
