@@ -3,7 +3,7 @@
 -- This file does three things in order:
 --   1. Registers autoplace controls and loads all mod prototypes
 --   2. Enforces the administrative paradigm via vanilla overrides
---   3. Registers debug-only custom input
+--   3. Registers the desk overview shortcut and custom inputs
 
 -------------------------------------------------------------------------------
 -- 1. AUTOPLACE CONTROLS (must be registered before resources reference them)
@@ -122,9 +122,17 @@ data.extend = extend_prototypes
 require("overrides.vanilla")
 
 -------------------------------------------------------------------------------
--- 4. CUSTOM INPUTS
+-- 4. SHORTCUT AND CUSTOM INPUTS
 -------------------------------------------------------------------------------
 data:extend({{
+  type = "shortcut",
+  name = "administratorio-station-overview",
+  action = "lua",
+  toggleable = true,
+  icons = {{icon = "__administratorio__/graphics/icons/admin-desk.png", icon_size = 64, scale = 0.5}},
+  small_icons = {{icon = "__administratorio__/graphics/icons/admin-desk.png", icon_size = 64, scale = 0.375}},
+  order = "b[administratorio]-a[station-overview]",
+}, {
   type = "custom-input",
   name = "administratorio-toggle-runtime-debug",
   key_sequence = "CONTROL + SHIFT + D",

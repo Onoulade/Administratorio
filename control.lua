@@ -12,6 +12,7 @@ local ai_server = require("scripts.ai_server")
 local heat_exhaust = require("scripts.heat_exhaust")
 local relocation_cannon = require("scripts.relocation_cannon")
 local frustration = require("scripts.frustration")
+local station_overview = require("scripts.station_overview")
 local zones = require("scripts.zones")
 local biters = require("scripts.biters")
 local pentapods = require("scripts.pentapods")
@@ -841,6 +842,7 @@ local function on_player_created(event)
   local player = game.get_player(event.player_index)
   if player then
     biters.refresh_protest_notifications(player)
+    station_overview.sync_player(player)
   end
 end
 
@@ -856,6 +858,7 @@ local function on_player_joined_game(event)
   if player then
     sync_force_regulated_recipe_unlocks(player.force)
     biters.refresh_protest_notifications(player)
+    station_overview.sync_player(player)
     field_office.update_placement_preview(player, game.tick, true)
   end
 end
@@ -2166,6 +2169,7 @@ local function on_gui_click(event)
 
   local player = game.get_player(event.player_index)
   if not player then return end
+  if station_overview.on_click(player, event.element) then return end
 
   if event.element.name == "administratorio-win-close" then
     if player.gui.screen["administratorio-win-screen"] then
@@ -2229,6 +2233,7 @@ local function on_main_tick(event)
   end)
   territorial_arbitration.on_tick(event)
   administrative_clock.update()
+  if event.tick % 300 == 0 then station_overview.refresh_open() end
 end
 
 local function on_trajectory_compliance_tick(event)
@@ -2307,6 +2312,7 @@ control_event_router.register({
   on_entity_removed = on_entity_removed,
   on_field_agent_waypoint_input = on_field_agent_waypoint_input,
   on_gui_click = on_gui_click,
+  on_lua_shortcut = station_overview.on_shortcut,
   on_gui_closed = on_gui_closed,
   on_init = on_init,
   on_load = on_load,

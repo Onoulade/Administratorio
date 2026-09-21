@@ -808,11 +808,15 @@ local function surface_has_available_capture_bureau(surface, desks, entity_name)
   return false
 end
 
-local function find_nearest_available_desk(position, entity_name)
+local function find_nearest_available_desk(position, entity_name, surface)
   local best = nil
   local best_dist = math.huge
-  for _, desk in ipairs(get_preferred_desks_for_entity(entity_name, get_cached_desks())) do
-    if zones.get_available_slots(desk.unit_number) > 0 then
+  local candidates = {}
+  for _, desk in ipairs(get_cached_desks()) do
+    if not surface or desk.surface == surface then candidates[#candidates + 1] = desk end
+  end
+  for _, desk in ipairs(get_preferred_desks_for_entity(entity_name, candidates)) do
+    if (not surface or desk.surface == surface) and zones.get_available_slots(desk.unit_number) > 0 then
       local dx = desk.position.x - position.x
       local dy = desk.position.y - position.y
       local dist = dx * dx + dy * dy
@@ -1420,7 +1424,13 @@ function M.send_biter_to_station_with_targets(entity, targets, opts)
 
   local min_dist = math.huge
   local best = nil
-  local preferred_targets = get_preferred_desks_for_entity(entity.name, targets)
+  local same_surface_targets = {}
+  for _, desk in ipairs(targets) do
+    if desk.valid and desk.surface == entity.surface then
+      same_surface_targets[#same_surface_targets + 1] = desk
+    end
+  end
+  local preferred_targets = get_preferred_desks_for_entity(entity.name, same_surface_targets)
   if #preferred_targets == 0 then
     if pentapods.is_pentapod(entity.name) then
       return
@@ -1429,7 +1439,7 @@ function M.send_biter_to_station_with_targets(entity, targets, opts)
     return
   end
   for _, desk in ipairs(preferred_targets) do
-    if zones.get_available_slots(desk.unit_number) > 0 then
+    if desk.surface == entity.surface and zones.get_available_slots(desk.unit_number) > 0 then
       local dist = (desk.position.x - entity.position.x)^2 + (desk.position.y - entity.position.y)^2
       if dist < min_dist then
         min_dist = dist

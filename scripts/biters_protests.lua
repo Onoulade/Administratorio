@@ -952,10 +952,12 @@ function M.new(deps)
 
   local function get_cached_desks_by_distance(info)
     local position = get_tracked_position(info)
+    local surface = info.entity and info.entity.valid and info.entity.surface
+      or (info.last_known_surface_index and game.get_surface(info.last_known_surface_index))
     local desks = {}
 
     for _, desk in ipairs(deps.get_cached_desks()) do
-      if desk and desk.valid then
+      if desk and desk.valid and (not surface or desk.surface == surface) then
         local dist = 0
         if position then
           local dx = desk.position.x - position.x
@@ -982,7 +984,9 @@ function M.new(deps)
   local function find_available_desk_for_info(info)
     local position = get_tracked_position(info)
     if not position then return nil end
-    return deps.find_nearest_available_desk(position)
+    local surface = info.entity and info.entity.valid and info.entity.surface
+      or (info.last_known_surface_index and game.get_surface(info.last_known_surface_index))
+    return deps.find_nearest_available_desk(position, nil, surface)
   end
 
   local function schedule_next_pacified_roam(info)
@@ -3512,7 +3516,13 @@ function M.new(deps)
               goto continue_biter
             end
           end
-          accumulate_biter_frustration(info, info.entity, "waiting-or-pathfinding")
+          -- Travel to a reserved desk can span a desert. Start the service
+          -- deadline on arrival, while route-stall detection remains active.
+          if info.state == "waiting" then
+            accumulate_biter_frustration(info, info.entity, "waiting")
+          else
+            info.last_frustration_tick = game.tick
+          end
 
           if info.frustration >= get_protest_threshold() then
             clear_desk_route_breach_runtime(info, info.entity)
@@ -4204,7 +4214,7 @@ function M.new(deps)
           end
           if storage.stats then storage.stats.protests_suppressed = (storage.stats.protests_suppressed or 0) + 1 end
 
-          local desk = deps.find_nearest_available_desk(biter_entity.position)
+          local desk = deps.find_nearest_available_desk(biter_entity.position, biter_entity.name, biter_entity.surface)
           clear_hard_mode_attack_runtime(info)
 
           if desk and deps.route_biter_to_desk(info, biter_entity, desk, {
