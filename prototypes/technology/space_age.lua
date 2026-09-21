@@ -1,4 +1,5 @@
 local feature_flags = require("feature_flags")
+local building_icons = require("prototypes.shared.building_icons")
 local manager_briefings = require("prototypes.shared.manager_briefings")
 local working_hours_enabled = feature_flags.working_hours_enabled()
 local tech_icons = "__administratorio__/graphics/technology/"
@@ -406,7 +407,7 @@ data:extend({
   {
     type = "technology",
     name = "aquilo-cryogenic-administration",
-    icon = "__administratorio__/graphics/icons/cryogenic-operations-license.png",
+    icon = "__administratorio__/graphics/icons/space-age/laser-printer.png",
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "laser-printer"},
@@ -470,8 +471,7 @@ data:extend({
   {
     type = "technology",
     name = "bureaucratic-transcendence",
-    icon = "__administratorio__/graphics/icons/public-transportation-contract.png",
-    icon_size = 64,
+    icons = building_icons.public_train_stop(),
     effects = {
       {type = "unlock-recipe", recipe = "public-train-stop-production"},
     },

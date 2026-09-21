@@ -271,7 +271,7 @@ data:extend({
   -- T3b: INDUSTRIAL PROPAGANDA (lies, nonsense, and credentials)
   {
     type = "technology", name = "industrial-propaganda",
-    icon = "__administratorio__/graphics/icons/misinformation.png", icon_size = 64,
+    icon = "__administratorio__/graphics/entities/propaganda-distillery/base/fuel-refinery-icon.png", icon_size = 64,
     effects = {
       { type = "unlock-recipe", recipe = "propaganda-distillery" },
       { type = "unlock-recipe", recipe = "politician-fluid-refining" },
