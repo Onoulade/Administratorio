@@ -127,7 +127,7 @@ function M.register(deps)
     {deps.biter_station_check_ticks or 10, deps.on_biter_station_tick},
     {deps.biterport_check_ticks or 30, deps.on_biterport_tick},
     {deps.field_office_update_ticks or 5, deps.on_field_office_tick},
-    {60, deps.on_passenger_train_tick},
+    {10, deps.on_passenger_train_tick},
     {20, deps.on_protest_pacing_tick},
     {deps.unit_group_debug_scan_interval, deps.on_unit_group_debug_tick},
     {60, deps.on_main_tick},

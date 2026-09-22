@@ -44,10 +44,18 @@ test("router registers lifecycle, event, and custom handlers", function()
     on_gui_closed = handler("closed"), on_research_finished = handler("research"),
     on_pneumatic_tick = handler("pneumatic"), terminus_check_ticks = 15, on_interplanetary_tube_tick = handler("tube"),
     ai_server_check_ticks = 15, on_ai_server_tick = handler("ai-server"), on_main_tick = handler("main"),
+    on_passenger_train_tick = handler("passenger"),
   })
   assert_true(registrations.init and registrations.configuration and registrations.load)
   assert_true(registrations[defines.events.on_entity_died] ~= nil)
   assert_true(registrations["administratorio-toggle-runtime-debug"] ~= nil)
+end)
+
+test("passenger trains update every 10 ticks", function()
+  assert_true(ticks[10] ~= nil, "passenger updates should be registered at 10 ticks")
+  registrations.called = ""
+  ticks[10]({tick = 10})
+  assert_true(registrations.called:find("passenger", 1, true) ~= nil)
 end)
 
 test("router fan-outs handlers sharing a cadence", function()

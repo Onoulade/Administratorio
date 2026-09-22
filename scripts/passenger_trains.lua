@@ -24,14 +24,13 @@ local PLATFORM_RADIUS = 24
 -- A platform is a 3x3 rail-side apron. Its center may sit two-and-a-half
 -- tiles from the track, but it must not be usable as a distant station marker.
 local PLATFORM_RAIL_RADIUS = 2.75
--- Platforms have a 3x3 visual/selection footprint. Treat the surrounding
--- apron as the queue point so visitors do not stack on the marker itself.
-local PLATFORM_WAIT_RADIUS = 3.25
+-- Boarders must reach the center tile of the 3x3 platform. A small margin
+-- accepts the tile corners and minor pathfinding offsets.
+local PLATFORM_BOARD_RADIUS = 0.85
 local PLATFORM_WAGON_RADIUS = 4
 local PLATFORM_CAPACITY = 24
 local WAGON_CAPACITY = 24
 local MAX_RAIL_LEGS = 3
-local UPDATE_TICKS = 60
 
 local function valid(entity)
   return entity and entity.valid
@@ -405,9 +404,7 @@ local function issue_route(entity, destination)
   entity.active = true
   if entity.commandable and entity.commandable.set_command then
     entity.commandable.set_command({
-      -- Aim for the full queue apron rather than forcing every visitor onto
-      -- the same marker point.
-      type = defines.command.go_to_location, destination = destination, radius = PLATFORM_WAIT_RADIUS,
+      type = defines.command.go_to_location, destination = destination, radius = PLATFORM_BOARD_RADIUS,
       distraction = defines.distraction.none,
     })
   end
@@ -496,7 +493,9 @@ end
 local function board_one(wagon, manifest, record, visitor_id, stop_id)
   local info = record.queue[visitor_id]
   local entity = info and info.entity
-  if not info or not valid(entity) or info.state ~= "waiting_for_train" or manifest_count(manifest) >= WAGON_CAPACITY then
+  if not info or not valid(entity) or info.state ~= "waiting_for_train" or manifest_count(manifest) >= WAGON_CAPACITY
+      or entity.surface ~= record.entity.surface
+      or distance_sq(entity.position, record.entity.position) > PLATFORM_BOARD_RADIUS * PLATFORM_BOARD_RADIUS then
     return false
   end
   local passenger = copy_case(info, entity, stop_id)
@@ -833,6 +832,8 @@ function M.on_tick(event)
         local entity = info and info.entity
         if not valid(entity) then
           record.queue[visitor_id] = nil
+        elseif entity.surface ~= platform.surface then
+          release_and_reroute(info)
         -- Full wagons must immediately release visitors, even if an operator
         -- left the explicit boarding signal high. Without this, arrivals were
         -- stopped indefinitely at a platform that could not serve them.
@@ -843,7 +844,12 @@ function M.on_tick(event)
         -- it keeps a queue reserved for an incoming train.
         elseif not train_present and not circuit_open then
           release_and_reroute(info)
-        elseif info.state == "pathfinding_to_platform" and distance_sq(entity.position, platform.position) <= PLATFORM_WAIT_RADIUS * PLATFORM_WAIT_RADIUS then
+        elseif info.state == "waiting_for_train"
+            and distance_sq(entity.position, platform.position) > PLATFORM_BOARD_RADIUS * PLATFORM_BOARD_RADIUS then
+          if biters and biters.set_passenger_ground_state then biters.set_passenger_ground_state(info, "pathfinding_to_platform") else info.state = "pathfinding_to_platform" end
+          info.platform_route_started_tick = tick
+          issue_route(entity, info.platform_dest or platform.position)
+        elseif info.state == "pathfinding_to_platform" and distance_sq(entity.position, platform.position) <= PLATFORM_BOARD_RADIUS * PLATFORM_BOARD_RADIUS then
           if biters and biters.set_passenger_ground_state then biters.set_passenger_ground_state(info, "waiting_for_train") else info.state = "waiting_for_train" end
           entity.active = false
           if entity.commandable and entity.commandable.set_command then entity.commandable.set_command({type = defines.command.stop, distraction = defines.distraction.none}) end

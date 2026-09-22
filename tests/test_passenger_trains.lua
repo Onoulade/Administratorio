@@ -101,6 +101,75 @@ test("Boarding Enabled explicitly opens an incoming-train queue", function()
   assert_eq(passenger_trains.find_destination(visitor), platform, "the circuit override should open the platform without a train")
 end)
 
+test("only visitors on the center tile board on the 10-tick update", function()
+  local surface, platform = setup()
+  local wagon = new_entity(surface, "passenger-wagon", "cargo-wagon", 0, 0)
+  wagon.force = "player"
+  wagon.train = {speed = 0, manual_mode = true, carriages = {wagon}}
+  passenger_trains.on_built(wagon)
+
+  local visitor = new_entity(surface, "small-biter", "unit", 1.1, 2.5)
+  visitor.force = {name = "enemy"}
+  function visitor.destroy() visitor.valid = false end
+  local command
+  visitor.commandable = {set_command = function(value) command = value end}
+  local info = {entity = visitor, entity_name = visitor.name, state = "pathfinding", frustration = 0}
+  passenger_trains.set_biters_module({
+    set_passenger_ground_state = function(entry, state) entry.state = state end,
+    detach_for_passenger = function() return true end,
+  })
+  assert_true(passenger_trains.reserve_platform(info, visitor, platform))
+  assert_eq(command.radius, 0.85, "the route should target the center tile")
+
+  passenger_trains.on_tick({tick = 10})
+  assert_eq(info.state, "pathfinding_to_platform", "a visitor beside the center tile should keep walking")
+  assert_eq(#storage.passenger_wagons[wagon.unit_number].passengers, 0)
+
+  -- A stale waiting state cannot board from outside the arrival radius.
+  info.state = "waiting_for_train"
+  passenger_trains.on_tick({tick = 20})
+  assert_eq(info.state, "pathfinding_to_platform", "a displaced visitor should be routed back to the platform")
+  assert_true(visitor.active)
+  assert_eq(#storage.passenger_wagons[wagon.unit_number].passengers, 0)
+
+  visitor.position = {x = 0.6, y = 3.0}
+  passenger_trains.on_tick({tick = 30})
+  assert_eq(#storage.passenger_wagons[wagon.unit_number].passengers, 1,
+    "a visitor within the center-tile margin should board on the next update")
+  assert_true(not visitor.valid)
+end)
+
+test("a train arrival only boards visitors still on the platform", function()
+  local surface, platform = setup()
+  local stop = new_entity(surface, "train-stop", "train-stop", 0, 4)
+  stop.force = "player"
+  surface.create_entity = function() return nil end
+  assert_true(passenger_trains.pair_platform(platform, stop))
+  local wagon = new_entity(surface, "passenger-wagon", "cargo-wagon", 0, 0)
+  wagon.force = "player"
+  local train = {speed = 0, state = defines.train_state.wait_station, station = stop, carriages = {wagon}}
+  wagon.train = train
+  passenger_trains.on_built(wagon)
+
+  local visitor = new_entity(surface, "small-biter", "unit", 1.1, 2.5)
+  visitor.force = {name = "enemy"}
+  function visitor.destroy() visitor.valid = false end
+  local info = {entity = visitor, entity_name = visitor.name, state = "pathfinding", frustration = 0}
+  passenger_trains.set_biters_module({
+    set_passenger_ground_state = function(entry, state) entry.state = state end,
+    detach_for_passenger = function() return true end,
+  })
+  assert_true(passenger_trains.reserve_platform(info, visitor, platform))
+  info.state = "waiting_for_train"
+
+  passenger_trains.on_train_changed_state({train = train})
+  assert_eq(#storage.passenger_wagons[wagon.unit_number].passengers, 0,
+    "arrival must reject a stale waiting visitor outside the center tile")
+  visitor.position = {x = 0.4, y = 2.9}
+  passenger_trains.on_train_changed_state({train = train})
+  assert_eq(#storage.passenger_wagons[wagon.unit_number].passengers, 1)
+end)
+
 test("idle enabled platforms remain local waiting candidates", function()
   local surface, platform = setup()
   local visitor = new_entity(surface, "small-biter", "unit", 8, 2.5)
