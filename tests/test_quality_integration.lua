@@ -108,6 +108,19 @@ test("certification recipes use the exact costly administrative chain", function
   assert_true(has_ingredient(recipes["quality-module-3"], "taxpayer-money", 500))
 end)
 
+test("Space Age certification keeps Fulgora's superconductor without duplicating it", function()
+  mods = {["space-age"] = "2.0.0"}
+  local data_api = new_data()
+  integration.apply(data_api)
+  integration.apply(data_api)
+  mods = nil
+  local recipe = data_api.raw.recipe["quality-module-3"]
+  assert_eq(#recipe.ingredients, 7)
+  assert_true(has_ingredient(recipe, "superconductor", 1))
+  assert_true(has_ingredient(recipe, "quality-module-2", 5))
+  assert_true(has_ingredient(recipe, "management-approval-written", 1))
+end)
+
 test("certification technologies retain native costs and gain one administrative pack", function()
   local data_api = new_data()
   integration.apply(data_api)

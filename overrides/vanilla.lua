@@ -303,11 +303,26 @@ local module_recipe_overrides = {
   },
 }
 
+-- Keep each tier-3 module tied to its planet. Productivity uses the local
+-- pentapod egg supply so its production stays on Gleba.
+local space_age_enabled = require("feature_flags").space_age_enabled()
+if space_age_enabled then
+  table.insert(module_recipe_overrides["speed-module-3"],
+    {type = "item", name = "tungsten-carbide", amount = 1})
+  table.insert(module_recipe_overrides["productivity-module-3"],
+    {type = "item", name = "pentapod-egg", amount = 1})
+  table.insert(module_recipe_overrides["efficiency-module-3"],
+    {type = "item", name = "spoilage", amount = 5})
+end
+
 for name, ingredients in pairs(module_recipe_overrides) do
   local recipe = data.raw["recipe"][name]
   if recipe then
     recipe.category = "bureaucracy-modules"
     recipe.ingredients = ingredients
+    if space_age_enabled and name == "productivity-module-3" then
+      require("prototypes.shared.space_age_planets").apply_planet_surface_conditions(recipe, "gleba")
+    end
   end
 end
 

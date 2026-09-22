@@ -122,7 +122,15 @@ function M.apply(data_api)
     local recipe = raw.recipe and raw.recipe[name]
     if recipe then
       recipe.category = "bureaucracy-modules"
-      recipe.ingredients = ingredients
+      recipe.ingredients = {}
+      for _, ingredient in ipairs(ingredients) do
+        recipe.ingredients[#recipe.ingredients + 1] = ingredient
+      end
+      -- Native Space Age certification uses Fulgora's superconductor.
+      if name == "quality-module-3" and require("feature_flags").space_age_enabled() then
+        recipe.ingredients[#recipe.ingredients + 1] =
+          {type = "item", name = "superconductor", amount = 1}
+      end
     end
   end
 

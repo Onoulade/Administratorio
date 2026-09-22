@@ -185,6 +185,7 @@ else
 end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 
+mods = {["space-age"] = "2.0.0"}
 dofile(mod_root .. "overrides/vanilla.lua")
 
 test("laser weapons damage technologies are disabled and hidden", function()
@@ -260,6 +261,32 @@ test("first-tier speed and efficiency modules use two paperwork inputs", functio
     "efficiency-module should require two crappy reports")
 end)
 
+test("Space Age tier-3 modules retain their thematic planetary inputs", function()
+  local expected = {
+    ["speed-module-3"] = {"tungsten-carbide", 1},
+    ["productivity-module-3"] = {"pentapod-egg", 1},
+    ["efficiency-module-3"] = {"spoilage", 5},
+  }
+  for recipe_name, ingredient in pairs(expected) do
+    local recipe = data.raw.recipe[recipe_name]
+    assert_true(recipe_ingredient_amount(recipe, ingredient[1]) == ingredient[2],
+      recipe_name .. " should use its planetary input")
+    assert_true(recipe_ingredient_amount(recipe, recipe_name:gsub("%-3$", "-2")) == 4,
+      recipe_name .. " should keep four tier-2 modules")
+    assert_true(recipe_ingredient_amount(recipe, "management-approval-written") == 1,
+      recipe_name .. " should keep its administrative approval")
+  end
+  local productivity = data.raw.recipe["productivity-module-3"]
+  assert_true(recipe_ingredient_amount(productivity, "biter-egg") == nil,
+    "productivity-module-3 should no longer require a Nauvis egg")
+  assert_true(#productivity.surface_conditions == 2,
+    "productivity-module-3 should have Gleba surface conditions")
+  assert_true(productivity.surface_conditions[1].property == "pressure"
+    and productivity.surface_conditions[1].min == 2000
+    and productivity.surface_conditions[1].max == 2000,
+    "productivity-module-3 should use Gleba's pressure")
+end)
+
 test("premature pentapods of every size keep vanilla attack damage when eggs hatch", function()
   local biter_damage = data.raw.unit["small-biter"].attack_parameters.ammo_type.action[1]
     .action_delivery[1].target_effects[1].damage.amount
@@ -287,6 +314,22 @@ test("pentapod egg nests resist impact damage like biter nests", function()
     assert_true(impact_percent == 100,
       spawner_name .. " should be immune to collision and stomping damage")
   end
+end)
+
+test("base-only tier-3 modules do not require absent Space Age items", function()
+  mods = nil
+  data.raw.recipe["productivity-module-3"].surface_conditions = nil
+  dofile(mod_root .. "overrides/vanilla.lua")
+  for recipe_name, item_name in pairs({
+    ["speed-module-3"] = "tungsten-carbide",
+    ["productivity-module-3"] = "pentapod-egg",
+    ["efficiency-module-3"] = "spoilage",
+  }) do
+    assert_true(recipe_ingredient_amount(data.raw.recipe[recipe_name], item_name) == nil,
+      recipe_name .. " should remain craftable without Space Age")
+  end
+  assert_true(data.raw.recipe["productivity-module-3"].surface_conditions == nil,
+    "base-only productivity-module-3 should not be restricted to Gleba")
 end)
 
 if failed > 0 then

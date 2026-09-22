@@ -134,6 +134,11 @@ local technologies = {
   ["industrial-propaganda"] = {type = "technology", name = "industrial-propaganda", effects = {}},
   ["corporate-hospitality"] = {type = "technology", name = "corporate-hospitality", effects = {}},
   ["agricultural-science-pack"] = {type = "technology", name = "agricultural-science-pack", effects = {}},
+  ["productivity-module-3"] = {
+    type = "technology", name = "productivity-module-3",
+    prerequisites = {"productivity-module-2", "biter-egg-handling"},
+    effects = {{type = "unlock-recipe", recipe = "productivity-module-3"}},
+  },
   ["electromagnetic-plant"] = {type = "technology", name = "electromagnetic-plant", effects = {{type = "unlock-recipe", recipe = "electromagnetic-plant"}}, prerequisites = {}},
   ["biochamber"] = {type = "technology", name = "biochamber", effects = {{type = "unlock-recipe", recipe = "biochamber"}}, prerequisites = {}},
   ["big-mining-drill"] = {type = "technology", name = "big-mining-drill", effects = {}, prerequisites = {}},
@@ -1534,6 +1539,16 @@ test("orbital employee return has no random recovery research", function()
     assert_true(technologies["orbital-employment-recovery-" .. level] == nil,
       "obsolete recovery tier should not exist: " .. level)
   end
+end)
+
+test("productivity module 3 follows Gleba eggs rather than Nauvis egg handling", function()
+  local technology = technologies["productivity-module-3"]
+  assert_true(tech_has_prerequisite(technology, "agricultural-science-pack"),
+    "productivity-module-3 should follow Gleba's agricultural progression")
+  assert_true(not tech_has_prerequisite(technology, "biter-egg-handling"),
+    "productivity-module-3 should not require capturing a Nauvis spawner")
+  assert_true(tech_unlocks_recipe(technology, "productivity-module-3"),
+    "productivity-module-3 should retain its recipe unlock")
 end)
 
 test("gleba separates yellow administration from conciliation operations", function()

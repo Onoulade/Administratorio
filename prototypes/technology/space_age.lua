@@ -1067,6 +1067,17 @@ add_tech_prerequisite("quantum-processor", "carbon-fiber")
 add_tech_prerequisite("metallurgic-science-pack", "cyan-ink-production")
 add_tech_prerequisite("agricultural-science-pack", "gleba-conciliation")
 add_tech_prerequisite("electromagnetic-science-pack", "fulgora-salvage-administration")
+-- The audit module now consumes Gleba pentapod eggs, not Nauvis biter eggs.
+-- Agricultural science already follows the local egg-harvesting bootstrap.
+local productivity_module_3 = data.raw.technology["productivity-module-3"]
+if productivity_module_3 then
+  for index = #(productivity_module_3.prerequisites or {}), 1, -1 do
+    if productivity_module_3.prerequisites[index] == "biter-egg-handling" then
+      table.remove(productivity_module_3.prerequisites, index)
+    end
+  end
+  add_tech_prerequisite("productivity-module-3", "agricultural-science-pack")
+end
 add_tech_prerequisite("planet-discovery-aquilo", "administratorio-behemoth-complaints")
 add_tech_prerequisite("cryogenic-plant", "aquilo-cryogenic-administration")
 -- Any recipe that consumes calcite must remain unavailable until the player has
