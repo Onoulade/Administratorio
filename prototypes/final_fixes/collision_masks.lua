@@ -9,6 +9,7 @@ local WORKER_TERRAIN_COLLISION_LAYER = "administratorio_worker_terrain"
 local WORKER_OBSTACLE_COLLISION_LAYER = "administratorio_worker_obstacle"
 local RIDEABLE_BITER_COLLISION_LAYER = "administratorio_rideable_biter_collision"
 local RIDEABLE_BITER_TERRAIN_LAYER = "administratorio_rideable_biter_terrain"
+local PASSENGER_PLATFORM_COLLISION_LAYER = "administratorio_passenger_platform"
 local NIGHT_WORK_BUILDINGS = {
   ["office-desk"] = true,
   ["corporate-breakroom"] = true,
@@ -51,6 +52,26 @@ local ADMIN_STATION_EXCLUDED_TYPES = {
 local ADMIN_STATION_EXCLUDED_FLAGS = {
   ["not-on-map"] = true,
   ["placeable-off-grid"] = true,
+}
+-- Passenger platforms are solid reservation markers for every physical thing
+-- except the two populations that must cross their queue apron: characters
+-- and enemy units. Unlike the broader admin-station rule, rails and rolling
+-- stock intentionally remain in this set, which prevents overlap placement.
+local PASSENGER_PLATFORM_PASSABLE_NAMES = {
+  ["boarding-platform"] = true,
+  ["deboarding-platform"] = true,
+}
+local PASSENGER_PLATFORM_PASSABLE_TYPES = {
+  ["character"] = true, ["unit"] = true, ["combat-robot"] = true,
+  ["construction-robot"] = true, ["corpse"] = true, ["entity-ghost"] = true,
+  ["explosion"] = true, ["fire"] = true, ["highlight-box"] = true,
+  ["item-entity"] = true, ["logistic-robot"] = true,
+  ["optimized-decorative"] = true, ["particle"] = true,
+  ["particle-source"] = true, ["projectile"] = true,
+  ["rocket-silo-rocket"] = true, ["segment"] = true,
+  ["segmented-unit"] = true, ["smoke"] = true,
+  ["smoke-with-trigger"] = true, ["speech-bubble"] = true,
+  ["spider-leg"] = true, ["stream"] = true, ["tile-ghost"] = true,
 }
 local WORKER_PASSABLE_NAMES = {
   -- These buildings use hidden blockers to model walls while keeping their
@@ -221,6 +242,16 @@ local function should_add_rideable_biter_layer(prototype)
   return not mask.layers.train and collides_with_standard_car(mask)
 end
 
+local function should_add_passenger_platform_layer(prototype)
+  return prototype
+    and not PASSENGER_PLATFORM_PASSABLE_NAMES[prototype.name]
+    and not PASSENGER_PLATFORM_PASSABLE_TYPES[prototype.type]
+    and not has_excluded_flag(prototype)
+    and prototype.collision_box
+    and not collision_box_is_zero(prototype.collision_box)
+    and (prototype.collision_mask or default_collision_mask_for(prototype.type))
+end
+
 local function build_standard_module_categories(data)
   local categories = {}
   for name in pairs(data.raw["module-category"] or {}) do
@@ -270,6 +301,11 @@ function M.apply(data, working_hours_enabled)
       if should_add_rideable_biter_layer(prototype) then
         prototype.collision_mask = materialize_collision_mask(prototype)
         prototype.collision_mask.layers[RIDEABLE_BITER_COLLISION_LAYER] = true
+      end
+
+      if should_add_passenger_platform_layer(prototype) then
+        prototype.collision_mask = materialize_collision_mask(prototype)
+        prototype.collision_mask.layers[PASSENGER_PLATFORM_COLLISION_LAYER] = true
       end
 
       if prototype and type(prototype.module_slots) == "number" and prototype.module_slots > 0 then

@@ -17,6 +17,7 @@ local zones = require("scripts.zones")
 local biters = require("scripts.biters")
 local pentapods = require("scripts.pentapods")
 local trains = require("scripts.trains")
+local passenger_trains = require("scripts.passenger_trains")
 local working_hours = require("scripts.working_hours")
 local administrative_clock = require("scripts.administrative_clock")
 local field_office = require("scripts.field_office")
@@ -44,6 +45,7 @@ local evolution_gating = require("scripts.evolution_gating")
 
 biter_station.set_biters_module(biters)
 biterport.set_biters_module(biters)
+passenger_trains.set_biters_module(biters)
 
 local ADMIN_DESK_NAMES = {
   "admin-station",
@@ -486,6 +488,7 @@ local function init_storage()
   storage.desk_circuit_dirty = storage.desk_circuit_dirty or {}
   storage.capture_bureau_ports = storage.capture_bureau_ports or {}
   storage.stations = storage.stations or {}
+  passenger_trains.ensure_storage()
   storage.achievements = storage.achievements or {}
   storage.path_requests = storage.path_requests or {}
   storage.pending_group_redirects = storage.pending_group_redirects or {}
@@ -654,6 +657,7 @@ local function on_init()
   set_biter_ceasefire()
   evolution_gating.on_init()
   trains.on_init()
+  passenger_trains.rebuild_registry()
   for _, player in pairs(game.players) do
     normalize_player_admin_station_items(player)
     normalize_player_admin_station_quickbar(player)
@@ -693,6 +697,7 @@ local function on_configuration_changed(event)
   heat_exhaust.rebuild_registry()
   relocation_cannon.rebuild_registry()
   trains.on_init()
+  passenger_trains.rebuild_registry()
   set_biter_ceasefire()
   
   -- Clean up legacy storage from older versions (dead references)
@@ -882,6 +887,7 @@ local function on_selected_entity_changed(event)
   field_office_hover.clear(player)
 
   local entity = player.selected
+  passenger_trains.on_selected_entity_changed(player, entity)
   if entity and entity.valid and biter_station.is_station(entity) then
     biter_station_hover.show_station_zone(player, entity)
   elseif entity and entity.valid and biter_station.is_managed_building(entity) then
@@ -1145,6 +1151,7 @@ local function on_entity_built_inner(event)
       biter_station.track_managed_building(entity)
     end
     trains.on_built(entity) -- Passed directly to script
+    passenger_trains.on_built(entity, event)
   end
 end
 
@@ -1234,6 +1241,7 @@ local function on_entity_removed(event)
   relocation_cannon.on_entity_removed(entity)
 
   trains.on_removed(entity)
+  passenger_trains.on_removed(entity)
 
   if cleanup_removed_admin_desk(entity) then
     return
@@ -1902,6 +1910,7 @@ local function on_entity_died(event)
     pneumatic.delete_tube_pump_supports(entity)
   end
   trains.on_removed(entity)
+  passenger_trains.on_removed(entity)
 end
 
 local ON_ENTITY_DIED_BASE_FILTERS = {
@@ -1920,6 +1929,9 @@ local ON_ENTITY_DIED_BASE_FILTERS = {
   {filter = "name", name = "corporate-breakroom"},
   {filter = "name", name = "union-headquarters"},
   {filter = "name", name = "administrative-clock"},
+  {filter = "name", name = "passenger-wagon"},
+  {filter = "name", name = "boarding-platform"},
+  {filter = "name", name = "deboarding-platform"},
   {filter = "name", name = "tube-pump"},
 }
 
@@ -2018,6 +2030,11 @@ end
 
 local function on_train_changed_state(event)
   trains.on_train_changed_state(event)
+  passenger_trains.on_train_changed_state(event)
+end
+
+local function on_passenger_train_tick(event)
+  passenger_trains.on_tick(event)
 end
 
 -- ============================================================
@@ -2353,6 +2370,7 @@ control_event_router.register({
   on_toggle_runtime_debug = on_toggle_runtime_debug,
   on_toggle_complaint_locator = on_toggle_complaint_locator,
   on_train_changed_state = on_train_changed_state,
+  on_passenger_train_tick = on_passenger_train_tick,
   on_unit_added_to_group = on_unit_added_to_group,
   on_unit_group_created = on_unit_group_created,
   on_unit_group_debug_tick = on_unit_group_debug_tick,

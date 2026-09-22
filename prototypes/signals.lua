@@ -33,6 +33,20 @@ signals[#signals + 1] = {
   subgroup = "virtual-signal",
   order = "z[admin]-x",
 }
+for _, signal in ipairs({
+  {name = "signal-train-passengers", icon = "__base__/graphics/icons/signal/signal_P.png", order = "z[admin]-pa"},
+  {name = "signal-train-free-seats", icon = "__base__/graphics/icons/signal/signal_F.png", order = "z[admin]-pb"},
+  {name = "signal-boarders-waiting", icon = "__base__/graphics/icons/signal/signal_Q.png", order = "z[admin]-pc"},
+  {name = "signal-passenger-outbreak", icon = "__administratorio__/graphics/icons/protest-cross.png", order = "z[admin]-pd"},
+  {name = "signal-boarding-enabled", icon = "__base__/graphics/icons/signal/signal_green.png", order = "z[admin]-pe"},
+  {name = "signal-passenger-highest-frustration", icon = "__base__/graphics/icons/signal/signal_H.png", order = "z[admin]-pf"},
+  {name = "signal-deboarding-closed", icon = "__base__/graphics/icons/signal/signal_red.png", order = "z[admin]-pg"},
+}) do
+  signals[#signals + 1] = {
+    type = "virtual-signal", name = signal.name, icon = signal.icon, icon_size = 64,
+    subgroup = "virtual-signal", order = signal.order,
+  }
+end
 signals[#signals + 1] = {
   type = "virtual-signal",
   name = "signal-total-waiting",

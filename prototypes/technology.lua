@@ -136,6 +136,18 @@ data:extend({
     research_trigger = { type = "craft-item", item = "field-office", count = 1 },
     order = "z-d"
   },
+  {
+    type = "technology", name = "passenger-rail-service",
+    icon = "__base__/graphics/technology/railway.png", icon_size = 256,
+    effects = {
+      {type = "unlock-recipe", recipe = "passenger-wagon"},
+      {type = "unlock-recipe", recipe = "boarding-platform"},
+      {type = "unlock-recipe", recipe = "deboarding-platform"},
+    },
+    prerequisites = {"railway", "biter-employment"},
+    unit = {count = 60, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20},
+    order = "z[passenger-rail-service]",
+  },
   -- ADMINISTRATIVE SCIENCE (T0 — unlocks admin science packs)
   {
     type = "technology", name = "administrative-science-research",

@@ -973,6 +973,11 @@ local admin_station_combinator = {
   circuit_wire_max_distance = 9
 }
 
+local passenger_stop_combinator = table.deepcopy(admin_station_combinator)
+passenger_stop_combinator.name = "passenger-stop-combinator"
+passenger_stop_combinator.icon = "__base__/graphics/icons/cargo-wagon.png"
+passenger_stop_combinator.item_slot_count = 5
+
 local distillery_graphics = entity_graphics .. "propaganda-distillery/"
 local distillery_scale = 0.525
 local distillery_shift = util.by_pixel(5, -5)
@@ -1160,6 +1165,133 @@ transit_permit_chest.inventory_type = "with_filters_and_bar"
 transit_permit_chest.max_health = 200
 transit_permit_chest.collision_box = {{0, 0}, {0, 0}}
 transit_permit_chest.collision_mask = {layers = {}}
+
+local passenger_platform_graphics = entity_graphics .. "passenger-platforms/"
+local PASSENGER_PLATFORM_COLLISION_LAYER = "administratorio_passenger_platform"
+-- The source frames are alpha-trimmed to roughly 12 tiles at native pixels.
+-- At 0.25 this produces a true 3x3-tile platform, matching its selection
+-- footprint instead of the undersized 0.20 render.
+local PASSENGER_PLATFORM_SCALE = 0.25
+-- The yellow hazard strip is the floor-edge datum, not the lamp, pipework, or
+-- raised platform detail. Align it to the respective 3x3 tile edge and allow
+-- those perspective details to overhang the entity footprint.
+local passenger_platform_frames = {
+  ["boarding-platform"] = {
+    north = {width = 373, height = 381, shift = {0, -0.25}},
+    east = {width = 364, height = 386, shift = {0.25, 0}},
+    south = {width = 366, height = 368, shift = {0, 0.25}},
+    west = {width = 366, height = 386, shift = {-0.25, 0}},
+  },
+  ["deboarding-platform"] = {
+    north = {width = 375, height = 388, shift = {0, -0.25}},
+    east = {width = 366, height = 393, shift = {0.25, 0}},
+    south = {width = 368, height = 378, shift = {0, 0.25}},
+    west = {width = 369, height = 394, shift = {-0.25, 0}},
+  },
+}
+
+local function passenger_platform_filename(name, state, direction)
+  return name .. "-" .. direction .. ".png"
+end
+
+local function passenger_platform_sprite(name, direction, state)
+  local frame = passenger_platform_frames[name][direction]
+  return {
+    filename = passenger_platform_graphics .. passenger_platform_filename(name, state or "idle", direction),
+    width = frame.width,
+    height = frame.height,
+    scale = PASSENGER_PLATFORM_SCALE,
+    shift = frame.shift,
+  }
+end
+
+-- Constant combinators only expose a single entity sprite. The floor is always
+-- the same idle art; the runtime light alone communicates active, idle, and
+-- disabled state. Keeping the same scale and shift makes every direction line
+-- up with the transient placement-preview entity exactly.
+local passenger_platform_runtime_sprites = {}
+for name, directions in pairs(passenger_platform_frames) do
+  for direction, frame in pairs(directions) do
+    passenger_platform_runtime_sprites[#passenger_platform_runtime_sprites + 1] = {
+      type = "sprite",
+      name = "administratorio-passenger-platform-" .. name .. "-idle-" .. direction,
+      filename = passenger_platform_graphics .. passenger_platform_filename(name, "idle", direction),
+      width = frame.width,
+      height = frame.height,
+      scale = PASSENGER_PLATFORM_SCALE,
+      shift = frame.shift,
+    }
+    passenger_platform_runtime_sprites[#passenger_platform_runtime_sprites + 1] = {
+      type = "sprite",
+      name = "administratorio-passenger-platform-" .. name .. "-light-" .. direction,
+      filename = passenger_platform_graphics .. name .. "-" .. direction .. "-light.png",
+      width = frame.width,
+      height = frame.height,
+      scale = PASSENGER_PLATFORM_SCALE,
+      shift = frame.shift,
+    }
+  end
+end
+data:extend(passenger_platform_runtime_sprites)
+
+-- The held-item ghost needs a native entity sprite, while the real circuit
+-- entity must remain visually lower than walkers. The item therefore places a
+-- visible preview combinator, which control immediately swaps for its invisible
+-- runtime counterpart; runtime rendering supplies the floor and state light.
+local function make_passenger_platform(name, placement_preview)
+  local source = table.deepcopy(data.raw["constant-combinator"]["constant-combinator"])
+  source.name = placement_preview and name .. "-placement-preview" or name
+  source.localised_name = {"entity-name." .. name}
+  source.localised_description = {"entity-description." .. name}
+  source.icon = "__administratorio__/graphics/icons/" .. name .. ".png"
+  source.icon_size = 64
+  source.icons = nil
+  if placement_preview then
+    source.sprites = {
+      north = passenger_platform_sprite(name, "north", "idle"),
+      east = passenger_platform_sprite(name, "east", "idle"),
+      south = passenger_platform_sprite(name, "south", "idle"),
+      west = passenger_platform_sprite(name, "west", "idle"),
+    }
+    source.hidden_in_factoriopedia = true
+    source.selectable_in_game = false
+  else
+    -- The logical constant combinator is deliberately invisible. Runtime draws
+    -- the platform at lower-object so biters and players walking on the floor
+    -- render above it, rather than disappearing beneath an object-layer sprite.
+    local invisible_sprite = {filename = "__core__/graphics/empty.png", width = 1, height = 1}
+    source.sprites = {
+      north = invisible_sprite,
+      east = invisible_sprite,
+      south = invisible_sprite,
+      west = invisible_sprite,
+    }
+  end
+  -- The directional lamps are painted into the platform sheet; inherited
+  -- constant-combinator LEDs would otherwise hover at the old 1x1 offsets.
+  source.activity_led_sprites = nil
+  source.minable = {mining_time = 0.5, result = name}
+  source.placeable_by = placeable_by_item(name)
+  -- Runtime owns the five output slots. Players cannot configure them, but can
+  -- still attach circuit wire to read live passenger counts.
+  source.item_slot_count = 5
+  source.operable = false
+  source.max_health = 250
+  -- The dedicated layer is applied in final-fixes to every solid prototype
+  -- except characters and units. Platforms therefore reserve their rail-side
+  -- apron against rails, trains, and buildings while players and biters can
+  -- still walk across it.
+  source.collision_box = {{-1.4, -1.4}, {1.4, 1.4}}
+  source.collision_mask = {layers = {[PASSENGER_PLATFORM_COLLISION_LAYER] = true, water_tile = true}}
+  source.selection_box = {{-1.5, -1.5}, {1.5, 1.5}}
+  source.circuit_wire_max_distance = 9
+  return source
+end
+
+local boarding_platform = make_passenger_platform("boarding-platform")
+local deboarding_platform = make_passenger_platform("deboarding-platform")
+local boarding_platform_placement_preview = make_passenger_platform("boarding-platform", true)
+local deboarding_platform_placement_preview = make_passenger_platform("deboarding-platform", true)
 
 -- Legacy supply cache from pre-spider field agents. Kept hidden so old saves can
 -- load cleanly; runtime destroys any remaining instances.
@@ -1394,7 +1526,12 @@ add_entity(propaganda_distillery)
 add_entity(waiting_zone_marker)
 add_entity(admin_station_corner_blocker)
 add_entity(admin_station_combinator)
+add_entity(passenger_stop_combinator)
 add_entity(transit_permit_chest)
+add_entity(boarding_platform)
+add_entity(deboarding_platform)
+add_entity(boarding_platform_placement_preview)
+add_entity(deboarding_platform_placement_preview)
 add_entity(biter_station_coffee_input)
 add_entity(biterport_coffee_input)
 add_entity(biter_station_wall_blocker)

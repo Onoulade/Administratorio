@@ -225,3 +225,29 @@ if rideable_biter then
   mounted_rideable_biter.animation = mounted_biter_run_animation()
   data:extend({rideable_biter, mounted_rideable_biter})
 end
+
+-- Passenger manifests are deliberately script-side data, never items.  A
+-- cargo-wagon gives the train the expected vanilla carriage behaviour while
+-- the zero-slot inventory prevents inserters, belts, and normal cargo wait
+-- conditions from interacting with visitors.
+local function make_passenger_wagon()
+  local base = data.raw["cargo-wagon"] and data.raw["cargo-wagon"]["cargo-wagon"]
+  if not base then return nil end
+  local wagon = deepcopy(base)
+  wagon.name = "passenger-wagon"
+  wagon.localised_name = {"entity-name.passenger-wagon"}
+  wagon.localised_description = {"entity-description.passenger-wagon"}
+  wagon.icon = "__base__/graphics/icons/cargo-wagon.png"
+  wagon.icon_size = 64
+  wagon.icons = {
+    {icon = "__base__/graphics/icons/cargo-wagon.png", icon_size = 64, tint = {r = 0.45, g = 0.78, b = 1, a = 1}},
+    {icon = "__base__/graphics/icons/signal/signal_P.png", icon_size = 64, scale = 0.38, shift = {8, 8}},
+  }
+  wagon.minable = {mining_time = 0.5, result = "passenger-wagon"}
+  wagon.placeable_by = {{item = "passenger-wagon", count = 1}}
+  wagon.inventory_size = 0
+  return wagon
+end
+
+local passenger_wagon = make_passenger_wagon()
+if passenger_wagon then data:extend({passenger_wagon}) end

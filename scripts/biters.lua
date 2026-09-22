@@ -9,6 +9,7 @@ local unit_ai_settings = require("scripts.unit_ai_settings")
 local protest_targets = require("scripts.protest_targets")
 local spawner_population = require("scripts.spawner_population")
 local pentapods = require("scripts.pentapods")
+local passenger_trains = require("scripts.passenger_trains")
 
 local M = {}
 local SPACE_AGE_ENABLED = feature_flags.space_age_enabled()
@@ -149,7 +150,7 @@ local PROTEST_ALERT_SOUND_COOLDOWN_TICKS = 6 * 60
 local PROTEST_ALERT_SOUND_MAX_DISTANCE = 32
 local PROTEST_MAP_TAG_TEXT = {"gui.protest-map-tag"}
 local PROTEST_STOP_TEXT = {"gui.protest-stop"}
-local WAITING_BITER_STATE_NAMES = {"waiting", "pathfinding", "protesting", "pacified", "returning_home", "attacking"}
+local WAITING_BITER_STATE_NAMES = {"waiting", "pathfinding", "pathfinding_to_platform", "waiting_for_train", "protesting", "pacified", "returning_home", "attacking"}
 local WAITING_PATHING_PROCESS_SHARD_COUNT = C.FRUST_PROTEST_PROCESS_SHARDS or 4
 local DESK_CIRCUIT_RECONCILE_TICKS = 60
 local BITER_FORCE_NAME = "administratorio-biters"
@@ -340,7 +341,7 @@ local function ensure_desk_circuit_dirty()
 end
 
 local function is_frustration_tracked_state(state)
-  if state == "waiting" or state == "pathfinding" then return true end
+  if state == "waiting" or state == "pathfinding" or state == "pathfinding_to_platform" or state == "waiting_for_train" then return true end
   return state == "protesting" and C.hard_mode_enabled and C.hard_mode_enabled()
 end
 
@@ -1417,9 +1418,6 @@ function M.send_biter_to_station_with_targets(entity, targets, opts)
   local prepared_redirect = opts.prepared_redirect == true
     and entity.force == get_biter_force()
   if entity.force.name ~= "enemy" and not prepared_redirect then return end
-  if #targets == 0 then
-    return
-  end
   local initial_frustration = opts.initial_frustration or 0
 
   local min_dist = math.huge
@@ -1431,7 +1429,7 @@ function M.send_biter_to_station_with_targets(entity, targets, opts)
     end
   end
   local preferred_targets = get_preferred_desks_for_entity(entity.name, same_surface_targets)
-  if #preferred_targets == 0 then
+  if #preferred_targets == 0 and #targets > 0 then
     if pentapods.is_pentapod(entity.name) then
       return
     end
@@ -1448,11 +1446,21 @@ function M.send_biter_to_station_with_targets(entity, targets, opts)
     end
   end
 
-  if best then
+  local platform, platform_distance = passenger_trains.find_destination(entity)
+  for _, desk in ipairs(preferred_targets) do
+    if is_capture_bureau(desk) then
+      platform, platform_distance = nil, nil
+      break
+    end
+  end
+  local use_platform = platform and (not best or platform_distance < min_dist
+    or (platform_distance == min_dist and platform.unit_number < best.unit_number))
+
+  if best or use_platform then
     --   .. " at [" .. math.floor(best.position.x) .. "," .. math.floor(best.position.y) .. "], dist=" .. math.floor(math.sqrt(min_dist)))
     local info = {
       entity = entity,
-      desk_id = best.unit_number,
+      desk_id = best and best.unit_number or nil,
       complaints = {},
       complaints_total = 0,
       complaints_filed = false,
@@ -1465,13 +1473,100 @@ function M.send_biter_to_station_with_targets(entity, targets, opts)
 
     info.entity = entity
     track_waiting_biter(entity.unit_number, info)
-    if not route_biter_to_desk(info, entity, best, {initial_frustration = initial_frustration}) then
+    local routed = use_platform
+      and passenger_trains.reserve_platform(info, entity, platform)
+      or route_biter_to_desk(info, entity, best, {initial_frustration = initial_frustration})
+    if not routed then
       untrack_waiting_biter(entity.unit_number, info)
       M.trigger_immediate_protest(entity, entity.surface, info, {allow_obstacle_breach = false})
     end
   else
     M.trigger_immediate_protest(entity, entity.surface, nil, {allow_obstacle_breach = false})
   end
+end
+
+-- Passenger rail owns its manifest but borrows the complaint lifecycle. These
+-- narrow bridge functions keep a visitor's spawner lease live while the world
+-- entity is absent, then restore it before issuing a fresh route.
+function M.set_passenger_ground_state(info, state)
+  set_waiting_biter_state(info, state)
+end
+
+function M.detach_for_passenger(info, visitor_id)
+  local entity = info and info.entity
+  if not info or not visitor_id or not entity or not entity.valid then return false end
+  local unit_number = entity.unit_number
+  if info.desk_id then unindex_biter_from_desk(info.desk_id, unit_number) end
+  if info.state then get_waiting_biter_state_set(info.state)[unit_number] = nil end
+  storage.waiting_biters[unit_number] = nil
+  info.tracked_unit_number = nil
+  info.last_frustration_tick = nil
+  spawner_population.rekey_detached(unit_number, visitor_id, nil, info.home_spawner)
+  return true
+end
+
+function M.restore_passenger(record, entity, protest)
+  if not record or not entity or not entity.valid then return false end
+  local home_spawner = record.home_spawner_id and game.get_entity_by_unit_number
+    and game.get_entity_by_unit_number(record.home_spawner_id) or nil
+  local info = {
+    entity = entity, entity_name = entity.name, visitor_id = record.visitor_id,
+    complaints = copy_complaints(record.complaints), complaints_total = record.complaints_total,
+    complaints_filed = record.complaints_filed == true, frustration = record.frustration or 0,
+    frust_accum = record.frust_accum or 0, home_spawner = home_spawner,
+    home_spawner_unit_number = record.home_spawner_id, home_position = record.home_position,
+    home_surface_index = record.home_surface_index, visited_stops = record.visited_stops,
+    rail_legs = record.rail_legs or 0, state = "pathfinding",
+  }
+  spawner_population.rekey_detached(record.visitor_id, entity.unit_number, entity, home_spawner)
+  track_waiting_biter(entity.unit_number, info)
+  if protest then
+    M.trigger_immediate_protest(entity, entity.surface, info, {allow_obstacle_breach = false})
+    return true
+  end
+  local best, best_distance
+  for _, desk in ipairs(get_cached_desks()) do
+    if desk.surface == entity.surface and zones.get_available_slots(desk.unit_number) > 0 then
+      local d = (desk.position.x - entity.position.x)^2 + (desk.position.y - entity.position.y)^2
+      if not best or d < best_distance or (d == best_distance and desk.unit_number < best.unit_number) then
+        best, best_distance = desk, d
+      end
+    end
+  end
+  local platform, platform_distance = passenger_trains.find_destination(entity, record.visited_stops)
+  if (record.rail_legs or 0) < 3 and platform and (not best or platform_distance < best_distance) then
+    if passenger_trains.reserve_platform(info, entity, platform) then return true end
+  end
+  if best and route_biter_to_desk(info, entity, best) then return true end
+  untrack_waiting_biter(entity.unit_number, info)
+  M.trigger_immediate_protest(entity, entity.surface, info, {allow_obstacle_breach = false})
+  return false
+end
+
+function M.reroute_passenger_ground(info, excluded_platform_id)
+  local entity = info and info.entity
+  if not info or not entity or not entity.valid then return false end
+  local best, best_distance
+  for _, desk in ipairs(get_cached_desks()) do
+    if desk.surface == entity.surface and zones.get_available_slots(desk.unit_number) > 0 then
+      local d = (desk.position.x - entity.position.x)^2 + (desk.position.y - entity.position.y)^2
+      if not best or d < best_distance or (d == best_distance and desk.unit_number < best.unit_number) then
+        best, best_distance = desk, d
+      end
+    end
+  end
+  -- A visitor released by a departed/full train should resume the same target
+  -- selection used after ordinary passenger deboarding. Exclude the platform
+  -- that just released it so a held circuit signal cannot create a route loop.
+  local excluded = excluded_platform_id and {[excluded_platform_id] = true} or nil
+  local platform, platform_distance = passenger_trains.find_destination(entity, excluded)
+  if platform and (not best or platform_distance < best_distance) then
+    if passenger_trains.reserve_platform(info, entity, platform) then return true end
+  end
+  if best and route_biter_to_desk(info, entity, best) then return true end
+  untrack_waiting_biter(entity.unit_number, info)
+  M.trigger_immediate_protest(entity, entity.surface, info, {allow_obstacle_breach = false})
+  return false
 end
 
 local function enforce_desk_capacity_limit(desk)

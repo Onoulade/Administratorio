@@ -34,6 +34,9 @@ data:extend({
   { type = "item", name = "printer-t1",                icon = "__administratorio__/graphics/icons/printer-t1-v2.png", icon_size = 64, subgroup = "admin-printers", order = "b", place_result = "printer-t1", stack_size = 50 },
   { type = "item", name = "printer-t2",                icon = "__administratorio__/graphics/icons/printer-t2-v2.png", icon_size = 64, subgroup = "admin-printers", order = "c", place_result = "printer-t2", stack_size = 50 },
   { type = "item", name = "transit-permit-chest",      icons = building_icons.transit_permit_chest(), subgroup = "admin-transit", order = "a", stack_size = 50 },
+  { type = "item", name = "passenger-wagon",           icons = {{icon = "__base__/graphics/icons/cargo-wagon.png", icon_size = 64, tint = {r=0.45, g=0.78, b=1, a=1}}}, subgroup = "train-transport", order = "z[passenger-wagon]", place_result = "passenger-wagon", stack_size = 5 },
+  { type = "item", name = "boarding-platform",         icon = item_icons .. "boarding-platform.png", icon_size = 64, subgroup = "admin-transit", order = "b", place_result = "boarding-platform-placement-preview", stack_size = 20 },
+  { type = "item", name = "deboarding-platform",       icon = item_icons .. "deboarding-platform.png", icon_size = 64, subgroup = "admin-transit", order = "c", place_result = "deboarding-platform-placement-preview", stack_size = 20 },
 })
 
 if working_hours_enabled then

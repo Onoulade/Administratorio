@@ -315,6 +315,18 @@ function M.rebuild()
     end
   end
 
+  -- Onboard visitors have no LuaEntity, but still consume their original nest
+  -- lease. Passenger IDs survive every destroy/recreate transfer.
+  for _, manifest in pairs(storage.passenger_wagons or {}) do
+    for _, passenger in ipairs(manifest.passengers or {}) do
+      local spawner = passenger.home_spawner_id and game.get_entity_by_unit_number
+        and game.get_entity_by_unit_number(passenger.home_spawner_id) or nil
+      if spawner and spawner.valid then
+        M.restore_detached(passenger.visitor_id, nil, spawner)
+      end
+    end
+  end
+
   for _, state in pairs(storage.field_office_state or {}) do
     local unit_number = state and (state.biter_unit_number
       or (state.biter and state.biter.valid and state.biter.unit_number))
