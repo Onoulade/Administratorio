@@ -158,6 +158,25 @@ test("biterport tip unlocks with biterport-logistics technology", function()
   )
 end)
 
+test("passenger rail guide unlocks with its blue-science technology", function()
+  local item = tip("administratorio-passenger-rail-service")
+  assert_true(
+    trigger_contains(item.trigger, "research", "technology", "passenger-rail-service"),
+    "passenger rail guide should unlock from passenger-rail-service"
+  )
+  for _, phrase in ipairs({
+    "Boarding Enabled",
+    "Deboarding Closed",
+    "Train Passengers",
+    "Highest Passenger Frustration",
+  }) do
+    assert_true(
+      english_tips_locale:find(phrase, 1, true) ~= nil,
+      "passenger rail guide should document " .. phrase
+    )
+  end
+end)
+
 test("stranded worker recovery is documented when either dispatch building is used", function()
   local item = tip("administratorio-orphaned-workers")
   assert_true(

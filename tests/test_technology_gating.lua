@@ -541,6 +541,25 @@ test("bootstrap paperwork is gated behind both discovery chains", function()
   assert_true(tech_depends_on("administrative-bureaucracy", "discovery-redundant-rubble"), "administrative-bureaucracy should stay behind discovery-redundant-rubble")
 end)
 
+test("passenger rail service is a blue-science rail and workforce upgrade", function()
+  local service = technologies["passenger-rail-service"]
+  assert_true(service ~= nil, "passenger rail service technology should exist")
+  assert_true(tech_has_prereq("passenger-rail-service", "railway"),
+    "passenger rail service should build on the railway")
+  assert_true(tech_has_prereq("passenger-rail-service", "biter-employment"),
+    "passenger rail service should require employed passengers")
+  assert_true(tech_has_prereq("passenger-rail-service", "chemical-science-pack"),
+    "passenger rail service should unlock only after chemical science")
+  assert_true(tech_uses_pack("passenger-rail-service", "chemical-science-pack"),
+    "passenger rail service should consume chemical science")
+  assert_true(not tech_uses_pack("passenger-rail-service", "production-science-pack"),
+    "passenger rail service should remain available before production science")
+  for _, recipe_name in ipairs({"passenger-wagon", "boarding-platform", "deboarding-platform"}) do
+    assert_true(tech_unlocks_recipe("passenger-rail-service", recipe_name),
+      "passenger rail service should unlock " .. recipe_name)
+  end
+end)
+
 test("rideable biter gets its own tech while automobilism stays the late car unlock", function()
   assert_true(technologies["rideable-biter"] ~= nil, "rideable-biter technology should exist")
   assert_true(tech_unlocks_recipe("rideable-biter", "rideable-biter"), "rideable-biter tech should unlock the rideable biter recipe")

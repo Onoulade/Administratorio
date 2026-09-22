@@ -144,8 +144,11 @@ data:extend({
       {type = "unlock-recipe", recipe = "boarding-platform"},
       {type = "unlock-recipe", recipe = "deboarding-platform"},
     },
-    prerequisites = {"railway", "biter-employment"},
-    unit = {count = 60, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20},
+    -- Passenger service comes after chemical science: it builds on a working
+    -- rail network and formal biter employment, then adds blue-science
+    -- signalling and carriage controls.
+    prerequisites = {"railway", "biter-employment", "chemical-science-pack"},
+    unit = {count = 60, ingredients = {{"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"chemical-science-pack", 1}, {"administrative-science-pack", 1}}, time = 20},
     order = "z[passenger-rail-service]",
   },
   -- ADMINISTRATIVE SCIENCE (T0 — unlocks admin science packs)

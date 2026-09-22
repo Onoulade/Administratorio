@@ -98,6 +98,7 @@ data:extend({
     },
   }),
   research_tip("administratorio-hired-biter", workforce, "g", "hired-biter-fieldwork"),
+  research_tip("administratorio-passenger-rail-service", workforce, "h", "passenger-rail-service"),
 })
 
 if working_hours_enabled then
@@ -138,7 +139,7 @@ if space_age_enabled then
   data:extend({
     -- Space Age changes the desk-to-worker conversion before the dedicated
     -- orbital category is relevant, so keep this beside the core hiring tips.
-    research_tip("administratorio-space-age-enrollment", workforce, "h", "worker-formation"),
+    research_tip("administratorio-space-age-enrollment", workforce, "i", "worker-formation"),
 
     -- Orbital administration
     research_tip("administratorio-workforce-formation-title", orbit, "a", "space-platform", {
