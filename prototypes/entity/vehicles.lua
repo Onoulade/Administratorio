@@ -246,6 +246,15 @@ local function make_passenger_wagon()
   wagon.minable = {mining_time = 0.5, result = "passenger-wagon"}
   wagon.placeable_by = {{item = "passenger-wagon", count = 1}}
   wagon.inventory_size = 0
+  -- The inherited cargo-wagon artwork supplies the runtime-tint mask, while
+  -- passenger manifests remain script-side rather than a visible inventory.
+  wagon.color = {r = 0.45, g = 0.78, b = 1, a = 1}
+  wagon.horizontal_doors = nil
+  wagon.vertical_doors = nil
+  wagon.open_sound = nil
+  wagon.close_sound = nil
+  wagon.door_opening_sound = nil
+  wagon.door_closing_sound = nil
   return wagon
 end
 
