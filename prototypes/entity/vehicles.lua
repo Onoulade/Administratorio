@@ -249,6 +249,11 @@ local function make_passenger_wagon()
   -- The inherited cargo-wagon artwork supplies the runtime-tint mask, while
   -- passenger manifests remain script-side rather than a visible inventory.
   wagon.color = {r = 0.45, g = 0.78, b = 1, a = 1}
+  -- Keep the native cargo-wagon silhouettes on the map and minimap, but tint
+  -- both normal and selected markers with the same passenger-service colour.
+  for _, representation in ipairs({wagon.minimap_representation, wagon.selected_minimap_representation}) do
+    if representation then representation.apply_runtime_tint = true end
+  end
   wagon.horizontal_doors = nil
   wagon.vertical_doors = nil
   wagon.open_sound = nil
