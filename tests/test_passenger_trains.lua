@@ -101,6 +101,24 @@ test("Boarding Enabled explicitly opens an incoming-train queue", function()
   assert_eq(passenger_trains.find_destination(visitor), platform, "the circuit override should open the platform without a train")
 end)
 
+test("idle enabled platforms remain local waiting candidates", function()
+  local surface, platform = setup()
+  local visitor = new_entity(surface, "small-biter", "unit", 8, 2.5)
+  local candidates = passenger_trains.find_candidates(visitor)
+  assert_eq(#candidates, 1)
+  assert_eq(candidates[1].entity, platform)
+  assert_eq(candidates[1].available, false)
+
+  platform.signals["signal-boarding-enabled"] = 1
+  assert_eq(passenger_trains.find_candidates(visitor)[1].available, true)
+  local record = storage.passenger_platforms[platform.unit_number]
+  for i = 1, 24 do record.queue[i] = {} end
+  assert_eq(passenger_trains.find_candidates(visitor)[1].available, false)
+
+  record.mode = "off"
+  assert_eq(#passenger_trains.find_candidates(visitor), 0)
+end)
+
 test("highest passenger frustration signal is a clamped percentage", function()
   local surface, platform = setup()
   local slots = {}

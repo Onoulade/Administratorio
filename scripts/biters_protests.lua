@@ -1936,6 +1936,14 @@ function M.new(deps)
     end
     info.desk_id = nil
     info.desk_dest = nil
+    if deps.route_or_seek_slot then
+      info.slot_search_failed_until = info.slot_search_failed_until or {}
+      if desk_id then
+        info.slot_search_failed_until[desk_id] = game.tick + 10 * 60 * 60
+      end
+      deps.route_or_seek_slot(info, entity)
+      return true
+    end
     if unit_number then
       deps.untrack_waiting_biter(unit_number, info)
     end
@@ -3223,12 +3231,21 @@ function M.new(deps)
       deps.unindex_biter_from_desk(desk_id, entry.b_id)
 
       local reassigned = false
-      for _, other_desk in ipairs(other_desks) do
-        if other_desk.valid and other_desk.unit_number ~= desk_id
-           and zones.get_available_slots(other_desk.unit_number) > 0 then
-          reassigned = deps.route_biter_to_desk(info, biter, other_desk)
-          if reassigned then
-            break
+      if deps.route_or_seek_slot then
+        local remaining = {}
+        for _, other_desk in ipairs(other_desks) do
+          if other_desk.valid and other_desk.unit_number ~= desk_id then
+            remaining[#remaining + 1] = other_desk
+          end
+        end
+        deps.route_or_seek_slot(info, biter, remaining)
+        reassigned = true
+      else
+        for _, other_desk in ipairs(other_desks) do
+          if other_desk.valid and other_desk.unit_number ~= desk_id
+             and zones.get_available_slots(other_desk.unit_number) > 0 then
+            reassigned = deps.route_biter_to_desk(info, biter, other_desk)
+            if reassigned then break end
           end
         end
       end
@@ -3379,6 +3396,7 @@ function M.new(deps)
     append_state_unit_numbers("returning_home", tracked_biter_ids, seen_biter_ids, shard_index, shard_count)
     append_state_unit_numbers("waiting", tracked_biter_ids, seen_biter_ids, shard_index, shard_count)
     append_state_unit_numbers("pathfinding", tracked_biter_ids, seen_biter_ids, shard_index, shard_count)
+    append_state_unit_numbers("seeking_slot", tracked_biter_ids, seen_biter_ids, shard_index, shard_count)
     append_state_unit_numbers("attacking", tracked_biter_ids, seen_biter_ids, shard_index, shard_count)
 
     for _, b_id in ipairs(tracked_biter_ids) do
@@ -3431,7 +3449,7 @@ function M.new(deps)
         goto continue_biter
       end
 
-        if info.state == "pathfinding" or info.state == "waiting" then
+        if info.state == "pathfinding" or info.state == "waiting" or info.state == "seeking_slot" then
           render.destroy_protest_rendering(info)
           render.destroy_pacified_rendering(info)
           clear_pacified_runtime(info)
@@ -3510,7 +3528,7 @@ function M.new(deps)
           info.hard_mode_attacking = true
         end
 
-        if info.state == "pathfinding" or info.state == "waiting" then
+        if info.state == "pathfinding" or info.state == "waiting" or info.state == "seeking_slot" then
           if info.state == "pathfinding" then
             if process_desk_route(info, info.entity) then
               goto continue_biter
@@ -3518,7 +3536,7 @@ function M.new(deps)
           end
           -- Travel to a reserved desk can span a desert. Start the service
           -- deadline on arrival, while route-stall detection remains active.
-          if info.state == "waiting" then
+          if info.state == "waiting" or info.state == "seeking_slot" then
             accumulate_biter_frustration(info, info.entity, "waiting")
           else
             info.last_frustration_tick = game.tick
@@ -3538,6 +3556,8 @@ function M.new(deps)
               release_unassigned_protester(info, info.entity, "frustration-no-protest-target")
               goto continue_biter
             end
+          elseif info.state == "seeking_slot" and deps.process_slot_search then
+            deps.process_slot_search(info, info.entity)
           end
         elseif info.state == "pacified" then
           local desk = find_available_desk_for_info(info)
@@ -3840,6 +3860,16 @@ function M.new(deps)
       local desk = storage.admin_desks and storage.admin_desks[info.desk_id]
       if desk and desk.valid then
         deps.finalize_pathfinding_biter_arrival(info, desk, "ai_complete")
+      end
+      return
+    end
+
+    if info.state == "seeking_slot" then
+      if info.slot_search_dest and deps.finish_slot_search_move then
+        deps.finish_slot_search_move(info, entity, event.result == defines.behavior_result.fail)
+      elseif game.tick >= (info.slot_search_retry_tick or 0) and deps.process_slot_search then
+        -- A bounded native wander has completed; scan for a slot immediately.
+        deps.process_slot_search(info, entity)
       end
       return
     end

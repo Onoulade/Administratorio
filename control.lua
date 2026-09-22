@@ -367,6 +367,7 @@ local function collect_runtime_debug_counts(desks)
     biters = 0,
     waiting = 0,
     pathfinding = 0,
+    seeking_slot = 0,
     protesting = 0,
     pacified = 0,
     returning_home = 0,
@@ -418,6 +419,8 @@ local function collect_runtime_debug_counts(desks)
       counts.waiting = counts.waiting + 1
     elseif info.state == "pathfinding" then
       counts.pathfinding = counts.pathfinding + 1
+    elseif info.state == "seeking_slot" then
+      counts.seeking_slot = counts.seeking_slot + 1
     elseif info.state == "protesting" then
       counts.protesting = counts.protesting + 1
       if info.hard_mode_attacking then
@@ -1389,13 +1392,9 @@ local function process_pending_group_redirects(tick)
        and (biter.force.name == "enemy" or entry.prepared == true)
        and not (storage.waiting_biters and storage.waiting_biters[biter.unit_number]) then
       targets = targets or get_cached_desks()
-      if #targets > 0 then
-        biters.send_biter_to_station_with_targets(biter, targets, {
-          prepared_redirect = entry.prepared == true,
-        })
-      else
-        biters.trigger_immediate_protest(biter, biter.surface)
-      end
+      biters.send_biter_to_station_with_targets(biter, targets, {
+        prepared_redirect = entry.prepared == true,
+      })
       processed = processed + 1
     end
     ::continue_redirect::

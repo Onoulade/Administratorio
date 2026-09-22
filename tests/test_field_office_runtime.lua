@@ -160,7 +160,7 @@ local function new_surface(spawners)
       commands = {},
       commandable = {},
       ai_settings = {
-        destroy_when_commands_fail = true,
+        allow_destroy_when_commands_fail = true,
         allow_try_return_to_spawner = true,
         join_attacks = true,
       },

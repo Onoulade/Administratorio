@@ -298,12 +298,18 @@ boarding_train_state = function(record)
   return wagon, train, train_present, has_space
 end
 
-local function boarding_routable(record)
+local function boarding_eligible(record)
   if not record or record.kind ~= "boarding-platform" or not valid(record.entity) then return false end
-  if not is_rail_adjacent(record.entity) or queue_count(record) >= PLATFORM_CAPACITY then return false end
+  if not is_rail_adjacent(record.entity) then return false end
   if record.mode == "off" then return false end
   local circuit_open = boarding_signal_open(record)
   if record.mode == "circuit" and not circuit_open then return false end
+  return true
+end
+
+local function boarding_routable(record)
+  if not boarding_eligible(record) or queue_count(record) >= PLATFORM_CAPACITY then return false end
+  local circuit_open = boarding_signal_open(record)
   local _, _, train_present, has_space = boarding_train_state(record)
   -- The circuit signal explicitly reserves a queue for an incoming train.
   -- Without it, an available stationary wagon is the sole attraction.
@@ -374,6 +380,24 @@ function M.find_destination(entity, excluded_platforms)
     end
   end
   return best and best.entity or nil, best_distance
+end
+
+-- Include full queues so complaint routing can wait locally instead of
+-- walking past a platform to an arbitrarily distant free desk.
+function M.find_candidates(entity, excluded_platforms)
+  local candidates = {}
+  if not valid(entity) then return candidates end
+  for id, record in pairs(storage.passenger_platforms or {}) do
+    if not (excluded_platforms and (excluded_platforms[id] or (record.stop_id and excluded_platforms[record.stop_id])))
+       and boarding_eligible(record) and record.entity.surface == entity.surface then
+      candidates[#candidates + 1] = {
+        entity = record.entity,
+        kind = "platform",
+        available = boarding_routable(record),
+      }
+    end
+  end
+  return candidates
 end
 
 local function issue_route(entity, destination)

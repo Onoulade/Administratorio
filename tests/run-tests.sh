@@ -98,7 +98,7 @@ run_python_tests() {
     [ -f "$test_file" ] || continue
     printf '==> %s\n' "$(basename "$test_file")"
     test_name=$(basename "$test_file")
-    if [ "$test_name" = "test_progression_report.py" ] || [ "$test_name" = "test_planet_escape.py" ] || [ "$test_name" = "test_factorio_config_matrix.py" ] || [ "$test_name" = "test_factorio_runtime_smoke.py" ]; then
+    if [ "$test_name" = "test_progression_report.py" ] || [ "$test_name" = "test_planet_escape.py" ] || [ "$test_name" = "test_factorio_config_matrix.py" ] || [ "$test_name" = "test_factorio_runtime_smoke.py" ] || [ "$test_name" = "test_factorio_complaint_identity.py" ]; then
       if [ -z "$FACTORIO_BIN" ]; then
         printf 'Skipping %s; --factorio-bin was not provided.\n' "$test_name"
         continue

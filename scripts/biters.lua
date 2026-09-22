@@ -150,7 +150,24 @@ local PROTEST_ALERT_SOUND_COOLDOWN_TICKS = 6 * 60
 local PROTEST_ALERT_SOUND_MAX_DISTANCE = 32
 local PROTEST_MAP_TAG_TEXT = {"gui.protest-map-tag"}
 local PROTEST_STOP_TEXT = {"gui.protest-stop"}
-local WAITING_BITER_STATE_NAMES = {"waiting", "pathfinding", "pathfinding_to_platform", "waiting_for_train", "protesting", "pacified", "returning_home", "attacking"}
+local WAITING_BITER_STATE_NAMES = {"waiting", "pathfinding", "seeking_slot", "pathfinding_to_platform", "waiting_for_train", "protesting", "pacified", "returning_home", "attacking"}
+local COMPLAINT_LOCAL_RADIUS = 8 * 32
+local COMPLAINT_ROAM_RADIUS = 3 * 32
+local SLOT_SEARCH_WANDER_TICKS = 60
+local SLOT_SEARCH_STALL_TICKS = 10 * 60
+local SLOT_SEARCH_MAX_POSITION_RETRIES = 3
+local SLOT_SEARCH_APPROACH_MIN_DISTANCE = 7
+local SLOT_SEARCH_APPROACH_MAX_DISTANCE = 10
+local SLOT_SEARCH_APPROACH_OFFSETS = {}
+for dx = -SLOT_SEARCH_APPROACH_MAX_DISTANCE, SLOT_SEARCH_APPROACH_MAX_DISTANCE do
+  for dy = -SLOT_SEARCH_APPROACH_MAX_DISTANCE, SLOT_SEARCH_APPROACH_MAX_DISTANCE do
+    local distance_sq = dx * dx + dy * dy
+    if distance_sq >= SLOT_SEARCH_APPROACH_MIN_DISTANCE * SLOT_SEARCH_APPROACH_MIN_DISTANCE
+       and distance_sq <= SLOT_SEARCH_APPROACH_MAX_DISTANCE * SLOT_SEARCH_APPROACH_MAX_DISTANCE then
+      SLOT_SEARCH_APPROACH_OFFSETS[#SLOT_SEARCH_APPROACH_OFFSETS + 1] = {x = dx, y = dy}
+    end
+  end
+end
 local WAITING_PATHING_PROCESS_SHARD_COUNT = C.FRUST_PROTEST_PROCESS_SHARDS or 4
 local DESK_CIRCUIT_RECONCILE_TICKS = 60
 local BITER_FORCE_NAME = "administratorio-biters"
@@ -341,7 +358,7 @@ local function ensure_desk_circuit_dirty()
 end
 
 local function is_frustration_tracked_state(state)
-  if state == "waiting" or state == "pathfinding" or state == "pathfinding_to_platform" or state == "waiting_for_train" then return true end
+  if state == "waiting" or state == "pathfinding" or state == "seeking_slot" or state == "pathfinding_to_platform" or state == "waiting_for_train" then return true end
   return state == "protesting" and C.hard_mode_enabled and C.hard_mode_enabled()
 end
 
@@ -472,6 +489,9 @@ local function set_waiting_biter_state(info, state)
   end
 
   info.state = state
+  if old_state == "seeking_slot" and state ~= "seeking_slot" then
+    info.slot_search_wander_anchor = nil
+  end
 
   if state and unit_number then
     local new_state_set = get_waiting_biter_state_set(state)
@@ -980,40 +1000,16 @@ local function capture_home_spawner(info, entity, should_release)
   return spawner
 end
 
-local function adopt_redirected_biter(info, entity, force_name)
+local function adopt_redirected_biter(info, entity, _force_name)
   if not entity or not entity.valid then return nil end
-
-  local surface = entity.surface
-  local position = surface.find_non_colliding_position(entity.name, entity.position, 2, 0.25)
-  if not position then
-    capture_home_spawner(info, entity, true)
-    return entity
-  end
-
-  local replacement = surface.create_entity{
-    name = entity.name,
-    position = position,
-    force = force_name or entity.force.name,
-  }
-  if not replacement or not replacement.valid then
-    capture_home_spawner(info, entity, true)
-    return entity
-  end
-  unit_ai_settings.apply_managed_unit_settings(replacement)
-
-  local home_spawner = capture_home_spawner(info, entity, false)
-  if entity.health and replacement.health then
-    replacement.health = entity.health
-  end
-  remember_entity_tracking(info, replacement)
-  spawner_population.rekey_detached(
-    entity.unit_number,
-    replacement.unit_number,
-    replacement,
-    home_spawner
-  )
-  entity.destroy()
-  return replacement
+  -- A native group member already has the right world identity. Replacing it
+  -- produces a visible despawn/respawn and can mask a lost spawner lease.
+  -- The walk-in path uses this same release operation without replacing units.
+  capture_home_spawner(info, entity, true)
+  entity.force = get_biter_force()
+  unit_ai_settings.apply_managed_unit_settings(entity)
+  remember_entity_tracking(info, entity)
+  return entity
 end
 
 local function get_desk_waiting_destination(entity, desk, unit_number)
@@ -1302,6 +1298,332 @@ local function route_biter_to_desk(info, entity, desk, opts)
   return false
 end
 
+local function complaint_candidates(entity, desks, excluded_platforms)
+  local candidates = {}
+  for _, desk in ipairs(desks or get_cached_desks()) do
+    if desk and desk.valid and desk.surface == entity.surface then
+      local capture = is_capture_bureau(desk)
+      if (capture and get_capture_bureau_products(desk, entity.name))
+         or (not capture and not pentapods.is_pentapod(entity.name)) then
+        candidates[#candidates + 1] = {
+          entity = desk, kind = "desk",
+          available = zones.get_available_slots(desk.unit_number) > 0
+            and (not capture or capture_bureau_can_accept_entity(desk, entity.name)),
+        }
+      end
+    end
+  end
+  if excluded_platforms ~= false and not pentapods.is_pentapod(entity.name) then
+    for _, candidate in ipairs(passenger_trains.find_candidates(entity, excluded_platforms)) do
+      candidates[#candidates + 1] = candidate
+    end
+  end
+  local position = entity.position
+  for _, candidate in ipairs(candidates) do
+    local dx = candidate.entity.position.x - position.x
+    local dy = candidate.entity.position.y - position.y
+    candidate.distance = dx * dx + dy * dy
+  end
+  table.sort(candidates, function(a, b)
+    if a.distance ~= b.distance then return a.distance < b.distance end
+    return a.entity.unit_number < b.entity.unit_number
+  end)
+  local nearby = {}
+  local radius_sq = COMPLAINT_LOCAL_RADIUS * COMPLAINT_LOCAL_RADIUS
+  for _, candidate in ipairs(candidates) do
+    if candidate.distance <= radius_sq then nearby[#nearby + 1] = candidate end
+  end
+  return #nearby > 0 and nearby or candidates, #nearby > 0
+end
+
+local function try_slot_search_approach(info, entity)
+  local target = info.slot_search_target
+  if not target or not target.valid or not entity.commandable then return false end
+  local center = target.position
+  local offset_count = #SLOT_SEARCH_APPROACH_OFFSETS
+  local used_offsets = info.slot_search_used_offsets or {}
+  info.slot_search_used_offsets = used_offsets
+  entity.force = get_biter_force()
+  unit_ai_settings.apply_managed_unit_settings(entity)
+  entity.active = true
+
+  while (info.slot_search_position_attempts or 0) <= SLOT_SEARCH_MAX_POSITION_RETRIES do
+    info.slot_search_position_attempts = (info.slot_search_position_attempts or 0) + 1
+    local index = math.random(offset_count)
+    local scanned = 0
+    while used_offsets[index] and scanned < offset_count do
+      index = index % offset_count + 1
+      scanned = scanned + 1
+    end
+    if used_offsets[index] then return false end
+    used_offsets[index] = true
+    local offset = SLOT_SEARCH_APPROACH_OFFSETS[index]
+    local requested = {x = center.x + offset.x, y = center.y + offset.y}
+    -- Keep the collision probe tight: a wide search may return the building
+    -- center and make a waiting visitor look as if it has entered the queue.
+    local dest = entity.surface.find_non_colliding_position(entity.name, requested, 1, 0.5)
+    if dest then
+      local dx, dy = dest.x - center.x, dest.y - center.y
+      local distance_sq = dx * dx + dy * dy
+      local walk_dx, walk_dy = dest.x - entity.position.x, dest.y - entity.position.y
+      if distance_sq >= SLOT_SEARCH_APPROACH_MIN_DISTANCE * SLOT_SEARCH_APPROACH_MIN_DISTANCE
+         and distance_sq <= SLOT_SEARCH_APPROACH_MAX_DISTANCE * SLOT_SEARCH_APPROACH_MAX_DISTANCE
+         and walk_dx * walk_dx + walk_dy * walk_dy > 9 then
+        local ok, accepted = pcall(function()
+          return entity.commandable.set_command({
+            type = defines.command.go_to_location,
+            destination = dest,
+            radius = C.DESK_SLOT_COMMAND_RADIUS,
+            distraction = defines.distraction.none,
+          })
+        end)
+        if ok and accepted ~= false then
+          info.slot_search_dest = {x = dest.x, y = dest.y}
+          info.slot_search_move_started_tick = game.tick
+          info.slot_search_last_progress_tick = game.tick
+          info.slot_search_best_distance_sq = walk_dx * walk_dx + walk_dy * walk_dy
+          info.slot_search_retry_tick = nil
+          return true
+        end
+      end
+    end
+  end
+  return false
+end
+
+local function try_slot_search_patrol(info, entity, candidates)
+  local anchor = info.slot_search_wander_anchor
+  if not anchor or not entity.commandable then return false end
+  local offset_count = #SLOT_SEARCH_APPROACH_OFFSETS
+  local nearby_centers = {}
+  local exclusion_reach = SLOT_SEARCH_APPROACH_MAX_DISTANCE + SLOT_SEARCH_APPROACH_MIN_DISTANCE
+  for _, candidate in ipairs(candidates) do
+    local center = candidate.entity.position
+    local dx, dy = center.x - anchor.x, center.y - anchor.y
+    if dx * dx + dy * dy <= exclusion_reach * exclusion_reach then
+      nearby_centers[#nearby_centers + 1] = center
+    end
+  end
+  for _ = 1, SLOT_SEARCH_MAX_POSITION_RETRIES + 1 do
+    local offset = SLOT_SEARCH_APPROACH_OFFSETS[math.random(offset_count)]
+    local requested = {x = anchor.x + offset.x, y = anchor.y + offset.y}
+    local dest = entity.surface.find_non_colliding_position(entity.name, requested, 1, 0.5)
+    if dest then
+      local anchor_dx, anchor_dy = dest.x - anchor.x, dest.y - anchor.y
+      local walk_dx, walk_dy = dest.x - entity.position.x, dest.y - entity.position.y
+      local clear_of_destinations = true
+      for _, center in ipairs(nearby_centers) do
+        local dx = dest.x - center.x
+        local dy = dest.y - center.y
+        if dx * dx + dy * dy < SLOT_SEARCH_APPROACH_MIN_DISTANCE * SLOT_SEARCH_APPROACH_MIN_DISTANCE then
+          clear_of_destinations = false
+          break
+        end
+      end
+      if clear_of_destinations
+         and anchor_dx * anchor_dx + anchor_dy * anchor_dy
+           <= SLOT_SEARCH_APPROACH_MAX_DISTANCE * SLOT_SEARCH_APPROACH_MAX_DISTANCE
+         and walk_dx * walk_dx + walk_dy * walk_dy > 9 then
+        local ok, accepted = pcall(function()
+          return entity.commandable.set_command({
+            type = defines.command.go_to_location,
+            destination = dest,
+            radius = C.DESK_SLOT_COMMAND_RADIUS,
+            distraction = defines.distraction.none,
+          })
+        end)
+        if ok and accepted ~= false then return true end
+      end
+    end
+  end
+  return false
+end
+
+local route_or_seek_slot
+
+local function finish_slot_search_move(info, entity, failed)
+  if failed and try_slot_search_approach(info, entity) then return end
+  if failed and info.slot_search_target_id then
+    info.slot_search_failed_until = info.slot_search_failed_until or {}
+    info.slot_search_failed_until[info.slot_search_target_id] = game.tick + 10 * 60 * 60
+  end
+  info.slot_search_target_id = nil
+  info.slot_search_target = nil
+  info.slot_search_dest = nil
+  info.slot_search_move_started_tick = nil
+  info.slot_search_last_progress_tick = nil
+  info.slot_search_best_distance_sq = nil
+  info.slot_search_position_attempts = nil
+  info.slot_search_used_offsets = nil
+  info.slot_search_retry_tick = nil
+  -- A stopped, inactive seeker can be culled by the native unit AI. Keep it
+  -- active and hand it a fresh route in the same event/tick as its arrival.
+  route_or_seek_slot(info, entity)
+end
+
+route_or_seek_slot = function(info, entity, desks, excluded_platforms)
+  if not info or not entity or not entity.valid then return false end
+  if excluded_platforms ~= nil then info.slot_search_excluded_platforms = excluded_platforms end
+  local candidates, has_local_candidates = complaint_candidates(entity, desks, info.slot_search_excluded_platforms)
+  local failed_until = info.slot_search_failed_until or {}
+  local route_candidates = candidates
+  -- Keep the existing Capture Bureau preference among locally reachable
+  -- openings, then fall back to ordinary desks and boarding platforms.
+  if has_local_candidates then
+    route_candidates = {}
+    for _, candidate in ipairs(candidates) do
+      if candidate.kind == "desk" and is_capture_bureau(candidate.entity) then
+        route_candidates[#route_candidates + 1] = candidate
+      end
+    end
+    for _, candidate in ipairs(candidates) do
+      if candidate.kind ~= "desk" or not is_capture_bureau(candidate.entity) then
+        route_candidates[#route_candidates + 1] = candidate
+      end
+    end
+  end
+  for _, candidate in ipairs(route_candidates) do
+    if candidate.available and game.tick >= (failed_until[candidate.entity.unit_number] or 0) then
+      local routed
+      if candidate.kind == "platform" then
+        routed = passenger_trains.reserve_platform(info, entity, candidate.entity)
+      else
+        routed = route_biter_to_desk(info, entity, candidate.entity, {initial_frustration = info.frustration or 0})
+      end
+      if routed then
+        info.slot_search_target_id = nil
+        info.slot_search_target = nil
+        info.slot_search_dest = nil
+        info.slot_search_move_started_tick = nil
+        info.slot_search_last_progress_tick = nil
+        info.slot_search_best_distance_sq = nil
+        info.slot_search_position_attempts = nil
+        info.slot_search_used_offsets = nil
+        info.slot_search_retry_tick = nil
+        info.slot_search_failed_until = nil
+        info.slot_search_wander_anchor = nil
+        info.slot_search_excluded_platforms = nil
+        info.slot_search_message_tick = nil
+        return true
+      end
+      -- A reservation can lose a race or lack a reachable slot position.
+      -- Never retain a desk identity without its reservation.
+      info.desk_id = nil
+      info.desk_dest = nil
+    end
+  end
+
+  set_waiting_biter_state(info, "seeking_slot")
+  info.desk_id = nil
+  info.desk_dest = nil
+  if game.tick >= (info.slot_search_message_tick or 0) then
+    if entity.surface.create_entity then
+      pcall(entity.surface.create_entity, {
+        name = "flying-text", position = entity.position,
+        text = {"message.no-available-slots-nearby"},
+      })
+    end
+    info.slot_search_message_tick = game.tick + 10 * 60
+  end
+
+  local roaming = {}
+  local roam_radius_sq = COMPLAINT_ROAM_RADIUS * COMPLAINT_ROAM_RADIUS
+  for _, candidate in ipairs(candidates) do
+    -- A local, full destination keeps the search within eight chunks, but
+    -- waiting movement only visits destinations within three chunks. When
+    -- there is no local destination at all, approach the first distant one.
+    if (not has_local_candidates or candidate.distance <= roam_radius_sq)
+       and game.tick >= (failed_until[candidate.entity.unit_number] or 0) then
+      roaming[#roaming + 1] = candidate
+      if #roaming >= 3 then break end
+    end
+  end
+  local chosen
+  if not has_local_candidates then
+    chosen = roaming[1]
+  elseif #roaming >= 3 then
+    chosen = roaming[math.random(2, 3)]
+  elseif #roaming == 2 then
+    chosen = roaming[2]
+  else
+    chosen = roaming[1]
+  end
+  if chosen then
+    info.slot_search_wander_anchor = nil
+    info.slot_search_target_id = chosen.entity.unit_number
+    info.slot_search_target = chosen.entity
+    info.slot_search_position_attempts = nil
+    info.slot_search_used_offsets = nil
+    if try_slot_search_approach(info, entity) then return false end
+    -- All four approach positions were blocked. Exclude this destination and
+    -- continue on the next update without recursively searching in this call.
+    info.slot_search_failed_until = info.slot_search_failed_until or {}
+    info.slot_search_failed_until[chosen.entity.unit_number] = game.tick + 10 * 60 * 60
+  end
+  info.slot_search_target_id = nil
+  info.slot_search_target = nil
+  info.slot_search_dest = nil
+  info.slot_search_move_started_tick = nil
+  info.slot_search_last_progress_tick = nil
+  info.slot_search_best_distance_sq = nil
+  info.slot_search_position_attempts = nil
+  info.slot_search_used_offsets = nil
+  -- Patrol around one fixed anchor; restarting an unconstrained wander from
+  -- each new position would slowly drift away from nearby desks.
+  entity.force = get_biter_force()
+  unit_ai_settings.apply_managed_unit_settings(entity)
+  entity.active = true
+  info.slot_search_wander_anchor = info.slot_search_wander_anchor or {
+    x = entity.position.x, y = entity.position.y,
+  }
+  if try_slot_search_patrol(info, entity, candidates) then
+    info.slot_search_retry_tick = nil
+    return false
+  end
+  -- If even a local patrol tile cannot be found, keep the native unit AI
+  -- running with a short bounded wander and recheck on its completion.
+  if entity.commandable then
+    entity.commandable.set_command({
+      type = defines.command.wander,
+      radius = 2,
+      ticks_to_wait = SLOT_SEARCH_WANDER_TICKS,
+      distraction = defines.distraction.none,
+    })
+  end
+  info.slot_search_retry_tick = game.tick + SLOT_SEARCH_WANDER_TICKS
+  return false
+end
+
+local function process_slot_search(info, entity)
+  if not info or info.state ~= "seeking_slot" or not entity or not entity.valid then return end
+  if not entity.active then
+    -- Wake seekers persisted by older saves while their removed stop timer was
+    -- still running. They must not spend another cycle parked and inactive.
+    entity.active = true
+    if not info.slot_search_dest then info.slot_search_retry_tick = nil end
+  end
+  if info.slot_search_dest then
+    if info.slot_search_target and not info.slot_search_target.valid then
+      finish_slot_search_move(info, entity, false)
+      return
+    end
+    local dx = entity.position.x - info.slot_search_dest.x
+    local dy = entity.position.y - info.slot_search_dest.y
+    local distance_sq = dx * dx + dy * dy
+    if distance_sq <= C.DESK_SLOT_ARRIVAL_DISTANCE * C.DESK_SLOT_ARRIVAL_DISTANCE then
+      finish_slot_search_move(info, entity, false)
+    elseif distance_sq + 1 < (info.slot_search_best_distance_sq or math.huge) then
+      info.slot_search_best_distance_sq = distance_sq
+      info.slot_search_last_progress_tick = game.tick
+    elseif game.tick - (info.slot_search_last_progress_tick or info.slot_search_move_started_tick or game.tick)
+       >= SLOT_SEARCH_STALL_TICKS then
+      finish_slot_search_move(info, entity, true)
+    end
+  elseif game.tick >= (info.slot_search_retry_tick or 0) then
+    route_or_seek_slot(info, entity)
+  end
+end
+
 protest_rendering = biters_rendering_factory.new({
   format_position = format_position,
   pacified_wait_label = PACIFIED_WAIT_LABEL,
@@ -1355,6 +1677,9 @@ protest_system = biters_protests_factory.new({
   release_as_regular_enemy = unit_ai_settings.release_as_regular_enemy,
   replace_tracked_waiting_biter_unit_number = replace_tracked_waiting_biter_unit_number,
   route_biter_to_desk = route_biter_to_desk,
+  route_or_seek_slot = route_or_seek_slot,
+  process_slot_search = process_slot_search,
+  finish_slot_search_move = finish_slot_search_move,
   send_biter_to_station_with_targets = function(...)
     return M.send_biter_to_station_with_targets(...)
   end,
@@ -1419,70 +1744,29 @@ function M.send_biter_to_station_with_targets(entity, targets, opts)
     and entity.force == get_biter_force()
   if entity.force.name ~= "enemy" and not prepared_redirect then return end
   local initial_frustration = opts.initial_frustration or 0
-
-  local min_dist = math.huge
-  local best = nil
-  local same_surface_targets = {}
-  for _, desk in ipairs(targets) do
-    if desk.valid and desk.surface == entity.surface then
-      same_surface_targets[#same_surface_targets + 1] = desk
-    end
-  end
-  local preferred_targets = get_preferred_desks_for_entity(entity.name, same_surface_targets)
-  if #preferred_targets == 0 and #targets > 0 then
-    if pentapods.is_pentapod(entity.name) then
-      return
-    end
-    M.trigger_immediate_protest(entity, entity.surface, nil, {allow_obstacle_breach = false})
-    return
-  end
-  for _, desk in ipairs(preferred_targets) do
-    if desk.surface == entity.surface and zones.get_available_slots(desk.unit_number) > 0 then
-      local dist = (desk.position.x - entity.position.x)^2 + (desk.position.y - entity.position.y)^2
-      if dist < min_dist then
-        min_dist = dist
-        best = desk
+  if pentapods.is_pentapod(entity.name) and targets and #targets > 0 then
+    local has_capture_bureau = false
+    for _, desk in ipairs(targets) do
+      if desk.valid and desk.surface == entity.surface and is_capture_bureau(desk)
+         and get_capture_bureau_products(desk, entity.name) then
+        has_capture_bureau = true
+        break
       end
     end
+    if not has_capture_bureau then return end
   end
 
-  local platform, platform_distance = passenger_trains.find_destination(entity)
-  for _, desk in ipairs(preferred_targets) do
-    if is_capture_bureau(desk) then
-      platform, platform_distance = nil, nil
-      break
-    end
-  end
-  local use_platform = platform and (not best or platform_distance < min_dist
-    or (platform_distance == min_dist and platform.unit_number < best.unit_number))
-
-  if best or use_platform then
-    --   .. " at [" .. math.floor(best.position.x) .. "," .. math.floor(best.position.y) .. "], dist=" .. math.floor(math.sqrt(min_dist)))
-    local info = {
-      entity = entity,
-      desk_id = best and best.unit_number or nil,
-      complaints = {},
-      complaints_total = 0,
-      complaints_filed = false,
-      frustration = initial_frustration,
-      state = "pathfinding",
-    }
-    info.entity_name = entity.name
-    entity = adopt_redirected_biter(info, entity, BITER_FORCE_NAME)
-    if not entity or not entity.valid then return end
-
-    info.entity = entity
-    track_waiting_biter(entity.unit_number, info)
-    local routed = use_platform
-      and passenger_trains.reserve_platform(info, entity, platform)
-      or route_biter_to_desk(info, entity, best, {initial_frustration = initial_frustration})
-    if not routed then
-      untrack_waiting_biter(entity.unit_number, info)
-      M.trigger_immediate_protest(entity, entity.surface, info, {allow_obstacle_breach = false})
-    end
-  else
-    M.trigger_immediate_protest(entity, entity.surface, nil, {allow_obstacle_breach = false})
-  end
+  local info = {
+    entity = entity, complaints = {}, complaints_total = 0,
+    complaints_filed = false, frustration = initial_frustration,
+    state = "seeking_slot",
+  }
+  info.entity_name = entity.name
+  entity = adopt_redirected_biter(info, entity, BITER_FORCE_NAME)
+  if not entity or not entity.valid then return end
+  info.entity = entity
+  track_waiting_biter(entity.unit_number, info)
+  route_or_seek_slot(info, entity, targets or {})
 end
 
 -- Passenger rail owns its manifest but borrows the complaint lifecycle. These
@@ -1524,49 +1808,22 @@ function M.restore_passenger(record, entity, protest)
     M.trigger_immediate_protest(entity, entity.surface, info, {allow_obstacle_breach = false})
     return true
   end
-  local best, best_distance
-  for _, desk in ipairs(get_cached_desks()) do
-    if desk.surface == entity.surface and zones.get_available_slots(desk.unit_number) > 0 then
-      local d = (desk.position.x - entity.position.x)^2 + (desk.position.y - entity.position.y)^2
-      if not best or d < best_distance or (d == best_distance and desk.unit_number < best.unit_number) then
-        best, best_distance = desk, d
-      end
-    end
-  end
-  local platform, platform_distance = passenger_trains.find_destination(entity, record.visited_stops)
-  if (record.rail_legs or 0) < 3 and platform and (not best or platform_distance < best_distance) then
-    if passenger_trains.reserve_platform(info, entity, platform) then return true end
-  end
-  if best and route_biter_to_desk(info, entity, best) then return true end
-  untrack_waiting_biter(entity.unit_number, info)
-  M.trigger_immediate_protest(entity, entity.surface, info, {allow_obstacle_breach = false})
-  return false
+  local excluded = record.visited_stops
+  if (record.rail_legs or 0) >= 3 then excluded = false end
+  route_or_seek_slot(info, entity, nil, excluded)
+  return true
 end
 
 function M.reroute_passenger_ground(info, excluded_platform_id)
   local entity = info and info.entity
   if not info or not entity or not entity.valid then return false end
-  local best, best_distance
-  for _, desk in ipairs(get_cached_desks()) do
-    if desk.surface == entity.surface and zones.get_available_slots(desk.unit_number) > 0 then
-      local d = (desk.position.x - entity.position.x)^2 + (desk.position.y - entity.position.y)^2
-      if not best or d < best_distance or (d == best_distance and desk.unit_number < best.unit_number) then
-        best, best_distance = desk, d
-      end
-    end
-  end
   -- A visitor released by a departed/full train should resume the same target
   -- selection used after ordinary passenger deboarding. Exclude the platform
   -- that just released it so a held circuit signal cannot create a route loop.
   local excluded = excluded_platform_id and {[excluded_platform_id] = true} or nil
-  local platform, platform_distance = passenger_trains.find_destination(entity, excluded)
-  if platform and (not best or platform_distance < best_distance) then
-    if passenger_trains.reserve_platform(info, entity, platform) then return true end
-  end
-  if best and route_biter_to_desk(info, entity, best) then return true end
-  untrack_waiting_biter(entity.unit_number, info)
-  M.trigger_immediate_protest(entity, entity.surface, info, {allow_obstacle_breach = false})
-  return false
+  if (info.rail_legs or 0) >= 3 then excluded = false end
+  route_or_seek_slot(info, entity, nil, excluded)
+  return true
 end
 
 local function enforce_desk_capacity_limit(desk)
@@ -1592,8 +1849,9 @@ local function enforce_desk_capacity_limit(desk)
     local entry = occupants[i]
     zones.release_slot(desk_id, entry.b_id)
     unindex_biter_from_desk(desk_id, entry.b_id)
-    untrack_waiting_biter(entry.b_id, entry.info)
-    M.trigger_immediate_protest(entry.info.entity, desk.surface, entry.info, {allow_obstacle_breach = false})
+    entry.info.desk_id = nil
+    entry.info.desk_dest = nil
+    route_or_seek_slot(entry.info, entry.info.entity)
   end
   mark_desk_circuit_dirty(desk_id)
 end

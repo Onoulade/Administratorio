@@ -55,6 +55,7 @@ local function new_test_context(hard_mode_enabled, constant_overrides)
     returning_home = {},
     waiting = {},
     pathfinding = {},
+    seeking_slot = {},
   }
   local next_unit_number = 100
   local next_request_id = 0
@@ -377,6 +378,7 @@ local function new_test_context(hard_mode_enabled, constant_overrides)
 
   return {
     controller = controller,
+    deps = deps,
     surface = surface,
     set_protest_targets = function(targets)
       protest_targets = targets
@@ -1550,6 +1552,61 @@ test("a failed desk route releases its reservation and starts a protest", functi
   assert_eq(ctx.get_released_desk_slots()[1].desk_id, 999, "the released slot should belong to the failed destination")
   assert_eq(ctx.get_attack_command_count(), 0, "a failed desk route must not attack pipes on the way to administration")
   assert_true(protest_info.pending_path_request_id ~= nil, "the failed visitor should validate a route to a protest building")
+end)
+
+test("a failed desk route retries complaint search without losing frustration", function()
+  local ctx = new_test_context(false)
+  local entity = ctx.surface.create_entity{name = "small-biter", position = {x = 0, y = 0}, force = "neutral"}
+  local info = {
+    entity = entity, tracked_unit_number = entity.unit_number,
+    state = "pathfinding", desk_id = 999, desk_dest = {x = 20, y = 0},
+    frustration = 42,
+  }
+  storage.waiting_biters[entity.unit_number] = info
+  storage.waiting_biter_state_index.pathfinding[entity.unit_number] = true
+  local searches = 0
+  ctx.deps.route_or_seek_slot = function(entry)
+    searches = searches + 1
+    ctx.deps.set_waiting_biter_state(entry, "seeking_slot")
+  end
+
+  ctx.controller.on_ai_command_completed{unit_number = entity.unit_number, result = defines.behavior_result.fail}
+  assert_eq(searches, 1)
+  assert_eq(info.state, "seeking_slot")
+  assert_eq(info.frustration, 42)
+  assert_eq(info.desk_id, nil)
+  assert_eq(#ctx.get_released_desk_slots(), 1)
+  assert_true(info.slot_search_failed_until[999] > game.tick)
+end)
+
+test("a slot seeker keeps gaining frustration until normal protest threshold", function()
+  local ctx = new_test_context(false, {
+    FRUST_GROWTH_RATES = {[1] = 2},
+    get_individual_frust_tier = function() return 1 end,
+  })
+  ctx.set_protest_targets({new_target(ctx.surface, 230, 10, 0)})
+  local entity = ctx.surface.create_entity{name = "small-biter", position = {x = 0, y = 0}, force = "neutral"}
+  local info = {
+    entity = entity, tracked_unit_number = entity.unit_number, entity_name = entity.name,
+    state = "seeking_slot", frustration = 590, frust_accum = 0,
+    last_frustration_tick = 1,
+  }
+  storage.waiting_biters[entity.unit_number] = info
+  storage.waiting_biter_state_index.seeking_slot[entity.unit_number] = true
+  local searches = 0
+  ctx.deps.process_slot_search = function() searches = searches + 1 end
+
+  game.tick = 61
+  ctx.controller.process_frustration_and_protests(ctx.surface)
+  assert_eq(info.frustration, 592)
+  assert_eq(info.state, "seeking_slot")
+  assert_eq(searches, 1)
+
+  game.tick = 301
+  ctx.controller.process_frustration_and_protests(ctx.surface)
+  assert_true(info.frustration >= 600)
+  assert_eq(info.state, "protesting")
+  assert_eq(searches, 1, "the protest threshold must stop the slot search")
 end)
 
 test("an inactive stalled desk route releases its reservation", function()

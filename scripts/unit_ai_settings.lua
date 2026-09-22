@@ -14,10 +14,12 @@ function M.apply_managed_unit_settings(unit)
   local ok, settings = pcall(function() return unit.ai_settings end)
   if not ok or not settings then return false end
 
-  set_ai_setting(settings, "destroy_when_commands_fail", false)
-  set_ai_setting(settings, "allow_try_return_to_spawner", false)
-  set_ai_setting(settings, "join_attacks", false)
-  return true
+  -- Runtime LuaAISettings prefixes this key with "allow_"; the prototype
+  -- UnitAISettings field below deliberately uses the unprefixed spelling.
+  local protected_from_command_failure = set_ai_setting(settings, "allow_destroy_when_commands_fail", false)
+  local detached_from_spawner = set_ai_setting(settings, "allow_try_return_to_spawner", false)
+  local excluded_from_attacks = set_ai_setting(settings, "join_attacks", false)
+  return protected_from_command_failure and detached_from_spawner and excluded_from_attacks
 end
 
 function M.reset_regular_unit_settings(unit)
@@ -26,10 +28,10 @@ function M.reset_regular_unit_settings(unit)
   local ok, settings = pcall(function() return unit.ai_settings end)
   if not ok or not settings then return false end
 
-  set_ai_setting(settings, "destroy_when_commands_fail", true)
-  set_ai_setting(settings, "allow_try_return_to_spawner", true)
-  set_ai_setting(settings, "join_attacks", true)
-  return true
+  local restored_command_failure = set_ai_setting(settings, "allow_destroy_when_commands_fail", true)
+  local restored_spawner_return = set_ai_setting(settings, "allow_try_return_to_spawner", true)
+  local restored_attack_joining = set_ai_setting(settings, "join_attacks", true)
+  return restored_command_failure and restored_spawner_return and restored_attack_joining
 end
 
 function M.release_as_regular_enemy(unit)
