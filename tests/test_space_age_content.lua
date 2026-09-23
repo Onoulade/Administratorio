@@ -74,6 +74,7 @@ local recipes = {
   ["biosulfur"] = {type = "recipe", name = "biosulfur", ingredients = {{type = "item", name = "bioflux", amount = 1}}},
   ["biolubricant"] = {type = "recipe", name = "biolubricant", ingredients = {{type = "item", name = "bioflux", amount = 1}}},
   biochamber = {type = "recipe", name = "biochamber", surface_conditions = {{property = "pressure", min = 2000, max = 2000}}, ingredients = {{type = "item", name = "iron-plate", amount = 20}}},
+  ["pentapod-egg"] = {type = "recipe", name = "pentapod-egg", category = "organic", enabled = false, energy_required = 15},
   ["electromagnetic-plant"] = {type = "recipe", name = "electromagnetic-plant", surface_conditions = {{property = "pressure", min = 800, max = 800}}, ingredients = {{type = "item", name = "holmium-plate", amount = 150}}},
   ["cryogenic-plant"] = {type = "recipe", name = "cryogenic-plant", surface_conditions = {{property = "pressure", min = 300, max = 300}}, ingredients = {{type = "item", name = "lithium-plate", amount = 20}}},
   ["biter-logistics-formation"] = {
@@ -140,7 +141,7 @@ local technologies = {
     effects = {{type = "unlock-recipe", recipe = "productivity-module-3"}},
   },
   ["electromagnetic-plant"] = {type = "technology", name = "electromagnetic-plant", effects = {{type = "unlock-recipe", recipe = "electromagnetic-plant"}}, prerequisites = {}},
-  ["biochamber"] = {type = "technology", name = "biochamber", effects = {{type = "unlock-recipe", recipe = "biochamber"}}, prerequisites = {}},
+  ["biochamber"] = {type = "technology", name = "biochamber", effects = {{type = "unlock-recipe", recipe = "biochamber"}, {type = "unlock-recipe", recipe = "pentapod-egg"}}, prerequisites = {}},
   ["big-mining-drill"] = {type = "technology", name = "big-mining-drill", effects = {}, prerequisites = {}},
   ["electromagnetic-science-pack"] = {type = "technology", name = "electromagnetic-science-pack", effects = {}},
   ["cryogenic-plant"] = {type = "technology", name = "cryogenic-plant", effects = {{type = "unlock-recipe", recipe = "cryogenic-plant"}}, prerequisites = {}},
@@ -1602,6 +1603,29 @@ test("gleba separates yellow administration from conciliation operations", funct
     "gleba-conciliation should follow the yellow administration research")
   assert_true(tech_has_prerequisite(yellow, "amber-sap-processing"),
     "gleba yellow administration should follow the local amber sap discovery")
+
+  local capsule = assert(recipes["pentapod-sampling-capsule"], "first-egg capsule recipe missing")
+  assert_eq(capsule.category, "crafting", "first-egg capsule must be handcraftable")
+  assert_eq(exact_surface_planet(capsule), "gleba", "first-egg capsule should be crafted on Gleba")
+  assert_eq(ingredient_amount(capsule, "yumako-mash"), 2, "capsule should use local yumako mash")
+  assert_eq(ingredient_amount(capsule, "jelly"), 2, "capsule should use local jelly")
+  assert_eq(ingredient_amount(capsule, "spoilage"), 5, "capsule should use local spoilage")
+  assert_true(not has_ingredient(capsule, "pentapod-egg"), "first egg cannot require an egg")
+  assert_true(tech_unlocks_recipe(technologies["planet-discovery-gleba"], "pentapod-sampling-capsule"),
+    "manual first-egg route should unlock before landing")
+
+  local cultivation = assert(technologies["pentapod-egg-cultivation"], "egg cultivation research missing")
+  assert_true(tech_has_prerequisite(cultivation, "agricultural-science-pack"),
+    "egg cultivation must follow agricultural science")
+  assert_true(tech_uses_pack(cultivation, "agricultural-science-pack"),
+    "egg cultivation must consume agricultural science")
+  assert_eq(cultivation.unit.count, 30, "first egg production should require a modest 30 science packs")
+  assert_true(tech_unlocks_recipe(cultivation, "pentapod-egg"),
+    "cultivation must unlock the vanilla egg recipe")
+  assert_true(not tech_unlocks_recipe(technologies["biochamber"], "pentapod-egg"),
+    "Biochamber research must not bypass the new egg cultivation gate")
+  assert_eq(recipes["pentapod-egg"].energy_required, 15,
+    "post-research egg cultivation should retain vanilla crafting speed")
 end)
 
 test("mining amber sap unlocks Gleba bootstrap recipes", function()
@@ -1816,7 +1840,7 @@ test("capture bureau mode recipes split by surface and role", function()
   assert_true(not has_ingredient(egg_spores, "agricultural-science-pack"),
     "egg lure spores should not require the agricultural science that needs eggs")
   assert_true(recipes["manual-pentapod-egg-foraging"] == nil,
-    "eggs should not be craftable from ingredients; bootstrap comes from bribing wild pentapods with dropped money")
+    "eggs should not be craftable from ingredients; bootstrap comes from sampling living wild pentapods")
   assert_true(recipes["pentapod-egg-bounty"] == nil,
     "egg bootstrap should use loose taxpayer-money, not a dedicated crafted capsule")
 

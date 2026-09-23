@@ -737,7 +737,11 @@ local function update_capture_bureau_lure_upkeep(desk)
 
   local next_tick = storage.capture_bureau_lure_upkeep[desk.unit_number] or 0
   if tick >= next_tick then
-    remove_fluid_amount(desk, fluid_name, CAPTURE_BUREAU_SPORE_UPKEEP_AMOUNT)
+    -- Egg intake pays per captured pentapod. Wild arrivals are intermittent;
+    -- draining an idle Bureau would consume the whole bootstrap batch.
+    if mode ~= "pentapod-eggs" then
+      remove_fluid_amount(desk, fluid_name, CAPTURE_BUREAU_SPORE_UPKEEP_AMOUNT)
+    end
     storage.capture_bureau_lure_upkeep[desk.unit_number] = tick + CAPTURE_BUREAU_SPORE_UPKEEP_TICKS
   end
 
@@ -745,7 +749,7 @@ local function update_capture_bureau_lure_upkeep(desk)
 end
 
 local function get_capture_bureau_products(desk, entity_name)
-  local mode = get_capture_bureau_mode(desk)
+  local mode, _, lure_amount = get_capture_bureau_lure(desk)
   if mode == "workforce" then
     if entity_name and C.BITER_MAX_TIER[entity_name] ~= nil and not C.IS_SPITTER[entity_name] then
       return {{name = "worker-biter", count = 1}}
@@ -763,7 +767,8 @@ local function get_capture_bureau_products(desk, entity_name)
 
   if mode == "pentapod-eggs" then
     local egg_count = entity_name and pentapods.PENTAPOD_EGG_YIELDS[entity_name] or nil
-    if egg_count then
+    local lure_cost = egg_count and (C.PENTAPOD_CAPTURE_LURE_COSTS or {})[egg_count] or nil
+    if egg_count and lure_cost and lure_amount >= lure_cost then
       return {{name = "pentapod-egg", count = egg_count}}
     end
   end
@@ -921,6 +926,14 @@ local function deliver_capture_bureau_products(desk, entity_name)
   local output = get_entity_output_inventory(desk)
   local products = get_capture_bureau_products(desk, entity_name)
   if not output or not products or not can_insert_all_products(output, products) then return false end
+
+  if pentapods.is_pentapod(entity_name) then
+    local egg_count = pentapods.PENTAPOD_EGG_YIELDS[entity_name]
+    local lure_cost = (C.PENTAPOD_CAPTURE_LURE_COSTS or {})[egg_count]
+    if not lure_cost or remove_fluid_amount(desk, "oviposition-lure-spores", lure_cost) < lure_cost then
+      return false
+    end
+  end
 
   for _, product in ipairs(products) do
     if output.insert({name = product.name, count = product.count}) <= 0 then

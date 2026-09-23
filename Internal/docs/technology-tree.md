@@ -291,7 +291,7 @@ Space Age progression is a set of jurisdiction branches rather than one straight
 | --- | --- | --- |
 | Shared pre-planet | `chromatic-printing` | Chromatic Printer, black ink, shared colored-form framework |
 | Vulcanus | `cyan-ink-production`, `vulcanus-certification`, `vulcanus-export-charters` | Cyan paperwork, Notary Office, Territorial Arbitration Post, local and off-world metallurgy charters |
-| Gleba | `amber-sap-processing`, `gleba-yellow-administration`, `gleba-conciliation` | Yellow paperwork, Conciliation Desk, Capture Bureau modes, biological exception paperwork |
+| Gleba | `amber-sap-processing`, `gleba-yellow-administration`, `gleba-conciliation`, `pentapod-egg-cultivation` | Yellow paperwork, Conciliation Desk, pre-Biochamber Capture Bureau egg harvest, biological exception paperwork; 30 agricultural science unlocks vanilla Biochamber egg breeding after the first science setup |
 | Fulgora | `fulgora-salvage-administration`, `fulgora-digital-services`, `archive-recombination` | Magenta salvage, Digital Services Bureau, electromagnetic paperwork, archive reassignment |
 | Cross-planet | `cyan-yellow-bureaucracy`, `cyan-magenta-bureaucracy`, `yellow-magenta-bureaucracy` | Pairwise colored forms, tourism and cross-jurisdiction data/permit routes |
 | Aquilo | `aquilo-cryogenic-administration` | Laser Printer, solid transfer media, cryogenic operations license, Cryoprint Technician |

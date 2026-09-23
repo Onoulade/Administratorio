@@ -57,17 +57,13 @@ local function load_biters_module()
       ["small-spitter"] = 5,
     },
     PROTEST_THRESHOLD = 600,
-    CAPTURE_BUREAU_LURE_RADIUS = 29,
+    CAPTURE_BUREAU_LURE_RADIUS = 48,
     CAPTURE_BUREAU_SPORE_UPKEEP_TICKS = 60,
-    CAPTURE_BUREAU_SPORE_UPKEEP_AMOUNT = 5,
+    CAPTURE_BUREAU_SPORE_UPKEEP_AMOUNT = 1,
     CAPTURE_BUREAU_SPORE_VISUAL_TICKS = 60,
     HATCHED_PENTAPOD_FORCE_NAME = "administratorio-hatched-pentapods",
-    PENTAPOD_MONEY_BAIT_INTERVAL_TICKS = 60,
-    PENTAPOD_MONEY_BAIT_SCAN_LIMIT = 24,
-    PENTAPOD_MONEY_BAIT_LURE_RADIUS = 24,
-    PENTAPOD_MONEY_BAIT_PICKUP_RADIUS = 1.75,
-    PENTAPOD_MONEY_BAIT_MIN_MONEY_PER_EGG = 10,
-    PENTAPOD_MONEY_BAIT_MAX_MONEY_PER_EGG = 10,
+    PENTAPOD_SAMPLING_COOLDOWN_TICKS = 30 * 60,
+    PENTAPOD_CAPTURE_LURE_COSTS = {[1] = 5, [2] = 8, [4] = 12},
     ENROLLMENT_OFFER_LOW_FRUSTRATION_RATIO = 0.50,
     ENROLLMENT_OFFER_MEDIUM_FRUSTRATION_RATIO = 0.75,
     ENROLLMENT_OFFER_HIGH_FRUSTRATION_RATIO = 0.90,
@@ -232,6 +228,7 @@ local function new_context(opts)
   local surface = {
     index = 1,
     name = opts.surface_name or "nauvis",
+    planet = {name = opts.surface_name or "nauvis"},
   }
   surfaces_by_index[surface.index] = surface
 
@@ -366,14 +363,6 @@ local function new_context(opts)
     }, created_entities, last_command)
   end
 
-  if opts.money_position then
-    surface.create_entity{
-      name = "item-on-ground",
-      position = opts.money_position,
-      stack = {name = "taxpayer-money", count = opts.money_count or 1},
-    }
-  end
-
   local function new_force(name)
     local force = {
       name = name,
@@ -504,6 +493,33 @@ test("capture bureau pentapod mode converts gleba wildlife into eggs", function(
 
   assert_eq(ctx.inventory._added["pentapod-egg"], 1, "pentapod mode should output pentapod eggs")
   assert_true(ctx.nearby_enemies[1].valid == false, "captured pentapod should be removed from the world")
+  assert_eq(ctx.desk.fluidbox[1].amount, 95, "a small capture should spend five lure fluid")
+end)
+
+test("egg lure stays available while the bureau waits for wildlife", function()
+  local ctx = new_context({
+    desk_name = "capture-bureau",
+    lure_fluid = "oviposition-lure-spores",
+    lure_amount = 40,
+    surface_name = "gleba",
+  })
+  biters.process_walk_in_registration(ctx.desk.surface, {ctx.desk})
+  assert_eq(ctx.desk.fluidbox[1].amount, 40, "idle egg intake should not consume lure")
+end)
+
+test("egg intake waits for enough lure to pay the size-based capture cost", function()
+  local ctx = new_context({
+    desk_name = "capture-bureau",
+    lure_fluid = "oviposition-lure-spores",
+    lure_amount = 7,
+    enemy_name = "medium-strafer-pentapod",
+    enemy_type = "spider-unit",
+    enemy_position = {x = 0, y = 2},
+    surface_name = "gleba",
+  })
+  biters.process_walk_in_registration(ctx.desk.surface, {ctx.desk})
+  assert_true(ctx.nearby_enemies[1].valid, "medium pentapod should wait for eight lure")
+  assert_eq(ctx.desk.fluidbox[1].amount, 7, "insufficient lure should not be consumed")
 end)
 
 test("oviposition spores attract every pentapod size and family across the enlarged radius", function()
@@ -529,7 +545,7 @@ test("oviposition spores attract every pentapod size and family across the enlar
       lure_fluid = "oviposition-lure-spores",
       enemy_name = entity_name,
       enemy_type = expected.type,
-      enemy_position = {x = 28.5, y = 0},
+      enemy_position = {x = 47, y = 0},
       surface_name = "gleba",
     })
 
@@ -653,103 +669,84 @@ test("spoiled pentapod eggs hatch into hostile attackers instead of bureaucracy 
     "hatched pentapod should not be redirected into the admin desk queue")
 end)
 
-test("dropped taxpayer money lures pentapods and can buy eggs", function()
+local function sample_with_player(ctx, tick, inventory_limit)
+  local received = {}
+  local messages = {}
+  local player = {
+    position = {x = 0, y = 0},
+    surface = ctx.desk.surface,
+    force = game.forces.player,
+    insert = function(stack)
+      local count = math.min(stack.count, inventory_limit or stack.count)
+      received[stack.name] = (received[stack.name] or 0) + count
+      return count
+    end,
+    create_local_flying_text = function(spec)
+      messages[#messages + 1] = spec.text
+    end,
+  }
+  local source = {valid = true, type = "character", player = player}
+  local event = {
+    effect_id = "administratorio-pentapod-sampling",
+    source_entity = source,
+    target_entity = ctx.nearby_enemies[1],
+    tick = tick,
+  }
+  return event, received, messages
+end
+
+test("sampling capsule yields eggs without removing a live pentapod", function()
   local ctx = new_context({
-    desk_name = "admin-station",
     surface_name = "gleba",
     enemy_name = "small-wriggler-pentapod",
     enemy_position = {x = 5, y = 0},
-    money_position = {x = 0, y = 0},
-    money_count = 25,
   })
+  local event, received = sample_with_player(ctx, 100)
+  biters.on_script_trigger_effect(event)
 
-  pentapods.process_money_baits(60)
-
-  assert_eq(ctx.last_command().type, defines.command.go_to_location,
-    "pentapod should be lured toward dropped taxpayer money")
-  assert_eq(ctx.last_command().destination.x, 0, "pentapod should path to money x")
-
-  ctx.nearby_enemies[1].position = {x = 0.5, y = 0}
-  pentapods.process_money_baits(120)
-
-  assert_true(ctx.ground_items[1].valid == false, "pentapod should consume the whole taxpayer money stack")
-  assert_eq(ctx.ground_items[2].stack.name, "pentapod-egg", "pentapod should sometimes drop an egg")
-  assert_eq(ctx.ground_items[2].stack.count, 2, "egg payout should scale around one egg per 10-20 money")
-  assert_eq(ctx.ground_items[2].position.x, 0, "eggs should drop where the money was")
-  assert_eq(ctx.ground_items[2].position.y, 0, "eggs should drop where the money was")
-  assert_true(next(storage.waiting_biters) == nil,
-    "money-baited pentapod should not enter the admin desk queue")
+  assert_eq(received["pentapod-egg"], 1, "first throw should yield a bootstrap egg")
+  assert_true(ctx.nearby_enemies[1].valid, "sampling must leave the pentapod alive")
+  assert_eq(storage.pentapod_sampling_cooldowns[11], 100 + 30 * 60,
+    "target should receive a 30-second cooldown")
 end)
 
-test("dropped taxpayer money always pays at least one egg at the minimum threshold", function()
-  local ctx = new_context({
-    desk_name = "admin-station",
-    surface_name = "gleba",
-    enemy_name = "small-wriggler-pentapod",
-    enemy_position = {x = 0.5, y = 0},
-    money_position = {x = 0, y = 0},
-    money_count = 10,
-  })
+test("sampling cooldown refunds the capsule, then permits another throw", function()
+  local ctx = new_context({surface_name = "gleba", enemy_name = "small-wriggler-pentapod"})
+  local event, received, messages = sample_with_player(ctx, 100)
+  biters.on_script_trigger_effect(event)
+  event.tick = 100 + 20 * 60
+  biters.on_script_trigger_effect(event)
+  assert_eq(received["pentapod-egg"], 1, "early second throw must not yield another egg")
+  assert_eq(received["pentapod-sampling-capsule"], 1, "early second throw should be refunded")
+  assert_eq(messages[2][1], "message.pentapod-sampling-cooldown", "cooldown should explain the refund")
 
-  pentapods.process_money_baits(60)
-
-  assert_true(ctx.ground_items[1].valid == false, "pentapod should consume the whole taxpayer money stack")
-  assert_eq(ctx.ground_items[2].stack.name, "pentapod-egg", "minimum money threshold should still drop an egg")
-  assert_eq(ctx.ground_items[2].stack.count, 1, "10 money should buy one bootstrap egg")
+  event.tick = 100 + 30 * 60
+  biters.on_script_trigger_effect(event)
+  assert_eq(received["pentapod-egg"], 2, "same pentapod should be harvestable again after 30 seconds")
+  assert_true(ctx.nearby_enemies[1].valid, "repeated sampling must not remove the pentapod")
 end)
 
-test("nearby split taxpayer money piles combine into one pentapod egg payment", function()
-  local ctx = new_context({
-    desk_name = "admin-station",
-    surface_name = "gleba",
-    enemy_name = "small-wriggler-pentapod",
-    enemy_position = {x = 0.5, y = 0},
-    money_position = {x = 0, y = 0},
-    money_count = 5,
-  })
-  ctx.desk.surface.create_entity{
-    name = "item-on-ground",
-    position = {x = 0.3, y = 0},
-    stack = {name = "taxpayer-money", count = 5},
-  }
-
-  pentapods.process_money_baits(60)
-
-  assert_true(ctx.ground_items[1].valid == false, "first money pile should be consumed")
-  assert_true(ctx.ground_items[2].valid == false, "nearby money pile should be consumed with it")
-  assert_eq(ctx.ground_items[3].stack.name, "pentapod-egg", "combined nearby money should produce an egg")
-  assert_eq(ctx.ground_items[3].stack.count, 1, "combined 10 money should buy one egg")
-  assert_eq(ctx.ground_items[3].position.x, 0, "eggs should drop at the bait position")
+test("sampling works on larger spider-unit pentapods and keeps eggs near the player", function()
+  for _, case in ipairs({
+    {name = "medium-strafer-pentapod", count = 2},
+    {name = "big-stomper-pentapod", count = 4},
+  }) do
+    local ctx = new_context({surface_name = "gleba", enemy_name = case.name, enemy_type = "spider-unit"})
+    local event, received = sample_with_player(ctx, 100, 0)
+    biters.on_script_trigger_effect(event)
+    assert_true(ctx.nearby_enemies[1].valid, case.name .. " should survive sampling")
+    assert_eq(received["pentapod-egg"], 0, "full inventory should receive no eggs")
+    assert_eq(ctx.spilled_items[1].stack.count, case.count, "overflow eggs should land by the player")
+    assert_eq(ctx.spilled_items[1].position.x, 0, "overflow must not land under the pentapod")
+  end
 end)
 
-test("larger pentapods multiply loose-money egg payouts", function()
-  local medium = new_context({
-    desk_name = "admin-station",
-    surface_name = "gleba",
-    enemy_name = "medium-wriggler-pentapod",
-    enemy_position = {x = 0.5, y = 0},
-    money_position = {x = 0, y = 0},
-    money_count = 10,
-  })
-
-  pentapods.process_money_baits(60)
-
-  assert_eq(medium.ground_items[2].stack.name, "pentapod-egg", "medium pentapod should drop eggs")
-  assert_eq(medium.ground_items[2].stack.count, 2, "medium pentapod should double the small payout")
-
-  local big = new_context({
-    desk_name = "admin-station",
-    surface_name = "gleba",
-    enemy_name = "big-wriggler-pentapod",
-    enemy_position = {x = 0.5, y = 0},
-    money_position = {x = 0, y = 0},
-    money_count = 10,
-  })
-
-  pentapods.process_money_baits(60)
-
-  assert_eq(big.ground_items[2].stack.name, "pentapod-egg", "big pentapod should drop eggs")
-  assert_eq(big.ground_items[2].stack.count, 4, "big pentapod should quadruple the small payout")
+test("sampling rejects an invalid target without wasting the capsule", function()
+  local ctx = new_context({surface_name = "gleba", enemy_name = "small-biter"})
+  local event, received = sample_with_player(ctx, 100)
+  biters.on_script_trigger_effect(event)
+  assert_eq(received["pentapod-sampling-capsule"], 1, "invalid target should refund the capsule")
+  assert_true(received["pentapod-egg"] == nil, "invalid target must not create eggs")
 end)
 
 if failed > 0 then

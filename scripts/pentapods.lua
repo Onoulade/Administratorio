@@ -18,33 +18,15 @@ M.PENTAPOD_EGG_YIELDS = {
 }
 
 local HATCHED_PENTAPOD_SCRIPT_EFFECT = "administratorio-pentapod-egg-hatch"
+local PENTAPOD_SAMPLING_SCRIPT_EFFECT = "administratorio-pentapod-sampling"
 local HATCHED_PENTAPOD_FORCE_NAME = C.HATCHED_PENTAPOD_FORCE_NAME or "administratorio-hatched-pentapods"
-local PENTAPOD_MONEY_BAIT_INTERVAL_TICKS = C.PENTAPOD_MONEY_BAIT_INTERVAL_TICKS or 120
-local PENTAPOD_MONEY_BAIT_SCAN_LIMIT = C.PENTAPOD_MONEY_BAIT_SCAN_LIMIT or 24
-local PENTAPOD_MONEY_BAIT_LURE_RADIUS = C.PENTAPOD_MONEY_BAIT_LURE_RADIUS or 24
-local PENTAPOD_MONEY_BAIT_PICKUP_RADIUS = C.PENTAPOD_MONEY_BAIT_PICKUP_RADIUS or 1.75
-local PENTAPOD_MONEY_BAIT_MIN_MONEY_PER_EGG = C.PENTAPOD_MONEY_BAIT_MIN_MONEY_PER_EGG or 10
-local PENTAPOD_MONEY_BAIT_MAX_MONEY_PER_EGG = C.PENTAPOD_MONEY_BAIT_MAX_MONEY_PER_EGG or 20
+local PENTAPOD_SAMPLING_COOLDOWN_TICKS = C.PENTAPOD_SAMPLING_COOLDOWN_TICKS or 30 * 60
+local PENTAPOD_SAMPLING_CAPSULE_NAME = "pentapod-sampling-capsule"
 local HATCHED_PENTAPOD_UNITS = {
   ["small-wriggler-pentapod-premature"] = true,
   ["medium-wriggler-pentapod-premature"] = true,
   ["big-wriggler-pentapod-premature"] = true,
 }
-local PENTAPOD_BAIT_EGG_SCALE = {
-  ["small-wriggler-pentapod"] = 1,
-  ["small-strafer-pentapod"] = 1,
-  ["small-stomper-pentapod"] = 1,
-  ["small-wriggler-pentapod-premature"] = 1,
-  ["medium-wriggler-pentapod"] = 2,
-  ["medium-strafer-pentapod"] = 2,
-  ["medium-stomper-pentapod"] = 2,
-  ["medium-wriggler-pentapod-premature"] = 2,
-  ["big-wriggler-pentapod"] = 4,
-  ["big-strafer-pentapod"] = 4,
-  ["big-stomper-pentapod"] = 4,
-  ["big-wriggler-pentapod-premature"] = 4,
-}
-
 function M.is_pentapod(entity_name)
   return entity_name ~= nil and M.PENTAPOD_EGG_YIELDS[entity_name] ~= nil
 end
@@ -62,143 +44,63 @@ local function get_hatched_pentapod_force()
   return force
 end
 
-local function spill_pentapod_eggs(surface, position, count, force)
-  local created = nil
-  if surface.create_entity then
-    local ok, entity = pcall(surface.create_entity, {
-      name = "item-on-ground",
-      position = position,
-      stack = {name = "pentapod-egg", count = count},
-    })
-    if ok then created = entity end
-  end
-  if not created and surface.spill_item_stack then
-    surface.spill_item_stack{
-      position = position,
-      stack = {name = "pentapod-egg", count = count},
+local function give_item_to_player(player, name, count)
+  if not player or count <= 0 then return end
+  local inserted = player.insert{name = name, count = count}
+  if inserted < count then
+    player.surface.spill_item_stack{
+      position = player.position,
+      stack = {name = name, count = count - inserted},
       enable_looted = true,
-      force = force,
+      force = player.force,
     }
   end
+end
 
-  if rendering and rendering.draw_text then
-    pcall(rendering.draw_text, {
-      text = {"", "+", tostring(count), " ", {"item-name.pentapod-egg"}},
-      surface = surface,
-      target = position,
-      color = {r = 0.9, g = 0.95, b = 0.25, a = 1},
-      time_to_live = 90,
-    })
+local function sample_pentapod(event)
+  local source = event.source_entity
+  local player = source and source.valid and source.type == "character" and source.player or nil
+  if not player then return end
+
+  local target = event.target_entity
+  local egg_count = target and target.valid and M.PENTAPOD_EGG_YIELDS[target.name] or nil
+  if not egg_count or not target.force or target.force.name ~= "enemy"
+     or not target.surface.planet or target.surface.planet.name ~= "gleba" then
+    give_item_to_player(player, PENTAPOD_SAMPLING_CAPSULE_NAME, 1)
+    player.create_local_flying_text{text = {"message.pentapod-sampling-invalid"}, position = player.position}
+    return
   end
-end
 
-local function get_ground_item_count(item)
-  local stack = item and item.valid and item.stack
-  if not stack or not stack.valid_for_read or stack.name ~= "taxpayer-money" then return 0 end
-  return stack.count or 0
-end
+  local tick = event.tick or game.tick
+  storage.pentapod_sampling_cooldowns = storage.pentapod_sampling_cooldowns or {}
+  local cooldowns = storage.pentapod_sampling_cooldowns
+  for unit_number, expires in pairs(cooldowns) do
+    if expires <= tick then cooldowns[unit_number] = nil end
+  end
+  local expires = cooldowns[target.unit_number]
+  if expires and expires > tick then
+    give_item_to_player(player, PENTAPOD_SAMPLING_CAPSULE_NAME, 1)
+    player.create_local_flying_text{
+      text = {"message.pentapod-sampling-cooldown", math.ceil((expires - tick) / 60)},
+      position = player.position,
+    }
+    return
+  end
 
-local function consume_ground_money(item)
-  local stack = item and item.valid and item.stack
-  if not stack or not stack.valid_for_read or stack.name ~= "taxpayer-money" then return false end
-  local count = stack.count or 0
-  item.destroy()
-  return count
-end
-
-local function consume_nearby_ground_money(surface, position)
-  local total = 0
-  local money_items = surface.find_entities_filtered{
-    name = "item-on-ground",
-    position = position,
-    radius = PENTAPOD_MONEY_BAIT_PICKUP_RADIUS,
+  cooldowns[target.unit_number] = tick + PENTAPOD_SAMPLING_COOLDOWN_TICKS
+  give_item_to_player(player, "pentapod-egg", egg_count)
+  player.create_local_flying_text{
+    text = {"message.pentapod-sampling-success", egg_count},
+    position = player.position,
   }
-  for _, money in ipairs(money_items) do
-    total = total + (consume_ground_money(money) or 0)
-  end
-  return total
-end
-
-local function roll_pentapod_bait_eggs(money_count, pentapod_name)
-  local eggs = 0
-  local remaining = money_count or 0
-  while remaining >= PENTAPOD_MONEY_BAIT_MIN_MONEY_PER_EGG do
-    local cost = math.random(PENTAPOD_MONEY_BAIT_MIN_MONEY_PER_EGG, PENTAPOD_MONEY_BAIT_MAX_MONEY_PER_EGG)
-    if remaining < cost then
-      if eggs == 0 then
-        eggs = 1
-      end
-      break
-    end
-    eggs = eggs + 1
-    remaining = remaining - cost
-  end
-  return eggs * (PENTAPOD_BAIT_EGG_SCALE[pentapod_name] or 1)
-end
-
-local function command_pentapod_to_money(unit, money)
-  if not unit.commandable or not money.valid then return end
-  local destination = {x = money.position.x, y = money.position.y}
-  unit.commandable.set_command{
-    type = defines.command.go_to_location,
-    destination = destination,
-    radius = 0.75,
-    distraction = defines.distraction.none,
-  }
-end
-
-function M.process_money_baits(tick)
-  if (tick % PENTAPOD_MONEY_BAIT_INTERVAL_TICKS) ~= 0 then return end
-  for _, surface in pairs(game.surfaces or {}) do
-    if surface.valid ~= false then
-      local money_items = surface.find_entities_filtered{
-        name = "item-on-ground",
-        limit = PENTAPOD_MONEY_BAIT_SCAN_LIMIT,
-      }
-      for _, money in ipairs(money_items) do
-        if get_ground_item_count(money) > 0 then
-          local money_position = {x = money.position.x, y = money.position.y}
-          local pentapod_units = surface.find_entities_filtered{
-            force = "enemy",
-            type = "unit",
-            position = money_position,
-            radius = PENTAPOD_MONEY_BAIT_LURE_RADIUS,
-          }
-          local closest = nil
-          local closest_dist = math.huge
-          for _, unit in ipairs(pentapod_units) do
-            if unit.valid and M.is_pentapod(unit.name) and not storage.waiting_biters[unit.unit_number] then
-              local dx = unit.position.x - money_position.x
-              local dy = unit.position.y - money_position.y
-              local dist = dx * dx + dy * dy
-              if dist < closest_dist then
-                closest = unit
-                closest_dist = dist
-              end
-            end
-          end
-
-          if closest then
-            if closest_dist <= PENTAPOD_MONEY_BAIT_PICKUP_RADIUS * PENTAPOD_MONEY_BAIT_PICKUP_RADIUS then
-              local pentapod_force = closest.valid and closest.force or nil
-              local pentapod_name = closest.valid and closest.name or nil
-              local money_count = consume_nearby_ground_money(surface, money_position)
-              local egg_count = roll_pentapod_bait_eggs(money_count, pentapod_name)
-              if pentapod_force and egg_count > 0 then
-                spill_pentapod_eggs(surface, money_position, egg_count, pentapod_force)
-              end
-            else
-              command_pentapod_to_money(closest, money)
-            end
-          end
-        end
-      end
-    end
-  end
 end
 
 -- Returns true if the event was handled (pentapod egg hatch).
 function M.on_script_trigger_effect(event)
+  if event and event.effect_id == PENTAPOD_SAMPLING_SCRIPT_EFFECT then
+    sample_pentapod(event)
+    return true
+  end
   if not event or event.effect_id ~= HATCHED_PENTAPOD_SCRIPT_EFFECT then return false end
 
   local source_entity = event.source_entity

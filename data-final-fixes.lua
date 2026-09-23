@@ -157,14 +157,6 @@ if egg_spoil_trigger and egg_spoil_trigger.action_delivery then
   })
 end
 
--- Vanilla doubles one pentapod egg in 15 seconds. Keep duplication as a slow
--- fallback so capturing wild pentapods with oviposition spores remains the
--- practical source of fresh eggs instead of becoming obsolete immediately.
-local pentapod_egg_duplication = data.raw.recipe and data.raw.recipe["pentapod-egg"]
-if pentapod_egg_duplication then
-  pentapod_egg_duplication.energy_required = 60
-end
-
 -------------------------------------------------------------------------------
 -- 2b. TAXPAYER MONEY FUEL SETUP
 -- Taxpayer money keeps its dedicated fuel category so the rideable biter can

@@ -126,7 +126,7 @@ Space Age adds planet-specific offices and orbital infrastructure. Most of these
 | `notary-office` | Vulcanus | Certifies seals, charters, endorsements, and Vulcanus fallback paperwork; consumes a Licensed Notary on placement. |
 | `territorial-arbitration-post` | Vulcanus | Uses Territorial Resettlement Orders and Liquid Lie to shrink demolisher territory toward a Territorial Deed. Territory regrows without maintenance. |
 | `conciliation-desk` | Gleba | Finalizes yellow-form biological exceptions and launch shortcuts; consumes a Conciliation Officer on placement. |
-| `capture-bureau` | Nauvis or Gleba, recipe-dependent | Uses lure spores to attract biters, spitters, or Gleba pentapods. Active lure consumes 1 per second within 48 tiles. |
+| `capture-bureau` | Nauvis or Gleba, recipe-dependent | Uses lure spores to attract wildlife within 48 tiles. Workforce and tourism lure consume 1 per second; Gleba egg lure has no idle drain and consumes 5/8/12 fluid per small/medium/big pentapod capture, producing 1/2/4 eggs. Its spores can be made in a Chemical Plant before the Biochamber. |
 | `digital-services-bureau` | Fulgora | High-speed, 24/7 Fulgora office for digital certificates, archive recovery, and electromagnetic paperwork; consumes a Relay Clerk on placement. |
 | `archive-recombination-bureau` | Fulgora | Recycler-style archive reassignment: three same-rank, color-safe candidates each roll independently at 25%, so output can be zero to three forms. |
 | `laser-printer` | Aquilo or space platform | Solid-media printer with no liquid inputs; handles legacy, chromatic, multicolor, and orbital printing. |

@@ -20,6 +20,14 @@ function M.sync_force(force)
       recipe.enabled = unlocked
     end
   end
+
+  -- Biochamber used to unlock this vanilla recipe. Reconcile old saves with
+  -- the new post-agricultural research gate on configuration changes.
+  local cultivation = force.technologies and force.technologies["pentapod-egg-cultivation"]
+  local egg_recipe = force.recipes and force.recipes["pentapod-egg"]
+  if cultivation and egg_recipe then
+    egg_recipe.enabled = cultivation.researched == true
+  end
 end
 
 function M.sync_all()
@@ -30,7 +38,8 @@ function M.sync_all()
 end
 
 function M.on_research_finished(research)
-  if research and research.name == M.AMBER_SAP_TECHNOLOGY then
+  if research and (research.name == M.AMBER_SAP_TECHNOLOGY
+      or research.name == "pentapod-egg-cultivation") then
     M.sync_force(research.force)
   end
 end

@@ -2907,9 +2907,9 @@ test("pentapod egg spoil trigger notifies runtime to unpacify hatchlings", funct
   assert_true(found, "pentapod egg spoil trigger should include the hatchling runtime script effect")
 end)
 
-test("pentapod egg duplication remains much slower than spore harvesting", function()
-  assert_eq(data.raw.recipe["pentapod-egg"].energy_required, 60,
-    "egg duplication should be slowed from vanilla's 15 seconds to 60 seconds")
+test("pentapod egg duplication keeps vanilla speed after the research gate", function()
+  assert_eq(data.raw.recipe["pentapod-egg"].energy_required, 15,
+    "egg duplication should keep vanilla's 15-second craft time")
 end)
 
 -------------------------------------------------------------------------------

@@ -754,6 +754,10 @@ Remaining follow-up:
 - run a broader planner-mod / gameplay pass
 - only add more Gleba-local shortcuts if that broader pass proves they are necessary
 
+### Step 3.7: Make pentapod eggs a staged Gleba progression
+
+Status: implemented. Gleba discovery unlocks a handcraftable sampling capsule (2 yumako mash, 2 jelly, 5 spoilage) that collects 1/2/4 eggs from living small/medium/big wild pentapods, with a 30-second cooldown per target and capsule refunds on invalid or early throws. The Capture Bureau can harvest wild pentapods before Biochambers: its egg lure and spore base work in a Chemical Plant, egg lure has no idle drain, and each capture costs 5/8/12 fluid for 1/2/4 eggs within 48 tiles. After the player produces agricultural science, `pentapod-egg-cultivation` costs 30 agricultural science packs and unlocks the vanilla 15-second Biochamber egg-breeding recipe. The older taxpayer-money bait route is removed. Existing saves sync the breeding recipe with research state.
+
 ---
 
 ## Phase 4: Fulgora — Digital Services Bureau

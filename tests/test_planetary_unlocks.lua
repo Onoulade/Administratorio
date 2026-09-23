@@ -62,6 +62,26 @@ test("configuration sync preserves Gleba recipes after amber sap discovery", fun
   end
 end)
 
+test("configuration sync revokes Biochamber's old egg-breeding unlock", function()
+  local force = make_force(true)
+  force.technologies["pentapod-egg-cultivation"] = {researched = false}
+  force.recipes["pentapod-egg"] = {enabled = true}
+
+  planetary_unlocks.sync_force(force)
+  assert_eq(force.recipes["pentapod-egg"].enabled, false,
+    "old saves should require agricultural research before egg breeding")
+end)
+
+test("configuration sync restores egg breeding after cultivation research", function()
+  local force = make_force(true)
+  force.technologies["pentapod-egg-cultivation"] = {researched = true}
+  force.recipes["pentapod-egg"] = {enabled = false}
+
+  planetary_unlocks.sync_force(force)
+  assert_eq(force.recipes["pentapod-egg"].enabled, true,
+    "researched cultivation should keep the vanilla egg recipe available")
+end)
+
 if failed > 0 then
   io.stderr:write(("Planetary unlock tests failed: %d/%d\n"):format(failed, passed + failed))
   for _, err in ipairs(errors) do

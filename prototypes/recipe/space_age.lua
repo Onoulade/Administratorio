@@ -184,6 +184,22 @@ add_scrap_recycling_result("useless-documentation", 1, 0.08)
 add_scrap_recycling_result("old-archive", 1, 0.06)
 sync_scrap_recycler_output_slots()
 
+-- A local, character-craftable first-egg route. Fruit processing and spoilage
+-- precede the Biochamber, whose construction itself consumes an egg.
+data:extend({surface_limited({
+  type = "recipe",
+  name = "pentapod-sampling-capsule",
+  category = "crafting",
+  enabled = false,
+  ingredients = {
+    {type = "item", name = "yumako-mash", amount = 2},
+    {type = "item", name = "jelly", amount = 2},
+    {type = "item", name = "spoilage", amount = 5},
+  },
+  results = {{type = "item", name = "pentapod-sampling-capsule", amount = 1}},
+  energy_required = 3,
+}, "gleba")})
+
 local function not_in_space(recipe)
   return planets.require_non_vacuum_surface(recipe)
 end

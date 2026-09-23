@@ -130,6 +130,15 @@ Both `Capture Bureau` and `Conciliation Desk` require a `conciliation-officer` w
 
 Gleba recipes should not require `taxpayer-money`. The planet operates outside the Nauvis tax authority's reach. Local paperwork uses biological resources and yellow ink instead of cash.
 
+Pentapod egg acquisition follows the same rule. On arrival, the player can handcraft `pentapod-sampling-capsule` from 2 yumako mash, 2 jelly, and 5 spoilage, then throw it at a living wild Gleba pentapod. Small/medium/big targets yield 1/2/4 fresh eggs without taking damage or despawning. The same target can be sampled every 30 seconds; invalid or premature throws return the capsule. This is a manual bootstrap, not an automated egg source.
+
+`gleba-conciliation` also unlocks the Capture Bureau egg mode and Chemical Plant-compatible spore culture and oviposition lure. Within 48 tiles, a Bureau consumes 5/8/12 lure fluid when capturing a small/medium/big pentapod and yields 1/2/4 eggs; egg lure does not drain while idle. This provides a reliable automated wild-harvest route before a Biochamber or agricultural science exists. Workforce and tourism modes still consume 1 lure per second.
+
+Pentapod raft removal continues to use imported `eviction-notice` items. Gleba does not gain a local notice recipe.
+
+
+The vanilla `pentapod-egg` breeding recipe is moved from the Biochamber technology to `pentapod-egg-cultivation`, which requires Biochamber plus agricultural science and costs 30 agricultural science packs. Breeding retains its vanilla 15-second recipe time. The first eggs and science must come from sampling or wild capture; research then lets established Gleba bases scale without continually harvesting wild pentapods. The sampling capsule is unlocked by Gleba discovery; existing saves sync the egg recipe unlock to the new technology state.
+
 ### 12. Escape exceptions are terminal, slow, and biological
 
 The implemented Gleba bridges are deliberately limited to what the unchanged

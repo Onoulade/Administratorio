@@ -800,7 +800,10 @@ local function on_research_finished(event)
   evolution_gating.on_research_changed()
 end
 
-local function on_research_reversed(_event)
+local function on_research_reversed(event)
+  if event and event.research then
+    planetary_unlocks.sync_force(event.research.force)
+  end
   evolution_gating.on_research_changed()
 end
 
@@ -2240,7 +2243,6 @@ local function on_main_tick(event)
     cleanup_legacy_resolved_biter_releases()
   end
   resolution_processing.on_tick(event)
-  pentapods.process_money_baits(event.tick)
   runtime_debug.run_profiled_external_sections("hired_biter", function()
     hired_biter.update(event.tick)
   end)

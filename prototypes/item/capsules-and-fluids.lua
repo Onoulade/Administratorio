@@ -243,6 +243,42 @@ data:extend({
   hired_biter_remote
 })
 
+if feature_flags.space_age_enabled() then
+  data:extend({
+    {
+      type = "capsule",
+      name = "pentapod-sampling-capsule",
+      icons = {
+        {icon = item_icons .. "spore-culture.png", icon_size = 64},
+        {icon = "__space-age__/graphics/icons/pentapod-egg-3.png", icon_size = 64, scale = 0.42, shift = {8, 8}},
+      },
+      subgroup = "capsule",
+      order = "z2[pentapod-sampling]",
+      stack_size = 20,
+      capsule_action = {
+        type = "throw",
+        attack_parameters = {
+          type = "projectile",
+          ammo_category = "capsule",
+          cooldown = 30,
+          range = 20,
+          ammo_type = {
+            category = "capsule",
+            target_type = "entity",
+            action = {
+              type = "direct",
+              action_delivery = {
+                type = "instant",
+                target_effects = {{type = "script", effect_id = "administratorio-pentapod-sampling"}},
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+end
+
 -- Fluids
 data:extend({
   { type = "fluid", name = "slush-fund",        icon = item_icons .. "slush-fund.png",                  icon_size = 64, subgroup = "admin-fluids", order = "a", default_temperature = 25, base_color = {r=0.2, g=0.4, b=0.2}, flow_color = {r=0.3, g=0.5, b=0.3} },

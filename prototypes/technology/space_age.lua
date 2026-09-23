@@ -264,6 +264,16 @@ data:extend({
     },
     order = "h-c2",
   },
+  {
+    type = "technology",
+    name = "pentapod-egg-cultivation",
+    icon = "__space-age__/graphics/icons/pentapod-egg-3.png",
+    icon_size = 64,
+    effects = {{type = "unlock-recipe", recipe = "pentapod-egg"}},
+    prerequisites = {"agricultural-science-pack", "biochamber"},
+    unit = {count = 30, ingredients = {{"agricultural-science-pack", 1}}, time = 30},
+    order = "h-c3",
+  },
 
   -- ============================================================
   -- TIER 3a: FULGORA MAGENTA BOOTSTRAP
@@ -1054,6 +1064,8 @@ add_tech_unlock("carbon-fiber", "coal-synthesis")
 add_tech_prerequisite("foundry", "vulcanus-certification")
 add_tech_prerequisite("big-mining-drill", "electric-engine")
 add_tech_prerequisite("biochamber", "gleba-conciliation")
+remove_tech_unlock("biochamber", "pentapod-egg")
+add_tech_unlock("planet-discovery-gleba", "pentapod-sampling-capsule")
 add_tech_prerequisite("electromagnetic-plant", "fulgora-salvage-administration")
 add_tech_prerequisite("space-platform", "electric-engine")
 add_tech_prerequisite("space-science-pack", "orbital-employment-infrastructure")
