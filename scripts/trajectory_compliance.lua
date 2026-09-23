@@ -15,9 +15,9 @@ local ARRAY_FORCE_MULTIPLIERS = {
   ["executive-trajectory-compliance-array"] = 4,
 }
 local ARRAY_RANGES = {
-  ["trajectory-compliance-array"] = 20,
-  ["senior-trajectory-compliance-array"] = 30,
-  ["executive-trajectory-compliance-array"] = 40,
+  ["trajectory-compliance-array"] = 24,
+  ["senior-trajectory-compliance-array"] = 36,
+  ["executive-trajectory-compliance-array"] = 48,
 }
 local TARGET_TIERS = {
   ["trajectory-compliance-array"] = 2,
@@ -78,7 +78,7 @@ local DEVIATION_MAX_SPEED = 0.05
 -- Keep centerline asteroids from being pushed harmlessly straight ahead. The
 -- sign is chosen once per target deviation, so every array reinforces the same
 -- lateral escape instead of symmetric arrays cancelling one another.
-local DEVIATION_MIN_LATERAL_RATIO = 0.2
+local DEVIATION_MIN_LATERAL_RATIO = 0.35
 local PRIORITY_DEVIATION_STRENGTH = 2
 -- Arrays otherwise retain their engine-selected target indefinitely. Recheck
 -- often enough to follow the nearest incoming threat, without scanning every
@@ -90,6 +90,8 @@ local DEVIATION_MASS_FACTORS = {
   big = 2.5,
   huge = 5,
 }
+local SALVAGE_BATCH_SIZE = 6
+local SALVAGE_BATCH_INTERVAL = 60
 -- Mirrors Space Age's asteroid graphics_set.rotation_speed values. Asteroid
 -- sprite rotation is not exposed through LuaEntity.orientation, so attached
 -- manager rendering and release direction must accumulate it explicitly.
@@ -167,6 +169,7 @@ local function ensure_storage()
   state.blocked_arrays = state.blocked_arrays or {}
   state.deviations = state.deviations or {}
   state.next_deviation_id = state.next_deviation_id or 1
+  state.pending_salvage = state.pending_salvage or {}
 
   -- These belonged to older scanners and random-return queues. New workers
   -- return exclusively as collectible asteroid chunks.
@@ -286,6 +289,55 @@ local function platform_by_index(platform_index)
     end
   end
   return nil
+end
+
+local function release_mined_chunks(platform, salvage, employees, tick)
+  if not platform or not platform.valid or not platform.create_asteroid_chunks then return end
+  if #employees > 0 then platform.create_asteroid_chunks(employees) end
+  if #salvage == 0 then return end
+
+  local first_batch = {}
+  for index = 1, math.min(#salvage, SALVAGE_BATCH_SIZE) do
+    first_batch[#first_batch + 1] = salvage[index]
+  end
+  platform.create_asteroid_chunks(first_batch)
+  if #salvage > SALVAGE_BATCH_SIZE then
+    local pending = storage.trajectory_compliance.pending_salvage
+    pending[#pending + 1] = {
+      platform_index = platform.index,
+      chunks = salvage,
+      next_index = SALVAGE_BATCH_SIZE + 1,
+      next_tick = tick + SALVAGE_BATCH_INTERVAL,
+    }
+  end
+end
+
+local function process_pending_salvage(tick)
+  local state = storage.trajectory_compliance
+  if not state or not state.pending_salvage then return end
+  for index = #state.pending_salvage, 1, -1 do
+    local pending = state.pending_salvage[index]
+    if tick >= pending.next_tick then
+      local platform = platform_by_index(pending.platform_index)
+      if not platform or not platform.create_asteroid_chunks then
+        table.remove(state.pending_salvage, index)
+      else
+        local batch = {}
+        local last_index = math.min(#pending.chunks,
+          pending.next_index + SALVAGE_BATCH_SIZE - 1)
+        for chunk_index = pending.next_index, last_index do
+          batch[#batch + 1] = pending.chunks[chunk_index]
+        end
+        platform.create_asteroid_chunks(batch)
+        if last_index == #pending.chunks then
+          table.remove(state.pending_salvage, index)
+        else
+          pending.next_index = last_index + 1
+          pending.next_tick = tick + SALVAGE_BATCH_INTERVAL
+        end
+      end
+    end
+  end
 end
 
 local function force_by_name(force_name)
@@ -464,24 +516,80 @@ local function existing_entity_names(name_set)
   return names
 end
 
+local function priority_name(entry)
+  if type(entry) == "string" then return entry end
+  return entry and entry.name
+end
+
+local function default_priority_names(maximum_size_rank, descending)
+  local names = {}
+  for offset = 1, maximum_size_rank do
+    local size_rank = descending and maximum_size_rank - offset + 1 or offset
+    local size = ASTEROID_SIZES[size_rank]
+    for _, family in ipairs(ASTEROID_FAMILIES) do
+      local name = size .. "-" .. family .. "-asteroid"
+      if feature_flags.entity_prototype_exists(name) then
+        names[#names + 1] = name
+      end
+    end
+  end
+  return names
+end
+
+local function priorities_match(actual, expected)
+  if #actual ~= #expected then return false end
+  for index, name in ipairs(expected) do
+    if priority_name(actual[index]) ~= name then return false end
+  end
+  return true
+end
+
+local function priority_rank_for(source, target)
+  local priorities = source.priority_targets or {}
+  local _, _, size_rank = asteroid_identity(target.name)
+  local default_catapult_priorities = source.name == CATAPULT_NAME
+    and priorities_match(priorities, default_priority_names(4, true))
+  for index, entry in ipairs(priorities) do
+    if priority_name(entry) == target.name then
+      -- The generated list groups four families by size. Treat each group as
+      -- one priority so a nearby huge rock beats a distant huge rock.
+      if default_catapult_priorities then return 5 - (size_rank or 0) end
+      return index
+    end
+  end
+  if source.ignore_unprioritised_targets then return nil end
+  return #priorities + (5 - (size_rank or 0))
+end
+
 function M.configure_array(entity)
   local maximum_size_rank = entity and entity.valid and TARGET_TIERS[entity.name]
   if not maximum_size_rank or not entity.set_priority_target then return false end
 
-  local previous_count = entity.priority_targets and #entity.priority_targets or 0
-  local priority_index = 1
-  for size_rank, size in ipairs(ASTEROID_SIZES) do
-    if size_rank <= maximum_size_rank then
-      for _, family in ipairs(ASTEROID_FAMILIES) do
-        local asteroid_name = size .. "-" .. family .. "-asteroid"
-        if feature_flags.entity_prototype_exists(asteroid_name) then
-          entity.set_priority_target(priority_index, asteroid_name)
-          priority_index = priority_index + 1
-        end
-      end
-    end
+  local actual = entity.priority_targets or {}
+  local previous_count = #actual
+  local is_catapult = entity.name == CATAPULT_NAME
+  local old_catapult_default = is_catapult
+    and priorities_match(actual, default_priority_names(maximum_size_rank, false))
+  local inherited_array_default = false
+  if not is_catapult and maximum_size_rank > 2 then
+    inherited_array_default = priorities_match(actual,
+      default_priority_names(maximum_size_rank - 1, false))
   end
-  for index = priority_index, previous_count do
+  -- Leave player-edited filters intact, including an intentionally empty list.
+  if (previous_count > 0 and not old_catapult_default and not inherited_array_default)
+    or (previous_count == 0 and entity.ignore_unprioritised_targets)
+  then
+    if ARRAY_TIERS[entity.name] and reconcile_array_target then
+      reconcile_array_target(entity)
+    end
+    return true
+  end
+
+  local names = default_priority_names(maximum_size_rank, is_catapult)
+  for index, name in ipairs(names) do
+    entity.set_priority_target(index, name)
+  end
+  for index = #names + 1, previous_count do
     entity.set_priority_target(index, nil)
   end
   entity.ignore_unprioritised_targets = true
@@ -618,6 +726,7 @@ local function available_target_for(source, excluded_target)
   if not surface or not surface.valid or not surface.find_entities_filtered then return nil end
 
   local best_target
+  local best_priority
   local best_distance
   local capacity = M.employee_capacity(source.force)
   for _, candidate in ipairs(surface.find_entities_filtered{
@@ -629,15 +738,19 @@ local function available_target_for(source, excluded_target)
       and valid_asteroid_target(source, candidate)
       and catapult_target_within_arc(source, candidate)
     then
+      local priority = priority_rank_for(source, candidate)
       local assault = find_assault_for_target(candidate)
       local occupied = (assault and #assault.workers or 0)
         + pending_assignment_count(candidate)
-      if occupied < capacity then
+      if priority and occupied < capacity then
         local dx = candidate.position.x - source.position.x
         local dy = candidate.position.y - source.position.y
         local distance = dx * dx + dy * dy
-        if not best_distance or distance < best_distance then
+        if not best_priority or priority < best_priority
+          or (priority == best_priority and distance < best_distance)
+        then
           best_target = candidate
+          best_priority = priority
           best_distance = distance
         end
       end
@@ -677,6 +790,16 @@ local function refresh_blocked_catapults()
   end
 end
 
+local function refresh_catapult_targets()
+  if not game or not game.surfaces then return end
+  if not feature_flags.entity_prototype_exists(CATAPULT_NAME) then return end
+  for _, surface in pairs(game.surfaces) do
+    for _, catapult in ipairs(surface.find_entities_filtered{name = CATAPULT_NAME}) do
+      reroute_or_pause_catapult(catapult)
+    end
+  end
+end
+
 local function reroute_catapults_targeting(target)
   local surface = target and target.valid and target.surface
   if not surface or not surface.valid or not surface.find_entities_filtered then return end
@@ -707,7 +830,7 @@ local function remove_deviation(deviation_id)
   storage.trajectory_compliance.deviations[deviation_id] = nil
 end
 
-local function available_deviation_target_for(source, excluded_target)
+local function available_deviation_target_for(source, excluded_target, assigned_targets, push_strengths)
   if not source or not source.valid then return nil end
   local range = ARRAY_RANGES[source.name]
   local surface = source.surface
@@ -716,7 +839,8 @@ local function available_deviation_target_for(source, excluded_target)
   end
 
   local best_target
-  local best_lateral_distance
+  local best_saturated
+  local best_score
   local best_hub_distance
   local best_source_distance
   local platform = platform_for_source(source)
@@ -729,6 +853,7 @@ local function available_deviation_target_for(source, excluded_target)
     if candidate ~= excluded_target
       and valid_asteroid_target(source, candidate)
       and not target_has_assigned_workers(candidate)
+      and priority_rank_for(source, candidate)
     then
       local source_dx = candidate.position.x - source.position.x
       local source_dy = candidate.position.y - source.position.y
@@ -746,15 +871,36 @@ local function available_deviation_target_for(source, excluded_target)
         hub_distance = hub_dx * hub_dx + hub_dy * hub_dy
       end
 
-      if not best_lateral_distance
-        or lateral_distance < best_lateral_distance
-        or (lateral_distance == best_lateral_distance and hub_distance < best_hub_distance)
-        or (lateral_distance == best_lateral_distance
+      local strength = push_strengths and push_strengths[candidate]
+      if not strength then
+        strength = 0
+        local deviation = find_deviation_for_target(candidate)
+        for _, push in ipairs(deviation and deviation.pushes or {}) do
+          if push.source and push.source.valid then
+            strength = strength + (push.strength or 1)
+          end
+        end
+      end
+      local size = asteroid_identity(candidate.name)
+      local mass = DEVIATION_MASS_FACTORS[size] or 1
+      local saturated = strength * DEVIATION_FORCE_PER_PULSE / mass
+        >= DEVIATION_MAX_SPEED * 0.95
+      -- Spread arrays across similarly centered threats, but still let a
+      -- centerline asteroid recruit several arrays when it needs them.
+      local score = lateral_distance + ((assigned_targets and assigned_targets[candidate]) or 0) * 4
+
+      if best_saturated == nil
+        or (best_saturated and not saturated)
+        or (best_saturated == saturated and score < best_score)
+        or (best_saturated == saturated and score == best_score
+          and hub_distance < best_hub_distance)
+        or (best_saturated == saturated and score == best_score
           and hub_distance == best_hub_distance
           and source_distance < best_source_distance)
       then
         best_target = candidate
-        best_lateral_distance = lateral_distance
+        best_saturated = saturated
+        best_score = score
         best_hub_distance = hub_distance
         best_source_distance = source_distance
       end
@@ -763,18 +909,18 @@ local function available_deviation_target_for(source, excluded_target)
   return best_target
 end
 
-local function reroute_or_pause_array(source, excluded_target)
+local function reroute_or_pause_array(source, excluded_target, assigned_targets, push_strengths)
   if not source or not source.valid or not ARRAY_TIERS[source.name] then return false end
   ensure_storage()
   local state = storage.trajectory_compliance
   local unit_number = source.unit_number
-  local target = available_deviation_target_for(source, excluded_target)
+  local target = available_deviation_target_for(source, excluded_target, assigned_targets, push_strengths)
 
   if target then
     source.shooting_target = target
     source.disabled_by_script = false
     if unit_number then state.blocked_arrays[unit_number] = nil end
-    return true
+    return true, target
   end
 
   source.disabled_by_script = true
@@ -810,13 +956,26 @@ end
 
 local function refresh_array_targets()
   if not game or not game.surfaces then return end
+  ensure_storage()
   local names = existing_entity_names(ARRAY_TIERS)
   if #names == 0 then return end
+  local push_strengths = {}
+  for _, deviation in pairs(storage.trajectory_compliance.deviations) do
+    if deviation.target and deviation.target.valid then
+      local strength = 0
+      for _, push in ipairs(deviation.pushes) do
+        if push.source and push.source.valid then strength = strength + (push.strength or 1) end
+      end
+      push_strengths[deviation.target] = strength
+    end
+  end
   for _, surface in pairs(game.surfaces) do
+    local assigned_targets = {}
     for _, array in ipairs(surface.find_entities_filtered{name = names}) do
       -- Set the explicit closest eligible target instead of merely clearing
       -- shooting_target and relying on Factorio's cached target selection.
-      reroute_or_pause_array(array)
+      local _, target = reroute_or_pause_array(array, nil, assigned_targets, push_strengths)
+      if target then assigned_targets[target] = (assigned_targets[target] or 0) + 1 end
     end
   end
 end
@@ -1173,14 +1332,13 @@ local function process_assaults(tick)
         local position = {x = target.position.x, y = target.position.y}
         local platform = platform_by_index(assault.platform_index)
         local destination = destination_for(platform, assault.source_position)
-        local chunks = salvage_chunks(assault.size, assault.family, position, destination) or {}
+        local salvage = salvage_chunks(assault.size, assault.family, position, destination) or {}
+        local employees = {}
         snapshot_worker_orientations(assault.workers, target, tick)
-        append_employee_chunks(chunks, assault.workers, position, destination)
+        append_employee_chunks(employees, assault.workers, position, destination)
 
         if target.destroy() then
-          if platform and platform.create_asteroid_chunks then
-            platform.create_asteroid_chunks(chunks)
-          end
+          release_mined_chunks(platform, salvage, employees, tick)
           remove_assault(assault_id, assault)
         end
       elseif damage > 0 and health then
@@ -1193,9 +1351,11 @@ end
 function M.on_tick(event)
   if not event or not event.tick then return end
   process_pending_assignments(event.tick)
+  process_pending_salvage(event.tick)
   process_deviations(event.tick)
   if event.tick % ARRAY_RETARGET_INTERVAL == 0 then
     refresh_array_targets()
+    refresh_catapult_targets()
   end
   if event.tick % MANAGER_ORIENTATION_INTERVAL == 0 then
     process_manager_visuals(event.tick)

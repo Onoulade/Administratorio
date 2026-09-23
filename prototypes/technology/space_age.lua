@@ -649,37 +649,13 @@ data:extend({
   -- ============================================================
   {
     type = "technology",
-    name = "trajectory-compliance-jurisdiction-1",
-    icon = "__administratorio__/graphics/icons/trajectory-compliance-array-v3.png",
-    icon_size = 256,
-    effects = {
-      {type = "nothing", effect_description = {"technology-effect.trajectory-compliance-jurisdiction", "1"}},
-    },
-    prerequisites = {"orbital-compliance-systems", "space-science-pack"},
-    unit = {
-      count = 600,
-      ingredients = {
-        {"automation-science-pack", 1},
-        {"logistic-science-pack", 1},
-        {"chemical-science-pack", 1},
-        {"production-science-pack", 1},
-        {"space-science-pack", 1},
-        {"administrative-science-pack", 1},
-      },
-      time = 45,
-    },
-    order = "h-b-j[01]",
-  },
-
-  {
-    type = "technology",
     name = "trajectory-compliance-jurisdiction-2",
     icon = "__administratorio__/graphics/icons/trajectory-compliance-array-v3.png",
     icon_size = 256,
     effects = {
       {type = "unlock-recipe", recipe = "senior-trajectory-compliance-array"},
     },
-    prerequisites = {"trajectory-compliance-jurisdiction-1", "metallurgic-science-pack", "agricultural-science-pack", "electromagnetic-science-pack", "carbon-fiber"},
+    prerequisites = {"orbital-compliance-systems", "space-science-pack", "metallurgic-science-pack", "agricultural-science-pack", "electromagnetic-science-pack", "carbon-fiber"},
     unit = {
       count = 1200,
       ingredients = {
@@ -845,7 +821,7 @@ end
 data:extend(chromatic_resolution_technology_prototypes)
 
 -- Trajectory compliance speed upgrades
-local trajectory_speed_seconds = {4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0, 0.5}
+local trajectory_speed_seconds = {4.5, 4.0, 3.5, 3.0, 2.75, 2.5, 2.25, 2.0, 1.5}
 local trajectory_speed_counts = {200, 350, 550, 800, 1000, 1500, 2250, 3000, 4000}
 local trajectory_speed_techs = {}
 local previous_speed_modifier = 0
@@ -1026,6 +1002,11 @@ for level, count in ipairs(orbital_employment_capacity_counts) do
     icon = "__administratorio__/graphics/icons/orbital-employment-catapult-v3.png",
     icon_size = 256,
     effects = {
+      {
+        type = "gun-speed",
+        ammo_category = "orbital-biter-ballistics",
+        modifier = 0.1,
+      },
       {
         type = "nothing",
         effect_description = {"technology-effect.orbital-employment-capacity", tostring(level + 1)},

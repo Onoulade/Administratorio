@@ -297,7 +297,7 @@ test("trajectory compliance tiers use native powered timing, range, and asteroid
       energy = "16.25kJ",
       flow = "81.25kW",
       next_upgrade = "senior-trajectory-compliance-array",
-      range = 20,
+      range = 24,
       masks = {small = true, medium = true},
     },
     {
@@ -305,7 +305,7 @@ test("trajectory compliance tiers use native powered timing, range, and asteroid
       energy = "32.5kJ",
       flow = "162.5kW",
       next_upgrade = "executive-trajectory-compliance-array",
-      range = 30,
+      range = 36,
       masks = {small = true, medium = true, big = true},
     },
     {
@@ -313,7 +313,7 @@ test("trajectory compliance tiers use native powered timing, range, and asteroid
       energy = "65kJ",
       flow = "325kW",
       masks = {small = true, medium = true, big = true, huge = true},
-      range = 40,
+      range = 48,
     },
   }
 

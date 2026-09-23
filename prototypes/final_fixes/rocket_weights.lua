@@ -157,7 +157,7 @@ function M.apply()
   set_weights("item", {"rideable-biter", "union-delegate", "chemical-operator", "nuclear-technician", "clerical-trainee", "voluntary-research-subject"}, 200 * kg)
   set_weights("item", {"management-trainee", "astronaut"}, 400 * kg)
   set_weights("item", {"middle-management-managing-manager", "training-briefed-middle-management-managing-manager", "staffing-briefed-middle-management-managing-manager", "compliance-briefed-middle-management-managing-manager", "liaison-briefed-middle-management-managing-manager", "orbital-briefed-middle-management-managing-manager", "hired-biter-capsule", "missionary-manager", "geotechnical-assessment-manager"}, 1 * tons)
-  set_weight("ammo", "voluntary-exploration-space-miner", 1 * tons)
+  set_weight("ammo", "voluntary-exploration-space-miner", 400 * kg)
 
   -- Live tourism cargo follows the same small-to-behemoth progression as the
   -- underlying spitters.  The captured specimen is a heavy living load.

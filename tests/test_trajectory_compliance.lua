@@ -483,6 +483,48 @@ test("array and catapult configuration install strict native priorities", functi
   assert_eq(#senior.priority_targets, 12)
   assert_eq(#executive.priority_targets, 16)
   assert_eq(#catapult.priority_targets, 16)
+  assert_eq(catapult.priority_targets[1], "huge-metallic-asteroid",
+    "the default mining contract should prefer high-yield huge asteroids")
+
+  junior.name = "senior-trajectory-compliance-array"
+  assert_true(module.configure_array(junior))
+  assert_eq(#junior.priority_targets, 12,
+    "upgrading an array should add its newly permitted asteroid size")
+end)
+
+test("catapult keeps player-edited asteroid filters across configuration", function()
+  local _, _, surface, force = new_world(nil, nil, 0)
+  local catapult = new_source(surface, force)
+  catapult.priority_targets = {"big-metallic-asteroid"}
+  catapult.ignore_unprioritised_targets = true
+  assert_true(module.configure_array(catapult))
+  module.configure_existing_arrays()
+  assert_eq(#catapult.priority_targets, 1)
+
+  local big = new_target("asteroid", "big-metallic-asteroid", nil, surface)
+  local small = new_target("asteroid", "small-metallic-asteroid", nil, surface)
+  big.position = {x = 15, y = 0}
+  small.position = {x = 5, y = 0}
+  fire_biter(catapult, big)
+  assert_true(catapult.disabled_by_script,
+    "a full filtered target should pause rather than launch at an excluded small rock")
+end)
+
+test("catapult defaults to larger rocks and the nearest rock within a size", function()
+  local _, _, surface, force = new_world(nil, nil, 0)
+  local catapult = new_source(surface, force)
+  assert_true(module.configure_array(catapult))
+  local small = new_target("asteroid", "small-metallic-asteroid", nil, surface)
+  local medium = new_target("asteroid", "medium-metallic-asteroid", nil, surface)
+  local near_huge = new_target("asteroid", "huge-carbonic-asteroid", nil, surface)
+  local far_huge = new_target("asteroid", "huge-metallic-asteroid", nil, surface)
+  small.position = {x = 5, y = 0}
+  medium.position = {x = 10, y = 0}
+  near_huge.position = {x = 20, y = 0}
+  far_huge.position = {x = 45, y = 0}
+
+  module.on_tick({tick = module.ARRAY_RETARGET_INTERVAL})
+  assert_eq(catapult.shooting_target, near_huge)
 end)
 
 test("deviation pushes threats outward without deleting or salvaging them", function()
@@ -537,6 +579,20 @@ test("arrays prioritize a centerline collision over a nearby deflected asteroid"
     "cross-track collision risk should outrank proximity to an edge-mounted array")
 end)
 
+test("arrays split between similarly centered threats before overfocusing", function()
+  local _, hub, surface, force = new_world()
+  local first = new_source(surface, force, "normal", "trajectory-compliance-array")
+  local second = new_source(surface, force, "normal", "trajectory-compliance-array")
+  local near = new_target("asteroid", "medium-metallic-asteroid", nil, surface)
+  local far = new_target("asteroid", "medium-carbonic-asteroid", nil, surface)
+  near.position = {x = hub.position.x, y = -10}
+  far.position = {x = hub.position.x, y = -12}
+
+  module.on_tick({tick = module.ARRAY_RETARGET_INTERVAL})
+  assert_eq(first.shooting_target, near)
+  assert_eq(second.shooting_target, far)
+end)
+
 test("asteroid mass and overlapping deviation pulses scale sustained movement", function()
   local _, _, surface, force = new_world()
   local array_a = new_source(surface, force, "normal", "executive-trajectory-compliance-array")
@@ -583,27 +639,30 @@ test("multiple arrays add speed until the deviation safety limit", function()
     "combined array speed should stop at the safety limit")
 end)
 
-test("one max-speed executive array sustains the cap against a huge asteroid", function()
+test("max-speed executive arrays retain a reason to cooperate against huge asteroids", function()
   local _, _, surface, force = new_world()
-  local array = new_source(surface, force, "normal", "executive-trajectory-compliance-array")
   local asteroid = new_target("asteroid", "huge-metallic-asteroid")
 
-  -- Level 9 fires every 30 ticks. Eleven orders remain active across the
-  -- 330-tick push lifetime once the array reaches steady state.
-  for tick = 0, 300, 30 do
-    array.shooting_target = asteroid
-    module.on_script_trigger_effect({
-      effect_id = module.DEVIATION_EFFECT_ID,
-      source_entity = array,
-      target_entity = asteroid,
-      tick = tick,
-    })
+  -- Level 9 now fires every 90 ticks. Four orders remain active per array.
+  for array_index = 1, 3 do
+    local array = new_source(surface, force, "normal", "executive-trajectory-compliance-array")
+    for tick = 0, 270, 90 do
+      array.shooting_target = asteroid
+      module.on_script_trigger_effect({
+        effect_id = module.DEVIATION_EFFECT_ID,
+        source_entity = array,
+        target_entity = asteroid,
+        tick = tick,
+      })
+    end
+    local previous_x = asteroid.position.x
+    module.on_tick({tick = 329})
+    local expected = math.min(module.DEVIATION_MAX_SPEED,
+      module.DEVIATION_FORCE_PER_PULSE * array_index * 4
+        * module.ARRAY_FORCE_MULTIPLIERS[array.name]
+        / module.DEVIATION_MASS_FACTORS.huge)
+    assert_near(asteroid.position.x - previous_x, expected, 1e-9)
   end
-
-  local previous_x = asteroid.position.x
-  module.on_tick({tick = 329})
-  assert_near(asteroid.position.x - previous_x, module.DEVIATION_MAX_SPEED, 1e-9,
-    "a fully researched executive array should maintain maximum huge-asteroid speed")
 end)
 
 test("centerline asteroids receive one shared lateral failsafe from every array", function()
@@ -804,8 +863,8 @@ test("multiple attached workers stack damage and each becomes a chunk", function
 
   assert_true(asteroid.destroyed)
   assert_eq(#platform.created_chunks, 8, "six salvage plus two employees expected")
-  assert_returning_chunk(platform.created_chunks[7].name)
-  assert_returning_chunk(platform.created_chunks[8].name)
+  assert_returning_chunk(platform.created_chunks[1].name)
+  assert_returning_chunk(platform.created_chunks[2].name)
 end)
 
 test("completed demolition creates full salvage plus the employee chunk", function()
@@ -824,12 +883,19 @@ test("completed demolition creates full salvage plus the employee chunk", functi
     module.on_tick({tick = 60})
 
     assert_true(asteroid.destroyed)
-    assert_eq(#platform.created_chunks, case.count + 1, case.name .. " chunk count mismatch")
-    for index = 1, case.count do
+    assert_returning_chunk(platform.created_chunks[1].name)
+    assert_near(math.sqrt(platform.created_chunks[1].movement.x ^ 2
+      + platform.created_chunks[1].movement.y ^ 2), 0.005, 1e-9)
+    assert_eq(#platform.created_chunks, math.min(case.count, 6) + 1,
+      "employee should return before large salvage batches")
+    for tick = 120, 60 + math.ceil((case.count - 6) / 6) * 60, 60 do
+      module.on_tick({tick = tick})
+    end
+    assert_eq(#platform.created_chunks, case.count + 1, case.name .. " final chunk count mismatch")
+    for index = 2, case.count + 1 do
       assert_eq(platform.created_chunks[index].name, case.chunk)
       assert_true(platform.created_chunks[index].movement.x < 0, "salvage should drift toward the hub")
     end
-    assert_returning_chunk(platform.created_chunks[case.count + 1].name)
   end
 end)
 
@@ -847,7 +913,7 @@ test("released manager preserves arrival angle plus accumulated asteroid rotatio
   -- therefore advance the attached manager from 0.90 to 0.954.
   module.on_tick({tick = 60})
 
-  local returning_chunk = platform.created_chunks[7]
+  local returning_chunk = platform.created_chunks[1]
   local expected = (0.90 + 60 * module.ASTEROID_ROTATION_SPEEDS.medium) % 1
   assert_eq(returning_chunk.name, module.returning_chunk_name(expected))
   assert_eq(returning_chunk.name, "returning-orbital-employee-orientation-15",
@@ -867,7 +933,7 @@ test("projectile cause lookup still attaches the fired employee", function()
   }))
   module.on_tick({tick = 60})
 
-  assert_returning_chunk(platform.created_chunks[3].name)
+  assert_returning_chunk(platform.created_chunks[1].name)
 end)
 
 test("external asteroid death releases attached employees alongside native debris", function()

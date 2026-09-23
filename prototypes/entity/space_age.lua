@@ -1049,7 +1049,7 @@ local trajectory_compliance_array = make_trajectory_compliance_array({
   icons = building_icons.trajectory_array("junior"),
   next_upgrade = "senior-trajectory-compliance-array",
   target_masks = {asteroid_size_masks.small, asteroid_size_masks.medium},
-  range = 20,
+  range = 24,
   energy_per_shot = "16.25kJ",
   input_flow_limit = "81.25kW",
 })
@@ -1059,7 +1059,7 @@ local senior_trajectory_compliance_array = make_trajectory_compliance_array({
   icons = building_icons.trajectory_array("senior"),
   next_upgrade = "executive-trajectory-compliance-array",
   target_masks = {asteroid_size_masks.small, asteroid_size_masks.medium, asteroid_size_masks.big},
-  range = 30,
+  range = 36,
   energy_per_shot = "32.5kJ",
   input_flow_limit = "162.5kW",
 })
@@ -1074,7 +1074,7 @@ local executive_trajectory_compliance_array = make_trajectory_compliance_array({
     asteroid_size_masks.big,
     asteroid_size_masks.huge,
   },
-  range = 40,
+  range = 48,
   energy_per_shot = "65kJ",
   input_flow_limit = "325kW",
 })

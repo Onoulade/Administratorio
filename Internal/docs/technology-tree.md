@@ -305,10 +305,10 @@ Space Age progression is a set of jurisdiction branches rather than one straight
 | `specialized-formation` | Astronaut formation for platform administration |
 | `orbital-employment-infrastructure` | Administrative Space Station and platform paperwork production |
 | `orbital-compliance-systems` | Trajectory Compliance Array, deviation orders, Orbital Miner Deployment Catapult, and VESM formation |
-| `trajectory-compliance-jurisdiction-1..3` | Array range and asteroid-size authority: Junior, Senior, then Executive |
-| `trajectory-compliance-speed-1..9` | Array cooldown from 4.5 seconds down to 0.5 seconds |
+| `trajectory-compliance-jurisdiction-2..3` | Senior and Executive array range and asteroid-size authority; Junior unlocks with Orbital Compliance Systems |
+| `trajectory-compliance-speed-1..9` | Array cooldown from 4.5 seconds down to 1.5 seconds |
 | `orbital-employment-damage-1..5` | VESM mining damage from 206.25 to 481.25 per second |
-| `orbital-employment-capacity-1..4` | One through five simultaneous miners per asteroid |
+| `orbital-employment-capacity-1..4` | Two through five simultaneous miners per asteroid, plus 10% catapult firing speed per level |
 
 ### Interplanetary Paperwork
 

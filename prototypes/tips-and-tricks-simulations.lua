@@ -508,7 +508,7 @@ scenes.trajectory = scene(720, 0.7, {
   sprites = {item("orbital-deviation-order", -6, 0.3, 0.4), item("priority-orbital-deviation-order", 0, 0.3, 0.4), item("voluntary-exploration-space-miner", 6, 0.3, 0.4, {show = {{420, 690}}, pulse = true}), sprite("entity/small-metallic-asteroid", -6, -2.6, 0.7), sprite("entity/medium-metallic-asteroid", 0, -2.6, 0.7), sprite("entity/big-metallic-asteroid", 6, -2.6, 0.7)},
   lines = {line(-6, 1.2, -4, -2.3, colors.green), line(0, 1.2, 2.7, -2.3, colors.yellow), line(6, 1.2, 9, -2.3, colors.red)},
   movers = {move_item("orbital-deviation-order", 0, 180, -6, 0.3, -4, -2.3), move_item("priority-orbital-deviation-order", 160, 340, 0, 0.3, 2.7, -2.3), move_item("orbital-deviation-order", 320, 500, 6, 0.3, 9, -2.3)},
-  texts = {label("1x ARC", -6, -3.8, colors.green, {alignment = "center"}), label("PRIORITY = 2x ARC", 0, -3.8, colors.yellow, {alignment = "center"}), label("VESM RETARGET", 6, -3.8, colors.cyan, {show = {{420, 690}}, alignment = "center"}), label("COOLDOWN 4.5s > 0.5s", 0, 4, colors.magenta, {alignment = "center"})},
+  texts = {label("1x ARC", -6, -3.8, colors.green, {alignment = "center"}), label("PRIORITY = 2x ARC", 0, -3.8, colors.yellow, {alignment = "center"}), label("VESM RETARGET", 6, -3.8, colors.cyan, {show = {{420, 690}}, alignment = "center"}), label("COOLDOWN 4.5s > 1.5s", 0, 4, colors.magenta, {alignment = "center"})},
   stage = stages(0, "Junior array pushes small asteroid", 160, "Senior priority order doubles arc", 320, "Executive array handles large target", 420, "VESM retargets arrays", 560, "Speed research reduces cooldown"),
 })
 

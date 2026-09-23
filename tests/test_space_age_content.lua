@@ -1319,15 +1319,14 @@ test("deviation paperwork and VESM catapult are distinct orbital systems", funct
   assert_true(has_ingredient(executive_recipe, "quantum-processor"),
     "executive array should require pre-Promethium quantum processing")
 
-  local junior_tech = assert(technologies["trajectory-compliance-jurisdiction-1"], "junior jurisdiction missing")
+  assert_true(technologies["trajectory-compliance-jurisdiction-1"] == nil,
+    "empty junior jurisdiction research should be removed")
   local senior_tech = assert(technologies["trajectory-compliance-jurisdiction-2"], "senior jurisdiction missing")
   local executive_tech = assert(technologies["trajectory-compliance-jurisdiction-3"], "executive jurisdiction missing")
-  assert_true(tech_has_prerequisite(junior_tech, "orbital-compliance-systems"),
-    "junior jurisdiction must follow orbital compliance systems")
-  assert_true(not tech_unlocks_recipe(junior_tech, "trajectory-compliance-array"),
-    "junior jurisdiction must not repeat the orbital compliance array unlock")
-  assert_true(tech_has_prerequisite(senior_tech, "trajectory-compliance-jurisdiction-1"),
-    "senior jurisdiction must follow junior jurisdiction")
+  assert_true(tech_has_prerequisite(senior_tech, "orbital-compliance-systems"),
+    "senior jurisdiction must follow orbital compliance systems")
+  assert_true(tech_has_prerequisite(senior_tech, "space-science-pack"),
+    "senior jurisdiction must follow space science")
   assert_true(tech_has_prerequisite(senior_tech, "carbon-fiber"),
     "senior jurisdiction must follow the carbon fiber recipe it consumes")
   assert_true(tech_unlocks_recipe(senior_tech, "senior-trajectory-compliance-array"))
@@ -1443,7 +1442,7 @@ test("advanced asteroid outputs feed tier-two orbital administration", function(
 end)
 
 test("trajectory compliance speed research reaches every exact cooldown", function()
-  local expected_seconds = {4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0, 0.5}
+  local expected_seconds = {4.5, 4.0, 3.5, 3.0, 2.75, 2.5, 2.25, 2.0, 1.5}
   local expected_counts = {200, 350, 550, 800, 1000, 1500, 2250, 3000, 4000}
   local cumulative_modifier = 0
 
@@ -1516,11 +1515,17 @@ test("orbital staffing capacity grows from two through five VESMs", function()
     assert_eq(technology.unit.count, count)
 
     local description_effect
+    local speed_effect
     for _, effect in ipairs(technology.effects or {}) do
       if effect.type == "nothing" then description_effect = effect end
+      if effect.type == "gun-speed" and effect.ammo_category == "orbital-biter-ballistics" then
+        speed_effect = effect
+      end
     end
     assert_true(description_effect ~= nil, "capacity description effect missing at tier " .. level)
     assert_eq(description_effect.effect_description[2], tostring(level + 1))
+    assert_true(speed_effect ~= nil, "capacity should also improve catapult firing speed")
+    assert_eq(speed_effect.modifier, 0.1)
 
     assert_eq(technology_has_pack(technology, "metallurgic-science-pack"), level >= 2,
       "metallurgic capacity gating mismatch")
