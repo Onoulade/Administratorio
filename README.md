@@ -48,6 +48,8 @@ Research **Pneumatic Form Transport** to send administrative items through a scr
 
 Trains also participate in the civic order: stations use transit authorization paperwork unless you eventually earn the privilege of bureaucratic transcendence.
 
+Passenger rail can also carry unresolved complaint visitors. Research **Passenger Rail Service**, add a zero-inventory Passenger Wagon to a train, and place paired Boarding and Deboarding Platforms beside the stops. Each wagon carries up to 24 visitors in a protected manifest; frustration continues during the trip, so use platform circuit signals to manage queues and keep journeys short. The [Advanced Topics guide](Internal/docs/advanced-topics.md#passenger-rail-service) covers setup, schedules, and failure behavior.
+
 ### Working hours, coffee and other workplace realities
 
 With **Working Hours** enabled (the default), Office Desks, Corporate Breakrooms and Union Headquarters close during the night window. Install an **Overtime Exemption** module to keep an eligible building open around the clock. Biter Employment Offices and Biterports can work night shifts too, but they charge the company in liquid coffee.
@@ -94,7 +96,7 @@ The in-game tips and tricks explain individual items and progression gates. The 
 - [Biter Employment](Internal/docs/biter-employment.md) — hiring, training, stations, Biterports and Field Offices.
 - [Buildings and Structures](Internal/docs/buildings-and-structures.md) — production buildings, support infrastructure and pneumatic tubes.
 - [Technology Tree](Internal/docs/technology-tree.md) — progression, research gates and specialization.
-- [Advanced Topics](Internal/docs/advanced-topics.md) — working hours, modules, coffee, trains, field agents and structural bottlenecks.
+- [Advanced Topics](Internal/docs/advanced-topics.md) — working hours, modules, coffee, ordinary and passenger rail, field agents and structural bottlenecks.
 - [Mod Compatibility](Internal/docs/mod-compatibility.md) — compatibility hooks for contributors.
 
 ## Current status

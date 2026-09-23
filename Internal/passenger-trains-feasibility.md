@@ -1,5 +1,7 @@
 # Passenger trains: feasibility and implementation sketch
 
+> **Historical design note; implemented.** This document records the feasibility work and early proposal. Passenger Rail Service shipped after this note was written. For current player instructions, use [Passenger Rail Service](docs/advanced-topics.md#passenger-rail-service) and the in-game Workforce tip. Current behavior differs from some proposals below: boarding requires reaching the platform center; platform controls and circuit outputs are documented in the guide; frustration continues in transit and an outbreak returns passengers to the world.
+
 ## Conclusion
 
 Factorio 2.0 can support a dedicated passenger wagon without putting biter items

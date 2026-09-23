@@ -52,6 +52,10 @@ With Space Age enabled, `worker-formation` moves the Resolution Office unlock be
 | `formation-center` | `biter-training` | Converts enrolled biters into workers and trains managers or specialists |
 | `biter-station` | worker dispatch | Sends hired workers to managed machines; night dispatches consume coffee |
 | `biterport` | walking logistics | Provides biter logistics and construction networks |
+| `passenger-wagon` | passenger rail | Zero-inventory wagon with a protected manifest for up to 24 unresolved complaint visitors |
+| `boarding-platform` / `deboarding-platform` | passenger rail | Rail-adjacent queue and unload points, with circuit controls and train/passenger signals; see [Passenger Rail Service](docs/advanced-topics.md#passenger-rail-service) |
+
+The **Administration Desk Overview** shortcut summarizes force-wide desk capacity, inbound visitors, and protests, and opens Remote View at a selected desk. Passenger Rail Service is unlocked by `passenger-rail-service` after Railway, Biter Employment, and Chemical Science Pack research.
 
 Space Age adds `chromatic-printer`, `laser-printer`, `notary-office`, `territorial-arbitration-post`, `conciliation-desk`, `capture-bureau`, `digital-services-bureau`, `archive-recombination-bureau`, `administrative-space-station`, the three trajectory-compliance arrays, `orbital-employment-catapult`, `interplanetary-terminus`, `ai-server`, `heat-exhaust`, `slop-refinery`, `synthetic-personnel-bureau`, and the involuntary relocation Cannon/Receiver pair. Their behavior is documented in [Buildings & Structures](docs/buildings-and-structures.md).
 
@@ -97,6 +101,7 @@ Space Age adds `chromatic-printer`, `laser-printer`, `notary-office`, `territori
 | `rubble-compaction` | `compacted-rubble-production` | Standardized rubble for infrastructure and pneumatic transport |
 | `pneumatic-form-transport` | pneumatic buildings and intake recipes | Form logistics through shared tube networks |
 | `industrial-printing` | `printer-t2`, bulk copy recipes | Real midgame paperwork acceleration |
+| `passenger-rail-service` | Passenger Wagon, Boarding Platform, Deboarding Platform | Chemical-science rail transport for unresolved visitors |
 | `local-precedents` | `useless-documentation-production`, `form-27b-6` | Local legal fiction and the precedent archive |
 | `streamlined-work-orders` | direct draft-to-work-order printing | Throughput upgrade for early combined forms |
 | `industrial-propaganda` | distillery, lie / misinformation chain, refined nonsense, credentials | Opens the true admin economy |

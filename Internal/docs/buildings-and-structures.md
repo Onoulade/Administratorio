@@ -46,7 +46,7 @@
 - Unlocked by `administrative-bureaucracy` (displayed as "Wood Production")
 - First coffee bean discovery (10% probability, hand-mine)
 - Coffee plantation bootstraps bean multiplication
-- Coffee refining: coffee-bean + water + work-order → liquid-coffee
+- Coffee refining: coffee-bean + water → liquid-coffee
 - Outputs: wood, coffee-bean, water (input-output fluid connections)
 
 ### Corporate Breakroom (`corporate-breakroom`)

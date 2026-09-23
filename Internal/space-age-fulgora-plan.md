@@ -1,6 +1,6 @@
 # Fulgora Space Age Plan
 
-This file records the planned Fulgora principles under the shared rules in [space-age-compatibility-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-compatibility-plan.md).
+This file records the planned Fulgora principles under the shared rules in [space-age-compatibility-plan.md](space-age-compatibility-plan.md).
 
 ## Planet Role
 

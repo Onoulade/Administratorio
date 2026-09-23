@@ -1,8 +1,8 @@
 # Aquilo Space Age Plan
 
-This file records the Aquilo principles and the current first-pass implementation under the shared rules in [space-age-compatibility-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-compatibility-plan.md).
+This file records the Aquilo principles and the current first-pass implementation under the shared rules in [space-age-compatibility-plan.md](space-age-compatibility-plan.md).
 
-> **Superseded in part.** The fax network described in earlier revisions of this file was **deleted outright** and replaced by the Interplanetary Tube Network, which unlocks *before* Aquilo. Aquilo's compute, heat, and colored-transport identity is designed in [space-age-automation-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-automation-plan.md). Sections below have been updated; treat that file as canonical where the two disagree.
+> **Superseded in part.** The fax network described in earlier revisions of this file was **deleted outright** and replaced by the Interplanetary Tube Network, which unlocks *before* Aquilo. Aquilo's compute, heat, and colored-transport identity is designed in [space-age-automation-plan.md](space-age-automation-plan.md). Sections below have been updated; treat that file as canonical where the two disagree.
 
 ## Planet Role
 
@@ -109,7 +109,7 @@ This is the correct Aquilo identity because the constraint is native to the plan
 
 The server hard-stops when it cannot dump its heat. The recovered `lufter` fan becomes a Heat Exhaust for players who want compute without power generation, and must never be more efficient than actually using the heat.
 
-Full design in [space-age-automation-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-automation-plan.md), section 2.
+Full design in [space-age-automation-plan.md](space-age-automation-plan.md), section 2.
 
 **Superseded rationale, recorded deliberately.** Earlier revisions argued that cross-planet paperwork logistics must unlock on Aquilo so that "before Aquilo, players must physically ship all paperwork between planets," making the network the reward for reaching the final planet. That decision has been reversed: the Interplanetary Tube Network now unlocks pre-Aquilo with regular forms only, and Aquilo unlocks the colored tier. The protection against trivialized logistics is no longer the unlock gate but the trunk's own design — a separate narrow pool, explicit hand-off, and per-item transit latency.
 
@@ -187,7 +187,7 @@ Aquilo recipes should not require `taxpayer-money`. Like all off-world planets, 
 - `Heat Exhaust`: optional heat sink for players who want compute without power generation
 - Inference Tokens, Administrative Slop, and Fabricated Citations as the Aquilo compute chain
 
-Detailed in [space-age-automation-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-automation-plan.md), section 2.
+Detailed in [space-age-automation-plan.md](space-age-automation-plan.md), section 2.
 
 ## Interplanetary Transport Loop
 

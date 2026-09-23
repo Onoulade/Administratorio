@@ -1,6 +1,6 @@
 # Space Age Implementation Steps
 
-This file tracks the next concrete implementation steps for the Space Age expansion, in recommended order.
+This file is a historical implementation audit for the Space Age expansion. The April 18, 2026 snapshots and open-item lists below describe the branch at that time; they are not the current release checklist. For current shared design rules, see [space-age-compatibility-plan.md](space-age-compatibility-plan.md), and for current player-facing behavior, see [the reference guides](docs/index.md).
 
 > **Historical note — superseded fax design.** The fax implementation described
 > in older sections of this record was deleted on 2026-08-15 and replaced by
@@ -597,7 +597,7 @@ Fax runtime:
   - validate queue capacity tech values
   - validate whether `unified-operations-charter` has enough recipe demand
 
-## Current Status Snapshot
+## Implementation Snapshot — 2026-04-18 (Historical)
 
 Implemented first pass:
 
@@ -644,7 +644,7 @@ Implemented first pass:
     - Aquilo cryogenic natives -> `cyan-yellow-form` / `cryogenic-operations-license`
 - Targeted Lua coverage exists for the current Vulcanus, Gleba, Fulgora, and final-fixes passes
 
-Still missing:
+Items recorded as missing in the 2026-04-18 snapshot:
 
 - The two currently failing Lua tests listed in the 2026-04-18 assessment
 - Planner-mod / gameplay follow-up beyond the current dump-based escape verification

@@ -8,9 +8,9 @@ It focuses on practical hooks that already exist in the mod, especially the curr
 
 The current night-work system is simple and exact-name based.
 
-- The recipe is defined in [modules.lua](~/Library/Application Support/factorio/mods/administratorio/prototypes/recipe/modules.lua).
-- The item is defined in [modules.lua](~/Library/Application Support/factorio/mods/administratorio/prototypes/item/modules.lua).
-- Runtime checks for the literal item name `overtime-exemption` in [working_hours.lua](~/Library/Application Support/factorio/mods/administratorio/scripts/working_hours.lua).
+- The recipe is defined in [modules.lua](../prototypes/recipe/modules.lua).
+- The item is defined in [modules.lua](../prototypes/item/modules.lua).
+- Runtime checks for the literal item name `overtime-exemption` in [working_hours.lua](../scripts/working_hours.lua).
 
 That means:
 
@@ -287,7 +287,7 @@ Pros:
 
 Cons:
 
-- requires runtime changes because [working_hours.lua](~/Library/Application Support/factorio/mods/administratorio/scripts/working_hours.lua) currently only recognizes `overtime-exemption`
+- requires runtime changes because [working_hours.lua](../scripts/working_hours.lua) currently only recognizes `overtime-exemption`
 
 Recommendation:
 

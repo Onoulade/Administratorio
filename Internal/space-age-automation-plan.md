@@ -1,6 +1,6 @@
 # Space Age Automation Plan
 
-This file records the design for the automation and interplanetary logistics pass, under the shared rules in [space-age-compatibility-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-compatibility-plan.md).
+This file records the design for the automation and interplanetary logistics pass, under the shared rules in [space-age-compatibility-plan.md](space-age-compatibility-plan.md).
 
 It covers six connected systems that share one thesis: **the bureaucracy learns to run without biters.**
 
@@ -373,9 +373,9 @@ exists, and was not adopted.
 
 Deleting the fax network invalidates written doctrine outside this file. These need correcting or they will contradict this plan in future sessions:
 
-- [space-age-aquilo-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-aquilo-plan.md) — **updated alongside this file**
-- [space-age-compatibility-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-compatibility-plan.md) — **updated.** Principle 9 is now "The trunk is narrow and slow, not teleportation"; the planet matrix, Planned Aquilo Principles, specialist list, and Current Status all describe the tube trunk.
-- [README.md](~/Library/Application Support/factorio/mods/administratorio/README.md) — **updated.** The fax queue-slot promise is gone; Quality now explicitly never widens the trunk, changes transit time, or grows a Terminus buffer.
+- [space-age-aquilo-plan.md](space-age-aquilo-plan.md) — **updated alongside this file**
+- [space-age-compatibility-plan.md](space-age-compatibility-plan.md) — **updated.** Principle 9 is now "The trunk is narrow and slow, not teleportation"; the planet matrix, Planned Aquilo Principles, specialist list, and Current Status all describe the tube trunk.
+- [README.md](../README.md) — **updated.** The fax queue-slot promise is gone; Quality now explicitly never widens the trunk, changes transit time, or grows a Terminus buffer.
 
 ## Open Questions — resolved during implementation
 

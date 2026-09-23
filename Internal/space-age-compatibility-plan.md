@@ -1,21 +1,20 @@
 # Space Age Compatibility Plan
 
-This file is the canonical design reference for the mod's Space Age support.
+This file is the canonical design reference for the mod's Space Age support and shared planet rules.
 
 It records the shared principles that all planet passes should follow, the current implementation status, and the specific rules established by the implemented Vulcanus pass.
 
 ## Current Status
 
 - Space Age remains an optional compatibility target rather than a hard dependency.
-- The current branch is a broad first-pass implementation, not a completed compatibility pass. The detailed completion backlog and 2026-04-18 assessment live in [space-age-implementation-steps.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-implementation-steps.md).
-- Vulcanus has a working first-pass implementation and the latest Space Age route analyzer run reports no aggregate imports or aggregate deadlocks for selected escape targets.
-- Gleba has a working first-pass implementation (yellow ink, conciliation paperwork, spoilage, and bootstrap variants).
-- Fulgora has a working first-pass implementation (static charge deposits, Digital Services Bureau, salvage-backed magenta paperwork, and holmium gating).
-- Aquilo has a working first-pass implementation (Laser Printer, frozen-ink restrictions, transfer media, multicolor paperwork, AI Servers and the slop economy, and the chromatic tier of the interplanetary tube trunk).
-- The fax network was deleted outright and replaced by the Interplanetary Tube Network. See [space-age-automation-plan.md](~/Library/Application Support/factorio/mods/administratorio/Internal/space-age-automation-plan.md).
-- Current automated validation status: all local Lua/Python tests pass without a Factorio binary; dump-data route analysis still needs to be rerun with a local Factorio executable after the latest balance changes.
-- Current known blockers are design/completion issues rather than load-test failures: manual route-balance review, exported paperwork pressure tuning, and whether the new Fulgora toner deposit density is right in real maps.
-- Latest validation note: Space Age remains optional; `amber-sap-seep`, `verdigris-crust`, `static-charge-deposit`, and `capture-bureau` are gated so base-only `--dump-data` no longer receives Space Age-only resources/entities.
+- The current release branch includes the implemented Vulcanus, Gleba, Fulgora, and Aquilo content described below. This design record does not imply that every balance question has been closed.
+- Vulcanus implements its cyan paperwork, specialist certification, demolisher arbitration, and export-charter branches. The April 2026 route-analyzer run reported no aggregate imports or deadlocks for its selected escape targets; that result is historical and is not a current balance assessment.
+- Gleba implements yellow ink, conciliation paperwork, spoilage, bootstrap variants, pentapod egg sampling, wild egg harvest, and research-gated breeding.
+- Fulgora implements static-charge deposits, Digital Services, salvage-backed magenta paperwork, archive reassignment, and holmium gating.
+- Aquilo implements the Laser Printer, frozen-ink restrictions, transfer media, multicolor paperwork, AI Servers, the slop economy, and the chromatic tier of the interplanetary tube trunk.
+- The fax network was deleted outright and replaced by the Interplanetary Tube Network. See [space-age-automation-plan.md](space-age-automation-plan.md).
+- The detailed checklist in [space-age-implementation-steps.md](space-age-implementation-steps.md) is a dated historical audit. Its April 2026 snapshots and open-item lists are not current release validation results.
+- The April 2026 validation note confirmed that Space Age-only resources and `capture-bureau` are gated out of base-only `--dump-data`; consult current release validation separately before making a release-readiness claim.
 - The shared rules below should be treated as the baseline for future planet work unless a later implementation proves they need revision.
 
 ## Shared Principles
