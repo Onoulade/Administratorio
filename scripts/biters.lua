@@ -1,5 +1,6 @@
 -- Biter routing, registration, resolution, protest logic
 local C = require("scripts.constants")
+local biter_emotes = require("scripts.biter_emotes")
 local feature_flags = require("feature_flags")
 local zones = require("scripts.zones")
 local working_hours = require("scripts.working_hours")
@@ -151,6 +152,16 @@ local PROTEST_ALERT_SOUND_MAX_DISTANCE = 32
 local PROTEST_MAP_TAG_TEXT = {"gui.protest-map-tag"}
 local PROTEST_STOP_TEXT = {"gui.protest-stop"}
 local WAITING_BITER_STATE_NAMES = {"waiting", "pathfinding", "seeking_slot", "pathfinding_to_platform", "waiting_for_train", "protesting", "pacified", "returning_home", "attacking"}
+local BITER_STATE_EMOTES = {
+  waiting = "waiting-slot",
+  seeking_slot = "waiting-slot",
+  waiting_for_train = "waiting-slot",
+  pathfinding = "to-field-office",
+  pathfinding_to_platform = "to-field-office",
+  protesting = "protesting",
+  pacified = "pacified-returning",
+  returning_home = "pacified-returning",
+}
 local COMPLAINT_LOCAL_RADIUS = 8 * 32
 local COMPLAINT_ROAM_RADIUS = 3 * 32
 local SLOT_SEARCH_WANDER_TICKS = 60
@@ -425,6 +436,7 @@ local function track_waiting_biter(unit_number, info)
     info.entity.force = get_biter_force()
     unit_ai_settings.apply_managed_unit_settings(info.entity)
   end
+  biter_emotes.set(info, info.entity, BITER_STATE_EMOTES[info.state])
 
   local state = info.state
   if state then
@@ -452,6 +464,7 @@ local function untrack_waiting_biter(unit_number, info)
     end
     tracked_info.last_frustration_tick = nil
   end
+  biter_emotes.clear(tracked_info)
 
   storage.waiting_biters[unit_number] = nil
   spawner_population.untrack_unit(unit_number)
@@ -469,6 +482,7 @@ local function replace_tracked_waiting_biter_unit_number(old_unit_number, new_un
   storage.waiting_biters[old_unit_number] = nil
   storage.waiting_biters[new_unit_number] = info
   info.tracked_unit_number = new_unit_number
+  biter_emotes.set(info, info.entity, BITER_STATE_EMOTES[info.state])
   spawner_population.rekey_detached(
     old_unit_number,
     new_unit_number,
@@ -478,7 +492,14 @@ local function replace_tracked_waiting_biter_unit_number(old_unit_number, new_un
 end
 
 local function set_waiting_biter_state(info, state)
-  if not info or info.state == state then return end
+  if not info then return end
+
+  local entity = info.entity
+  local current_emote = BITER_STATE_EMOTES[state]
+  if info.state == state then
+    biter_emotes.set(info, entity, current_emote)
+    return
+  end
 
   local old_state = info.state
   local unit_number = info.tracked_unit_number or (info.entity and info.entity.valid and info.entity.unit_number) or nil
@@ -489,6 +510,7 @@ local function set_waiting_biter_state(info, state)
   end
 
   info.state = state
+  biter_emotes.set(info, entity, current_emote)
   if old_state == "seeking_slot" and state ~= "seeking_slot" then
     info.slot_search_wander_anchor = nil
   end

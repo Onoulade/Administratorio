@@ -116,6 +116,7 @@ require("prototypes.recipe")
 require("prototypes.technology")
 require("prototypes.signals")
 require("prototypes.sounds")
+require("prototypes.biter-emotes")
 require("prototypes.tips-and-tricks")
 require("prototypes.achievements")
 

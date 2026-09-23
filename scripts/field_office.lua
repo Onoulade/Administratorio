@@ -458,17 +458,15 @@ local function calling_worker_is_stuck(state, biter, tick)
   return tick - (state.calling_last_progress_tick or state.calling_started_tick) >= CALLING_STUCK_TICKS
 end
 
-local function create_working_overlay(biter)
+local function create_worker_overlay(biter, emote)
   if not biter or not biter.valid then return nil end
-  local render_obj = rendering.draw_text{
-    text = {"gui.field-office-biter-working"},
+  local render_obj = rendering.draw_sprite{
+    sprite = "administratorio-biter-emote-" .. (emote or "working"),
     surface = biter.surface,
     target = {entity = biter, offset = {0, -1.8}},
-    color = {r = 0.9, g = 0.85, b = 0.5},
-    alignment = "center",
-    vertical_alignment = "middle",
-    scale = 1.0,
-    scale_with_zoom = true,
+    x_scale = 0.45,
+    y_scale = 0.45,
+    render_layer = "air-object",
   }
   return render_obj and render_obj.id or nil
 end
@@ -818,6 +816,8 @@ function M.update(tick, runtime_profile)
           state.biter_unit_number = biter.unit_number
           state.spawner = spawner
           refresh_worker_snapshot(state, biter)
+          destroy_overlay(state)
+          state.overlay_id = create_worker_overlay(biter, "to-field-office")
           reset_calling_progress(state, biter, tick)
           storage.field_office_worker_to_office[biter.unit_number] = office_id
           request_worker_path_check(state, office, biter, destination)
@@ -848,6 +848,8 @@ function M.update(tick, runtime_profile)
             radius = 0.5,
             distraction = defines.distraction.none,
           })
+          destroy_overlay(state)
+          state.overlay_id = create_worker_overlay(biter, "to-field-office")
           request_worker_path_check(state, office, biter, destination)
           set_office_status(state, office, defines.entity_status_diode.yellow, "gui.field-office-calling")
           record_runtime_profile(runtime_profile, "field_office_calling", phase_profiler)
@@ -883,7 +885,8 @@ function M.update(tick, runtime_profile)
         })
 
         -- Show working overlay
-        state.overlay_id = create_working_overlay(state.biter)
+        destroy_overlay(state)
+        state.overlay_id = create_worker_overlay(state.biter, "working")
 
         -- Activate the building
         office.active = true
@@ -910,7 +913,7 @@ function M.update(tick, runtime_profile)
             type = defines.command.stop,
             distraction = defines.distraction.none,
           })
-          state.overlay_id = create_working_overlay(biter)
+          state.overlay_id = create_worker_overlay(biter, "working")
           office.active = true
         else
           destroy_overlay(state)

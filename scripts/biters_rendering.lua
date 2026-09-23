@@ -1,4 +1,5 @@
 local M = {}
+local biter_emotes = require("scripts.biter_emotes")
 
 function M.new(deps)
   local controller = {}
@@ -239,27 +240,14 @@ function M.new(deps)
       return
     end
 
-    local wait_text_tint = deps.pacified_wait_text_tint or {r = 1, g = 0.98, b = 0.85}
-    local wait_label = deps.pacified_wait_label or {"gui.pacified-wait-no-desk"}
-
     if info.pacified_text_target_unit_number ~= entity.unit_number then
       destroy_render_object(info.pacified_text_render_id)
       info.pacified_text_render_id = nil
     end
-
-    if not get_render_object(info.pacified_text_render_id) then
-      info.pacified_text_render_id = rendering.draw_text{
-        text = wait_label,
-        surface = entity.surface,
-        target = {entity = entity, offset = {0, -2.2}},
-        color = wait_text_tint,
-        alignment = "center",
-        vertical_alignment = "middle",
-        scale = 1.15,
-        scale_with_zoom = true,
-      }.id
-      info.pacified_text_target_unit_number = entity.unit_number
-    end
+    destroy_render_object(info.pacified_text_render_id)
+    info.pacified_text_render_id = nil
+    biter_emotes.set(info, entity, "pacified-returning")
+    info.pacified_text_target_unit_number = entity.unit_number
   end
 
   function controller.ensure_protest_rendering(info)
@@ -335,9 +323,11 @@ function M.new(deps)
       info.protest_stop_text_render_id = nil
     end
 
+    biter_emotes.set(info, entity, "protesting")
     if info.protest_text_target_unit_number ~= entity.unit_number then
       destroy_render_object(info.protest_text_render_id)
       info.protest_text_render_id = nil
+      info.protest_text_target_unit_number = entity.unit_number
     end
 
     if not get_render_object(info.protest_text_render_id) then
@@ -348,7 +338,7 @@ function M.new(deps)
         color = complaint_tint,
         alignment = "center",
         vertical_alignment = "middle",
-        scale = 1.35,
+        scale = 1.15,
         scale_with_zoom = true,
         use_rich_text = true,
       }.id

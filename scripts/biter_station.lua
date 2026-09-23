@@ -427,17 +427,15 @@ local function destroy_overlay(active_state)
   active_state.overlay_id = nil
 end
 
-local function create_worker_overlay(biter)
+local function create_worker_overlay(biter, emote)
   if not biter or not biter.valid then return nil end
-  local render_obj = rendering.draw_text{
-    text = {"gui.biter-station-calling"},
+  local render_obj = rendering.draw_sprite{
+    sprite = "administratorio-biter-emote-" .. (emote or "working"),
     surface = biter.surface,
     target = {entity = biter, offset = {0, -1.8}},
-    color = {r = 0.9, g = 0.85, b = 0.5},
-    alignment = "center",
-    vertical_alignment = "middle",
-    scale = 1.0,
-    scale_with_zoom = true,
+    x_scale = 0.45,
+    y_scale = 0.45,
+    render_layer = "air-object",
   }
   return render_obj and render_obj.id or nil
 end
@@ -804,6 +802,8 @@ local function begin_phase_move(active_state, biter, phase, destination, radius,
   if not command_destination then return end
 
   active_state.phase = phase
+  destroy_overlay(active_state)
+  active_state.overlay_id = create_worker_overlay(biter, phase == "to_station" and "to-station" or "working")
   active_state.phase_started_tick = tick or game.tick
   active_state.phase_origin = {x = biter.position.x, y = biter.position.y}
   active_state.phase_departed = false
@@ -835,6 +835,8 @@ local function begin_orphan_station_return(active_state, biter, tick)
     end
   end
   active_state.phase = "orphaned_returning"
+  destroy_overlay(active_state)
+  active_state.overlay_id = create_worker_overlay(biter, "to-station")
   active_state.station = nil
   active_state.station_id = nil
   mark_station_worker_unit(biter_unit_number, nil)
@@ -1285,7 +1287,10 @@ local function recreate_missing_active_biter(active_state, station, tick)
 
   apply_machine_tint(biter)
   destroy_overlay(active_state)
-  active_state.overlay_id = create_worker_overlay(biter)
+  active_state.overlay_id = create_worker_overlay(
+    biter,
+    (active_state.phase == "to_station" or active_state.phase == "orphaned_returning") and "to-station" or "working"
+  )
   local old_unit_number = active_state.biter_unit_number
   active_state.biter = biter
   active_state.biter_unit_number = biter.unit_number
