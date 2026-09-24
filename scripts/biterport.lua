@@ -50,6 +50,8 @@ local LOGISTIC_CHEST_NAMES = {
 
 local MIN_PHASE_TRAVEL_DISTANCE = 0.75
 local PHASE_STUCK_TIMEOUT_TICKS = 120
+local PHASE_NO_PROGRESS_TICKS = 180
+local PHASE_NO_APPROACH_TICKS = 600
 local MAX_PHASE_PATH_FAILURES = 12
 local function copy_position(pos)
   return pos and {x = pos.x, y = pos.y} or nil
@@ -925,10 +927,14 @@ local function build_networks(surface, force)
     if ra ~= rb then parent[rb] = ra end
   end
 
-  local link_sq = C.BITERPORT_LOGISTICS_CONNECTION_DISTANCE * C.BITERPORT_LOGISTICS_CONNECTION_DISTANCE
   for i = 1, #ports do
     for j = i + 1, #ports do
-      if distance_squared(ports[i].position, ports[j].position) <= link_sq then
+      -- Roboport logistic areas are squares. Their touching edges (including
+      -- corners) are what the orange preview and connection lines represent.
+      local reach = C.BITERPORT_LOGISTICS_CONNECTION_DISTANCE
+      local dx = math.abs(ports[i].position.x - ports[j].position.x)
+      local dy = math.abs(ports[i].position.y - ports[j].position.y)
+      if dx <= reach and dy <= reach then
         unite(i, j)
       end
     end
@@ -988,8 +994,8 @@ end
 local function position_in_network_radius(network, position, radius)
   for _, port in ipairs(network.ports) do
     local scaled_radius = radius * quality.infrastructure_multiplier(port)
-    local radius_sq = scaled_radius * scaled_radius
-    if distance_squared(port.position, position) <= radius_sq then
+    if math.abs(port.position.x - position.x) <= scaled_radius
+       and math.abs(port.position.y - position.y) <= scaled_radius then
       return true
     end
   end
@@ -1043,7 +1049,9 @@ local function for_each_logistic_chest(network, callback, options)
       type = "logistic-container",
       area = area,
       force = network.force,
-      limit = C.BITERPORT_MAX_CHESTS_PER_PORT_SCAN,
+      -- A full scan drives dispatch decisions. Truncating it to a fixed first
+      -- page leaves later requester chests unserved in dense networks.
+      limit = not full_scan and C.BITERPORT_MAX_CHESTS_PER_PORT_SCAN or nil,
     }
     for _, chest in ipairs(chests) do
       local key = logistic_chest_key(chest)
@@ -1339,6 +1347,18 @@ local function copy_logistic_filter(filter)
   return copied
 end
 
+local function logistic_filters_equal(a, b)
+  if type(a) ~= type(b) then return false end
+  if type(a) ~= "table" then return a == b end
+  for key, value in pairs(a) do
+    if not logistic_filters_equal(value, b[key]) then return false end
+  end
+  for key in pairs(b) do
+    if a[key] == nil then return false end
+  end
+  return true
+end
+
 local function set_logistic_filter_min_count(filter, count)
   local adjusted = copy_logistic_filter(filter) or {}
   count = math.max(0, count or 0)
@@ -1467,7 +1487,14 @@ local function requested_missing_stack(entity, inv, tracking_key, counted_subjec
       end
       local current = counted_items(counted_subject or entity, inv, item_name, item_quality)
       if current < target then
-        return item_name, item_quality, math.min(max_count or 1, target - current)
+        local count = math.min(max_count or 1, target - current)
+        -- A request can remain unmet while every physical slot is occupied.
+        -- Only reserve a trip that can actually fit in the destination.
+        while count > 0 and inv.can_insert
+          and not inv.can_insert(exact_stack(item_name, count, item_quality)) do
+          count = count - 1
+        end
+        if count > 0 then return item_name, item_quality, count end
       end
     end
     ::next_filter::
@@ -1481,6 +1508,13 @@ local function restore_logistics_reservation(reservation)
   end
   local section = reservation.section
   if section.valid == false or not section.set_slot then return end
+  if reservation.paused_filter and section.get_slot then
+    local ok, current = pcall(section.get_slot, reservation.slot_index)
+    if not ok or not logistic_filters_equal(current, reservation.paused_filter) then
+      -- A player may have changed this request while the worker was away.
+      return
+    end
+  end
   pcall(section.set_slot, reservation.slot_index, copy_logistic_filter(reservation.original_filter))
 end
 
@@ -1519,6 +1553,8 @@ local function create_logistics_reservation(job)
       reservation.section = section
       reservation.slot_index = slot_index
       reservation.original_filter = copy_logistic_filter(filter)
+      local read_ok, paused_filter = pcall(section.get_slot, slot_index)
+      if read_ok then reservation.paused_filter = copy_logistic_filter(paused_filter) end
     end
   end
 
@@ -1876,9 +1912,15 @@ local function resolve_destination_unit_number(destination)
   return safe_entity_field(destination, "unit_number")
 end
 
+local function destination_bounding_box(destination)
+  if not destination or (destination.valid ~= nil and not destination.valid) then return nil end
+  if destination.valid == nil then return destination.bounding_box end
+  return safe_entity_field(destination, "bounding_box")
+end
+
 local function position_reaches_entity(position, entity, radius)
   if not position or not entity or (entity.valid ~= nil and not entity.valid) then return false end
-  local box = safe_entity_field(entity, "bounding_box")
+  local box = destination_bounding_box(entity)
   if not box then return false end
   local pad = math.max(0.5, radius or C.BITERPORT_ARRIVAL_RADIUS)
   return position.x >= box.left_top.x - pad
@@ -1900,7 +1942,7 @@ local function resolve_command_destination(biter, destination, radius, failed_de
     return true
   end
 
-  local box = destination and (destination.valid == nil or destination.valid) and safe_entity_field(destination, "bounding_box") or nil
+  local box = destination_bounding_box(destination)
   if box then
     local from = biter.position
     local pad = math.max(0.75, (radius or C.BITERPORT_ARRIVAL_RADIUS) * 0.5)
@@ -1967,6 +2009,7 @@ local function resolve_command_destination(biter, destination, radius, failed_de
       0.25
     )
     if usable(fallback) then return fallback end
+    return nil
   end
 
   if usable(target_position) then return target_position end
@@ -2048,6 +2091,10 @@ local function begin_phase_move(active, phase, destination, radius, tick)
   active.phase_command_radius = math.max(0.5, (radius or 0) * 0.5)
   active.phase_arrived_tick = nil
   active.phase_failed_destinations = nil
+  active.phase_progress_position = copy_position(biter.position)
+  active.phase_progress_tick = active.phase_started_tick
+  active.phase_best_distance = math.sqrt(distance_squared(biter.position, command_destination))
+  active.phase_best_tick = active.phase_started_tick
   return issue_move_command(biter, command_destination, active.phase_command_radius)
 end
 
@@ -2169,6 +2216,10 @@ local function recreate_missing_worker(active, tick)
     active.phase_started_tick = tick or game.tick
     active.phase_origin = copy_position(biter.position)
     active.phase_arrived_tick = nil
+    active.phase_progress_position = copy_position(biter.position)
+    active.phase_progress_tick = active.phase_started_tick
+    active.phase_best_distance = math.sqrt(distance_squared(biter.position, active.phase_destination))
+    active.phase_best_tick = active.phase_started_tick
   end
   return biter
 end
@@ -2413,10 +2464,76 @@ local function fail_job_and_return(active, tick)
   end
 end
 
+local function recover_failed_phase_move(active, tick)
+  local biter = active and active.biter
+  local destination = active and active.phase_destination
+  if not biter or not biter.valid or not destination then return end
+  local failed = active.phase_failed_destinations or {}
+  active.phase_failed_destinations = failed
+  failed[#failed + 1] = copy_position(destination)
+  local job = active.job
+  local target
+  if active.phase == "to_pickup" then
+    target = job and (job.source_destination or job.source)
+  elseif active.phase == "to_target" then
+    target = job and (job.kind == "construction" and construction_destination(job)
+      or job.target_destination or job.target)
+  elseif active.phase == "dispose_items" then
+    target = job and job.target
+  elseif active.phase == "returning" then
+    target = destination
+  end
+  local alternative = #failed < MAX_PHASE_PATH_FAILURES
+    and resolve_command_destination(biter, target, active.phase_radius, failed)
+  if alternative then
+    active.phase_destination = copy_position(alternative)
+    active.phase_progress_position = copy_position(biter.position)
+    active.phase_progress_tick = tick
+    active.phase_best_distance = math.sqrt(distance_squared(biter.position, alternative))
+    active.phase_best_tick = tick
+    issue_move_command(biter, alternative, active.phase_command_radius)
+  elseif active.phase == "returning" then
+    active.unreachable_return_ports = active.unreachable_return_ports or {}
+    if active.return_port_id then active.unreachable_return_ports[active.return_port_id] = true end
+    start_return(active, tick)
+  else
+    fail_job_and_return(active, tick)
+  end
+end
+
+local function check_phase_progress(active, tick)
+  if not active or not active.phase_destination or not active.biter or not active.biter.valid then return end
+  local position = active.biter.position
+  local distance = math.sqrt(distance_squared(position, active.phase_destination))
+  if not active.phase_best_distance or distance <= active.phase_best_distance - 0.5 then
+    active.phase_best_distance = distance
+    active.phase_best_tick = tick
+  end
+  if not active.phase_progress_position then
+    active.phase_progress_position = copy_position(position)
+    active.phase_progress_tick = tick
+  elseif distance_squared(position, active.phase_progress_position) >= 0.25 then
+    active.phase_progress_position = copy_position(position)
+    active.phase_progress_tick = tick
+  elseif tick - (active.phase_progress_tick or tick) >= PHASE_NO_PROGRESS_TICKS then
+    -- A go_to_location command can remain active while a worker pushes into
+    -- machinery forever, so recover even without a failed-command event.
+    recover_failed_phase_move(active, tick)
+    return
+  end
+  if tick - (active.phase_best_tick or tick) >= PHASE_NO_APPROACH_TICKS then
+    -- Sliding back and forth beside an obstacle still counts as movement, but
+    -- it cannot keep the same destination alive indefinitely.
+    recover_failed_phase_move(active, tick)
+  end
+end
+
 local function perform_pickup(active, tick)
   local job = active.job
   if job and job.kind == "deconstruction" then
-    begin_phase_move(active, "to_target", job.target, C.BITERPORT_ARRIVAL_RADIUS, tick)
+    if not begin_phase_move(active, "to_target", job.target, C.BITERPORT_ARRIVAL_RADIUS, tick) then
+      fail_job_and_return(active, tick)
+    end
     return
   end
   local source = job and job.source
@@ -2436,6 +2553,15 @@ local function perform_pickup(active, tick)
   end
   local count = job.count or 1
   local item_quality = job_quality_name(job)
+  if job.kind == "logistics" then
+    local target_inv = job.target_tracking_key and get_player_main_inventory(job.target)
+      or get_entity_inventory(job.target)
+    if not target_inv or (target_inv.can_insert
+      and not target_inv.can_insert(exact_stack(job.item_name, count, item_quality))) then
+      fail_job_and_return(active, tick)
+      return
+    end
+  end
   local removed = source_inv.remove(exact_stack(job.item_name, count, item_quality)) or 0
   if removed <= 0 then
     fail_job_and_return(active, tick)
@@ -2445,7 +2571,9 @@ local function perform_pickup(active, tick)
   local target = job.kind == "construction" and construction_destination(job)
     or job.target_destination
     or job.target
-  begin_phase_move(active, "to_target", target, C.BITERPORT_ARRIVAL_RADIUS, tick)
+  if not begin_phase_move(active, "to_target", target, C.BITERPORT_ARRIVAL_RADIUS, tick) then
+    fail_job_and_return(active, tick)
+  end
 end
 
 local function deconstruction_products(entity)
@@ -2533,7 +2661,9 @@ local function dispose_carried_stack(active, tick)
   if target then
     active.job.target = target
     active.job.target_unit_number = target.unit_number
-    begin_phase_move(active, "dispose_items", target, C.BITERPORT_ARRIVAL_RADIUS, tick)
+    if not begin_phase_move(active, "dispose_items", target, C.BITERPORT_ARRIVAL_RADIUS, tick) then
+      fail_job_and_return(active, tick)
+    end
   else
     return_carried_item(active, nil)
     if not start_return(active, tick) then finish_worker(active, tick, true) end
@@ -2693,7 +2823,9 @@ local function build_construction_job(active, tick)
     local next_job = find_next_carried_construction_job(active, tick)
     if next_job then
       active.job = next_job
-      begin_phase_move(active, "to_target", construction_destination(next_job), C.BITERPORT_ARRIVAL_RADIUS, tick)
+      if not begin_phase_move(active, "to_target", construction_destination(next_job), C.BITERPORT_ARRIVAL_RADIUS, tick) then
+        fail_job_and_return(active, tick)
+      end
     elseif not start_return(active, tick) then
       finish_worker(active, tick, true)
     end
@@ -2781,7 +2913,9 @@ local function advance_active_workers(tick)
       elseif active.phase_target_unit_number ~= resolve_destination_unit_number(source)
           or phase_target_shifted(active, source)
           or (biter.commandable and not biter.commandable.has_command) then
-        begin_phase_move(active, "to_pickup", source, C.BITERPORT_ARRIVAL_RADIUS, tick)
+        if not begin_phase_move(active, "to_pickup", source, C.BITERPORT_ARRIVAL_RADIUS, tick) then
+          fail_job_and_return(active, tick)
+        end
     end
 
     elseif active.phase == "to_target" then
@@ -2809,7 +2943,9 @@ local function advance_active_workers(tick)
       elseif active.phase_target_unit_number ~= resolve_destination_unit_number(target)
           or phase_target_shifted(active, target)
           or (biter.commandable and not biter.commandable.has_command) then
-        begin_phase_move(active, "to_target", target, C.BITERPORT_ARRIVAL_RADIUS, tick)
+        if not begin_phase_move(active, "to_target", target, C.BITERPORT_ARRIVAL_RADIUS, tick) then
+          fail_job_and_return(active, tick)
+        end
       end
 
     elseif active.phase == "returning" then
@@ -2849,13 +2985,19 @@ local function advance_active_workers(tick)
       elseif active.phase_target_unit_number ~= resolve_destination_unit_number(target)
           or phase_target_shifted(active, target)
           or (biter.commandable and not biter.commandable.has_command) then
-        begin_phase_move(active, "dispose_items", target, C.BITERPORT_ARRIVAL_RADIUS, tick)
+        if not begin_phase_move(active, "dispose_items", target, C.BITERPORT_ARRIVAL_RADIUS, tick) then
+          fail_job_and_return(active, tick)
+        end
       end
 
     else
       fail_job_and_return(active, tick)
     end
 
+    if active.phase == "to_pickup" or active.phase == "to_target"
+       or active.phase == "returning" or active.phase == "dispose_items" then
+      check_phase_progress(active, tick)
+    end
     ::continue::
   end
 end
@@ -2903,7 +3045,10 @@ local function dispatch_job(worker_port, job, tick)
     storage.biterport_logistics_request_cursors = storage.biterport_logistics_request_cursors or {}
     storage.biterport_logistics_request_cursors[job.network_key] = job.request_cursor_key
   end
-  begin_phase_move(active, "to_pickup", job.source_destination or job.source, C.BITERPORT_ARRIVAL_RADIUS, current_tick(tick))
+  if not begin_phase_move(active, "to_pickup", job.source_destination or job.source,
+      C.BITERPORT_ARRIVAL_RADIUS, current_tick(tick)) then
+    fail_job_and_return(active, current_tick(tick))
+  end
   refresh_port_status(worker_port)
   return true
 end
@@ -3176,35 +3321,7 @@ function M.on_ai_command_completed(event)
   if destination and phase_is_arrived(active, biter, destination, active.phase_command_radius) then
     active.phase_arrived_tick = event.tick or game.tick
   elseif destination and defines.behavior_result and event.result == defines.behavior_result.fail then
-    -- Do not resubmit an unreachable point indefinitely. Remember failures
-    -- for this leg and try a different approach before abandoning the job.
-    local failed = active.phase_failed_destinations or {}
-    active.phase_failed_destinations = failed
-    failed[#failed + 1] = copy_position(destination)
-    local job = active.job
-    local target
-    if active.phase == "to_pickup" then
-      target = job and (job.source_destination or job.source)
-    elseif active.phase == "to_target" then
-      target = job and (job.kind == "construction" and construction_destination(job)
-        or job.target_destination or job.target)
-    elseif active.phase == "dispose_items" then
-      target = job and job.target
-    elseif active.phase == "returning" then
-      target = destination
-    end
-    local alternative = #failed < MAX_PHASE_PATH_FAILURES
-      and resolve_command_destination(biter, target, active.phase_radius, failed)
-    if alternative then
-      active.phase_destination = copy_position(alternative)
-      issue_move_command(biter, alternative, active.phase_command_radius)
-    elseif active.phase == "returning" then
-      active.unreachable_return_ports = active.unreachable_return_ports or {}
-      if active.return_port_id then active.unreachable_return_ports[active.return_port_id] = true end
-      start_return(active, event.tick or game.tick)
-    else
-      fail_job_and_return(active, event.tick or game.tick)
-    end
+    recover_failed_phase_move(active, event.tick or game.tick)
   elseif destination then
     issue_move_command(biter, destination, active.phase_command_radius)
   end

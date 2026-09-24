@@ -67,6 +67,8 @@ function rendering.draw_text(params)
   return obj
 end
 
+rendering.draw_sprite = rendering.draw_text
+
 function rendering.get_object_by_id(id)
   return drawn[id]
 end

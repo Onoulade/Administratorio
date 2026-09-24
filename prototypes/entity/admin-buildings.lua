@@ -495,9 +495,9 @@ if roboport_source then
   hidden_biterport_roboport.collision_box = {{0, 0}, {0, 0}}
   hidden_biterport_roboport.selection_box = {{0, 0}, {0, 0}}
   hidden_biterport_roboport.collision_mask = {layers = {}}
-  hidden_biterport_roboport.logistics_radius = roboport_source.logistics_radius or 25
-  hidden_biterport_roboport.logistics_connection_distance = roboport_source.logistics_connection_distance or 50
-  hidden_biterport_roboport.construction_radius = roboport_source.construction_radius or 55
+  hidden_biterport_roboport.logistics_radius = gameplay_facts.biterport.logistics_radius
+  hidden_biterport_roboport.logistics_connection_distance = gameplay_facts.biterport.connection_distance
+  hidden_biterport_roboport.construction_radius = gameplay_facts.biterport.construction_radius
   hidden_biterport_roboport.robot_slots_count = 0
   hidden_biterport_roboport.material_slots_count = 0
   hidden_biterport_roboport.energy_source = {type = "void"}

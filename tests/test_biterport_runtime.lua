@@ -290,6 +290,7 @@ local function new_surface()
       for _, chest in ipairs(surface.chests) do
         if chest.valid and within(params.area, chest.position) then
           entities[#entities + 1] = chest
+          if params.limit and #entities >= params.limit then break end
         end
       end
       return entities
@@ -688,6 +689,110 @@ test("biterport transports items across connected biterports", function()
     "provider at the first port should lose the delivered item")
 end)
 
+test("diagonally touching orange areas share one biterport network", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+  local surface = new_surface()
+  local force = {name = "player", technologies = {}, set_cease_fire = function() end}
+  game = {
+    tick = 0, connected_players = {}, surfaces = {surface},
+    forces = {player = force},
+    create_force = function(name)
+      local created = {name = name, valid = true, technologies = {}, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  local biterport = require("scripts.biterport")
+  local source_port = new_port(surface, force, 0, 0, 10, {x = 0, y = 0})
+  local target_port = new_port(surface, force, 1, 1, 11, {x = 40, y = 40})
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {gear = 1})
+  local requester = new_chest(surface, 31, {x = 42, y = 40}, "requester", {}, {
+    {name = "gear", count = 1},
+  })
+  provider.force, requester.force = force, force
+  biterport.track_port(source_port)
+  biterport.track_port(target_port)
+  assert_eq(biterport.get_network_summary(source_port).ports, 2,
+    "touching corners in the orange preview should connect")
+  biterport.update(30)
+  assert_true(first_active_worker() ~= nil, "connected diagonal ports should share deliveries")
+end)
+
+test("full requester inboxes do not dispatch or consume a salary", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+  local surface = new_surface()
+  local force = {name = "player", technologies = {}, set_cease_fire = function() end}
+  game = {
+    tick = 0, connected_players = {}, surfaces = {surface},
+    forces = {player = force},
+    create_force = function(name)
+      local created = {name = name, valid = true, technologies = {}, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 1, 1)
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {gear = 1})
+  local requester = new_chest(surface, 31, {x = 4, y = 0}, "requester", {}, {
+    {name = "gear", count = 100},
+  })
+  provider.force, requester.force = force, force
+  requester.inventory.can_insert = function() return false end
+  biterport.track_port(port)
+  biterport.update(30)
+  assert_eq(active_worker_count(), 0)
+  assert_eq(port.inventory.get_item_count("taxpayer-money"), 1)
+  assert_eq(provider.inventory.get_item_count("gear"), 1)
+
+  requester.inventory.can_insert = function() return true end
+  biterport.update(60)
+  local active = first_active_worker()
+  assert_true(active ~= nil, "request should resume once the inbox has room")
+  requester.inventory.can_insert = function() return false end
+  advance_worker_to(active, provider.position, 61, biterport)
+  assert_eq(provider.inventory.get_item_count("gear"), 1,
+    "inbox filling en route should cancel before material pickup")
+  assert_eq(active.carried_stack, nil)
+  assert_eq(active.phase, "returning")
+end)
+
+test("dense networks still scan requester inboxes past the old chest limit", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+  local surface = new_surface()
+  local force = {name = "player", technologies = {}, set_cease_fire = function() end}
+  game = {
+    tick = 0, connected_players = {}, surfaces = {surface},
+    forces = {player = force},
+    create_force = function(name)
+      local created = {name = name, valid = true, technologies = {}, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 1, 1)
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {gear = 1})
+  provider.force = force
+  for index = 1, 64 do
+    local dummy = new_chest(surface, 100 + index,
+      {x = (index % 16) - 8, y = math.floor(index / 16) + 5}, "passive-provider", {})
+    dummy.force = force
+  end
+  local requester = new_chest(surface, 200, {x = 4, y = 0}, "requester", {}, {
+    {name = "gear", count = 1},
+  })
+  requester.force = force
+  biterport.track_port(port)
+  biterport.update(30)
+  local active = first_active_worker()
+  assert_true(active ~= nil, "later requester should not be omitted by a 64-chest result cap")
+  assert_eq(active.job.target_unit_number, requester.unit_number)
+end)
+
 test("biterport uses symmetric entrances and central all-sided coffee input", function()
   storage = {}
   set_working_hours(true, true)
@@ -859,6 +964,39 @@ test("biterport reserves requester chest deliveries instead of dispatching every
 
   assert_eq(requester.inventory.get_item_count("iron-plate"), 1, "requester chest should receive the requested item")
   assert_eq(requester.request_section.filters[1].min, 100, "requester slot should be restored after delivery")
+end)
+
+test("finishing a delivery preserves request edits made while the worker was away", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+  local surface = new_surface()
+  local force = {name = "player", technologies = {}, set_cease_fire = function() end}
+  game = {
+    tick = 0, connected_players = {}, surfaces = {surface},
+    forces = {player = force},
+    create_force = function(name)
+      local created = {name = name, valid = true, technologies = {}, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 1, 1)
+  local provider = new_chest(surface, 30, {x = 2, y = 0}, "passive-provider", {gear = 1})
+  local requester = new_chest(surface, 31, {x = 4, y = 0}, "requester", {}, {
+    {name = "gear", count = 2},
+  })
+  provider.force, requester.force = force, force
+  biterport.track_port(port)
+  biterport.update(30)
+  local active = first_active_worker()
+  assert_true(active ~= nil)
+  requester.request_section.set_slot(1, {value = {name = "copper-plate"}, min = 7})
+  advance_worker_to(active, provider.position, 31, biterport)
+  advance_worker_to(active, requester.position, 32, biterport)
+  assert_eq(requester.request_section.filters[1].value.name, "copper-plate")
+  assert_eq(requester.request_section.filters[1].min, 7,
+    "an old reservation must not overwrite a player-edited request")
 end)
 
 test("biterport does not overdispatch claimed source inventory", function()
@@ -1605,6 +1743,39 @@ test("failed construction approach changes route and still builds exactly once",
   assert_eq(active.phase_failed_destinations, nil, "new leg must forget the previous leg's failures")
 end)
 
+test("a worker pushing into buildings reroutes without an AI failure event", function()
+  local biterport, active, provider = new_path_failure_job()
+  advance_worker_to(active, provider.position, 31, biterport)
+  local first_destination = active.phase_destination
+  biterport.update(212)
+  assert_true(active.phase_destination.x ~= first_destination.x
+    or active.phase_destination.y ~= first_destination.y,
+    "no progress should select another approach even while the command stays active")
+  assert_eq(active.carried_stack.count, 1, "rerouting should keep the worker's cargo")
+end)
+
+test("an oscillating worker eventually tries a different approach", function()
+  local biterport, active, provider = new_path_failure_job()
+  advance_worker_to(active, provider.position, 31, biterport)
+  local first_destination = active.phase_destination
+  for tick = 60, 720, 30 do
+    active.biter.position = {x = tick % 60 == 0 and 11 or 10, y = 0}
+    biterport.update(tick)
+    if active.phase_destination ~= first_destination
+       and (active.phase_destination.x ~= first_destination.x
+         or active.phase_destination.y ~= first_destination.y) then
+      break
+    end
+  end
+  assert_true(active.phase_destination.x ~= first_destination.x
+    or active.phase_destination.y ~= first_destination.y,
+    "sideways movement without approaching the destination must not mask a stuck route"
+      .. " best_tick=" .. tostring(active.phase_best_tick)
+      .. " phase=" .. tostring(active.phase)
+      .. " failed=" .. tostring(active.phase_failed_destinations and #active.phase_failed_destinations))
+  assert_eq(active.carried_stack.count, 1)
+end)
+
 test("unreachable construction restores its ghost and material after bounded retries", function()
   local biterport, active, provider, ghost = new_path_failure_job()
   advance_worker_to(active, provider.position, 31, biterport)
@@ -1628,6 +1799,26 @@ test("unreachable pickup returns without taking the construction material", func
   assert_eq(provider.inventory.get_item_count("inserter"), 1)
   assert_eq(active.carried_stack, nil)
   assert_true(ghost.valid and ghost.force.name == "player")
+end)
+
+test("a reserved ghost snapshot keeps its approach box", function()
+  local biterport, active, provider, ghost = new_path_failure_job()
+  active.job.ghost = nil
+  advance_worker_to(active, provider.position, 31, biterport)
+  assert_eq(active.phase, "to_target")
+  assert_true(active.phase_destination.x ~= ghost.position.x
+    or active.phase_destination.y ~= ghost.position.y,
+    "a synthetic ghost target should route to a collision-free edge")
+end)
+
+test("a construction target with no safe approach returns its material", function()
+  local biterport, active, provider, _, _, surface = new_path_failure_job()
+  active.job.ghost = nil
+  surface.find_non_colliding_position = function() return nil end
+  advance_worker_to(active, provider.position, 31, biterport)
+  assert_eq(active.phase, "returning", "the worker must not be sent into the solid target center")
+  assert_eq(provider.inventory.get_item_count("inserter"), 1)
+  assert_eq(active.carried_stack, nil)
 end)
 
 test("unreachable return port switches ports and does not cycle between blocked ports", function()
