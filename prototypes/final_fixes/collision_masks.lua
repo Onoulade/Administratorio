@@ -72,6 +72,9 @@ local PASSENGER_PLATFORM_PASSABLE_TYPES = {
   ["segmented-unit"] = true, ["smoke"] = true,
   ["smoke-with-trigger"] = true, ["speech-bubble"] = true,
   ["spider-leg"] = true, ["stream"] = true, ["tile-ghost"] = true,
+  -- Ore deposits must retain their native resource-only mask so drills and
+  -- ordinary buildings can still be placed over them.
+  ["resource"] = true,
 }
 local WORKER_PASSABLE_NAMES = {
   -- These buildings use hidden blockers to model walls while keeping their

@@ -158,6 +158,23 @@ def assert_rideable_layers_preserve_native_collisions(data_raw: dict) -> None:
             )
 
 
+def assert_ore_placement_masks(data_raw: dict) -> None:
+    """Platform reservations must not make ore block drills or other buildings."""
+    platform_layer = "administratorio_passenger_platform"
+    for name, resource in data_raw.get("resource", {}).items():
+        layers = resource.get("collision_mask", {}).get("layers", {})
+        assert platform_layer not in layers, f"resource {name} blocks ordinary building placement"
+
+    for name in ("boarding-platform", "deboarding-platform",
+                 "boarding-platform-placement-preview", "deboarding-platform-placement-preview"):
+        layers = data_raw["constant-combinator"][name]["collision_mask"]["layers"]
+        assert "resource" not in layers, f"{name} cannot be placed over ore"
+
+    for name in ("electric-mining-drill", "burner-mining-drill"):
+        layers = data_raw["mining-drill"][name]["collision_mask"]["layers"]
+        assert "resource" not in layers, f"{name} cannot be placed over ore"
+
+
 def assert_space_age_category_migrations_are_regulated(data_raw: dict) -> None:
     """Audit every Space Age category that can otherwise bypass an assembler."""
     shared_categories = {
@@ -308,6 +325,8 @@ def main() -> None:
     space_age = run_case(factorio_bin, space_age=True, working_hours=True)
     assert_rideable_layers_preserve_native_collisions(base)
     assert_rideable_layers_preserve_native_collisions(space_age)
+    assert_ore_placement_masks(base)
+    assert_ore_placement_masks(space_age)
     assert_milestone_resolutions_are_operable(base, "base game")
     assert_milestone_resolutions_are_operable(space_age, "Space Age")
     assert_chromatic_fast_tracks_are_space_age_only(base, space_age)
@@ -327,6 +346,7 @@ def main() -> None:
 
     no_working_hours = run_case(factorio_bin, space_age=True, working_hours=False)
     assert_rideable_layers_preserve_native_collisions(no_working_hours)
+    assert_ore_placement_masks(no_working_hours)
     assert_milestone_resolutions_are_operable(no_working_hours, "Space Age without Working Hours")
     assert "administrative-clock" not in no_working_hours.get("item", {}), "disabled Working Hours must not expose the Administrative Clock item"
     assert "administrative-clock" not in no_working_hours.get("constant-combinator", {}), "disabled Working Hours must not expose the Administrative Clock entity"

@@ -163,6 +163,9 @@ test("collision masks separate worker obstacles from passable infrastructure", f
     ["transport-belt"] = {
       belt = {name = "belt", type = "transport-belt", collision_mask = {"object"}, collision_box = {{-0.4, -0.4}, {0.4, 0.4}}},
     },
+    resource = {
+      ore = {name = "iron-ore", type = "resource", collision_mask = {layers = {resource = true}}, collision_box = {{-0.1, -0.1}, {0.1, 0.1}}},
+    },
     car = {
       car = {name = "car", type = "car", collision_box = {{-0.7, -1}, {0.7, 1}}},
       rideable = {name = "rideable-biter", type = "car", collision_mask = {layers = {administratorio_rideable_biter_collision = true, administratorio_rideable_biter_terrain = true, train = true}}, collision_box = {{-0.3, -0.4}, {0.3, 0.4}}},
@@ -218,6 +221,10 @@ test("collision masks separate worker obstacles from passable infrastructure", f
   assert_true(not mask_has_layer(data.raw.inserter.inserter.collision_mask, "administratorio_rideable_biter_collision"))
   assert_true(not mask_has_layer(data.raw["electric-pole"].pole.collision_mask, "administratorio_rideable_biter_collision"))
   assert_true(not mask_has_layer(data.raw["transport-belt"].belt.collision_mask, "administratorio_rideable_biter_collision"))
+  assert_true(not mask_has_layer(data.raw.resource.ore.collision_mask, "administratorio_passenger_platform"),
+    "ore must remain placeable beneath ordinary buildings")
+  assert_true(not collides(data.raw.resource.ore.collision_mask, data.raw["assembling-machine"].machine.collision_mask),
+    "ore must not collide with factory buildings through the platform layer")
   assert_eq(#data.raw.chest.box.allowed_module_categories, 2)
   masks.apply(data, true)
   assert_eq(#data.raw.chest.box.allowed_module_categories, 2, "collision pass should be idempotent")
