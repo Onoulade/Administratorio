@@ -101,7 +101,7 @@ Space Age adds `chromatic-printer`, `laser-printer`, `notary-office`, `territori
 | `rubble-compaction` | `compacted-rubble-production` | Standardized rubble for infrastructure and pneumatic transport |
 | `pneumatic-form-transport` | pneumatic buildings and intake recipes | Form logistics through shared tube networks |
 | `industrial-printing` | `printer-t2`, bulk copy recipes | Real midgame paperwork acceleration |
-| `passenger-rail-service` | Passenger Wagon, Boarding Platform, Deboarding Platform | Chemical-science rail transport for unresolved visitors |
+| `passenger-rail-service` | Passenger Wagon, Boarding Platform, Unboarding Platform | Chemical-science rail transport for unresolved visitors |
 | `local-precedents` | `useless-documentation-production`, `form-27b-6` | Local legal fiction and the precedent archive |
 | `streamlined-work-orders` | direct draft-to-work-order printing | Throughput upgrade for early combined forms |
 | `industrial-propaganda` | distillery, lie / misinformation chain, refined nonsense, credentials | Opens the true admin economy |

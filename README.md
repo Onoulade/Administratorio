@@ -48,7 +48,7 @@ Research **Pneumatic Form Transport** to send administrative items through a scr
 
 Trains also participate in the civic order: stations use transit authorization paperwork unless you eventually earn the privilege of bureaucratic transcendence.
 
-Passenger rail can also carry unresolved complaint visitors. Research **Passenger Rail Service**, add a zero-inventory Passenger Wagon to a train, and place paired Boarding and Deboarding Platforms beside the stops. Each wagon carries up to 24 visitors in a protected manifest; frustration continues during the trip, so use platform circuit signals to manage queues and keep journeys short. The [Advanced Topics guide](Internal/docs/advanced-topics.md#passenger-rail-service) covers setup, schedules, and failure behavior.
+Passenger rail can also carry unresolved complaint visitors. Research **Passenger Rail Service**, add a zero-inventory Passenger Wagon to a train, and place paired Boarding and Unboarding Platforms beside the stops. Each wagon carries up to 24 visitors in a protected manifest; frustration continues during the trip, so use platform circuit signals to manage queues and keep journeys short. The [Advanced Topics guide](Internal/docs/advanced-topics.md#passenger-rail-service) covers setup, schedules, and failure behavior.
 
 ### Working hours, coffee and other workplace realities
 

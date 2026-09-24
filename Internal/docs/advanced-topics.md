@@ -135,18 +135,18 @@ The `bureaucratic-transcendence` technology unlocks the Public Train Stop. It ha
 
 ## Passenger Rail Service
 
-Passenger rail moves unresolved complaint visitors between stops. Research `passenger-rail-service` after chemical science, add one or more `passenger-wagon`s to a train, and place a Boarding Platform and a Deboarding Platform directly beside rail at the relevant train stops. A platform pairs automatically when exactly one same-force train stop is within 24 tiles; keep it rail-adjacent. A passenger wagon has no cargo inventory and carries up to 24 visitors in its protected manifest.
+Passenger rail moves unresolved complaint visitors between stops. Research `passenger-rail-service` after chemical science, add one or more `passenger-wagon`s to a train, and place a Boarding Platform and an Unboarding Platform directly beside rail at the relevant train stops. A platform pairs automatically when exactly one same-force train stop is within 24 tiles; keep it rail-adjacent. A passenger wagon has no cargo inventory and carries up to 24 visitors in its protected manifest.
 
-### Boarding and Deboarding
+### Boarding and Unboarding
 
 - A Boarding Platform accepts visitors when a passenger wagon is stopped beside it and has room. To queue visitors before the train arrives, connect either circuit wire and send a positive `signal-boarding-enabled` signal. This opens a queue for the next train. An enabled idle platform can attract visitors; an off or circuit-disabled platform cannot.
 - Visitors must walk to the center tile of the Boarding Platform, with a small positioning margin, before they board. Visitors already seated at an office are not moved by passenger rail.
-- A Deboarding Platform unloads by default when a passenger wagon is stopped there. A positive `signal-deboarding-closed` signal holds passengers aboard; remove the signal or set it to zero to resume unloading.
-- Platforms report passenger count, free seats, waiting boarders, passenger outbreaks, and highest passenger frustration. Connect the platform and train stop to the same circuit network to use these values in train schedule conditions. For example, wait for `signal-train-passengers = 0` before leaving a deboarding stop.
+- An Unboarding Platform unloads by default when a passenger wagon is stopped there. A positive `signal-deboarding-closed` signal holds passengers aboard; remove the signal or set it to zero to resume unloading.
+- Platforms report passenger count, free seats, waiting boarders, passenger outbreaks, and highest passenger frustration. Connect the platform and train stop to the same circuit network to use these values in train schedule conditions. For example, wait for `signal-train-passengers = 0` before leaving an unboarding stop.
 
 ### Frustration and Outbreaks
 
-Passenger frustration continues to rise in transit. At the protest threshold, an outbreak returns affected passengers to the world and routes them into the usual complaint and protest system; visitors are not discarded. Keep trips and queues short, and use the highest-frustration and outbreak signals to send a train to a suitable stop. Passengers remain aboard while deboarding is circuit-closed.
+Passenger frustration continues to rise in transit. At the protest threshold, an outbreak returns affected passengers to the world and routes them into the usual complaint and protest system; visitors are not discarded. Keep trips and queues short, and use the highest-frustration and outbreak signals to send a train to a suitable stop. Passengers remain aboard while unboarding is circuit-closed.
 
 ## Administration Desk Overview
 

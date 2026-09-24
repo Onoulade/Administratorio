@@ -13,6 +13,8 @@ local manifest_count
 local attached_passenger_wagon
 local boarding_train_state
 
+-- Keep the original prototype IDs for placed platforms and circuit settings
+-- in existing saves; the player-facing name is Unboarding Platform.
 local PLATFORM_NAMES = {"boarding-platform", "deboarding-platform"}
 local PLATFORM_PREVIEW_NAMES = {
   ["boarding-platform-placement-preview"] = "boarding-platform",
@@ -175,9 +177,9 @@ local function boarding_signal_open(record)
   return record and read_platform_signal(record.entity, "signal-boarding-enabled")
 end
 
--- Deboarding is open by default. Sending this signal closes the platform and
+-- Unboarding is open by default. Sending this signal closes the platform and
 -- leaves passengers aboard until the signal is removed.
-local function deboarding_enabled(record)
+local function unboarding_enabled(record)
   return record and valid(record.entity)
     and not read_platform_signal(record.entity, "signal-deboarding-closed")
 end
@@ -210,7 +212,7 @@ local function platform_visual_state(record)
     if train_present and has_space then return "active" end
     return "idle"
   end
-  if not deboarding_enabled(record) then return "inactive" end
+  if not unboarding_enabled(record) then return "inactive" end
   local wagon = attached_passenger_wagon(record)
   local train = wagon and wagon.train
   if wagon and train and math.abs(train.speed or 0) < 0.000001 then return "active" end
@@ -542,11 +544,11 @@ local function board_platform_wagon(record, wagon)
   end
 end
 
-local function find_deboarding_platform(stop)
+local function find_unboarding_platform(stop)
   local best
   for _, record in pairs(storage.passenger_platforms or {}) do
     if record.kind == "deboarding-platform" and valid(record.entity) and is_rail_adjacent(record.entity)
-        and deboarding_enabled(record)
+        and unboarding_enabled(record)
         and get_platform_stop(record) == stop then
       if not best or record.entity.unit_number < best.entity.unit_number then best = record end
     end
@@ -582,8 +584,8 @@ local function restore_record(record, entity, stop_id)
   return true
 end
 
-local function deboard_train(train, stop)
-  local platform = find_deboarding_platform(stop)
+local function unboard_train(train, stop)
+  local platform = find_unboarding_platform(stop)
   if not platform then return end
   for _, wagon in ipairs(passenger_wagons(train)) do
     local manifest = manifest_for(wagon)
@@ -610,8 +612,8 @@ local function deboard_train(train, stop)
   end
 end
 
-local function deboard_platform_wagon(record, wagon)
-  if not deboarding_enabled(record) then return end
+local function unboard_platform_wagon(record, wagon)
+  if not unboarding_enabled(record) then return end
   local manifest = manifest_for(wagon)
   if manifest.outbreak_pending then return end
   local retained = {}
@@ -798,7 +800,7 @@ function M.on_train_changed_state(event)
   if train.state == defines.train_state.wait_station and valid(train.station) then
     local stop = train.station
     storage.passenger_stopped_trains[stop.unit_number] = train
-    deboard_train(train, stop) -- disembark before boarding at a mixed stop
+    unboard_train(train, stop) -- disembark before boarding at a mixed stop
     board_train(train, stop)
     update_stop_signals(train, stop)
     return
@@ -870,7 +872,7 @@ function M.on_tick(event)
         if record.kind == "boarding-platform" then
           board_platform_wagon(record, wagon)
         elseif record.kind == "deboarding-platform" then
-          deboard_platform_wagon(record, wagon)
+          unboard_platform_wagon(record, wagon)
         end
       end
       update_platform_signals(record)
@@ -890,7 +892,7 @@ function M.on_tick(event)
       local stopped_train = storage.passenger_stopped_trains[stop.unit_number]
       if not stopped_train and stop.get_stopped_train then stopped_train = stop.get_stopped_train() end
       if stopped_train and stopped_train.state == defines.train_state.wait_station and stopped_train.station == stop then
-        deboard_train(stopped_train, stop)
+        unboard_train(stopped_train, stop)
         board_train(stopped_train, stop)
       else
         storage.passenger_stopped_trains[stop.unit_number] = nil
@@ -925,7 +927,7 @@ function M.on_built(entity, event)
   if entity.name == "boarding-platform" or entity.name == "deboarding-platform" then
     -- Retain off-rail placements so blueprints and copy/paste do not collapse
     -- into a 1x1 dropped-item marker. They remain visually red and cannot
-    -- board, deboard, emit passenger signals, or attract biters until moved
+    -- board, unboard, emit passenger signals, or attract biters until moved
     -- beside rail.
     local record = platform_record(entity)
     auto_pair(record)

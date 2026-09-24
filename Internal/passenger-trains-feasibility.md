@@ -23,20 +23,20 @@ wagon inventory would contain nothing for players, inserters, or belts to move.
 3. A bounded periodic update advances the frustration of each onboard record.
    The wagon displays a passenger count and worst frustration. Its contents
    are inaccessible through ordinary cargo operations.
-4. A deboarding platform at a stopped train restores entities near the
+4. An unboarding platform at a stopped train restores entities near the
    platform, reattaches their case state, and routes them to local desks.
-   Deboarding waits if no safe spawn position is available; records stay in
+   Unboarding waits if no safe spawn position is available; records stay in
    the wagon until restoration succeeds.
 5. When any passenger reaches the protest threshold, the entire wagon's
    manifest is removed atomically and every passenger is spawned near the
    wagon and handed to the existing protest controller. If safe positions are
-   temporarily unavailable, queue the outbreak and block deboarding until it
+   temporarily unavailable, queue the outbreak and block unboarding until it
    can be completed. Never discard a passenger because a tile is blocked.
 
 ## Engine hooks and lifecycle
 
 - `on_train_changed_state` plus `LuaTrain.station` identifies a stopped train
-  at a boarding or deboarding platform. `LuaTrain.carriages` finds dedicated
+  at a boarding or unboarding platform. `LuaTrain.carriages` finds dedicated
   wagons regardless of their order in the train.
 - Key manifests by wagon `unit_number`, not train ID: coupling, splitting,
   and train creation can change train IDs while wagons remain the same.
@@ -57,7 +57,7 @@ rail trips plus service. The boarding rule should define whether the clock
 starts at boarding or continues from its current value, and whether an occupied
 wagon has a longer deadline. An explicit deadline in the wagon UI makes the
 failure mode readable. Station placement near distant nests still matters for
-boarding and deboarding access.
+boarding and unboarding access.
 
 ## Evidence
 
@@ -66,4 +66,4 @@ boarding and deboarding access.
   protesters were about 292 to 426 tiles from their nearest desk.
 - A temporary Factorio 2.0.77 prototype probe accepted a cloned cargo wagon
   with zero inventory slots. This proves the no-cargo wagon shape loads, not
-  the complete boarding/deboarding behavior.
+  the complete boarding/unboarding behavior.

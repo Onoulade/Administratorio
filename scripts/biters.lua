@@ -1853,7 +1853,7 @@ function M.reroute_passenger_ground(info, excluded_platform_id)
   local entity = info and info.entity
   if not info or not entity or not entity.valid then return false end
   -- A visitor released by a departed/full train should resume the same target
-  -- selection used after ordinary passenger deboarding. Exclude the platform
+  -- selection used after ordinary passenger unboarding. Exclude the platform
   -- that just released it so a held circuit signal cannot create a route loop.
   local excluded = excluded_platform_id and {[excluded_platform_id] = true} or nil
   if (info.rail_legs or 0) >= 3 then excluded = false end

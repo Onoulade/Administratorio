@@ -228,7 +228,7 @@ test("departed or closed platforms release queued visitors to the normal reroute
   assert_eq(rerouted_from, platform.unit_number, "rerouting must exclude the platform that just released the visitor")
 end)
 
-test("Deboarding Closed holds passengers aboard by default-on platform control", function()
+test("Unboarding Closed holds passengers aboard by default-on platform control", function()
   local surface = new_surface()
   storage = {passenger_registry_ready = true}
   game = {tick = 0, surfaces = {[1] = surface}, connected_players = {}}
@@ -255,7 +255,7 @@ test("Deboarding Closed holds passengers aboard by default-on platform control",
   storage.passenger_wagons[wagon.unit_number].passengers = {{entity_name = "small-biter", frustration = 0}}
   passenger_trains.on_train_changed_state({train = train})
   assert_eq(#storage.passenger_wagons[wagon.unit_number].passengers, 1,
-    "a positive Deboarding Closed signal must hold the manifest until removed")
+    "a positive Unboarding Closed signal must hold the manifest until removed")
 end)
 
 test("platform visuals keep one floor asset and tint the state light", function()
@@ -288,7 +288,7 @@ test("platform visuals keep one floor asset and tint the state light", function(
   rendering = nil
 end)
 
-test("idle deboarding platforms use their blue light in every direction", function()
+test("idle unboarding platforms use their blue light in every direction", function()
   local surface = new_surface()
   storage = {passenger_registry_ready = true}
   game = {tick = 0, surfaces = {[1] = surface}, connected_players = {}}
@@ -308,11 +308,11 @@ test("idle deboarding platforms use their blue light in every direction", functi
   }
   passenger_trains.on_built(platform, {})
   assert_eq(calls[1].sprite, "administratorio-passenger-platform-deboarding-platform-idle-east",
-    "idle deboarding must draw its east-facing platform layer")
+    "idle unboarding must draw its east-facing platform layer")
   assert_eq(calls[1].render_layer, "lower-object", "the platform floor must render below walkers")
   assert_eq(calls[2].sprite, "administratorio-passenger-platform-deboarding-platform-light-east",
-    "idle deboarding must draw its east-facing lamp overlay")
-  assert_eq(calls[2].tint.b, 1, "idle deboarding lamp must be blue")
+    "idle unboarding must draw its east-facing lamp overlay")
+  assert_eq(calls[2].tint.b, 1, "idle unboarding lamp must be blue")
   rendering = nil
 end)
 

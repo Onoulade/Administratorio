@@ -166,7 +166,7 @@ test("passenger rail guide unlocks with its blue-science technology", function()
   )
   for _, phrase in ipairs({
     "Boarding Enabled",
-    "Deboarding Closed",
+    "Unboarding Closed",
     "Train Passengers",
     "Highest Passenger Frustration",
   }) do
