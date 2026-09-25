@@ -719,6 +719,53 @@ test("diagonally touching orange areas share one biterport network", function()
   assert_true(first_active_worker() ~= nil, "connected diagonal ports should share deliveries")
 end)
 
+test("hover lines only connect biterports whose orange areas touch", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+  package.loaded["scripts.biterport_hover"] = nil
+  local surface = new_surface()
+  local force = {name = "player", technologies = {}, set_cease_fire = function() end}
+  game = {
+    tick = 0, connected_players = {}, surfaces = {surface},
+    forces = {player = force},
+    create_force = function(name)
+      local created = {name = name, valid = true, technologies = {}, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  local biterport = require("scripts.biterport")
+  local first = new_port(surface, force, 0, 0, 10, {x = 0, y = 0})
+  local middle = new_port(surface, force, 0, 0, 11, {x = 40, y = 0})
+  local last = new_port(surface, force, 0, 0, 12, {x = 80, y = 0})
+  for _, port in ipairs({first, middle, last}) do biterport.track_port(port) end
+  assert_eq(biterport.get_network_summary(first).ports, 3, "chain is one network")
+  assert_true(biterport.ports_connect(first, middle), "touching orange areas connect directly")
+  assert_true(not biterport.ports_connect(first, last), "distant network members do not connect directly")
+
+  local old_rendering = rendering
+  local lines = {}
+  rendering = {
+    draw_line = function(spec)
+      lines[#lines + 1] = spec
+      return {id = #lines}
+    end,
+    get_object_by_id = function() return nil end,
+  }
+  local ok, err = pcall(function()
+    local hover = require("scripts.biterport_hover")
+    hover.show_port({index = 1}, first)
+    assert_eq(#lines, 1, "outer port should show only its direct neighbor")
+    assert_eq(lines[1].to, middle.position, "outer port line should end at middle port")
+
+    lines = {}
+    hover.show_port({index = 1}, middle)
+    assert_eq(#lines, 2, "middle port should show both direct neighbors")
+  end)
+  rendering = old_rendering
+  if not ok then error(err) end
+end)
+
 test("full requester inboxes do not dispatch or consume a salary", function()
   storage = {}
   package.loaded["scripts.biterport"] = nil

@@ -78,7 +78,7 @@ function M.show_port(player, port)
   local summary = biterport.get_network_summary(port)
   if summary and summary.network then
     for _, member in ipairs(summary.network.ports) do
-      if member.valid and member ~= port then
+      if member.valid and member ~= port and biterport.ports_connect(port, member) then
         add_render(player.index, rendering.draw_line{
           color = LINK_COLOR,
           width = 2,

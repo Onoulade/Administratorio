@@ -909,6 +909,16 @@ local function collect_ports_for_surface_force(surface, force)
   return ports
 end
 
+local function ports_connect(a, b)
+  -- The orange logistics areas are squares. A line represents a direct
+  -- overlap, rather than merely membership in the same transitive network.
+  local reach = C.BITERPORT_LOGISTICS_CONNECTION_DISTANCE
+  return math.abs(a.position.x - b.position.x) <= reach
+    and math.abs(a.position.y - b.position.y) <= reach
+end
+
+M.ports_connect = ports_connect
+
 local function build_networks(surface, force)
   local ports = collect_ports_for_surface_force(surface, force)
   local parent = {}
@@ -929,12 +939,7 @@ local function build_networks(surface, force)
 
   for i = 1, #ports do
     for j = i + 1, #ports do
-      -- Roboport logistic areas are squares. Their touching edges (including
-      -- corners) are what the orange preview and connection lines represent.
-      local reach = C.BITERPORT_LOGISTICS_CONNECTION_DISTANCE
-      local dx = math.abs(ports[i].position.x - ports[j].position.x)
-      local dy = math.abs(ports[i].position.y - ports[j].position.y)
-      if dx <= reach and dy <= reach then
+      if ports_connect(ports[i], ports[j]) then
         unite(i, j)
       end
     end
