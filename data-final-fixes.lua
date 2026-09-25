@@ -12,6 +12,7 @@
 --   8. Pneumatic form transport recipe generation
 --   9. Admin station collision footprint layering
 --   10. Taxpayer money fuel compatibility
+--   11. Consistent map colours for visible Administratorio entities
 --
 -- The regulation system:
 --   Handcraftable recipes (including explicit late-game vanilla exceptions):
@@ -1660,6 +1661,15 @@ require("prototypes.final_fixes.science_pack_stripping").apply(data, ITEM_LIKE_P
 -- cargo, including Space Age tourism items and generated forms, is covered.
 -------------------------------------------------------------------------------
 require("prototypes.final_fixes.rocket_weights").apply()
+
+-- 14. MINIMAP COLOURS
+-- Chart visible Administratorio entities on Nauvis and Space Age surfaces.
+-- Apply after all prototype mutations so inherited vanilla colours cannot win.
+require("prototypes.final_fixes.minimap_colors").apply(
+  data.raw,
+  feature_flags.space_age_enabled(),
+  feature_flags.working_hours_enabled()
+)
 
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------

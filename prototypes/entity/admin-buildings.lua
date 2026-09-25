@@ -1501,7 +1501,6 @@ local function make_hired_biter_unit()
     unit.attack_parameters.sound = nil
     unit.attack_parameters.cyclic_sound = nil
   end
-  unit.map_color = {r = 0.4, g = 0.8, b = 0.35, a = 1}
   return unit
 end
 
