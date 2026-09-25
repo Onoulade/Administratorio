@@ -16,6 +16,7 @@ local generated_animation_speeds = require("prototypes.shared.generated_animatio
 local building_icons = require("prototypes.shared.building_icons")
 local native_fluid_rotation = require("prototypes.shared.native_fluid_rotation")
 local gameplay_facts = require("prototypes.shared.gameplay_facts")
+local managed_biter_pathing = require("prototypes.shared.managed_biter_pathing")
 local working_hours_enabled = feature_flags.working_hours_enabled()
 local space_age_enabled = feature_flags.space_age_enabled()
 local entity_graphics = "__administratorio__/graphics/entities/"
@@ -23,7 +24,6 @@ local scrubber_graphics = entity_graphics .. "scrubber/"
 local sound_path = "__administratorio__/sound/buildings/"
 local biter_building_icons = "__administratorio__/graphics/icons/"
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
-local WORKER_TERRAIN_COLLISION_LAYER = "administratorio_worker_terrain"
 local WORKER_OBSTACLE_COLLISION_LAYER = "administratorio_worker_obstacle"
 local OFFICE_DESK_SPEED = working_hours_enabled and 1.0 or 0.75
 local BREAKROOM_SPEED = working_hours_enabled and 1.0 or 0.75
@@ -1405,20 +1405,10 @@ local function make_managed_biter(name, source_name, localised_name, speed_multi
   biter.hidden_in_factoriopedia = true
   biter.collision_box = {{-0.18, -0.18}, {0.18, 0.18}}
   if factory_pathing then
-    -- Employment Office workers are authorization tokens with legs, not combat
-    -- units. Let them cross belts, inserters, poles, and one another without
-    -- walking through solid machines. Dedicated layers distinguish terrain
-    -- and machinery from the staffed buildings whose hidden blockers define
-    -- their walkable interiors. The train layer keeps workers off rolling stock.
-    biter.collision_mask = {
-      layers = {
-        [WORKER_TERRAIN_COLLISION_LAYER] = true,
-        [WORKER_OBSTACLE_COLLISION_LAYER] = true,
-        train = true,
-      },
-      not_colliding_with_itself = true,
-    }
-    biter.has_belt_immunity = true
+    -- Managed workers cross terrain and light infrastructure while solid
+    -- machines and staffed-building wall blockers remain obstacles. A dedicated
+    -- layer keeps them off rolling stock without blocking train-layer trees.
+    managed_biter_pathing.apply(biter)
   end
   biter.selection_box = {{-0.35, -0.45}, {0.35, 0.25}}
   unit_ai_settings.apply_managed_prototype_settings(biter)
@@ -1486,7 +1476,7 @@ local function make_hired_biter_unit()
   unit.max_health = 2000
   unit.collision_box = unit.collision_box or {{-0.6, -0.6}, {0.6, 0.6}}
   unit.selection_box = unit.selection_box or {{-0.8, -1.0}, {0.8, 0.6}}
-  unit.collision_mask = {layers = {object = true, player = true, water_tile = true}}
+  managed_biter_pathing.apply(unit)
   unit.vision_distance = 0
   unit.max_pursue_distance = 0
   unit.min_pursue_time = 0

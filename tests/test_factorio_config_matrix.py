@@ -158,6 +158,55 @@ def assert_rideable_layers_preserve_native_collisions(data_raw: dict) -> None:
             )
 
 
+def assert_managed_biter_crossings(data_raw: dict) -> None:
+    """Every managed biter and native complaint tier must cross common obstacles."""
+    blocking_layers = {"administratorio_worker_obstacle", "administratorio_biter_rolling_stock"}
+    biter_names = (
+        "biter-worker-t1", "biter-worker-t2", "biter-worker-t3",
+        "biterport-worker", "biterport-worker-fast", "biterport-worker-express",
+        "field-office-worker", "hired-biter-unit",
+        *(f"{size}-{kind}" for size in ("small", "medium", "big", "behemoth")
+          for kind in ("biter", "spitter")),
+    )
+    for name in biter_names:
+        unit = data_raw["unit"][name]
+        assert unit.get("has_belt_immunity"), f"{name} is moved by belts"
+        assert set(unit["collision_mask"]["layers"]) == blocking_layers, (
+            f"{name} has an unexpected collision layer"
+        )
+
+    passable_types = (
+        "pipe-to-ground", "inserter", "electric-pole", "transport-belt",
+        "underground-belt", "splitter", "straight-rail", "curved-rail-a",
+        "curved-rail-b", "half-diagonal-rail", "elevated-straight-rail",
+        "elevated-curved-rail-a", "elevated-curved-rail-b",
+        "elevated-half-diagonal-rail", "rail-ramp", "rail-support", "tree",
+    )
+    for prototype_type in ("tile", *passable_types):
+        for name, prototype in data_raw.get(prototype_type, {}).items():
+            layers = prototype.get("collision_mask", {}).get("layers", {})
+            assert not blocking_layers.intersection(layers), (
+                f"{prototype_type}/{name} blocks managed biters"
+            )
+
+    machine_layers = data_raw["assembling-machine"]["assembling-machine-1"]["collision_mask"]["layers"]
+    assert machine_layers.get("administratorio_worker_obstacle"), (
+        "ordinary machines must still block managed biters"
+    )
+    assert not blocking_layers.intersection(
+        data_raw["simple-entity"]["big-rock"].get("collision_mask", {}).get("layers", {})
+    )
+    for prototype_type in ("locomotive", "cargo-wagon", "fluid-wagon", "artillery-wagon"):
+        for name, stock in data_raw.get(prototype_type, {}).items():
+            assert stock["collision_mask"]["layers"].get("administratorio_biter_rolling_stock"), (
+                f"{prototype_type}/{name} does not block managed biters"
+            )
+    for name in ("rideable-biter", "rideable-biter-mounted"):
+        assert data_raw["car"][name]["collision_mask"]["layers"].get("administratorio_biter_rolling_stock"), (
+            f"{name} does not block managed biters"
+        )
+
+
 def assert_ore_placement_masks(data_raw: dict) -> None:
     """Platform reservations must not make ore block drills or other buildings."""
     platform_layer = "administratorio_passenger_platform"
@@ -325,6 +374,8 @@ def main() -> None:
     space_age = run_case(factorio_bin, space_age=True, working_hours=True)
     assert_rideable_layers_preserve_native_collisions(base)
     assert_rideable_layers_preserve_native_collisions(space_age)
+    assert_managed_biter_crossings(base)
+    assert_managed_biter_crossings(space_age)
     assert_ore_placement_masks(base)
     assert_ore_placement_masks(space_age)
     assert_milestone_resolutions_are_operable(base, "base game")
@@ -346,6 +397,7 @@ def main() -> None:
 
     no_working_hours = run_case(factorio_bin, space_age=True, working_hours=False)
     assert_rideable_layers_preserve_native_collisions(no_working_hours)
+    assert_managed_biter_crossings(no_working_hours)
     assert_ore_placement_masks(no_working_hours)
     assert_milestone_resolutions_are_operable(no_working_hours, "Space Age without Working Hours")
     assert "administrative-clock" not in no_working_hours.get("item", {}), "disabled Working Hours must not expose the Administrative Clock item"

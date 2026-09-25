@@ -3,10 +3,12 @@
 -- regulation and needs a narrow, focused compatibility test surface.
 
 local M = {}
+local gameplay_facts = require("prototypes.shared.gameplay_facts")
+local managed_biter_pathing = require("prototypes.shared.managed_biter_pathing")
 
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
-local WORKER_TERRAIN_COLLISION_LAYER = "administratorio_worker_terrain"
 local WORKER_OBSTACLE_COLLISION_LAYER = "administratorio_worker_obstacle"
+local BITER_ROLLING_STOCK_COLLISION_LAYER = "administratorio_biter_rolling_stock"
 local RIDEABLE_BITER_COLLISION_LAYER = "administratorio_rideable_biter_collision"
 local RIDEABLE_BITER_TERRAIN_LAYER = "administratorio_rideable_biter_terrain"
 local PASSENGER_PLATFORM_COLLISION_LAYER = "administratorio_passenger_platform"
@@ -84,9 +86,8 @@ local WORKER_PASSABLE_NAMES = {
   ["biter-station"] = true,
   ["biterport"] = true,
   ["biterport-placement-preview"] = true,
-  -- These use the train layer to remain solid to managed biters. Do not add
-  -- the general worker-obstacle layer, because trees also carry that layer
-  -- and the mounted biter must be able to step through them.
+  -- These use the dedicated biter rolling-stock layer to remain solid to
+  -- managed biters without changing the mounted biter's own collisions.
   ["rideable-biter"] = true,
   ["rideable-biter-mounted"] = true,
 }
@@ -100,14 +101,16 @@ local WORKER_PASSABLE_TYPES = {
   ["smoke-with-trigger"] = true, ["speech-bubble"] = true, ["spider-leg"] = true,
   ["spider-unit"] = true, ["stream"] = true, ["tile-ghost"] = true,
   ["unit"] = true, ["resource"] = true, ["fish"] = true,
+  ["tree"] = true, ["simple-entity"] = true,
 
   -- Narrow factory infrastructure is intentionally traversable.
   ["transport-belt"] = true, ["underground-belt"] = true, ["splitter"] = true,
   ["loader"] = true, ["loader-1x1"] = true, ["linked-belt"] = true,
   ["lane-splitter"] = true, ["inserter"] = true, ["electric-pole"] = true,
+  ["pipe-to-ground"] = true,
   ["land-mine"] = true, ["display-panel"] = true,
 
-  -- Workers may cross rails, but the train collision layer still blocks trains.
+  -- Biters cross rails; the dedicated rolling-stock layer still blocks trains.
   ["straight-rail"] = true, ["curved-rail-a"] = true, ["curved-rail-b"] = true,
   ["half-diagonal-rail"] = true, ["elevated-straight-rail"] = true,
   ["elevated-curved-rail-a"] = true, ["elevated-curved-rail-b"] = true,
@@ -135,6 +138,11 @@ local RIDEABLE_BITER_PASSABLE_TYPES = {
   -- Asteroid collectors are only placeable on space platforms, where the
   -- rideable biter cannot travel. Keep their native overlap rules intact.
   ["asteroid-collector"] = true,
+}
+local ROLLING_STOCK_TYPES = {
+  ["locomotive"] = true, ["cargo-wagon"] = true,
+  ["fluid-wagon"] = true, ["artillery-wagon"] = true,
+  ["infinity-cargo-wagon"] = true,
 }
 
 local function collision_box_is_zero(box)
@@ -273,15 +281,17 @@ end
 function M.apply(data, working_hours_enabled)
   local standard_module_categories = build_standard_module_categories(data)
 
-  -- Employment workers ignore factory footprints, including the Employment
-  -- Office they spawn inside. Give water tiles a worker-only layer instead of
-  -- putting water_tile on the workers, which also collides with the Office.
+  -- Complaint visitors and protesters keep their native unit identity, so
+  -- their movement settings must be on those prototypes before the game starts.
+  for name in pairs(gameplay_facts.biter_entity_map("max_tier")) do
+    managed_biter_pathing.apply((data.raw.unit or {})[name])
+  end
+
+  -- These biters have no terrain collision layer, so every tile remains
+  -- traversable without changing tile masks for other entities.
   for _, tile in pairs(data.raw.tile or {}) do
     if tile.collision_mask then
       local mask = normalize_collision_mask(tile.collision_mask)
-      if mask.layers.water_tile then
-        mask.layers[WORKER_TERRAIN_COLLISION_LAYER] = true
-      end
       if collides_with_standard_car(mask) then
         mask.layers[RIDEABLE_BITER_TERRAIN_LAYER] = true
       end
@@ -291,6 +301,13 @@ function M.apply(data, working_hours_enabled)
 
   for _, prototype_set in pairs(data.raw) do
     for _, prototype in pairs(prototype_set) do
+      if prototype and (ROLLING_STOCK_TYPES[prototype.type]
+          or prototype.name == "rideable-biter"
+          or prototype.name == "rideable-biter-mounted") then
+        prototype.collision_mask = materialize_collision_mask(prototype)
+        prototype.collision_mask.layers[BITER_ROLLING_STOCK_COLLISION_LAYER] = true
+      end
+
       if should_add_admin_station_layer(prototype) then
         prototype.collision_mask = normalize_collision_mask(prototype.collision_mask)
         prototype.collision_mask.layers[ADMIN_STATION_COLLISION_LAYER] = true

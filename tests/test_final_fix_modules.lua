@@ -131,6 +131,11 @@ test("collision masks separate worker obstacles from passable infrastructure", f
   local masks = require("prototypes.final_fixes.collision_masks")
   data = {raw = {
     item = {}, ["module-category"] = {speed = {}, productivity = {}},
+    unit = {
+      ["small-biter"] = {name = "small-biter", type = "unit", collision_box = {{-0.2, -0.2}, {0.2, 0.2}}},
+      ["behemoth-spitter"] = {name = "behemoth-spitter", type = "unit", collision_box = {{-0.5, -0.5}, {0.5, 0.5}}},
+      ["unrelated-unit"] = {name = "unrelated-unit", type = "unit", collision_box = {{-0.2, -0.2}, {0.2, 0.2}}},
+    },
     chest = {box = {name = "box", type = "container", collision_mask = {"item", "player"}, collision_box = {{-1, -1}, {1, 1}}, module_slots = 1}},
     ["assembling-machine"] = {
       machine = {name = "machine", type = "assembling-machine", collision_mask = {"item", "object", "player"}, collision_box = {{-1, -1}, {1, 1}}},
@@ -152,6 +157,9 @@ test("collision masks separate worker obstacles from passable infrastructure", f
     },
     ["pipe-to-ground"] = {
       pipe = {name = "pipe-to-ground", type = "pipe-to-ground",
+        collision_mask = {layers = {item = true, car = true, water_tile = true}},
+        collision_box = {{-0.4, -0.4}, {0.4, 0.4}}},
+      tube = {name = "pneumatic-pipe-to-ground", type = "pipe-to-ground",
         collision_mask = {layers = {item = true, car = true, water_tile = true}},
         collision_box = {{-0.4, -0.4}, {0.4, 0.4}}},
     },
@@ -185,6 +193,15 @@ test("collision masks separate worker obstacles from passable infrastructure", f
     },
   }}
   masks.apply(data, true)
+  for _, name in ipairs({"small-biter", "behemoth-spitter"}) do
+    local unit = data.raw.unit[name]
+    assert_true(unit.has_belt_immunity, name .. " must ignore belts")
+    assert_true(unit.collision_mask.layers.administratorio_worker_obstacle)
+    assert_true(unit.collision_mask.layers.administratorio_biter_rolling_stock)
+    assert_true(not unit.collision_mask.layers.train)
+    assert_true(not unit.collision_mask.layers.water_tile)
+  end
+  assert_true(not data.raw.unit["unrelated-unit"].has_belt_immunity)
   assert_true(data.raw.chest.box.collision_mask.layers.administratorio_station_footprint)
   assert_true(data.raw.chest.box.collision_mask.layers.administratorio_worker_obstacle)
   assert_true(data.raw["assembling-machine"].machine.collision_mask.layers.administratorio_worker_obstacle)
@@ -192,16 +209,19 @@ test("collision masks separate worker obstacles from passable infrastructure", f
   assert_true(not mask_has_layer(data.raw["electric-pole"].pole.collision_mask, "administratorio_worker_obstacle"))
   assert_true(not mask_has_layer(data.raw.inserter.inserter.collision_mask, "administratorio_worker_obstacle"))
   assert_true(not mask_has_layer(data.raw["transport-belt"].belt.collision_mask, "administratorio_worker_obstacle"))
+  assert_true(not mask_has_layer(data.raw.tree.tree.collision_mask, "administratorio_worker_obstacle"))
+  assert_true(not mask_has_layer(data.raw["pipe-to-ground"].pipe.collision_mask, "administratorio_worker_obstacle"))
+  assert_true(not mask_has_layer(data.raw["pipe-to-ground"].tube.collision_mask, "administratorio_worker_obstacle"))
   assert_true(not mask_has_layer(data.raw.container.station.collision_mask, "administratorio_worker_obstacle"))
   assert_true(not mask_has_layer(data.raw.container.biterport.collision_mask, "administratorio_worker_obstacle"))
   assert_true(not mask_has_layer(data.raw.container.admin.collision_mask, "administratorio_worker_obstacle"))
   assert_true(not mask_has_layer(data.raw.furnace.bureau.collision_mask, "administratorio_worker_obstacle"))
-  assert_true(data.raw.tile.water.collision_mask.layers.administratorio_worker_terrain)
-  assert_true(not data.raw.tile.dirt.collision_mask.layers.administratorio_worker_terrain)
+  assert_true(not mask_has_layer(data.raw.tile.water.collision_mask, "administratorio_worker_terrain"))
   assert_true(data.raw.chest.box.collision_mask.layers.administratorio_rideable_biter_collision)
   assert_true(data.raw["assembling-machine"].machine.collision_mask.layers.administratorio_rideable_biter_collision)
   assert_true(not mask_has_layer(data.raw.car.car.collision_mask, "administratorio_rideable_biter_collision"))
   assert_true(data.raw.car.rideable.collision_mask.layers.administratorio_rideable_biter_collision)
+  assert_true(data.raw.car.rideable.collision_mask.layers.administratorio_biter_rolling_stock)
   assert_true(not data.raw.car.rideable.collision_mask.layers.administratorio_worker_obstacle)
   assert_true(data.raw.tile.water.collision_mask.layers.administratorio_rideable_biter_terrain)
   assert_true(not data.raw.tile.water.collision_mask.layers.administratorio_rideable_biter_collision)
