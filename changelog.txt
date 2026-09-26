@@ -1,4 +1,19 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.7.4
+Date: 2026-09-26
+  Bugfixes:
+    - keep managed biters off water and cliffs
+  Changes:
+    - Show production routes and acquisition paths in Factoriopedia
+    - Keep Gleba pentapod spawns small at all evolution levels
+    - Fix player-force nest placement near nests
+    - Fix wagon-local passenger platform transfers
+    - Fix passenger platform boarding collision
+    - Allow editor placement of enemy nests near nests
+    - Route loose Biterport items to requesters before storage
+    - Keep Biterport cargo until storage is available
+    - Restore fabricated citation byproducts from slop synthesis
+---------------------------------------------------------------------------------------------------
 Version: 0.7.3
 Date: 2026-09-25
   Features:
