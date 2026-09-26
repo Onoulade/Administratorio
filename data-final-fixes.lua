@@ -158,6 +158,8 @@ if egg_spoil_trigger and egg_spoil_trigger.action_delivery then
   })
 end
 
+require("prototypes.final_fixes.gleba_pentapods").apply(data)
+
 -------------------------------------------------------------------------------
 -- 2b. TAXPAYER MONEY FUEL SETUP
 -- Taxpayer money keeps its dedicated fuel category so the rideable biter can
