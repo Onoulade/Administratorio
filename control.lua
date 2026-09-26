@@ -972,7 +972,12 @@ local function on_entity_built_inner(event)
   local surface = entity.surface
   local player = event.player_index and game.players[event.player_index]
 
-  local nearby_spawner = find_nearby_enemy_spawner(surface, entity.position)
+  -- Editor-placed enemy and neutral entities are world fixtures, not player
+  -- construction. In particular, a newly placed spawner finds itself here.
+  local nearby_spawner
+  if entity.force.name ~= "enemy" and entity.force.name ~= "neutral" then
+    nearby_spawner = find_nearby_enemy_spawner(surface, entity.position)
+  end
 
   if nearby_spawner then
       -- 1. Notify the player
