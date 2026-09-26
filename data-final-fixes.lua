@@ -48,7 +48,6 @@ if feature_flags.quality_enabled() then
   require("prototypes.final_fixes.quality_integration").apply(data)
 end
 
-local REGULATED_AM_FACTORIOPEDIA_NOTE = {"administratorio-factoriopedia.regulated-assembling-note"}
 local PNEUMATIC_TRANSPORT_NOTE = {
   "",
   {"administratorio-factoriopedia.pneumatic-transport-note-prefix"},
@@ -536,15 +535,6 @@ local function get_item_like_localisation(prototype, product_name)
   return localised_name, localised_description
 end
 
-local function add_factoriopedia_note(prototype, note)
-  if not prototype or not note then return end
-  if prototype.factoriopedia_description then
-    prototype.factoriopedia_description = {"", prototype.factoriopedia_description, "\n\n", note}
-  else
-    prototype.factoriopedia_description = note
-  end
-end
-
 -- Factoriopedia otherwise has no compact way to tell a player whether a
 -- colored document is locally made, remotely usable, or transportable at the
 -- current trunk tier.  Keep that operational information on the product page
@@ -567,38 +557,6 @@ local cross_planet_factoriopedia_descriptions = {
 for item_name, description in pairs(cross_planet_factoriopedia_descriptions) do
   local item = data.raw.item and data.raw.item[item_name]
   if item then item.factoriopedia_description = description end
-end
-
-local function prefer_factoriopedia_recipe(original_recipe, preferred_recipe_name)
-  if not original_recipe or not preferred_recipe_name then return end
-  original_recipe.hidden_in_factoriopedia = true
-  original_recipe.factoriopedia_alternative = preferred_recipe_name
-end
-
-local function get_primary_item_like_result_name(recipe)
-  local target = recipe.normal or recipe
-  if not target then return nil end
-
-  if target.main_product and target.main_product ~= "" and find_item_like_prototype(target.main_product) then
-    return target.main_product
-  end
-  if recipe.main_product and recipe.main_product ~= "" and find_item_like_prototype(recipe.main_product) then
-    return recipe.main_product
-  end
-
-  local results = target.results or (target.result and {{name = target.result}}) or {}
-  local product_name = nil
-  for _, res in ipairs(results) do
-    local res_name = res.name or res[1]
-    if res_name and find_item_like_prototype(res_name) then
-      if product_name and product_name ~= res_name then
-        return nil
-      end
-      product_name = res_name
-    end
-  end
-
-  return product_name
 end
 
 local function get_primary_result_name_and_type(recipe)
@@ -968,7 +926,6 @@ for _, recipe_name in pairs(shared.COMBINED_FORM_PRODUCTION_RECIPES) do
 end
 
 local regulated_recipes = {}
-local regulated_factoriopedia_products = {}
 
 for name, recipe in pairs(data.raw["recipe"]) do
   -- Skip our mod's recipes
@@ -996,10 +953,6 @@ for name, recipe in pairs(data.raw["recipe"]) do
   -- but preserve their native quantities.
   local paperwork_free = shared.PAPERWORK_FREE_REGULATED_RECIPES[name] == true
   local multiplier = paperwork_free and 1 or get_recipe_batch_multiplier(name, recipe)
-  local primary_result_name = get_primary_item_like_result_name(recipe)
-  if primary_result_name then
-    regulated_factoriopedia_products[primary_result_name] = true
-  end
 
   -- Determine which form is required based on item tier
   local required_form = shared.get_required_form(name)
@@ -1055,9 +1008,8 @@ for name, recipe in pairs(data.raw["recipe"]) do
     -- Tech effects: keep original unlock as-is (recipe name unchanged)
   else
     -------------------------------------------------------------------------
-    -- HANDCRAFTABLE RECIPE: Create separate regulated copy for AMs,
-    -- keep original for handcrafting, but point Factoriopedia at the
-    -- regulated version so machine info reflects the real automation path.
+    -- Create a regulated assembler route alongside the original manual or
+    -- specialist-machine route. Both stay navigable in Factoriopedia.
     -------------------------------------------------------------------------
     local regulated = util.table.deepcopy(recipe)
     regulated.name = name .. "-regulated"
@@ -1080,13 +1032,6 @@ for name, recipe in pairs(data.raw["recipe"]) do
     end
 
     regulated_recipes[regulated.name] = regulated
-    -- Standard crafting recipes have separate handcraft and assembler copies,
-    -- so Factoriopedia should prefer the regulated production path. A Space
-    -- Age shared-category original is also the native specialist-machine path;
-    -- keep it visible alongside the regulated assembler copy.
-    if not shared_space_age_regulated_cat then
-      prefer_factoriopedia_recipe(recipe, regulated.name)
-    end
 
     -- Preserve Space Age's explicitly handcraftable shared categories. Other
     -- shared-category originals remain native-machine recipes but stay out of
@@ -1238,8 +1183,6 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
   apply_bulk_recipe_icon_overlay(regulated)
 
   table.insert(admin_building_regulated, regulated)
-  regulated_factoriopedia_products[recipe_name] = true
-  prefer_factoriopedia_recipe(recipe, regulated.name)
 
   ::next_admin_building::
 end
@@ -1365,13 +1308,6 @@ local specialist_buildings = {
 for building_name, specialist in pairs(specialist_buildings) do
   add_special_paperwork(building_name, specialist.name, specialist.amount)
   add_special_paperwork(building_name .. "-regulated", specialist.name, specialist.amount)
-end
-
-for product_name, _ in pairs(regulated_factoriopedia_products) do
-  local prototype = find_item_like_prototype(product_name)
-  if prototype then
-    add_factoriopedia_note(prototype, REGULATED_AM_FACTORIOPEDIA_NOTE)
-  end
 end
 
 -------------------------------------------------------------------------------
@@ -1671,6 +1607,12 @@ require("prototypes.final_fixes.minimap_colors").apply(
   data.raw,
   feature_flags.space_age_enabled(),
   feature_flags.working_hours_enabled()
+)
+
+-- Present the final production routes and scripted acquisition paths without
+-- changing crafting or research behavior.
+require("prototypes.final_fixes.factoriopedia").apply(
+  data.raw, feature_flags.space_age_enabled(), ITEM_LIKE_PROTOTYPE_TYPES
 )
 
 -------------------------------------------------------------------------------
