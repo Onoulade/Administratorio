@@ -27,6 +27,7 @@ local worker_underground_pipe
 local worker_underground_tube
 local worker_rail
 local worker_tree
+local worker_cliff
 local worker_machine
 local worker_special_blockers = {}
 local rideable
@@ -40,6 +41,16 @@ end
 script.on_init(function()
   local surface = game.surfaces[1]
   local force = game.forces.player
+
+  -- Give fixture entities deterministic dry ground before adding the water
+  -- barrier and shoreline used by the collision checks below.
+  local fixture_ground = {}
+  for x = -2, 84 do
+    for y = -4, 4 do
+      fixture_ground[#fixture_ground + 1] = {name = "grass-1", position = {x, y}}
+    end
+  end
+  surface.set_tiles(fixture_ground)
 
   regular_stop = surface.create_entity{
     name = "train-stop",
@@ -87,6 +98,10 @@ script.on_init(function()
   if not worker_belt or not worker_belt.valid then fail("could not create worker-path belt") end
   if not worker_pole or not worker_pole.valid then fail("could not create worker-path power pole") end
   if not worker_tree or not worker_tree.valid then fail("could not create rideable-biter tree obstacle") end
+  worker_cliff = surface.create_entity{
+    name = "cliff", position = {56, 3}, cliff_orientation = "west-to-east",
+  }
+  if not worker_cliff or not worker_cliff.valid then fail("could not create cliff obstacle") end
   worker_underground_pipe = surface.create_entity{
     name = "pipe-to-ground", position = {74, 0}, force = force,
   }
@@ -199,8 +214,8 @@ script.on_nth_tick(30, function()
     return
   elseif game.tick == 120 then
     for _, crossing in ipairs(crossing_biters) do
-      if not crossing.valid or crossing.position.x < 43 then
-        fail(crossing.name .. " did not walk across the water barrier")
+      if not crossing.valid or crossing.position.x >= 38 then
+        fail(crossing.name .. " walked onto the water barrier")
       end
     end
     return
@@ -271,6 +286,12 @@ script.on_nth_tick(30, function()
     if not prototype.collision_mask.layers.administratorio_worker_obstacle then
       fail(biter_name .. " lacks the worker obstacle collision layer")
     end
+    if not prototype.collision_mask.layers.administratorio_worker_terrain then
+      fail(biter_name .. " lacks the water collision layer")
+    end
+    if not prototype.collision_mask.layers.cliff then
+      fail(biter_name .. " lacks the cliff collision layer")
+    end
     if not worker_machine.prototype.collision_mask.layers.administratorio_worker_obstacle then
       fail(worker_machine.name .. " lacks the worker obstacle collision layer")
     end
@@ -278,11 +299,11 @@ script.on_nth_tick(30, function()
     if not spawn then
       fail(biter_name .. " cannot spawn inside the Biter Employment Office")
     end
-    if not surface.can_place_entity{name = biter_name, position = {40.5, 0.5}, force = game.forces.player} then
-      fail(biter_name .. " cannot cross water")
+    if surface.can_place_entity{name = biter_name, position = {40.5, 0.5}, force = game.forces.player} then
+      fail(biter_name .. " can stand on water")
     end
-    if not surface.can_place_entity{name = biter_name, position = {82.5, 0.5}, force = game.forces.player} then
-      fail(biter_name .. " cannot cross lava")
+    if surface.can_place_entity{name = biter_name, position = {82.5, 0.5}, force = game.forces.player} then
+      fail(biter_name .. " can stand on lava")
     end
     if not surface.can_place_entity{name = biter_name, position = worker_inserter.position, force = game.forces.player} then
       fail(biter_name .. " cannot walk over inserters")
@@ -295,6 +316,9 @@ script.on_nth_tick(30, function()
     end
     if not surface.can_place_entity{name = biter_name, position = worker_tree.position, force = game.forces.player} then
       fail(biter_name .. " cannot walk through trees")
+    end
+    if surface.can_place_entity{name = biter_name, position = worker_cliff.position, force = game.forces.player} then
+      fail(biter_name .. " can stand inside a cliff")
     end
     for _, crossing in ipairs({worker_underground_pipe, worker_underground_tube, worker_rail}) do
       if not surface.can_place_entity{name = biter_name, position = crossing.position, force = game.forces.player} then

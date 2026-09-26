@@ -8,6 +8,7 @@ local managed_biter_pathing = require("prototypes.shared.managed_biter_pathing")
 
 local ADMIN_STATION_COLLISION_LAYER = "administratorio_station_footprint"
 local WORKER_OBSTACLE_COLLISION_LAYER = "administratorio_worker_obstacle"
+local WORKER_TERRAIN_COLLISION_LAYER = "administratorio_worker_terrain"
 local BITER_ROLLING_STOCK_COLLISION_LAYER = "administratorio_biter_rolling_stock"
 local RIDEABLE_BITER_COLLISION_LAYER = "administratorio_rideable_biter_collision"
 local RIDEABLE_BITER_TERRAIN_LAYER = "administratorio_rideable_biter_terrain"
@@ -287,11 +288,14 @@ function M.apply(data, working_hours_enabled)
     managed_biter_pathing.apply((data.raw.unit or {})[name])
   end
 
-  -- These biters have no terrain collision layer, so every tile remains
-  -- traversable without changing tile masks for other entities.
+  -- Keep water separate from entity collisions: shore buildings can use
+  -- water_tile for placement without becoming impassable to workers.
   for _, tile in pairs(data.raw.tile or {}) do
     if tile.collision_mask then
       local mask = normalize_collision_mask(tile.collision_mask)
+      if mask.layers.water_tile then
+        mask.layers[WORKER_TERRAIN_COLLISION_LAYER] = true
+      end
       if collides_with_standard_car(mask) then
         mask.layers[RIDEABLE_BITER_TERRAIN_LAYER] = true
       end

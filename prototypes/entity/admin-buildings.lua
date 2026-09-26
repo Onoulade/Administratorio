@@ -1405,7 +1405,7 @@ local function make_managed_biter(name, source_name, localised_name, speed_multi
   biter.hidden_in_factoriopedia = true
   biter.collision_box = {{-0.18, -0.18}, {0.18, 0.18}}
   if factory_pathing then
-    -- Managed workers cross terrain and light infrastructure while solid
+    -- Managed workers cross light infrastructure while water, cliffs, solid
     -- machines and staffed-building wall blockers remain obstacles. A dedicated
     -- layer keeps them off rolling stock without blocking train-layer trees.
     managed_biter_pathing.apply(biter)

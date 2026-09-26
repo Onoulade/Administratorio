@@ -160,7 +160,7 @@ def assert_rideable_layers_preserve_native_collisions(data_raw: dict) -> None:
 
 def assert_managed_biter_crossings(data_raw: dict) -> None:
     """Every managed biter and native complaint tier must cross common obstacles."""
-    blocking_layers = {"administratorio_worker_obstacle", "administratorio_biter_rolling_stock"}
+    blocking_layers = {"administratorio_worker_obstacle", "administratorio_worker_terrain", "administratorio_biter_rolling_stock", "cliff"}
     biter_names = (
         "biter-worker-t1", "biter-worker-t2", "biter-worker-t3",
         "biterport-worker", "biterport-worker-fast", "biterport-worker-express",
@@ -182,12 +182,25 @@ def assert_managed_biter_crossings(data_raw: dict) -> None:
         "elevated-curved-rail-a", "elevated-curved-rail-b",
         "elevated-half-diagonal-rail", "rail-ramp", "rail-support", "tree",
     )
-    for prototype_type in ("tile", *passable_types):
+    for prototype_type in passable_types:
         for name, prototype in data_raw.get(prototype_type, {}).items():
             layers = prototype.get("collision_mask", {}).get("layers", {})
             assert not blocking_layers.intersection(layers), (
                 f"{prototype_type}/{name} blocks managed biters"
             )
+
+    for name, tile in data_raw.get("tile", {}).items():
+        layers = tile.get("collision_mask", {}).get("layers", {})
+        assert bool(layers.get("administratorio_worker_terrain")) == bool(layers.get("water_tile")), (
+            f"tile/{name} has the wrong managed biter water collision"
+        )
+        assert not (blocking_layers - {"administratorio_worker_terrain"}).intersection(layers), (
+            f"tile/{name} blocks managed biters unexpectedly"
+        )
+
+    assert data_raw["cliff"]["cliff"]["collision_mask"]["layers"].get("cliff"), (
+        "native cliffs must collide with managed biters"
+    )
 
     machine_layers = data_raw["assembling-machine"]["assembling-machine-1"]["collision_mask"]["layers"]
     assert machine_layers.get("administratorio_worker_obstacle"), (
