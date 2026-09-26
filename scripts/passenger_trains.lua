@@ -514,46 +514,30 @@ local function board_one(wagon, manifest, record, visitor_id, stop_id)
 end
 
 local function board_train(train, stop)
-  local wagons = passenger_wagons(train)
-  if #wagons == 0 then return end
-  local platforms = {}
   for _, record in pairs(storage.passenger_platforms or {}) do
-    if record.kind == "boarding-platform" and get_platform_stop(record) == stop and boarding_routable(record) then
-      platforms[#platforms + 1] = record
-    end
-  end
-  table.sort(platforms, function(a, b) return a.entity.unit_number < b.entity.unit_number end)
-  for _, wagon in ipairs(wagons) do
-    local manifest = manifest_for(wagon)
-    for _, platform in ipairs(platforms) do
-      for _, visitor_id in ipairs(platform.queue_order) do
-        if manifest_count(manifest) >= WAGON_CAPACITY then break end
-        board_one(wagon, manifest, platform, visitor_id, stop.unit_number)
+    if record.kind == "boarding-platform" and get_platform_stop(record) == stop
+        and boarding_eligible(record) then
+      local wagon = attached_passenger_wagon(record)
+      if wagon and wagon.train == train then
+        local manifest = manifest_for(wagon)
+        for _, visitor_id in ipairs(record.queue_order or {}) do
+          if manifest_count(manifest) >= WAGON_CAPACITY then break end
+          board_one(wagon, manifest, record, visitor_id, stop.unit_number)
+        end
       end
-      if manifest_count(manifest) >= WAGON_CAPACITY then break end
     end
   end
 end
 
 local function board_platform_wagon(record, wagon)
-  if not boarding_routable(record) then return end
+  -- A full 24-visitor queue cannot accept new reservations, but everyone
+  -- already waiting there must still be allowed to board.
+  if not boarding_eligible(record) then return end
   local manifest = manifest_for(wagon)
   for _, visitor_id in ipairs(record.queue_order or {}) do
     if manifest_count(manifest) >= WAGON_CAPACITY then break end
     board_one(wagon, manifest, record, visitor_id, record.entity.unit_number)
   end
-end
-
-local function find_unboarding_platform(stop)
-  local best
-  for _, record in pairs(storage.passenger_platforms or {}) do
-    if record.kind == "deboarding-platform" and valid(record.entity) and is_rail_adjacent(record.entity)
-        and unboarding_enabled(record)
-        and get_platform_stop(record) == stop then
-      if not best or record.entity.unit_number < best.entity.unit_number then best = record end
-    end
-  end
-  return best
 end
 
 local function find_home_spawner(record)
@@ -584,49 +568,38 @@ local function restore_record(record, entity, stop_id)
   return true
 end
 
-local function unboard_train(train, stop)
-  local platform = find_unboarding_platform(stop)
-  if not platform then return end
-  for _, wagon in ipairs(passenger_wagons(train)) do
-    local manifest = manifest_for(wagon)
-    if manifest.outbreak_pending then goto continue_wagon end
-    local retained = {}
-    for _, record in ipairs(manifest.passengers) do
-      -- A train may wait through several periodic updates. Do not unload a
-      -- visitor who just boarded at this same stop on the previous update.
-      if record.last_stop == stop.unit_number then
-        retained[#retained + 1] = record
-      else
-        local entity = spawn_passenger(record, platform)
-        if entity and restore_record(record, entity, stop.unit_number) then
-        -- restored atomically enough for Lua's single event turn: only remove
-        -- after entity creation and ground-state registration succeed.
-        else
-          retained[#retained + 1] = record
-        end
-      end
-    end
-    manifest.passengers = retained
-    wagon.minable = #retained == 0
-    ::continue_wagon::
-  end
-end
-
-local function unboard_platform_wagon(record, wagon)
+local function unboard_platform_wagon(record, wagon, stop_id)
   if not unboarding_enabled(record) then return end
   local manifest = manifest_for(wagon)
   if manifest.outbreak_pending then return end
   local retained = {}
   for _, passenger in ipairs(manifest.passengers) do
-    local entity = spawn_passenger(passenger, record)
-    if entity and restore_record(passenger, entity, record.entity.unit_number) then
-      -- Removal occurs only after the visitor is restored to ground state.
-    else
+    -- Scheduled trains can wait through several updates. Keep anyone who
+    -- boarded at this stop aboard until the next station.
+    if stop_id and passenger.last_stop == stop_id then
       retained[#retained + 1] = passenger
+    else
+      local entity = spawn_passenger(passenger, record)
+      if not (entity and restore_record(passenger, entity, stop_id or record.entity.unit_number)) then
+        retained[#retained + 1] = passenger
+      end
     end
   end
   manifest.passengers = retained
   wagon.minable = #retained == 0
+end
+
+local function unboard_train(train, stop)
+  for _, platform in pairs(storage.passenger_platforms or {}) do
+    if platform.kind == "deboarding-platform" and valid(platform.entity)
+        and is_rail_adjacent(platform.entity) and unboarding_enabled(platform)
+        and get_platform_stop(platform) == stop then
+      local wagon = attached_passenger_wagon(platform)
+      if wagon and wagon.train == train then
+        unboard_platform_wagon(platform, wagon, stop.unit_number)
+      end
+    end
+  end
 end
 
 local function write_platform_signals(record, passengers, free_seats, waiting, outbreak, highest_frustration)

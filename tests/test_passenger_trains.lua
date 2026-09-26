@@ -170,6 +170,93 @@ test("a train arrival only boards visitors still on the platform", function()
   assert_eq(#storage.passenger_wagons[wagon.unit_number].passengers, 1)
 end)
 
+test("scheduled boarding fills a 24-visitor queue only into its adjacent wagon", function()
+  local surface, first_platform = setup()
+  new_entity(surface, "straight-rail", "straight-rail", 7, 0)
+  local second_platform = new_entity(surface, "boarding-platform", "constant-combinator", 7, 2.5)
+  second_platform.force = "player"
+  local stop = new_entity(surface, "train-stop", "train-stop", 0, 4)
+  stop.force = "player"
+  surface.create_entity = function() return nil end
+  assert_true(passenger_trains.pair_platform(first_platform, stop))
+  assert_true(passenger_trains.pair_platform(second_platform, stop))
+  local first_wagon = new_entity(surface, "passenger-wagon", "cargo-wagon", 0, 0)
+  local second_wagon = new_entity(surface, "passenger-wagon", "cargo-wagon", 7, 0)
+  local train = {speed = 0, state = defines.train_state.wait_station,
+    station = stop, carriages = {first_wagon, second_wagon}}
+  first_wagon.train, second_wagon.train = train, train
+  passenger_trains.on_built(first_wagon)
+  passenger_trains.on_built(second_wagon)
+  passenger_trains.set_biters_module({detach_for_passenger = function() return true end})
+
+  local function queue_visitor(platform)
+    local visitor = new_entity(surface, "small-biter", "unit", platform.position.x, platform.position.y)
+    visitor.force = {name = "enemy"}
+    function visitor.destroy() visitor.valid = false end
+    local info = {entity = visitor, entity_name = visitor.name, state = "pathfinding", frustration = 0}
+    assert_true(passenger_trains.reserve_platform(info, visitor, platform))
+    info.state = "waiting_for_train"
+  end
+  for _ = 1, 24 do queue_visitor(first_platform) end
+  queue_visitor(second_platform)
+  assert_eq(passenger_trains.get_platform_status(first_platform).enabled, false,
+    "a full platform must refuse new reservations")
+
+  passenger_trains.on_train_changed_state({train = train})
+  assert_eq(#storage.passenger_wagons[first_wagon.unit_number].passengers, 24,
+    "all visitors already in a full queue must board")
+  assert_eq(#storage.passenger_wagons[second_wagon.unit_number].passengers, 1,
+    "the second platform must board only its adjacent wagon")
+end)
+
+test("one scheduled unboarding platform unloads only its adjacent wagon", function()
+  local surface = new_surface()
+  storage = {passenger_registry_ready = true}
+  game = {tick = 0, surfaces = {[1] = surface}, connected_players = {}}
+  new_entity(surface, "straight-rail", "straight-rail", 0, 0)
+  new_entity(surface, "straight-rail", "straight-rail", 7, 0)
+  local stop = new_entity(surface, "train-stop", "train-stop", 0, 4)
+  stop.force = "player"
+  local platform = new_entity(surface, "deboarding-platform", "constant-combinator", 0, 2.5)
+  platform.force = "player"
+  assert_true(passenger_trains.pair_platform(platform, stop))
+  local first_wagon = new_entity(surface, "passenger-wagon", "cargo-wagon", 0, 0)
+  local second_wagon = new_entity(surface, "passenger-wagon", "cargo-wagon", 7, 0)
+  local train = {speed = 0, state = defines.train_state.wait_station,
+    station = stop, carriages = {first_wagon, second_wagon}}
+  first_wagon.train, second_wagon.train = train, train
+  passenger_trains.on_built(first_wagon)
+  passenger_trains.on_built(second_wagon)
+  storage.passenger_wagons[first_wagon.unit_number].passengers = {
+    {entity_name = "small-biter", force_name = "enemy", visitor_id = 1},
+  }
+  storage.passenger_wagons[second_wagon.unit_number].passengers = {
+    {entity_name = "small-biter", force_name = "enemy", visitor_id = 2},
+  }
+  function surface.find_non_colliding_position(_, position) return position end
+  local spawn_positions = {}
+  function surface.create_entity(params)
+    if params.name == "passenger-stop-combinator" then return nil end
+    spawn_positions[#spawn_positions + 1] = params.position.x
+    return new_entity(surface, params.name, "unit", params.position.x, params.position.y)
+  end
+  passenger_trains.set_biters_module({restore_passenger = function() return true end})
+
+  passenger_trains.on_train_changed_state({train = train})
+  assert_eq(#storage.passenger_wagons[first_wagon.unit_number].passengers, 0)
+  assert_eq(#storage.passenger_wagons[second_wagon.unit_number].passengers, 1,
+    "a wagon without its own platform must stay loaded")
+  assert_eq(#spawn_positions, 1)
+  assert_eq(spawn_positions[1], platform.position.x)
+
+  local second_platform = new_entity(surface, "deboarding-platform", "constant-combinator", 7, 2.5)
+  second_platform.force = "player"
+  assert_true(passenger_trains.pair_platform(second_platform, stop))
+  passenger_trains.on_train_changed_state({train = train})
+  assert_eq(#storage.passenger_wagons[second_wagon.unit_number].passengers, 0)
+  assert_eq(spawn_positions[2], second_platform.position.x)
+end)
+
 test("idle enabled platforms remain local waiting candidates", function()
   local surface, platform = setup()
   local visitor = new_entity(surface, "small-biter", "unit", 8, 2.5)
