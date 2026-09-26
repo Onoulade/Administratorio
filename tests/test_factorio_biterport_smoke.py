@@ -18,6 +18,7 @@ local port
 local peer
 local provider
 local requester
+local storage_chest
 
 local function fail(message)
   error("Administratorio Biterport smoke failure: " .. message)
@@ -103,6 +104,30 @@ script.on_nth_tick(30, function()
     if port.get_item_count("biter-logistics-formation") ~= 1 then
       fail("construction worker did not return")
     end
+    port.insert{name = "taxpayer-money", count = 1}
+    local loose_items = surface.spill_item_stack{
+      position = {210, 200}, stack = {name = "wood", count = 1},
+      enable_looted = false, force = game.forces.player, allow_belts = false,
+    }
+    if not loose_items or #loose_items == 0 then fail("could not spill loose item") end
+  elseif game.tick == 1500 then
+    if #surface.find_entities_filtered{name = "item-on-ground", position = {210, 200}, radius = 2} ~= 0 then
+      fail("worker left loose item on the ground without storage")
+    end
+    if port.get_item_count("biter-logistics-formation") ~= 0 then
+      fail("worker returned instead of holding loose item")
+    end
+    storage_chest = surface.create_entity{
+      name = "paperwork-storage-chest", position = {207, 200}, force = game.forces.player,
+    }
+    if not storage_chest then fail("could not create storage chest") end
+  elseif game.tick == 2100 then
+    if storage_chest.get_item_count("wood") ~= 1 then
+      fail("waiting worker did not deliver loose item after storage appeared")
+    end
+    if port.get_item_count("biter-logistics-formation") ~= 1 then
+      fail("waiting worker did not return after delivery")
+    end
     helpers.write_file("administratorio-biterport-smoke.txt", "PASS\n", false)
   end
 end)
@@ -137,13 +162,13 @@ def main() -> None:
             "--mod-directory", str(root / "mods"), "--disable-audio",
             "--server-settings", str(root / "server-settings.json"),
             "--start-server-load-scenario", f"{SMOKE_MOD_NAME}/runtime-smoke",
-            "--until-tick", "960",
+            "--until-tick", "2160",
         ]
         marker = root / "script-output" / "administratorio-biterport-smoke.txt"
         process = subprocess.Popen(
             command, cwd=REPO_ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
-        deadline = time.monotonic() + 30
+        deadline = time.monotonic() + 60
         while not marker.exists() and process.poll() is None and time.monotonic() < deadline:
             time.sleep(0.05)
         if marker.exists():

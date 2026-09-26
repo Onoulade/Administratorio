@@ -627,6 +627,135 @@ test("biterport picks up marked loose items instead of treating them as building
   assert_true(not loose_item.valid, "loose item should be picked up and removed")
 end)
 
+test("loose item waits with cargo and alert until storage becomes available", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+
+  local surface = new_surface()
+  local spills, alerts, cleared = 0, 0, 0
+  surface.spill_item_stack = function() spills = spills + 1 end
+  local viewer = {
+    valid = true,
+    index = 1,
+    add_custom_alert = function(_, icon, message)
+      assert_eq(icon.name, "biter-logistics-formation")
+      assert_eq(message[1], "message.biterport-no-storage-alert")
+      alerts = alerts + 1
+    end,
+    remove_alert = function() cleared = cleared + 1 end,
+  }
+  local force = {name = "player", technologies = {}, players = {viewer}, set_cease_fire = function() end}
+  defines.alert_type = {custom = 1}
+  game = {
+    tick = 0, connected_players = {viewer}, surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  local previous_rendering = rendering
+  local renders = {}
+  rendering = {
+    draw_sprite = function(params)
+      local id = #renders + 1
+      renders[id] = {valid = true, sprite = params.sprite, destroy = function() renders[id].valid = false end}
+      return {id = id}
+    end,
+    get_object_by_id = function(id)
+      return renders[id] and renders[id].valid and renders[id] or nil
+    end,
+  }
+
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 1, 1)
+  local loose_item = new_loose_item(surface, 40, {x = -35, y = -35}, "wood", 3, true)
+  biterport.ensure_storage()
+  biterport.track_port(port)
+  biterport.update(30)
+  local active = first_active_worker()
+  advance_worker_to(active, loose_item.position, 30, biterport)
+  active = first_active_worker()
+  advance_worker_to(active, loose_item.position, 31, biterport)
+
+  assert_eq(active.phase, "waiting_for_storage")
+  assert_eq(active.carried_stack.count, 3)
+  assert_eq(active.emote_sprite, "waiting-slot")
+  assert_eq(alerts, 1)
+  assert_eq(spills, 0)
+  biterport.update(330)
+  assert_eq(active.phase, "waiting_for_storage", "retry without storage should keep the cargo")
+  assert_eq(alerts, 1, "waiting should not duplicate its alert")
+  assert_eq(active_worker_count(), 1, "the cargo should remain with the same worker")
+
+  local old_unit_number = active.biter_unit_number
+  active.biter.valid = false
+  biterport.update(331)
+  assert_true(active.biter_unit_number ~= old_unit_number, "waiting worker should be recreated")
+  assert_eq(active.phase, "waiting_for_storage")
+  assert_eq(active.carried_stack.count, 3, "recreated worker should keep its cargo")
+  assert_eq(active.emote_sprite, "waiting-slot")
+  assert_eq(alerts, 2, "recreated worker should receive a fresh alert")
+
+  local chest = new_chest(surface, 41, {x = 0, y = 0}, "storage", {})
+  chest.force = force
+  biterport.update(632)
+  assert_eq(active.phase, "dispose_items")
+  assert_eq(cleared, 2, "alert should clear when delivery resumes")
+  assert_eq(active.emote_sprite, nil)
+  advance_worker_to(active, chest.position, 632, biterport)
+  assert_eq(chest.inventory.get_item_count("wood"), 3)
+  assert_eq(active.carried_stack, nil)
+  assert_eq(spills, 0)
+  rendering = previous_rendering
+end)
+
+test("deconstruction cargo waits when its chosen storage chest fills en route", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+  local surface = new_surface()
+  local spills = 0
+  surface.spill_item_stack = function() spills = spills + 1 end
+  local force = {name = "player", technologies = {}, set_cease_fire = function() end}
+  game = {
+    tick = 0, connected_players = {}, surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 1, 1)
+  local chest = new_chest(surface, 41, {x = 0, y = 0}, "storage", {})
+  chest.force = force
+  local loose_item = new_loose_item(surface, 40, {x = -35, y = -35}, "wood", 1, true)
+  biterport.ensure_storage()
+  biterport.track_port(port)
+  biterport.update(30)
+  local active = first_active_worker()
+  advance_worker_to(active, loose_item.position, 30, biterport)
+  active = first_active_worker()
+  advance_worker_to(active, loose_item.position, 31, biterport)
+  assert_eq(active.phase, "dispose_items")
+  chest.inventory.can_insert = function() return false end
+  chest.inventory.insert = function() return 0 end
+  advance_worker_to(active, chest.position, 32, biterport)
+  assert_eq(active.phase, "waiting_for_storage")
+  assert_eq(active.carried_stack.count, 1)
+  assert_eq(spills, 0)
+end)
+
 test("biterport transports items across connected biterports", function()
   storage = {}
   package.loaded["scripts.biterport"] = nil

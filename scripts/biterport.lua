@@ -5,6 +5,7 @@ local unit_ai_settings = require("scripts.unit_ai_settings")
 local orphaned_worker = require("scripts.orphaned_worker")
 
 local M = {}
+M._storage_wait = require("scripts.biterport_storage_wait")
 local biters_module = nil
 
 local PORT_NAME = C.BITERPORT_NAME
@@ -2225,6 +2226,9 @@ local function recreate_missing_worker(active, tick)
     active.phase_progress_tick = active.phase_started_tick
     active.phase_best_distance = math.sqrt(distance_squared(biter.position, active.phase_destination))
     active.phase_best_tick = active.phase_started_tick
+  elseif active.phase == "waiting_for_storage" then
+    M._storage_wait.clear(active)
+    M._storage_wait.enter(active, current_tick(tick), WORKER_ITEM_NAME)
   end
   return biter
 end
@@ -2387,6 +2391,7 @@ turn_worker_into_protester = function(active, tick)
   end
   release_logistics_reservation(active.job)
   release_deconstruction_reservation(active.job)
+  M._storage_wait.clear(active)
   return_carried_item(active, active.job and active.job.source)
 
   if not biter or not biter.valid then
@@ -2435,6 +2440,7 @@ local function advance_orphaned_return(active, tick)
 end
 
 local function finish_worker(active, tick, return_worker)
+  M._storage_wait.clear(active)
   if return_worker then
     local port = active.return_port_id and storage.biterports[active.return_port_id]
       or active.home_port_id and storage.biterports[active.home_port_id]
@@ -2455,6 +2461,10 @@ end
 
 local function fail_job_and_return(active, tick)
   local job = active.job
+  if job and job.kind == "deconstruction" and active.carried_stack then
+    M._dispose_carried_stack(active, tick)
+    return
+  end
   if job and job.kind == "construction" and not job.built then
     restore_construction_ghost(job)
   elseif job and job.overlay_id then
@@ -2463,6 +2473,7 @@ local function fail_job_and_return(active, tick)
   end
   release_logistics_reservation(job)
   release_deconstruction_reservation(job)
+  M._storage_wait.clear(active)
   return_carried_item(active, job and job.source)
   if not start_return(active, tick) then
     finish_worker(active, tick, true)
@@ -2653,25 +2664,29 @@ local function collect_nearby_mined_items(active, surface, position, products)
   end
 end
 
-local function dispose_carried_stack(active, tick)
+M._dispose_carried_stack = function(active, tick)
   local stack = active and active.carried_stack
   if not stack or not stack.name or (stack.count or 0) <= 0 then
+    M._storage_wait.clear(active)
     active.carried_stack = nil
     if not start_return(active, tick) then finish_worker(active, tick, true) end
     return
   end
-  local network = find_network_for_position(active.biter.surface, active.force, active.biter.position, C.BITERPORT_LOGISTICS_RADIUS)
+  local network = find_network_for_position(active.biter.surface, active.force, active.biter.position, C.BITERPORT_CONSTRUCTION_RADIUS)
   local target = network and find_trash_target(
     network, stack.name, normalized_quality_name(stack), active.biter.position, tick, stack.count) or nil
   if target then
     active.job.target = target
     active.job.target_unit_number = target.unit_number
-    if not begin_phase_move(active, "dispose_items", target, C.BITERPORT_ARRIVAL_RADIUS, tick) then
-      fail_job_and_return(active, tick)
+    if begin_phase_move(active, "dispose_items", target, C.BITERPORT_ARRIVAL_RADIUS, tick) then
+      M._storage_wait.clear(active)
+    else
+      M._storage_wait.enter(active, current_tick(tick), WORKER_ITEM_NAME)
     end
   else
-    return_carried_item(active, nil)
-    if not start_return(active, tick) then finish_worker(active, tick, true) end
+    active.job.target = nil
+    active.job.target_unit_number = nil
+    M._storage_wait.enter(active, current_tick(tick), WORKER_ITEM_NAME)
   end
 end
 
@@ -2687,7 +2702,7 @@ local function perform_deconstruction(active, tick)
       target.destroy()
     end
     release_deconstruction_reservation(job)
-    dispose_carried_stack(active, tick)
+    M._dispose_carried_stack(active, tick)
     return
   end
 
@@ -2711,13 +2726,13 @@ local function perform_deconstruction(active, tick)
       active.carried_stack = exact_stack(job.item_name, 1, job_quality_name(job))
     end
     release_deconstruction_reservation(job)
-    dispose_carried_stack(active, tick)
+    M._dispose_carried_stack(active, tick)
     return
   end
 
   if not target or not target.valid then
     release_deconstruction_reservation(job)
-    dispose_carried_stack(active, tick)
+    M._dispose_carried_stack(active, tick)
     return
   end
 
@@ -2770,7 +2785,7 @@ local function perform_deconstruction(active, tick)
   collect_nearby_mined_items(active, target_surface, target_position, products)
 
   release_deconstruction_reservation(job)
-  dispose_carried_stack(active, tick)
+  M._dispose_carried_stack(active, tick)
 end
 
 local function build_construction_job(active, tick)
@@ -2891,6 +2906,7 @@ local function advance_active_workers(tick)
         end
         release_logistics_reservation(active.job)
         release_deconstruction_reservation(active.job)
+        M._storage_wait.clear(active)
         return_carried_item(active, active.job and active.job.source)
         local port = active.home_port_id and storage.biterports[active.home_port_id]
         if port and port.valid then
@@ -2976,22 +2992,36 @@ local function advance_active_workers(tick)
     elseif active.phase == "orphaned_returning" then
       advance_orphaned_return(active, tick)
 
+    elseif active.phase == "waiting_for_storage" then
+      M._storage_wait.alert(active, WORKER_ITEM_NAME)
+      if tick >= (active.storage_next_retry_tick or 0) then
+        M._dispose_carried_stack(active, tick)
+      end
+
     elseif active.phase == "dispose_items" then
       local job = active.job
       local target = job and job.target
       if not target or not target.valid then
-        fail_job_and_return(active, tick)
+        M._dispose_carried_stack(active, tick)
         goto continue
       end
       local arrived = phase_is_arrived(active, biter, target, C.BITERPORT_ARRIVAL_RADIUS)
         and (active.phase_arrived_tick or phase_has_departed(active, biter, tick))
       if arrived then
-        deliver_logistics_job(active, tick)
+        local stack = active.carried_stack
+        local inserted = insert_stack_into_target(target, stack)
+        if inserted > 0 then
+          local remaining = (stack.count or 0) - inserted
+          active.carried_stack = remaining > 0 and exact_stack(stack.name, remaining, stack) or nil
+          M._dispose_carried_stack(active, tick)
+        else
+          M._storage_wait.enter(active, current_tick(tick), WORKER_ITEM_NAME)
+        end
       elseif active.phase_target_unit_number ~= resolve_destination_unit_number(target)
           or phase_target_shifted(active, target)
           or (biter.commandable and not biter.commandable.has_command) then
         if not begin_phase_move(active, "dispose_items", target, C.BITERPORT_ARRIVAL_RADIUS, tick) then
-          fail_job_and_return(active, tick)
+          M._dispose_carried_stack(active, tick)
         end
       end
 
@@ -3305,6 +3335,7 @@ function M.on_entity_died(event)
       end
       release_logistics_reservation(active.job)
       release_deconstruction_reservation(active.job)
+      M._storage_wait.clear(active)
       return_carried_item(active, active.job and active.job.source)
       unmark_worker_unit(active.biter_unit_number)
       unregister_active_worker(active)
