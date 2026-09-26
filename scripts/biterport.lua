@@ -1617,6 +1617,45 @@ local function find_trash_target(network, item_name, item_quality, position, tic
   return best
 end
 
+-- Loose items can satisfy requester demand directly. Count both ordinary
+-- logistics deliveries and ground-item pickups already assigned to a chest.
+M._find_ground_requester = function(network, item_name, item_quality, position, tick, own_job)
+  if not network then return nil end
+  local best, best_score = nil, math.huge
+  for _, chest in ipairs(collect_logistic_chests(network, {full_scan = true, tick = tick})) do
+    if is_requester_chest(chest) then
+      local inv = get_entity_inventory(chest)
+      if inv and inv.insert and (not inv.can_insert
+          or inv.can_insert(exact_stack(item_name, 1, item_quality))) then
+        for _, filter in ipairs(requester_filters(chest) or {}) do
+          if logistic_filter_item_name(filter) == item_name
+             and logistic_filter_quality_name(filter) == normalized_quality_name(item_quality) then
+            local incoming = active_logistics_item_count("target_unit_number", chest.unit_number,
+              item_name, item_quality)
+            for _, active in pairs(storage.biterport_workers or {}) do
+              local job = active.job
+              if job and job ~= own_job and job.kind == "deconstruction"
+                 and job.delivery_target_unit_number == chest.unit_number
+                 and job.item_name == item_name
+                 and active.phase ~= "returning" and active.phase ~= "orphaned_returning"
+                 and job_quality_name(job) == normalized_quality_name(item_quality) then
+                incoming = incoming + (active.carried_stack and active.carried_stack.count or job.count or 1)
+              end
+            end
+            local current = inventory_exact_count(inv, item_name, item_quality)
+            if current + incoming < logistic_filter_min_count(filter) then
+              local score = position and distance_squared(chest.position, position) or 0
+              if score < best_score then best, best_score = chest, score end
+            end
+            break
+          end
+        end
+      end
+    end
+  end
+  return best
+end
+
 local function next_player_trash_stack(player, max_count)
   local inv = get_player_trash_inventory(player)
   local tracking_key = make_player_tracking_key(player)
@@ -1775,6 +1814,7 @@ local function find_player_trash_job(network, tick)
 end
 
 local function find_deconstruction_job(network, tick)
+  local pending_loose_pickup = M._storage_wait.has_pending_loose_pickup(network)
   for _, port in ipairs(network.ports) do
     local area = port_scan_area(
       port,
@@ -1844,9 +1884,23 @@ local function find_deconstruction_job(network, tick)
       if item_entity.valid
          and not is_deconstruction_reserved(item_entity)
          and position_in_network_radius(network, item_entity.position, C.BITERPORT_CONSTRUCTION_RADIUS) then
-        local worker_port = choose_worker_port(network, item_entity.position, item_entity.position, tick)
-        if worker_port then
-          return snapshot_loose_item_deconstruction(item_entity), worker_port
+        local stack = safe_entity_field(item_entity, "stack")
+        if stack and stack.valid_for_read and stack.name then
+          local requester = M._find_ground_requester(network, stack.name, normalized_quality_name(stack),
+            item_entity.position, tick)
+          local storage_target = not requester and find_trash_target(network, stack.name,
+            normalized_quality_name(stack), item_entity.position, tick, stack.count or 1) or nil
+          if requester or storage_target or not pending_loose_pickup then
+            local worker_port = choose_worker_port(network, item_entity.position, item_entity.position, tick)
+            if worker_port then
+              local job = snapshot_loose_item_deconstruction(item_entity)
+              if job and requester then
+                job.delivery_target = requester
+                job.delivery_target_unit_number = requester.unit_number
+              end
+              return job, worker_port
+            end
+          end
         end
       end
     end
@@ -2673,8 +2727,15 @@ M._dispose_carried_stack = function(active, tick)
     return
   end
   local network = find_network_for_position(active.biter.surface, active.force, active.biter.position, C.BITERPORT_CONSTRUCTION_RADIUS)
-  local target = network and find_trash_target(
-    network, stack.name, normalized_quality_name(stack), active.biter.position, tick, stack.count) or nil
+  local requester = network and active.job and active.job.deconstruction_type == "loose_item"
+    and M._find_ground_requester(network, stack.name, normalized_quality_name(stack),
+      active.biter.position, tick, active.job) or nil
+  local target = requester or (network and find_trash_target(
+    network, stack.name, normalized_quality_name(stack), active.biter.position, tick, stack.count) or nil)
+  if active.job then
+    active.job.delivery_target = requester
+    active.job.delivery_target_unit_number = requester and requester.unit_number or nil
+  end
   if target then
     active.job.target = target
     active.job.target_unit_number = target.unit_number
@@ -2993,6 +3054,19 @@ local function advance_active_workers(tick)
       advance_orphaned_return(active, tick)
 
     elseif active.phase == "waiting_for_storage" then
+      if tick % C.BITERPORT_CHECK_TICKS == 0 then
+        local network = find_network_for_position(biter.surface, active.force, biter.position,
+          C.BITERPORT_CONSTRUCTION_RADIUS)
+        if M._storage_wait.is_surplus_waiter(active, network) then
+          M._dispose_carried_stack(active, tick)
+          if active.phase == "waiting_for_storage" then
+            M._storage_wait.clear(active)
+            return_carried_item(active, nil)
+            if not start_return(active, tick) then finish_worker(active, tick, true) end
+          end
+          goto continue
+        end
+      end
       M._storage_wait.alert(active, WORKER_ITEM_NAME)
       if tick >= (active.storage_next_retry_tick or 0) then
         M._dispose_carried_stack(active, tick)

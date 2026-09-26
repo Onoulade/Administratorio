@@ -128,6 +128,22 @@ script.on_nth_tick(30, function()
     if port.get_item_count("biter-logistics-formation") ~= 1 then
       fail("waiting worker did not return after delivery")
     end
+    requester.get_inventory(defines.inventory.chest).clear()
+    requester.get_requester_point().get_section(1).set_slot(1,
+      {value = {type = "item", name = "work-order", quality = "normal"}, min = 1})
+    port.insert{name = "taxpayer-money", count = 1}
+    local loose_items = surface.spill_item_stack{
+      position = {210, 200}, stack = {name = "work-order", count = 1},
+      enable_looted = false, force = game.forces.player, allow_belts = false,
+    }
+    if not loose_items or #loose_items == 0 then fail("could not spill requested item") end
+  elseif game.tick == 2700 then
+    if requester.get_item_count("work-order") ~= 1 then
+      fail("ground item did not satisfy an available requester")
+    end
+    if port.get_item_count("biter-logistics-formation") ~= 1 then
+      fail("ground-item worker did not return after requester delivery")
+    end
     helpers.write_file("administratorio-biterport-smoke.txt", "PASS\n", false)
   end
 end)
@@ -162,13 +178,13 @@ def main() -> None:
             "--mod-directory", str(root / "mods"), "--disable-audio",
             "--server-settings", str(root / "server-settings.json"),
             "--start-server-load-scenario", f"{SMOKE_MOD_NAME}/runtime-smoke",
-            "--until-tick", "2160",
+            "--until-tick", "2760",
         ]
         marker = root / "script-output" / "administratorio-biterport-smoke.txt"
         process = subprocess.Popen(
             command, cwd=REPO_ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
-        deadline = time.monotonic() + 60
+        deadline = time.monotonic() + 75
         while not marker.exists() and process.poll() is None and time.monotonic() < deadline:
             time.sleep(0.05)
         if marker.exists():

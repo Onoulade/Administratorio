@@ -756,6 +756,119 @@ test("deconstruction cargo waits when its chosen storage chest fills en route", 
   assert_eq(spills, 0)
 end)
 
+test("a network without storage keeps one loose-item waiter and releases saved surplus waiters", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+  local surface = new_surface()
+  local spills = 0
+  surface.spill_item_stack = function() spills = spills + 1 end
+  local force = {name = "player", technologies = {}, set_cease_fire = function() end}
+  game = {
+    tick = 0, connected_players = {}, surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 3, 3)
+  local first = new_loose_item(surface, 40, {x = -35, y = -35}, "wood", 1, true)
+  new_loose_item(surface, 41, {x = -34, y = -35}, "wood", 1, true)
+  biterport.ensure_storage()
+  biterport.track_port(port)
+  biterport.update(30)
+  assert_eq(active_worker_count(), 1, "only one worker should start an item pickup without storage")
+  assert_eq(port.inventory.get_item_count("taxpayer-money"), 2)
+
+  local keeper = first_active_worker()
+  advance_worker_to(keeper, first.position, 30, biterport)
+  advance_worker_to(keeper, first.position, 31, biterport)
+  assert_eq(keeper.phase, "waiting_for_storage")
+  biterport.update(330)
+  assert_eq(active_worker_count(), 1, "retries must not start another pickup")
+  assert_eq(port.inventory.get_item_count("taxpayer-money"), 2)
+
+  local extra_biter = surface.create_entity{name = "biterport-worker", position = {x = -34, y = -35}, force = force}
+  local extra = {
+    biter = extra_biter,
+    biter_unit_number = extra_biter.unit_number,
+    home_port_id = port.unit_number,
+    force = force,
+    job = {kind = "deconstruction", deconstruction_type = "loose_item", surface = surface},
+    carried_stack = {name = "wood", count = 1, quality = "normal"},
+    phase = "waiting_for_storage",
+    storage_next_retry_tick = 600,
+  }
+  storage.biterport_workers[extra.biter_unit_number] = extra
+  storage.biterport_active_by_port[port.unit_number][extra.biter_unit_number] = true
+  biterport.update(360)
+  assert_eq(keeper.phase, "waiting_for_storage")
+  assert_eq(extra.phase, "returning", "surplus worker from an existing save should be freed")
+  assert_eq(extra.carried_stack, nil)
+  assert_eq(spills, 1, "surplus cargo should be returned to the ground once")
+  assert_eq(port.inventory.get_item_count("taxpayer-money"), 2,
+    "returned cargo should not cause another paid pickup")
+end)
+
+test("loose items satisfy requester demand before requiring storage", function()
+  storage = {}
+  package.loaded["scripts.biterport"] = nil
+  local surface = new_surface()
+  local spills = 0
+  surface.spill_item_stack = function() spills = spills + 1 end
+  local force = {name = "player", technologies = {}, set_cease_fire = function() end}
+  game = {
+    tick = 0, connected_players = {}, surfaces = {surface},
+    forces = {
+      player = force,
+      enemy = {name = "enemy", set_cease_fire = function() end},
+      neutral = {name = "neutral", set_cease_fire = function() end},
+    },
+    create_force = function(name)
+      local created = {name = name, technologies = {}, valid = true, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  local biterport = require("scripts.biterport")
+  local port = new_port(surface, force, 3, 3)
+  local requester = new_chest(surface, 50, {x = 5, y = 0}, "requester", {}, {
+    {name = "work-order", count = 2},
+  })
+  requester.force = force
+  new_loose_item(surface, 40, {x = -35, y = -35}, "work-order", 1, true)
+  new_loose_item(surface, 41, {x = -34, y = -35}, "work-order", 1, true)
+  new_loose_item(surface, 42, {x = -33, y = -35}, "work-order", 1, true)
+  biterport.ensure_storage()
+  biterport.track_port(port)
+  biterport.update(30)
+  local network = biterport.get_network_summary(port).network
+  assert_true(biterport._find_ground_requester(network, "work-order", "normal",
+    {x = -34, y = -35}, 60) ~= nil, "second ground item should still have requester demand")
+  for tick = 60, 300, 30 do biterport.update(tick) end
+  assert_eq(active_worker_count(), 2, "only the two missing requested items should dispatch")
+
+  local workers = {}
+  for _, active in pairs(storage.biterport_workers) do workers[#workers + 1] = active end
+  for _, active in ipairs(workers) do
+    advance_worker_to(active, active.job.source.position, 30, biterport)
+    advance_worker_to(active, active.job.position, 31, biterport)
+    assert_eq(active.phase, "dispose_items")
+    assert_eq(active.job.target.unit_number, requester.unit_number)
+  end
+  for _, active in ipairs(workers) do
+    advance_worker_to(active, requester.position, 32, biterport)
+  end
+  assert_eq(requester.inventory.get_item_count("work-order"), 2)
+  assert_eq(spills, 0)
+end)
+
 test("biterport transports items across connected biterports", function()
   storage = {}
   package.loaded["scripts.biterport"] = nil

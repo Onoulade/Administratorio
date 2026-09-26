@@ -7,6 +7,33 @@ local function players_for_force(force)
   return force and force.players or game and game.connected_players or {}
 end
 
+-- A missing storage destination needs one visible carrier per network, not
+-- every worker in the network. This also recognizes workers saved before the
+-- dispatch guard existed.
+function M.has_pending_loose_pickup(network)
+  for _, active in pairs(storage.biterport_workers or {}) do
+    local job = active.job
+    if job and job.kind == "deconstruction" and job.deconstruction_type == "loose_item"
+       and active.phase ~= "returning" and active.phase ~= "orphaned_returning"
+       and network.port_set[active.home_port_id] then
+      return true
+    end
+  end
+  return false
+end
+
+function M.is_surplus_waiter(active, network)
+  if not network or not network.port_set[active.home_port_id] then return false end
+  for unit_number, other in pairs(storage.biterport_workers or {}) do
+    if other ~= active and other.phase == "waiting_for_storage"
+       and network.port_set[other.home_port_id]
+       and unit_number < active.biter_unit_number then
+      return true
+    end
+  end
+  return false
+end
+
 function M.clear(active)
   if not active then return end
   local biter = active.biter
