@@ -972,10 +972,11 @@ local function on_entity_built_inner(event)
   local surface = entity.surface
   local player = event.player_index and game.players[event.player_index]
 
-  -- Editor-placed enemy and neutral entities are world fixtures, not player
-  -- construction. In particular, a newly placed spawner finds itself here.
+  -- A newly placed spawner finds itself in the proximity search, regardless
+  -- of its force. Only apply nest exclusion to player-built structures.
   local nearby_spawner
-  if entity.force.name ~= "enemy" and entity.force.name ~= "neutral" then
+  if entity.type ~= "unit-spawner"
+      and entity.force.name ~= "enemy" and entity.force.name ~= "neutral" then
     nearby_spawner = find_nearby_enemy_spawner(surface, entity.position)
   end
 

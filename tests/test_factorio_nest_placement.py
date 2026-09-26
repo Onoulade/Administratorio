@@ -18,13 +18,13 @@ script.on_nth_tick(1, function(event)
   if event.tick ~= 0 then return end
   local surface = game.surfaces[1]
   local ground = {}
-  for x = 196, 260 do
+  for x = 196, 290 do
     for y = -5, 5 do
       ground[#ground + 1] = {name = "grass-1", position = {x, y}}
     end
   end
   surface.set_tiles(ground)
-  for _, entity in pairs(surface.find_entities_filtered{area = {{196, -5}, {261, 6}}}) do
+  for _, entity in pairs(surface.find_entities_filtered{area = {{196, -5}, {291, 6}}}) do
     entity.destroy()
   end
 
@@ -35,13 +35,17 @@ script.on_nth_tick(1, function(event)
     {name = "wooden-chest", x = 216, force = game.forces.enemy},
     {name = "wooden-chest", x = 220, force = game.forces.neutral},
     {name = "wooden-chest", x = 224, force = game.forces.player},
-    {name = "wooden-chest", x = 250, force = game.forces.player},
+    {name = "biter-spawner", x = 230, force = game.forces.player},
+    {name = "spitter-spawner", x = 236, force = game.forces.player},
+    {name = "biter-spawner", x = 242, force = game.forces.neutral},
+    {name = "wooden-chest", x = 246, force = game.forces.player},
+    {name = "wooden-chest", x = 280, force = game.forces.player},
   }) do
     local entity = surface.create_entity{
       name = placement.name, position = {placement.x, 0},
       force = placement.force, raise_built = true,
     }
-    if placement.x ~= 224 and (not entity or not entity.valid) then
+    if placement.x ~= 224 and placement.x ~= 246 and (not entity or not entity.valid) then
       error("could not create " .. placement.name .. " at " .. placement.x)
     end
   end
@@ -61,6 +65,15 @@ script.on_nth_tick(2, function()
   if count("spitter-spawner", 206, game.forces.enemy) ~= 1 then
     error("second editor nest was removed")
   end
+  if count("biter-spawner", 230, game.forces.player) ~= 1 then
+    error("player-force nest near another nest was removed")
+  end
+  if count("spitter-spawner", 236, game.forces.player) ~= 1 then
+    error("second player-force nest was removed")
+  end
+  if count("biter-spawner", 242, game.forces.neutral) ~= 1 then
+    error("neutral nest was removed")
+  end
   if count("medium-worm-turret", 212, game.forces.enemy) ~= 1 then
     error("editor worm was removed")
   end
@@ -73,7 +86,10 @@ script.on_nth_tick(2, function()
   if count("wooden-chest", 224, game.forces.player) ~= 0 then
     error("player chest near a nest was not denied")
   end
-  if count("wooden-chest", 250, game.forces.player) ~= 1 then
+  if count("wooden-chest", 246, game.forces.player) ~= 0 then
+    error("player chest near the new nest was not denied")
+  end
+  if count("wooden-chest", 280, game.forces.player) ~= 1 then
     error("player chest away from nests was removed")
   end
   helpers.write_file("administratorio-nest-placement.txt", "PASS\n", false)
