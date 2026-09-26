@@ -236,6 +236,7 @@ dofile(mod_root .. "prototypes/item/groups.lua")
 
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 local manager_couriers = require("prototypes.shared.manager_couriers")
+local slop_rules = require("prototypes.shared.slop_rules")
 
 local preexisting_technology_names = {}
 for technology_name in pairs(technologies) do
@@ -357,17 +358,28 @@ test("slop refinery converts blank forms into fabricated citations", function()
   assert_eq(recipe.main_product, "fabricated-citations")
 end)
 
-test("other slop refinery recipes consume one form and return only their document", function()
+test("other slop refinery recipes emit rank-scaled citations with their document", function()
   local found_other_recipe = false
   for recipe_name, recipe in pairs(recipes) do
     if recipe_name:match("^slop%-synthesis%-") and recipe_name ~= "slop-synthesis-blank-form" then
       found_other_recipe = true
+      local document_name = recipe_name:match("^slop%-synthesis%-(.+)$")
+      local expected_citations = slop_rules.citation_yield(document_name)
       assert_eq(ingredient_amount(recipe, "blank-form"), 1,
         recipe_name .. " should consume one blank form")
-      assert_true(not has_result(recipe, "fabricated-citations"),
-        recipe_name .. " should not produce fabricated citations")
-      assert_eq(item_result_count(recipe), 1,
-        recipe_name .. " should have only its requested document as output")
+      assert_eq(get_result_amount(recipe, document_name), 1,
+        recipe_name .. " should produce its requested document")
+      assert_eq(get_result_amount(recipe, "fabricated-citations"), expected_citations,
+        recipe_name .. " should produce citations scaled to document rank")
+      assert_eq(item_result_count(recipe), 2,
+        recipe_name .. " should have its document and citations as outputs")
+      assert_eq(recipe.main_product, document_name)
+      for _, result in ipairs(recipe.results) do
+        if result.name == "fabricated-citations" then
+          assert_eq(result.ignored_by_productivity, expected_citations,
+            recipe_name .. " should not multiply citation byproducts with productivity")
+        end
+      end
     end
   end
   assert_true(found_other_recipe, "expected at least one non-blank-form slop recipe")

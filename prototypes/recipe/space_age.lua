@@ -2354,10 +2354,10 @@ for _, item_name in ipairs(interplanetary_payloads.all()) do
 end
 data:extend(dispatch_recipes)
 
--- Slop synthesis, generated straight from the paperwork taxonomy. The blank
--- form recipe is the citation-producing sink: it consumes a blank form and
--- slop to produce citations.
--- Every other recipe consumes one blank form and returns the requested document.
+-- Slop synthesis, generated straight from the paperwork taxonomy. Every
+-- document recipe emits rank-scaled fabricated citations as a byproduct.
+-- The blank form recipe makes extra citations when paperwork production
+-- does not supply enough.
 local slop_rules = require("prototypes.shared.slop_rules")
 
 local slop_recipes = {}
@@ -2387,6 +2387,9 @@ for _, tier in ipairs({"base", "advanced"}) do
           ignored_by_productivity = 1},
       } or {
         {type = "item", name = item_name, amount = 1},
+        {type = "item", name = slop_rules.CITATION_ITEM,
+          amount = slop_rules.citation_yield(item_name),
+          ignored_by_productivity = slop_rules.citation_yield(item_name)},
       },
       main_product = is_blank_form_recycling and slop_rules.CITATION_ITEM or item_name,
       allow_decomposition = false,
