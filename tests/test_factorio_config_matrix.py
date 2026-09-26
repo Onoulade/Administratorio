@@ -189,6 +189,14 @@ def assert_managed_biter_crossings(data_raw: dict) -> None:
                 f"{prototype_type}/{name} blocks managed biters"
             )
 
+    for name in ("boarding-platform", "deboarding-platform",
+                 "boarding-platform-placement-preview", "deboarding-platform-placement-preview"):
+        layers = data_raw["constant-combinator"][name]["collision_mask"]["layers"]
+        assert not blocking_layers.intersection(layers), f"{name} blocks visitors from its center tile"
+        assert layers.get("administratorio_passenger_platform"), (
+            f"{name} no longer reserves its footprint against buildings and rail"
+        )
+
     for name, tile in data_raw.get("tile", {}).items():
         layers = tile.get("collision_mask", {}).get("layers", {})
         assert bool(layers.get("administratorio_worker_terrain")) == bool(layers.get("water_tile")), (

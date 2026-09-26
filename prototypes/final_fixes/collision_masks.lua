@@ -80,6 +80,12 @@ local PASSENGER_PLATFORM_PASSABLE_TYPES = {
   ["resource"] = true,
 }
 local WORKER_PASSABLE_NAMES = {
+  -- Boarding requires visitors to stand on the platform center. The generic
+  -- worker-obstacle pass would otherwise make its entire 3x3 apron impassable.
+  ["boarding-platform"] = true,
+  ["deboarding-platform"] = true,
+  ["boarding-platform-placement-preview"] = true,
+  ["deboarding-platform-placement-preview"] = true,
   -- These buildings use hidden blockers to model walls while keeping their
   -- waiting/work areas navigable to managed biters.
   ["admin-station"] = true,
