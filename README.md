@@ -25,6 +25,8 @@ The factory must grow, the paperwork must flow; if the stamp says no, the belts 
 
 Biters do not attack you by default. They arrive at **Administration Desks**, file complaints about the landscape, smog, noise, unemployment and other amenities your industrial paradise emits, then wait for your **Resolution Offices** to process their cases.
 
+Enemy expansion is disabled on Nauvis and Gleba. Existing nests remain, but biters and pentapods cannot establish new ones through expansion. Eviction therefore clears a nest permanently without requiring a gun wall.
+
 Resolve a complaint and the citizen leaves peacefully, paying **Taxpayer Money**. Ignore the queue for too long and frustration becomes a protest: a building is selected, operations stop, and a very determined employee of the public walks over to make the point in person.
 
 Larger biters file more complicated complaints and pay more. Complaint milestones also control native evolution, so the ecosystem is not allowed to become more troublesome until your administration has demonstrated the paperwork throughput to deserve it. A modest incentive to keep the queue moving; civilization is apparently a throughput problem.

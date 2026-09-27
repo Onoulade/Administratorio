@@ -542,6 +542,11 @@ end
 -- LIFECYCLE EVENTS
 -- ============================================================
 
+local function disable_enemy_expansion()
+  local expansion = game.map_settings.enemy_expansion
+  if expansion.enabled then expansion.enabled = false end
+end
+
 -- Managed biters normally remain on ceasefire. Hard-mode attackers and the small,
 -- bounded set of blocked protesters use the hostile force temporarily.
 local function set_biter_ceasefire()
@@ -634,6 +639,7 @@ local function warn_about_pre_040_save(event)
 end
 
 local function on_init()
+  disable_enemy_expansion()
   init_storage()
   rebuild_desk_cache()
   territorial_arbitration.rebuild_registry()
@@ -691,6 +697,7 @@ local function cleanup_orphan_admin_desk_storage()
 end
 
 local function on_configuration_changed(event)
+  disable_enemy_expansion()
   warn_about_pre_040_save(event)
   init_storage()
   rebuild_desk_cache()
@@ -2244,6 +2251,7 @@ local function on_unit_group_debug_tick(event)
 end
 
 local function on_main_tick(event)
+  disable_enemy_expansion()
   if needs_load_bugged_biter_cleanup then
     needs_load_bugged_biter_cleanup = false
     cleanup_legacy_resolved_biter_releases()

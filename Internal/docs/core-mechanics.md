@@ -107,6 +107,8 @@ Leave citizens waiting too long and they **protest** — they walk to one of you
 - **Bureaucratic Promise** capsule — temporarily pacifies a protester for up to 60 seconds while it retries to find an open desk. If no desk frees up before the timer expires, the protest resumes.
 - **Eviction Notice** capsule — clears a biter nest, but the displaced biters show up at your desk already halfway to furious and freshly opinionated about property law.
 
+Native enemy expansion is disabled on every planet. Existing nests remain available for complaint visitors and other interactions, while cleared territory stays clear of new expansion nests.
+
 ### Complaint Types
 
 | Biter Type | Complaints |
