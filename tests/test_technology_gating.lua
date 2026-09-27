@@ -98,7 +98,7 @@ vanilla_tech("nuclear-power", {"uranium-processing"}, {
   {type = "unlock-recipe", recipe = "heat-exchanger"},
   {type = "unlock-recipe", recipe = "heat-pipe"},
   {type = "unlock-recipe", recipe = "steam-turbine"},
-}, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
+}, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
 vanilla_tech("rocket-fuel", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack", "utility-science-pack"})
 vanilla_tech("concrete", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
 vanilla_tech("low-density-structure", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "production-science-pack"})
@@ -820,6 +820,17 @@ test("vanilla branches gain the required bureaucracy prerequisites", function()
   assert_true(tech_has_prereq("rocket-silo", "executive-review"), "rocket-silo should require executive-review")
   assert_true(tech_has_prereq("hired-biter-fieldwork", "executive-review"), "hired biter fieldwork should require written management work orders")
   assert_true(tech_has_prereq("power-armor-mk2", "utility-science-pack"), "power armor mk2 should require utility science explicitly")
+end)
+
+test("nuclear research remains available with chemical science", function()
+  for _, tech_name in ipairs({"nuclear-technician-training", "uranium-processing", "nuclear-power"}) do
+    assert_true(not tech_depends_on(tech_name, "production-science-pack"),
+      tech_name .. " should not depend on production science")
+    assert_true(not tech_uses_pack(tech_name, "production-science-pack"),
+      tech_name .. " should not consume production science")
+    assert_true(tech_uses_pack(tech_name, "chemical-science-pack"),
+      tech_name .. " should remain in the chemical-science era")
+  end
 end)
 
 print(("Technology gating tests: %d passed, %d failed"):format(passed, failed))

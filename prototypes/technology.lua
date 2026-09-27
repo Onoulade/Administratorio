@@ -1183,7 +1183,6 @@ add_tech_prerequisite("health-and-safety", "chemical-science-pack")
   add_tech_prerequisite("synthetic-stationery", "chemical-science-pack")
   add_tech_prerequisite("biter-labor-efficiency-2", "chemical-science-pack")
   add_tech_prerequisite("admin-station-capacity-3", "chemical-science-pack")
-  add_tech_prerequisite("nuclear-technician-training", "production-science-pack")
   add_tech_prerequisite("power-armor-mk2", "utility-science-pack")
   add_tech_prerequisite("robotics", "federal-regulation")
 
@@ -1379,7 +1378,6 @@ for _, tech_name in ipairs({"automation-3", "effect-transmission", "rocket-silo"
 end
 
 add_tech_prerequisite("uranium-processing", "radiological-compliance")
-add_tech_prerequisite("nuclear-power", "production-science-pack")
 
 inherit_parent_science_packs()
 

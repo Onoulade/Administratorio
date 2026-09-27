@@ -1439,6 +1439,18 @@ require("prototypes.final_fixes.colored_ink_gating").apply(
   add_special_paperwork
 )
 
+-- The other first planetary specialist buildings already consume their local
+-- jurisdiction's form when built. Gleba's yellow forms are printable before
+-- Biochamber research, so give the Biochamber the same one-time build gate on
+-- both its native and assembler construction routes.
+if feature_flags.space_age_enabled() then
+  for _, recipe_name in ipairs({"biochamber", "biochamber-regulated"}) do
+    if data.raw.recipe[recipe_name] then
+      add_special_paperwork(recipe_name, "blank-yellow-form", 1)
+    end
+  end
+end
+
 -------------------------------------------------------------------------------
 -- 7a1. UNSTAFFED OPERATIONS WAIVER FITMENT
 -- The waiver only belongs in machines that wait for a dispatched worker biter.
@@ -1582,6 +1594,82 @@ if space_age_planets and data.raw.recipe and data.raw.recipe["rocket-silo"] then
     local recipe_name = factoriopedia_recipe_renames[source_recipe_name] or source_recipe_name
     space_age_planets.apply_planet_surface_conditions(data.raw.recipe[recipe_name], "nauvis")
   end
+end
+
+-------------------------------------------------------------------------------
+-- 11a. SPECIALIST MACHINE ROUTES FOR HANDCRAFTABLE CATEGORIES
+-- Pressing and electronics categories are shared with the character or
+-- assemblers. Their recipes can carry handcraft permits, while specialists have no
+-- general operating-paperwork requirement. Keep the character recipes and
+-- regulated assembler copies intact, and give the foundry and electromagnetic
+-- plant their own routes without the handcraft permits. Planetary material
+-- forms and other explicit recipe ingredients remain in place.
+-------------------------------------------------------------------------------
+local function strip_paperwork_requirement(target, requirement_name)
+  if not target or not target.ingredients then return end
+  local ingredients = {}
+  for _, ingredient in ipairs(target.ingredients) do
+    if ingredient_name(ingredient) ~= requirement_name then
+      ingredients[#ingredients + 1] = ingredient
+    end
+  end
+  target.ingredients = ingredients
+end
+
+local function add_specialist_native_routes(machine_name, source_categories, route_category, suffix)
+  local machine = data.raw["assembling-machine"][machine_name]
+  if not machine then return end
+
+  local categories = {}
+  for _, category in ipairs(machine.crafting_categories or {}) do
+    if not source_categories[category] then categories[#categories + 1] = category end
+  end
+  categories[#categories + 1] = route_category
+  machine.crafting_categories = categories
+
+  local specialist_recipes = {}
+  for recipe_name, native in pairs(data.raw.recipe) do
+    local copy_name = recipe_name .. suffix
+    if source_categories[native.category] and not data.raw.recipe[copy_name] then
+      local copy = util.table.deepcopy(native)
+      copy.name = copy_name
+      copy.category = route_category
+      copy.hide_from_player_crafting = true
+      copy.localised_name, copy.localised_description = resolve_regulated_recipe_localisation(native, recipe_name)
+
+      -- Recipes skipped by assembler regulation may contain their own
+      -- intentional paperwork. Only remove handcraft permits from recipes
+      -- for which a regulated machine route was generated.
+      if data.raw.recipe[recipe_name .. "-regulated"] then
+        local handcraft_form = shared.get_required_form(recipe_name)
+        for _, requirement in ipairs(shared.get_paperwork_requirements(handcraft_form, false)) do
+          strip_paperwork_requirement(copy, requirement.name)
+          strip_paperwork_requirement(copy.normal, requirement.name)
+          strip_paperwork_requirement(copy.expensive, requirement.name)
+        end
+      end
+      specialist_recipes[#specialist_recipes + 1] = copy
+
+      for _, technology in pairs(data.raw.technology or {}) do
+        for _, effect in ipairs(technology.effects or {}) do
+          if effect.type == "unlock-recipe" and effect.recipe == recipe_name then
+            add_recipe_unlock(technology, copy_name)
+            break
+          end
+        end
+      end
+    end
+  end
+  data:extend(specialist_recipes)
+end
+
+if feature_flags.space_age_enabled() then
+  add_specialist_native_routes("foundry", {pressing = true}, "foundry-pressing", "-foundry")
+  add_specialist_native_routes("electromagnetic-plant", {
+    electronics = true,
+    ["electronics-with-fluid"] = true,
+    ["electronics-or-assembling"] = true,
+  }, "electromagnetic-electronics", "-electromagnetic")
 end
 
 -------------------------------------------------------------------------------

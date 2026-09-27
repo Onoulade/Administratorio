@@ -41,12 +41,14 @@ local compatibility_rules = space_age_enabled
 --    Forms are only craftable in administrative buildings (office desk,
 --    admin station, printers). AMs only craft regulated vanilla recipes.
 --
--- 7. ALL BUILDINGS NEED FORMS
---    Every vanilla building recipe requires a tier-appropriate form:
+-- 7. AUTOMATED CONSTRUCTION USES FORMS
+--    Most vanilla building recipes require a tier-appropriate form:
 --    - In the regulated recipe (AM1/AM2/AM3): combined form (tier + work-order, consumed)
 --    - In the original recipe (handcraft before green): tier form directly
---    Exception: pipes, belts, poles, and basic intermediates (T0 = work-order only).
---    Machine operation paperwork is handled separately by recipe category.
+--    T0 assembler recipes generally use the base work order; basic pipes are
+--    exempt. Native specialist-machine routes do not inherit handcraft or
+--    assembler paperwork, but explicit planetary and process forms still apply.
+--    Machine operation paperwork is also handled by recipe category.
 --
 -- 8. TOP-TIER ASSEMBLERS STAY REGULATED
 --    AM2 and AM3 keep vanilla fluid capability, but regulated recipes live on

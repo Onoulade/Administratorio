@@ -49,6 +49,10 @@ data = {
       ["assembling-machine-1"] = { name = "assembling-machine-1", type = "assembling-machine", crafting_categories = {"crafting"} },
       ["assembling-machine-2"] = { name = "assembling-machine-2", type = "assembling-machine", crafting_categories = {"crafting", "advanced-crafting", "crafting-with-fluid"} },
       ["assembling-machine-3"] = { name = "assembling-machine-3", type = "assembling-machine", crafting_categories = {"crafting", "advanced-crafting", "crafting-with-fluid"} },
+      ["foundry"] = { name = "foundry", type = "assembling-machine",
+        crafting_categories = {"metallurgy", "pressing", "crafting-with-fluid-or-metallurgy", "metallurgy-or-assembling"} },
+      ["electromagnetic-plant"] = { name = "electromagnetic-plant", type = "assembling-machine",
+        crafting_categories = {"electromagnetics", "electronics", "electronics-with-fluid", "electronics-or-assembling"} },
     },
     furnace = {
       ["stone-furnace"] = { name = "stone-furnace", type = "furnace", energy_source = {type = "burner", fuel_category = "chemical"} },
@@ -881,6 +885,32 @@ recipes["electromagnetic-plant"] = {
   },
 }
 
+recipes["biochamber"] = {
+  type = "recipe", name = "biochamber", category = "organic-or-assembling", enabled = false,
+  ingredients = {{type = "item", name = "pentapod-egg", amount = 1}},
+  results = {{type = "item", name = "biochamber", amount = 1}},
+}
+
+for _, circuit in ipairs({
+  {name = "electronic-circuit", category = "electronics"},
+  {name = "advanced-circuit", category = "electronics"},
+  {name = "processing-unit", category = "electronics-with-fluid"},
+}) do
+  recipes[circuit.name] = {
+    type = "recipe", name = circuit.name, category = circuit.category, enabled = false,
+    ingredients = {{type = "item", name = "copper-plate", amount = 1}},
+    results = {{type = "item", name = circuit.name, amount = 1}},
+  }
+end
+
+for _, process in ipairs({"superconductor", "electromagnetic-science-pack"}) do
+  recipes[process] = {
+    type = "recipe", name = process, category = "electromagnetics", enabled = false,
+    ingredients = {{type = "item", name = "holmium-plate", amount = 1}},
+    results = {{type = "item", name = process, amount = 1}},
+  }
+end
+
 recipes["dual-planet-widget"] = {
   type = "recipe",
   name = "dual-planet-widget",
@@ -1658,6 +1688,15 @@ technologies["elevated-rails"] = {
   },
 }
 
+technologies["test-electronics"] = {
+  type = "technology", name = "test-electronics",
+  effects = {
+    {type = "unlock-recipe", recipe = "electronic-circuit"},
+    {type = "unlock-recipe", recipe = "advanced-circuit"},
+    {type = "unlock-recipe", recipe = "processing-unit"},
+  },
+}
+
 if not table.deepcopy then
   table.deepcopy = util.table.deepcopy
 end
@@ -2372,6 +2411,79 @@ test("Space Age shared categories receive regulated assembler copies", function(
   assert_eq(electromagnetic.category, "electronics-or-assembling", "native electromagnetic build path should be preserved")
   assert_true(regulated_electromagnetic ~= nil, "specialist-machine bootstrap missing regulated copy")
   assert_eq(regulated_electromagnetic.category, "advanced-crafting-regulated", "specialist-machine bootstrap should use AM2")
+end)
+
+test("electromagnetic plant keeps native electronics free of recurring paperwork", function()
+  local plant = data.raw["assembling-machine"]["electromagnetic-plant"]
+  local categories = {}
+  for _, category in ipairs(plant.crafting_categories) do categories[category] = true end
+  assert_true(categories["electromagnetics"] and categories["electromagnetic-electronics"],
+    "plant should retain dedicated processes and gain its own electronics route")
+  for _, category in ipairs({"electronics", "electronics-with-fluid", "electronics-or-assembling"}) do
+    assert_true(not categories[category], "plant should not use unregulated " .. category)
+  end
+
+  local required = {
+    ["electronic-circuit"] = "work-order",
+    ["advanced-circuit"] = "management-verbal-work-order",
+    ["processing-unit"] = "management-verbal-work-order",
+  }
+  for name, paperwork in pairs(required) do
+    local native = assert(get_recipe(name))
+    local assembler = assert(get_recipe(name .. "-regulated"))
+    local electromagnetic = assert(get_recipe(name .. "-electromagnetic"))
+    assert_eq(electromagnetic.category, "electromagnetic-electronics", name .. " plant category")
+    assert_true(not has_ingredient(electromagnetic, paperwork), name .. " plant route should not use " .. paperwork)
+    assert_true(not has_ingredient(electromagnetic, "management-approval-verbal"),
+      name .. " plant route should not inherit handcraft approval")
+    assert_true(has_ingredient(assembler, paperwork), name .. " assembler recipe missing " .. paperwork)
+    assert_true(not has_ingredient(native, paperwork), name .. " handcraft path should stay distinct")
+    assert_eq(electromagnetic.energy_required, native.energy_required, name .. " native batch size should match")
+    local unlocked = false
+    for _, effect in ipairs(technologies["test-electronics"].effects) do
+      if effect.recipe == electromagnetic.name then unlocked = true end
+    end
+    assert_true(unlocked, name .. " plant route should unlock with its source recipe")
+  end
+
+  assert_true(not has_ingredient(get_recipe("superconductor"), "work-order"),
+    "dedicated electromagnetic processing should stay exempt")
+  assert_true(not has_ingredient(get_recipe("electromagnetic-science-pack"), "research-grant-work-order"),
+    "native electromagnetic science should stay exempt")
+end)
+
+test("foundry pressing does not inherit handcraft permits", function()
+  local foundry = data.raw["assembling-machine"]["foundry"]
+  local categories = {}
+  for _, category in ipairs(foundry.crafting_categories) do categories[category] = true end
+  assert_true(categories["foundry-pressing"] and not categories["pressing"],
+    "foundry should use its own pressing routes")
+
+  local expected = {
+    ["fast-transport-belt"] = {hand = "construction-permit", machine = "construction-work-order"},
+    ["fast-underground-belt"] = {hand = "construction-permit", machine = "construction-work-order"},
+    ["fast-splitter"] = {hand = "safety-waiver", machine = "safety-work-order"},
+  }
+  for name, paperwork in pairs(expected) do
+    local native = assert(get_recipe(name))
+    local regulated = assert(get_recipe(name .. "-regulated"))
+    local foundry_recipe = assert(get_recipe(name .. "-foundry"))
+    assert_eq(foundry_recipe.category, "foundry-pressing", name .. " foundry category")
+    assert_true(has_ingredient(native, paperwork.hand), name .. " handcraft route missing permit")
+    assert_true(has_ingredient(regulated, paperwork.machine), name .. " assembler route missing work order")
+    assert_true(not has_ingredient(foundry_recipe, paperwork.hand), name .. " foundry route inherited permit")
+    assert_true(not has_ingredient(foundry_recipe, paperwork.machine), name .. " foundry route inherited work order")
+    assert_eq(foundry_recipe.energy_required, native.energy_required, name .. " foundry batch should match native")
+  end
+end)
+
+test("biochamber construction uses one yellow form on both machine routes", function()
+  local native = assert(get_recipe("biochamber"))
+  local regulated = assert(get_recipe("biochamber-regulated"))
+  assert_eq(get_ingredient_amount(native, "blank-yellow-form"), 1,
+    "native Biochamber build should use one Gleba form")
+  assert_eq(get_ingredient_amount(regulated, "blank-yellow-form"), 1,
+    "assembler Biochamber build should use one Gleba form")
 end)
 
 test("handcrafted upgraded logistics keep permits separate from regulated work orders", function()

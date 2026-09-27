@@ -37,6 +37,9 @@ local function new_force()
     recipes = {
       ["transport-belt"] = {enabled = false},
       ["transport-belt-regulated"] = {enabled = false},
+      ["transport-belt-foundry"] = {enabled = false},
+      ["electronic-circuit"] = {enabled = false},
+      ["electronic-circuit-electromagnetic"] = {enabled = false},
       ["fast-inserter"] = {enabled = false},
       ["fast-inserter-regulated"] = {enabled = false},
     },
@@ -59,6 +62,7 @@ test("technology names resolve through force technologies", function()
 
   assert_true(force.recipes["transport-belt"].enabled, "logistics should unlock transport-belt")
   assert_true(force.recipes["transport-belt-regulated"].enabled, "logistics should unlock transport-belt-regulated")
+  assert_true(force.recipes["transport-belt-foundry"].enabled, "logistics should unlock the foundry route")
 end)
 
 test("research objects from on_research_finished use their prototype", function()
@@ -94,6 +98,7 @@ end)
 test("configuration sync enables default and previously unlocked regulated copies", function()
   local force = new_force()
   force.recipes["transport-belt"].enabled = true
+  force.recipes["electronic-circuit"].enabled = true
   force.recipes["fast-inserter"].enabled = true
 
   regulated_unlocks.sync_enabled_variants(force)
@@ -102,6 +107,10 @@ test("configuration sync enables default and previously unlocked regulated copie
     "existing saves should enable the new basic-belt regulated copy")
   assert_true(force.recipes["fast-inserter-regulated"].enabled,
     "existing saves should mirror already-researched recipes")
+  assert_true(force.recipes["transport-belt-foundry"].enabled,
+    "existing saves should enable basic foundry pressing")
+  assert_true(force.recipes["electronic-circuit-electromagnetic"].enabled,
+    "existing saves should enable basic electromagnetic electronics")
 end)
 
 test("configuration sync ignores disabled originals and invalid forces", function()
@@ -112,6 +121,10 @@ test("configuration sync ignores disabled originals and invalid forces", functio
 
   assert_true(not force.recipes["transport-belt-regulated"].enabled,
     "disabled originals must not be unlocked")
+  assert_true(not force.recipes["transport-belt-foundry"].enabled,
+    "disabled originals must not unlock foundry routes")
+  assert_true(not force.recipes["electronic-circuit-electromagnetic"].enabled,
+    "disabled originals must not unlock electromagnetic routes")
 end)
 
 print(("Regulated unlock runtime tests: %d passed, %d failed"):format(passed, failed))

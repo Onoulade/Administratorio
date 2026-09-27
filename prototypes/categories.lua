@@ -56,6 +56,8 @@ local categories = {
 }
 
 if space_age_enabled then
+  categories[#categories + 1] = {type = "recipe-category", name = "electromagnetic-electronics"}
+  categories[#categories + 1] = {type = "recipe-category", name = "foundry-pressing"}
   for _, planet_name in ipairs(bureaucracy_categories.OFFWORLD_PLANETS) do
     categories[#categories + 1] = {
       type = "recipe-category",
