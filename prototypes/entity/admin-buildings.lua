@@ -790,7 +790,9 @@ breakroom.name = "corporate-breakroom"
 breakroom.minable.result = "corporate-breakroom"
 breakroom.placeable_by = placeable_by_item("corporate-breakroom")
 breakroom.next_upgrade = nil
-breakroom.crafting_categories = {"watercooler-gossip"}
+breakroom.crafting_categories = space_age_enabled
+  and {"watercooler-gossip", "specialist-approval"}
+  or {"watercooler-gossip"}
 breakroom.crafting_speed = BREAKROOM_SPEED
 breakroom.module_slots = 3
 breakroom.allowed_effects = {"speed", "productivity", "consumption", "pollution"}
@@ -832,7 +834,9 @@ union_hq.minable.result = "union-headquarters"
 union_hq.placeable_by = placeable_by_item("union-headquarters")
 union_hq.next_upgrade = nil
 union_hq.fast_replaceable_group = "late-admin-campus"
-union_hq.crafting_categories = {"union-negotiation", "bureaucracy-policy"}
+union_hq.crafting_categories = space_age_enabled
+  and {"union-negotiation", "bureaucracy-policy", "specialist-approval"}
+  or {"union-negotiation", "bureaucracy-policy"}
 union_hq.crafting_speed = UNION_HQ_SPEED
 union_hq.ingredient_count = 10
 union_hq.module_slots = 6

@@ -125,6 +125,38 @@ def run_case(factorio_bin: Path, *, space_age: bool, working_hours: bool) -> dic
         return dump_data(factorio_bin, root)
 
 
+def assert_specialist_approvals(data_raw: dict) -> None:
+    approvals = {
+        "foundry": "blank-cyan-form",
+        "biochamber": "blank-yellow-form",
+        "electromagnetic-plant": "blank-magenta-form",
+        "cryogenic-plant": "cryogenic-operations-license",
+    }
+    for name, form in approvals.items():
+        chassis = name + "-unapproved"
+        approval_name = name + "-approval"
+        assert not data_raw["item"][chassis].get("place_result"), chassis
+        assert data_raw["item"][name]["place_result"] == name, name
+        assert data_raw["assembling-machine"][name]["minable"]["result"] == chassis, name
+        for recipe_name in (name, name + "-regulated"):
+            recipe = data_raw["recipe"][recipe_name]
+            assert (chassis, "item") in recipe_results(recipe), recipe_name
+            assert form not in {ingredient for ingredient, _ in recipe_ingredients(recipe)}, recipe_name
+        approval = data_raw["recipe"][approval_name]
+        assert approval["category"] == "specialist-approval", approval_name
+        assert {ingredient["name"]: ingredient["amount"] for ingredient in approval["ingredients"]} == {
+            chassis: 1, form: 1,
+        }, approval_name
+        assert approval["results"] == [{"type": "item", "name": name, "amount": 1}], approval_name
+        assert not approval.get("surface_conditions"), approval_name
+        assert approval.get("allow_productivity") is False, approval_name
+        assert approval.get("allow_quality") is False, approval_name
+        assert any(effect.get("recipe") == approval_name
+                   for effect in data_raw["technology"][name]["effects"]), approval_name
+    for machine in ("corporate-breakroom", "union-headquarters"):
+        assert "specialist-approval" in data_raw["assembling-machine"][machine]["crafting_categories"], machine
+
+
 def assert_rideable_layers_preserve_native_collisions(data_raw: dict) -> None:
     """The biter's selective layers must not change unrelated placement rules."""
     object_layer = "administratorio_rideable_biter_collision"
@@ -401,6 +433,8 @@ def main() -> None:
     assert_ore_placement_masks(space_age)
     assert_milestone_resolutions_are_operable(base, "base game")
     assert_milestone_resolutions_are_operable(space_age, "Space Age")
+    assert_specialist_approvals(space_age)
+    assert "foundry-unapproved" not in base.get("item", {}), "specialist chassis must be Space Age only"
     assert_chromatic_fast_tracks_are_space_age_only(base, space_age)
     assert "administrative-clock" in base.get("item", {}), "Working Hours should expose the Administrative Clock item"
     assert "administrative-clock" in base.get("constant-combinator", {}), "Working Hours should expose the Administrative Clock entity"
@@ -421,6 +455,7 @@ def main() -> None:
     assert_managed_biter_crossings(no_working_hours)
     assert_ore_placement_masks(no_working_hours)
     assert_milestone_resolutions_are_operable(no_working_hours, "Space Age without Working Hours")
+    assert_specialist_approvals(no_working_hours)
     assert "administrative-clock" not in no_working_hours.get("item", {}), "disabled Working Hours must not expose the Administrative Clock item"
     assert "administrative-clock" not in no_working_hours.get("constant-combinator", {}), "disabled Working Hours must not expose the Administrative Clock entity"
     assert "signal-daytime" not in no_working_hours.get("virtual-signal", {}), "disabled Working Hours must not expose the daytime signal"

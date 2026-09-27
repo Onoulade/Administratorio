@@ -167,7 +167,7 @@ local function new_managed_building(surface, force, opts)
   opts = opts or {}
   local building = {
     valid = true,
-    name = "printer-t2",
+    name = opts.name or "printer-t2",
     unit_number = opts.unit_number or 20,
     position = opts.position or {x = 2, y = 0},
     surface = surface,
@@ -175,17 +175,53 @@ local function new_managed_building(surface, force, opts)
     active = false,
     products_finished = 0,
     crafting_progress = 0,
+    recipe_name = opts.recipe_name or "dummy",
     bounding_box = {
       left_top = {x = 1.5, y = -0.5},
       right_bottom = {x = 2.5, y = 0.5},
     },
   }
   function building.get_recipe()
-    return {name = "dummy"}
+    return {name = building.recipe_name}
   end
   surface.buildings[#surface.buildings + 1] = building
   return building
 end
+
+test("breakroom approval runs without wage dispatch and returns to normal gating", function()
+  storage = {}
+  package.loaded["scripts.biter_station"] = nil
+  local surface = new_surface()
+  local force = {name = "player", valid = true, technologies = {}, set_cease_fire = function() end}
+  game = {
+    tick = 0,
+    surfaces = {surface},
+    forces = {player = force},
+    create_force = function(name)
+      local created = {name = name, valid = true, technologies = {}, set_cease_fire = function() end}
+      game.forces[name] = created
+      return created
+    end,
+  }
+  local breakroom = new_managed_building(surface, force, {
+    name = "corporate-breakroom", recipe_name = "foundry-approval",
+  })
+  local biter_station = require("scripts.biter_station")
+  biter_station.track_managed_building(breakroom)
+  assert_true(breakroom.active, "approval should run without a dispatched worker")
+  biter_station.update(10)
+  assert_true(breakroom.active, "approval should remain active without a station")
+  assert_true(next(storage.biter_station_biter or {}) == nil,
+    "approval should not dispatch or charge a worker")
+
+  breakroom.recipe_name = "watercooler-gossip-production"
+  biter_station.update(20)
+  assert_true(not breakroom.active, "gossip should still wait for a station worker")
+
+  breakroom.recipe_name = "biochamber-approval"
+  biter_station.update(30)
+  assert_true(breakroom.active, "switching back to approval should resume autonomously")
+end)
 
 local function active_worker()
   for _, state in pairs(storage.biter_station_biter or {}) do

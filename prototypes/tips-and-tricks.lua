@@ -150,6 +150,17 @@ if space_age_enabled then
     research_tip("administratorio-workforce-formation", orbit, "d", "worker-formation"),
     research_tip("administratorio-management-briefings", orbit, "e", "management-formation"),
     research_tip("administratorio-orbital-specialists", orbit, "f", "specialized-formation"),
+    tip("administratorio-specialist-approval", orbit, "f1", {
+      trigger = {
+        type = "or",
+        triggers = {
+          {type = "research", technology = "foundry"},
+          {type = "research", technology = "biochamber"},
+          {type = "research", technology = "electromagnetic-plant"},
+          {type = "research", technology = "cryogenic-plant"},
+        },
+      },
+    }),
     research_tip("administratorio-administrative-space-station", orbit, "g", "orbital-employment-infrastructure"),
     research_tip("administratorio-trajectory-compliance-arrays", orbit, "h", "orbital-compliance-systems"),
     research_tip("administratorio-senior-trajectory-compliance-array", orbit, "i", "trajectory-compliance-jurisdiction-2"),

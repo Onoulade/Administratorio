@@ -1,6 +1,6 @@
 local M = {}
 
-local MACHINE_ROUTE_SUFFIXES = {"-regulated", "-foundry", "-electromagnetic"}
+local MACHINE_ROUTE_SUFFIXES = {"-regulated", "-foundry", "-electromagnetic", "-approval"}
 
 local function is_machine_route(recipe_name)
   for _, suffix in ipairs(MACHINE_ROUTE_SUFFIXES) do

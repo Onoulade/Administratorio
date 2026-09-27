@@ -38,6 +38,9 @@ local function new_force()
       ["transport-belt"] = {enabled = false},
       ["transport-belt-regulated"] = {enabled = false},
       ["transport-belt-foundry"] = {enabled = false},
+      ["foundry"] = {enabled = false},
+      ["foundry-regulated"] = {enabled = false},
+      ["foundry-approval"] = {enabled = false},
       ["electronic-circuit"] = {enabled = false},
       ["electronic-circuit-electromagnetic"] = {enabled = false},
       ["fast-inserter"] = {enabled = false},
@@ -81,6 +84,15 @@ test("research objects from on_research_finished use their prototype", function(
   assert_true(force.recipes["fast-inserter-regulated"].enabled, "research objects should unlock regulated variants")
 end)
 
+test("specialist approval unlocks with its construction research", function()
+  local force = new_force()
+  local research = {prototype = {effects = {{type = "unlock-recipe", recipe = "foundry"}}}}
+  regulated_unlocks.enable_regulated_variants_for_technology(force, research)
+  assert_true(force.recipes["foundry"].enabled, "foundry chassis should unlock")
+  assert_true(force.recipes["foundry-regulated"].enabled, "assembler chassis route should unlock")
+  assert_true(force.recipes["foundry-approval"].enabled, "foundry approval should unlock")
+end)
+
 test("direct prototypes and missing regulated copies are handled safely", function()
   local force = new_force()
 
@@ -100,6 +112,7 @@ test("configuration sync enables default and previously unlocked regulated copie
   force.recipes["transport-belt"].enabled = true
   force.recipes["electronic-circuit"].enabled = true
   force.recipes["fast-inserter"].enabled = true
+  force.recipes["foundry"].enabled = true
 
   regulated_unlocks.sync_enabled_variants(force)
 
@@ -111,6 +124,8 @@ test("configuration sync enables default and previously unlocked regulated copie
     "existing saves should enable basic foundry pressing")
   assert_true(force.recipes["electronic-circuit-electromagnetic"].enabled,
     "existing saves should enable basic electromagnetic electronics")
+  assert_true(force.recipes["foundry-approval"].enabled,
+    "existing saves should enable approval for already researched specialist buildings")
 end)
 
 test("configuration sync ignores disabled originals and invalid forces", function()

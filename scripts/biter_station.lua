@@ -1,6 +1,7 @@
 local C = require("scripts.constants")
 local feature_flags = require("feature_flags")
 local working_hours = require("scripts.working_hours")
+local specialist_approvals = require("prototypes.shared.specialist_approvals")
 local unit_ai_settings = require("scripts.unit_ai_settings")
 local orphaned_worker = require("scripts.orphaned_worker")
 
@@ -1072,6 +1073,14 @@ local function get_recipe_name(recipe)
   return recipe and recipe.name or nil
 end
 
+local function is_dispatch_exempt_approval(entity)
+  if not entity or not entity.valid or entity.name ~= "corporate-breakroom" then
+    return false
+  end
+  local recipe = entity.get_recipe and entity.get_recipe() or nil
+  return recipe and specialist_approvals.recipe_names[recipe.name] == true or false
+end
+
 local function get_entity_crafting_progress(entity)
   local progress = entity and entity.crafting_progress
   if type(progress) == "number" then
@@ -1088,6 +1097,7 @@ local function activate_building_for_visit(building, biter_unit_number)
   if not recipe then
     return false
   end
+  if is_dispatch_exempt_approval(building) then return false end
 
   local unit_number = building.unit_number
   local run_state = ensure_run_state(building)
@@ -1161,6 +1171,7 @@ local function build_building_queue(station)
        and building.force
        and building.force == station.force
        and not is_orbital_printer(building)
+       and not is_dispatch_exempt_approval(building)
        and not has_unstaffed_operations_waiver(building) then
       storage.managed_building_registry[building.unit_number] = building
 
@@ -1534,7 +1545,8 @@ end
 local function advance_running_buildings()
   for unit_number, run_state in pairs(storage.managed_building_run) do
     local entity = run_state.entity
-    if entity and entity.valid and has_unstaffed_operations_waiver(entity) then
+    if entity and entity.valid and (has_unstaffed_operations_waiver(entity)
+        or is_dispatch_exempt_approval(entity)) then
       -- A waiver installed mid-run takes over immediately: the building keeps
       -- running rather than stopping when its dispatched crafts run out.
       storage.managed_building_run[unit_number] = nil
@@ -1910,6 +1922,12 @@ function M.track_managed_building(entity)
 
   storage.managed_building_registry[entity.unit_number] = entity
 
+  if is_dispatch_exempt_approval(entity) then
+    storage.managed_building_run[entity.unit_number] = nil
+    entity.active = not is_building_blocked_by_working_hours(entity)
+    return
+  end
+
   if has_unstaffed_operations_waiver(entity) then
     storage.managed_building_run[entity.unit_number] = nil
     entity.active = true
@@ -2210,10 +2228,11 @@ local function reconcile_waivered_buildings()
   for unit_number, entity in pairs(storage.managed_building_registry) do
     if not entity or not entity.valid then
       storage.managed_building_registry[unit_number] = nil
+    elseif is_dispatch_exempt_approval(entity) then
+      entity.active = not is_building_blocked_by_working_hours(entity)
+      storage.managed_building_run[unit_number] = nil
     elseif has_unstaffed_operations_waiver(entity) then
-      if not entity.active then
-        entity.active = true
-      end
+      if not entity.active then entity.active = true end
       storage.managed_building_run[unit_number] = nil
     elseif entity.active and not storage.managed_building_run[unit_number] then
       -- The waiver was removed: the building waits for a dispatched biter again.

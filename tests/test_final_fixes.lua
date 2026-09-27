@@ -50,9 +50,17 @@ data = {
       ["assembling-machine-2"] = { name = "assembling-machine-2", type = "assembling-machine", crafting_categories = {"crafting", "advanced-crafting", "crafting-with-fluid"} },
       ["assembling-machine-3"] = { name = "assembling-machine-3", type = "assembling-machine", crafting_categories = {"crafting", "advanced-crafting", "crafting-with-fluid"} },
       ["foundry"] = { name = "foundry", type = "assembling-machine",
-        crafting_categories = {"metallurgy", "pressing", "crafting-with-fluid-or-metallurgy", "metallurgy-or-assembling"} },
+        crafting_categories = {"metallurgy", "pressing", "crafting-with-fluid-or-metallurgy", "metallurgy-or-assembling"},
+        minable = {mining_time = 0.5, result = "foundry"}, placeable_by = {item = "foundry", count = 1} },
+      ["biochamber"] = { name = "biochamber", type = "assembling-machine",
+        crafting_categories = {"organic", "organic-or-assembling"},
+        minable = {mining_time = 0.5, result = "biochamber"}, placeable_by = {item = "biochamber", count = 1} },
       ["electromagnetic-plant"] = { name = "electromagnetic-plant", type = "assembling-machine",
-        crafting_categories = {"electromagnetics", "electronics", "electronics-with-fluid", "electronics-or-assembling"} },
+        crafting_categories = {"electromagnetics", "electronics", "electronics-with-fluid", "electronics-or-assembling"},
+        minable = {mining_time = 0.5, result = "electromagnetic-plant"}, placeable_by = {item = "electromagnetic-plant", count = 1} },
+      ["cryogenic-plant"] = { name = "cryogenic-plant", type = "assembling-machine",
+        crafting_categories = {"cryogenics", "cryogenics-or-assembling"},
+        minable = {mining_time = 0.5, result = "cryogenic-plant"}, placeable_by = {item = "cryogenic-plant", count = 1} },
     },
     furnace = {
       ["stone-furnace"] = { name = "stone-furnace", type = "furnace", energy_source = {type = "burner", fuel_category = "chemical"} },
@@ -872,6 +880,12 @@ recipes["heat-pipe"] = {
   },
 }
 
+recipes["foundry"] = {
+  type = "recipe", name = "foundry", category = "metallurgy-or-assembling", enabled = false,
+  ingredients = {{type = "item", name = "tungsten-carbide", amount = 4}},
+  results = {{type = "item", name = "foundry", amount = 1}},
+}
+
 recipes["electromagnetic-plant"] = {
   type = "recipe",
   name = "electromagnetic-plant",
@@ -890,6 +904,18 @@ recipes["biochamber"] = {
   ingredients = {{type = "item", name = "pentapod-egg", amount = 1}},
   results = {{type = "item", name = "biochamber", amount = 1}},
 }
+
+for _, name in ipairs({"foundry", "biochamber", "electromagnetic-plant", "cryogenic-plant"}) do
+  data.raw.item[name] = {
+    type = "item", name = name, place_result = name, stack_size = 50,
+    subgroup = "production-machine", order = name,
+    icon = "__space-age__/graphics/icons/" .. name .. ".png", icon_size = 64,
+  }
+  technologies[name] = {
+    type = "technology", name = name,
+    effects = {{type = "unlock-recipe", recipe = name}},
+  }
+end
 
 for _, circuit in ipairs({
   {name = "electronic-circuit", category = "electronics"},
@@ -2477,13 +2503,42 @@ test("foundry pressing does not inherit handcraft permits", function()
   end
 end)
 
-test("biochamber construction uses one yellow form on both machine routes", function()
-  local native = assert(get_recipe("biochamber"))
-  local regulated = assert(get_recipe("biochamber-regulated"))
-  assert_eq(get_ingredient_amount(native, "blank-yellow-form"), 1,
-    "native Biochamber build should use one Gleba form")
-  assert_eq(get_ingredient_amount(regulated, "blank-yellow-form"), 1,
-    "assembler Biochamber build should use one Gleba form")
+test("specialist buildings require approval after construction and mining", function()
+  local specs = {
+    ["foundry"] = "blank-cyan-form",
+    ["biochamber"] = "blank-yellow-form",
+    ["electromagnetic-plant"] = "blank-magenta-form",
+    ["cryogenic-plant"] = "cryogenic-operations-license",
+  }
+  for name, form in pairs(specs) do
+    local chassis_name = name .. "-unapproved"
+    local chassis = assert(data.raw.item[chassis_name], chassis_name .. " missing")
+    local approved = assert(data.raw.item[name])
+    local entity = assert(data.raw["assembling-machine"][name])
+    local approval = assert(get_recipe(name .. "-approval"))
+    assert_eq(chassis.place_result, nil, chassis_name .. " must not be placeable")
+    assert_eq(approved.place_result, name, name .. " approved item must place machine")
+    assert_eq(entity.minable.result, chassis_name, name .. " mining must revoke approval")
+    assert_eq(entity.placeable_by.item, name, name .. " blueprint must request approved item")
+    assert_eq(entity.loot, nil, name .. " destruction must not salvage chassis")
+    for _, build_name in ipairs({name, name .. "-regulated"}) do
+      local build_recipe = assert(get_recipe(build_name))
+      assert_eq(get_result_amount(build_recipe, chassis_name), 1, build_name .. " output")
+      assert_true(not has_ingredient(build_recipe, form), build_name .. " must not double-charge form")
+    end
+    assert_eq(approval.category, "specialist-approval", name .. " approval category")
+    assert_eq(get_ingredient_amount(approval, chassis_name), 1, name .. " chassis cost")
+    assert_eq(get_ingredient_amount(approval, form), 1, name .. " approval cost")
+    assert_eq(get_result_amount(approval, name), 1, name .. " approved output")
+    assert_eq(approval.surface_conditions, nil, name .. " reapproval should work on any planet")
+    assert_true(approval.allow_productivity == false and approval.allow_quality == false,
+      name .. " approval must not duplicate or upgrade the chassis")
+    local unlocked = false
+    for _, effect in ipairs(technologies[name].effects) do
+      if effect.recipe == approval.name then unlocked = true end
+    end
+    assert_true(unlocked, name .. " research must unlock approval")
+  end
 end)
 
 test("handcrafted upgraded logistics keep permits separate from regulated work orders", function()
@@ -2801,17 +2856,17 @@ test("Space Age native and regulated recipe paths both remain visible in Factori
   assert_true(not original.hidden_in_factoriopedia, "native transport-belt recipe should remain visible in Factoriopedia")
   assert_true(not regulated.hidden_in_factoriopedia, "transport-belt-regulated should remain visible in Factoriopedia")
   assert_true(type(regulated.localised_name) == "table", "transport-belt-regulated missing localised_name")
-  assert_eq(regulated.localised_name[1], "entity-name.transport-belt", "transport-belt-regulated should localise from place_result")
+  assert_eq(regulated.localised_name[1], "administratorio-factoriopedia.route-regulated", "transport-belt-regulated should identify the regulated route")
 end)
 
-test("admin building recipes redirect Factoriopedia to regulated copies", function()
+test("admin building recipes expose both Factoriopedia routes", function()
   local original = get_recipe("printer-t1")
   local regulated = get_recipe("printer-t1-regulated")
 
   assert_true(original ~= nil, "printer-t1 missing")
   assert_true(regulated ~= nil, "printer-t1-regulated missing")
-  assert_eq(original.factoriopedia_alternative, "printer-t1-regulated", "printer-t1 should redirect Factoriopedia to the regulated recipe")
-  assert_eq(original.hidden_in_factoriopedia, true, "printer-t1 should be hidden in Factoriopedia")
+  assert_eq(original.factoriopedia_alternative, nil, "printer-t1 should keep its native route visible")
+  assert_true(not original.hidden_in_factoriopedia, "printer-t1 should remain visible in Factoriopedia")
   assert_true(not regulated.hidden_in_factoriopedia, "printer-t1-regulated should remain visible in Factoriopedia")
 end)
 
@@ -2909,8 +2964,8 @@ end)
 test("space age intermediate recipes gain the expected chromatic and aquilo gates", function()
   local electromagnetic = get_recipe("electromagnetic-plant")
   assert_true(electromagnetic ~= nil, "electromagnetic-plant missing")
-  assert_true(has_ingredient(electromagnetic, "blank-magenta-form"),
-    "electromagnetic-plant should gain blank-magenta-form for holmium use")
+  assert_true(has_ingredient(get_recipe("electromagnetic-plant-approval"), "blank-magenta-form"),
+    "electromagnetic-plant approval should require magenta paperwork")
 
   local asteroid_collector = get_recipe("asteroid-collector")
   assert_true(asteroid_collector ~= nil, "asteroid-collector missing")
@@ -2973,8 +3028,8 @@ test("space age intermediate recipes gain the expected chromatic and aquilo gate
   assert_true(has_ingredient(cooling, "cryogenic-operations-license"),
     "fluoroketone-cooling should require cryogenic-operations-license")
   local cryogenic = get_recipe("cryogenic-plant")
-  assert_true(has_ingredient(cryogenic, "cryogenic-operations-license"),
-    "cryogenic-plant should require cryogenic-operations-license")
+  assert_true(has_ingredient(get_recipe("cryogenic-plant-approval"), "cryogenic-operations-license"),
+    "cryogenic-plant approval should require cryogenic-operations-license")
 end)
 
 test("first platform infrastructure and basic asteroid crushing stay pre-planet", function()

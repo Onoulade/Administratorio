@@ -1672,6 +1672,13 @@ if feature_flags.space_age_enabled() then
   }, "electromagnetic-electronics", "-electromagnetic")
 end
 
+-- Specialist construction produces a reusable unapproved chassis. A separate
+-- breakroom or Union HQ cycle consumes the existing planetary form and issues
+-- the placeable machine; mining the machine returns its chassis.
+if feature_flags.space_age_enabled() then
+  require("prototypes.final_fixes.specialist_approvals").apply(data, remove_ingredient_from_recipe)
+end
+
 -------------------------------------------------------------------------------
 -- 12. SCIENCE PACKS ARE RESEARCH-ONLY
 -- Science packs belong in technology unit ingredients, never crafting recipe
