@@ -123,14 +123,16 @@ Larger biters file more complaints at higher tiers, but also pay more.
 | Biter Size | Complaint Count | Max Tier | Payout |
 | --- | --- | --- | --- |
 | Small | 1 | 1 (landscape / littering) | 5 taxpayer-money |
-| Medium | 2 | 2 (adds smog / hazmat) | 15 taxpayer-money |
-| Big | 3 | 3 (adds noise / loitering) | 50 taxpayer-money |
-| Behemoth | 4 | 4 (adds unemployment / vagrancy) | 100 taxpayer-money |
+| Medium | 2 | 2 (adds smog / hazmat) | 10 taxpayer-money |
+| Big | 3 | 3 (adds noise / loitering) | 25 taxpayer-money |
+| Behemoth | 4 | 4 (adds unemployment / vagrancy) | 50 taxpayer-money |
 <!-- END GENERATED: complaint-size-facts -->
 
 ### Resolution Chains
 
 Each complaint pair requires a specific technology to unlock. Resolved complaints produce a reward item and pay out taxpayer-money.
+
+Routine White Papers, Policies, and Regulations no longer spend Treasury Bonds. The normal Noise and Loitering finals each spend 1 taxpayer-money; Unemployment and Vagrancy finals each spend 2. The document requirements remain three for tier 3 and five for tier 4. Since a big visitor files three tickets and a behemoth files four, their maximum direct money costs are 3 and 8 respectively. Their payouts are 25 and 50, leaving at least 22 and 42 taxpayer-money before other materials and power. Space Age chromatic fast tracks still resolve a ticket directly with a colored form and no money ingredient.
 
 | Complaint pair | Unlocked after | Recipe depth |
 | --- | --- | --- |

@@ -686,11 +686,13 @@ test("late policy recipes stay within the shared HQ fluid limits", function()
   end
 end)
 
-test("white-paper now uses a treasury-bond instead of slush-fund", function()
-  local r = get_recipe("white-paper-production")
-  assert_true(has_ingredient(r, "treasury-bond"))
-  assert_eq(get_ingredient_amount(r, "treasury-bond"), 1)
-  assert_true(not has_ingredient(r, "slush-fund"))
+test("late policy intermediates no longer spend complaint revenue", function()
+  for _, recipe_name in ipairs({"white-paper-production", "policy-production", "regulation-production"}) do
+    local recipe = get_recipe(recipe_name)
+    assert_false(has_ingredient(recipe, "treasury-bond"), recipe_name .. " should not consume bonds")
+    assert_false(has_ingredient(recipe, "taxpayer-money"), recipe_name .. " should not consume loose money")
+    assert_false(has_ingredient(recipe, "slush-fund"), recipe_name .. " should not consume slush fund")
+  end
 end)
 
 -- =========================================================================
@@ -1009,6 +1011,54 @@ test("unemployment/vagrancy finals now resolve directly from the case stage", fu
   assert_true(has_ingredient(get_recipe("vagrancy-final"), "case-v"))
 end)
 
+test("complaint recipes retain their document counts and cap direct money cost", function()
+  for _, track in ipairs({
+    {name = "noise", document = "policy", count = 3, money = 1},
+    {name = "loitering", document = "regulation", count = 3, money = 1},
+    {name = "unemployment", document = "regulation", count = 5, money = 2},
+    {name = "vagrancy", document = "policy", count = 5, money = 2},
+  }) do
+    local final = get_recipe(track.name .. "-final")
+    assert_eq(get_ingredient_amount(final, track.document), track.count, track.name .. " document count")
+    assert_eq(get_ingredient_amount(final, "taxpayer-money"), track.money, track.name .. " money cost")
+    assert_false(has_ingredient(final, "treasury-bond"), track.name .. " should not consume bonds")
+  end
+  assert_false(has_ingredient(get_recipe("case-unemployment"), "treasury-bond"))
+  assert_eq(get_ingredient_amount(get_recipe("case-vagrancy"), "policy"), 1)
+  for _, name in ipairs({"landscape", "littering", "smog", "hazmat"}) do
+    assert_false(has_ingredient(get_recipe(name .. "-final"), "taxpayer-money"), name .. " should remain free")
+  end
+  local facts = require("prototypes.shared.gameplay_facts")
+  local tracks = {
+    {"landscape", "smog", "noise", "unemployment"},
+    {"littering", "hazmat", "loitering", "vagrancy"},
+  }
+  local caps = {small = 0, medium = 0, big = 5, behemoth = 10}
+  local previous_best_net = 0
+  for _, size in ipairs(facts.biter_sizes) do
+    local worst_ticket_cost = 0
+    for _, kind in ipairs(tracks) do
+      for tier = 1, size.max_tier do
+        local name = kind[tier]
+        local cost = 0
+        for _, recipe_name in ipairs({"filing-" .. name, "case-" .. name, name .. "-final"}) do
+          local recipe = get_recipe(recipe_name)
+          if recipe then
+            cost = cost + (get_ingredient_amount(recipe, "taxpayer-money") or 0)
+            assert_false(has_ingredient(recipe, "treasury-bond"), recipe_name .. " should not spend bonds")
+          end
+        end
+        worst_ticket_cost = math.max(worst_ticket_cost, cost)
+      end
+    end
+    local worst_cost = size.complaint_count * worst_ticket_cost
+    assert_true(worst_cost <= caps[size.name], size.name .. " exceeds its money cost cap")
+    assert_true(size.payout - worst_cost > previous_best_net,
+      size.name .. " worst net income should exceed the prior size's best")
+    previous_best_net = size.payout
+  end
+end)
+
 test("final resolution times escalate after folding the brief stage into the final craft", function()
   assert_eq(get_recipe("landscape-final").energy_required, 5)
   assert_eq(get_recipe("littering-final").energy_required, 7)
@@ -1174,11 +1224,8 @@ test("government-grant requires treasury-bond and union negotiation", function()
   assert_true(has_ingredient(r, "management-approval-verbal"))
 end)
 
-test("repeatable policy and casework use bonds instead of megaproject grants", function()
+test("specialist equipment uses bonds instead of megaproject grants", function()
   for _, recipe_name in ipairs({
-    "policy-production",
-    "regulation-production",
-    "case-unemployment",
     "hired-biter-capsule",
     "overtime-exemption",
   }) do

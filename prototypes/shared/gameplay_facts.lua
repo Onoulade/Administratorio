@@ -6,9 +6,9 @@ local M = {}
 
 M.biter_sizes = {
   {name = "small", complaint_count = 1, max_tier = 1, payout = 5, worker_yield = 1},
-  {name = "medium", complaint_count = 2, max_tier = 2, payout = 15, worker_yield = 2},
-  {name = "big", complaint_count = 3, max_tier = 3, payout = 50, worker_yield = 3},
-  {name = "behemoth", complaint_count = 4, max_tier = 4, payout = 100, worker_yield = 5},
+  {name = "medium", complaint_count = 2, max_tier = 2, payout = 10, worker_yield = 2},
+  {name = "big", complaint_count = 3, max_tier = 3, payout = 25, worker_yield = 3},
+  {name = "behemoth", complaint_count = 4, max_tier = 4, payout = 50, worker_yield = 5},
 }
 
 M.admin_station = {
