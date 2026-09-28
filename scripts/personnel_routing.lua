@@ -1,6 +1,7 @@
 local R = require("prototypes.shared.personnel_routing")
 local graph = require("scripts.personnel_route_graph")
 local pavement = require("scripts.personnel_pavement")
+local traffic = require("scripts.personnel_traffic")
 local ai = require("scripts.unit_ai_settings")
 local briefing_overlay = require("scripts.personnel_briefing_overlay")
 local M = {}
@@ -40,7 +41,8 @@ local function floor_tiles(cell)
 end
 local function paved(surface, cell)
   for x = cell.x - 1, cell.x do for y = cell.y - 1, cell.y do
-    if surface.get_tile(x, y).name ~= R.TILE then return false end
+    local tile=surface.get_tile(x,y)
+    if not tile.valid or tile.name~=R.TILE then return false end
   end end
   return true
 end
@@ -70,21 +72,34 @@ local function reserve_route(route)
   for i, cell in ipairs(route) do
     cell.refs = (cell.refs or 0) + 1
     if route.serial then cell.serial_refs = (cell.serial_refs or 0) + 1 end
-    cell.flow = route[i + 1] and route[i + 1].key or "arrival"
+    if route[i+1] then
+      cell.flow=route[i+1].key
+      cell.flow_refs=(cell.flow_refs or 0)+1
+    end
+    lock_cell(cell)
+  end
+end
+local function drop_route(route,id)
+  for i,cell in ipairs(route or {}) do
+    if cell.occupant==id then cell.occupant=nil end
+    cell.refs=math.max(0,(cell.refs or 0)-1)
+    if route.serial then cell.serial_refs=math.max(0,(cell.serial_refs or 0)-1) end
+    if route[i+1] then cell.flow_refs=math.max(0,(cell.flow_refs or 0)-1) end
+    if (cell.flow_refs or 0)==0 then cell.flow=nil end
     lock_cell(cell)
   end
 end
 local function release_route(job)
-  for _, cell in ipairs(job.route or {}) do
-    if cell.occupant == job.id then cell.occupant = nil end
-    cell.refs = math.max(0, (cell.refs or 0) - 1)
-    if job.route.serial then cell.serial_refs = math.max(0, (cell.serial_refs or 0) - 1) end
-    if cell.refs == 0 then cell.flow = nil end
-    lock_cell(cell)
-  end
+  drop_route(job.route,job.id)
+  drop_route(job.departure,job.id)
+  job.departure=nil
+  for _,tail in ipairs(job.trailing or {}) do drop_route(tail,job.id) end
+  job.trailing=nil
   local s=surface_state(job.surface_index)
+  for _,key in ipairs(job.exclusive or {}) do if s.exclusive and s.exclusive[key]==job.id then s.exclusive[key]=nil end end
+  job.exclusive=nil
   if s.deferred then s.dirty=true end
-  job.route = nil
+  job.route=nil
 end
 local function delete_unit(job)
   briefing_overlay.clear(job)
@@ -182,10 +197,12 @@ local function remove_record(id)
     if cell.node == record then cell.node = nil end
     if cell.road == record then cell.road = nil end
     local affected = {}
-    for _, job in pairs(st.jobs) do
-      for _, used in ipairs(job.route or {}) do
-        if used == cell then affected[#affected + 1] = job; break end
-      end
+    for _,job in pairs(st.jobs) do
+      local uses=false
+      for _,used in ipairs(job.route or {}) do if used==cell then uses=true end end
+      for _,used in ipairs(job.departure or {}) do if used==cell then uses=true end end
+      for _,tail in ipairs(job.trailing or {}) do for _,used in ipairs(tail) do if used==cell then uses=true end end end
+      if uses then affected[#affected+1]=job end
     end
     for _, job in ipairs(affected) do recover(job) end
     if not cell.node and not cell.road then
@@ -225,7 +242,8 @@ function M.on_built(event)
   for x = p.x - 1, p.x do for y = p.y - 1, p.y do
     local owner = s.tiles[R.key(x, y)]
     if owner and owner ~= key then reject_build(entity, event); return true end
-    if entity.surface.get_tile(x, y).collides_with("water_tile") then reject_build(entity, event); return true end
+    local tile=entity.surface.get_tile(x,y)
+    if not tile.valid or tile.collides_with("water_tile") then reject_build(entity,event);return true end
   end end
   if not clear_block(entity.surface, {x=p.x,y=p.y}) then reject_build(entity, event); return true end
   if not cell then
@@ -274,13 +292,43 @@ function M.on_object_destroyed(event)
   if entry.kind == "record" then remove_record(entry.id)
   elseif st.jobs[entry.id] then recover(st.jobs[entry.id]) end
 end
+local function rotation_locks()
+  local locks={}
+  for _,job in pairs(state().jobs) do
+    local route=job.route
+    if route then
+      local first=route[1].node
+      if not route.segment then
+        for i=1,#route-1 do
+          local node=route[i].node
+          if node and node.role=="sign" and valid(node.entity) then locks[node.entity.unit_number]=true end
+        end
+      end
+      if first and first.role=="sign" and valid(first.entity) then locks[first.entity.unit_number]=true end
+      -- Incoming segments end at the sign's fixed center, regardless of its
+      -- arrow. Approaching followers must not prevent redirecting a terminal
+      -- queue. Only admitted departures and bodies still clearing a turn lock
+      -- the arrow; mining/combat protection still covers incoming reservations.
+    end
+    if job.departure then
+      local node=job.departure[1].node
+      if node and valid(node.entity) then locks[node.entity.unit_number]=true end
+    end
+    for _,tail in ipairs(job.trailing or {}) do
+      for _,cell in ipairs(tail) do if cell.node and cell.node.role=="sign" and valid(cell.node.entity) then locks[cell.node.entity.unit_number]=true end end
+    end
+  end
+  return locks
+end
 function M.on_rotated(event)
   local entity = event.entity
   local record = valid(entity) and state().records[entity.unit_number]
   if not record then return end
   local s = surface_state(record.surface_index)
   local cell = s.cells[record.key]
-  if (cell.refs or 0) > 0 then entity.direction = event.previous_direction; return end
+  if (cell.refs or 0)>0 and (record.role~="sign" or rotation_locks()[entity.unit_number]) then
+    entity.direction=event.previous_direction;return
+  end
   s.revision = s.revision + 1
   s.dirty = true
 end
@@ -323,8 +371,40 @@ end
 local function stop(job)
   job.entity.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.none}
   job.entity.active = false
+  if job.dx then job.entity.orientation=job.dx==1 and 0.25 or job.dx==-1 and 0.75 or job.dy==1 and 0.5 or 0 end
 end
-local function dispatch(record, tick)
+local function available(route,s,id)
+  for _,cell in ipairs(route) do
+    if s.exclusive and s.exclusive[cell.key] and s.exclusive[cell.key]~=id then return false end
+  end
+  if not id and route.guards then
+    for _,cell in ipairs(route.guards) do
+      if (cell.refs or 0)>0 or (s.exclusive and s.exclusive[cell.key]) then return false end
+    end
+  end
+  return graph.compatible(route,s.cells)
+end
+local function departure_for(job,cell,tick,index)
+  local s=surface_state(job.surface_index)
+  if job.extension_revision~=s.revision then
+    job.extension=graph.compile(s.cells,cell)
+    job.extension_revision=s.revision
+    job.extension_validate_after=nil
+  end
+  local onward=job.extension
+  if not onward or not available(onward,s,job.id) then return nil end
+  if tick>=(job.extension_validate_after or 0) then
+    local next_cell=onward[2]
+    job.extension_blocked=not paved(job.entity.surface,next_cell) or not clear_block(job.entity.surface,next_cell)
+    job.extension_validate_after=tick+15
+  end
+  if job.extension_blocked then return nil end
+  local dx=(onward[2].x-cell.x)/2
+  local dy=(onward[2].y-cell.y)/2
+  if traffic.limit(index,job,{x=cell.x,y=cell.y},dx,dy,job.entity.speed)<1/256 then return nil end
+  return onward
+end
+local function dispatch(record, tick, index)
   local entity = record.entity
   if not valid(entity) then return end
   local inv = inventory(entity, false)
@@ -333,7 +413,7 @@ local function dispatch(record, tick)
   if not R.cargo[stack.name] or not prototypes.entity[R.unit_name(stack.name)] then status(entity, "invalid-cargo"); return end
   local route = route_for(record)
   if not route or #route < 2 then status(entity, "no-route"); return end
-  if route[1].occupant or not graph.compatible(route, surface_state(record.surface_index).cells) then status(entity, "queued"); return end
+  if not traffic.free(index,record.surface_index,entity.position) or not available(route,surface_state(record.surface_index)) then status(entity,"queued");return end
   if not clear_block(entity.surface, route[1]) then status(entity, "queued"); return end
   if not entity.surface.can_place_entity{name = R.unit_name(stack.name), position = entity.position, force = entity.force} then
     status(entity, "queued"); return
@@ -351,12 +431,20 @@ local function dispatch(record, tick)
   local job = {id = id, cargo = cargo, entity = unit, unit_id = unit.unit_number,
     route = route, index = 1, origin = entity.unit_number, state = "waiting",
     surface_index = entity.surface.index, force_index = entity.force.index,
-    home = {x = entity.position.x, y = entity.position.y}, retry = tick, failures = 0}
+    home = {x = entity.position.x, y = entity.position.y},
+    position={x=entity.position.x,y=entity.position.y}, retry = tick, failures = 0}
   st.jobs[id] = job
   st.job_order[#st.job_order + 1] = id
   st.units[unit.unit_number] = id
   job.watch = watch(unit, "job", id)
   reserve_route(route)
+  if route.guards then
+    local s=surface_state(job.surface_index)
+    s.exclusive=s.exclusive or {}
+    job.exclusive={}
+    for _,cell in ipairs(route.guards) do s.exclusive[cell.key]=id;job.exclusive[#job.exclusive+1]=cell.key end
+  end
+  traffic.move(index,job,job.position)
   route[1].occupant = id
   unit.destructible = false
   unit.minable_flag = false
@@ -367,7 +455,7 @@ local function dispatch(record, tick)
 end
 -- Deterministic lane motion with a native walking proxy. Commands keep its
 -- walking animation active; saved lane positions own actual traffic movement.
-local function update_job(job, tick)
+local function update_job(job, tick, index)
   if job.state == "recovery" then
     if tick >= job.retry then
       job.retry = tick + 300
@@ -388,14 +476,41 @@ local function update_job(job, tick)
     -- return cargo halfway through. Native walking supplies sprite animation.
     -- Quantize to the engine's position resolution to avoid fractional drift.
     local step = math.max(1/256, math.floor(unit.speed*256)/256)
-    local distance = math.min(step,math.max(0,remaining))
+    local terminal=route[#route]
+    local approaching=route.segment and job.goal==#route and terminal.node and terminal.node.role=="sign"
+    -- Keep the complete 2x2 body outside an invalid sign's tile. Reserve the
+    -- departure before crossing this stop line so the arrow cannot change
+    -- halfway through entry; valid turns keep moving without a forced pause.
+    if approaching and not job.departure and remaining<=traffic.GAP+step then
+      local onward=departure_for(job,terminal,tick,index)
+      if onward then job.departure=onward;reserve_route(onward) end
+    end
+    if next_cell and (job.validated_cell~=next_cell.key or tick>=(job.validate_after or 0)) then
+      job.validated_cell=next_cell.key
+      job.validate_after=tick+15
+      job.blocked=not paved(unit.surface,next_cell) or not clear_block(unit.surface,next_cell)
+    end
+    if job.blocked then
+      if job.state~="stopped" then stop(job);job.state="stopped" end
+      unit.teleport(p);return
+    end
+    local permitted=remaining
+    if approaching and not job.departure then permitted=remaining-traffic.GAP end
+    local distance = traffic.limit(index,job,p,dx,dy,math.min(step,math.max(0,permitted)))
+    if distance<1/256 then
+      if job.state~="stopped" then stop(job);job.state="stopped" end
+      unit.teleport(p)
+      return
+    end
+    if job.state=="stopped" then job.state="walking";unit.active=true;job.animation_goal=nil end
     p = {x=p.x+dx*distance,y=p.y+dy*distance}
     if dx~=0 then p.y=cell.y else p.x=cell.x end
-    local arrived = remaining<=step
+    local arrived = remaining<=distance+1/512
     if arrived then p={x=goal.x,y=goal.y} end
     if not unit.teleport(p) then recover(job,"teleport");return end
     unit.orientation=dx==1 and 0.25 or dx==-1 and 0.75 or dy==1 and 0.5 or 0
     job.position=p
+    traffic.move(index,job,p)
     while next_cell and job.index<job.goal
       and (p.x-next_cell.x)*dx+(p.y-next_cell.y)*dy >= -1/256 do
       local tail=route[job.index-1]
@@ -404,16 +519,50 @@ local function update_job(job, tick)
       cell,next_cell=route[job.index],route[job.index+1]
       job.progress_tick=tick
     end
-    if arrived then job.goal=nil; job.state="waiting"
-    elseif tick-(job.progress_tick or tick)>=R.STALL_TICKS then recover(job,"stall"); return end
+    if approaching and not job.departure and remaining-distance<=traffic.GAP+1/512 then
+      if job.state~="stopped" then stop(job);job.state="stopped" end
+      return
+    end
+    if arrived then job.goal=nil; job.state="waiting" end
   end
+  -- Retain only the last incoming block until the full body clears it.
+  local tails={}
+  for _,tail in ipairs(job.trailing or {}) do
+    local p=job.position or unit.position
+    local last=tail[#tail]
+    if math.abs(p.x-last.x)>=traffic.GAP or math.abs(p.y-last.y)>=traffic.GAP then drop_route(tail,job.id)
+    else tails[#tails+1]=tail end
+  end
+  job.trailing=tails
   if not next_cell then
-    if job.state~="stopped" then stop(job);job.state="stopped" end
     local destination=cell.node and cell.node.entity
     if not valid(destination) then recover(job);return end
-    if finish(job,inventory(destination,true)) then status(destination,"received",true)
-    else status(destination,"output-full") end
-    return
+    if cell.node.role=="output" then
+      if job.state~="stopped" then stop(job);job.state="stopped" end
+      if finish(job,inventory(destination,true)) then traffic.remove(index,job.id);status(destination,"received",true)
+      else status(destination,"output-full") end
+      return
+    end
+    -- Saved pre-stop-line jobs may already be standing on the sign. Retain
+    -- their cargo and let a valid departure drain them normally.
+    local onward=job.departure or departure_for(job,cell,tick,index)
+    if not onward then
+      if job.state~="stopped" then stop(job);job.state="stopped" end
+      status(destination,"no-route")
+      return
+    end
+    local tail={route[math.max(1,#route-1)],cell}
+    if #route==1 then tail={cell} end
+    reserve_route(tail)
+    drop_route(route,job.id)
+    job.trailing[#job.trailing+1]=tail
+    job.route,job.index=onward,1
+    if not job.departure then reserve_route(onward) end
+    job.departure=nil
+    route=onward
+    cell,next_cell=route[1],route[2]
+    job.extension,job.extension_revision=nil,nil
+    job.goal,job.animation_goal,job.checked,job.blocked,job.validated_cell=nil,nil,nil,nil,nil
   end
   local dx=(next_cell.x-cell.x)/2
   local dy=(next_cell.y-cell.y)/2
@@ -424,11 +573,12 @@ local function update_job(job, tick)
     local part=route[i]
     local previous=route[i-1]
     if part.x-previous.x~=dx*2 or part.y-previous.y~=dy*2 then break end
-    if part.occupant and part.occupant~=job.id then break end
     -- Surface queries occur only when first claiming a block, not each tick.
-    if part.occupant~=job.id then
-      if not paved(unit.surface,part) then recover(job,"pavement-removed");return end
-      if not clear_block(unit.surface,part) then recover(job,"obstruction");return end
+    job.checked=job.checked or {}
+    if not job.checked[part.key] then
+      if not paved(unit.surface,part) then break end
+      if not clear_block(unit.surface,part) then break end
+      job.checked[part.key]=true
     end
     part.occupant=job.id
     frontier=i
@@ -438,7 +588,7 @@ local function update_job(job, tick)
     if job.state~="stopped" then stop(job);job.state="stopped" end
     return
   end
-  if job.goal~=frontier or job.dx~=dx or job.dy~=dy then
+  if job.goal~=frontier or job.dx~=dx or job.dy~=dy or not job.animation_goal then
     job.goal,job.dx,job.dy=frontier,dx,dy
     job.position=job.position or {x=unit.position.x,y=unit.position.y}
     job.state,job.started,job.progress_tick="walking",tick,tick
@@ -475,19 +625,27 @@ function M.on_tick(event)
   for index,s in pairs(st.surfaces) do
     if s.dirty and game.surfaces[index] then pavement.refresh(s, game.surfaces[index], clear_block) end
   end
-  -- Jobs are ordered by admission, giving merges deterministic FIFO priority.
-  for _, id in ipairs(st.job_order) do if st.jobs[id] then update_job(st.jobs[id], event.tick) end end
-  if event.tick % R.RETRY_TICKS ~= 0 then return end
-  local order = {}
-  for _, id in ipairs(st.job_order) do if st.jobs[id] then order[#order + 1] = id end end
-  st.job_order = order
-  local inputs = {}
-  for id in pairs(st.inputs) do inputs[#inputs + 1] = id end
-  table.sort(inputs)
-  for _, id in ipairs(inputs) do
-    local record = st.inputs[id]
-    if valid(record.entity) then record.entity.active = false; dispatch(record, event.tick)
-    else remove_record(id) end
+  -- Physical traffic is indexed once per tick; updates preserve admission order.
+  local index=traffic.new(st.jobs)
+  for _,id in ipairs(st.job_order) do if st.jobs[id] then update_job(st.jobs[id],event.tick,index) end end
+  if event.tick%R.DISPATCH_TICKS==0 then
+    local order = {}
+    for _, id in ipairs(st.job_order) do if st.jobs[id] then order[#order + 1] = id end end
+    st.job_order = order
+    local inputs = {}
+    for id in pairs(st.inputs) do inputs[#inputs + 1] = id end
+    table.sort(inputs)
+    for _, id in ipairs(inputs) do
+      local record = st.inputs[id]
+      if valid(record.entity) then record.entity.active = false; dispatch(record, event.tick, index)
+      else remove_record(id) end
+    end
+  end
+  -- reserve_route/dispatch also write entity locks. Apply arrow protection
+  -- last so a fresh incoming reservation cannot re-lock a terminal for a tick.
+  local rotations=rotation_locks()
+  for id,record in pairs(st.records) do
+    if record.role=="sign" and valid(record.entity) then record.entity.rotatable=not rotations[id] end
   end
 end
 function M.rebuild()
@@ -511,7 +669,21 @@ function M.rebuild()
     if cell then cell.road=nil end
     if valid(record.entity) then record.entity.destroy() end
   end
-  for _,s in pairs(st.surfaces) do s.dirty=true end
+  for _,s in pairs(st.surfaces) do
+    s.dirty=true
+    for _,cell in pairs(s.cells) do cell.flow_refs=0;cell.flow=nil end
+  end
+  for _,job in pairs(st.jobs) do
+    for i,cell in ipairs(job.route or {}) do
+      if job.route[i+1] then cell.flow_refs=cell.flow_refs+1;cell.flow=job.route[i+1].key end
+    end
+    for i,cell in ipairs(job.departure or {}) do
+      if job.departure[i+1] then cell.flow_refs=cell.flow_refs+1;cell.flow=job.departure[i+1].key end
+    end
+    for _,tail in ipairs(job.trailing or {}) do
+      for i,cell in ipairs(tail) do if tail[i+1] then cell.flow_refs=cell.flow_refs+1;cell.flow=tail[i+1].key end end
+    end
+  end
   for _,job in pairs(st.jobs) do
     job.goal=nil
     job.animation_goal=nil

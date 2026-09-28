@@ -10,6 +10,7 @@ local M = {
   MAX_ROUTE_CELLS = 512,
   UPDATE_TICKS = 1,
   RETRY_TICKS = 60,
+  DISPATCH_TICKS = 5,
   STALL_TICKS = 600,
 }
 M.passable_types = {

@@ -25,7 +25,8 @@ function M.refresh(s, surface, clear_block)
         local clear = clear_block(surface,cell)
         for tx=x-1,x do for ty=y-1,y do
           local owner = claimed[R.key(tx,ty)] or s.tiles[R.key(tx,ty)]
-          if surface.get_tile(tx,ty).collides_with("water_tile") or (owner and owner ~= key) then clear=false end
+          local tile=surface.get_tile(tx,ty)
+          if not tile.valid or tile.collides_with("water_tile") or (owner and owner ~= key) then clear=false end
         end end
         if not clear then break end
         segment[#segment+1] = cell

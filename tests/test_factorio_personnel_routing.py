@@ -111,12 +111,71 @@ script.on_nth_tick(4, function()
     local stack=storage.fixture.buffer.find_item_stack{name="worker-biter",quality="rare"}
     if stack and source().insert(stack)==1 then stack.clear() end
   end
+  if storage.fixture.pending then
+    local pending=storage.fixture.pending
+    local inv=pending.input.get_inventory(defines.inventory.furnace_source)
+    if not inv[1].valid_for_read then
+      local stack=pending.buffer.find_item_stack{name="worker-biter",quality="epic"}
+      if stack and inv.insert(stack)==1 then stack.clear() end
+    end
+    local count=inv.get_item_count{name="worker-biter",quality="epic"}+pending.buffer.get_item_count{name="worker-biter",quality="epic"}+#proxies(pending.surface)
+    if pending.output then count=count+pending.output.get_inventory(defines.inventory.furnace_result).get_item_count{name="worker-biter",quality="epic"} end
+    check(count==8,"incomplete route lost personnel")
+    local units=proxies(pending.surface)
+    for i,a in ipairs(units) do for j=i+1,#units do
+      local p,q=a.position,units[j].position
+      check(math.abs(p.x-q.x)>=2-1/256 or math.abs(p.y-q.y)>=2-1/256,"dense incomplete queue overlaps")
+    end end
+    if game.tick==12 then
+      pending.obstruction=pending.surface.create_entity{name="steel-chest",position={6,0},force=game.forces.player}
+      check(pending.obstruction,"could not force obstruction fixture")
+    elseif game.tick==240 then
+      check(#units>=2,"blocked lane never admitted its local traffic")
+      for _,unit in ipairs(units) do check(unit.position.x<5,"unit crossed a newly obstructed block") end
+      check(#pending.surface.find_entities_filtered{name="personnel-recovery-crate"}==0,"ordinary blockage recovered instead of waiting")
+    elseif game.tick==320 then pending.obstruction.destroy()
+    elseif game.tick==1160 then
+      check(#units>=4,"no reception: biters did not fill the reachable lane")
+      local positions={}
+      for _,unit in ipairs(units) do positions[#positions+1]=unit.position.x end
+      table.sort(positions)
+      check(math.abs(positions[#positions]-9.5)<0.02,"leader did not stop before the terminal sign tile")
+      for _,unit in ipairs(units) do check(unit.position.x+1<11,"waiting body entered terminal sign tile") end
+      for i=2,#positions do check(positions[i]-positions[i-1]<2.8,"queue still has spare-block gaps") end
+      check(not pending.sign.minable and pending.sign.rotatable,"stopped terminal sign cannot be redirected safely")
+      local player=game.players[1]
+      check(pending.sign.rotate{reverse=true,by_player=player},"safe terminal rotation failed")
+      check(pending.sign.direction==defines.direction.east,"safe terminal rotation was reverted")
+      check(#pending.surface.find_entities_filtered{name="personnel-recovery-crate"}==0,"long queue waiting triggered recovery")
+    elseif game.tick==1200 then
+      local main=surface;surface=pending.surface
+      build("personnel-routing-sign",18,0,defines.direction.south)
+      pending.output=build("personnel-reception-office",18,12)
+      surface=main
+    elseif game.tick==2200 then
+      check(#units==0 and pending.output.get_inventory(defines.inventory.furnace_result).get_item_count{name="worker-biter",quality="epic"}==8,"extended route did not resume and deliver its queue")
+      check(pending.sign.minable and pending.sign.rotatable,"segment locks leaked after draining")
+    end
+  end
   if storage.fixture.folded then
     local folded=storage.fixture.folded
     local inv=folded.input.get_inventory(defines.inventory.furnace_source)
     if not inv[1].valid_for_read and folded.spare[1].valid_for_read and inv.insert(folded.spare[1])==1 then folded.spare[1].clear() end
   end
   if game.tick == 4 then
+    local main=surface
+    surface=game.create_surface("personnel-incomplete-smoke",{autoplace_controls={}})
+    surface.request_to_generate_chunks({12,6},2);surface.force_generate_chunk_requests()
+    for _,entity in ipairs(surface.find_entities()) do entity.destroy() end
+    local tiles={}
+    for x=-4,30 do for y=-4,18 do tiles[#tiles+1]={name="grass-1",position={x,y}} end end
+    surface.set_tiles(tiles)
+    local departure=build("personnel-deployment-office",0,0,defines.direction.east)
+    local terminal=build("personnel-routing-sign",12,0,defines.direction.south)
+    departure.get_inventory(defines.inventory.furnace_source).insert{name="worker-biter",count=1,quality="epic"}
+    local buffer=game.create_inventory(7);buffer.insert{name="worker-biter",count=7,quality="epic"}
+    storage.fixture.pending={surface=surface,input=departure,sign=terminal,buffer=buffer}
+    surface=main
     verify_grid()
     check(prototypes.item["personnel-path"].hidden and not prototypes.item["personnel-path"].place_result, "pavement still placeable")
     check(not game.forces.player.recipes["personnel-path"].enabled, "pavement still craftable")
@@ -149,9 +208,18 @@ script.on_nth_tick(4, function()
     end
   end
   if game.tick <= 2400 then conservation(5) end
+  if game.tick==40 then
+    local entering=false
+    for _,unit in ipairs(units) do
+      if unit.position.x>205.5 and unit.position.x<208 and math.abs(unit.position.y-200)<0.3 then entering=true end
+    end
+    check(entering and not sign.rotatable,"sign entry was not protected by a departure reservation")
+    game.server_save("personnel-mid-sign-entry")
+  end
   if game.tick == 120 then
     check(#units > 0, "no native unit dispatched")
     check(not sign.minable and not sign.rotatable, "reserved sign is editable")
+    check(not sign.rotate{}, "moving traffic allowed sign rotation")
     check(surface.get_tile(203,199).name=="personnel-path-concrete", "automatic pavement missing")
   elseif game.tick == 480 then
     local grid=storage.fixture.grid
@@ -183,7 +251,7 @@ script.on_nth_tick(4, function()
   elseif game.tick == 2640 then
     check(#units == 0 and source().get_item_count("worker-biter") == 1, "gap dispatched an orphan")
     sign = build("personnel-routing-sign",208,200,defines.direction.south)
-  elseif game.tick == 2704 then
+  elseif game.tick == 2652 then
     check(#units == 1, "repaired route did not restart")
     input.destroy()
   elseif game.tick == 2820 then
@@ -392,7 +460,7 @@ def main() -> None:
         output_text=log_file.read_text()
         assert marker.exists(), 'Personnel routing engine smoke failed:\n'+output_text[-7000:]
         assert marker.read_text() == 'PASS\n'
-        for filename,ticks in [('personnel-mid-queue.zip',3420),('personnel-mid-briefing.zip',580)]:
+        for filename,ticks in [('personnel-mid-sign-entry.zip',4220),('personnel-mid-queue.zip',3420),('personnel-mid-briefing.zip',580)]:
             save = root/'saves'/filename
             assert save.exists(), f'{filename} was not written'
             marker.unlink()

@@ -4,7 +4,9 @@ local R = require("prototypes.shared.personnel_routing")
 local personnel_colors = require("prototypes.shared.personnel_colors")
 local graphics = "__administratorio__/graphics/entities/personnel-routing/"
 local function sprite(name)
-  return {filename = graphics .. name .. ".png", width = 128, height = 128, scale = 0.5}
+  local sign=name:find("^sign%-")
+  return {filename = graphics .. name .. ".png", width = sign and 160 or 128, height = sign and 256 or 128,
+    scale = 0.5, shift = sign and {0,-1.5} or nil}
 end
 local function directions(name)
   return {north = sprite(name .. "-north"), east = sprite(name .. "-east"),
@@ -41,6 +43,8 @@ for i, name in ipairs(R.names) do
     max_health = 350,
     collision_box = {{-0.99, -0.99}, {0.99, 0.99}},
     selection_box = {{-1, -1}, {1, 1}},
+    -- Prefer the sign over a waiting proxy in saves made before stop lines.
+    selection_priority = role == "sign" and 60 or nil,
     hidden_in_factoriopedia = role == "road",
     tile_width = 2, tile_height = 2,
     build_grid_size = 2,
