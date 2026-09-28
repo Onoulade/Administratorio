@@ -4,6 +4,7 @@
 # files that should not be modified
 *.png binary
 *.ogg binary
+*.zip binary
 *.blend binary export-ignore
 
 # files that should not get included in a release zip

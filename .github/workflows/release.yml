@@ -38,6 +38,25 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Validate menu simulation assets
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const cp = require("node:child_process");
+          const source = fs.readFileSync("prototypes/final_fixes/menu_simulations.lua", "utf8");
+          const saves = [...source.matchAll(/\bmake_simulation\("([^"]+)"/g)]
+            .map((match) => `menu-simulations/${match[1]}.zip`);
+          if (!saves.length) throw new Error("No menu simulation saves found");
+          for (const save of saves) {
+            cp.execFileSync("git", ["ls-files", "--error-unmatch", save]);
+            const attribute = cp.execFileSync("git", ["check-attr", "export-ignore", "--", save], { encoding: "utf8" });
+            if (attribute.trim().endsWith(": set")) {
+              throw new Error(`Menu simulation excluded from release: ${save}`);
+            }
+            cp.execFileSync("unzip", ["-tq", save], { stdio: "inherit" });
+          }
+          NODE
+
       - name: Prepare release metadata
         id: prepare
         env:
