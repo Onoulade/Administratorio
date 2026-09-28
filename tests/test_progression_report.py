@@ -131,6 +131,10 @@ SCIENCE_PACK_TIERS = {
     "space-science-pack": 6,
 }
 SCIENCE_CEILINGS = {
+    "personnel-routing": "logistic-science-pack",
+    "personnel-routing-speed-1": "chemical-science-pack",
+    "personnel-routing-multisign": "chemical-science-pack",
+    "personnel-routing-speed-2": "production-science-pack",
     "admin-station-capacity-4": "chemical-science-pack",
     "admin-station-capacity-5": "chemical-science-pack",
     "admin-station-capacity-6": "chemical-science-pack",

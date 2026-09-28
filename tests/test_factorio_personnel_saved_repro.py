@@ -21,6 +21,10 @@ local function count()
 end
 script.on_nth_tick(1,function()
  if not storage.repro then
+  -- Preserve the original speed and timings of this dedicated save repro.
+  for _,force in pairs(game.forces) do
+   if force.technologies["personnel-routing-speed-1"] then force.technologies["personnel-routing-speed-1"].researched=true end
+  end
   for _,s in pairs(game.surfaces) do for _,e in ipairs(s.find_entities_filtered{type='inserter'}) do e.active=false end end
   storage.repro={start=game.tick,total=count(),delivered=0,previous={},moving_ticks=0}
   check(storage.repro.total>0,'save has no test personnel')

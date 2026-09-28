@@ -13,28 +13,30 @@ function M.refresh(s, surface, clear_block)
   end
   for _,cell in ipairs(nodes) do claim(cell) end
   for _, start in ipairs(nodes) do
-    local dx, dy = R.vector(start.node.entity.direction)
-    if dx and start.node.role ~= "output" then
-      local segment = {}
-      for i = 1, R.MAX_ROUTE_CELLS - 1 do
-        local x, y = start.x + dx*i, start.y + dy*i
-        local key = R.key(x,y)
-        local existing = s.cells[key]
-        if existing and existing.force_index ~= start.force_index then break end
-        local cell = existing or {key=key,x=x,y=y,force_index=start.force_index}
-        local clear = clear_block(surface,cell)
-        for tx=x-1,x do for ty=y-1,y do
-          local owner = claimed[R.key(tx,ty)] or s.tiles[R.key(tx,ty)]
-          local tile=surface.get_tile(tx,ty)
-          if not tile.valid or tile.collides_with("water_tile") or (owner and owner ~= key) then clear=false end
-        end end
-        if not clear then break end
-        segment[#segment+1] = cell
-        if cell.node then
-          if cell.node.role == "sign" or cell.node.role == "output" then
-            for _, part in ipairs(segment) do desired[part.key] = part; claim(part) end
+    for _, direction in ipairs(R.directions(start.node)) do
+      local dx, dy = R.vector(direction)
+      if dx and start.node.role ~= "output" then
+        local segment = {}
+        for i = 1, R.MAX_ROUTE_CELLS - 1 do
+          local x, y = start.x + dx*i, start.y + dy*i
+          local key = R.key(x,y)
+          local existing = s.cells[key]
+          if existing and existing.force_index ~= start.force_index then break end
+          local cell = existing or {key=key,x=x,y=y,force_index=start.force_index}
+          local clear = clear_block(surface,cell)
+          for tx=x-1,x do for ty=y-1,y do
+            local owner = claimed[R.key(tx,ty)] or s.tiles[R.key(tx,ty)]
+            local tile=surface.get_tile(tx,ty)
+            if not tile.valid or tile.collides_with("water_tile") or (owner and owner ~= key) then clear=false end
+          end end
+          if not clear then break end
+          segment[#segment+1] = cell
+          if cell.node then
+            if cell.node.role == "sign" or cell.node.role == "output" then
+              for _, part in ipairs(segment) do desired[part.key] = part; claim(part) end
+            end
+            break
           end
-          break
         end
       end
     end

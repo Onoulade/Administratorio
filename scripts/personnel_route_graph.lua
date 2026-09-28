@@ -15,7 +15,7 @@ local function finish_route(route)
   end
   return route
 end
-local function walk(cells, start, segment)
+local function walk(cells, start, segment, item)
   local route, seen = {}, {}
   local cell = start
   local dx, dy
@@ -32,7 +32,7 @@ local function walk(cells, start, segment)
       if not node.entity.valid then return nil, "gap" end
       if node.role == "output" or (segment and node.role == "sign" and cell~=start) then return finish_route(route) end
       if node.role == "input" and cell ~= start then return nil, "input" end
-      dx, dy = R.vector(node.entity.direction)
+      dx, dy = R.vector(R.direction_for(node, item))
       if not dx then return nil, "direction" end
     end
     if not dx then return nil, "direction" end
@@ -40,11 +40,11 @@ local function walk(cells, start, segment)
   end
   return not segment and finish_route(route) or nil, "length"
 end
-function M.compile(cells,start)
-  local route,reason=walk(cells,start,true)
+function M.compile(cells,start,item)
+  local route,reason=walk(cells,start,true,item)
   if route then route.segment=true end
   if route and start.node.role=="input" then
-    local ahead=walk(cells,start,false)
+    local ahead=walk(cells,start,false,item)
     if ahead and ahead.serial then route.guards=ahead end
   end
   return route,reason

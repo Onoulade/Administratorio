@@ -3,12 +3,27 @@ if not require("feature_flags").space_age_enabled() then return end
 local R = require("prototypes.shared.personnel_routing")
 local personnel_colors = require("prototypes.shared.personnel_colors")
 local office_sprites = require("prototypes.shared.personnel_office_sprites")
+local shadow_sprites = require("prototypes.shared.personnel_shadow_sprites")
 local graphics = "__administratorio__/graphics/entities/personnel-routing/"
 local function sprite(name)
-  if office_sprites[name] then return table.deepcopy(office_sprites[name]) end
-  local sign=name:find("^sign%-")
-  return {filename = graphics .. name .. ".png", width = sign and 160 or 128, height = sign and 256 or 128,
-    scale = 0.5, shift = sign and {0,-1.5} or nil}
+  local body
+  local multisign = name:find("^multisign%-")
+  if office_sprites[name] then
+    body = table.deepcopy(office_sprites[name])
+  elseif multisign then
+    body = {filename=graphics .. name .. ".png",width=160,height=160,scale=0.5*R.MULTISIGN_SCALE}
+  else
+    local sign=name:find("^sign%-")
+    body = {filename = graphics .. name .. ".png", width = sign and 160 or 128, height = sign and 256 or 128,
+      scale = 0.5, shift = sign and {0,-1.5} or nil}
+  end
+  if not shadow_sprites[name] then return body end
+  local shadow = table.deepcopy(shadow_sprites[name])
+  if multisign then
+    shadow.scale = shadow.scale * R.MULTISIGN_SCALE
+    shadow.shift = {shadow.shift[1]*R.MULTISIGN_SCALE, shadow.shift[2]*R.MULTISIGN_SCALE}
+  end
+  return {layers={body,shadow}}
 end
 local function directions(name)
   return {north = sprite(name .. "-north"), east = sprite(name .. "-east"),
@@ -34,11 +49,11 @@ tile.decorative_removal_probability = 1
 tile.autoplace = nil
 tile.hidden_in_factoriopedia = true
 prototypes_to_add[#prototypes_to_add + 1] = tile
-local effects = {}
+local effects, multisign_effects = {}, {}
 for i, name in ipairs(R.names) do
   local role = R.roles[name]
   local entity = {
-    type = (role == "input" or role == "output") and "furnace" or "simple-entity-with-owner",
+    type = (role == "input" or role == "output") and "furnace" or name == R.SIGN and "constant-combinator" or "simple-entity-with-owner",
     name = name, icon = graphics .. role .. "-icon.png", icon_size = 64,
     flags = {"placeable-player", "player-creation"},
     minable = {mining_time = 0.2, result = name},
@@ -55,6 +70,10 @@ for i, name in ipairs(R.names) do
       required_tiles = {layers = {ground_tile = true}}, colliding_tiles = {layers = {water_tile = true}}}},
     map_color = {r = 0.55, g = 0.80, b = 0.70},
   }
+  if name == R.MULTISIGN then
+    entity.icon = graphics .. "multisign-icon.png"
+    entity.operable = false
+  end
   if role == "road" then
     entity.icon = "__base__/graphics/icons/concrete.png"
     entity.icons = {{icon = entity.icon, icon_size = 64, tint = table.deepcopy(tile.tint)}}
@@ -78,10 +97,24 @@ for i, name in ipairs(R.names) do
     entity.show_recipe_icon = false
     entity.show_recipe_icon_on_map = false
     entity.graphics_set = {animation = role=="output" and sprite("output") or directions(role)}
+  elseif entity.type == "constant-combinator" then
+    entity.sprites = directions(role)
+    entity.item_slot_count = 128
+    entity.operable = false
+    entity.activity_led_light_offsets = {{0,0},{0,0},{0,0},{0,0}}
+    entity.circuit_wire_max_distance = 9
+    entity.circuit_wire_connection_points = {}
+    for i=1,4 do
+      entity.circuit_wire_connection_points[#entity.circuit_wire_connection_points+1] = {
+        wire = {red = {-0.08,0}, green = {0.08,0}},
+        shadow = {red = {-0.08,0}, green = {0.08,0}},
+      }
+    end
   else
     -- The actual vanilla concrete tile supplies texture and seamless borders.
     -- This selectable entity only owns the protected 2x2 pavement block.
-    entity.picture = role == "road" and {filename = "__core__/graphics/empty.png", width = 1, height = 1} or directions(role)
+    entity.picture = role == "road" and {filename = "__core__/graphics/empty.png", width = 1, height = 1}
+      or name == R.MULTISIGN and directions("multisign") or directions(role)
     entity.render_layer = role == "road" and "floor" or "object"
     if role == "road" then entity.flags[#entity.flags + 1] = "not-rotatable" end
   end
@@ -95,11 +128,15 @@ for i, name in ipairs(R.names) do
   }
   local ingredients = (role == "input" or role == "output") and {
     {type = "item", name = "steel-plate", amount = 10},
+    {type = "item", name = "electronic-circuit", amount = 5},
+    {type = "item", name = "form-27b-6", amount = 2},
+  } or name == R.MULTISIGN and {
+    {type = "item", name = R.SIGN, amount = 1},
     {type = "item", name = "advanced-circuit", amount = 5},
-    {type = "item", name = "yellow-magenta-form", amount = 2},
+    {type = "item", name = "form-27b-6", amount = 3},
   } or role == "sign" and {
     {type = "item", name = "iron-plate", amount = 2},
-    {type = "item", name = "yellow-magenta-form", amount = 1},
+    {type = "item", name = "form-27b-6", amount = 1},
   } or {
     {type = "item", name = "concrete", amount = 4},
     {type = "item", name = "iron-stick", amount = 2},
@@ -109,7 +146,44 @@ for i, name in ipairs(R.names) do
     ingredients = ingredients, results = {{type = "item", name = name, amount = 1}},
     hidden = role == "road", hidden_in_factoriopedia = role == "road",
   }
-  if role ~= "road" then effects[#effects + 1] = {type = "unlock-recipe", recipe = name} end
+  if role ~= "road" then
+    local target = name == R.MULTISIGN and multisign_effects or effects
+    target[#target + 1] = {type = "unlock-recipe", recipe = name}
+  end
+end
+-- The three sockets are selectable native wire targets. They never reserve ground
+-- or get admitted to the lane graph, and are owned by their multisign.
+local port = table.deepcopy(data.raw["constant-combinator"]["constant-combinator"])
+port.name = R.PORT
+port.localised_name = {"entity-name." .. R.PORT}
+port.localised_description = {"entity-description." .. R.PORT}
+port.flags = {"placeable-off-grid", "not-on-map", "not-blueprintable", "not-deconstructable"}
+port.hidden = true
+port.hidden_in_factoriopedia = true
+port.minable = nil
+port.collision_mask = {layers = {}}
+port.collision_box = {{0,0},{0,0}}
+port.selection_priority = 70
+port.item_slot_count = 128
+port.activity_led_sprites = nil
+port.activity_led_light = nil
+-- Their visible brass sockets are painted into the sign sprite. Invisible
+-- native entities provide three equal wire targets without loose combinators.
+local empty={filename="__core__/graphics/empty.png",width=1,height=1}
+port.sprites={north=empty,east=empty,south=empty,west=empty}
+port.operable=false
+local socket_radius=0.32*R.MULTISIGN_SCALE
+port.selection_box={{-socket_radius,-socket_radius},{socket_radius,socket_radius}}
+port.circuit_wire_connection_points = {}
+local contact_offset=0.08*R.MULTISIGN_SCALE
+for i=1,4 do
+  port.circuit_wire_connection_points[i] = {wire={red={-contact_offset,0},green={contact_offset,0}},shadow={red={-contact_offset,0},green={contact_offset,0}}}
+end
+for _,exit in ipairs(R.exits) do
+  local side=table.deepcopy(port)
+  side.name=R.PORT .. "-" .. exit
+  side.localised_name={"personnel-routing.filter-port", {"personnel-routing." .. exit}}
+  prototypes_to_add[#prototypes_to_add+1]=side
 end
 local recovery = table.deepcopy(data.raw.container["steel-chest"])
 recovery.name = R.RECOVERY
@@ -158,7 +232,7 @@ for _, item in ipairs(cargo_names) do
     administratorio_personnel_obstacle = true,
   }}
   unit.has_belt_immunity = true
-  unit.movement_speed = data.raw.unit["small-biter"].movement_speed
+  unit.movement_speed = data.raw.unit["small-biter"].movement_speed * 0.5
   unit.vision_distance = 0
   unit.max_pursue_distance = 0
   unit.min_pursue_time = 0
@@ -180,9 +254,29 @@ end
 prototypes_to_add[#prototypes_to_add + 1] = {
   type = "technology", name = "personnel-routing",
   icon = graphics .. "sign-icon.png", icon_size = 64,
-  prerequisites = {"yellow-magenta-bureaucracy", "biter-employment", "utility-science-pack"},
-  unit = {count = 400, time = 45, ingredients = {
-    {"administrative-science-pack", 1}, {"utility-science-pack", 1}, {"agricultural-science-pack", 1}, {"electromagnetic-science-pack", 1},
+  prerequisites = {"local-precedents", "biter-employment", "steel-processing", "logistic-science-pack"},
+  unit = {count = 120, time = 30, ingredients = {
+    {"automation-science-pack", 1}, {"logistic-science-pack", 1}, {"administrative-science-pack", 1},
   }}, effects = effects, order = "h-e4",
+}
+for tier, name in ipairs({R.SPEED_100, R.SPEED_150}) do
+  prototypes_to_add[#prototypes_to_add+1] = {
+    type = "technology", name = name, icon = graphics .. "sign-icon.png", icon_size = 64,
+    prerequisites = {tier == 1 and "personnel-routing" or R.SPEED_100,
+      tier == 1 and "chemical-science-pack" or "production-science-pack"},
+    unit = {count = tier == 1 and 200 or 300, time = 30, ingredients = tier == 1 and {
+      {"automation-science-pack",1}, {"logistic-science-pack",1}, {"chemical-science-pack",1}, {"administrative-science-pack",1},
+    } or {
+      {"automation-science-pack",1}, {"logistic-science-pack",1}, {"chemical-science-pack",1}, {"production-science-pack",1}, {"administrative-science-pack",1},
+    }},
+    effects = {{type = "nothing", effect_description = {"technology-effect." .. name}}}, order = "h-e4-" .. tier,
+  }
+end
+prototypes_to_add[#prototypes_to_add+1] = {
+  type = "technology", name = "personnel-routing-multisign", icon = graphics .. "multisign-icon.png", icon_size = 64,
+  prerequisites = {"personnel-routing", "circuit-network", "advanced-circuit", "chemical-science-pack"},
+  unit = {count = 150, time = 30, ingredients = {
+    {"automation-science-pack",1}, {"logistic-science-pack",1}, {"chemical-science-pack",1}, {"administrative-science-pack",1},
+  }}, effects = multisign_effects, order = "h-e4-m",
 }
 data:extend(prototypes_to_add)

@@ -95,6 +95,8 @@ script.on_init(function()
   for _, e in ipairs(surface.find_entities_filtered{area = {{185,185},{236,231}}, type = {"tree","simple-entity","resource","unit","unit-spawner","cliff"}}) do e.destroy() end
   for _, e in ipairs(surface.find_entities_filtered{type="unit-spawner"}) do e.destroy() end
   game.forces.player.technologies["personnel-routing"].researched = true
+  -- Keep existing timing regressions at their original walking speed.
+  game.forces.player.technologies["personnel-routing-speed-1"].researched = true
   input = build("personnel-deployment-office", 200,200, defines.direction.east)
   sign = build("personnel-routing-sign", 208,200, defines.direction.south)
   output = build("personnel-reception-office", 208,208)

@@ -1,0 +1,66 @@
+{
+  "north": {
+    "filename": "multisign-north.png",
+    "width": 160,
+    "height": 160,
+    "scale": 0.6,
+    "shift": [
+      0,
+      0
+    ],
+    "visible_bounds": [
+      22,
+      26,
+      139,
+      110
+    ]
+  },
+  "east": {
+    "filename": "multisign-east.png",
+    "width": 160,
+    "height": 160,
+    "scale": 0.6,
+    "shift": [
+      0,
+      0
+    ],
+    "visible_bounds": [
+      53,
+      26,
+      143,
+      135
+    ]
+  },
+  "south": {
+    "filename": "multisign-south.png",
+    "width": 160,
+    "height": 160,
+    "scale": 0.6,
+    "shift": [
+      0,
+      0
+    ],
+    "visible_bounds": [
+      20,
+      54,
+      137,
+      135
+    ]
+  },
+  "west": {
+    "filename": "multisign-west.png",
+    "width": 160,
+    "height": 160,
+    "scale": 0.6,
+    "shift": [
+      0,
+      0
+    ],
+    "visible_bounds": [
+      19,
+      26,
+      107,
+      134
+    ]
+  }
+}

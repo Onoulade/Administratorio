@@ -18,7 +18,7 @@ function M.apply(data)
     for _, p in pairs(set) do
       if R.roles[p.name] then
         p.collision_mask = {layers = {administratorio_personnel_reserved = true}, not_colliding_with_itself = true}
-      elseif not passable[p.type] and p.collision_box then
+      elseif not R.is_port(p.name) and not passable[p.type] and p.collision_box then
         local b = p.collision_box
         if b[1][1] ~= b[2][1] and b[1][2] ~= b[2][2] then
           local ok, default = pcall(masks.get_default_mask, p.type)

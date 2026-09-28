@@ -104,4 +104,22 @@ test("a serialized journey blocks overlapping ordinary routes", function()
   route[2].refs=1;route[2].serial_refs=1
   check(not G.compatible(route))
 end)
+test("multisign filters choose relative exits and keep empty exits closed", function()
+  local multi=cell(0,0,"sign",defines.direction.east)
+  multi.node.entity.name=R.MULTISIGN
+  multi.node.filters={left={["worker-biter"]=true},straight={},right={["management-trainee"]=true}}
+  local cells=layout(multi,cell(0,-2),cell(0,-4,"output"),cell(2,0),cell(4,0,"output"),cell(0,2),cell(0,4,"output"))
+  check(G.compile(cells,multi,"worker-biter")[3].key==R.key(0,-4))
+  check(G.compile(cells,multi,"management-trainee")[3].key==R.key(0,4))
+  check(not G.compile(cells,multi,"chemical-operator"),"empty straight exit opened")
+  cells[R.key(0,-2)]=nil
+  check(not G.compile(cells,multi,"worker-biter"),"unavailable filtered exit fell back to another lane")
+end)
+test("multisign duplicate filters have stable priority and rotate with the sign", function()
+  local node={entity={name=R.MULTISIGN,direction=defines.direction.south},filters={
+    left={["worker-biter"]=true},straight={["worker-biter"]=true},right={["worker-biter"]=true}}}
+  check(R.direction_for(node,"worker-biter")==defines.direction.east)
+  node.entity.direction=defines.direction.west
+  check(R.direction_for(node,"worker-biter")==defines.direction.south)
+end)
 print("Personnel route tests: " .. passed .. " passed")

@@ -3,6 +3,7 @@ local graph = require("scripts.personnel_route_graph")
 local pavement = require("scripts.personnel_pavement")
 local traffic = require("scripts.personnel_traffic")
 local ai = require("scripts.unit_ai_settings")
+local signals = require("scripts.personnel_signals")
 local briefing_overlay = require("scripts.personnel_briefing_overlay")
 local M = {}
 local function state()
@@ -48,7 +49,7 @@ local function paved(surface, cell)
 end
 local function clear_block(surface, cell)
   for _, other in ipairs(surface.find_entities_filtered{area = {{cell.x-0.99, cell.y-0.99}, {cell.x+0.99, cell.y+0.99}}}) do
-    if not R.roles[other.name] and not R.passable_types[other.type] then
+    if not R.is_port(other.name) and not R.roles[other.name] and not R.passable_types[other.type] then
       local box = other.bounding_box
       if box.left_top.x < box.right_bottom.x and box.left_top.y < box.right_bottom.y then return false end
     end
@@ -188,6 +189,7 @@ local function remove_record(id)
   local st = state()
   local record = st.records[id]
   if not record then return end
+  signals.remove_ports(record)
   st.records[id], st.inputs[id] = nil, nil
   st.watches[record.watch] = nil
   local s = st.surfaces[record.surface_index]
@@ -232,7 +234,7 @@ function M.on_built(event)
   if not valid(entity) or not R.roles[entity.name] then return false end
   if R.roles[entity.name]=="output" then entity.direction=defines.direction.north;entity.rotatable=false end
   if R.roles[entity.name]=="sign" then entity.rotatable=true end
-  if state().records[entity.unit_number] then return true end
+  if state().records[entity.unit_number] then signals.ensure_ports(state().records[entity.unit_number]); return true end
   local p, role = entity.position, R.roles[entity.name]
   -- Native player placement uses the shared 2x2 grid. Keep integer-centered
   -- legacy/scripted layouts valid; their non-overlap checks still apply.
@@ -260,6 +262,7 @@ function M.on_built(event)
     s.cells[key] = cell
   end
   local record = {entity = entity, role = role, surface_index = entity.surface.index, key = key}
+  signals.ensure_ports(record)
   record.watch = watch(entity, "record", entity.unit_number)
   state().records[entity.unit_number] = record
   if role == "road" then cell.road = record else cell.node = record end
@@ -275,6 +278,10 @@ function M.on_cloned(event)
   local entity = event.destination
   if valid(entity) and R.roles[entity.name] then
     M.on_built{entity = entity}
+  elseif valid(entity) and R.is_port(entity.name) then
+    -- Cloning a sign creates its own ports; separately cloned helpers are
+    -- never independent infrastructure.
+    entity.destroy()
   elseif valid(entity) and entity.name:find("^personnel%-in%-transit%-") then
     -- A proxy is never cargo ownership: cloning it must not duplicate a biter.
     entity.destroy()
@@ -306,6 +313,7 @@ function M.on_rotated(event)
   if record.role=="output" or ((cell.refs or 0)>0 and record.role~="sign") then
     entity.direction=event.previous_direction;return
   end
+  signals.ensure_ports(record)
   s.revision = s.revision + 1
   s.dirty = true
 end
@@ -363,8 +371,10 @@ local function available(route,s,id)
 end
 local function departure_for(job,cell,tick,index)
   local s=surface_state(job.surface_index)
-  if job.extension_revision~=s.revision then
-    job.extension=graph.compile(s.cells,cell)
+  local item=job.cargo[1].valid_for_read and job.cargo[1].name
+  if job.extension_revision~=s.revision or job.extension_item~=item then
+    job.extension=graph.compile(s.cells,cell,item)
+    job.extension_item=item
     job.extension_revision=s.revision
     job.extension_validate_after=nil
   end
@@ -423,6 +433,7 @@ local function dispatch(record, tick, index)
   end
   traffic.move(index,job,job.position)
   route[1].occupant = id
+  unit.speed = unit.prototype.speed * R.speed_multiplier(entity.force)
   unit.destructible = false
   unit.minable_flag = false
   ai.apply_managed_unit_settings(unit)
@@ -443,6 +454,7 @@ local function update_job(job, tick, index)
   if not valid(job.entity) then recover(job, "invalid"); return end
   briefing_overlay.update(job, tick)
   local route, unit = job.route, job.entity
+  unit.speed = unit.prototype.speed * R.speed_multiplier(unit.force)
   local cell, next_cell = route[job.index], route[job.index+1]
   if job.goal then
     local dx,dy = job.dx,job.dy
@@ -461,7 +473,7 @@ local function update_job(job, tick, index)
         -- direction is now immutable, including when loading an older save.
         job.departure_committed=true
       else
-        local vx,vy=R.vector(terminal.node.entity.direction)
+        local vx,vy=R.vector(R.direction_for(terminal.node,job.cargo[1].valid_for_read and job.cargo[1].name))
         if not vx or job.departure[2].key~=R.key(terminal.x+vx,terminal.y+vy) then
           -- A reservation outside the tile is still tentative. Recheck the
           -- current arrow rather than sending the next biter along an old one.
@@ -646,6 +658,14 @@ function M.on_ai_command_completed(event)
 end
 function M.on_tick(event)
   local st = state()
+  if event.tick%R.DISPATCH_TICKS==0 then
+    signals.update(st.records,st.jobs,function(record, rotated)
+      local s=surface_state(record.surface_index)
+      -- Filter changes invalidate routing, but never alter the paved exits.
+      s.revision=s.revision+1
+      if rotated then s.dirty=true end
+    end)
+  end
   for index,s in pairs(st.surfaces) do
     if s.dirty and game.surfaces[index] then pavement.refresh(s, game.surfaces[index], clear_block) end
   end
@@ -705,7 +725,7 @@ function M.rebuild()
   for _,job in pairs(st.jobs) do
     job.goal=nil
     job.animation_goal=nil
-    if valid(job.entity) then job.entity.speed=job.entity.prototype.speed end
+    if valid(job.entity) then job.entity.speed=job.entity.prototype.speed * R.speed_multiplier(job.entity.force) end
   end
   -- A removed cargo permission must return existing saved items safely, even
   -- when Factorio has already removed their obsolete walking prototype.
@@ -744,9 +764,23 @@ function M.on_forces_merged(event)
       if cell.force_index == event.source_index then cell.force_index = event.destination.index end
     end
   end
+  for _,record in pairs(st.records) do
+    if valid(record.entity) then
+      for _,port in pairs(record.ports or {}) do if port.valid then port.force=record.entity.force end end
+    end
+  end
   for _, job in pairs(st.jobs) do
     if job.force_index == event.source_index then job.force_index = event.destination.index end
   end
+end
+function M.inspect_signals()
+  local result={}
+  for id,record in pairs(state().records) do
+    if valid(record.entity) and (record.entity.name==R.MULTISIGN or record.entity.name==R.SIGN) then
+      result[#result+1]={id=id,entity=record.entity,ports=record.ports,filters=record.filters}
+    end
+  end
+  return result
 end
 function M.inspect()
   local result = {}

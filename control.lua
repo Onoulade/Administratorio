@@ -12,7 +12,7 @@ local ai_server = require("scripts.ai_server")
 local heat_exhaust = require("scripts.heat_exhaust")
 local relocation_cannon = require("scripts.relocation_cannon")
 local personnel_routing = require("scripts.personnel_routing")
-remote.add_interface("administratorio-personnel-routing", {inspect = personnel_routing.inspect})
+remote.add_interface("administratorio-personnel-routing", {inspect = personnel_routing.inspect, inspect_signals = personnel_routing.inspect_signals})
 local frustration = require("scripts.frustration")
 local station_overview = require("scripts.station_overview")
 local zones = require("scripts.zones")
@@ -1941,6 +1941,7 @@ local ON_ENTITY_DIED_BASE_FILTERS = {
   {filter = "name", name = "personnel-deployment-office"},
   {filter = "name", name = "personnel-reception-office"},
   {filter = "name", name = "personnel-routing-sign"},
+  {filter = "name", name = "personnel-routing-multisign"},
   {filter = "name", name = "personnel-path"},
   {filter = "type", type = "asteroid"},
   {filter = "type", type = "unit"},
