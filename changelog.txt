@@ -1,4 +1,19 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.8.0
+Date: 2026-09-28
+  Bugfixes:
+    - include menu simulation saves in release archives
+  Changes:
+    - Update administrative science pack icon
+    - Fix multisign rotation feedback and document routing
+    - Add personnel routing progression, circuit multisigns and shadows
+    - Prevent alternate supply recipes from defining recycling inputs
+    - Align administrative research, permits, and planetary triggers
+    - Unlock public train stops after Vulcanus and Gleba science
+    - Improve personnel office artwork and allow live sign rotation
+    - Queue personnel between signs and stop safely before invalid turns
+    - Add initial personnel routing draft with protected walking lanes
+---------------------------------------------------------------------------------------------------
 Version: 0.7.5
 Date: 2026-09-27
   Changes:
