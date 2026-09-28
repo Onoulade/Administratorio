@@ -64,6 +64,10 @@ local function verify_grid()
       check(built[1].position.x%2==1 and built[1].position.y%2==1, "native 2x2 building centers did not snap: " .. name .. " " .. serpent.line(built[1].position))
       script.raise_script_built{entity=built[1]}
       check(built[1].valid, "aligned placement was rejected: " .. name)
+      if name=="personnel-reception-office" then
+        check(not built[1].rotatable and not built[1].rotate{},"reception office rotates")
+        check(built[1].direction==defines.direction.north,"reception retained a directional orientation")
+      end
     end
   end
   local forced=grid.create_entity{name="personnel-routing-sign",position={13.25,13.25},force=game.forces.player,snap_to_grid=false}
@@ -213,13 +217,12 @@ script.on_nth_tick(4, function()
     for _,unit in ipairs(units) do
       if unit.position.x>205.5 and unit.position.x<208 and math.abs(unit.position.y-200)<0.3 then entering=true end
     end
-    check(entering and not sign.rotatable,"sign entry was not protected by a departure reservation")
+    check(entering and sign.rotatable,"sign cannot rotate during entry")
     game.server_save("personnel-mid-sign-entry")
   end
   if game.tick == 120 then
     check(#units > 0, "no native unit dispatched")
-    check(not sign.minable and not sign.rotatable, "reserved sign is editable")
-    check(not sign.rotate{}, "moving traffic allowed sign rotation")
+    check(not sign.minable and sign.rotatable, "reserved sign cannot rotate or lost mining protection")
     check(surface.get_tile(203,199).name=="personnel-path-concrete", "automatic pavement missing")
   elseif game.tick == 480 then
     local grid=storage.fixture.grid
@@ -239,9 +242,10 @@ script.on_nth_tick(4, function()
     check(sign.minable and sign.rotatable, "route locks leaked after arrival")
     arrival().clear()
     source().insert{name="worker-biter",count=1}
-  elseif game.tick == 2464 then
+  elseif game.tick == 2440 then
     check(#units == 1, "trained biter did not dispatch")
-    -- No raised event: register_on_object_destroyed must recover this route.
+    -- Delete during entry, while the biter still depends on this junction.
+    -- No raised event: register_on_object_destroyed must recover the cargo.
     sign.destroy()
   elseif game.tick == 2520 then
     check(#units == 0 and source().get_item_count("worker-biter") == 1, "forced sign deletion lost personnel")

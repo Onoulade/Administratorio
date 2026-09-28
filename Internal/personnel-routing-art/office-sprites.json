@@ -1,0 +1,52 @@
+{
+  "input-north": {
+    "filename": "__administratorio__/graphics/entities/personnel-routing/input-north.png",
+    "width": 152,
+    "height": 161,
+    "scale": 0.5,
+    "shift": [
+      0,
+      -0.1953125
+    ]
+  },
+  "input-east": {
+    "filename": "__administratorio__/graphics/entities/personnel-routing/input-east.png",
+    "width": 152,
+    "height": 148,
+    "scale": 0.5,
+    "shift": [
+      0,
+      -0.09375
+    ]
+  },
+  "input-south": {
+    "filename": "__administratorio__/graphics/entities/personnel-routing/input-south.png",
+    "width": 152,
+    "height": 149,
+    "scale": 0.5,
+    "shift": [
+      0,
+      -0.1015625
+    ]
+  },
+  "input-west": {
+    "filename": "__administratorio__/graphics/entities/personnel-routing/input-west.png",
+    "width": 152,
+    "height": 147,
+    "scale": 0.5,
+    "shift": [
+      0,
+      -0.0859375
+    ]
+  },
+  "output": {
+    "filename": "__administratorio__/graphics/entities/personnel-routing/output.png",
+    "width": 152,
+    "height": 148,
+    "scale": 0.5,
+    "shift": [
+      0,
+      -0.09375
+    ]
+  }
+}

@@ -58,7 +58,7 @@ end
 local function lock_entity(record, locked)
   if record and valid(record.entity) then
     record.entity.minable_flag = not locked
-    record.entity.rotatable = not locked and record.role ~= "road"
+    record.entity.rotatable = record.role=="sign" or (not locked and record.role=="input")
     -- Active routes cannot be destroyed by combat. Direct script deletion is
     -- covered by registered destruction callbacks and the saved escrow.
     record.entity.destructible = not locked
@@ -79,8 +79,9 @@ local function reserve_route(route)
     lock_cell(cell)
   end
 end
-local function drop_route(route,id)
-  for i,cell in ipairs(route or {}) do
+local function drop_route(route,id,first,last)
+  for i=first or 1,last or #(route or {}) do
+    local cell=route[i]
     if cell.occupant==id then cell.occupant=nil end
     cell.refs=math.max(0,(cell.refs or 0)-1)
     if route.serial then cell.serial_refs=math.max(0,(cell.serial_refs or 0)-1) end
@@ -90,11 +91,13 @@ local function drop_route(route,id)
   end
 end
 local function release_route(job)
-  drop_route(job.route,job.id)
+  drop_route(job.route,job.id,job.released_start and 2 or 1)
   drop_route(job.departure,job.id)
   job.departure=nil
   for _,tail in ipairs(job.trailing or {}) do drop_route(tail,job.id) end
   job.trailing=nil
+  for _,cell in ipairs(job.entries or {}) do if cell.entry_owner==job.id then cell.entry_owner=nil end end
+  job.entries=nil
   local s=surface_state(job.surface_index)
   for _,key in ipairs(job.exclusive or {}) do if s.exclusive and s.exclusive[key]==job.id then s.exclusive[key]=nil end end
   job.exclusive=nil
@@ -199,7 +202,7 @@ local function remove_record(id)
     local affected = {}
     for _,job in pairs(st.jobs) do
       local uses=false
-      for _,used in ipairs(job.route or {}) do if used==cell then uses=true end end
+      for i,used in ipairs(job.route or {}) do if used==cell and not (i==1 and job.released_start) then uses=true end end
       for _,used in ipairs(job.departure or {}) do if used==cell then uses=true end end
       for _,tail in ipairs(job.trailing or {}) do for _,used in ipairs(tail) do if used==cell then uses=true end end end
       if uses then affected[#affected+1]=job end
@@ -227,6 +230,8 @@ end
 function M.on_built(event)
   local entity = event.entity or event.created_entity
   if not valid(entity) or not R.roles[entity.name] then return false end
+  if R.roles[entity.name]=="output" then entity.direction=defines.direction.north;entity.rotatable=false end
+  if R.roles[entity.name]=="sign" then entity.rotatable=true end
   if state().records[entity.unit_number] then return true end
   local p, role = entity.position, R.roles[entity.name]
   -- Native player placement uses the shared 2x2 grid. Keep integer-centered
@@ -292,41 +297,13 @@ function M.on_object_destroyed(event)
   if entry.kind == "record" then remove_record(entry.id)
   elseif st.jobs[entry.id] then recover(st.jobs[entry.id]) end
 end
-local function rotation_locks()
-  local locks={}
-  for _,job in pairs(state().jobs) do
-    local route=job.route
-    if route then
-      local first=route[1].node
-      if not route.segment then
-        for i=1,#route-1 do
-          local node=route[i].node
-          if node and node.role=="sign" and valid(node.entity) then locks[node.entity.unit_number]=true end
-        end
-      end
-      if first and first.role=="sign" and valid(first.entity) then locks[first.entity.unit_number]=true end
-      -- Incoming segments end at the sign's fixed center, regardless of its
-      -- arrow. Approaching followers must not prevent redirecting a terminal
-      -- queue. Only admitted departures and bodies still clearing a turn lock
-      -- the arrow; mining/combat protection still covers incoming reservations.
-    end
-    if job.departure then
-      local node=job.departure[1].node
-      if node and valid(node.entity) then locks[node.entity.unit_number]=true end
-    end
-    for _,tail in ipairs(job.trailing or {}) do
-      for _,cell in ipairs(tail) do if cell.node and cell.node.role=="sign" and valid(cell.node.entity) then locks[cell.node.entity.unit_number]=true end end
-    end
-  end
-  return locks
-end
 function M.on_rotated(event)
   local entity = event.entity
   local record = valid(entity) and state().records[entity.unit_number]
   if not record then return end
   local s = surface_state(record.surface_index)
   local cell = s.cells[record.key]
-  if (cell.refs or 0)>0 and (record.role~="sign" or rotation_locks()[entity.unit_number]) then
+  if record.role=="output" or ((cell.refs or 0)>0 and record.role~="sign") then
     entity.direction=event.previous_direction;return
   end
   s.revision = s.revision + 1
@@ -477,13 +454,38 @@ local function update_job(job, tick, index)
     -- Quantize to the engine's position resolution to avoid fractional drift.
     local step = math.max(1/256, math.floor(unit.speed*256)/256)
     local terminal=route[#route]
-    local approaching=route.segment and job.goal==#route and terminal.node and terminal.node.role=="sign"
+    local approaching=job.goal==#route and terminal.node and (terminal.node.role=="sign" or terminal.node.role=="output")
+    if approaching and job.departure and not job.departure_committed then
+      if remaining<2 then
+        -- The full 2x2 body has crossed the sign's 2x2 boundary. Its saved
+        -- direction is now immutable, including when loading an older save.
+        job.departure_committed=true
+      else
+        local vx,vy=R.vector(terminal.node.entity.direction)
+        if not vx or job.departure[2].key~=R.key(terminal.x+vx,terminal.y+vy) then
+          -- A reservation outside the tile is still tentative. Recheck the
+          -- current arrow rather than sending the next biter along an old one.
+          drop_route(job.departure,job.id)
+          job.departure=nil
+          job.extension_revision=nil
+          local s=surface_state(job.surface_index)
+          if s.deferred then s.dirty=true end
+        end
+      end
+    end
     -- Keep the complete 2x2 body outside an invalid sign's tile. Reserve the
-    -- departure before crossing this stop line so the arrow cannot change
-    -- halfway through entry; valid turns keep moving without a forced pause.
-    if approaching and not job.departure and remaining<=traffic.GAP+step then
-      local onward=departure_for(job,terminal,tick,index)
-      if onward then job.departure=onward;reserve_route(onward) end
+    -- departure before crossing this stop line. The saved segment freezes
+    -- this biter's turn even if the player rotates the arrow during entry.
+    if approaching and remaining<=traffic.GAP+step and (not terminal.entry_owner or terminal.entry_owner==job.id) then
+      local onward=job.departure or (terminal.node.role=="sign" and departure_for(job,terminal,tick,index))
+      if terminal.node.role=="output" or onward then
+        if not terminal.entry_owner then
+          terminal.entry_owner=job.id
+          job.entries=job.entries or {}
+          job.entries[#job.entries+1]=terminal
+        end
+        if onward and not job.departure then job.departure=onward;reserve_route(onward) end
+      end
     end
     if next_cell and (job.validated_cell~=next_cell.key or tick>=(job.validate_after or 0)) then
       job.validated_cell=next_cell.key
@@ -495,7 +497,8 @@ local function update_job(job, tick, index)
       unit.teleport(p);return
     end
     local permitted=remaining
-    if approaching and not job.departure then permitted=remaining-traffic.GAP end
+    local admitted=terminal.entry_owner==job.id and (terminal.node.role=="output" or job.departure)
+    if approaching and not admitted then permitted=remaining-traffic.GAP end
     local distance = traffic.limit(index,job,p,dx,dy,math.min(step,math.max(0,permitted)))
     if distance<1/256 then
       if job.state~="stopped" then stop(job);job.state="stopped" end
@@ -510,6 +513,7 @@ local function update_job(job, tick, index)
     if not unit.teleport(p) then recover(job,"teleport");return end
     unit.orientation=dx==1 and 0.25 or dx==-1 and 0.75 or dy==1 and 0.5 or 0
     job.position=p
+    if approaching and job.departure and remaining-distance<2 then job.departure_committed=true end
     traffic.move(index,job,p)
     while next_cell and job.index<job.goal
       and (p.x-next_cell.x)*dx+(p.y-next_cell.y)*dy >= -1/256 do
@@ -519,7 +523,7 @@ local function update_job(job, tick, index)
       cell,next_cell=route[job.index],route[job.index+1]
       job.progress_tick=tick
     end
-    if approaching and not job.departure and remaining-distance<=traffic.GAP+1/512 then
+    if approaching and not admitted and remaining-distance<=traffic.GAP+1/512 then
       if job.state~="stopped" then stop(job);job.state="stopped" end
       return
     end
@@ -534,6 +538,24 @@ local function update_job(job, tick, index)
     else tails[#tails+1]=tail end
   end
   job.trailing=tails
+  local entries={}
+  for _,entry in ipairs(job.entries or {}) do
+    local p=job.position or unit.position
+    if math.abs(p.x-entry.x)>=traffic.GAP or math.abs(p.y-entry.y)>=traffic.GAP then
+      if entry.entry_owner==job.id then entry.entry_owner=nil end
+    else entries[#entries+1]=entry end
+  end
+  job.entries=entries
+  local start=route[1]
+  local p=job.position or unit.position
+  if not job.released_start and start.node and start.node.role=="sign"
+    and (math.abs(p.x-start.x)>=traffic.GAP or math.abs(p.y-start.y)>=traffic.GAP) then
+    -- The old direction only owns the junction while its body clears it.
+    -- Keep the rest of that saved leg protected, and let new entrants follow
+    -- the sign's current arrow once the shared tile is physically clear.
+    drop_route(route,job.id,1,1)
+    job.released_start=true
+  end
   if not next_cell then
     local destination=cell.node and cell.node.entity
     if not valid(destination) then recover(job);return end
@@ -554,11 +576,13 @@ local function update_job(job, tick, index)
     local tail={route[math.max(1,#route-1)],cell}
     if #route==1 then tail={cell} end
     reserve_route(tail)
-    drop_route(route,job.id)
+    drop_route(route,job.id,job.released_start and 2 or 1)
     job.trailing[#job.trailing+1]=tail
     job.route,job.index=onward,1
+    job.released_start=false
     if not job.departure then reserve_route(onward) end
     job.departure=nil
+    job.departure_committed=nil
     route=onward
     cell,next_cell=route[1],route[2]
     job.extension,job.extension_revision=nil,nil
@@ -641,12 +665,6 @@ function M.on_tick(event)
       else remove_record(id) end
     end
   end
-  -- reserve_route/dispatch also write entity locks. Apply arrow protection
-  -- last so a fresh incoming reservation cannot re-lock a terminal for a tick.
-  local rotations=rotation_locks()
-  for id,record in pairs(st.records) do
-    if record.role=="sign" and valid(record.entity) then record.entity.rotatable=not rotations[id] end
-  end
 end
 function M.rebuild()
   local st = state()
@@ -675,7 +693,7 @@ function M.rebuild()
   end
   for _,job in pairs(st.jobs) do
     for i,cell in ipairs(job.route or {}) do
-      if job.route[i+1] then cell.flow_refs=cell.flow_refs+1;cell.flow=job.route[i+1].key end
+      if job.route[i+1] and not (i==1 and job.released_start) then cell.flow_refs=cell.flow_refs+1;cell.flow=job.route[i+1].key end
     end
     for i,cell in ipairs(job.departure or {}) do
       if job.departure[i+1] then cell.flow_refs=cell.flow_refs+1;cell.flow=job.departure[i+1].key end

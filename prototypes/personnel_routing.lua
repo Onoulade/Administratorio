@@ -2,8 +2,10 @@
 if not require("feature_flags").space_age_enabled() then return end
 local R = require("prototypes.shared.personnel_routing")
 local personnel_colors = require("prototypes.shared.personnel_colors")
+local office_sprites = require("prototypes.shared.personnel_office_sprites")
 local graphics = "__administratorio__/graphics/entities/personnel-routing/"
 local function sprite(name)
+  if office_sprites[name] then return table.deepcopy(office_sprites[name]) end
   local sign=name:find("^sign%-")
   return {filename = graphics .. name .. ".png", width = sign and 160 or 128, height = sign and 256 or 128,
     scale = 0.5, shift = sign and {0,-1.5} or nil}
@@ -43,8 +45,8 @@ for i, name in ipairs(R.names) do
     max_health = 350,
     collision_box = {{-0.99, -0.99}, {0.99, 0.99}},
     selection_box = {{-1, -1}, {1, 1}},
-    -- Prefer the sign over a waiting proxy in saves made before stop lines.
-    selection_priority = role == "sign" and 60 or nil,
+    -- Keep signs and office inventories selectable under waiting proxies.
+    selection_priority = role ~= "road" and 60 or nil,
     hidden_in_factoriopedia = role == "road",
     tile_width = 2, tile_height = 2,
     build_grid_size = 2,
@@ -57,23 +59,25 @@ for i, name in ipairs(R.names) do
     entity.icon = "__base__/graphics/icons/concrete.png"
     entity.icons = {{icon = entity.icon, icon_size = 64, tint = table.deepcopy(tile.tint)}}
   end
+  if role=="output" then entity.flags[#entity.flags+1]="not-rotatable" end
   if entity.type == "furnace" then
     entity.crafting_categories = {R.CATEGORY}
     entity.crafting_speed = 0.001
     entity.energy_usage = "1W"
     entity.energy_source = {type = "void"}
-    -- An asymmetric, inactive fluid port gives the native furnace shell a
-    -- cardinal direction. No cargo recipe uses fluid, so the port stays off.
-    entity.fluid_boxes = {{production_type = "input", volume = 1, hide_connection_info = true,
-      pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {-0.5, -0.5}}}}}
-    entity.fluid_boxes_off_when_no_fluid_recipe = true
+    if role=="input" then
+      -- Only deployment needs a direction. Reception accepts all four sides.
+      entity.fluid_boxes = {{production_type = "input", volume = 1, hide_connection_info = true,
+        pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {-0.5, -0.5}}}}}
+      entity.fluid_boxes_off_when_no_fluid_recipe = true
+    end
     entity.source_inventory_size = 1
     entity.result_inventory_size = 8
     entity.module_slots = 0
     entity.allowed_effects = {}
     entity.show_recipe_icon = false
     entity.show_recipe_icon_on_map = false
-    entity.graphics_set = {animation = directions(role)}
+    entity.graphics_set = {animation = role=="output" and sprite("output") or directions(role)}
   else
     -- The actual vanilla concrete tile supplies texture and seamless borders.
     -- This selectable entity only owns the protected 2x2 pavement block.

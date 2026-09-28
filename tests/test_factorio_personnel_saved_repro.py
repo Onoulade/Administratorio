@@ -130,7 +130,112 @@ script.on_nth_tick(1,function()
   check(r.rotated,'never tested a stopped leader with approaching followers')
   check(r.rotation_output.get_item_count('worker-biter')==6,'redirected queue did not drain: '..r.rotation_output.get_item_count('worker-biter')..' '..serpent.line(remote.call('administratorio-personnel-routing','inspect')))
   check(r.terminal.minable,'redirected terminal locks leaked')
-  helpers.write_file('personnel-saved-repro.txt','PASS '..r.delivered..' personnel; '..r.moving_ticks..' smooth movement ticks; native terminal rotation\n',false)
+ end
+ if game.tick-r.start==2100 then
+  local s=game.create_surface('personnel-live-turn-repro',{autoplace_controls={}})
+  s.request_to_generate_chunks({48,12},3);s.force_generate_chunk_requests()
+  for _,e in ipairs(s.find_entities()) do e.destroy() end
+  local tiles={}
+  for x=-4,96 do for y=-20,44 do tiles[#tiles+1]={name='grass-1',position={x,y}} end end
+  s.set_tiles(tiles)
+  local function build(name,x,y,direction)
+   local e=s.create_entity{name=name,position={x,y},direction=direction,force='player',snap_to_grid=false}
+   script.raise_script_built{entity=e};check(e and e.valid,'live turn fixture placement failed');return e
+  end
+  r.live={surface=s,input=build('personnel-deployment-office',0,0,defines.direction.east),
+   sign=build('personnel-routing-sign',8,0,defines.direction.south),
+   old_output=build('personnel-reception-office',8,40),new_output=build('personnel-reception-office',40,0),
+   buffer=game.create_inventory(4)}
+  r.live.input.get_inventory(defines.inventory.furnace_source).insert{name='worker-biter',count=1}
+  r.live.buffer.insert{name='worker-biter',count=4}
+  r.live.all_sides=build('personnel-reception-office',80,0,defines.direction.west)
+  r.live.side_inputs={}
+  for _,p in ipairs({{80,-12,defines.direction.south},{92,0,defines.direction.west},
+    {80,12,defines.direction.north},{68,0,defines.direction.east}}) do
+   local departure=build('personnel-deployment-office',p[1],p[2],p[3])
+   r.live.side_inputs[#r.live.side_inputs+1]=departure
+   departure.get_inventory(defines.inventory.furnace_source).insert{name='worker-biter',count=1}
+  end
+ end
+ if r.live then
+  local live=r.live
+  check(not live.all_sides.rotatable and not live.all_sides.rotate{},'omnidirectional reception rotates')
+  local inv=live.input.get_inventory(defines.inventory.furnace_source)
+  if not inv[1].valid_for_read then
+   local stack=live.buffer.find_item_stack('worker-biter')
+   if stack and inv.insert(stack)==1 then stack.clear() end
+  end
+  local live_jobs={}
+  local n=inv.get_item_count('worker-biter')+live.buffer.get_item_count('worker-biter')
+    +live.old_output.get_item_count('worker-biter')+live.new_output.get_item_count('worker-biter')
+    +live.all_sides.get_item_count('worker-biter')
+  for _,input in ipairs(live.side_inputs) do n=n+input.get_inventory(defines.inventory.furnace_source).get_item_count('worker-biter') end
+  for _,j in ipairs(remote.call('administratorio-personnel-routing','inspect')) do
+   if j.surface_index==live.surface.index then
+    n=n+1;live_jobs[#live_jobs+1]=j
+    if not live.early_rotation and j.lane_position.x>5.5 and j.lane_position.x<6 and math.abs(j.lane_position.y)<0.01 then
+     -- An approach reservation must not freeze the direction before the
+     -- full body actually enters the sign tile.
+     live.early_rotation={id=j.id,tick=game.tick}
+     check(live.sign.rotate{by_player=game.players[1]},'pre-entry rotation failed')
+    end
+    if live.early_rotation and not live.early_checked and game.tick-live.early_rotation.tick>=8 and j.id==live.early_rotation.id then
+     check(j.state=='stopped' and j.lane_position.x<=6,'pre-entry biter followed a direction frozen too early')
+     check(j.position.x+1<7,'pre-entry rotation let the biter body cross the sign tile')
+     check(live.sign.rotate{reverse=true,by_player=game.players[1]},'pre-entry queue could not resume')
+     live.early_checked=true
+    end
+    if not live.frozen_id and j.lane_position.x>7 and j.lane_position.x<8 and math.abs(j.lane_position.y)<0.01 then
+     -- Rotate with the leader's center physically inside the sign tile. Its
+     -- saved SOUTH departure must survive a new, invalid WEST arrow.
+     live.frozen_id=j.id
+     local player=game.players[1];check(player.teleport({8,-4},live.surface),'live turn player teleport failed')
+     player.update_selected_entity(live.sign.position)
+     check(player.selected==live.sign,'occupied live sign cannot be selected')
+     check(live.sign.rotate{by_player=player},'occupied live sign cannot rotate')
+     check(live.sign.direction==defines.direction.west,'occupied rotation reverted')
+    end
+    if j.id==live.frozen_id and j.lane_position.y>0.01 then
+     check(math.abs(j.lane_position.x-8)<0.01,'entered biter followed the rotated arrow')
+    end
+   end
+  end
+  check(n==9,'live rotation lost personnel: '..n)
+  for i,a in ipairs(live_jobs) do for k=i+1,#live_jobs do
+   local p,q=a.position,live_jobs[k].position
+   check(math.abs(p.x-q.x)>=2-1/256 or math.abs(p.y-q.y)>=2-1/256,'live rotation overlaps full biter bodies')
+  end end
+  if game.tick-r.start==2250 then
+   check(live.frozen_id,'never rotated with a biter inside the sign tile')
+   check(live.early_checked,'never rotated before a biter entered the sign tile')
+   check(live.old_output.get_item_count('worker-biter')==0,'old-direction fixture already finished')
+   check(live.all_sides.get_item_count('worker-biter')==4,'reception did not accept all four directions: '..serpent.line(live_jobs))
+   local waiting=false
+   for _,j in ipairs(live_jobs) do
+    if j.id~=live.frozen_id and j.lane_position.y==0 and j.lane_position.x<=8 then
+     check(j.lane_position.x<=5.5+1/256,'next biter entered an invalid rotated sign')
+     waiting=waiting or (j.state=='stopped' and math.abs(j.lane_position.x-5.5)<0.01)
+    end
+   end
+   check(waiting,'next biter did not wait before the newly invalid sign')
+   local player=game.players[1]
+   check(live.sign.rotate{reverse=true,by_player=player} and live.sign.rotate{reverse=true,by_player=player},'could not redirect waiting followers')
+   check(live.sign.direction==defines.direction.east,'live sign failed to choose new valid direction')
+  end
+  if game.tick-r.start==2280 then
+   local old_moving,new_moving=false,false
+   for _,j in ipairs(live_jobs) do
+    old_moving=old_moving or (j.id==live.frozen_id and j.lane_position.y>5)
+    new_moving=new_moving or (j.id~=live.frozen_id and j.lane_position.x>8 and math.abs(j.lane_position.y)<0.01)
+   end
+   check(old_moving and new_moving,'new direction waits for the entire old leg instead of junction clearance')
+  end
+  if game.tick-r.start==2750 then
+   check(#live_jobs==0,'live turn queues failed to drain: '..serpent.line(live_jobs))
+   check(live.old_output.get_item_count('worker-biter')==1 and live.new_output.get_item_count('worker-biter')==4,'live turns changed the entered direction or following queue')
+   check(live.sign.minable and live.sign.rotatable,'live junction reservations leaked')
+   helpers.write_file('personnel-saved-repro.txt','PASS '..r.delivered..' personnel; '..r.moving_ticks..' smooth movement ticks; native hover/rotation; frozen entered turn; four-sided reception\n',false)
+  end
  end
 end)
 '''
@@ -147,7 +252,7 @@ def main():
             for name in src.namelist():
                 dst.writestr(name,CONTROL.encode() if name.endswith('/control.lua') else src.read(name))
         run=subprocess.run([a.factorio_bin,'--config',str(root/'config.ini'),'--mod-directory',str(root/'mods'),
-            '--disable-audio','--benchmark',str(save),'--benchmark-ticks','2060','--benchmark-runs','1'],cwd=REPO_ROOT,
+            '--disable-audio','--benchmark',str(save),'--benchmark-ticks','2780','--benchmark-runs','1'],cwd=REPO_ROOT,
             text=True,capture_output=True,timeout=45)
         marker=root/'script-output/personnel-saved-repro.txt'
         assert marker.exists(),(run.stdout+run.stderr)[-6500:]
