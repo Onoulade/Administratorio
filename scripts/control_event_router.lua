@@ -90,6 +90,10 @@ function M.register(deps)
     script.on_event(defines.events.on_player_rotated_entity, deps.on_player_rotated_entity)
   end
 
+  if deps.on_personnel_rotate_input then
+    script.on_event("administratorio-rotate-personnel-sign", deps.on_personnel_rotate_input)
+    script.on_event("administratorio-reverse-rotate-personnel-sign", deps.on_personnel_rotate_input)
+  end
   script.on_event("administratorio-toggle-runtime-debug", deps.on_toggle_runtime_debug)
   script.on_event("administratorio-toggle-complaint-locator", deps.on_toggle_complaint_locator)
   script.on_event("administratorio-field-agent-toggle-select", deps.on_field_agent_waypoint_input)

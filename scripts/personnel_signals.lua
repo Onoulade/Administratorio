@@ -22,6 +22,7 @@ function M.ensure_ports(record)
       port.teleport(position)
     end
     if port then
+      -- Linked rotate controls turn the owner; sockets never rotate alone.
       port.destructible,port.minable_flag,port.rotatable,port.operable = false,false,false,false
     end
   end

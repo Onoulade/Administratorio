@@ -11,6 +11,9 @@ from test_factorio_runtime_smoke import prepare_profile, REPO_ROOT, SMOKE_MOD_NA
 
 CONTROL = r'''
 local function check(v,m) if not v then error("Personnel circuits: "..m) end end
+local function save(name)
+ if game.is_multiplayer() then game.server_save(name) else game.auto_save(name) end
+end
 local function build(s,name,x,y,direction)
  local e=s.create_entity{name=name,position={x,y},direction=direction,force="player",snap_to_grid=false}
  check(e,"creation failed: "..name)
@@ -94,13 +97,17 @@ local function new_fixture()
  for i=1,2 do f.cbuffers[i].insert{name="worker-biter",count=1,quality="rare"};f.cbuffers[i].insert{name="worker-biter",count=1,quality="epic"} end
  f.cbuffers[3].insert{name="management-trainee",count=1}
  f.reader=source(s,20,44);wire(f.reader,f.csign)
- -- Rotation while queued must move side sockets without losing their wires.
+ -- The straight filter initially points north into a reception. After the
+ -- first biter is engaged, rotating the sign makes straight point east.
+ -- The leader keeps north; the follower takes the new east exit.
  f.rotinput=build(s,"personnel-deployment-office",48,12,defines.direction.north)
  f.rotsign=build(s,"personnel-routing-multisign",48,0,defines.direction.north)
- f.rotwest=build(s,"personnel-reception-office",36,0)
  f.rotnorth=build(s,"personnel-reception-office",48,-12)
- f.rotsource=source(s,44,-4);wire(f.rotsource,ports(f.rotsign).left)
+ f.rotsource=source(s,48,4);wire(f.rotsource,ports(f.rotsign).straight)
+ set(f.rotsource,{{"enrolled-biter",1}})
  inv(f.rotinput).insert{name="enrolled-biter",count=1,quality="legendary"}
+ f.rotbuffer=game.create_inventory(1)
+ f.rotbuffer.insert{name="enrolled-biter",count=1,quality="uncommon"}
  return f
 end
 local function feed(e,buffer)
@@ -122,6 +129,7 @@ script.on_nth_tick(1,function()
  local f=storage.fixture
  local t=game.tick-f.start
  feed(f.input,f.buffer)
+ feed(f.rotinput,f.rotbuffer)
  for i,e in ipairs(f.inputs) do feed(e,f.cbuffers[i]) end
  local force=game.forces.player
  -- Change a live filter after the first worker's body enters the junction.
@@ -131,6 +139,20 @@ script.on_nth_tick(1,function()
     set(f.lsource,{})
     set(f.rsource,{{"worker-biter",1},{"management-trainee",1}})
     f.changed=true
+   end
+  end
+ end
+ -- Rotate the body after the leader has crossed the entry boundary. That
+ -- leader keeps north; the next biter takes the newly available east exit.
+ if t>60 and t<300 and not f.rot_committed then
+  for _,j in ipairs(jobs(f.s)) do
+   local p=j.lane_position
+   if j.item=="enrolled-biter" and math.abs(p.x-48)<1/256 and p.y>=-2 and p.y<=0 then
+    f.roteast=build(f.s,"personnel-reception-office",60,0)
+    check(f.rotsign.rotate{},"multisign would not rotate with a committed biter inside")
+    check(f.rotsign.direction==defines.direction.east,"occupied multisign rotation was reverted")
+    f.rot_committed=true
+    save("personnel-circuits-mid-multisign-entry")
    end
   end
  end
@@ -144,13 +166,7 @@ script.on_nth_tick(1,function()
  if t==300 then
   local c=values(f.reader)
   check(c["worker-biter"]==4 and c["management-trainee"]==1,"incoming lanes/qualities not summed: "..serpent.line(c).." jobs="..serpent.line(jobs(f.s)).." native="..serpent.line(f.csign.get_or_create_control_behavior().get_section(1).filters).." raw="..serpent.line(f.reader.get_signals(defines.wire_connector_id.circuit_red)))
-  check(f.rotsign.rotate{by_player=game.players[1]},"multisign would not rotate while queued")
-  check(f.rotsign.direction==defines.direction.east,"multisign rotation incorrect")
-  set(f.rotsource,{{"enrolled-biter",1}})
- end
- if t==310 then
-  local p=ports(f.rotsign)
-  check(math.abs(p.left.position.x-48)<1/256 and p.left.position.y<0,"side port did not rotate")
+  check(f.rot_committed,"multisign rotation was not exercised before the engaged biter cleared")
  end
  if t==500 then
   check(f.changed,"entry-time filter change not exercised")
@@ -158,7 +174,9 @@ script.on_nth_tick(1,function()
   check(count(f.right,"worker-biter")==1 and count(f.right,"management-trainee")==1,"live filters did not route following types right")
   check(inv(f.left,true).get_item_count{name="worker-biter",quality="rare"}==1,"left worker quality lost")
   check(inv(f.right,true).get_item_count{name="worker-biter",quality="epic"}==1,"right worker quality lost")
-  check(count(f.rotnorth,"enrolled-biter")==1 and count(f.rotwest,"enrolled-biter")==0,"rotation lost wiring or relative exit")
+  check(f.rot_committed,"occupied multisign rotation was not exercised: "..serpent.line(jobs(f.s)).." signals="..serpent.line(values(ports(f.rotsign).left)))
+  check(inv(f.rotnorth,true).get_item_count{name="enrolled-biter",quality="legendary"}==1,"committed biter lost its original destination after rotation")
+  check(inv(f.roteast,true).get_item_count{name="enrolled-biter",quality="uncommon"}==1,"next biter did not use the rotated exit")
   inv(f.input).insert{name="chemical-operator",count=1}
  end
  if t==600 then
@@ -176,7 +194,7 @@ script.on_nth_tick(1,function()
  if t==800 then
   for _,j in ipairs(jobs(f.s)) do if j.item=="chemical-operator" then check(math.abs(j.position.x-9.5)<1/256,"negative green signal did not cancel red") end end
   set(f.negative,{})
-  game.server_save("personnel-circuits-mid-queue")
+  save("personnel-circuits-mid-queue")
  end
  if t==1000 then
   check(count(f.straight,"chemical-operator")==1,"live signal did not release unmatched type")
@@ -234,11 +252,14 @@ def main() -> None:
         assert marker.exists(), log_path.read_text()[-6500:]
         assert marker.read_text() == 'PASS\n'
         marker.unlink()
-        replay = subprocess.run([str(factorio), '--config', str(root/'config.ini'), '--mod-directory', str(root/'mods'),
-            '--disable-audio', '--benchmark', str(root/'saves/personnel-circuits-mid-queue.zip'),
-            '--benchmark-ticks', '620', '--benchmark-runs', '1'], cwd=REPO_ROOT, text=True, capture_output=True, timeout=45)
-        assert marker.exists(), (replay.stdout+replay.stderr)[-6500:]
-        assert marker.read_text() == 'PASS\n'
+        for save, ticks in [('personnel-circuits-mid-queue', '620'), ('personnel-circuits-mid-multisign-entry', '1420')]:
+            filename=save+'.zip'
+            replay = subprocess.run([str(factorio), '--config', str(root/'config.ini'), '--mod-directory', str(root/'mods'),
+                '--disable-audio', '--benchmark', str(root/'saves'/filename),
+                '--benchmark-ticks', ticks, '--benchmark-runs', '1'], cwd=REPO_ROOT, text=True, capture_output=True, timeout=45)
+            assert marker.exists(), (replay.stdout+replay.stderr)[-6500:]
+            assert marker.read_text() == 'PASS\n'
+            marker.unlink()
     print('Personnel live filters, rotated circuit ports, research speeds, incoming counts and saved queues passed')
 
 if __name__ == '__main__':
