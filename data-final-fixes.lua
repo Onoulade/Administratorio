@@ -1511,6 +1511,7 @@ end
 -- 9. ADMIN STATION COLLISION FOOTPRINT
 -------------------------------------------------------------------------------
 require("prototypes.final_fixes.collision_masks").apply(data, feature_flags.working_hours_enabled())
+require("prototypes.final_fixes.personnel_routing").apply(data)
 
 -------------------------------------------------------------------------------
 -- 8b. BITERPORT ITEM PLACE_RESULT FALLBACK

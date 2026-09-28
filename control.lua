@@ -11,6 +11,8 @@ local interplanetary_tube = require("scripts.interplanetary_tube")
 local ai_server = require("scripts.ai_server")
 local heat_exhaust = require("scripts.heat_exhaust")
 local relocation_cannon = require("scripts.relocation_cannon")
+local personnel_routing = require("scripts.personnel_routing")
+remote.add_interface("administratorio-personnel-routing", {inspect = personnel_routing.inspect})
 local frustration = require("scripts.frustration")
 local station_overview = require("scripts.station_overview")
 local zones = require("scripts.zones")
@@ -647,6 +649,7 @@ local function on_init()
   ai_server.rebuild_registry()
   heat_exhaust.rebuild_registry()
   relocation_cannon.rebuild_registry()
+  personnel_routing.rebuild()
   biters.rebuild_desk_index()
   biters.rebuild_capture_bureau_ports()
   biters.mark_all_desk_circuit_dirty()
@@ -706,6 +709,7 @@ local function on_configuration_changed(event)
   ai_server.rebuild_registry()
   heat_exhaust.rebuild_registry()
   relocation_cannon.rebuild_registry()
+  personnel_routing.rebuild()
   trains.on_init()
   passenger_trains.rebuild_registry()
   set_biter_ceasefire()
@@ -1137,6 +1141,7 @@ local function on_entity_built_inner(event)
     if interplanetary_tube.is_terminus(entity) and not interplanetary_tube.on_entity_built(entity, player) then
       return
     end
+    if personnel_routing.on_built(event) then return end
     ai_server.on_entity_built(entity)
     heat_exhaust.on_entity_built(entity)
     if relocation_cannon.is_cannon(entity) and not relocation_cannon.on_entity_built(entity, player) then
@@ -1234,6 +1239,8 @@ local function on_entity_removed(event)
   local entity = event.entity
   if not entity or not entity.valid then return end
 
+  if personnel_routing.on_removed(event) then return end
+
   if entity.type == "unit" and biters.on_biter_removed(entity, event) then
     return
   end
@@ -1279,6 +1286,7 @@ local function on_pre_entity_removed(event)
 end
 
 local function on_player_rotated_entity(event)
+  personnel_routing.on_rotated(event)
   if event.entity and event.entity.valid and event.entity.name == C.TUBE_PUMP_NAME then
     pneumatic.refresh_tube_pump_supports(event.entity)
   end
@@ -1883,6 +1891,7 @@ local function on_unit_group_finished_gathering(event)
 end
 
 local function on_entity_died(event)
+  if personnel_routing.on_removed(event) then return end
   local entity = event.entity
   complaint_item_recovery.on_entity_died(event)
   spawner_population.on_entity_died(entity)
@@ -1929,6 +1938,10 @@ local function on_entity_died(event)
 end
 
 local ON_ENTITY_DIED_BASE_FILTERS = {
+  {filter = "name", name = "personnel-deployment-office"},
+  {filter = "name", name = "personnel-reception-office"},
+  {filter = "name", name = "personnel-routing-sign"},
+  {filter = "name", name = "personnel-path"},
   {filter = "type", type = "asteroid"},
   {filter = "type", type = "unit"},
   {filter = "type", type = "pipe"},
@@ -1956,7 +1969,9 @@ local ON_ENTITY_DIED_BASE_FILTERS = {
 build_entity_died_filters = function()
   local filters = {}
   for _, base_filter in ipairs(ON_ENTITY_DIED_BASE_FILTERS) do
-    filters[#filters + 1] = base_filter
+    if base_filter.filter ~= "name" or feature_flags.entity_prototype_exists(base_filter.name) then
+      filters[#filters + 1] = base_filter
+    end
   end
   for _, target_type in ipairs(protest_targets.get_target_types()) do
     filters[#filters + 1] = {filter = "type", type = target_type}
@@ -2004,6 +2019,7 @@ local function on_field_agent_waypoint_input(event)
 end
 
 local function on_ai_command_completed(event)
+  if personnel_routing.on_ai_command_completed(event) then return end
   local tracked_group = unit_group_debug_enabled() and storage.unit_group_debug and storage.unit_group_debug[event.unit_number]
   if tracked_group then
     local snapshot = snapshot_unit_group(tracked_group.group, event.tick)
@@ -2332,6 +2348,13 @@ resolution_processing = control_resolution_processing_factory.new({
 })
 
 control_event_router.register({
+  on_personnel_routing_tick = personnel_routing.on_tick,
+  on_entity_cloned = personnel_routing.on_cloned,
+  on_object_destroyed = personnel_routing.on_object_destroyed,
+  on_tiles_built = personnel_routing.on_tiles_built,
+  on_pre_surface_removed = personnel_routing.on_pre_surface_removed,
+  on_personnel_surface_removed = personnel_routing.on_surface_removed,
+  on_forces_merged = personnel_routing.on_forces_merged,
   on_ai_command_completed = on_ai_command_completed,
   on_biter_station_tick = on_biter_station_tick,
   on_biterport_tick = on_biterport_tick,

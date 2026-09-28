@@ -40,6 +40,15 @@ local function register_nth_tick_handlers(registrations)
 end
 
 function M.register(deps)
+  if deps.on_object_destroyed then script.on_event(defines.events.on_object_destroyed, deps.on_object_destroyed) end
+  if deps.on_tiles_built then
+    script.on_event(defines.events.on_player_built_tile, deps.on_tiles_built)
+    script.on_event(defines.events.on_robot_built_tile, deps.on_tiles_built)
+  end
+  if deps.on_pre_surface_removed then
+    script.on_event(defines.events.on_pre_surface_deleted, deps.on_pre_surface_removed)
+    script.on_event(defines.events.on_pre_surface_cleared, deps.on_pre_surface_removed)
+  end
   script.on_init(deps.on_init)
   script.on_configuration_changed(deps.on_configuration_changed)
   script.on_load(deps.on_load)
@@ -65,6 +74,7 @@ function M.register(deps)
   script.on_event(defines.events.on_robot_built_entity, deps.on_entity_built)
   script.on_event(defines.events.script_raised_built, deps.on_entity_built)
   script.on_event(defines.events.script_raised_revive, deps.on_entity_built)
+  if deps.on_entity_cloned then script.on_event(defines.events.on_entity_cloned, deps.on_entity_cloned) end
   script.on_event(defines.events.on_player_mined_entity, deps.on_entity_removed)
   script.on_event(defines.events.on_robot_mined_entity, deps.on_entity_removed)
   script.on_event(defines.events.script_raised_destroy, deps.on_entity_removed)
@@ -111,15 +121,25 @@ function M.register(deps)
   script.on_event(defines.events.on_research_reversed, deps.on_research_reversed)
   script.on_event(defines.events.on_force_created, deps.on_force_changed)
   script.on_event(defines.events.on_force_reset, deps.on_force_changed)
-  script.on_event(defines.events.on_forces_merged, deps.on_force_changed)
+  script.on_event(defines.events.on_forces_merged, function(event)
+    if deps.on_forces_merged then deps.on_forces_merged(event) end
+    if deps.on_force_changed then deps.on_force_changed(event) end
+  end)
   script.on_event(defines.events.on_player_changed_force, deps.on_force_changed)
   script.on_event(defines.events.on_surface_created, deps.on_surface_changed)
   script.on_event(defines.events.on_surface_imported, deps.on_surface_changed)
-  script.on_event(defines.events.on_surface_deleted, deps.on_surface_deleted)
+  script.on_event(defines.events.on_surface_deleted, function(event)
+    if deps.on_personnel_surface_removed then deps.on_personnel_surface_removed(event) end
+    if deps.on_surface_deleted then deps.on_surface_deleted(event) end
+  end)
+  if deps.on_personnel_surface_removed then
+    script.on_event(defines.events.on_surface_cleared, deps.on_personnel_surface_removed)
+  end
 
   -- Each system declares the cadence its own behaviour needs. Sharing an
   -- interval with another system is allowed and has no effect on either.
   register_nth_tick_handlers({
+    {1, deps.on_personnel_routing_tick},
     {15, deps.on_pneumatic_tick},
     {deps.terminus_check_ticks, deps.on_interplanetary_tube_tick},
     {deps.ai_server_check_ticks, deps.on_ai_server_tick},

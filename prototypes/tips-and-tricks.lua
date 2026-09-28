@@ -140,6 +140,7 @@ if space_age_enabled then
     -- Space Age changes the desk-to-worker conversion before the dedicated
     -- orbital category is relevant, so keep this beside the core hiring tips.
     research_tip("administratorio-space-age-enrollment", workforce, "i", "worker-formation"),
+    research_tip("administratorio-personnel-routing", workforce, "j", "personnel-routing"),
 
     -- Orbital administration
     research_tip("administratorio-workforce-formation-title", orbit, "a", "space-platform", {

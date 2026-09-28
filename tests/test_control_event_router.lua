@@ -45,10 +45,27 @@ test("router registers lifecycle, event, and custom handlers", function()
     on_pneumatic_tick = handler("pneumatic"), terminus_check_ticks = 15, on_interplanetary_tube_tick = handler("tube"),
     ai_server_check_ticks = 15, on_ai_server_tick = handler("ai-server"), on_main_tick = handler("main"),
     on_passenger_train_tick = handler("passenger"),
+    on_forces_merged = handler("personnel-force"), on_force_changed = handler("existing-force"),
+    on_personnel_surface_removed = handler("personnel-surface"), on_surface_deleted = handler("existing-surface"),
   })
   assert_true(registrations.init and registrations.configuration and registrations.load)
   assert_true(registrations[defines.events.on_entity_died] ~= nil)
   assert_true(registrations["administratorio-toggle-runtime-debug"] ~= nil)
+end)
+
+test("force merge preserves both personnel and existing force handling", function()
+  registrations.called = ""
+  registrations[defines.events.on_forces_merged]({source_index=3,destination={index=1}})
+  assert_eq(registrations.called, "personnel-forceexisting-force")
+end)
+
+test("surface deletion preserves both cleanup handlers", function()
+  registrations.called = ""
+  registrations[defines.events.on_surface_deleted]({surface_index=2})
+  assert_eq(registrations.called, "personnel-surfaceexisting-surface")
+  registrations.called = ""
+  registrations[defines.events.on_surface_cleared]({surface_index=2})
+  assert_eq(registrations.called, "personnel-surface")
 end)
 
 test("passenger trains update every 10 ticks", function()
