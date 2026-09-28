@@ -108,9 +108,19 @@ end
 -- final regulation pass uses this explicit registry instead of guessing from
 -- recipe-name patterns, which keeps third-party recipes out of the admin path.
 local shared = require("prototypes.shared")
+-- Store research provenance on the data API so it survives stage-local
+-- require caches and remains available during final fixes.
+data.administratorio_technology_ownership = {}
+data.administratorio_original_prerequisites = {}
+for name, technology in pairs(data.raw.technology or {}) do
+  data.administratorio_original_prerequisites[name] = table.deepcopy(technology.prerequisites or {})
+end
 local extend_prototypes = data.extend
 function data:extend(prototypes)
   shared.register_admin_recipe_prototypes(prototypes)
+  for _, prototype in ipairs(prototypes) do
+    if prototype.type == "technology" then data.administratorio_technology_ownership[prototype.name] = true end
+  end
   return extend_prototypes(self, prototypes)
 end
 

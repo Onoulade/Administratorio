@@ -82,6 +82,20 @@ test("configuration sync restores egg breeding after cultivation research", func
     "researched cultivation should keep the vanilla egg recipe available")
 end)
 
+test("expedition charter follows Administratorium research in old saves and reversals", function()
+  local force = make_force(true)
+  force.technologies["promethium-science-pack"] = {researched = false}
+  force.recipes["promethium-research-charter"] = {enabled = true}
+  planetary_unlocks.sync_force(force)
+  assert_eq(force.recipes["promethium-research-charter"].enabled, false)
+  force.technologies["promethium-science-pack"].researched = true
+  planetary_unlocks.on_research_finished({name = "promethium-science-pack", force = force})
+  assert_eq(force.recipes["promethium-research-charter"].enabled, true)
+  force.technologies["promethium-science-pack"].researched = false
+  planetary_unlocks.sync_force(force)
+  assert_eq(force.recipes["promethium-research-charter"].enabled, false)
+end)
+
 if failed > 0 then
   io.stderr:write(("Planetary unlock tests failed: %d/%d\n"):format(failed, passed + failed))
   for _, err in ipairs(errors) do

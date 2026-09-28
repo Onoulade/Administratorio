@@ -1569,6 +1569,23 @@ test("productivity module 3 follows Gleba eggs rather than Nauvis egg handling",
     "productivity-module-3 should retain its recipe unlock")
 end)
 
+test("planetary certification and yellow administration use reachable crafting triggers", function()
+  for name, item in pairs({
+    ["vulcanus-certification"] = "blank-cyan-form",
+    ["gleba-yellow-administration"] = "ink",
+    ["gleba-conciliation"] = "blank-yellow-form",
+  }) do
+    local technology = technologies[name]
+    assert_eq(technology.unit, nil, name .. " must not consume research packs")
+    assert_eq(technology.research_trigger.type, "craft-item")
+    assert_eq(technology.research_trigger.item, item)
+    assert_eq(technology.research_trigger.count, 1)
+  end
+  assert_true(tech_unlocks_recipe(technologies["cyan-ink-production"], "blank-cyan-form-production"))
+  assert_true(tech_unlocks_recipe(technologies["amber-sap-processing"], "ink-production-gleba"))
+  assert_true(tech_unlocks_recipe(technologies["gleba-yellow-administration"], "blank-yellow-form-production"))
+end)
+
 test("gleba separates yellow administration from conciliation operations", function()
   local yellow = technologies["gleba-yellow-administration"]
   local gleba = technologies["gleba-conciliation"]
@@ -2120,7 +2137,6 @@ test("Aquilo bootstrap precedes cryogenic science and the chromatic trunk follow
     "composite-chroma-ribbon-production",
     "trichromatic-permit-production",
     "unified-operations-charter-production",
-    "promethium-research-charter-production",
   }) do
     assert_true(tech_unlocks_recipe(aquilo, recipe_name), "interplanetary-tube-chromatic should unlock " .. recipe_name)
   end
@@ -2165,6 +2181,8 @@ test("Administratorium expedition closes the administrative progression loop", f
   end
   assert_true(uses_administrative_science,
     "Administratorium expedition should consume administrative science")
+  assert_true(tech_unlocks_recipe(technology, "promethium-research-charter-production"))
+  assert_true(not tech_unlocks_recipe(technologies["interplanetary-tube-chromatic"], "promethium-research-charter-production"))
 end)
 
 test("bicolored paperwork technologies require the matching planet sciences", function()

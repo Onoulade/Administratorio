@@ -440,6 +440,75 @@ def assert_milestone_resolutions_are_operable(data_raw: dict, configuration: str
                 )
 
 
+def assert_administrative_progression(data_raw: dict, *, space_age: bool) -> None:
+    technologies, recipes = data_raw["technology"], data_raw["recipe"]
+    analyzer = ProgressionAnalyzer(data_raw)
+    for name in ("railway", "nuclear-power", "automation-3", "rocket-silo",
+                 "advanced-circuit", "processing-unit", "construction-robotics"):
+        assert "administrative-science-pack" not in analyzer.tech_science_packs(name), name
+    for name, technology in technologies.items():
+        if name.endswith("-science-pack") and name not in ("automation-science-pack", "military-science-pack"):
+            assert "administrative-science-pack" in analyzer.tech_science_packs(name), name
+            assert not technology.get("research_trigger"), name
+    for name in ("modules", "quality-module", "speed-module", "productivity-module", "efficiency-module"):
+        if name in technologies:
+            assert "administrative-science-pack" in analyzer.tech_science_packs(name), name
+    assert not analyzer.unavailable_prerequisite_findings()
+    unreachable = analyzer.unreachable_technology_findings()
+    # Base space science is a satellite launch product, which this analyzer
+    # does not model as a recipe. Only its two native infinite upgrades fall
+    # outside the model; every other visible technology must be reachable.
+    if not space_age:
+        unreachable = [finding for finding in unreachable
+                       if finding["technology"] not in {"mining-productivity-4", "worker-robots-speed-6"}]
+    assert not unreachable, unreachable
+    assert not analyzer.pack_prereq_gaps()
+    active, visited = set(), set()
+    def visit(name):
+        assert name not in active, f"Technology cycle at {name}"
+        if name in visited:
+            return
+        active.add(name)
+        for parent in technologies[name].get("prerequisites", []):
+            visit(parent)
+        active.remove(name)
+        visited.add(name)
+    for name in technologies:
+        visit(name)
+    for name, recipe in recipes.items():
+        if any(analyzer.item_index.get(item, {}).get("place_result")
+               for item, _ in recipe_results(recipe)):
+            assert "office-desk" not in {item for item, _ in recipe_ingredients(recipe)}, name
+    if not space_age:
+        return
+    for name, item in {
+        "vulcanus-certification": "blank-cyan-form",
+        "gleba-yellow-administration": "ink",
+        "gleba-conciliation": "blank-yellow-form",
+    }.items():
+        technology = technologies[name]
+        assert not technology.get("unit"), name
+        assert technology["research_trigger"] == {"type": "craft-item", "item": item, "count": 1}, name
+        key = analyzer.tech_eval_key(name, include_self=False)
+        assert analyzer.machine_craftable(item, key), f"{name}: trigger input unavailable before unlock"
+    for route in ("fusion-reactor-equipment", "fusion-reactor-equipment-regulated", "captive-biter-spawner"):
+        ingredients = {item for item, _ in recipe_ingredients(recipes[route])}
+        assert "trichromatic-permit" in ingredients, route
+        assert not ingredients & {"cyan-yellow-form", "cyan-magenta-form", "yellow-magenta-form"}, route
+    assert recipes["captive-biter-spawner"]["category"] == "cryogenics"
+    assert "captive-biter-spawner-regulated" not in recipes
+    assert "missionary-manager" in {item for item, _ in recipe_ingredients(recipes["captive-biter-spawner"])}
+    for name in ("ai-server", "slop-refinery"):
+        for route in (name, name + "-regulated"):
+            assert "cryogenic-operations-license" in {item for item, _ in recipe_ingredients(recipes[route])}, route
+    for route in ("synthetic-personnel-bureau", "synthetic-personnel-bureau-regulated"):
+        assert "trichromatic-permit" in {item for item, _ in recipe_ingredients(recipes[route])}, route
+    assert data_raw["item"]["blank-yellow-form"]["spoil_ticks"] == 20 * 60 * 60
+    charter = "promethium-research-charter"
+    assert any(effect.get("recipe") == charter for effect in technologies["promethium-science-pack"].get("effects", []))
+    assert not any(effect.get("recipe") == charter for effect in technologies["interplanetary-tube-chromatic"].get("effects", []))
+
+
 def main() -> None:
     args = parse_args()
     if not args.factorio_bin:
@@ -452,6 +521,8 @@ def main() -> None:
 
     base = run_case(factorio_bin, space_age=False, working_hours=True)
     space_age = run_case(factorio_bin, space_age=True, working_hours=True)
+    assert_administrative_progression(base, space_age=False)
+    assert_administrative_progression(space_age, space_age=True)
     assert_rideable_layers_preserve_native_collisions(base)
     assert_rideable_layers_preserve_native_collisions(space_age)
     assert_managed_biter_crossings(base)
@@ -479,6 +550,7 @@ def main() -> None:
     )
 
     no_working_hours = run_case(factorio_bin, space_age=True, working_hours=False)
+    assert_administrative_progression(no_working_hours, space_age=True)
     assert_rideable_layers_preserve_native_collisions(no_working_hours)
     assert_managed_biter_crossings(no_working_hours)
     assert_ore_placement_masks(no_working_hours)

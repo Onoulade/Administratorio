@@ -2,6 +2,10 @@
 
 The entire research tree is reworked around bureaucratic milestones instead of military ones. New branches cover paperwork throughput, renewable wood and coal, approvals, public finance, queue capacity, workforce management, logistics formations, Space Age jurisdictions, and the late complaint families. Science counts and prerequisites below describe the current prototype graph; the in-game technology cards remain the final authority when another mod changes vanilla research.
 
+Administrative Science is required for administrative research, the repurposed module/certification branches, and new science-pack unlocks after the red-science bootstrap. Space Age's former science craft/build triggers are replaced by 75 Administrative Science at 30 seconds per unit. Ordinary vanilla technologies do not inherit the administrative pack from their parents. Administrative prerequisites on ordinary vanilla research must supply ingredients used by the unlocked recipes; missing input producers are added without introducing technology cycles. Runtime payload-selection recipes and automatic recycling do not define research prerequisites.
+
+Portable fusion and captive nests require a Trichromatic Permit. Captive nests remain a Cryogenic Plant recipe, with no regulated assembler copy. AI Servers and Slop Refineries require Aquilo's Cryogenic Operations License; the Synthetic Personnel Bureau requires a Trichromatic Permit. Heat Exhaust retains its existing construction paperwork. Buildings never consume Office Desks. Blank Yellow Forms spoil into paper after 20 minutes. The Administratorium Expedition Charter unlocks with Administratorium Science (`promethium-science-pack`), and existing saves reconcile that unlock on configuration changes.
+
 ## Trigger Technologies (Discovery)
 
 ### Discovery: Redundant Rubble (`discovery-redundant-rubble`)
@@ -286,6 +290,8 @@ The entire research tree is reworked around bureaucratic milestones instead of m
 Space Age progression is a set of jurisdiction branches rather than one straight ladder. Each planet first bootstraps its local paperwork before its science pack becomes part of the wider bureaucracy.
 
 ### Planetary Branches
+
+Three planetary bootstrap technologies use crafting triggers instead of laboratory research: `vulcanus-certification` requires one Blank Cyan Form; `gleba-yellow-administration` requires one Ink after amber-sap discovery; `gleba-conciliation` requires one Blank Yellow Form. Their existing prerequisites and recipe unlocks remain in place, and each trigger item is producible before its technology unlocks.
 
 | Branch | Technologies | Main unlocks |
 | --- | --- | --- |

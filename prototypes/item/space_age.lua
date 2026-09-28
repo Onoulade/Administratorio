@@ -396,7 +396,7 @@ data:extend({
     subgroup = "forms-printed",
     order = "dd",
     stack_size = 100,
-    spoil_ticks = 18000,
+    spoil_ticks = 20 * 60 * 60,
     spoil_result = "paper",
   },
   {

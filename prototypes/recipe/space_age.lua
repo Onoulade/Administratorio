@@ -476,7 +476,6 @@ data:extend({
     subgroup = "admin-buildings", order = "h-d",
     enabled = false,
     ingredients = {
-      {type = "item", name = "office-desk", amount = 2},
       {type = "item", name = "chromatic-printer", amount = 1},
       {type = "item", name = "licensed-notary", amount = 1},
       {type = "item", name = "tungsten-carbide", amount = 4},
@@ -493,7 +492,6 @@ data:extend({
     subgroup = "admin-buildings", order = "h-e",
     enabled = false,
     ingredients = {
-      {type = "item", name = "office-desk", amount = 1},
       {type = "item", name = "licensed-notary", amount = 1},
       {type = "item", name = "steel-plate", amount = 20},
       {type = "item", name = "advanced-circuit", amount = 10},
@@ -637,7 +635,6 @@ data:extend({
     subgroup = "admin-biter-buildings", order = "a-i",
     enabled = false,
     ingredients = {
-      {type = "item", name = "office-desk", amount = 2},
       {type = "item", name = "chromatic-printer", amount = 1},
       {type = "item", name = "conciliation-officer", amount = 1},
       {type = "item", name = "steel-plate", amount = 20},
@@ -653,7 +650,6 @@ data:extend({
     subgroup = "admin-buildings", order = "h-f",
     enabled = false,
     ingredients = {
-      {type = "item", name = "office-desk", amount = 1},
       {type = "item", name = "relay-clerk", amount = 1},
       {type = "item", name = "processing-unit", amount = 15},
       {type = "item", name = "holmium-plate", amount = 20},
@@ -746,7 +742,6 @@ data:extend({
     subgroup = "admin-space-buildings", order = "zc-e",
     enabled = false,
     ingredients = {
-      {type = "item", name = "office-desk", amount = 1},
       {type = "item", name = "astronaut", amount = 1},
       {type = "item", name = "processing-unit", amount = 12},
       {type = "item", name = "low-density-structure", amount = 12},
@@ -1355,7 +1350,6 @@ data:extend({
     subgroup = "admin-relocation", order = "a",
     enabled = false,
     ingredients = {
-      {type = "item", name = "office-desk", amount = 2},
       {type = "item", name = "licensed-notary", amount = 1},
       {type = "item", name = "tungsten-plate", amount = 40},
       {type = "item", name = "processing-unit", amount = 20},
@@ -1371,7 +1365,6 @@ data:extend({
     subgroup = "admin-relocation", order = "b",
     enabled = false,
     ingredients = {
-      {type = "item", name = "office-desk", amount = 2},
       {type = "item", name = "licensed-notary", amount = 1},
       {type = "item", name = "tungsten-plate", amount = 40},
       {type = "item", name = "processing-unit", amount = 20},
@@ -1403,12 +1396,11 @@ data:extend({
     subgroup = "admin-biter-buildings", order = "a-j",
     enabled = false,
     ingredients = {
-      {type = "item", name = "office-desk", amount = 2},
       {type = "item", name = "cryoprint-technician", amount = 1},
       {type = "item", name = "quantum-processor", amount = 20},
       {type = "item", name = "superconductor", amount = 20},
       {type = "item", name = "biter-egg", amount = 20},
-      {type = "item", name = "construction-work-order", amount = 1},
+      {type = "item", name = "trichromatic-permit", amount = 1},
     },
     results = {{type = "item", name = "synthetic-personnel-bureau", amount = 1}},
     energy_required = 30,
@@ -1419,12 +1411,11 @@ data:extend({
     subgroup = "admin-ai", order = "c",
     enabled = false,
     ingredients = {
-      {type = "item", name = "office-desk", amount = 4},
       {type = "item", name = "cryoprint-technician", amount = 1},
       {type = "item", name = "processing-unit", amount = 40},
       {type = "item", name = "lithium-plate", amount = 30},
       {type = "item", name = "optical-fibre", amount = 20},
-      {type = "item", name = "construction-work-order", amount = 1},
+      {type = "item", name = "cryogenic-operations-license", amount = 1},
     },
     results = {{type = "item", name = "slop-refinery", amount = 1}},
     energy_required = 30,
@@ -1435,13 +1426,12 @@ data:extend({
     subgroup = "admin-ai", order = "b",
     enabled = false,
     ingredients = {
-      {type = "item", name = "office-desk", amount = 4},
       {type = "item", name = "cryoprint-technician", amount = 1},
       {type = "item", name = "processing-unit", amount = 60},
       {type = "item", name = "lithium-plate", amount = 40},
       {type = "item", name = "superconductor", amount = 30},
       {type = "item", name = "heat-pipe", amount = 20},
-      {type = "item", name = "construction-work-order", amount = 1},
+      {type = "item", name = "cryogenic-operations-license", amount = 1},
     },
     results = {{type = "item", name = "ai-server", amount = 1}},
     energy_required = 40,
@@ -1567,7 +1557,6 @@ data:extend({
     subgroup = "admin-space-buildings", order = "zc-e",
     enabled = false,
     ingredients = {
-      {type = "item", name = "office-desk", amount = 2},
       -- Staffed by a notary, not a cryoprint technician: the base tier is
       -- pre-Aquilo, and an unbuildable building is a bad first impression.
       {type = "item", name = "licensed-notary", amount = 1},

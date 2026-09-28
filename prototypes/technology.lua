@@ -1068,7 +1068,9 @@ local function inherit_parent_science_packs()
             for _, ingredient in ipairs(prereq.unit.ingredients) do
               local pack_name = ingredient[1] or ingredient.name
               local pack_amount = ingredient[2] or ingredient.amount or 1
-              if pack_name and add_tech_science_pack(tech_name, pack_name, pack_amount) then
+              if pack_name and (pack_name ~= "administrative-science-pack"
+                  or tech_uses_pack(technology, pack_name))
+                  and add_tech_science_pack(tech_name, pack_name, pack_amount) then
                 changed = true
               end
             end

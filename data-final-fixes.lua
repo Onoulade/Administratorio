@@ -1714,5 +1714,5 @@ require("prototypes.final_fixes.factoriopedia").apply(
 -- Show the five Administratorio title scenes in place of the built-in ones.
 require("prototypes.final_fixes.menu_simulations").apply(data.raw)
 
--------------------------------------------------------------------------------
--------------------------------------------------------------------------------
+-- Reconcile research after all recipe generation, paperwork and route renames.
+require("prototypes.final_fixes.technology_requirements").apply(data)

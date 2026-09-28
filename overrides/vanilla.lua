@@ -197,7 +197,7 @@ for _, entity_type in ipairs({"unit", "unit-spawner"}) do
 end
 
 -------------------------------------------------------------------------------
--- REPLACE MILITARY SCIENCE WITH ADMINISTRATIVE SCIENCE
+-- REMOVE MILITARY SCIENCE FROM RESEARCH COSTS
 -------------------------------------------------------------------------------
 for _, tech in pairs(data.raw["technology"]) do
   if tech.prerequisites then
@@ -208,13 +208,13 @@ for _, tech in pairs(data.raw["technology"]) do
     end
   end
   if tech.unit and tech.unit.ingredients then
+    local ingredients = {}
     for _, ingredient in ipairs(tech.unit.ingredients) do
-      if ingredient[1] == "military-science-pack" then
-        ingredient[1] = "administrative-science-pack"
-      elseif ingredient.name == "military-science-pack" then
-        ingredient.name = "administrative-science-pack"
+      if (ingredient.name or ingredient[1]) ~= "military-science-pack" then
+        ingredients[#ingredients + 1] = ingredient
       end
     end
+    tech.unit.ingredients = ingredients
   end
 end
 

@@ -13,6 +13,8 @@ local PLANET_INTERMEDIATE_GATING = {
 local TOP_TIER_MULTICOLOR_GATING = { ["quantum-processor"] = "unified-operations-charter" }
 local EXPLICIT_MULTICOLOR_RECIPE_GATING = {
   ["fusion-reactor"] = "trichromatic-permit",
+  ["fusion-reactor-equipment"] = "trichromatic-permit",
+  ["captive-biter-spawner"] = "trichromatic-permit",
   ["fusion-generator"] = "trichromatic-permit",
   ["mech-armor"] = "trichromatic-permit",
   ["promethium-science-pack"] = "promethium-research-charter",
@@ -50,7 +52,9 @@ function M.apply(data, shared, remove_ingredient_from_recipe, add_special_paperw
     end
 
     if #required_form_order >= 2 then
-      local multicolor_gate = TOP_TIER_MULTICOLOR_GATING[recipe_name]
+      local base_name = recipe_name:gsub("%-regulated$", "")
+      local multicolor_gate = EXPLICIT_MULTICOLOR_RECIPE_GATING[base_name]
+        or TOP_TIER_MULTICOLOR_GATING[base_name]
         or (#required_form_order == 2 and get_bicolor_gate(required_form_order) or "trichromatic-permit")
       for _, form_name in ipairs(required_form_order) do
         remove_ingredient_from_recipe(recipe_name, form_name)
@@ -71,8 +75,15 @@ function M.apply(data, shared, remove_ingredient_from_recipe, add_special_paperw
     end
   end
   for recipe_name, form_name in pairs(EXPLICIT_MULTICOLOR_RECIPE_GATING) do
-    if data.raw.recipe[recipe_name] and not shared.is_admin_recipe(recipe_name) then
-      add_special_paperwork(recipe_name, form_name, 1)
+    for _, route_name in ipairs({recipe_name, recipe_name .. "-regulated"}) do
+      if data.raw.recipe[route_name] and not shared.is_admin_recipe(route_name) then
+        -- An explicit permit supersedes the automatically inferred color gate.
+        for _, color_form in ipairs({"blank-cyan-form", "blank-yellow-form", "blank-magenta-form",
+            "cyan-yellow-form", "cyan-magenta-form", "yellow-magenta-form"}) do
+          remove_ingredient_from_recipe(route_name, color_form)
+        end
+        add_special_paperwork(route_name, form_name, 1)
+      end
     end
   end
 end

@@ -82,7 +82,7 @@ data:extend({
   -- ============================================================
   -- TIER 1: VULCANUS CERTIFICATION BOOTSTRAP
   -- The notary is required to build the first foundry, so certification must
-  -- be completed with pre-planet science after the local cyan process exists.
+  -- follow the first cyan form after the local cyan process exists.
   -- ============================================================
   {
     type = "technology",
@@ -99,19 +99,7 @@ data:extend({
       {type = "unlock-recipe", recipe = "vulcanus-lie-distillation"},
     },
     prerequisites = {"cyan-ink-production", "tungsten-carbide", "management-formation"},
-    unit = {
-      count = 260,
-      ingredients = {
-        {"automation-science-pack", 1},
-        {"logistic-science-pack", 1},
-        {"chemical-science-pack", 1},
-        {"production-science-pack", 1},
-        {"utility-science-pack", 1},
-        {"space-science-pack", 1},
-        {"administrative-science-pack", 1},
-      },
-      time = 45,
-    },
+    research_trigger = {type = "craft-item", item = "blank-cyan-form", count = 1},
     order = "h-b",
   },
 
@@ -197,7 +185,8 @@ data:extend({
   -- ============================================================
   -- TIER 2a: GLEBA YELLOW ADMINISTRATION
   -- Keep the chromatic bootstrap visually and conceptually parallel with
-  -- Vulcanus cyan and Fulgora magenta.
+  -- Vulcanus cyan and Fulgora magenta. First craft ink after amber-sap
+  -- discovery; the native Gleba ink route is already unlocked by that parent.
   -- ============================================================
   {
     type = "technology",
@@ -210,19 +199,7 @@ data:extend({
       {type = "unlock-recipe", recipe = "blank-yellow-form-production"},
     },
     prerequisites = {"amber-sap-processing", "management-formation"},
-    unit = {
-      count = 220,
-      ingredients = {
-        {"automation-science-pack", 1},
-        {"logistic-science-pack", 1},
-        {"chemical-science-pack", 1},
-        {"production-science-pack", 1},
-        {"utility-science-pack", 1},
-        {"space-science-pack", 1},
-        {"administrative-science-pack", 1},
-      },
-      time = 45,
-    },
+    research_trigger = {type = "craft-item", item = "ink", count = 1},
     order = "h-c",
   },
 
@@ -230,6 +207,7 @@ data:extend({
   -- TIER 2b: GLEBA CONCILIATION BOOTSTRAP
   -- Capture Bureau egg harvesting, its lure, and its specialist must all exist
   -- before agricultural science, whose recipe consumes pentapod eggs.
+  -- The first yellow form proves the preceding printing chain is usable.
   -- ============================================================
   {
     type = "technology",
@@ -249,19 +227,7 @@ data:extend({
       {type = "unlock-recipe", recipe = "composted-rubble-recovery-gleba"},
     },
     prerequisites = {"gleba-yellow-administration", "management-formation"},
-    unit = {
-      count = 220,
-      ingredients = {
-        {"automation-science-pack", 1},
-        {"logistic-science-pack", 1},
-        {"chemical-science-pack", 1},
-        {"production-science-pack", 1},
-        {"utility-science-pack", 1},
-        {"space-science-pack", 1},
-        {"administrative-science-pack", 1},
-      },
-      time = 45,
-    },
+    research_trigger = {type = "craft-item", item = "blank-yellow-form", count = 1},
     order = "h-c2",
   },
   {
@@ -458,7 +424,6 @@ data:extend({
       {type = "unlock-recipe", recipe = "composite-chroma-ribbon-production"},
       {type = "unlock-recipe", recipe = "trichromatic-permit-production"},
       {type = "unlock-recipe", recipe = "unified-operations-charter-production"},
-      {type = "unlock-recipe", recipe = "promethium-research-charter-production"},
     },
     prerequisites = {"aquilo-cryogenic-administration", "cyan-magenta-bureaucracy", "yellow-magenta-bureaucracy", "cryogenic-science-pack", "interplanetary-tube-network"},
     unit = {
@@ -1029,6 +994,7 @@ data:extend(orbital_employment_capacity_techs)
 -- tier, so the expedition technology must not bypass that administrative branch.
 add_tech_prerequisite("promethium-science-pack", "interplanetary-tube-chromatic")
 add_tech_science_pack("promethium-science-pack", "administrative-science-pack", 1)
+add_tech_unlock("promethium-science-pack", "promethium-research-charter-production")
 
 -- Unlock orbital permit with space platform
 add_tech_unlock("space-platform", "orbital-infrastructure-permit")
@@ -1571,8 +1537,12 @@ for technology_name, technology in pairs(data.raw.technology or {}) do
     for _, effect in ipairs(technology.effects or {}) do
       if effect.type == "unlock-recipe" and effect.recipe == "captive-biter-spawner" then
         add_tech_prerequisite(technology_name, "involuntary-relocation")
+        add_tech_prerequisite(technology_name, "interplanetary-tube-chromatic")
         break
       end
     end
   end
 end
+
+-- Portable fusion consumes the Aquilo convergence permit on both routes.
+add_tech_prerequisite("fusion-reactor-equipment", "interplanetary-tube-chromatic")

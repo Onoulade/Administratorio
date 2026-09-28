@@ -21,6 +21,11 @@ function M.sync_force(force)
     end
   end
 
+  local expedition = force.technologies and force.technologies["promethium-science-pack"]
+  local charter = force.recipes and force.recipes["promethium-research-charter"]
+    or force.recipes and force.recipes["promethium-research-charter-production"]
+  if expedition and charter then charter.enabled = expedition.researched == true end
+
   -- Biochamber used to unlock this vanilla recipe. Reconcile old saves with
   -- the new post-agricultural research gate on configuration changes.
   local cultivation = force.technologies and force.technologies["pentapod-egg-cultivation"]
@@ -39,7 +44,8 @@ end
 
 function M.on_research_finished(research)
   if research and (research.name == M.AMBER_SAP_TECHNOLOGY
-      or research.name == "pentapod-egg-cultivation") then
+      or research.name == "pentapod-egg-cultivation"
+      or research.name == "promethium-science-pack") then
     M.sync_force(research.force)
   end
 end
