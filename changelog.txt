@@ -3,6 +3,7 @@ Version: 0.7.4
 Date: 2026-09-26
   Bugfixes:
     - keep managed biters off water and cliffs
+    - Prevent alternate supply and bulk recipes from recycling cheap materials into advanced paperwork or offworld resources
   Changes:
     - Show production routes and acquisition paths in Factoriopedia
     - Keep Gleba pentapod spawns small at all evolution levels

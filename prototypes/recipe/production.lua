@@ -1,6 +1,8 @@
 local function bulk_copy_recipe(name, recipe)
   recipe.name = name
   recipe.localised_name = {"recipe-name." .. name}
+  -- Copies expand an existing form; they must not define its recycling inputs.
+  recipe.auto_recycle = false
   return recipe
 end
 
@@ -26,11 +28,12 @@ data:extend({
 
   -- Batch Smelting (Stone Furnace): alternate recipes for vanilla intermediates,
   -- so they stay in the vanilla Intermediate Products tab -> admin-intermediate
-  { type = "recipe", name = "iron-plate-batch",   category = "smelting-basic", enabled = true,  subgroup = "admin-intermediate", order = "a", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="iron-ore", amount=10}},    results = {{type="item", name="iron-plate", amount=10}},   energy_required = 32,  allow_decomposition = false },
-  { type = "recipe", name = "copper-plate-batch", category = "smelting-basic", enabled = true,  subgroup = "admin-intermediate", order = "b", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="copper-ore", amount=10}},  results = {{type="item", name="copper-plate", amount=10}}, energy_required = 32,  allow_decomposition = false },
-  { type = "recipe", name = "steel-plate-batch",  category = "smelting-basic", enabled = false, subgroup = "admin-intermediate", order = "c", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="iron-plate", amount=25}},  results = {{type="item", name="steel-plate", amount=5}},  energy_required = 90, allow_decomposition = false },
-  { type = "recipe", name = "stone-brick-batch",  category = "smelting-basic", enabled = true,  subgroup = "admin-intermediate", order = "d", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="stone", amount=20}},       results = {{type="item", name="stone-brick", amount=10}},  energy_required = 32,  allow_decomposition = false },
-  { type = "recipe", name = "dubious-data-batch", category = "smelting-basic", enabled = true,  subgroup = "admin-data-economy", order = "c-e", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="bullshit-ore", amount=10}}, results = {{type="item", name="dubious-data", amount=10}}, energy_required = 32,  allow_decomposition = false },
+  -- Match native smelting: operating certificates cannot be recovered from plates.
+  { type = "recipe", name = "iron-plate-batch",   category = "smelting-basic", auto_recycle = false, enabled = true,  subgroup = "admin-intermediate", order = "a", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="iron-ore", amount=10}},    results = {{type="item", name="iron-plate", amount=10}},   energy_required = 32,  allow_decomposition = false },
+  { type = "recipe", name = "copper-plate-batch", category = "smelting-basic", auto_recycle = false, enabled = true,  subgroup = "admin-intermediate", order = "b", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="copper-ore", amount=10}},  results = {{type="item", name="copper-plate", amount=10}}, energy_required = 32,  allow_decomposition = false },
+  { type = "recipe", name = "steel-plate-batch",  category = "smelting-basic", auto_recycle = false, enabled = false, subgroup = "admin-intermediate", order = "c", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="iron-plate", amount=25}},  results = {{type="item", name="steel-plate", amount=5}},  energy_required = 90, allow_decomposition = false },
+  { type = "recipe", name = "stone-brick-batch",  category = "smelting-basic", auto_recycle = false, enabled = true,  subgroup = "admin-intermediate", order = "d", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="stone", amount=20}},       results = {{type="item", name="stone-brick", amount=10}},  energy_required = 32,  allow_decomposition = false },
+  { type = "recipe", name = "dubious-data-batch", category = "smelting-basic", auto_recycle = false, enabled = true,  subgroup = "admin-data-economy", order = "c-e", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="bullshit-ore", amount=10}}, results = {{type="item", name="dubious-data", amount=10}}, energy_required = 32,  allow_decomposition = false },
 
   -- Printing / Copy Recipes -> admin-printed-forms
   bulk_copy_recipe("copy-blank-form", { type = "recipe", category = "printing-advanced", enabled = false, icon = "__administratorio__/graphics/icons/blank-form.png",       icon_size = 64, subgroup = "admin-printed-forms", order = "g-c-a", ingredients = {{type="item", name="blank-form", amount=1},                    {type="item", name="paper", amount=5}, {type="item", name="ink", amount=1}, {type="item", name="advanced-circuit", amount=1}}, results = {{type="item", name="blank-form", amount=6}}, main_product = "blank-form",                    energy_required = 12 }),
@@ -61,9 +64,9 @@ data:extend({
     allow_decomposition = false,
     hidden_in_factoriopedia = true,
   },
-  { type = "recipe", name = "compacted-rubble-production", category = "smelting-basic", enabled = false, subgroup = "admin-data-economy", order = "c-b", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="redundant-rubble", amount=5}}, results = {{type="item", name="compacted-rubble", amount=5}}, energy_required = 16 },
+  { type = "recipe", name = "compacted-rubble-production", category = "smelting-basic", auto_recycle = false, enabled = false, subgroup = "admin-data-economy", order = "c-b", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="redundant-rubble", amount=5}}, results = {{type="item", name="compacted-rubble", amount=5}}, energy_required = 16 },
 
   -- Charcoal Production: alternate recipe for vanilla coal -> admin-intermediate
-  { type = "recipe", name = "charcoal-production", category = "smelting-basic", enabled = false, subgroup = "admin-intermediate", order = "b3", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="wood", amount=30}}, results = {{type="item", name="coal", amount=8}}, energy_required = 30, allow_decomposition = false },
+  { type = "recipe", name = "charcoal-production", category = "smelting-basic", auto_recycle = false, enabled = false, subgroup = "admin-intermediate", order = "b3", ingredients = {{type="item", name="carbon-offset-certificate-basic", amount=1}, {type="item", name="wood", amount=30}}, results = {{type="item", name="coal", amount=8}}, energy_required = 30, allow_decomposition = false },
 
 })

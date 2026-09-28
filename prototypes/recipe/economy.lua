@@ -129,6 +129,7 @@ data:extend({
   { type = "recipe", name = "watercooler-gossip-production",  category = "watercooler-gossip", enabled = false, subgroup = "admin-gossip-economy", order = "h-d", ingredients = {{type="fluid", name="liquid-coffee", amount=50}, {type="item", name="dubious-data", amount=2}}, results = {{type="item", name="watercooler-gossip", amount=1}}, energy_required = 5 },
   {
     type = "recipe", name = "office-drama-recycling", category = "watercooler-gossip", enabled = false,
+    auto_recycle = false,
     icon = "__administratorio__/graphics/icons/watercooler-gossip.png", icon_size = 64,
     subgroup = "admin-gossip-economy", order = "h-e",
     ingredients = {{type="item", name="office-drama", amount=3}, {type="fluid", name="liquid-coffee", amount=25}},
@@ -141,9 +142,10 @@ data:extend({
   },
 
   -- OSHA Scrubbing -> admin-fluid-economy
-  { type = "recipe", name = "osha-scrubbing", category = "union-negotiation", enabled = false, subgroup = "admin-fluid-economy", order = "d-e", ingredients = {{type="item", name="osha-violation", amount=1}, {type="item", name="refined-nonsense", amount=2}, {type="fluid", name="union-approval", amount=50}}, results = {{type="item", name="justification", amount=1}}, energy_required = 10, crafting_machine_tint = icon_tints.recipe_tint("osha-scrubbing") },
+  { type = "recipe", name = "osha-scrubbing", category = "union-negotiation", enabled = false, auto_recycle = false, subgroup = "admin-fluid-economy", order = "d-e", ingredients = {{type="item", name="osha-violation", amount=1}, {type="item", name="refined-nonsense", amount=2}, {type="fluid", name="union-approval", amount=50}}, results = {{type="item", name="justification", amount=1}}, energy_required = 10, crafting_machine_tint = icon_tints.recipe_tint("osha-scrubbing") },
   {
     type = "recipe", name = "osha-violation-recycling", category = "union-negotiation", enabled = false,
+    auto_recycle = false,
     icon = "__administratorio__/graphics/icons/osha-violation.png", icon_size = 64,
     subgroup = "admin-fluid-economy", order = "d-f",
     ingredients = {{type="item", name="osha-violation", amount=5}, {type="fluid", name="liquid-coffee", amount=50}},

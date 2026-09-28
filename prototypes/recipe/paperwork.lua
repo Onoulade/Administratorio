@@ -5,6 +5,7 @@ data:extend({
   { type = "recipe", name = "paper-production",      enabled = true, subgroup = "admin-paper-supplies", order = "a", ingredients = {{type="item", name="wood", amount=1}},  results = {{type="item", name="paper", amount=5}}, energy_required = 1 },
   {
     type = "recipe", name = "synthetic-paper-production", category = "chemistry", enabled = false,
+    auto_recycle = false,
     icons = {
       { icon = "__administratorio__/graphics/icons/paper.png", icon_size = 64 },
       { icon = "__base__/graphics/icons/plastic-bar.png", icon_size = 64, scale = 0.35, shift = {8, 8} },

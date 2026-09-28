@@ -2,6 +2,9 @@ local planets = require("prototypes.shared.space_age_planets")
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 
 local function on_planet(planet_name, recipe)
+  -- These are alternate local supply routes for existing materials. Reversing
+  -- them would let cheap Nauvis inputs recover offworld resources or forms.
+  recipe.auto_recycle = false
   return planets.apply_planet_surface_conditions(recipe, planet_name)
 end
 

@@ -1,3 +1,6 @@
+-- Alternate material supply, recovery, copying, and fact-checking recipes opt
+-- out of automatic recycling. Quality must use the basic manufacturing route
+-- (or self-recycling), never turn cheap materials back into late-game inputs.
 local planets = require("prototypes.shared.space_age_planets")
 local bureaucracy_categories = require("prototypes.shared.bureaucracy_categories")
 local manager_briefings = require("prototypes.shared.manager_briefings")
@@ -761,6 +764,7 @@ data:extend({
   vacuum_only({
     type = "recipe",
     name = "orbital-paper-production",
+    auto_recycle = false,
     category = "orbital-bureaucracy",
     subgroup = "admin-orbital", order = "le-a",
     enabled = false,
@@ -775,6 +779,7 @@ data:extend({
   vacuum_only({
     type = "recipe",
     name = "orbital-ink-production",
+    auto_recycle = false,
     category = "orbital-bureaucracy",
     subgroup = "admin-orbital", order = "le-b",
     enabled = false,
@@ -887,6 +892,7 @@ data:extend({
   vacuum_only({
     type = "recipe",
     name = "orbital-archival-paper-production",
+    auto_recycle = false,
     category = "orbital-bureaucracy",
     subgroup = "admin-orbital", order = "le-i",
     enabled = false,
@@ -902,6 +908,7 @@ data:extend({
   vacuum_only({
     type = "recipe",
     name = "orbital-secure-ink-production",
+    auto_recycle = false,
     category = "orbital-bureaucracy",
     subgroup = "admin-orbital", order = "le-j",
     enabled = false,
@@ -918,6 +925,7 @@ data:extend({
   vacuum_only({
     type = "recipe",
     name = "orbital-operations-form-copying",
+    auto_recycle = false,
     category = "orbital-printing",
     subgroup = "admin-orbital", order = "le-k",
     enabled = false,
@@ -935,6 +943,7 @@ data:extend({
   vacuum_only({
     type = "recipe",
     name = "asteroid-processing-docket-copying",
+    auto_recycle = false,
     category = "orbital-printing",
     subgroup = "admin-orbital", order = "le-l",
     enabled = false,
@@ -982,6 +991,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "amber-sap-nonsense-seeding",
+    auto_recycle = false,
     category = bureaucracy_categories.bootstrap_for_planet("gleba"),
     enabled = false,
     subgroup = "admin-planet-gleba", order = "la-a",
@@ -998,6 +1008,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "ink-production-gleba",
+    auto_recycle = false,
     category = bureaucracy_categories.bootstrap_for_planet("gleba"),
     enabled = false,
     subgroup = "admin-planet-gleba", order = "la-b",
@@ -1014,6 +1025,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "carbon-offset-certificate-basic-gleba",
+    auto_recycle = false,
     category = bureaucracy_categories.bootstrap_for_planet("gleba"),
     enabled = false,
     localised_name = {"recipe-name.carbon-offset-certificate-basic"},
@@ -1178,6 +1190,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "charged-toner",
+    auto_recycle = false,
     category = bureaucracy_categories.bootstrap_for_planet("fulgora"),
     enabled = false,
     subgroup = "admin-planet-fulgora", order = "lb-a",
@@ -1192,6 +1205,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "archive-rubble-recovery",
+    auto_recycle = false,
     category = bureaucracy_categories.bootstrap_for_planet("fulgora"),
     enabled = false,
     subgroup = "admin-planet-fulgora", order = "lb-b",
@@ -1207,6 +1221,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "archive-documentation-recovery",
+    auto_recycle = false,
     category = bureaucracy_categories.bootstrap_for_planet("fulgora"),
     enabled = false,
     subgroup = "admin-planet-fulgora", order = "lb-c",
@@ -1526,6 +1541,7 @@ data:extend({
   {
     type = "recipe",
     name = "fabricated-citations-fact-check-data",
+    auto_recycle = false,
     category = "citation-handling",
     subgroup = "admin-data-economy", order = "a-d",
     enabled = false,
@@ -1540,6 +1556,7 @@ data:extend({
   {
     type = "recipe",
     name = "fabricated-citations-fact-check-documentation",
+    auto_recycle = false,
     category = "citation-handling",
     subgroup = "admin-data-economy", order = "a-e",
     enabled = false,
@@ -1801,6 +1818,7 @@ data:extend({
   {
     type = "recipe",
     name = "anecdotal-data-reprocessing",
+    auto_recycle = false,
     category = "bureaucracy-registration",
     subgroup = "admin-data-economy", order = "a-f",
     enabled = false,
@@ -1816,6 +1834,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "paper-production-vulcanus",
+    auto_recycle = false,
     subgroup = "admin-planet-vulcanus", order = "lc-a",
     enabled = false,
     localised_name = {"recipe-name.paper-production"},
@@ -1831,6 +1850,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "carbon-offset-certificate-basic-vulcanus",
+    auto_recycle = false,
     enabled = false,
     localised_name = {"recipe-name.carbon-offset-certificate-basic"},
     ingredients = {
@@ -1846,6 +1866,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "redundant-rubble-recovery-vulcanus",
+    auto_recycle = false,
     category = "smelting-basic",
     subgroup = "admin-planet-vulcanus", order = "lc-c",
     enabled = false,
@@ -1862,6 +1883,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "dubious-data-analysis-vulcanus",
+    auto_recycle = false,
     category = bureaucracy_categories.registration_for_planet("vulcanus"),
     subgroup = "admin-planet-vulcanus", order = "lc-d",
     enabled = false,
@@ -1993,6 +2015,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "plastic-bar-vulcanus",
+    auto_recycle = false,
     category = "chemistry",
     subgroup = "admin-planet-vulcanus", order = "lc-m",
     enabled = false,
@@ -2029,6 +2052,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "refined-nonsense-production-vulcanus",
+    auto_recycle = false,
     category = "propaganda-distillery",
     subgroup = "admin-planet-vulcanus", order = "lc-o",
     enabled = false,
@@ -2140,6 +2164,7 @@ data:extend({
   surface_limited({
     type = "recipe",
     name = "vulcanus-lie-distillation",
+    auto_recycle = false,
     category = "bureaucracy-certification",
     subgroup = "admin-planet-vulcanus", order = "lc-v",
     enabled = false,
@@ -2356,6 +2381,8 @@ for _, tier in ipairs({"base", "advanced"}) do
     local recipe = {
       type = "recipe",
       name = slop_rules.recipe_name(item_name),
+      -- Fabrication is an alternate source, never a document's recycling route.
+      auto_recycle = false,
       category = "slop-refining",
       -- No explicit subgroup: inherits the produced document's own subgroup,
       -- so this alternate recipe shows up wherever that form already lives
