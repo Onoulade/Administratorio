@@ -319,6 +319,16 @@ test("previously undocumented Space Age mechanics have dedicated tips", function
   end
 end)
 
+test("public train stop tips belong to cross-planet paperwork", function()
+  for _, name in ipairs({"administratorio-bureaucratic-transcendence", "administratorio-public-train-stop"}) do
+    local item = tip(name)
+    assert_true(item.category == tip("administratorio-cyan-yellow-bureaucracy").category,
+      name .. " should be grouped with cyan-yellow bureaucracy")
+    assert_true(trigger_contains(item.trigger, "research", "technology", "bureaucratic-transcendence"),
+      name .. " should unlock with the public train stop")
+  end
+end)
+
 test("every registered tip has an English name and description", function()
   local locale_helpers = require("tests.locale_helpers")
   local names = locale_helpers.section(mod_root, "en", "tips-and-tricks-item-name")

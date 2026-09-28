@@ -125,6 +125,33 @@ def run_case(factorio_bin: Path, *, space_age: bool, working_hours: bool) -> dic
         return dump_data(factorio_bin, root)
 
 
+def assert_public_train_stop_progression(data_raw: dict) -> None:
+    technologies = data_raw["technology"]
+    name = "bureaucratic-transcendence"
+    technology = technologies[name]
+    closure = set()
+    pending = [name]
+    while pending:
+        current = pending.pop()
+        if current in closure:
+            continue
+        closure.add(current)
+        pending.extend(technologies[current].get("prerequisites", []))
+
+    assert {"cyan-yellow-bureaucracy", "railway", "metallurgic-science-pack", "agricultural-science-pack"} <= closure
+    forbidden_packs = {"electromagnetic-science-pack", "cryogenic-science-pack", "promethium-science-pack"}
+    assert not closure & (forbidden_packs | {"planet-discovery-fulgora", "planet-discovery-aquilo", "interplanetary-tube-chromatic"}), closure
+    for ancestor in closure:
+        packs = {ingredient[0] if isinstance(ingredient, list) else ingredient["name"]
+                 for ingredient in technologies[ancestor].get("unit", {}).get("ingredients", [])}
+        assert not packs & forbidden_packs, (ancestor, packs)
+    packs = {ingredient[0] if isinstance(ingredient, list) else ingredient["name"]
+             for ingredient in technology["unit"]["ingredients"]}
+    assert {"metallurgic-science-pack", "agricultural-science-pack", "administrative-science-pack"} <= packs
+    assert any(effect.get("recipe") == "public-train-stop-production"
+               for effect in technology.get("effects", []))
+
+
 def assert_specialist_approvals(data_raw: dict) -> None:
     approvals = {
         "foundry": "blank-cyan-form",
@@ -434,6 +461,7 @@ def main() -> None:
     assert_milestone_resolutions_are_operable(base, "base game")
     assert_milestone_resolutions_are_operable(space_age, "Space Age")
     assert_specialist_approvals(space_age)
+    assert_public_train_stop_progression(space_age)
     assert "foundry-unapproved" not in base.get("item", {}), "specialist chassis must be Space Age only"
     assert_chromatic_fast_tracks_are_space_age_only(base, space_age)
     assert "administrative-clock" in base.get("item", {}), "Working Hours should expose the Administrative Clock item"
@@ -456,6 +484,7 @@ def main() -> None:
     assert_ore_placement_masks(no_working_hours)
     assert_milestone_resolutions_are_operable(no_working_hours, "Space Age without Working Hours")
     assert_specialist_approvals(no_working_hours)
+    assert_public_train_stop_progression(no_working_hours)
     assert "administrative-clock" not in no_working_hours.get("item", {}), "disabled Working Hours must not expose the Administrative Clock item"
     assert "administrative-clock" not in no_working_hours.get("constant-combinator", {}), "disabled Working Hours must not expose the Administrative Clock entity"
     assert "signal-daytime" not in no_working_hours.get("virtual-signal", {}), "disabled Working Hours must not expose the daytime signal"

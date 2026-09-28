@@ -476,7 +476,7 @@ data:extend({
   },
 
   -- ============================================================
-  -- TIER 5c: BUREAUCRATIC TRANSCENDENCE (orbital train stops)
+  -- CYAN-YELLOW BUREAUCRACY: PUBLIC TRAIN STOP
   -- ============================================================
   {
     type = "technology",
@@ -485,19 +485,17 @@ data:extend({
     effects = {
       {type = "unlock-recipe", recipe = "public-train-stop-production"},
     },
-    prerequisites = {"interplanetary-tube-chromatic"},
+    prerequisites = {"cyan-yellow-bureaucracy", "railway"},
     unit = {
       count = 400,
       ingredients = {
         {"metallurgic-science-pack", 1},
         {"agricultural-science-pack", 1},
-        {"electromagnetic-science-pack", 1},
-        {"cryogenic-science-pack", 1},
         {"administrative-science-pack", 1},
       },
       time = 60,
     },
-    order = "h-f-a",
+    order = "h-e1",
   },
 
   -- ============================================================

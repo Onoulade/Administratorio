@@ -204,6 +204,8 @@ if space_age_enabled then
     }),
     research_tip("administratorio-cyan-yellow-bureaucracy", interplanetary, "b", "cyan-yellow-bureaucracy"),
     research_tip("administratorio-space-tourism", interplanetary, "c", "cyan-yellow-bureaucracy"),
+    research_tip("administratorio-bureaucratic-transcendence", interplanetary, "c-a", "bureaucratic-transcendence"),
+    research_tip("administratorio-public-train-stop", interplanetary, "c-b", "bureaucratic-transcendence"),
     research_tip("administratorio-cyan-magenta-bureaucracy", interplanetary, "d", "cyan-magenta-bureaucracy"),
     research_tip("administratorio-yellow-magenta-bureaucracy", interplanetary, "e", "yellow-magenta-bureaucracy"),
 
@@ -228,7 +230,5 @@ if space_age_enabled then
     research_tip("administratorio-chromatic-trunk", aquilo, "e", "interplanetary-tube-chromatic"),
     research_tip("administratorio-egg-couriers", aquilo, "f", "egg-courier-formation"),
     research_tip("administratorio-promethium-administration", aquilo, "h", "promethium-science-pack"),
-    research_tip("administratorio-bureaucratic-transcendence", aquilo, "i", "bureaucratic-transcendence"),
-    research_tip("administratorio-public-train-stop", aquilo, "j", "bureaucratic-transcendence"),
   })
 end

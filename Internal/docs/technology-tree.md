@@ -318,7 +318,7 @@ Space Age progression is a set of jurisdiction branches rather than one straight
 | `interplanetary-tube-capacity-2..5` | Raises in-flight capacity to 5, 10, 15, and 20 while reducing transit time |
 | `interplanetary-tube-additional-terminus-1..3` | Adds parallel terminus capacity; the third tier is infinite |
 | `interplanetary-tube-chromatic` | Colored and composite trunk payloads, advanced charter payloads, and Promethium research charters |
-| `bureaucratic-transcendence` | Public Train Stop: no transit chest, no per-arrival authorization, no paperwork train limit |
+| `bureaucratic-transcendence` | Requires `cyan-yellow-bureaucracy` and `railway`, with Vulcanus and Gleba science. Public Train Stop: no transit chest, no per-arrival authorization, no paperwork train limit |
 
 ### Aquilo Endgame Systems
 
