@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.8.1
+Date: 2026-09-29
+  Changes:
+    - Add protest and Pathways menu scenes with robust logo handling
+    - Add manual and circuit filter UI for personnel multisigns
+    - Use shared shadow for personnel signs
+    - Fix global rotation controls and native multisign rotation
+---------------------------------------------------------------------------------------------------
 Version: 0.8.0
 Date: 2026-09-28
   Bugfixes:
