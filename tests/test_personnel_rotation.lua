@@ -1,6 +1,10 @@
 -- Native rotation must turn multisign bodies/sockets exactly once.
 defines = {direction={north=0,east=4,south=8,west=12}}
 local R = require("prototypes.shared.personnel_routing")
+local opened_record
+package.loaded["scripts.personnel_multisign_gui"] = {
+  open=function(_,record) opened_record=record end,
+}
 local routing = require("scripts.personnel_routing")
 local signals = require("scripts.personnel_signals")
 local sign = {valid=true,name=R.MULTISIGN,unit_number=1,direction=0,
@@ -41,7 +45,7 @@ assert(cell.refs==2,"rotation discarded occupied route reservations")
 for _,exit in ipairs(R.exits) do
   player.opened=ports[exit]
   routing.on_gui_opened{entity=ports[exit],player_index=1}
-  assert(player.opened==nil,"socket exposed a signal editor: "..exit)
+  assert(opened_record==record,"socket did not open its owner's custom panel: "..exit)
 end
 local regular={valid=true,name=R.SIGN}
 player.opened=regular

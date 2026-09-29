@@ -116,6 +116,11 @@ function M.register(deps)
   script.on_event(defines.events.on_rocket_launched, deps.on_rocket_launched)
   script.on_event(defines.events.on_gui_click, deps.on_gui_click)
   if deps.on_gui_opened then script.on_event(defines.events.on_gui_opened, deps.on_gui_opened) end
+  if deps.on_gui_elem_changed then script.on_event(defines.events.on_gui_elem_changed, deps.on_gui_elem_changed) end
+  if deps.on_gui_switch_state_changed then script.on_event(defines.events.on_gui_switch_state_changed, deps.on_gui_switch_state_changed) end
+  if deps.on_open_multisign then script.on_event("administratorio-open-multisign", deps.on_open_multisign) end
+  if deps.on_entity_settings_pasted then script.on_event(defines.events.on_entity_settings_pasted, deps.on_entity_settings_pasted) end
+  if deps.on_player_setup_blueprint then script.on_event(defines.events.on_player_setup_blueprint, deps.on_player_setup_blueprint) end
   script.on_event(defines.events.on_lua_shortcut, deps.on_lua_shortcut)
   script.on_event(defines.events.on_gui_closed, deps.on_gui_closed)
   script.on_event(defines.events.on_research_finished, deps.on_research_finished)

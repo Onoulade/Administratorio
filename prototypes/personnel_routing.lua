@@ -72,6 +72,7 @@ for i, name in ipairs(R.names) do
   }
   if name == R.MULTISIGN then
     entity.icon = graphics .. "multisign-icon.png"
+    entity.allow_copy_paste = true
   end
   if role == "road" then
     entity.icon = "__base__/graphics/icons/concrete.png"

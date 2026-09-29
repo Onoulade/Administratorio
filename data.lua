@@ -156,6 +156,12 @@ data:extend({{
   order = "b[administratorio]-a[station-overview]",
 }, {
   type = "custom-input",
+  name = "administratorio-open-multisign",
+  key_sequence = "",
+  linked_game_control = "open-gui",
+  consuming = "none",
+}, {
+  type = "custom-input",
   name = "administratorio-toggle-runtime-debug",
   key_sequence = "CONTROL + SHIFT + D",
   consuming = "none"

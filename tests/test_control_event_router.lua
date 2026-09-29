@@ -48,11 +48,24 @@ test("router registers lifecycle, event, and custom handlers", function()
     on_forces_merged = handler("personnel-force"), on_force_changed = handler("existing-force"),
     on_player_rotated_entity = handler("personnel-rotate"),
     on_gui_opened = handler("personnel-opened"),
+    on_gui_elem_changed = handler("personnel-filter"), on_gui_switch_state_changed = handler("personnel-mode"),
+    on_open_multisign = handler("personnel-open"), on_entity_settings_pasted = handler("personnel-paste"),
+    on_player_setup_blueprint = handler("personnel-blueprint"),
     on_personnel_surface_removed = handler("personnel-surface"), on_surface_deleted = handler("existing-surface"),
   })
   assert_true(registrations.init and registrations.configuration and registrations.load)
   assert_true(registrations[defines.events.on_entity_died] ~= nil)
   assert_true(registrations["administratorio-toggle-runtime-debug"] ~= nil)
+end)
+
+test("multisign GUI controls and configuration copying reach their handlers", function()
+  registrations.called = ""
+  registrations[defines.events.on_gui_elem_changed]({player_index=1})
+  registrations[defines.events.on_gui_switch_state_changed]({player_index=1})
+  registrations["administratorio-open-multisign"]({player_index=1})
+  registrations[defines.events.on_entity_settings_pasted]({player_index=1})
+  registrations[defines.events.on_player_setup_blueprint]({player_index=1})
+  assert_eq(registrations.called,"personnel-filterpersonnel-modepersonnel-openpersonnel-pastepersonnel-blueprint")
 end)
 
 test("native rotation and protected GUI opening reach their handlers", function()

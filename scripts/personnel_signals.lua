@@ -1,5 +1,5 @@
 -- Each exit has an identical, independently selectable circuit socket.
--- The sign body is decorative infrastructure and has no signal editor.
+-- Manual filters and circuit inputs share the same routing result.
 local R = require("prototypes.shared.personnel_routing")
 local M = {}
 function M.ensure_ports(record)
@@ -38,9 +38,15 @@ end
 function M.read_filters(record)
   local filters, signatures = {}, {}
   for _,exit in ipairs(R.exits) do
-    local port = record.ports[exit]
+    local port = (record.ports or {})[exit]
     local totals = {}
-    if port and port.valid then
+    if M.mode(record, exit) == "manual" then
+      local slots = (record.manual_filters or {})[exit] or {}
+      for slot=1,5 do
+        local name = slots[slot]
+        if name and R.cargo[name] then totals[name] = 1 end
+      end
+    elseif port and port.valid then
       local ids = defines.wire_connector_id
       for _,entry in ipairs(port.get_signals(ids.circuit_red, ids.circuit_green) or {}) do
         local signal = entry.signal
@@ -61,6 +67,28 @@ function M.read_filters(record)
   local changed = signature ~= record.filter_signature
   record.filters,record.filter_signature = filters,signature
   return changed
+end
+-- Missing settings preserve the live-circuit behaviour of existing saves.
+function M.mode(record, exit)
+  return type(record.filter_modes) == "table" and record.filter_modes[exit] == "manual" and "manual" or "circuit"
+end
+function M.configuration(record)
+  record = type(record) == "table" and record or {}
+  local config = {filter_modes={},manual_filters={}}
+  for _,exit in ipairs(R.exits) do
+    config.filter_modes[exit] = M.mode(record, exit)
+    config.manual_filters[exit] = {}
+    for slot=1,5 do
+      local slots = type(record.manual_filters) == "table" and record.manual_filters[exit]
+      local name = type(slots) == "table" and (slots[slot] or slots[tostring(slot)])
+      if name and R.cargo[name] then config.manual_filters[exit][slot] = name end
+    end
+  end
+  return config
+end
+function M.configure(record, config)
+  local copy = M.configuration(config)
+  record.filter_modes,record.manual_filters = copy.filter_modes,copy.manual_filters
 end
 function M.update(records, jobs, changed)
   local counts = {}

@@ -4,6 +4,7 @@ local pavement = require("scripts.personnel_pavement")
 local traffic = require("scripts.personnel_traffic")
 local ai = require("scripts.unit_ai_settings")
 local signals = require("scripts.personnel_signals")
+local multisign_gui = require("scripts.personnel_multisign_gui")
 local briefing_overlay = require("scripts.personnel_briefing_overlay")
 local M = {}
 local function state()
@@ -191,6 +192,7 @@ local function remove_record(id)
   if not record then return end
   signals.remove_ports(record)
   st.records[id], st.inputs[id] = nil, nil
+  multisign_gui.refresh_all(st.records)
   st.watches[record.watch] = nil
   local s = st.surfaces[record.surface_index]
   s.revision = s.revision + 1
@@ -262,6 +264,9 @@ function M.on_built(event)
     s.cells[key] = cell
   end
   local record = {entity = entity, role = role, surface_index = entity.surface.index, key = key}
+  if entity.name == R.MULTISIGN and event.tags and event.tags.personnel_multisign then
+    signals.configure(record, event.tags.personnel_multisign)
+  end
   signals.ensure_ports(record)
   record.watch = watch(entity, "record", entity.unit_number)
   state().records[entity.unit_number] = record
@@ -278,6 +283,12 @@ function M.on_cloned(event)
   local entity = event.destination
   if valid(entity) and R.roles[entity.name] then
     M.on_built{entity = entity}
+    local source = valid(event.source) and state().records[event.source.unit_number]
+    local destination = valid(entity) and state().records[entity.unit_number]
+    if source and destination and entity.name == R.MULTISIGN then
+      signals.configure(destination, source)
+      signals.read_filters(destination)
+    end
   elseif valid(entity) and R.is_port(entity.name) then
     -- Cloning a sign creates its own ports; separately cloned helpers are
     -- never independent infrastructure.
@@ -333,13 +344,63 @@ function M.on_rotated(event)
   s.revision = s.revision + 1
   s.dirty = true
 end
--- Operability permits native rotation, but these entities have no editable
--- signal configuration: multisign sockets read wires, regular signs emit counts.
+local function multisign_record(entity)
+  if not valid(entity) then return end
+  if entity.name == R.MULTISIGN then return state().records[entity.unit_number] end
+  if R.is_port(entity.name) then
+    for _,record in pairs(state().records) do
+      for _,port in pairs(record.ports or {}) do if port == entity then return record end end
+    end
+  end
+end
+-- The simple-entity body has no native GUI, so link the normal open control.
+function M.on_open_multisign(event)
+  local player = game.get_player(event.player_index)
+  if not player then return end
+  local entity = player.selected
+  if valid(entity) and entity.name == R.MULTISIGN and player.can_reach_entity(entity) then
+    local record = multisign_record(entity)
+    if record then multisign_gui.open(player, record) end
+  end
+end
 function M.on_gui_opened(event)
   local entity = event.entity
-  if valid(entity) and (entity.name == R.SIGN or R.is_port(entity.name)) then
-    local player = game.get_player(event.player_index)
-    if player then player.opened = nil end
+  local player = game.get_player(event.player_index)
+  if not player then return end
+  local record = multisign_record(entity)
+  if record then
+    multisign_gui.open(player, record)
+  elseif valid(entity) and (entity.name == R.SIGN or R.is_port(entity.name)) then
+    player.opened = nil
+  end
+end
+local function configuration_changed(record)
+  if signals.read_filters(record) then
+    local s = surface_state(record.surface_index)
+    s.revision = s.revision + 1
+  end
+end
+function M.on_gui_changed(event)
+  return multisign_gui.on_changed(event, state().records, configuration_changed)
+end
+M.on_gui_click = multisign_gui.on_click
+M.on_gui_closed = multisign_gui.on_closed
+function M.on_settings_pasted(event)
+  local source, destination = multisign_record(event.source), multisign_record(event.destination)
+  if source and destination then
+    signals.configure(destination, source)
+    configuration_changed(destination)
+    multisign_gui.refresh_all(state().records)
+  end
+end
+function M.on_setup_blueprint(event)
+  local player = game.get_player(event.player_index)
+  local blueprint = player and player.blueprint_to_setup
+  if player and (not blueprint or not blueprint.valid_for_read) then blueprint = player.cursor_stack end
+  if not blueprint or not blueprint.valid_for_read or not blueprint.is_blueprint then return end
+  for index,entity in pairs(event.mapping.get()) do
+    local record = valid(entity) and entity.name == R.MULTISIGN and state().records[entity.unit_number]
+    if record then blueprint.set_blueprint_entity_tag(index,"personnel_multisign",signals.configuration(record)) end
   end
 end
 function M.on_tiles_built(event)
@@ -690,6 +751,7 @@ function M.on_tick(event)
       s.revision=s.revision+1
       if rotated then s.dirty=true end
     end)
+    multisign_gui.refresh_all(st.records)
   end
   for index,s in pairs(st.surfaces) do
     if s.dirty and game.surfaces[index] then pavement.refresh(s, game.surfaces[index], clear_block) end
@@ -802,7 +864,8 @@ function M.inspect_signals()
   local result={}
   for id,record in pairs(state().records) do
     if valid(record.entity) and (record.entity.name==R.MULTISIGN or record.entity.name==R.SIGN) then
-      result[#result+1]={id=id,entity=record.entity,ports=record.ports,filters=record.filters}
+      result[#result+1]={id=id,entity=record.entity,ports=record.ports,filters=record.filters,
+        configuration=record.entity.name==R.MULTISIGN and signals.configuration(record) or nil}
     end
   end
   return result

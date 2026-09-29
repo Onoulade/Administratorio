@@ -2215,6 +2215,7 @@ end
 
 local function on_gui_click(event)
   if not event.element or not event.element.valid then return end
+  if personnel_routing.on_gui_click(event) then return end
 
   local player = game.get_player(event.player_index)
   if not player then return end
@@ -2230,6 +2231,7 @@ local function on_gui_click(event)
 end
 
 local function on_gui_closed(event)
+  personnel_routing.on_gui_closed(event)
   runtime_debug.handle_gui_closed(event.element, event.player_index)
 end
 
@@ -2351,6 +2353,11 @@ resolution_processing = control_resolution_processing_factory.new({
 control_event_router.register({
   on_personnel_routing_tick = personnel_routing.on_tick,
   on_gui_opened = personnel_routing.on_gui_opened,
+  on_gui_elem_changed = personnel_routing.on_gui_changed,
+  on_gui_switch_state_changed = personnel_routing.on_gui_changed,
+  on_open_multisign = personnel_routing.on_open_multisign,
+  on_entity_settings_pasted = personnel_routing.on_settings_pasted,
+  on_player_setup_blueprint = personnel_routing.on_setup_blueprint,
   on_entity_cloned = personnel_routing.on_cloned,
   on_object_destroyed = personnel_routing.on_object_destroyed,
   on_tiles_built = personnel_routing.on_tiles_built,
