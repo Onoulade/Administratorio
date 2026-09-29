@@ -36,6 +36,9 @@ M.cargo["rideable-biter"] = nil
 M.cargo["hired-biter-capsule"] = nil -- Field Agents keep their dedicated deployment system.
 M.cargo["biter-logistics-formation"] = true
 M.cargo["voluntary-exploration-space-miner"] = true
+for _, size in ipairs({"small", "medium", "big", "behemoth"}) do
+  M.cargo[size .. "-space-tourist"] = true
+end
 function M.is_port(name) return name == M.PORT .. "-left" or name == M.PORT .. "-straight" or name == M.PORT .. "-right" end
 function M.unit_name(item) return "personnel-in-transit-" .. item end
 function M.load_recipe(item) return "personnel-routing-load-" .. item end

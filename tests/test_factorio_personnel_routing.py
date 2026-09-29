@@ -10,6 +10,8 @@ from pathlib import Path
 from test_factorio_runtime_smoke import REPO_ROOT, SMOKE_MOD_NAME, prepare_profile
 
 SCENARIO_CONTROL = r'''
+local briefings = require("__administratorio__.prototypes.shared.manager_briefings").BRIEFINGS
+local couriers = require("__administratorio__.prototypes.shared.manager_couriers").COURIERS
 local input, sign, output
 local roads = {}
 local surface
@@ -111,8 +113,83 @@ script.on_load(function()
   local f=storage.fixture
   input,sign,output,roads,surface=f.input,f.sign,f.output,f.roads,f.surface
 end)
+local function cargo_lifecycle(tick)
+  if tick == 4 then
+    local main = surface
+    surface = game.create_surface("personnel-cargo-lifecycle", {autoplace_controls={}})
+    surface.request_to_generate_chunks({24,36}, 3); surface.force_generate_chunk_requests()
+    for _, entity in ipairs(surface.find_entities()) do entity.destroy() end
+    local tiles={}
+    for x=-4,52 do for y=-4,76 do tiles[#tiles+1]={name="grass-1",position={x,y}} end end
+    surface.set_tiles(tiles)
+    local items={"small-space-tourist", "medium-space-tourist", "big-space-tourist", "behemoth-space-tourist"}
+    for _, briefing in ipairs(briefings) do
+      items[#items+1]=briefing.item
+    end
+    for _, courier in ipairs(couriers) do
+      items[#items+1]=courier.item
+    end
+    local fixture={surface=surface, lanes={}}
+    for i,item in ipairs(items) do
+      local departure=build("personnel-deployment-office",0,(i-1)*6,defines.direction.east)
+      local reception=build("personnel-reception-office",48,(i-1)*6)
+      local inv=departure.get_inventory(defines.inventory.furnace_source)
+      check(inv.insert{name=item,count=1,quality="rare"}==1,"cargo source rejected " .. item)
+      if i>4 then inv[1].spoil_tick=tick+100 end
+      fixture.lanes[i]={item=item,output=reception}
+    end
+    local fresh_departure=build("personnel-deployment-office",0,72,defines.direction.east)
+    fixture.fresh_output=build("personnel-reception-office",4,72)
+    local fresh=fresh_departure.get_inventory(defines.inventory.furnace_source)
+    fresh.insert{name=briefings[1].item,count=1,quality="rare"}
+    fresh[1].spoil_tick=tick+200
+    storage.fixture.cargo_lifecycle=fixture
+    surface=main
+  elseif tick==160 or tick==220 then
+    local fixture=storage.fixture.cargo_lifecycle
+    local fresh=fixture.fresh_output.get_inventory(defines.inventory.furnace_result)[1]
+    check(fresh.valid_for_read and fresh.quality.name=="rare","short trip lost manager/quality")
+    if tick==160 then
+      check(fresh.name==briefings[1].item and fresh.spoil_tick>=210 and fresh.spoil_tick<=220,
+        "short trip failed to retain half-aged freshness")
+    else
+      check(fresh.name=="middle-management-managing-manager","spoilage stayed slowed after reception")
+    end
+    local count=0
+    for _,job in ipairs(remote.call("administratorio-personnel-routing","inspect")) do
+      if job.surface_index==fixture.surface.index then
+        count=count+1
+        local lane=fixture.lanes[math.floor(job.position.y/6+0.5)+1]
+        check(job.position.x>0 and job.position.x<48,"cargo did not keep walking")
+        if not lane.item:find("space-tourist",1,true) then
+          if tick==160 then
+            check(job.item==lane.item,"manager expired at full speed: " .. lane.item)
+            check(job.spoil_tick-tick>=20 and job.spoil_tick-tick<=50,"manager did not age at half speed")
+            lane.job_id=job.id
+          else
+            check(job.item=="middle-management-managing-manager","manager did not expire on path")
+            check(job.id==lane.job_id,"expiry replaced the journey")
+            check(job.unit_name=="personnel-in-transit-middle-management-managing-manager","expired proxy kept its old role")
+            check(not job.briefing,"expired manager kept its briefing badge")
+          end
+        end
+      end
+    end
+    check(count==12,"tourist/manager journey lost or dispatched late: " .. count)
+    check(#fixture.surface.find_entities_filtered{type="unit"}==12,"expiry spawned a loose biter")
+  elseif tick==800 then
+    local fixture=storage.fixture.cargo_lifecycle
+    check(#proxies(fixture.surface)==0,"cargo did not reach reception")
+    for i,lane in ipairs(fixture.lanes) do
+      local expected=i<=4 and lane.item or "middle-management-managing-manager"
+      check(lane.output.get_inventory(defines.inventory.furnace_result).get_item_count{name=expected,quality="rare"}==1,
+        "tourist/expired manager lost cargo or quality: " .. lane.item)
+    end
+  end
+end
 local saw_walk, saw_turn = false, false
 script.on_nth_tick(4, function()
+  cargo_lifecycle(game.tick)
   if game.tick<2400 and not source()[1].valid_for_read then
     local stack=storage.fixture.buffer.find_item_stack{name="worker-biter",quality="rare"}
     if stack and source().insert(stack)==1 then stack.clear() end
@@ -271,7 +348,7 @@ script.on_nth_tick(4, function()
     surface.force_generate_chunk_requests()
     for _, e in ipairs(surface.find_entities()) do if e.type ~= "character" then e.destroy() end end
     local tiles={}
-    for x=-8,12 do for y=-6,150 do tiles[#tiles+1]={name="grass-1",position={x,y}} end end
+    for x=-8,12 do for y=-6,168 do tiles[#tiles+1]={name="grass-1",position={x,y}} end end
     surface.set_tiles(tiles)
     local names={}
     for name in pairs(prototypes.entity) do
@@ -279,7 +356,7 @@ script.on_nth_tick(4, function()
       if item then names[#names+1]=item end
     end
     table.sort(names)
-    check(#names==23, "personnel roster changed; update coverage: " .. #names)
+    check(#names==27, "personnel roster changed; update coverage: " .. #names)
     check(not prototypes.entity["personnel-in-transit-rideable-biter"], "mount admitted into personnel roster")
     check(not prototypes.entity["personnel-in-transit-hired-biter-capsule"] and not prototypes.recipe["personnel-routing-load-hired-biter-capsule"], "Field Agent admitted into personnel roster")
     storage.fixture.roster={}
@@ -416,11 +493,18 @@ script.on_nth_tick(4, function()
     end
     check(briefings==1, "briefing did not dispatch for overlay test")
     game.server_save("personnel-mid-briefing")
+  elseif game.tick == 3900 then
+    local jobs=remote.call("administratorio-personnel-routing","inspect")
+    check(#jobs==1 and jobs[1].item=="training-briefed-middle-management-managing-manager",
+      "queued manager expired before its half-speed deadline")
+    check(jobs[1].spoil_tick-game.tick>=20 and jobs[1].spoil_tick-game.tick<=40,
+      "queued manager half-speed clock drifted across save/load")
   elseif game.tick == 4140 then
     check(storage.fixture.folded.output.get_inventory(defines.inventory.furnace_result).get_item_count("worker-biter")==2, "serialized folded lane failed to deliver both personnel: " .. serpent.line(remote.call("administratorio-personnel-routing","inspect")) .. " source=" .. serpent.line(storage.fixture.folded.input.get_inventory(defines.inventory.furnace_source).get_contents()) .. " output=" .. serpent.line(storage.fixture.folded.output.get_inventory(defines.inventory.furnace_result).get_contents()))
     local jobs=remote.call("administratorio-personnel-routing","inspect")
     check(#jobs==1 and jobs[1].item=="middle-management-managing-manager", "waiting briefing did not retain its normal spoil result: " .. serpent.line(jobs))
     check(not jobs[1].briefing, "expired briefing badge remained active")
+    check(jobs[1].unit_name=="personnel-in-transit-middle-management-managing-manager", "queued expired manager kept its old proxy")
     for _,id in ipairs(storage.fixture.expiry_renders) do
       local render=rendering.get_object_by_id(id)
       check(not render or not render.valid, "expired briefing leaked its overlay")

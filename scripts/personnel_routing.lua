@@ -444,6 +444,48 @@ local function stop(job)
   job.entity.active = false
   if job.dx then job.entity.orientation=job.dx==1 and 0.25 or job.dx==-1 and 0.75 or job.dy==1 and 0.5 or 0 end
 end
+local function slow_spoilage(job, tick)
+  local stack = job.cargo[1]
+  if not stack.valid_for_read or stack.spoil_tick == 0 then
+    job.spoilage_tick = nil
+    return
+  end
+  -- Script inventories have no spoilage multiplier. Grant one tick up front
+  -- and another every two ticks, so even nearly expired cargo gets half-rate
+  -- ageing. The saved phase survives reloads and also covers queued personnel.
+  if not job.spoilage_tick then
+    job.spoilage_tick = tick
+    stack.spoil_tick = stack.spoil_tick + 1
+  else
+    local bonus = math.floor((tick - job.spoilage_tick) / 2)
+    if bonus > 0 then
+      stack.spoil_tick = stack.spoil_tick + bonus
+      job.spoilage_tick = job.spoilage_tick + bonus * 2
+    end
+  end
+end
+local function refresh_personnel(job)
+  local stack = job.cargo[1]
+  if not stack.valid_for_read or job.entity.name == R.unit_name(stack.name) then return true end
+  local old = job.entity
+  local unit = old.surface.create_entity{name = R.unit_name(stack.name),
+    position = job.position or old.position, force = old.force}
+  if not unit then return false end
+  local orientation = old.orientation
+  delete_unit(job)
+  job.entity, job.unit_id = unit, unit.unit_number
+  state().units[unit.unit_number] = job.id
+  job.watch = watch(unit, "job", job.id)
+  unit.destructible, unit.minable_flag = false, false
+  ai.apply_managed_unit_settings(unit)
+  stop(job)
+  unit.orientation = orientation
+  job.animation_goal = nil
+  if job.state == "walking" then job.state = "stopped" end
+  -- Keep position, route reservations and any committed turn. The next
+  -- uncommitted junction reads the new cargo type through departure_for.
+  return true
+end
 local function available(route,s,id)
   for _,cell in ipairs(route) do
     if s.exclusive and s.exclusive[cell.key] and s.exclusive[cell.key]~=id then return false end
@@ -524,6 +566,7 @@ local function dispatch(record, tick, index)
   unit.minable_flag = false
   ai.apply_managed_unit_settings(unit)
   stop(job)
+  slow_spoilage(job, tick)
   briefing_overlay.update(job, tick)
   status(entity, "running", true)
 end
@@ -538,6 +581,8 @@ local function update_job(job, tick, index)
     return
   end
   if not valid(job.entity) then recover(job, "invalid"); return end
+  slow_spoilage(job, tick)
+  if not refresh_personnel(job) then return end
   briefing_overlay.update(job, tick)
   local route, unit = job.route, job.entity
   unit.speed = unit.prototype.speed * R.speed_multiplier(unit.force)
@@ -877,6 +922,8 @@ function M.inspect()
     local next_cell = job.route and job.route[job.index + 1]
     result[#result + 1] = {id = id, state = job.state, index = job.index, surface_index = job.surface_index,
       item = job.cargo[1].valid_for_read and job.cargo[1].name,
+      spoil_tick = job.cargo[1].valid_for_read and job.cargo[1].spoil_tick,
+      unit_name = valid(job.entity) and job.entity.name,
       position = valid(job.entity) and job.entity.position,
       current = current and {key = current.key, occupant = current.occupant},
       next_cell = next_cell and {key = next_cell.key, occupant = next_cell.occupant},

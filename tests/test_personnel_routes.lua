@@ -76,6 +76,13 @@ test("personnel roster excludes field agents and mounts", function()
     "union-delegate","chemical-operator","licensed-notary","missionary-manager","voluntary-exploration-space-miner"}) do check(R.cargo[name],name) end
   check(not R.cargo["hired-biter-capsule"] and not R.cargo["rideable-biter"] and not R.cargo["biter-egg"] and not R.cargo["iron-plate"])
 end)
+test("all returned space tourists can travel but transient hatch items cannot", function()
+  for _, size in ipairs({"small", "medium", "big", "behemoth"}) do
+    check(R.cargo[size .. "-space-tourist"])
+    check(not R.cargo[size .. "-departing-space-tourist"])
+    check(not R.cargo[size .. "-spitter-tourism-package"])
+  end
+end)
 test("independent adjacent lanes wait for full-footprint clearance", function()
   local neighbor=cell(2,2);neighbor.flow=R.key(4,2)
   local cells=layout(start,cell(2,0),cell(4,0,"output"),neighbor)

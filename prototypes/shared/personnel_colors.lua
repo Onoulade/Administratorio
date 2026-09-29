@@ -26,5 +26,9 @@ local M = {colors = {
   ["missionary-manager"] = rgb(0.92, 0.72, 0.88),
   ["voluntary-research-subject"] = rgb(0.90, 0.30, 0.58),
   ["geotechnical-assessment-manager"] = rgb(0.60, 0.66, 0.28),
+  ["small-space-tourist"] = rgb(0.55, 0.90, 1.00),
+  ["medium-space-tourist"] = rgb(0.35, 0.75, 0.95),
+  ["big-space-tourist"] = rgb(0.25, 0.55, 0.90),
+  ["behemoth-space-tourist"] = rgb(0.55, 0.35, 0.85),
 }}
 return M
