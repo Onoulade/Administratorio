@@ -8,6 +8,7 @@ __pycache__/
 *.code-workspace
 *.zip
 !/menu-simulations/*.zip
+!/menu-simulations/space-age/*.zip
 Internal/all-recipes.txt
 Internal/all-techs.txt
 /Internal/shadow_pipeline/

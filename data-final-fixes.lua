@@ -1711,8 +1711,8 @@ require("prototypes.final_fixes.factoriopedia").apply(
   data.raw, feature_flags.space_age_enabled(), ITEM_LIKE_PROTOTYPE_TYPES
 )
 
--- Show the five Administratorio title scenes in place of the built-in ones.
-require("prototypes.final_fixes.menu_simulations").apply(data.raw)
+-- Show Administratorio title scenes in place of the built-in ones.
+require("prototypes.final_fixes.menu_simulations").apply(data.raw, feature_flags.space_age_enabled())
 
 -- Reconcile research after all recipe generation, paperwork and route renames.
 require("prototypes.final_fixes.technology_requirements").apply(data)
