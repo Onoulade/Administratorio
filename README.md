@@ -2,131 +2,42 @@
 
 **The factory must grow. Subject to approval.**
 
-Administratorio is a bureaucratic overhaul for Factorio 2.0. It keeps the belts, furnaces, pollution and spectacularly irresponsible copper consumption, then adds the one thing every factory was missing: an administrative department large enough to become the real bottleneck.
+Administratorio is a Factorio 2.0 overhaul that replaces combat with bureaucracy. Build offices, automate paperwork, hire biters and try to keep the whole operation solvent.
 
-Forms and Work Orders sit beside iron and copper in your production chains. Machines need permits, staff, money or all three. Offices observe working hours. Night shifts require coffee. A factory can be perfectly supplied and still do nothing because somebody forgot to file the appropriate little rectangle of paper.
+The biters are still angry about your factory. They just file complaints now. Resolving those complaints earns you money, and some of the visitors can be recruited to work for you. You'll need them: production depends on staff and permits, workers need paying, and the office closes at night.
 
-That is not a bug. It is governance.
+## Features
 
-## What changes?
+- **65+ new technologies**, rising to **130+ with Space Age**.
+- **25+ new buildings and logistics structures**, or **50+ with Space Age**: printers, offices, training centers, Biterports and more.
+- **3 new natural resources**, or **5 with Space Age**. Yes, one of them is Bullshit Ore.
+- **Reworked production and research.** Work orders, operating permits and Administrative Science become part of your factory, from the first printers to late-game automation.
+- **Complaints, taxes and protests.** Process cases to fund your expansion. Keep citizens waiting too long and they'll shut down buildings. Larger biters bring more demanding cases and bigger payouts.
+- **A biter workforce.** Recruit and train workers to operate machines, carry goods and handle construction. Supply salaries and night-shift coffee. You can also ride a biter.
+- **New logistics systems.** Move paperwork through pneumatic tubes, build Biterport delivery networks and transport complaint visitors by passenger train.
+- **Working hours.** Buffer supplies for the night or invest in overtime exemptions. Can be disabled in settings.
 
-### Paperwork replaces military progression
+*Counts include research and building tiers, with default settings. Space Age figures are totals.*
 
-Weapons, turrets and military science are out. Bureaucracy is in. You begin by handcrafting paper and ink, printing basic forms, and assembling the first administrative buildings. From there, regulated production grows alongside the usual Factorio progression:
+## How different is it?
 
-- Work Orders and form tiers gate machines, logistics, construction and science.
-- Permits and operating documents are consumed by selected recipes and machine families.
-- Administrative Science joins the research queue.
-- Taxpayer Money, bonds, grants, coffee, credentials, data and increasingly questionable documentation sustain the late-game economy.
+Quite a lot, and **it's hard**. You'll be managing complaint queues, income and staffing alongside belts and production ratios. A shortage of paper can interrupt complaint resolution, which cuts the money available for wages, which leaves machines waiting for workers. Keeping that cycle running is a big part of the game.
 
-The factory must grow, the paperwork must flow; if the stamp says no, the belts will politely refuse to go.
-
-### Biters become citizens
-
-Biters do not attack you by default. They arrive at **Administration Desks**, file complaints about the landscape, smog, noise, unemployment and other amenities your industrial paradise emits, then wait for your **Resolution Offices** to process their cases.
-
-Enemy expansion is disabled on Nauvis and Gleba. Existing nests remain, but biters and pentapods cannot establish new ones through expansion. Eviction therefore clears a nest permanently without requiring a gun wall.
-
-Resolve a complaint and the citizen leaves peacefully, paying **Taxpayer Money**. Ignore the queue for too long and frustration becomes a protest: a building is selected, operations stop, and a very determined employee of the public walks over to make the point in person.
-
-Larger biters file more complicated complaints and pay more. Complaint milestones also control native evolution, so the ecosystem is not allowed to become more troublesome until your administration has demonstrated the paperwork throughput to deserve it. A modest incentive to keep the queue moving; civilization is apparently a throughput problem.
-
-### Hire the people you used to shoot
-
-Resolve a complaint with a **Job Offer** in the desk and the departing biter can join your workforce. Depending on the configuration, workers can be trained for increasingly specific duties:
-
-- **Biter Employment Office** dispatches workers to staff managed machines.
-- **Biterport** provides walking-worker logistics and construction support.
-- **Formation Centers** train workers into union delegates, chemical operators, nuclear technicians and logistics specialists.
-- **Field Offices** summon temporary workers from nearby nests to bridge the gap before your first hires.
-- **Rideable Biters** provide personal transport, because apparently the next logical step after industrial bureaucracy is commuting by insect.
-- **Hired Biters** act as controllable field agents for nest eviction and other approved interventions.
-
-Workers require salaries. Night dispatches require coffee. The union is real, and it has noticed your staffing model.
-
-### Build a logistics network made of paperwork
-
-Research **Pneumatic Form Transport** to send administrative items through a script-managed tube network. Tube Intakes feed the network, Outtakes retrieve filtered items, and Pumps move paperwork between connected networks. With Space Age enabled, every finished planetary document can use local tubes; raw heatproof, mycelial and signal form stock remains ordinary belt cargo. This local eligibility does not expand the separate interplanetary trunk whitelist. Capacity and throughput grow through research, because even documents need an upgrade path.
-
-Trains also participate in the civic order: stations use transit authorization paperwork unless you eventually earn the privilege of bureaucratic transcendence.
-
-Passenger rail can also carry unresolved complaint visitors. Research **Passenger Rail Service**, add a zero-inventory Passenger Wagon to a train, and place paired Boarding and Unboarding Platforms beside the stops. Each wagon carries up to 24 visitors in a protected manifest; frustration continues during the trip, so use platform circuit signals to manage queues and keep journeys short. The [Advanced Topics guide](Internal/docs/advanced-topics.md#passenger-rail-service) covers setup, schedules, and failure behavior.
-
-With Space Age, **Personnel Routing** turns trained biter items into walking personnel (excluding Field Agents and rideable biters) between 2×2 Deployment and Reception Offices. Green science and Form 27B/6 unlock offices, directional signs and automatic protected lanes of teal-tinted vanilla concrete. Biters walk at 50% of vanilla small-biter speed, with blue and purple upgrades to 100% and 150%. Blue science also unlocks rotatable three-way multisigns with separate live circuit filters on each exit. Regular signs emit per-type counts from all immediate incoming lanes. Biters travel to the next valid sign, queue closely before dead-end sign tiles or at full outputs, and resume when the lane is extended. Signs can rotate during traffic: entering biters keep their saved turn and later biters follow the new arrow or wait. Reception is fixed and accepts all four sides. Forced deletion returns their items or recovers them into a crate. See the [Personnel Routing guide](Internal/docs/personnel-routing.md).
-
-### Working hours, coffee and other workplace realities
-
-With **Working Hours** enabled (the default), Office Desks, Corporate Breakrooms and Union Headquarters close during the night window. Install an **Overtime Exemption** module to keep an eligible building open around the clock. Biter Employment Offices and Biterports can work night shifts too, but they charge the company in liquid coffee.
-
-The **Administrative Clock** exposes daytime, shift boundaries and working-hours state to the circuit network. At last, a clock that can tell you exactly when the factory is closed for lunch.
+If you enjoy working out unfamiliar production chains and figuring out why half your factory has stopped, there's plenty here to get stuck into. Expect to rethink how you build from the early game onward.
 
 ## Space Age
 
-Space does not repeal the weapons ban. It introduces asteroids, multiple planetary jurisdictions and a fresh opportunity to discover that one permit was only valid on the previous planet.
+Space Age is optional, but gets its own progression: planetary paperwork and resources, specialist workers, archive processing, AI and synthetic personnel. Build interplanetary tube connections, launch employees into orbit and redirect asteroids with Trajectory Compliance Arrays.
 
-With Space Age installed, Administratorio expands into:
+It also adds **personnel routing**: send trained biters between offices along walking lanes, with directional signs and live circuit filters controlling where they go.
 
-- Planet-specific paperwork for Vulcanus, Gleba, Fulgora and Aquilo.
-- Administrative space stations and orbital printing.
-- **Trajectory Compliance Arrays** that push inconvenient asteroids away from your platform using legally approved deviation orders.
-- Orbital employment and interplanetary tube infrastructure.
-- Planetary field offices, territorial arbitration and archive recombination.
-- Space Age-specific workforce, chemistry, metallurgy, biological and digital administration chains.
+## Status and help
 
-The result is the same factory problem at a larger scale: more planets, more jurisdictions, more forms. The void is cold, but the filing cabinet is warm.
+**Beta, actively developed.** Both base-game and Space Age progression are playable. Balance is still being worked on; bug reports and feedback from actual playthroughs are very welcome.
 
-## Optional integrations
+Supports optional Quality, with integrations for Factorissimo and AAI Loaders.
 
-- **Space Age** is optional. The base-game progression remains available without it.
-- **Quality** is optional and supported independently of Space Age. Its native quality grades remain meaningful without silently turning paperwork into magic.
-- **Factorissimo** compatibility is included for working-hours time handling and pneumatic tube networks through factory walls.
-- **AAI Loaders** compatibility carries the correct paperwork requirements and loader-specific batch behavior.
-- The mod includes a compatibility hook layer so supported integrations can be added without tangling the core systems into an unholy dependency scrapbook.
-
-## Getting started
-
-1. Gather wood and coal, then handcraft paper and ink.
-2. Use the starting **Mechanical Printer** to print basic forms.
-3. Research **Steam Power** to unlock the **Field Office** recipe.
-4. Mine **Redundant Rubble** and **Bullshit Ore** to trigger the two early discoveries, then use the unlocked paperwork to keep the bootstrap moving.
-5. Craft and place your first Field Office near a biter nest. This triggers **Field Office Deployment**, which unlocks provisional approvals and the **Biter Administration Desk**. The Field Office is your early bootstrap workforce; the permanent Office Desk is still waiting for research.
-6. Research **Administrative Bureaucracy**, **Rubble Compaction** and then **Biter Employment**. This unlocks the **Office Desk**; in the base game it also unlocks the **Resolution Office**, while Space Age moves that staffed-office unlock to **Worker Formation**. Bureaucracy has finally approved bureaucracy.
-7. Establish complaint filing and resolution before expanding the factory too aggressively.
-8. Keep paper, ink and the required forms buffered. The machine may be hungry for iron, but the bureaucracy is hungry for stationery.
-
-The in-game tips and tricks explain individual items and progression gates. The long-form reference is split into maintained documentation:
-
-- [Core Mechanics](Internal/docs/core-mechanics.md) — bootstrap, form tiers, complaints, protests and resolution chains.
-- [Biter Employment](Internal/docs/biter-employment.md) — hiring, training, stations, Biterports and Field Offices.
-- [Personnel Routing](Internal/docs/personnel-routing.md) — protected walking lanes, signs, queues and item recovery.
-- [Buildings and Structures](Internal/docs/buildings-and-structures.md) — production buildings, support infrastructure and pneumatic tubes.
-- [Technology Tree](Internal/docs/technology-tree.md) — progression, research gates and specialization.
-- [Advanced Topics](Internal/docs/advanced-topics.md) — working hours, modules, coffee, ordinary and passenger rail, field agents and structural bottlenecks.
-- [Mod Compatibility](Internal/docs/mod-compatibility.md) — compatibility hooks for contributors.
-
-## Current status
-
-**Beta** The main progression and runtime systems are playable, including the base-game and Space Age paths. Balance, compatibility, translations, migrations and late-game polish are still active work.
-
-Please report:
-
-- progression stalls or missing paperwork;
-- migration problems in existing saves;
-- compatibility issues with other mods;
-- balance spikes, especially around staffing, funding and planetary chains;
-- translations or tooltips that have wandered into the wilderness.
-
-Real factories are especially valuable test cases. Players routinely discover arrangements that no responsible test suite would think to fear.
-
-## Settings
-
-| Setting | Default | Purpose |
-| --- | --- | --- |
-| `administratorio-enable-working-hours` | `true` | Enables the night-shutdown system. Disable it for easier planner-mod modelling. |
-| `administratorio-debug-protest-belts-and-inserters` | `false` | Allows debug protests to target belts, underground belts, splitters and inserters. |
-| `administratorio-debug-hard-mode` | `false` | Enables the harsher protest and hostile-escalation rules for testing. |
-
-The two debug options are runtime-global settings and can be toggled during a save. Working Hours is a startup setting.
+The **in-game Tips & Tricks** explain how to get started. For more detail: [Core Mechanics](Internal/docs/core-mechanics.md) · [Employment](Internal/docs/biter-employment.md) · [Buildings](Internal/docs/buildings-and-structures.md) · [Research](Internal/docs/technology-tree.md) · [Personnel Routing](Internal/docs/personnel-routing.md) · [Advanced Topics](Internal/docs/advanced-topics.md).
 
 ## Credits
 
