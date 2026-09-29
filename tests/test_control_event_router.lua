@@ -46,7 +46,8 @@ test("router registers lifecycle, event, and custom handlers", function()
     ai_server_check_ticks = 15, on_ai_server_tick = handler("ai-server"), on_main_tick = handler("main"),
     on_passenger_train_tick = handler("passenger"),
     on_forces_merged = handler("personnel-force"), on_force_changed = handler("existing-force"),
-    on_personnel_rotate_input = handler("personnel-rotate"),
+    on_player_rotated_entity = handler("personnel-rotate"),
+    on_gui_opened = handler("personnel-opened"),
     on_personnel_surface_removed = handler("personnel-surface"), on_surface_deleted = handler("existing-surface"),
   })
   assert_true(registrations.init and registrations.configuration and registrations.load)
@@ -54,11 +55,13 @@ test("router registers lifecycle, event, and custom handlers", function()
   assert_true(registrations["administratorio-toggle-runtime-debug"] ~= nil)
 end)
 
-test("both linked personnel rotation controls reach the same handler", function()
+test("native rotation and protected GUI opening reach their handlers", function()
   registrations.called = ""
-  registrations["administratorio-rotate-personnel-sign"]({player_index=1})
-  registrations["administratorio-reverse-rotate-personnel-sign"]({player_index=1})
-  assert_eq(registrations.called, "personnel-rotatepersonnel-rotate")
+  registrations[defines.events.on_player_rotated_entity]({player_index=1})
+  registrations[defines.events.on_gui_opened]({player_index=1})
+  assert_eq(registrations.called, "personnel-rotatepersonnel-opened")
+  assert_true(not registrations["administratorio-rotate-personnel-sign"])
+  assert_true(not registrations["administratorio-reverse-rotate-personnel-sign"])
 end)
 
 test("force merge preserves both personnel and existing force handling", function()

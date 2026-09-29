@@ -233,7 +233,7 @@ function M.on_built(event)
   local entity = event.entity or event.created_entity
   if not valid(entity) or not R.roles[entity.name] then return false end
   if R.roles[entity.name]=="output" then entity.direction=defines.direction.north;entity.rotatable=false end
-  if R.roles[entity.name]=="sign" then entity.rotatable=true end
+  if R.roles[entity.name]=="sign" then entity.rotatable=true;entity.operable=true end
   if state().records[entity.unit_number] then signals.ensure_ports(state().records[entity.unit_number]); return true end
   local p, role = entity.position, R.roles[entity.name]
   -- Native player placement uses the shared 2x2 grid. Keep integer-centered
@@ -306,6 +306,22 @@ function M.on_object_destroyed(event)
 end
 function M.on_rotated(event)
   local entity = event.entity
+  if valid(entity) and R.is_port(entity.name) then
+    local reverse = (entity.direction - event.previous_direction) % 16 > 8
+    entity.direction = event.previous_direction
+    for _, owner in pairs(state().records) do
+      for _, port in pairs(owner.ports or {}) do
+        if port == entity and valid(owner.entity) then
+          local previous = owner.entity.direction
+          if owner.entity.rotate{reverse=reverse} then
+            M.on_rotated{entity=owner.entity,previous_direction=previous}
+          end
+          return
+        end
+      end
+    end
+    return
+  end
   local record = valid(entity) and state().records[entity.unit_number]
   if not record then return end
   local s = surface_state(record.surface_index)
@@ -317,41 +333,13 @@ function M.on_rotated(event)
   s.revision = s.revision + 1
   s.dirty = true
 end
--- Non-operable bodies/sockets cannot use native player rotation. Linked
--- controls preserve the player's rotate/reverse bindings without a signal GUI.
-function M.on_rotate_input(event)
-  local player = game.get_player(event.player_index)
-  if not player or event.in_gui or player.cursor_stack.valid_for_read then return end
-  local selected = player.selected
-  local record
-  if valid(selected) and selected.name==R.MULTISIGN then
-    record=state().records[selected.unit_number]
-  elseif valid(selected) and R.is_port(selected.name) then
-    for _,owner in pairs(state().records) do
-      for _,port in pairs(owner.ports or {}) do
-        if port==selected then record=owner;break end
-      end
-      if record then break end
-    end
-  elseif event.cursor_position and (not valid(selected)
-    or R.roles[selected.name]=="road" or selected.name:find("^personnel%-in%-transit%-")) then
-    -- An occupied, non-operable body can disappear from native selection.
-    -- Find its actual 2x2 footprint beneath the cursor/walking proxy.
-    local p=event.cursor_position
-    for _,owner in pairs(state().records) do
-      local entity=owner.entity
-      if valid(entity) and entity.name==R.MULTISIGN and entity.surface==player.surface
-        and math.abs(p.x-entity.position.x)<=1 and math.abs(p.y-entity.position.y)<=1 then
-        record=owner;break
-      end
-    end
-  end
-  if not record or not valid(record.entity) or record.entity.force~=player.force
-    or not player.can_reach_entity(record.entity) then return end
-  local entity = record.entity
-  local previous = entity.direction
-  if entity.rotate{reverse=event.input_name=="administratorio-reverse-rotate-personnel-sign"} then
-    M.on_rotated{entity=entity,previous_direction=previous}
+-- Operability permits native rotation, but these entities have no editable
+-- signal configuration: multisign sockets read wires, regular signs emit counts.
+function M.on_gui_opened(event)
+  local entity = event.entity
+  if valid(entity) and (entity.name == R.SIGN or R.is_port(entity.name)) then
+    local player = game.get_player(event.player_index)
+    if player then player.opened = nil end
   end
 end
 function M.on_tiles_built(event)

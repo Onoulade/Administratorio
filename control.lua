@@ -2350,7 +2350,7 @@ resolution_processing = control_resolution_processing_factory.new({
 
 control_event_router.register({
   on_personnel_routing_tick = personnel_routing.on_tick,
-  on_personnel_rotate_input = personnel_routing.on_rotate_input,
+  on_gui_opened = personnel_routing.on_gui_opened,
   on_entity_cloned = personnel_routing.on_cloned,
   on_object_destroyed = personnel_routing.on_object_destroyed,
   on_tiles_built = personnel_routing.on_tiles_built,

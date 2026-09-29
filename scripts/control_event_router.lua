@@ -90,10 +90,6 @@ function M.register(deps)
     script.on_event(defines.events.on_player_rotated_entity, deps.on_player_rotated_entity)
   end
 
-  if deps.on_personnel_rotate_input then
-    script.on_event("administratorio-rotate-personnel-sign", deps.on_personnel_rotate_input)
-    script.on_event("administratorio-reverse-rotate-personnel-sign", deps.on_personnel_rotate_input)
-  end
   script.on_event("administratorio-toggle-runtime-debug", deps.on_toggle_runtime_debug)
   script.on_event("administratorio-toggle-complaint-locator", deps.on_toggle_complaint_locator)
   script.on_event("administratorio-field-agent-toggle-select", deps.on_field_agent_waypoint_input)
@@ -119,6 +115,7 @@ function M.register(deps)
   script.on_event(defines.events.on_train_changed_state, deps.on_train_changed_state)
   script.on_event(defines.events.on_rocket_launched, deps.on_rocket_launched)
   script.on_event(defines.events.on_gui_click, deps.on_gui_click)
+  if deps.on_gui_opened then script.on_event(defines.events.on_gui_opened, deps.on_gui_opened) end
   script.on_event(defines.events.on_lua_shortcut, deps.on_lua_shortcut)
   script.on_event(defines.events.on_gui_closed, deps.on_gui_closed)
   script.on_event(defines.events.on_research_finished, deps.on_research_finished)

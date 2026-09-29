@@ -156,18 +156,6 @@ data:extend({{
   order = "b[administratorio]-a[station-overview]",
 }, {
   type = "custom-input",
-  name = "administratorio-rotate-personnel-sign",
-  key_sequence = "",
-  linked_game_control = "rotate",
-  consuming = "game-only"
-}, {
-  type = "custom-input",
-  name = "administratorio-reverse-rotate-personnel-sign",
-  key_sequence = "",
-  linked_game_control = "reverse-rotate",
-  consuming = "game-only"
-}, {
-  type = "custom-input",
   name = "administratorio-toggle-runtime-debug",
   key_sequence = "CONTROL + SHIFT + D",
   consuming = "none"

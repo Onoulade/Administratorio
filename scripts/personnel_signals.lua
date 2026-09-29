@@ -4,7 +4,9 @@ local R = require("prototypes.shared.personnel_routing")
 local M = {}
 function M.ensure_ports(record)
   if record.entity.name ~= R.MULTISIGN then return end
-  record.entity.operable = false
+  -- Native player rotation requires operable entities; GUI opening is handled
+  -- separately so circuit filters remain controlled by the external network.
+  record.entity.operable = true
   local rotated = record.port_direction ~= record.entity.direction
   record.port_direction = record.entity.direction
   record.ports = record.ports or {}
@@ -22,8 +24,9 @@ function M.ensure_ports(record)
       port.teleport(position)
     end
     if port then
-      -- Linked rotate controls turn the owner; sockets never rotate alone.
-      port.destructible,port.minable_flag,port.rotatable,port.operable = false,false,false,false
+      -- A native socket rotation is redirected to the owner by on_rotated.
+      port.destructible,port.minable_flag,port.rotatable,port.operable = false,false,true,true
+      port.direction = record.entity.direction
     end
   end
   return rotated
@@ -81,6 +84,7 @@ function M.update(records, jobs, changed)
       local filtered = M.read_filters(record)
       if rotated or filtered then changed(record, rotated) end
     elseif entity.valid and entity.name == R.SIGN then
+      entity.operable = true
       local values,names = counts[id] or {},{}
       for name in pairs(values) do names[#names+1] = name end
       table.sort(names)

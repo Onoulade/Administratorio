@@ -75,9 +75,9 @@ local function new_fixture()
  f.straight=build(s,"personnel-reception-office",24,0)
  f.right=build(s,"personnel-reception-office",12,12)
  local p=ports(f.sign)
- check(not f.sign.operable and f.sign.type=="simple-entity-with-owner","multisign body has an ambiguous native signal editor")
+ check(f.sign.operable and f.sign.rotatable and f.sign.type=="simple-entity-with-owner","multisign body rejects native rotation")
  for _,exit in ipairs({"left","straight","right"}) do
-  check(p[exit] and p[exit].valid and not p[exit].operable,"missing or editable exit socket: "..exit)
+  check(p[exit] and p[exit].valid and p[exit].operable and p[exit].rotatable,"missing or non-rotatable exit socket: "..exit)
  end
  check(p.left.unit_number~=p.straight.unit_number and p.straight.unit_number~=p.right.unit_number,"exit sockets share one wire target")
  f.lsource=source(s,8,-4);f.rsource=source(s,8,4);f.ssource=source(s,16,4)
@@ -103,7 +103,8 @@ local function new_fixture()
  f.rotinput=build(s,"personnel-deployment-office",48,12,defines.direction.north)
  f.rotsign=build(s,"personnel-routing-multisign",48,0,defines.direction.north)
  f.rotnorth=build(s,"personnel-reception-office",48,-12)
- f.rotsource=source(s,48,4);wire(f.rotsource,ports(f.rotsign).straight)
+ -- Keep the solid signal source outside the incoming lane so the pair reaches the sign.
+ f.rotsource=source(s,52,4);wire(f.rotsource,ports(f.rotsign).straight)
  set(f.rotsource,{{"enrolled-biter",1}})
  inv(f.rotinput).insert{name="enrolled-biter",count=1,quality="legendary"}
  f.rotbuffer=game.create_inventory(1)
@@ -166,7 +167,7 @@ script.on_nth_tick(1,function()
  if t==300 then
   local c=values(f.reader)
   check(c["worker-biter"]==4 and c["management-trainee"]==1,"incoming lanes/qualities not summed: "..serpent.line(c).." jobs="..serpent.line(jobs(f.s)).." native="..serpent.line(f.csign.get_or_create_control_behavior().get_section(1).filters).." raw="..serpent.line(f.reader.get_signals(defines.wire_connector_id.circuit_red)))
-  check(f.rot_committed,"multisign rotation was not exercised before the engaged biter cleared")
+  check(f.rot_committed,"multisign rotation was not exercised before the engaged biter cleared: "..serpent.line(jobs(f.s)).." north="..count(f.rotnorth,"enrolled-biter").." input="..serpent.line(inv(f.rotinput).get_contents()).." status="..serpent.line(f.rotinput.custom_status))
  end
  if t==500 then
   check(f.changed,"entry-time filter change not exercised")

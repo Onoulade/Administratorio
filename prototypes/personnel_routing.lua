@@ -72,7 +72,6 @@ for i, name in ipairs(R.names) do
   }
   if name == R.MULTISIGN then
     entity.icon = graphics .. "multisign-icon.png"
-    entity.operable = false
   end
   if role == "road" then
     entity.icon = "__base__/graphics/icons/concrete.png"
@@ -100,7 +99,6 @@ for i, name in ipairs(R.names) do
   elseif entity.type == "constant-combinator" then
     entity.sprites = directions(role)
     entity.item_slot_count = 128
-    entity.operable = false
     entity.activity_led_light_offsets = {{0,0},{0,0},{0,0},{0,0}}
     entity.circuit_wire_max_distance = 9
     entity.circuit_wire_connection_points = {}
@@ -171,7 +169,6 @@ port.activity_led_light = nil
 -- native entities provide three equal wire targets without loose combinators.
 local empty={filename="__core__/graphics/empty.png",width=1,height=1}
 port.sprites={north=empty,east=empty,south=empty,west=empty}
-port.operable=false
 local socket_radius=0.32*R.MULTISIGN_SCALE
 port.selection_box={{-socket_radius,-socket_radius},{socket_radius,socket_radius}}
 port.circuit_wire_connection_points = {}
