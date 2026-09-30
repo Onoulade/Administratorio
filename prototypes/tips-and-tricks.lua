@@ -1,235 +1,120 @@
--- ADMINISTRATORIO: TIPS AND TRICKS
--- In-game tutorial entries for the tips-and-tricks pane.
---
--- Each major system owns a category instead of contributing to one enormous
--- Administratorio drawer.  Category titles are real overview tips, and child
--- entries unlock when the mechanic they explain first becomes available.
+-- Short, task-focused guides to custom behavior. Recipe catalogs, packing
+-- lists and research-stat tables belong in Factoriopedia, not this pane.
+local features = require("feature_flags")
+local space_age = features.space_age_enabled()
+local working_hours = features.working_hours_enabled()
+local prefix = "administratorio-"
+local entries = {}
 
-local feature_flags = require("feature_flags")
-local working_hours_enabled = feature_flags.working_hours_enabled()
-local space_age_enabled = feature_flags.space_age_enabled()
+local function research(technology)
+  return {type = "research", technology = technology}
+end
 
-local function category(name, order)
-  return {
-    type = "tips-and-tricks-item-category",
-    name = name,
-    order = order,
+local function built(...)
+  local triggers = {}
+  for _, entity in ipairs({...}) do
+    triggers[#triggers + 1] = {type = "build-entity", entity = entity}
+  end
+  return #triggers == 1 and triggers[1] or {type = "or", triggers = triggers}
+end
+
+local function group(id, order, title, trigger)
+  local name = prefix .. id
+  entries[#entries + 1] = {
+    type = "tips-and-tricks-item-category", name = name, order = "z-" .. order,
+  }
+  entries[#entries + 1] = {
+    type = "tips-and-tricks-item", name = name, category = name,
+    order = "a", indent = 0, is_title = true, trigger = trigger,
+    starting_status = not trigger and "unlocked" or nil,
+    localised_name = {"tips-and-tricks-category-name." .. id},
+    localised_description = {"tips-and-tricks-item-description." .. prefix .. title},
+  }
+  return name
+end
+
+local function tip(id, category, order, trigger)
+  entries[#entries + 1] = {
+    type = "tips-and-tricks-item", name = prefix .. id, category = category,
+    order = order, indent = 1, trigger = trigger,
   }
 end
 
-local function tip(name, category_name, order, fields)
-  local prototype = {
-    type = "tips-and-tricks-item",
-    name = name,
-    category = category_name,
-    order = order,
-    indent = 1,
-  }
-  for key, value in pairs(fields or {}) do prototype[key] = value end
-  if prototype.is_title then prototype.indent = 0 end
-  return prototype
+local basics = group("welcome", "a", "welcome")
+tip("work-orders", basics, "b", research("automation"))
+tip("field-office", basics, "c", built("field-office"))
+if working_hours then
+  tip("working-hours", basics, "d", built("office-desk", "union-headquarters", "biter-station", "biterport"))
+  tip("administrative-clock", basics, "e", built("administrative-clock"))
+end
+if features.quality_enabled() then
+  tip("quality", basics, "f", research("quality-module"))
 end
 
-local function research_tip(name, category_name, order, technology, fields)
-  fields = fields or {}
-  fields.trigger = {type = "research", technology = technology}
-  return tip(name, category_name, order, fields)
+local citizens = group("biter-complaints", "b", "biter-complaints", built("admin-station"))
+tip("visitor-routing", citizens, "b", built("admin-station"))
+tip("desk-signals", citizens, "c", built("admin-station"))
+tip("frustration", citizens, "d", built("admin-station"))
+tip("hard-mode", citizens, "e", built("admin-station"))
+tip("evolution-approvals", citizens, "e1", built("admin-station"))
+tip("hush-money", citizens, "f", research("nest-pacification"))
+tip("nest-expropriation", citizens, "g", research("nest-expropriation"))
+
+local workforce = group("biter-employment", "c", space_age and "space-age-enrollment" or "biter-employment", research("biter-employment"))
+tip("biter-station", workforce, "b", built("biter-station"))
+tip("worker-machines", workforce, "c", built("biter-station"))
+tip("biterport", workforce, "d", research("biterport-logistics"))
+tip("biterport-cargo", workforce, "e", research("biterport-logistics"))
+tip("orphaned-workers", workforce, "f", built("biter-station", "biterport"))
+tip("rideable-biter", workforce, "g", research("rideable-biter"))
+tip("hired-biter", workforce, "h", research("hired-biter-fieldwork"))
+tip("field-agent-controls", workforce, "i", research("hired-biter-fieldwork"))
+
+local tubes = group("pneumatic-transport", "d", "pneumatic-transport", research("pneumatic-form-transport"))
+tip("tube-limits", tubes, "b", research("pneumatic-form-transport"))
+tip("tube-circuits", tubes, "c", research("pneumatic-form-transport"))
+tip("tube-pump", tubes, "d", research("tube-pump"))
+
+local rail = group("transit-authorization", "e", "transit-authorization", research("railway"))
+tip("passenger-rail-service", rail, "b", research("passenger-rail-service"))
+tip("passenger-boarding", rail, "c", research("passenger-rail-service"))
+tip("passenger-unboarding", rail, "d", research("passenger-rail-service"))
+tip("passenger-signals", rail, "e", research("passenger-rail-service"))
+
+if space_age then
+  tip("public-train-stop", rail, "f", research("bureaucratic-transcendence"))
+  tip("management-briefings", workforce, "j", research("management-formation"))
+  tip("specialist-approval", workforce, "k", {type = "or", triggers = {
+    research("foundry"), research("biochamber"), research("electromagnetic-plant"), research("cryogenic-plant"),
+  }})
+  if working_hours then
+    tip("unstaffed-operations", workforce, "l", research("unstaffed-operations"))
+  end
+
+  local paths = group("personnel-routing", "f", "personnel-routing", research("personnel-routing"))
+  tip("personnel-traffic", paths, "b", research("personnel-routing"))
+  tip("personnel-counts", paths, "b1", research("personnel-routing"))
+  tip("personnel-multisign", paths, "c", research("personnel-routing-multisign"))
+  tip("personnel-circuits", paths, "d", research("personnel-routing-multisign"))
+  tip("personnel-spoilage", paths, "e", research("personnel-routing"))
+
+  local orbit = group("trajectory-compliance-arrays", "g", "trajectory-compliance-arrays", research("orbital-compliance-systems"))
+  tip("orbital-employment-catapult", orbit, "b", research("orbital-compliance-systems"))
+  tip("orbital-miner-recovery", orbit, "c", research("orbital-compliance-systems"))
+
+  local planets = group("offworld-economy", "h", "offworld-economy", research("space-platform"))
+  tip("territorial-arbitration", planets, "b", research("vulcanus-certification"))
+  tip("pentapod-bargaining", planets, "c", research("planet-discovery-gleba"))
+  tip("capture-bureau", planets, "d", research("gleba-conciliation"))
+  tip("space-tourism", planets, "e", research("cyan-yellow-bureaucracy"))
+  tip("archive-recombination", planets, "f", research("archive-recombination"))
+  tip("ai-cooling", planets, "g", research("aquilo-ai-inference"))
+
+  local trunk = group("interplanetary-terminus", "i", "interplanetary-terminus", research("interplanetary-tube-network"))
+  tip("terminus-circuits", trunk, "b", research("interplanetary-tube-network"))
+  tip("interplanetary-trunk", trunk, "c", research("interplanetary-tube-network"))
+  tip("relocation-cannon", trunk, "d", research("involuntary-relocation"))
+  tip("egg-couriers", trunk, "e", research("egg-courier-formation"))
 end
 
-local foundations = "administratorio-welcome"
-local citizen_services = "administratorio-biter-complaints"
-local workforce = "administratorio-biter-employment"
-
-data:extend({
-  category(foundations, "z-a[administratorio-foundations]"),
-  category(citizen_services, "z-b[administratorio-citizens]"),
-  category(workforce, "z-c[administratorio-workforce]"),
-})
-
-data:extend({
-  -- Foundations
-  tip("administratorio-welcome", foundations, "a", {
-    is_title = true,
-    starting_status = "unlocked",
-  }),
-  research_tip("administratorio-work-orders", foundations, "b", "automation"),
-  research_tip("administratorio-bullshit-economy", foundations, "c", "discovery-bullshit"),
-  research_tip("administratorio-admin-science", foundations, "d", "administrative-science-research"),
-  research_tip("administratorio-propaganda-distillery", foundations, "e", "industrial-propaganda"),
-  research_tip("administratorio-transit-authorization", foundations, "f", "railway"),
-  research_tip("administratorio-pneumatic-transport", foundations, "g", "pneumatic-form-transport"),
-
-  -- Citizen services and territorial control
-  tip("administratorio-biter-complaints", citizen_services, "a", {
-    is_title = true,
-    trigger = {type = "build-entity", entity = "admin-station"},
-  }),
-  tip("administratorio-frustration", citizen_services, "b", {
-    trigger = {type = "build-entity", entity = "admin-station"},
-  }),
-  tip("administratorio-complaint-chain", citizen_services, "c", {
-    trigger = {type = "build-entity", entity = "admin-station"},
-  }),
-  tip("administratorio-field-office", citizen_services, "d", {
-    trigger = {type = "build-entity", entity = "field-office"},
-  }),
-  research_tip("administratorio-hush-money", citizen_services, "e", "nest-pacification"),
-  research_tip("administratorio-nest-expropriation", citizen_services, "f", "nest-expropriation"),
-
-  -- Workforce and logistics
-  research_tip("administratorio-biter-employment", workforce, "a", "biter-employment-office", {
-    is_title = true,
-  }),
-  tip("administratorio-biter-workers", workforce, "b", {
-    trigger = {type = "build-entity", entity = "formation-center"},
-  }),
-  tip("administratorio-biter-station", workforce, "c", {
-    trigger = {type = "build-entity", entity = "biter-station"},
-  }),
-  research_tip("administratorio-rideable-biter", workforce, "d", "rideable-biter"),
-  research_tip("administratorio-biterport", workforce, "e", "biterport-logistics"),
-  tip("administratorio-orphaned-workers", workforce, "f", {
-    trigger = {
-      type = "or",
-      triggers = {
-        {type = "build-entity", entity = "biter-station"},
-        {type = "build-entity", entity = "biterport"},
-      },
-    },
-  }),
-  research_tip("administratorio-hired-biter", workforce, "g", "hired-biter-fieldwork"),
-  research_tip("administratorio-passenger-rail-service", workforce, "h", "passenger-rail-service"),
-})
-
-if working_hours_enabled then
-  data:extend({
-    tip("administratorio-working-hours", foundations, "h", {
-      trigger = {
-        type = "or",
-        triggers = {
-          {type = "build-entity", entity = "office-desk"},
-          {type = "build-entity", entity = "union-headquarters"},
-          {type = "build-entity", entity = "biter-station"},
-          {type = "build-entity", entity = "biterport"},
-        },
-      },
-    }),
-  })
-end
-
-if space_age_enabled then
-  local orbit = "administratorio-workforce-formation-title"
-  local chromatic = "administratorio-chromatic-printing"
-  local vulcanus = "administratorio-vulcanus-certification"
-  local gleba = "administratorio-gleba-conciliation"
-  local interplanetary = "administratorio-cross-planet-bureaucracy"
-  local fulgora = "administratorio-fulgora-digital-services"
-  local aquilo = "administratorio-aquilo-tube-network"
-
-  data:extend({
-    category(orbit, "z-d[administratorio-orbit]"),
-    category(chromatic, "z-e[administratorio-chromatic]"),
-    category(vulcanus, "z-f[administratorio-vulcanus]"),
-    category(gleba, "z-g[administratorio-gleba]"),
-    category(interplanetary, "z-h[administratorio-interplanetary]"),
-    category(fulgora, "z-i[administratorio-fulgora]"),
-    category(aquilo, "z-j[administratorio-aquilo]"),
-  })
-
-  data:extend({
-    -- Space Age changes the desk-to-worker conversion before the dedicated
-    -- orbital category is relevant, so keep this beside the core hiring tips.
-    research_tip("administratorio-space-age-enrollment", workforce, "i", "worker-formation"),
-    research_tip("administratorio-personnel-routing", workforce, "j", "personnel-routing"),
-    research_tip("administratorio-personnel-multisign", workforce, "j1", "personnel-routing-multisign"),
-
-    -- Orbital administration
-    research_tip("administratorio-workforce-formation-title", orbit, "a", "space-platform", {
-      is_title = true,
-    }),
-    research_tip("administratorio-offworld-economy", orbit, "b", "space-platform"),
-    research_tip("administratorio-orbital-infrastructure-permit", orbit, "c", "space-platform"),
-    research_tip("administratorio-workforce-formation", orbit, "d", "worker-formation"),
-    research_tip("administratorio-management-briefings", orbit, "e", "management-formation"),
-    research_tip("administratorio-orbital-specialists", orbit, "f", "specialized-formation"),
-    tip("administratorio-specialist-approval", orbit, "f1", {
-      trigger = {
-        type = "or",
-        triggers = {
-          {type = "research", technology = "foundry"},
-          {type = "research", technology = "biochamber"},
-          {type = "research", technology = "electromagnetic-plant"},
-          {type = "research", technology = "cryogenic-plant"},
-        },
-      },
-    }),
-    research_tip("administratorio-administrative-space-station", orbit, "g", "orbital-employment-infrastructure"),
-    research_tip("administratorio-trajectory-compliance-arrays", orbit, "h", "orbital-compliance-systems"),
-    research_tip("administratorio-senior-trajectory-compliance-array", orbit, "i", "trajectory-compliance-jurisdiction-2"),
-    research_tip("administratorio-executive-trajectory-compliance-array", orbit, "j", "trajectory-compliance-jurisdiction-3"),
-    research_tip("administratorio-trajectory-compliance-speed", orbit, "k", "trajectory-compliance-speed-1"),
-    research_tip("administratorio-orbital-employment-catapult", orbit, "l", "orbital-compliance-systems"),
-    research_tip("administratorio-orbital-employment-damage", orbit, "m", "orbital-employment-damage-1"),
-    research_tip("administratorio-orbital-employment-capacity", orbit, "n", "orbital-employment-capacity-1"),
-
-    -- Chromatic printing
-    research_tip("administratorio-chromatic-printing", chromatic, "a", "chromatic-printing", {
-      is_title = true,
-    }),
-    research_tip("administratorio-chromatic-printer", chromatic, "b", "chromatic-printing"),
-    research_tip("administratorio-chromatic-inks", chromatic, "c", "chromatic-printing"),
-    research_tip("administratorio-multicolor-forms", chromatic, "d", "cyan-yellow-bureaucracy"),
-
-    -- Vulcanus
-    research_tip("administratorio-vulcanus-certification", vulcanus, "a", "vulcanus-certification", {
-      is_title = true,
-    }),
-    research_tip("administratorio-vulcanus-manifest", vulcanus, "b", "vulcanus-certification"),
-    research_tip("administratorio-notary-office", vulcanus, "c", "vulcanus-certification"),
-    research_tip("administratorio-territorial-arbitration", vulcanus, "d", "vulcanus-certification"),
-    research_tip("administratorio-vulcanus-export-charters", vulcanus, "e", "vulcanus-export-charters"),
-
-    -- Gleba
-    research_tip("administratorio-gleba-conciliation", gleba, "a", "gleba-yellow-administration", {
-      is_title = true,
-    }),
-    research_tip("administratorio-gleba-manifest", gleba, "b", "gleba-yellow-administration"),
-    research_tip("administratorio-yellow-paperwork-spoilage", gleba, "c", "gleba-yellow-administration"),
-    research_tip("administratorio-conciliation-desk", gleba, "d", "gleba-conciliation"),
-    research_tip("administratorio-capture-bureau", gleba, "e", "gleba-conciliation"),
-    research_tip("administratorio-pentapod-bargaining", gleba, "f", "gleba-conciliation"),
-
-    -- Cross-planet paperwork and tourism
-    research_tip("administratorio-cross-planet-bureaucracy", interplanetary, "a", "cyan-yellow-bureaucracy", {
-      is_title = true,
-    }),
-    research_tip("administratorio-cyan-yellow-bureaucracy", interplanetary, "b", "cyan-yellow-bureaucracy"),
-    research_tip("administratorio-space-tourism", interplanetary, "c", "cyan-yellow-bureaucracy"),
-    research_tip("administratorio-bureaucratic-transcendence", interplanetary, "c-a", "bureaucratic-transcendence"),
-    research_tip("administratorio-public-train-stop", interplanetary, "c-b", "bureaucratic-transcendence"),
-    research_tip("administratorio-cyan-magenta-bureaucracy", interplanetary, "d", "cyan-magenta-bureaucracy"),
-    research_tip("administratorio-yellow-magenta-bureaucracy", interplanetary, "e", "yellow-magenta-bureaucracy"),
-
-    -- Fulgora
-    research_tip("administratorio-fulgora-digital-services", fulgora, "a", "fulgora-digital-services", {
-      is_title = true,
-    }),
-    research_tip("administratorio-fulgora-archives", fulgora, "b", "archive-recombination"),
-    research_tip("administratorio-digital-services-bureau", fulgora, "c", "fulgora-digital-services"),
-    research_tip("administratorio-archive-recombination", fulgora, "d", "archive-recombination"),
-
-    -- Aquilo, the chromatic trunk, and the administrative endgame
-    research_tip("administratorio-aquilo-tube-network", aquilo, "a", "interplanetary-tube-chromatic", {
-      is_title = true,
-    }),
-    research_tip("administratorio-aquilo-manifest", aquilo, "b", "interplanetary-tube-chromatic"),
-    research_tip("administratorio-laser-printer", aquilo, "c", "interplanetary-tube-chromatic"),
-    research_tip("administratorio-interplanetary-terminus", interplanetary, "f", "interplanetary-tube-network"),
-    research_tip("administratorio-interplanetary-trunk", interplanetary, "g", "interplanetary-tube-network"),
-    research_tip("administratorio-relocation-cannon", interplanetary, "h", "involuntary-relocation"),
-    research_tip("administratorio-trunk-capacity", aquilo, "d", "interplanetary-tube-capacity-2"),
-    research_tip("administratorio-chromatic-trunk", aquilo, "e", "interplanetary-tube-chromatic"),
-    research_tip("administratorio-egg-couriers", aquilo, "f", "egg-courier-formation"),
-    research_tip("administratorio-promethium-administration", aquilo, "h", "promethium-science-pack"),
-  })
-end
+data:extend(entries)
