@@ -15,7 +15,8 @@ Optional arguments:
   --help               Show this help text.
 
 Any arguments after -- are forwarded to Python tests.
-If --factorio-bin is omitted, tests/test_progression_report.py is skipped.
+If --factorio-bin is omitted, engine-dependent Python tests are skipped.
+Save-specific reproduction scripts must be run separately with --save PATH.
 EOF
 }
 
@@ -98,19 +99,25 @@ run_python_tests() {
     [ -f "$test_file" ] || continue
     printf '==> %s\n' "$(basename "$test_file")"
     test_name=$(basename "$test_file")
-    if [ "$test_name" = "test_progression_report.py" ] || [ "$test_name" = "test_planet_escape.py" ] || [ "$test_name" = "test_factorio_config_matrix.py" ] || [ "$test_name" = "test_factorio_runtime_smoke.py" ] || [ "$test_name" = "test_factorio_biterport_smoke.py" ] || [ "$test_name" = "test_factorio_complaint_identity.py" ] || [ "$test_name" = "test_factorio_personnel_routing.py" ] || [ "$test_name" = "test_factorio_personnel_circuits.py" ]; then
-      if [ -z "$FACTORIO_BIN" ]; then
-        printf 'Skipping %s; --factorio-bin was not provided.\n' "$test_name"
-        continue
-      fi
-      if [ "$test_name" = "test_planet_escape.py" ]; then
-        "$PYTHON_BIN" "$test_file" --factorio-bin "$FACTORIO_BIN" --enforce-import-policy "$@"
-      else
-        "$PYTHON_BIN" "$test_file" --factorio-bin "$FACTORIO_BIN" "$@"
-      fi
-    else
-      "$PYTHON_BIN" "$test_file" "$@"
-    fi
+    case "$test_name" in
+      test_factorio_personnel_saved_repro.py)
+        printf 'Skipping %s; run separately with --factorio-bin and an explicit --save.\n' "$test_name"
+        ;;
+      test_factorio_*.py|test_progression_report.py|test_planet_escape.py)
+        if [ -z "$FACTORIO_BIN" ]; then
+          printf 'Skipping %s; --factorio-bin was not provided.\n' "$test_name"
+          continue
+        fi
+        if [ "$test_name" = "test_planet_escape.py" ]; then
+          "$PYTHON_BIN" "$test_file" --factorio-bin "$FACTORIO_BIN" --enforce-import-policy "$@"
+        else
+          "$PYTHON_BIN" "$test_file" --factorio-bin "$FACTORIO_BIN" "$@"
+        fi
+        ;;
+      *)
+        "$PYTHON_BIN" "$test_file" "$@"
+        ;;
+    esac
   done
 }
 

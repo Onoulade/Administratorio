@@ -82,6 +82,9 @@ data = {
       ["nuclear-reactor"] = { name = "nuclear-reactor", type = "reactor", energy_source = {type = "burner", fuel_category = "nuclear"} },
     },
     ["module-category"] = {},
+    ["utility-constants"] = {
+      default = {main_menu_simulations = {}},
+    },
     fluid = {},
     item = {},
     tool = {},
@@ -1791,6 +1794,13 @@ dofile(mod_root .. "prototypes/recipe/resolution.lua")
 dofile(mod_root .. "prototypes/recipe/modules.lua")
 dofile(mod_root .. "prototypes/technology.lua")
 data.extend = extend_prototypes
+-- This fixture loads recipes/items, not the graphical entity definitions.
+-- Keep the real palette pass active with the entity names it requires.
+local minimap = require("prototypes.final_fixes.minimap_colors")
+local minimap_fixture = require("tests.minimap_fixture")
+minimap_fixture.add_entities(data.raw, minimap.common)
+minimap_fixture.add_entities(data.raw, minimap.space_age)
+minimap_fixture.add_entities(data.raw, {data = {"administrative-clock"}})
 dofile(mod_root .. "data-final-fixes.lua")
 
 -------------------------------------------------------------------------------

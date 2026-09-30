@@ -288,6 +288,23 @@ def assert_managed_biter_crossings(data_raw: dict) -> None:
         )
 
 
+def assert_rolling_stock_avoids_ramp_collisions(data_raw: dict) -> None:
+    """Check the real off-grid stock masks, beyond the standalone Lua fixture."""
+    obstacles = [
+        (name, set(prototype["collision_mask"]["layers"]))
+        for kind in ("rail-ramp", "rail-support")
+        for name, prototype in data_raw.get(kind, {}).items()
+    ]
+    for kind in ("locomotive", "cargo-wagon", "fluid-wagon", "artillery-wagon"):
+        for name, stock in data_raw.get(kind, {}).items():
+            layers = set(stock["collision_mask"]["layers"])
+            assert "placeable-off-grid" in stock["flags"], name
+            assert {"train", "administratorio_biter_rolling_stock"} <= layers, name
+            assert not {"administratorio_passenger_platform", "administratorio_rideable_biter_collision"} & layers, name
+            for obstacle_name, obstacle_layers in obstacles:
+                assert not layers & obstacle_layers, (name, obstacle_name, layers & obstacle_layers)
+
+
 def assert_ore_placement_masks(data_raw: dict) -> None:
     """Platform reservations must not make ore block drills or other buildings."""
     platform_layer = "administratorio_passenger_platform"
@@ -530,6 +547,8 @@ def main() -> None:
     assert_rideable_layers_preserve_native_collisions(space_age)
     assert_managed_biter_crossings(base)
     assert_managed_biter_crossings(space_age)
+    assert_rolling_stock_avoids_ramp_collisions(base)
+    assert_rolling_stock_avoids_ramp_collisions(space_age)
     assert_ore_placement_masks(base)
     assert_ore_placement_masks(space_age)
     assert_milestone_resolutions_are_operable(base, "base game")
@@ -557,6 +576,7 @@ def main() -> None:
     assert_administrative_progression(no_working_hours, space_age=True)
     assert_rideable_layers_preserve_native_collisions(no_working_hours)
     assert_managed_biter_crossings(no_working_hours)
+    assert_rolling_stock_avoids_ramp_collisions(no_working_hours)
     assert_ore_placement_masks(no_working_hours)
     assert_milestone_resolutions_are_operable(no_working_hours, "Space Age without Working Hours")
     assert_specialist_approvals(no_working_hours)

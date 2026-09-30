@@ -128,7 +128,9 @@ The rethemed native `research-with-promethium` achievement marks using Administr
 - Catalogue checks execute the Lua definitions for base and Space Age, reject identical native goals and all-research conditions, and require complete English/French/Russian names, goal references and descriptions.
 - The Factorio startup matrix checks actual target entity/item/capsule existence, visible enabled research, and counted recipe outputs under base, Space Age, and Space Age without Working Hours.
 - A runtime unit test checks replay of all seven completed scripted goals and rejects partial/unearned goals.
-- All 83 Lua suites were run: 81 passed. The two failures also occur at unchanged HEAD: `test_final_fix_modules.lua` has a rolling-stock/rail-ramp collision assertion, and `test_final_fixes.lua` lacks entities required by the minimap fixture.
-- Full locale parity remains blocked by existing unrelated French/Russian GUI keys. The complete achievement surface passes in all three languages.
+- Follow-up investigation corrected the standalone fixtures: native rolling stock uses `placeable-off-grid` and a train-only default mask; the recipe fixture needs minimap entities of their real kinds and the native utility-constants table. All 83 Lua suites now pass, including all 60 final-fixes assertions.
+- The real-engine startup matrix now also checks that locomotive/wagon masks share no collision layers with rail ramps or supports, while retaining the dedicated managed-biter blocker layer. All three startup configurations pass.
+- The 258 supposedly missing GUI keys in each translation already existed under the wrong `[shortcut-name]` section. Moving that section to the end restores full parity: 2,409 English keys covered in French and Russian.
+- The local test runner now consistently skips engine-dependent tests without `--factorio-bin`, and leaves save-specific repro scripts to explicit standalone invocation. The complete local runner passes.
 
 The engine checks validate loading and prototype references. They do not simulate unlocking all 84 achievements in a live playthrough. Retargeted goals and the switch to per-game counters can change incomplete progress in existing saves; IDs were retained and no player achievement records are manually reset.

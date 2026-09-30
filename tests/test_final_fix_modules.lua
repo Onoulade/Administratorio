@@ -35,6 +35,10 @@ package.preload["collision-mask-util"] = function()
       if prototype_type == "car" then
         return {layers = {player = true, car = true, train = true, is_object = true}}
       end
+      if prototype_type == "locomotive" or prototype_type == "cargo-wagon"
+        or prototype_type == "fluid-wagon" or prototype_type == "artillery-wagon" then
+        return {layers = {train = true}}
+      end
       return {layers = {item = true, object = true, player = true, water_tile = true}}
     end,
     masks_collide = function(mask_a, mask_b)
@@ -261,7 +265,7 @@ test("collision masks separate worker obstacles from passable infrastructure", f
   assert_eq(#data.raw.chest.box.allowed_module_categories, 2, "collision pass should be idempotent")
 end)
 
-test("rolling stock keeps vanilla mask so trains can use rail ramps", function()
+test("rolling stock keeps train layers without gaining ramp collision layers", function()
   package.loaded["prototypes.final_fixes.collision_masks"] = nil
   local masks = require("prototypes.final_fixes.collision_masks")
   local function layers(names)
@@ -277,23 +281,26 @@ test("rolling stock keeps vanilla mask so trains can use rail ramps", function()
   end
   -- Vanilla masks: stock is train-only, ramps/supports block cars via is_object.
   local stock_box = {{-0.6, -1.8}, {0.6, 1.8}}
+  -- Native stock is off-grid. Omitting this flag makes the fixture acquire
+  -- platform/worker placement layers that real trains intentionally skip.
+  local stock_flags = {"placeable-neutral", "player-creation", "placeable-off-grid"}
   local ramp_mask = layers({"elevated_rail", "object", "rail", "rail_support", "is_lower_object", "is_object"})
   local support_mask = layers({"object", "rail", "rail_support", "is_lower_object", "is_object"})
   local stock_mask = layers({"train"})
   data = {raw = {
     item = {}, ["module-category"] = {},
     locomotive = {
-      loco = {name = "loco", type = "locomotive", collision_mask = layers({"train"}), collision_box = stock_box},
-      default_loco = {name = "default-loco", type = "locomotive", collision_box = stock_box},
+      loco = {name = "loco", type = "locomotive", flags = stock_flags, collision_mask = layers({"train"}), collision_box = stock_box},
+      default_loco = {name = "default-loco", type = "locomotive", flags = stock_flags, collision_box = stock_box},
     },
     ["cargo-wagon"] = {
-      wagon = {name = "wagon", type = "cargo-wagon", collision_mask = layers({"train"}), collision_box = stock_box},
+      wagon = {name = "wagon", type = "cargo-wagon", flags = stock_flags, collision_mask = layers({"train"}), collision_box = stock_box},
     },
     ["fluid-wagon"] = {
-      wagon = {name = "wagon", type = "fluid-wagon", collision_mask = layers({"train"}), collision_box = stock_box},
+      wagon = {name = "wagon", type = "fluid-wagon", flags = stock_flags, collision_mask = layers({"train"}), collision_box = stock_box},
     },
     ["artillery-wagon"] = {
-      wagon = {name = "wagon", type = "artillery-wagon", collision_mask = layers({"train"}), collision_box = stock_box},
+      wagon = {name = "wagon", type = "artillery-wagon", flags = stock_flags, collision_mask = layers({"train"}), collision_box = stock_box},
     },
     ["rail-ramp"] = {
       ramp = {name = "ramp", type = "rail-ramp", collision_mask = ramp_mask, collision_box = {{-1, -3}, {1, 3}}},
@@ -316,10 +323,61 @@ test("rolling stock keeps vanilla mask so trains can use rail ramps", function()
   local support = data.raw["rail-support"].support.collision_mask
   assert_true(not collides(loco, ramp), "locomotive must not collide with rail ramps")
   assert_true(not collides(loco, support), "locomotive must not collide with rail supports")
+  assert_true(not collides(data.raw.locomotive.default_loco.collision_mask, ramp), "default-mask locomotive must not collide with ramps")
+  for _, kind in ipairs({"locomotive", "cargo-wagon", "fluid-wagon", "artillery-wagon"}) do
+    for _, stock in pairs(data.raw[kind]) do
+      assert_true(mask_has_layer(stock.collision_mask, "train"), kind .. " must keep its native train layer")
+      assert_true(mask_has_layer(stock.collision_mask, "administratorio_biter_rolling_stock"), kind .. " must block managed biters")
+      assert_true(not mask_has_layer(stock.collision_mask, "administratorio_passenger_platform"), kind .. " must skip platform placement layers")
+      assert_true(not collides(stock.collision_mask, ramp), kind .. " must not collide with ramps")
+      assert_true(not collides(stock.collision_mask, support), kind .. " must not collide with supports")
+    end
+  end
   assert_true(not collides(stock_mask, ramp), "default stock mask must not collide with rail ramps")
   -- The rideable biter still collides with ramps/supports like a car does.
   assert_true(collides(data.raw.car.rideable.collision_mask, ramp), "rideable biter must stay blocked by rail ramps")
   assert_true(collides(data.raw.car.rideable.collision_mask, support), "rideable biter must stay blocked by rail supports")
+end)
+
+local minimap = require("prototypes.final_fixes.minimap_colors")
+local minimap_fixture = require("tests.minimap_fixture")
+local function palette_fixture(space_age, working_hours)
+  local raw = {container = {helper = {name = "helper", type = "container", flags = {"not-on-map"}}}}
+  minimap_fixture.add_entities(raw, minimap.common)
+  if space_age then minimap_fixture.add_entities(raw, minimap.space_age) end
+  if working_hours then minimap_fixture.add_entities(raw, {data = {"administrative-clock"}}) end
+  return raw
+end
+
+test("minimap sets friendly and fallback colours while respecting optional content", function()
+  for _, options in ipairs({{false, false}, {false, true}, {true, false}, {true, true}}) do
+    local raw = palette_fixture(options[1], options[2])
+    local seen = minimap.apply(raw, options[1], options[2])
+    assert_true(seen["admin-station"] and seen["printer-t1"])
+    assert_eq(seen["ai-server"], options[1] and true or nil)
+    assert_eq(seen["administrative-clock"], options[2] and true or nil)
+    assert_eq(raw["assembling-machine"]["printer-t1"].map_color.b, 0.79, "printers should be blue")
+    assert_eq(raw["assembling-machine"]["office-desk"].friendly_map_color.g, 0.42, "offices should be dark green")
+    assert_eq(raw.pipe["pneumatic-pipe"].friendly_map_color.r, 0.88, "tubes should be orange")
+    for name in pairs(seen) do
+      local entity = minimap_fixture.find_entity(raw, name)
+      for _, component in ipairs({"r", "g", "b"}) do
+        assert_eq(entity.map_color[component], entity.friendly_map_color[component], name .. " map colours differ")
+      end
+    end
+    assert_true(raw.container.helper.map_color == nil, "hidden helpers must stay uncoloured")
+  end
+end)
+
+test("minimap still rejects missing and hidden required entities", function()
+  local raw = palette_fixture(false, false)
+  raw.container["admin-station"] = nil
+  local ok, err = pcall(minimap.apply, raw, false, false)
+  assert_true(not ok and tostring(err):find("Missing minimap entity: admin%-station"), "missing entities must fail")
+  raw = palette_fixture(false, false)
+  raw.container["admin-station"].flags = {"not-on-map"}
+  ok, err = pcall(minimap.apply, raw, false, false)
+  assert_true(not ok and tostring(err):find("Hidden helper assigned a minimap colour"), "hidden required entities must fail")
 end)
 
 print(("Final-fix module tests: %d passed, %d failed"):format(passed, failed))
