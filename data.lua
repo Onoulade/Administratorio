@@ -125,7 +125,6 @@ function data:extend(prototypes)
 end
 
 require("prototypes.item")
-require("prototypes.tiles")
 require("prototypes.entity")
 require("prototypes.recipe")
 require("prototypes.technology")
