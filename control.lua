@@ -41,6 +41,7 @@ local hired_biter = require("scripts.hired_biter")
 local rideable_biter = require("scripts.rideable_biter")
 local spawner_population = require("scripts.spawner_population")
 local victory = require("scripts.victory")
+local achievements = require("scripts.achievements")
 local admin_desk_rotation = require("scripts.admin_desk_rotation")
 local complaint_item_recovery = require("scripts.complaint_item_recovery")
 local evolution_gating = require("scripts.evolution_gating")
@@ -863,6 +864,7 @@ local function on_player_created(event)
   storage.needs_startup_cleanup = true
   local player = game.get_player(event.player_index)
   if player then
+    achievements.sync_player(player)
     biters.refresh_protest_notifications(player)
     station_overview.sync_player(player)
   end
@@ -878,6 +880,7 @@ end
 local function on_player_joined_game(event)
   local player = game.get_player(event.player_index)
   if player then
+    achievements.sync_player(player)
     sync_force_regulated_recipe_unlocks(player.force)
     biters.refresh_protest_notifications(player)
     station_overview.sync_player(player)

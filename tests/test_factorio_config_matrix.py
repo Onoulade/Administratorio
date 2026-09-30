@@ -11,6 +11,7 @@ import tempfile
 from pathlib import Path
 
 from test_progression_report import ProgressionAnalyzer, recipe_ingredients, recipe_results
+from test_achievements import assert_achievement_catalogue
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -521,6 +522,8 @@ def main() -> None:
 
     base = run_case(factorio_bin, space_age=False, working_hours=True)
     space_age = run_case(factorio_bin, space_age=True, working_hours=True)
+    assert_achievement_catalogue(base)
+    assert_achievement_catalogue(space_age)
     assert_administrative_progression(base, space_age=False)
     assert_administrative_progression(space_age, space_age=True)
     assert_rideable_layers_preserve_native_collisions(base)
@@ -550,6 +553,7 @@ def main() -> None:
     )
 
     no_working_hours = run_case(factorio_bin, space_age=True, working_hours=False)
+    assert_achievement_catalogue(no_working_hours)
     assert_administrative_progression(no_working_hours, space_age=True)
     assert_rideable_layers_preserve_native_collisions(no_working_hours)
     assert_managed_biter_crossings(no_working_hours)
