@@ -2,7 +2,6 @@ local M = {}
 
 M.REGULAR_MANAGER = "middle-management-managing-manager"
 M.VESM = "voluntary-exploration-space-miner"
-M.SPOIL_TICKS = 3 * 60 * 60
 
 M.BRIEFINGS = {
   {
@@ -11,6 +10,7 @@ M.BRIEFINGS = {
     recipe = "middle-management-training-briefing",
     material = "iron-gear-wheel",
     material_amount = 1,
+    spoil_minutes = 30,
     order = "j-j1",
   },
   {
@@ -19,6 +19,7 @@ M.BRIEFINGS = {
     recipe = "middle-management-staffing-briefing",
     material = "repair-pack",
     material_amount = 1,
+    spoil_minutes = 25,
     order = "j-j2",
   },
   {
@@ -27,6 +28,7 @@ M.BRIEFINGS = {
     recipe = "middle-management-compliance-briefing",
     material = "blank-form",
     material_amount = 1,
+    spoil_minutes = 20,
     order = "j-j3",
   },
   {
@@ -35,6 +37,7 @@ M.BRIEFINGS = {
     recipe = "middle-management-liaison-briefing",
     material = "electronic-circuit",
     material_amount = 1,
+    spoil_minutes = 15,
     order = "j-j4",
   },
   {
@@ -43,6 +46,7 @@ M.BRIEFINGS = {
     recipe = "middle-management-orbital-briefing",
     material = "rocket-fuel",
     material_amount = 1,
+    spoil_minutes = 10,
     order = "j-j5",
   },
 }

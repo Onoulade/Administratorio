@@ -1214,11 +1214,11 @@ test("MMMM meetings cheaply brief one reusable manager on any planet", function(
   assert_eq(manager.stack_size, 1)
 
   local briefing_specs = {
-    training = {material = "iron-gear-wheel", amount = 1},
-    staffing = {material = "repair-pack", amount = 1},
-    compliance = {material = "blank-form", amount = 1},
-    liaison = {material = "electronic-circuit", amount = 1},
-    orbital = {material = "rocket-fuel", amount = 1},
+    training = {material = "iron-gear-wheel", amount = 1, spoil_minutes = 30},
+    staffing = {material = "repair-pack", amount = 1, spoil_minutes = 25},
+    compliance = {material = "blank-form", amount = 1, spoil_minutes = 20},
+    liaison = {material = "electronic-circuit", amount = 1, spoil_minutes = 15},
+    orbital = {material = "rocket-fuel", amount = 1, spoil_minutes = 10},
   }
   local management = technologies["management-formation"]
 
@@ -1228,7 +1228,7 @@ test("MMMM meetings cheaply brief one reusable manager on any planet", function(
     local briefed = assert(items[item_name], item_name .. " missing")
     local meeting = assert(recipes[recipe_name], recipe_name .. " missing")
     assert_eq(briefed.stack_size, 1)
-    assert_eq(briefed.spoil_ticks, 3 * 60 * 60)
+    assert_eq(briefed.spoil_ticks, spec.spoil_minutes * 60 * 60)
     assert_eq(briefed.spoil_result, "middle-management-managing-manager")
     assert_eq(meeting.energy_required, 5)
     assert_eq(meeting.allow_productivity, false)

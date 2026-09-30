@@ -36,7 +36,7 @@ for _, briefing in ipairs(manager_briefings.BRIEFINGS) do
     subgroup = "admin-biter-management",
     order = briefing.order,
     stack_size = 1,
-    spoil_ticks = manager_briefings.SPOIL_TICKS,
+    spoil_ticks = briefing.spoil_minutes * 60 * 60,
     spoil_result = manager_briefings.REGULAR_MANAGER,
   }
 end
