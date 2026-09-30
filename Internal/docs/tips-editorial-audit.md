@@ -81,3 +81,65 @@ the current caller applies 32 tiles. No gameplay was changed in this audit.
 - Full-repository locale parity has exactly the same 258 missing GUI keys in
   each of French and Russian at HEAD and in this worktree; none are tip keys.
 - French tube and Biterport entries visually checked in Factorio 2.0.77: concise layout and rich links render correctly.
+
+## Focused scenes
+
+Three working layouts illustrate the text below them:
+
+- Two ordinary chests and inserters feed opposite tube intakes. A central
+  outtake unloads onto a visible belt. The only overlay reads actual tube stock.
+- A regular small biter enters the native complaint redirect handler, walks to
+  the boarding platform, and boards a stationary passenger wagon. A circuit
+  briefly holds unboarding before the real unboarding code resets the loop.
+- Deployment feeds three personnel types through a multisign to three reception
+  offices. Three ordinary constant combinators provide independent exit filters.
+  The signed-path overview and multisign tip share this layout.
+
+Production control scripts handle transport, pathfinding, reservations and
+boarding. Scene maintenance only replenishes inputs, clears delivered cargo,
+introduces visitors, and toggles the unboarding circuit. There are no staged
+movements, fake transfers, extra captions, or illustration-only floating icons.
+Generated terrain and normal platform placement-grid coordinates let the native
+unit pathfinder reach the boarding center. Camera framing keeps tube power out
+of view and all three path exits visible.
+
+An isolated Factorio 2.0.77 save ran the exact scene initialization and maintenance
+for 3,601 updates: 20 items from each tube source reached the belt, 20 visitors
+boarded, and each filtered path delivered 13 of its matching personnel type.
+The live stock readout observed real nonempty network contents. The focused Lua
+checks and base/Space Age/Working Hours startup matrix pass. All three layouts
+were inspected in the actual Tips window; a QA-only observer confirmed repeated
+passenger loops there as well.
+
+## Progression timing
+
+Only the welcome guide is visible at the start. Every other guide uses native
+recipe-availability or research conditions, with no read-before-unlock dependency.
+Placement instructions now appear before construction, rather than waiting for
+a build event that may already have happened in an existing game.
+
+- Field Office placement: its recipe unlock at Steam Power.
+- Complaint service, routing, frustration, Hard Mode and evolution approvals:
+  the Admin Station recipe unlock at Field Office Deployment.
+- Working Hours: the first available night-sensitive desk or dispatch building.
+  Administrative Clock: its own recipe unlock.
+- Worker dispatch, managed machines and stranded workers: Biter Employment Office
+  or Biterport Logistics, as applicable.
+- Circuit-only guides: both their system and Circuit Network must be available.
+  Basic setup guides remain available before circuit research.
+- Planetary funding: the first planet discovery, in time to prepare an outpost.
+  Space Platform alone is too early.
+- Signed-path spoilage: signed paths plus manager briefings or egg couriers.
+  Egg couriers and relocation belong to the workforce category so unrelated
+  interplanetary tube research cannot hide them.
+
+All other guides were checked against the finalized recipe unlocks, including
+recipe renames, hidden effects and independent research branches. The engine
+audit covers every active tip and verifies that its category is already visible.
+Across the supported startup profiles it checks 31 base-game tips in 815
+progression states, 57 Space Age tips in 1,670 states, and 54 Space Age tips without
+Working Hours in 1,662 states. States include new games, branch prerequisites,
+completed research, and branches combined with circuits or manager briefings.
+
+Validation: `lua tests/test_tips_and_tricks.lua` and
+`python3 tests/test_factorio_tip_unlocks.py --factorio-bin <Factorio executable>`.

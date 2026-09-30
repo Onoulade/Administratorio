@@ -68,7 +68,8 @@ for _, space_age in ipairs({false, true}) do
         local titles = {}
         for name, item in pairs(tips) do
           check(categories[item.category], name .. " has no category")
-          check(item.simulation == nil, name .. " must remain text-only")
+          local visual = name == "administratorio-pneumatic-transport" or name == "administratorio-passenger-boarding" or name == "administratorio-personnel-routing" or name == "administratorio-personnel-multisign"
+          check((item.simulation ~= nil) == visual, name .. " has an unexpected scene")
           if item.is_title then
             titles[item.category] = (titles[item.category] or 0) + 1
             check(item.indent == 0, "title indentation")
@@ -118,8 +119,63 @@ test("custom rules unlock when usable, including early train and egg setup", fun
   for id, technology in pairs(expected) do
     check(contains(tips["administratorio-" .. id].trigger, "research", "technology", technology), id .. " unlocks too late or from wrong technology")
   end
-  for _, id in ipairs({"visitor-routing", "desk-signals", "frustration", "hard-mode", "evolution-approvals"}) do
-    check(contains(tips["administratorio-" .. id].trigger, "build-entity", "entity", "admin-station"), id .. " should be available at first desk")
+  for _, id in ipairs({"biter-complaints", "visitor-routing", "desk-signals", "frustration", "hard-mode", "evolution-approvals"}) do
+    check(contains(tips["administratorio-" .. id].trigger, "unlock-recipe", "recipe", "admin-station"), id .. " must explain service before placing the first desk")
+  end
+end)
+
+local function unlocked(trigger, technologies, recipes)
+  if trigger.type == "research" then return technologies[trigger.technology] == true end
+  if trigger.type == "unlock-recipe" then return recipes[trigger.recipe] == true end
+  if trigger.type == "and" then
+    for _, child in ipairs(trigger.triggers) do
+      if not unlocked(child, technologies, recipes) then return false end
+    end
+    return true
+  end
+  if trigger.type == "or" then
+    for _, child in ipairs(trigger.triggers) do
+      if unlocked(child, technologies, recipes) then return true end
+    end
+    return false
+  end
+  error("unexpected progression trigger " .. trigger.type)
+end
+
+test("placement guides precede construction and circuit guides require wires", function()
+  for id, recipe in pairs({["field-office"] = "field-office", ["administrative-clock"] = "administrative-clock", ["biter-station"] = "biter-station", ["worker-machines"] = "biter-station"}) do
+    local trigger = tips["administratorio-" .. id].trigger
+    check(not unlocked(trigger, {}, {}), id .. " appears before availability")
+    check(unlocked(trigger, {}, {[recipe] = true}), id .. " requires building before teaching layout")
+  end
+  for _, id in ipairs({"desk-signals", "tube-circuits", "passenger-signals", "personnel-counts", "terminus-circuits"}) do
+    local trigger = tips["administratorio-" .. id].trigger
+    local subjects = { ["circuit-network"] = false }
+    local recipes = {}
+    local function learn(t)
+      if t.type == "research" and t.technology ~= "circuit-network" then subjects[t.technology] = true end
+      if t.type == "unlock-recipe" then recipes[t.recipe] = true end
+      for _, child in ipairs(t.triggers or {}) do learn(child) end
+    end
+    learn(trigger)
+    check(not unlocked(trigger, subjects, recipes), id .. " appears before circuit access")
+    check(not unlocked(trigger, {["circuit-network"] = true}, {}), id .. " appears before its system")
+    subjects["circuit-network"] = true
+    check(unlocked(trigger, subjects, recipes), id .. " stays locked when usable")
+  end
+end)
+
+test("advanced rules wait for the relevant activity", function()
+  local travel = tips["administratorio-offworld-economy"].trigger
+  check(not unlocked(travel, {["space-platform"] = true}, {}), "platform bootstrap is too early for planetary funding")
+  for _, planet in ipairs({"vulcanus", "gleba", "fulgora", "aquilo"}) do
+    check(unlocked(travel, {["planet-discovery-" .. planet] = true}, {}), "funding missing before departure to " .. planet)
+  end
+  local spoilage = tips["administratorio-personnel-spoilage"].trigger
+  check(not unlocked(spoilage, {["personnel-routing"] = true}, {}), "path setup has no expiring personnel yet")
+  for _, technology in ipairs({"management-formation", "egg-courier-formation"}) do
+    check(not unlocked(spoilage, {[technology] = true}, {}), "walking rules need signed paths")
+    check(unlocked(spoilage, {[technology] = true, ["personnel-routing"] = true}, {}), "missing spoilage rules for " .. technology)
   end
 end)
 
