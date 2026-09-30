@@ -15,14 +15,13 @@ local function is_builtin(simulation)
   return false
 end
 
-local function make_simulation(filename, duration, fallback_position, override_position)
+local function make_simulation(filename, duration, fallback_position, override_position, surface_name)
   return {
     checkboard = false,
     save = "__administratorio__/menu-simulations/" .. filename .. ".zip",
     length = 60 * duration,
     mods = {"administratorio"},
-    init = [[
-      local surface = game.surfaces.nauvis
+    init = ("local surface = game.surfaces[%q]\n"):format(surface_name or "nauvis") .. [[
       local logos = {}
       for _, name in ipairs({"factorio-logo-11tiles", "factorio-logo-16tiles", "factorio-logo-22tiles"}) do
         if prototypes.entity[name] then
@@ -88,6 +87,10 @@ local function apply(raw, space_age_enabled)
   if space_age_enabled then
     simulations.administratorio_pathways = make_simulation("space-age/pathways", 20, {4, -19.5})
     simulations.administratorio_pathways.mods = {"administratorio", "space-age"}
+    -- Keep the vessel's saved logo anchor on its space platform, with the
+    -- same logo-to-camera offset used by the other title scenes.
+    simulations.administratorio_vessel = make_simulation("space-age/vessel", 20, {0.5, -25}, false, "platform-1")
+    simulations.administratorio_vessel.mods = {"administratorio", "space-age"}
   end
 
   raw["utility-constants"]["default"].main_menu_simulations = simulations

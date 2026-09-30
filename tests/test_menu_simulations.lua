@@ -11,10 +11,11 @@ local function scenes(space_age)
   local result = raw['utility-constants'].default.main_menu_simulations
   assert(not result.vanilla and result.other_mod)
   assert((result.administratorio_pathways ~= nil) == space_age)
+  assert((result.administratorio_vessel ~= nil) == space_age)
   return result
 end
 
-local function run_init(scene, saved_names, available, creation_fails)
+local function run_init(scene, saved_names, available, creation_fails, surface_name)
   local entities = {}
   local function entity(name, position)
     local e = {name = name, position = {x = position.x or position[1], y = position.y or position[2]}, valid = true}
@@ -24,7 +25,8 @@ local function run_init(scene, saved_names, available, creation_fails)
     return e
   end
   for _, name in ipairs(saved_names) do entity(name, {12, -30}) end
-  local surface = {index = 1}
+  surface_name = surface_name or 'nauvis'
+  local surface = {index = surface_name == 'nauvis' and 1 or 2}
   surface.find_entities_filtered = function(filter)
     assert(available[filter.name], 'unknown prototype queried')
     local found = {}
@@ -37,10 +39,10 @@ local function run_init(scene, saved_names, available, creation_fails)
     assert(available[args.name])
     if not creation_fails then return entity(args.name, args.position) end
   end
-  local game = {surfaces = {nauvis = surface}, simulation = {}, players = {{game_view_settings = {}}}, tick_paused = true}
+  local game = {surfaces = {[surface_name] = surface}, simulation = {}, players = {{game_view_settings = {}}}, tick_paused = true}
   local env = setmetatable({game = game, prototypes = {entity = available}}, {__index = _G})
   assert(load(scene.init, 'menu init', 't', env))()
-  assert(not game.tick_paused and game.simulation.camera_surface_index == 1)
+  assert(not game.tick_paused and game.simulation.camera_surface_index == surface.index)
   assert(game.simulation.camera_zoom == 1)
   assert(game.players[1].game_view_settings.show_controller_gui == false)
   local live = {}
@@ -59,14 +61,15 @@ for _, enabled in ipairs({false, true}) do
   for name, scene in pairs(scenes(enabled)) do
     if name ~= 'other_mod' then
       assert(scene.length == 1200)
+      local surface_name = name == 'administratorio_vessel' and 'platform-1' or 'nauvis'
       for _, names in ipairs({{'factorio-logo-11tiles'}, {'factorio-logo-16tiles'}, {'factorio-logo-22tiles'}, {}, {'factorio-logo-22tiles', 'factorio-logo-11tiles', 'factorio-logo-16tiles'}}) do
-        local game = run_init(scene, names, available)
+        local game = run_init(scene, names, available, false, surface_name)
         if #names > 0 and name ~= 'administratorio_biter_station' then
           assert(game.simulation.camera_position[1] == 12 and game.simulation.camera_position[2] == -20.25, 'saved anchor moved')
         end
       end
-      run_init(scene, {}, {}, false)
-      run_init(scene, {}, available, true)
+      run_init(scene, {}, {}, false, surface_name)
+      run_init(scene, {}, available, true, surface_name)
     end
   end
 end
@@ -75,4 +78,9 @@ local game = run_init(base.administratorio_passenger_train, {}, available)
 assert(game.simulation.camera_position[1] == -6.5 and game.simulation.camera_position[2] == 9.75)
 game = run_init(base.administratorio_biter_station, {'factorio-logo-11tiles'}, available)
 assert(game.simulation.camera_position[1] == -4.1484375 and game.simulation.camera_position[2] == 25.26953125)
+local vessel = scenes(true).administratorio_vessel
+assert(vessel.save == '__administratorio__/menu-simulations/space-age/vessel.zip')
+assert(vessel.mods[1] == 'administratorio' and vessel.mods[2] == 'space-age')
+game = run_init(vessel, {}, available, false, 'platform-1')
+assert(game.simulation.camera_position[1] == 0.5 and game.simulation.camera_position[2] == -15.25)
 print('Menu simulation logo initialization: PASS')
