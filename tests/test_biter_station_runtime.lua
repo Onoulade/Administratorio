@@ -576,6 +576,11 @@ test("managed building resumes an interrupted authorized craft without replaceme
   assert_true(building.active, "existing authorization should resume after the external shutdown is released")
   assert_eq(storage.managed_building_run[building.unit_number].crafts_remaining, 1,
     "interruption must not consume the authorized craft")
+
+  building.products_finished = 1
+  biter_station.update(50)
+  assert_eq(storage.stats.managed_crafts, 1,
+    "a completed supervised product should count once")
 end)
 
 test("stale worker claim self-heals without mining the managed building", function()

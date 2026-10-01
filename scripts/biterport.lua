@@ -3,6 +3,7 @@ local quality = require("scripts.quality")
 local working_hours = require("scripts.working_hours")
 local unit_ai_settings = require("scripts.unit_ai_settings")
 local orphaned_worker = require("scripts.orphaned_worker")
+local metrics = require("scripts.metrics")
 
 local M = {}
 M._storage_wait = require("scripts.biterport_storage_wait")
@@ -2761,6 +2762,7 @@ local function perform_deconstruction(active, tick)
         active.carried_stack = exact_stack(stack.name, stack.count or 1, stack)
       end
       target.destroy()
+      metrics.record("biterport_deconstructions", 1)
     end
     release_deconstruction_reservation(job)
     M._dispose_carried_stack(active, tick)
@@ -2773,8 +2775,9 @@ local function perform_deconstruction(active, tick)
     if target and target.valid and target.cancel_deconstruction then
       pcall(function() target.cancel_deconstruction(active.force) end)
     end
+    local removed = false
     if job.surface and job.position and job.surface.set_tiles then
-      pcall(function()
+      removed = pcall(function()
         job.surface.set_tiles({
           {name = replacement_tile, position = job.tile_position or job.position}
         }, true, true, true, true)
@@ -2786,6 +2789,7 @@ local function perform_deconstruction(active, tick)
     if job.item_name then
       active.carried_stack = exact_stack(job.item_name, 1, job_quality_name(job))
     end
+    if removed then metrics.record("biterport_deconstructions", 1) end
     release_deconstruction_reservation(job)
     M._dispose_carried_stack(active, tick)
     return
@@ -2845,6 +2849,8 @@ local function perform_deconstruction(active, tick)
   end
   collect_nearby_mined_items(active, target_surface, target_position, products)
 
+  if mined then metrics.record("biterport_deconstructions", 1) end
+
   release_deconstruction_reservation(job)
   M._dispose_carried_stack(active, tick)
 end
@@ -2889,6 +2895,7 @@ local function build_construction_job(active, tick)
   end
 
   if built and (built == true or built.valid) then
+    metrics.record("biterport_constructions", 1)
     job.built = true
     job.ghost = nil
     if job.overlay_id then
@@ -2932,6 +2939,7 @@ local function deliver_logistics_job(active, tick)
     if not start_return(active, tick) then finish_worker(active, tick, true) end
     return
   end
+  metrics.record("biterport_items_delivered", inserted)
   local remaining = stack and ((stack.count or 0) - inserted) or 0
   if remaining > 0 then
     active.carried_stack = exact_stack(stack.name, remaining, stack)

@@ -6,6 +6,7 @@ local C = require("scripts.constants")
 local quality = require("scripts.quality")
 local unit_ai_settings = require("scripts.unit_ai_settings")
 local spawner_population = require("scripts.spawner_population")
+local metrics = require("scripts.metrics")
 
 local M = {}
 
@@ -946,6 +947,7 @@ function M.update(tick, runtime_profile)
 
       -- Check if the biter has completed its shift.
       if office.products_finished >= (state.products_at_arrival or 0) + CRAFTS_PER_BITER then
+        metrics.record("field_office_shifts", 1)
         -- Release the biter
         release_biter(state, tick)
         state.phase = "idle"

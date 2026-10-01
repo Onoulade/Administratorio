@@ -4,6 +4,7 @@ local working_hours = require("scripts.working_hours")
 local specialist_approvals = require("prototypes.shared.specialist_approvals")
 local unit_ai_settings = require("scripts.unit_ai_settings")
 local orphaned_worker = require("scripts.orphaned_worker")
+local metrics = require("scripts.metrics")
 
 local M = {}
 local biters_module = nil
@@ -1593,6 +1594,7 @@ local function advance_running_buildings()
 
         if current_products > previous_products then
           local completed_crafts = current_products - previous_products
+          metrics.record("managed_crafts", completed_crafts)
           run_state.crafts_remaining = math.max(0, crafts_remaining - completed_crafts)
           run_state.products_at_last_check = current_products
         elseif current_products < previous_products then

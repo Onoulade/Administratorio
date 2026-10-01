@@ -929,6 +929,8 @@ test("biterport transports items across connected biterports", function()
     "requester at the second port should receive the item")
   assert_eq(provider.inventory.get_item_count("red-circuit"), 0,
     "provider at the first port should lose the delivered item")
+  assert_eq(storage.stats.biterport_items_delivered, 1,
+    "a successful requester insertion should count the delivered item")
 end)
 
 test("diagonally touching orange areas share one biterport network", function()

@@ -464,6 +464,8 @@ test("a requested form crosses from another planet's pool contribution", functio
   tube.on_tick{tick = C.TRUNK_BASE_TRANSIT_TICKS}
   assert_eq(#storage.terminus_flights, 0, "the pending item should have landed in the pool and been claimed")
   assert_eq(vulcanus.arrivals.get_item_count("blank-form"), 1, "the claim should land in the arrivals buffer")
+  assert_eq(storage.stats.interplanetary_items_delivered, 1,
+    "a successful destination claim should count one interplanetary delivery")
 end)
 
 test("a planet can claim back what it contributed itself", function()

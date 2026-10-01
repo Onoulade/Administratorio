@@ -156,6 +156,8 @@ test("pneumatic transport conserves an item and its quality", function()
   assert_eq(destination[1].count, 1, "outtake should recreate exactly one item")
   assert_eq(destination[1].quality.name, "legendary", "outtake should preserve item quality")
   assert_eq(pneumatic.get_network_total(1), 0, "completed transfer should leave no duplicate in the pool")
+  assert_eq(storage.stats.pneumatic_items_delivered, 1,
+    "only insertion into an outtake should count as a completed delivery")
 end)
 
 test("legacy unqualified signal-pool entries remain normal quality", function()

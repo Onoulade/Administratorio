@@ -6,6 +6,7 @@ local ai = require("scripts.unit_ai_settings")
 local signals = require("scripts.personnel_signals")
 local multisign_gui = require("scripts.personnel_multisign_gui")
 local briefing_overlay = require("scripts.personnel_briefing_overlay")
+local metrics = require("scripts.metrics")
 local M = {}
 local function state()
   storage.personnel_routing = storage.personnel_routing or {
@@ -704,7 +705,9 @@ local function update_job(job, tick, index)
     if not valid(destination) then recover(job);return end
     if cell.node.role=="output" then
       if job.state~="stopped" then stop(job);job.state="stopped" end
-      if finish(job,inventory(destination,true)) then traffic.remove(index,job.id);status(destination,"received",true)
+      if finish(job,inventory(destination,true)) then
+        metrics.record("personnel_routed", 1)
+        traffic.remove(index,job.id);status(destination,"received",true)
       else status(destination,"output-full") end
       return
     end

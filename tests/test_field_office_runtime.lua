@@ -470,6 +470,8 @@ test("all ten field office workers return, despawn, and release their nest lease
 
   for _, office in ipairs(offices) do office.products_finished = 2 end
   for tick = 90, 115, 5 do field_office.update(tick) end
+  assert_eq(storage.stats.field_office_shifts, C.FIELD_OFFICE_WORKERS_PER_NEST,
+    "each completed two-craft assignment should count one field-office shift")
 
   local releasing = 0
   for _, info in pairs(storage.field_office_releasing) do

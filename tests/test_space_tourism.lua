@@ -642,6 +642,7 @@ test("fulfilled tourist checkout releases the spitter and records Nauvis revenue
     assert_eq(tracked.state, "returning_home", "fulfilled tourist should immediately leave to despawn")
     assert_eq(tracked.entity.force.name, "neutral", "fulfilled tourist should leave peacefully")
     assert_eq(storage.stats.money_earned, variant.payout, variant.spitter .. " checkout should record its taxpayer-money payout")
+    assert_eq(storage.stats.tourists_served, 1, variant.spitter .. " checkout should count one completed tourist visit")
   end
 end)
 

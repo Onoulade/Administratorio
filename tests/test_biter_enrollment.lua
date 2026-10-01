@@ -320,6 +320,7 @@ test("resolved biter can accept a job offer at the 75% threshold through 50% fru
     assert_eq(ctx.inventory._flows["enrolled-biter"], 1, "another resolution pass must not count the same hire")
     assert_true(ctx.inventory._added["taxpayer-money"] == nil, "accepted biter should not pay taxpayer money")
     assert_eq(storage.stats.cases_resolved, 1, "accepted biter should still count as a resolved case")
+    assert_eq(storage.stats.complaints_resolved, 1, "consuming the resolution should count one processed complaint")
   end)
 end)
 

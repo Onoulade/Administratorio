@@ -464,6 +464,8 @@ test("completion destroys the demolisher and permanently clears the territory", 
   assert_nil(world.surface.get_territory_for_chunk({x = 0, y = 0}), "completed territory should stay cleared")
   assert_true(next(storage.territorial_arbitration.territories) == nil, "completed territories should be removed from runtime state")
   assert_true(territory.patrol_regenerations >= 1, "completion should refresh the territory patrol path")
+  assert_eq(storage.stats.territories_arbitrated, 1,
+    "a territory should count exactly once when arbitration completes")
 end)
 
 test("post is always indestructible regardless of progress", function()

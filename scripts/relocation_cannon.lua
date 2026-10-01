@@ -27,6 +27,7 @@
 
 local C = require("scripts.constants")
 local feature_flags = require("feature_flags")
+local metrics = require("scripts.metrics")
 
 local M = {}
 
@@ -312,6 +313,7 @@ local function try_fire_to(destination, entry, tick)
                 return_unlanded_payload(source, payload, request, removed - landed)
               end
               if landed > 0 then
+                metrics.record("personnel_relocated", landed)
                 -- Bill only items that actually arrived. The order inventory
                 -- was preflighted above, so a single tick cannot underpay.
                 orders.remove{name = C.RELOCATION_TRANSFER_FORM, count = landed}

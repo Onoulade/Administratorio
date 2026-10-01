@@ -1,4 +1,5 @@
 local feature_flags = require("feature_flags")
+local metrics = require("scripts.metrics")
 
 local M = {}
 
@@ -1058,6 +1059,7 @@ local function resolve_deviation(event, strength)
     expires_tick = tick + DEVIATION_PUSH_LIFETIME,
     strength = (strength or 1) * (ARRAY_FORCE_MULTIPLIERS[source.name] or 1),
   }
+  metrics.record("trajectory_orders_issued", 1)
 
   -- Each order creates one fixed-duration outward push. Faster firing research
   -- and additional arrays overlap more pushes; asteroid mass dilutes them.
@@ -1338,6 +1340,7 @@ local function process_assaults(tick)
         append_employee_chunks(employees, assault.workers, position, destination)
 
         if target.destroy() then
+          metrics.record("asteroids_processed", 1)
           release_mined_chunks(platform, salvage, employees, tick)
           remove_assault(assault_id, assault)
         end

@@ -248,6 +248,8 @@ test("one scheduled unboarding platform unloads only its adjacent wagon", functi
     "a wagon without its own platform must stay loaded")
   assert_eq(#spawn_positions, 1)
   assert_eq(spawn_positions[1], platform.position.x)
+  assert_eq(storage.stats.passenger_trips_completed, 1,
+    "only the passenger that successfully unboarded should count")
 
   local second_platform = new_entity(surface, "deboarding-platform", "constant-combinator", 7, 2.5)
   second_platform.force = "player"
@@ -255,6 +257,8 @@ test("one scheduled unboarding platform unloads only its adjacent wagon", functi
   passenger_trains.on_train_changed_state({train = train})
   assert_eq(#storage.passenger_wagons[second_wagon.unit_number].passengers, 0)
   assert_eq(spawn_positions[2], second_platform.position.x)
+  assert_eq(storage.stats.passenger_trips_completed, 2,
+    "the second successful unboarding should add one completed trip")
 end)
 
 test("idle enabled platforms remain local waiting candidates", function()

@@ -287,6 +287,8 @@ test("a partial arrival bills only cargo that actually lands", function()
   assert_eq(destination.input.get_item_count(C.RELOCATION_TRANSFER_FORM), C.RELOCATION_PAYLOAD_PER_SHOT - 3,
     "only landed personnel should consume transfer orders")
   assert_eq(#source.spills, 0, "normal partial arrivals must not spill or void cargo")
+  assert_eq(storage.stats.personnel_relocated, 3,
+    "only personnel that actually land should count as relocated")
 end)
 
 test("a full arrival buffer does not consume a source cooldown or orders", function()

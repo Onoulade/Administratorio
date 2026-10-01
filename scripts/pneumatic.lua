@@ -10,6 +10,7 @@
 
 local C = require("scripts.constants")
 local hooks = require("compat.hooks")
+local metrics = require("scripts.metrics")
 local M = {}
 
 -- The scripted pump does not perform native inserter movements, so charge its
@@ -957,6 +958,7 @@ function M.on_pneumatic_tick()
               local item_name, quality_name = parse_pool_key(best_key)
               local inserted = inv.insert{name = item_name, quality = quality_name, count = 1}
               if inserted > 0 then
+                metrics.record("pneumatic_items_delivered", inserted)
                 pool[best_key] = best_count - inserted
                 if pool[best_key] <= 0 then
                   pool[best_key] = nil

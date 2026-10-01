@@ -11,6 +11,7 @@ local protest_targets = require("scripts.protest_targets")
 local spawner_population = require("scripts.spawner_population")
 local pentapods = require("scripts.pentapods")
 local passenger_trains = require("scripts.passenger_trains")
+local metrics = require("scripts.metrics")
 
 local M = {}
 
@@ -2084,6 +2085,7 @@ function M.process_resolutions(desks)
                     local consumed = inv.remove({name = item_name, count = 1})
                     record_desk_item_flow(desk, item_name, -consumed)
                     resolved_count = resolved_count + 1
+                    if consumed > 0 then metrics.record("complaints_resolved", consumed) end
                     matched = true
                     mark_desk_circuit_dirty(desk_id)
 
@@ -2188,6 +2190,7 @@ local function release_fulfilled_space_tourist(event)
   if storage.stats then
     storage.stats.money_earned = (storage.stats.money_earned or 0) + departure.payout
   end
+  metrics.record("tourists_served", 1)
   return true
 end
 

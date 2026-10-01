@@ -1,5 +1,6 @@
 local demolishers = require("scripts.demolishers")
 local feature_flags = require("feature_flags")
+local metrics = require("scripts.metrics")
 
 local M = {}
 
@@ -466,6 +467,7 @@ local function complete_territory(runtime, territory_state)
     end
   end
 
+  metrics.record("territories_arbitrated", 1)
   remove_territory_state(runtime, territory_state)
 end
 

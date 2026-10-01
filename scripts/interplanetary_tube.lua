@@ -30,6 +30,7 @@
 
 local C = require("scripts.constants")
 local feature_flags = require("feature_flags")
+local metrics = require("scripts.metrics")
 
 local M = {}
 
@@ -476,6 +477,7 @@ local function try_claim_from_pool(destination, entry, tick)
     if count and count > 0 then
       local landed = arrivals.insert{name = request.name, quality = request.quality, count = 1}
       if landed > 0 then
+        metrics.record("interplanetary_items_delivered", landed)
         count = count - landed
         if count <= 0 then pool[key] = nil else pool[key] = count end
         storage.trunk_pool_dirty[entry.force_index] = true

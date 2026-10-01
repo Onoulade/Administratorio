@@ -1,6 +1,7 @@
 local C = require("scripts.constants")
 local biters = require("scripts.biters")
 local unit_ai_settings = require("scripts.unit_ai_settings")
+local metrics = require("scripts.metrics")
 local M = {}
 
 local SUPPLY_CHEST_NAME = "hired-biter-supply-chest"
@@ -595,8 +596,10 @@ function M._update_entry(entry, tick)
     local dy = entry.entity.position.y - entry.target_nest.position.y
     if dx * dx + dy * dy <= C.HIRED_BITER_ARRIVE_RADIUS * C.HIRED_BITER_ARRIVE_RADIUS then
       if consume_notice(entry) then
-        biters.evict_target(entry.entity.surface, entry.target_nest)
-        entry.notices_delivered = entry.notices_delivered + 1
+        if biters.evict_target(entry.entity.surface, entry.target_nest) then
+          entry.notices_delivered = entry.notices_delivered + 1
+          metrics.record("eviction_notices_delivered", 1)
+        end
       end
       entry.target_nest = nil
       entry.state = "exploring"

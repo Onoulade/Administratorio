@@ -538,6 +538,8 @@ test("deviation pushes threats outward without deleting or salvaging them", func
   assert_eq(outcome, module.OUTCOME_DEVIATED)
   assert_true(not asteroid.destroyed)
   assert_eq(table_count(storage.trajectory_compliance.deviations), 1)
+  assert_eq(storage.stats.trajectory_orders_issued, 1,
+    "an accepted deviation order should count once")
 
   module.on_tick({tick = 1})
   assert_near(asteroid.position.x, 10.005, 1e-9,
@@ -862,6 +864,8 @@ test("multiple attached workers stack damage and each becomes a chunk", function
   end
 
   assert_true(asteroid.destroyed)
+  assert_eq(storage.stats.asteroids_processed, 1,
+    "one employee-driven demolition should count one processed asteroid")
   assert_eq(#platform.created_chunks, 8, "six salvage plus two employees expected")
   assert_returning_chunk(platform.created_chunks[1].name)
   assert_returning_chunk(platform.created_chunks[2].name)

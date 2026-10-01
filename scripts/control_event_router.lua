@@ -114,6 +114,9 @@ function M.register(deps)
 
   script.on_event(defines.events.on_train_changed_state, deps.on_train_changed_state)
   script.on_event(defines.events.on_rocket_launched, deps.on_rocket_launched)
+  if deps.on_pre_scenario_finished and defines.events.on_pre_scenario_finished then
+    script.on_event(defines.events.on_pre_scenario_finished, deps.on_pre_scenario_finished)
+  end
   script.on_event(defines.events.on_gui_click, deps.on_gui_click)
   if deps.on_gui_opened then script.on_event(defines.events.on_gui_opened, deps.on_gui_opened) end
   if deps.on_gui_elem_changed then script.on_event(defines.events.on_gui_elem_changed, deps.on_gui_elem_changed) end

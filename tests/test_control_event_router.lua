@@ -40,7 +40,8 @@ test("router registers lifecycle, event, and custom handlers", function()
     on_entity_built = handler("built"), on_entity_removed = handler("removed"), on_toggle_runtime_debug = handler("debug"),
     on_toggle_complaint_locator = handler("locator"), on_unit_group_created = handler("group"), on_entity_died = handler("died"),
     on_script_trigger_effect = handler("effect"), on_ai_command_completed = handler("ai"), on_tick = handler("tick"),
-    on_train_changed_state = handler("train"), on_rocket_launched = handler("rocket"), on_gui_click = handler("click"),
+    on_train_changed_state = handler("train"), on_rocket_launched = handler("rocket"),
+    on_pre_scenario_finished = handler("victory"), on_gui_click = handler("click"),
     on_gui_closed = handler("closed"), on_research_finished = handler("research"),
     on_pneumatic_tick = handler("pneumatic"), terminus_check_ticks = 15, on_interplanetary_tube_tick = handler("tube"),
     ai_server_check_ticks = 15, on_ai_server_tick = handler("ai-server"), on_main_tick = handler("main"),
@@ -55,6 +56,7 @@ test("router registers lifecycle, event, and custom handlers", function()
   })
   assert_true(registrations.init and registrations.configuration and registrations.load)
   assert_true(registrations[defines.events.on_entity_died] ~= nil)
+  assert_true(registrations[defines.events.on_pre_scenario_finished] ~= nil)
   assert_true(registrations["administratorio-toggle-runtime-debug"] ~= nil)
 end)
 

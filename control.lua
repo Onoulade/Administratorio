@@ -41,6 +41,7 @@ local hired_biter = require("scripts.hired_biter")
 local rideable_biter = require("scripts.rideable_biter")
 local spawner_population = require("scripts.spawner_population")
 local victory = require("scripts.victory")
+local metrics = require("scripts.metrics")
 local achievements = require("scripts.achievements")
 local admin_desk_rotation = require("scripts.admin_desk_rotation")
 local complaint_item_recovery = require("scripts.complaint_item_recovery")
@@ -502,14 +503,8 @@ local function init_storage()
   storage.unit_group_redirect_watch = storage.unit_group_redirect_watch or {}
   storage.runtime_debug_players = storage.runtime_debug_players or {}
   storage.complaint_locator_pause_owners = storage.complaint_locator_pause_owners or {}
-  storage.stats = storage.stats or {}
-  storage.stats.cases_resolved = storage.stats.cases_resolved or 0
-  storage.stats.money_earned = storage.stats.money_earned or 0
-  storage.stats.protests_suppressed = storage.stats.protests_suppressed or 0
-  storage.stats.nests_evicted = storage.stats.nests_evicted or 0
-  storage.stats.nests_calmed = storage.stats.nests_calmed or 0
-  storage.stats.biters_hired = storage.stats.biters_hired or 0
-  storage.stats.rockets_launched = storage.stats.rockets_launched or 0
+  storage.stats = metrics.ensure(storage.stats)
+  storage.victory_screen_shown_for_players = storage.victory_screen_shown_for_players or {}
   storage.calmed_spawners = storage.calmed_spawners or {}
   trajectory_compliance.ensure_storage()
   trajectory_compliance.configure_existing_arrays()
@@ -2076,28 +2071,22 @@ end
 -- ROCKET LAUNCH WIN SCREEN
 -- ============================================================
 
--- All paperwork items to sum for "forms crafted"
-local PAPERWORK_ITEMS = {
-  "blank-form", "blank-approval", "blank-directive",
-  "carbon-offset-certificate-basic", "provisional-approval",
-  "safety-waiver-draft", "safety-waiver",
-  "construction-permit-draft", "construction-permit",
-  "management-verbal-draft", "management-approval-verbal",
-  "management-written-proposal", "management-approval-written",
-  "transit-authorization", "research-grant-approval",
-  "work-order", "form-27b-6",
-  "safety-work-order", "construction-work-order",
-  "management-verbal-work-order", "management-written-work-order",
-  "research-grant-work-order",
-  "carbon-offset-certificate-verified", "environmental-impact-report", "white-paper",
-}
+-- Use the canonical paperwork registry so expansion documents and newly added
+-- forms are included without another hand-maintained victory-screen list.
+local PAPERWORK_ITEMS = {}
+for item_name in pairs(require("prototypes.shared").PAPERWORK_ITEMS) do
+  PAPERWORK_ITEMS[#PAPERWORK_ITEMS + 1] = item_name
+end
+table.sort(PAPERWORK_ITEMS)
 
 local function count_forms_crafted(force)
   local total = 0
   for _, surface in pairs(game.surfaces) do
     local stats = force.get_item_production_statistics(surface)
     for _, item_name in ipairs(PAPERWORK_ITEMS) do
-      total = total + stats.get_input_count(item_name)
+      if not prototypes or not prototypes.item or prototypes.item[item_name] then
+        total = total + stats.get_input_count(item_name)
+      end
     end
   end
   return total
@@ -2127,40 +2116,48 @@ local function build_win_gui(player)
     caption = {"gui.win-title"},
   }
   frame.auto_center = true
-  frame.style.minimal_width = 400
-  frame.style.maximal_width = 500
+  frame.style.minimal_width = 520
+  frame.style.maximal_width = 620
 
   local inner = frame.add{type = "frame", direction = "vertical", style = "inside_shallow_frame_with_padding"}
   inner.style.padding = 12
 
   -- Subtitle
-  local subtitle = inner.add{type = "label", caption = {"gui.win-subtitle"}}
+  local subtitle_key = feature_flags.space_age_enabled()
+    and "gui.win-subtitle-space-age"
+    or "gui.win-subtitle"
+  local subtitle = inner.add{type = "label", caption = {subtitle_key}}
   subtitle.style.font = "default-bold"
   subtitle.style.bottom_margin = 12
 
-  -- Stat rows
-  local stat_table = inner.add{type = "table", column_count = 2}
-  stat_table.style.column_alignments[2] = "right"
-  stat_table.style.horizontal_spacing = 24
-  stat_table.style.vertical_spacing = 8
+  local scroll = inner.add{type = "scroll-pane", direction = "vertical"}
+  scroll.style.horizontally_stretchable = true
+  scroll.style.maximal_height = 560
+  scroll.style.padding = 4
 
-  local rows = {
-    {{"gui.stat-rockets-launched"},    stats.rockets_launched or 1},
-    {{"gui.stat-cases-resolved"},      stats.cases_resolved or 0},
-    {{"gui.stat-money-earned"},        stats.money_earned or 0},
-    {{"gui.stat-forms-crafted"},       forms_crafted},
-    {{"gui.stat-workers-hired"},       stats.biters_hired or 0},
-    {{"gui.stat-protests-suppressed"}, stats.protests_suppressed or 0},
-    {{"gui.stat-nests-evicted"},       stats.nests_evicted or 0},
-    {{"gui.stat-nests-calmed"},        stats.nests_calmed or 0},
-  }
+  local space_age_enabled = feature_flags.space_age_enabled()
+  for _, section in ipairs(victory.SECTIONS) do
+    local rows = victory.rows_for_section(section, stats, forms_crafted, space_age_enabled)
+    if #rows > 0 then
+      local heading = scroll.add{type = "label", caption = {section.caption}}
+      heading.style.font = "default-bold"
+      heading.style.top_margin = 8
+      heading.style.bottom_margin = 4
 
-  for _, row in ipairs(rows) do
-    local label = stat_table.add{type = "label", caption = row[1]}
-    label.style.font = "default-semibold"
-    local value = stat_table.add{type = "label", caption = format_number(row[2])}
-    value.style.font = "default-bold"
-    value.style.font_color = {r = 1, g = 0.85, b = 0.2}
+      local stat_table = scroll.add{type = "table", column_count = 2}
+      stat_table.style.column_alignments[2] = "right"
+      stat_table.style.horizontal_spacing = 24
+      stat_table.style.vertical_spacing = 5
+      stat_table.style.horizontally_stretchable = true
+
+      for _, row in ipairs(rows) do
+        local label = stat_table.add{type = "label", caption = {row.caption}}
+        label.style.font = "default-semibold"
+        local value = stat_table.add{type = "label", caption = format_number(row.value)}
+        value.style.font = "default-bold"
+        value.style.font_color = {r = 1, g = 0.85, b = 0.2}
+      end
+    end
   end
 
   -- Play time
@@ -2186,6 +2183,19 @@ local function build_win_gui(player)
     caption = {"gui.win-close"},
     style = "confirm_button",
   }
+
+  storage.victory_screen_shown_for_players = storage.victory_screen_shown_for_players or {}
+  storage.victory_screen_shown_for_players[player.index] = true
+end
+
+local function on_pre_scenario_finished(event)
+  if not event or not event.player_won then return end
+  storage.victory_screen_shown_for_players = storage.victory_screen_shown_for_players or {}
+  for _, player in pairs(game.connected_players) do
+    if not storage.victory_screen_shown_for_players[player.index] then
+      build_win_gui(player)
+    end
+  end
 end
 
 local function on_rocket_launched(event)
@@ -2412,6 +2422,7 @@ control_event_router.register({
   on_player_selected_area = on_player_selected_area,
   on_protest_pacing_tick = on_protest_pacing_tick,
   on_rocket_launched = on_rocket_launched,
+  on_pre_scenario_finished = on_pre_scenario_finished,
   on_runtime_mod_setting_changed = on_runtime_mod_setting_changed,
   on_script_path_request_finished = on_script_path_request_finished,
   on_script_trigger_effect = on_script_trigger_effect,

@@ -3,6 +3,7 @@
 -- manifest record, or outbreak-recovery record.
 local C = require("scripts.constants")
 local spawner_population = require("scripts.spawner_population")
+local metrics = require("scripts.metrics")
 
 local M = {}
 local biters
@@ -580,7 +581,9 @@ local function unboard_platform_wagon(record, wagon, stop_id)
       retained[#retained + 1] = passenger
     else
       local entity = spawn_passenger(passenger, record)
-      if not (entity and restore_record(passenger, entity, stop_id or record.entity.unit_number)) then
+      if entity and restore_record(passenger, entity, stop_id or record.entity.unit_number) then
+        metrics.record("passenger_trips_completed", 1)
+      else
         retained[#retained + 1] = passenger
       end
     end
