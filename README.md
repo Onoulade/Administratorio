@@ -35,7 +35,11 @@ It also adds **personnel routing**: send trained biters between offices along wa
 
 **Beta, actively developed.** Both base-game and Space Age progression are playable. Balance is still being worked on; bug reports and feedback from actual playthroughs are very welcome.
 
-Supports optional Quality, with integrations for Factorissimo and AAI Loaders.
+Supports optional Quality, with integrations for Factorissimo, AAI Loaders and Milestones.
+
+Milestones automatically selects an Administratorio preset in new games, covering science, paperwork, closed cases, hiring, finances and transport, plus planetary offices and orbital employees with Space Age. On an existing save, select **Administratorio** (or **Administratorio (Space Age)**) in Milestones settings and apply it to load the new goals. Existing custom lists stay under your control. Regulated machine production now counts normally; earlier crafts hidden from statistics cannot be recovered, and scripted desk counts start with this update.
+
+Use a Milestones release for Factorio 2.0 with this version of Administratorio. Milestones 1.5.x targets Factorio 2.1.
 
 The **in-game Tips & Tricks** explain how to get started. For more detail: [Core Mechanics](Internal/docs/core-mechanics.md) · [Employment](Internal/docs/biter-employment.md) · [Buildings](Internal/docs/buildings-and-structures.md) · [Research](Internal/docs/technology-tree.md) · [Personnel Routing](Internal/docs/personnel-routing.md) · [Advanced Topics](Internal/docs/advanced-topics.md).
 

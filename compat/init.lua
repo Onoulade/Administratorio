@@ -11,6 +11,7 @@
 local COMPAT = {
   {mod = "factorissimo", stages = {data = true, runtime = true}},
   {mod = "aai_loaders", stages = {data = true}},
+  {mod = "milestones", stages = {runtime = true}},
 }
 
 local M = {}

@@ -230,6 +230,16 @@ local function new_context(opts)
   local desk = {
     valid = true,
     unit_number = desk_id,
+    surface = surface,
+    force = {
+      get_item_production_statistics = function(actual_surface)
+        assert_eq(actual_surface, surface, "desk statistics must use the desk surface")
+        return {on_flow = function(name, count)
+          inventory._flows = inventory._flows or {}
+          inventory._flows[name] = (inventory._flows[name] or 0) + count
+        end}
+      end,
+    },
     get_inventory = function(_, _)
       return inventory
     end,
@@ -303,6 +313,11 @@ test("resolved biter can accept a job offer at the 75% threshold through 50% fru
     assert_true(ctx.entity.valid == false, "accepted biter should be removed from the world")
     assert_eq(ctx.inventory._removed["job-offer"], 1, "job offer should be consumed on acceptance")
     assert_eq(ctx.inventory._added["enrolled-biter"], 1, "accepted biter should produce enrolled-biter")
+    assert_eq(ctx.inventory._flows["enrolled-biter"], 1, "scripted hire is recorded exactly once")
+    assert_eq(ctx.inventory._flows["resolved-landscape"], -1, "closing a case records consumption")
+    assert_eq(ctx.inventory._flows["job-offer"], -1, "consumed offer is recorded")
+    biters.process_resolutions({ctx.desk})
+    assert_eq(ctx.inventory._flows["enrolled-biter"], 1, "another resolution pass must not count the same hire")
     assert_true(ctx.inventory._added["taxpayer-money"] == nil, "accepted biter should not pay taxpayer money")
     assert_eq(storage.stats.cases_resolved, 1, "accepted biter should still count as a resolved case")
   end)
@@ -342,6 +357,8 @@ test("failed job offer keeps the normal return-home payout path", function()
     assert_eq(ctx.info.state, "returning_home", "failed offer should send the biter home")
     assert_eq(ctx.inventory._removed["job-offer"], 1, "failed offer should still be consumed")
     assert_eq(ctx.inventory._added["taxpayer-money"], 5, "failed offer should still pay taxpayer money")
+    assert_eq(ctx.inventory._flows["taxpayer-money"], 5, "scripted payout is recorded")
+    assert_true(ctx.inventory._flows["enrolled-biter"] == nil, "failed hiring produces no recorded hire")
     assert_true(ctx.inventory._added["enrolled-biter"] == nil, "failed offer should not produce enrolled-biter")
     assert_true(ctx.last_command() ~= nil, "failed offer should issue a return-home movement command")
   end)

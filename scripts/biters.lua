@@ -13,6 +13,17 @@ local pentapods = require("scripts.pentapods")
 local passenger_trains = require("scripts.passenger_trains")
 
 local M = {}
+
+-- Inventory insertion/removal by script does not update native production
+-- statistics. Record only newly issued goods and consumed documents, never
+-- inventory transfers or machine products (the engine already counts those).
+local function record_desk_item_flow(desk, name, count)
+  if count == 0 then return end
+  local force = desk and desk.force
+  if force and force.get_item_production_statistics and desk.surface then
+    force.get_item_production_statistics(desk.surface).on_flow(name, count)
+  end
+end
 local SPACE_AGE_ENABLED = feature_flags.space_age_enabled()
 local protest_rendering
 local protest_system
@@ -931,11 +942,14 @@ local function get_nauvis_enrollment_offer_chance(info)
 end
 
 -- Slot release, desk unindex, and cases_resolved are owned by process_resolutions.
-local function finalize_hired_biter_conversion(desk_id, info, inv, item_name, count)
+local function finalize_hired_biter_conversion(desk, info, inv, item_name, count)
+  local desk_id = desk.unit_number
   if not desk_id or not info or not inv then return false end
   local entity = info.entity
   if not entity or not entity.valid then return false end
-  if inv.insert({name = item_name, count = count}) < count then return false end
+  local inserted = inv.insert({name = item_name, count = count})
+  record_desk_item_flow(desk, item_name, inserted)
+  if inserted < count then return false end
 
   untrack_waiting_biter(entity.unit_number, info)
   entity.destroy()
@@ -958,7 +972,9 @@ local function deliver_capture_bureau_products(desk, entity_name)
   end
 
   for _, product in ipairs(products) do
-    if output.insert({name = product.name, count = product.count}) <= 0 then
+    local inserted = output.insert({name = product.name, count = product.count})
+    record_desk_item_flow(desk, product.name, inserted)
+    if inserted <= 0 then
       return false
     end
   end
@@ -986,7 +1002,8 @@ local function finalize_capture_bureau_conversion(desk, desk_id, info)
   return true
 end
 
-local function maybe_attempt_nauvis_enrollment_offer(desk_id, info, inv)
+local function maybe_attempt_nauvis_enrollment_offer(desk, info, inv)
+  local desk_id = desk.unit_number
   if not desk_id or not info or not inv then return false end
   local entity = info.entity
   if not entity or not entity.valid then return false end
@@ -1001,7 +1018,8 @@ local function maybe_attempt_nauvis_enrollment_offer(desk_id, info, inv)
       return false
     end
     if inv.remove({name = "job-offer", count = 1}) <= 0 then return false end
-    return finalize_hired_biter_conversion(desk_id, info, inv, "worker-biter", worker_count)
+    record_desk_item_flow(desk, "job-offer", -1)
+    return finalize_hired_biter_conversion(desk, info, inv, "worker-biter", worker_count)
   end
 
   if C.IS_SPITTER[entity.name] then return false end
@@ -1009,10 +1027,11 @@ local function maybe_attempt_nauvis_enrollment_offer(desk_id, info, inv)
     return false
   end
   if inv.remove({name = "job-offer", count = 1}) <= 0 then return false end
+  record_desk_item_flow(desk, "job-offer", -1)
 
   local chance = get_nauvis_enrollment_offer_chance(info)
   if chance > 0 and math.random() < chance then
-    return finalize_hired_biter_conversion(desk_id, info, inv, "enrolled-biter", 1)
+    return finalize_hired_biter_conversion(desk, info, inv, "enrolled-biter", 1)
   end
 
   mark_desk_circuit_dirty(desk_id)
@@ -1138,6 +1157,12 @@ local function finalize_pathfinding_biter_arrival(info, desk, source)
   if complaints_filed then
     --   .. ": " .. tostring(#complaints) .. " unresolved of " .. tostring(complaints_total)
     --   .. " total complaints still tracked in memory")
+  end
+
+  if not complaints_filed then
+    for _, complaint in ipairs(complaints) do
+      record_desk_item_flow(desk, complaint, 1)
+    end
   end
 
   info.entity = entity
@@ -2056,7 +2081,8 @@ function M.process_resolutions(desks)
                 for j, req in ipairs(info.complaints) do
                   if req == target_ticket then
                     table.remove(info.complaints, j)
-                    inv.remove({name = item_name, count = 1})
+                    local consumed = inv.remove({name = item_name, count = 1})
+                    record_desk_item_flow(desk, item_name, -consumed)
                     resolved_count = resolved_count + 1
                     matched = true
                     mark_desk_circuit_dirty(desk_id)
@@ -2086,7 +2112,7 @@ function M.process_resolutions(desks)
                       zones.release_slot(desk_id, biter_unit)
                       unindex_biter_from_desk(desk_id, b_id)
 
-                      local hired = maybe_attempt_nauvis_enrollment_offer(desk_id, info, inv)
+                      local hired = maybe_attempt_nauvis_enrollment_offer(desk, info, inv)
                       if hired then
                         if storage.stats then storage.stats.biters_hired = (storage.stats.biters_hired or 0) + 1 end
                       else
@@ -2096,7 +2122,8 @@ function M.process_resolutions(desks)
                         local taxpayer_payout_allowed = not SPACE_AGE_ENABLED
                           or (payout_surface and payout_surface.name == "nauvis")
                         if taxpayer_payout_allowed and amount and inv.can_insert({name = "taxpayer-money", count = amount}) then
-                          inv.insert({name = "taxpayer-money", count = amount})
+                          local inserted = inv.insert({name = "taxpayer-money", count = amount})
+                          record_desk_item_flow(desk, "taxpayer-money", inserted)
                           if storage.stats then storage.stats.money_earned = (storage.stats.money_earned or 0) + amount end
                         end
                       end

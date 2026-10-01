@@ -1015,7 +1015,9 @@ for name, recipe in pairs(data.raw["recipe"]) do
     regulated.name = name .. "-regulated"
     regulated.localised_name, regulated.localised_description = resolve_regulated_recipe_localisation(recipe, name)
     regulated.hide_from_player_crafting = true
-    regulated.hide_from_stats = true
+    -- Hidden crafting routes still produce real items. Milestones and the
+    -- production GUI both depend on the engine recording these crafts.
+    regulated.hide_from_stats = false
     regulated.category = regulated_cat
 
     regulate_recipe(regulated, regulated_paperwork, multiplier)
@@ -1175,7 +1177,7 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
   regulated.name = recipe_name .. "-regulated"
   regulated.localised_name, regulated.localised_description = resolve_regulated_recipe_localisation(recipe, recipe_name)
   regulated.hide_from_player_crafting = true
-  regulated.hide_from_stats = true
+  regulated.hide_from_stats = false
   regulated.category = (cat == "advanced-crafting") and "advanced-crafting-regulated" or "crafting-regulated"
 
   local multiplier = get_recipe_batch_multiplier(recipe_name, recipe)

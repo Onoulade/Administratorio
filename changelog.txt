@@ -2,6 +2,8 @@
 Version: 0.8.2
 Date: 2026-10-01
   Changes:
+    - Add optional Milestones integration with Administratorio and Space Age presets
+    - Restore regulated machine production statistics and count scripted desk outputs and closed cases
     - Add vessel title-screen simulation with aligned logo
     - Repair final-fixes fixtures and GUI locale sections
     - Refresh achievements and cover current Administratorio systems
