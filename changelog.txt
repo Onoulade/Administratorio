@@ -1,4 +1,19 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.8.2
+Date: 2026-10-01
+  Changes:
+    - Add vessel title-screen simulation with aligned logo
+    - Repair final-fixes fixtures and GUI locale sections
+    - Refresh achievements and cover current Administratorio systems
+    - Show real mechanics in tip scenes and gate guides by progression
+    - Document tips overhaul mechanics audit
+    - Tips and tricks refinements
+    - remove dead code
+    - Balance manager briefing spoil times
+    - Fix tourist access and manager spoilage on personnel paths
+    - Better README
+    - Add protest and Pathways menu scenes with robust logo handling
+---------------------------------------------------------------------------------------------------
 Version: 0.8.1
 Date: 2026-09-29
   Changes:
