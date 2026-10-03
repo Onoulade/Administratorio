@@ -242,6 +242,8 @@ for _, item in ipairs(cargo_names) do
   prototypes_to_add[#prototypes_to_add + 1] = {
     type = "recipe", name = R.load_recipe(item), category = R.CATEGORY,
     enabled = false, hidden = true, hide_from_player_crafting = true,
+    -- These identity recipes whitelist cargo, not personnel acquisition.
+    unlock_results = false,
     hide_from_signal_gui = true, hidden_in_factoriopedia = true,
     allow_productivity = false, auto_recycle = false, energy_required = 1000000,
     ingredients = {{type = "item", name = item, amount = 1}},

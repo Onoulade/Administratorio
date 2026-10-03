@@ -2265,8 +2265,12 @@ local SPACE_TOURISM_VARIANTS = {
 }
 
 local tourism_recipes = {}
+local tourism_filter_results = {}
 
 for i, variant in ipairs(SPACE_TOURISM_VARIANTS) do
+  tourism_filter_results[#tourism_filter_results + 1] = {
+    type = "item", name = variant.package_item, amount = 1,
+  }
   local orbital_ingredients = {
     {type = "item", name = variant.package_item, amount = 1},
     {type = "item", name = "orbital-operations-form", amount = 1},
@@ -2341,6 +2345,27 @@ for i, variant in ipairs(SPACE_TOURISM_VARIANTS) do
 end
 
 data:extend(tourism_recipes)
+
+-- Packages are produced by script, so Factorio otherwise treats them as raw
+-- items and shows them in filters before tourism research. This uncraftable
+-- metadata recipe ties their selection-list unlock to the capture mode.
+data:extend({
+  {
+    type = "recipe-category", name = "scripted-tourism-filter-unlock",
+    localised_name = {"recipe-name.capture-bureau-tourism"},
+  },
+  {
+    type = "recipe", name = "capture-bureau-tourism-filter-unlock",
+    category = "scripted-tourism-filter-unlock",
+    localised_name = {"recipe-name.capture-bureau-tourism"},
+    icon = "__administratorio__/graphics/icons/admin-desk.png", icon_size = 64,
+    enabled = false, hidden = true, hidden_in_factoriopedia = true,
+    hide_from_player_crafting = true, hide_from_signal_gui = true,
+    unlock_results = true, auto_recycle = false,
+    allow_as_intermediate = false, allow_decomposition = false,
+    ingredients = {}, results = tourism_filter_results,
+  },
+})
 
 local interplanetary_payloads = require("prototypes.shared.interplanetary_payloads")
 

@@ -79,6 +79,8 @@ data:extend({
     },
     subgroup = "admin-biter-training",
     order = "j-a",
+    -- Recruitment is scripted, so no production recipe unlocks this item.
+    flags = {"always-show"},
     stack_size = 1
   },
   {

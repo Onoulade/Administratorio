@@ -1,4 +1,5 @@
 local item_icons = "__administratorio__/graphics/icons/"
+local space_age_enabled = require("feature_flags").space_age_enabled()
 
 local function biter_role_icons(biter_icon, tint, overlay_icon)
   local icons = {
@@ -64,6 +65,9 @@ data:extend({
     type = "item", name = "worker-biter",
     icons = biter_role_icons("__base__/graphics/icons/small-biter.png", {r=0.75, g=0.95, b=0.65, a=1}),
     subgroup = "admin-biter-training", order = "b-b", stack_size = 1,
+    -- Base-game recruitment is scripted; Space Age unlocks trained workers
+    -- through formation instead.
+    flags = not space_age_enabled and {"always-show"} or nil,
     localised_name = {"item-name.worker-biter"},
     localised_description = {"item-description.worker-biter"},
   },

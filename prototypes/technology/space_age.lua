@@ -315,6 +315,7 @@ data:extend({
     icon_size = 64,
     effects = {
       {type = "unlock-recipe", recipe = "capture-bureau-tourism"},
+      {type = "unlock-recipe", recipe = "capture-bureau-tourism-filter-unlock", hidden = true},
       {type = "unlock-recipe", recipe = "public-transportation-contract-production"},
       {type = "unlock-recipe", recipe = "cyan-yellow-form-production"},
     },
