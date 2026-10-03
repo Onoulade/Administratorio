@@ -27,6 +27,10 @@ With Space Age enabled, `worker-formation` moves the Resolution Office unlock be
 3. Research `administrative-science-research` to unlock `administrative-science-pack-production`.
 4. Produce `administrative-science-pack` through the available bureaucracy category: the Field Office covers the early bootstrap, and the Office Desk takes over after `biter-employment`.
 
+Utility Science unlocks both yellow packs and robot frames, avoiding a circular dependency. Robotics consumes yellow packs and gates Logistic Robotics and Construction Robotics. All robot speed and carrying-capacity upgrades follow Logistic Robotics and consume yellow packs.
+
+Vanilla batches scale material inputs, outputs, and crafting time together: blue science uses its native two-pack craft; plastic produces ten bars at ×5; low-density structures and robot frames use ×2; sulfuric acid uses ×10; explosives use ×5. Purple and yellow science keep their native ×1 crafts of three packs. Paperwork remains a fixed cost per batch.
+
 ### Bureaucracy loop
 
 1. Forms gate automation.

@@ -192,6 +192,7 @@ Like the biter station, biterports require the per-dispatch liquid-coffee amount
 - Workers can be overwhelmed if too many requests are active.
 - A worker that loses every reachable port raises an alert and accumulates normal frustration before protesting. It retries blocked ports every 10 seconds and can be recovered by restoring any reachable port with worker space.
 - True construction/logistic robotics (vanilla robots) are late-game, gated by utility science.
+- Utility Science unlocks robot frames to bootstrap yellow packs. Robotics then requires yellow packs and gates both robot technologies; speed and carrying-capacity upgrades require Logistic Robotics and yellow packs.
 
 ### Status Display
 

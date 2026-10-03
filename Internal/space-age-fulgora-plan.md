@@ -110,7 +110,7 @@ Fulgora recipes should not require `taxpayer-money`. The planet operates outside
 Fulgora keeps only the material and terminal-document exceptions that the
 unchanged launch chain actually needs:
 
-- `salvage-electrolyte-fulgora`, `electromagnetic-rocket-fuel-fulgora`, and the deliberately expensive `electromagnetic-lubricant-fulgora` cover the local engine and fuel bottlenecks.
+- `salvage-electrolyte-fulgora` and the deliberately expensive `electromagnetic-lubricant-fulgora` cover the local electric-engine bottleneck. Rocket fuel uses the ordinary heavy-oil supply chain.
 - Completed magenta/archive paperwork feeds Fulgora's recovery and operating loops. The final `management-approval-written` and one `government-grant` for a silo remain dense Nauvis imports.
 
 Fulgora does not receive a local liquid-black-ink route, crude-oil processing,

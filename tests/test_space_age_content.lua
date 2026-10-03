@@ -2091,8 +2091,8 @@ test("fulgora archive and electrolyte bootstrap stays local", function()
   assert_true(not has_fluid_ingredient(electrolyte, "heavy-oil"), "salvage electrolyte should not import heavy oil")
   assert_true(tech_unlocks_recipe(electromagnetic_plant, "salvage-electrolyte-fulgora"),
     "electromagnetic-plant should unlock the local electrolyte route")
-  assert_true(recipes["electromagnetic-rocket-fuel-fulgora"] ~= nil,
-    "Fulgora needs its electromagnetic rocket-fuel bridge")
+  assert_eq(recipes["electromagnetic-rocket-fuel-fulgora"], nil,
+    "Fulgora should use the ordinary rocket-fuel route")
   assert_eq(recipes["liquid-black-ink-fulgora"], nil,
     "Fulgora should not receive a broad liquid-black-ink substitute")
   assert_true(recipes["electromagnetic-lubricant-fulgora"] ~= nil,

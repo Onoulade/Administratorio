@@ -1288,6 +1288,7 @@ for _, tech_name in ipairs({
 end
 
 for _, tech_name in ipairs({
+  "robotics",
   "construction-robotics",
   "logistic-robotics",
   "personal-roboport-equipment",
@@ -1296,12 +1297,36 @@ for _, tech_name in ipairs({
 end
 
 for _, tech_name in ipairs({
+  "robotics",
   "construction-robotics",
   "logistic-robotics",
   "personal-roboport-equipment",
   "personal-roboport-mk2-equipment",
 }) do
   add_tech_science_pack(tech_name, "utility-science-pack")
+end
+
+-- Actual robots and their upgrades share the yellow-science entry point.
+-- Frames bootstrap yellow science itself, before Robotics can be researched.
+remove_tech_unlock("robotics", "flying-robot-frame")
+add_tech_unlock("utility-science-pack", "flying-robot-frame")
+local utility_science = data.raw.technology["utility-science-pack"]
+if utility_science then
+  for index = #(utility_science.prerequisites or {}), 1, -1 do
+    if utility_science.prerequisites[index] == "robotics" then
+      table.remove(utility_science.prerequisites, index)
+    end
+  end
+end
+add_tech_prerequisite("construction-robotics", "robotics")
+add_tech_prerequisite("logistic-robotics", "robotics")
+for tech_name in pairs(data.raw.technology) do
+  if tech_name:match("^worker%-robots%-speed%-%d+$")
+      or tech_name:match("^worker%-robots%-storage%-%d+$") then
+    add_tech_prerequisite(tech_name, "logistic-robotics")
+    add_tech_prerequisite(tech_name, "utility-science-pack")
+    add_tech_science_pack(tech_name, "utility-science-pack")
+  end
 end
 
 add_tech_prerequisite("oil-processing", "environmental-compliance")

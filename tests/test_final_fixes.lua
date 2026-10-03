@@ -1235,9 +1235,11 @@ recipes["mech-armor"] = {
   name = "mech-armor",
   enabled = false,
   ingredients = {
-    { type = "item", name = "tungsten-plate", amount = 10 },
-    { type = "item", name = "carbon-fiber", amount = 10 },
-    { type = "item", name = "holmium-plate", amount = 10 },
+    { type = "item", name = "power-armor-mk2", amount = 1 },
+    { type = "item", name = "holmium-plate", amount = 200 },
+    { type = "item", name = "processing-unit", amount = 100 },
+    { type = "item", name = "superconductor", amount = 50 },
+    { type = "item", name = "supercapacitor", amount = 50 },
   },
   results = {
     { type = "item", name = "mech-armor", amount = 1 },
@@ -2110,8 +2112,8 @@ end)
 
 test("bulk badges show the final result quantity, not only the policy multiplier", function()
   local cases = {
-    {recipe = "plastic-bar", product = "plastic-bar", batch = 20, old_multiplier = 10},
-    {recipe = "chemical-science-pack", product = "chemical-science-pack", batch = 4, old_multiplier = 2},
+    {recipe = "plastic-bar", product = "plastic-bar", batch = 10, old_multiplier = 5},
+    {recipe = "chemical-science-pack", product = "chemical-science-pack", batch = 2, old_multiplier = 1},
     {recipe = "sulfur", product = "sulfur", batch = 20, old_multiplier = 10},
     {recipe = "iron-stick-regulated", product = "iron-stick", batch = 10, old_multiplier = 5},
   }
@@ -2166,7 +2168,7 @@ test("plain pipes are paperwork-free while underground pipes use 5x construction
     "underground pipe should show the 10x overlay")
 end)
 
-test("fluid-only recipes retain native quantities and do not display a bulk overlay", function()
+test("fluid-only recipes default to native quantities with explicit acid batching", function()
   local oil = get_recipe("oil-processing")
   assert_true(oil ~= nil, "oil-processing missing")
   assert_eq(get_ingredient_amount(oil, "crude-oil"), 100,
@@ -2177,8 +2179,14 @@ test("fluid-only recipes retain native quantities and do not display a bulk over
     "oil-processing should not display a bulk overlay for fluid output")
 
   local sulfuric_acid = get_recipe("sulfuric-acid")
-  assert_eq(get_result_amount(sulfuric_acid, "sulfuric-acid"), 50,
-    "fluid-only chemistry should retain native output quantities")
+  assert_eq(get_result_amount(sulfuric_acid, "sulfuric-acid"), 500,
+    "sulfuric acid should multiply native output by ten")
+  assert_eq(get_ingredient_amount(sulfuric_acid, "iron-plate"), 10,
+    "sulfuric acid should multiply item input by ten")
+  assert_eq(get_ingredient_amount(sulfuric_acid, "sulfur"), 50,
+    "sulfuric acid should multiply sulfur input by ten")
+  assert_eq(get_ingredient_amount(sulfuric_acid, "water"), 1000,
+    "sulfuric acid should multiply fluid input by ten")
 end)
 
 test("equipment recipes stay unbatched at 1x", function()
@@ -3007,7 +3015,7 @@ test("space age intermediate recipes gain the expected chromatic and aquilo gate
   assert_true(not has_ingredient(quantum, "blank-magenta-form"),
     "quantum-processor should not keep separate blank-magenta-form once unified multicolor paperwork is used")
 
-  for _, recipe_name in ipairs({"fusion-reactor", "fusion-generator", "mech-armor"}) do
+  for _, recipe_name in ipairs({"fusion-reactor", "fusion-generator"}) do
     local recipe = get_recipe(recipe_name)
     assert_true(recipe ~= nil, recipe_name .. " missing")
     assert_true(has_ingredient(recipe, "trichromatic-permit"),
@@ -3018,6 +3026,12 @@ test("space age intermediate recipes gain the expected chromatic and aquilo gate
       recipe_name .. " should not keep separate blank-yellow-form once trichromatic paperwork is used")
     assert_true(not has_ingredient(recipe, "blank-magenta-form"),
       recipe_name .. " should not keep separate blank-magenta-form once trichromatic paperwork is used")
+  end
+
+  for _, route in ipairs({"mech-armor", "mech-armor-regulated"}) do
+    local armor = assert(get_recipe(route), route .. " missing")
+    assert_true(has_ingredient(armor, "blank-magenta-form"), "mech armor should use Fulgora paperwork")
+    assert_true(not has_ingredient(armor, "trichromatic-permit"), "mech armor should not require Aquilo convergence")
   end
 
   local promethium = get_recipe("promethium-science-pack")

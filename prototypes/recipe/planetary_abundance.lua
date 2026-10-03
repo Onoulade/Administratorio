@@ -87,21 +87,6 @@ data:extend({
     energy_required = 5,
     allow_productivity = true,
   }),
-  on_planet("fulgora", {
-    type = "recipe",
-    name = "electromagnetic-rocket-fuel-fulgora",
-    category = "electromagnetics",
-    subgroup = "admin-planet-fulgora", order = "lb-p",
-    enabled = false,
-    ingredients = {
-      {type = "item", name = "solid-fuel", amount = 10},
-      {type = "fluid", name = "electrolyte", amount = 20},
-      {type = "item", name = "charged-toner", amount = 1},
-    },
-    results = {{type = "item", name = "rocket-fuel", amount = 1}},
-    energy_required = 8,
-    allow_productivity = true,
-  }),
   -- This is the deliberately expensive petroleum exception required for
   -- electric engines and therefore the unchanged rocket-silo recipe. It does
   -- not open an oil chain: crude oil and every other refinery output remain

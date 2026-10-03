@@ -90,6 +90,9 @@ vanilla_tech("robotics", nil, {
   {type = "unlock-recipe", recipe = "flying-robot-frame"},
 }, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
 vanilla_tech("personal-roboport-equipment", {"robotics"}, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
+vanilla_tech("worker-robots-speed-1", {"robotics"}, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
+vanilla_tech("worker-robots-speed-2", {"worker-robots-speed-1"}, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
+vanilla_tech("worker-robots-storage-1", {"robotics"}, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
 vanilla_tech("personal-roboport-mk2-equipment", {"personal-roboport-equipment"}, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack", "utility-science-pack"})
 vanilla_tech("oil-gathering", nil, nil, {"chemical-science-pack"})
 vanilla_tech("uranium-mining", nil, nil, {"automation-science-pack", "logistic-science-pack", "chemical-science-pack"})
@@ -805,7 +808,17 @@ test("vanilla branches gain the required bureaucracy prerequisites", function()
   assert_true(tech_has_prereq("logistic-robotics", "utility-science-pack"), "logistic-robotics should explicitly require utility science")
   assert_true(tech_has_prereq("personal-roboport-equipment", "utility-science-pack"), "personal-roboport-equipment should explicitly require utility science")
   assert_true(tech_has_prereq("robotics", "federal-regulation"), "robotics should be delayed to the production-era bureaucracy branch")
-  assert_true(tech_unlocks_recipe("robotics", "flying-robot-frame"), "robotics should still own robot frames")
+  assert_true(not tech_unlocks_recipe("robotics", "flying-robot-frame"), "robot frames must bootstrap yellow science before robotics")
+  assert_true(tech_unlocks_recipe("utility-science-pack", "flying-robot-frame"), "utility science should unlock robot frames")
+  assert_true(tech_has_prereq("robotics", "utility-science-pack"), "robotics should require yellow science")
+  assert_true(tech_uses_pack("robotics", "utility-science-pack"), "robotics should consume yellow science")
+  for _, tech_name in ipairs({"construction-robotics", "logistic-robotics"}) do
+    assert_true(tech_has_prereq(tech_name, "robotics"), tech_name .. " should require robotics")
+  end
+  for _, tech_name in ipairs({"worker-robots-speed-1", "worker-robots-speed-2", "worker-robots-storage-1"}) do
+    assert_true(tech_has_prereq(tech_name, "logistic-robotics"), tech_name .. " should require logistic robotics")
+    assert_true(tech_uses_pack(tech_name, "utility-science-pack"), tech_name .. " should consume yellow science")
+  end
   assert_true(tech_depends_on("construction-robotics", "federal-regulation"), "construction robots should be late-game")
   assert_true(tech_depends_on("logistic-robotics", "federal-regulation"), "logistic robots should be late-game")
   assert_true(tech_depends_on("personal-roboport-equipment", "federal-regulation"), "personal roboports should be late-game")

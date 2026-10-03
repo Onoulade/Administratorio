@@ -96,7 +96,7 @@ local function assert_resolution(recipe_name, prototype, expected_multiplier, ex
   assert_eq(reason, expected_reason, recipe_name .. " reason")
 end
 
-test("fluid-only recipes are immutable 1x", function()
+test("fluid recipes default to 1x and allow explicit balance overrides", function()
   local prototype = recipe("fluid-recipe", "test-fluid", {result_type = "fluid"})
   prototype.main_product = "test-fluid"
   prototype.results[#prototype.results + 1] = {
@@ -105,7 +105,10 @@ test("fluid-only recipes are immutable 1x", function()
     amount = 1,
     probability = 0.5,
   }
-  assert_resolution("fluid-recipe", prototype, 1, "fluid-only")
+  assert_resolution("fluid-recipe", prototype, 20, "explicit")
+  assert_resolution("native-fluid-recipe", prototype, 1, "fluid-only")
+  assert_resolution("fluid-recipe", recipe("fluid-recipe", "test-fluid", {result_type = "fluid"}), 20, "explicit")
+  assert_resolution("native-fluid-recipe", recipe("native-fluid-recipe", "test-fluid", {result_type = "fluid"}), 1, "fluid-only")
 end)
 
 test("modules are immutable 1x", function()

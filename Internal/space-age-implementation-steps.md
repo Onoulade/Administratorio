@@ -120,7 +120,7 @@ Colored paperwork gating:
   - `hardened-data-vault` turns cyan-magenta Vulcanus-Fulgora paperwork into late orbital custody paperwork without blocking first platform logistics
 - Current three-color gate:
   - three CMY requirements collapse to `trichromatic-permit`
-  - explicit trichromatic convergence gates include `fusion-reactor`, `fusion-generator`, and `mech-armor`
+  - explicit trichromatic convergence gates include `fusion-reactor` and `fusion-generator`; `mech-armor` uses only Fulgora magenta paperwork
 - Current explicit top-tier override:
   - `quantum-processor` consumes `unified-operations-charter`
   - the visible Administratorium science tier (`promethium-science-pack` internally) consumes an Administratorium expedition charter (`promethium-research-charter` internally), issued in vacuum from unified, cryogenic, hardened data custody, and asteroid-processing paperwork

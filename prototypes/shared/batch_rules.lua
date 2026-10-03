@@ -1,7 +1,7 @@
 -- ADMINISTRATORIO: REGULATED RECIPE BATCH CLASSIFICATION
 --
 -- Batch size is an economic property of the thing being produced, not a
--- release-era list of recipe names.  Keep the immutable 1x rules here, then
+-- release-era list of recipe names. Keep the immutable item 1x rules here, then
 -- allow explicit balance overrides, and finally fall back to semantic output
 -- classes.  The returned reason is deliberately stable so tests and audit
 -- tooling can explain why a recipe received its multiplier.
@@ -148,7 +148,9 @@ function M.resolve(data_raw, recipe_name, recipe, config)
 
   local target = recipe_target(recipe)
   local main_product = target.main_product or recipe.main_product
+  local explicit = config.multipliers and config.multipliers[recipe_name]
   if main_product and data_raw.fluid and data_raw.fluid[main_product] then
+    if explicit then return explicit, "explicit" end
     return 1, "fluid-only"
   end
 
@@ -159,7 +161,10 @@ function M.resolve(data_raw, recipe_name, recipe, config)
       break
     end
   end
-  if all_fluid then return 1, "fluid-only" end
+  if all_fluid then
+    if explicit then return explicit, "explicit" end
+    return 1, "fluid-only"
+  end
 
   if recipe_mentions_biter(recipe_name, recipe, results, data_raw) then
     return 1, "biter-related"
@@ -191,7 +196,6 @@ function M.resolve(data_raw, recipe_name, recipe, config)
     end
   end
 
-  local explicit = config.multipliers and config.multipliers[recipe_name]
   if explicit then return explicit, "explicit" end
 
   if starts_with_any(recipe.subgroup, config.space_subgroup_prefixes) then

@@ -1054,7 +1054,6 @@ add_tech_unlock("calcite-processing", "molten-promises-production")
 add_tech_unlock("cyan-ink-production", "dubious-data-analysis-vulcanus")
 add_tech_unlock("electromagnetic-plant", "salvage-electrolyte-fulgora")
 add_tech_unlock("electromagnetic-plant", "electromagnetic-lubricant-fulgora")
-add_tech_unlock("rocket-fuel", "electromagnetic-rocket-fuel-fulgora")
 add_tech_unlock("gleba-conciliation", "capture-bureau-workforce")
 add_tech_unlock("biochamber", "workforce-lure-spores-production")
 for _, briefing in ipairs(manager_briefings.BRIEFINGS) do

@@ -16,7 +16,6 @@ local EXPLICIT_MULTICOLOR_RECIPE_GATING = {
   ["fusion-reactor-equipment"] = "trichromatic-permit",
   ["captive-biter-spawner"] = "trichromatic-permit",
   ["fusion-generator"] = "trichromatic-permit",
-  ["mech-armor"] = "trichromatic-permit",
   ["promethium-science-pack"] = "promethium-research-charter",
 }
 local CRYOGENIC_RECIPE_GATING = {

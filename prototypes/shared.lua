@@ -491,12 +491,9 @@ end
 -- Semantic defaults classify production buildings at 2x, repeatable tool
 -- infrastructure at 5x, and ordinary items at 5x. This table contains only
 -- deliberate balance exceptions and high-volume intermediates.
--- How many items are produced per regulated craft.
--- Determines effective form cost per item:
---   10x = 0.1 forms/item (bulk intermediates)
---    5x = 0.2 forms/item (standard items)
---    2x = 0.5 forms/item (machines, science)
---    1x = 1.0 forms/item (megastructures)
+-- Scale native material inputs, outputs, and craft time by the same factor.
+-- Paperwork is charged once per batch. A native two-output recipe multiplied
+-- by 5 therefore produces ten items, costing 0.1 documents per item.
 -------------------------------------------------------------------------------
 shared.BATCH_MULTIPLIER_DEFAULT = 5
 shared.BATCH_MULTIPLIER_BUILDING = 2
@@ -518,7 +515,7 @@ shared.BATCH_MULTIPLIERS = {
   -- Science remains an explicit economic progression.
   ["automation-science-pack"] = 5,
   ["logistic-science-pack"] = 5,
-  ["chemical-science-pack"] = 2,
+  ["chemical-science-pack"] = 1, -- Native craft already produces two packs.
   ["production-science-pack"] = 1,
   ["utility-science-pack"] = 1,
   ["space-science-pack"] = 1,
@@ -554,10 +551,13 @@ shared.BATCH_MULTIPLIERS = {
   ["copper-plate"] = 20,
   ["steel-plate"] = 20,
   ["stone-brick"] = 20,
-  ["plastic-bar"] = 10,
+  ["plastic-bar"] = 5, -- Native craft already produces two bars.
+  ["low-density-structure"] = 2,
+  ["flying-robot-frame"] = 2,
+  ["sulfuric-acid"] = 10,
   ["sulfur"] = 10,
   ["battery"] = 10,
-  ["explosives"] = 10,
+  ["explosives"] = 5,
   -- Ultra-high-volume (20x = 0.05 forms each)
   ["paper-production"] = 20,
 }

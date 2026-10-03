@@ -461,6 +461,42 @@ def assert_milestone_resolutions_are_operable(data_raw: dict, configuration: str
 def assert_administrative_progression(data_raw: dict, *, space_age: bool) -> None:
     technologies, recipes = data_raw["technology"], data_raw["recipe"]
     analyzer = ProgressionAnalyzer(data_raw)
+    assert "utility-science-pack" in analyzer.tech_science_packs("robotics")
+    assert "robotics" not in analyzer.prereq_closure("utility-science-pack")
+    frame_unlockers = {
+        name for name, technology in technologies.items()
+        if any(effect.get("recipe") == "flying-robot-frame" for effect in technology.get("effects", []))
+    }
+    assert frame_unlockers == {"utility-science-pack"}, frame_unlockers
+    for name in ("construction-robotics", "logistic-robotics"):
+        assert "robotics" in technologies[name]["prerequisites"], name
+    for name in technologies:
+        if name.startswith(("worker-robots-speed-", "worker-robots-storage-")):
+            assert "logistic-robotics" in technologies[name]["prerequisites"], name
+            assert "utility-science-pack" in analyzer.tech_science_packs(name), name
+
+    # Native material quantities, outputs and times scale by the same factor.
+    batches = {
+        "chemical-science-pack": (1, 2, 24, {"engine-unit": 2, "advanced-circuit": 3, "sulfur": 1}),
+        "low-density-structure": (2, 1, 15, {"steel-plate": 2, "copper-plate": 20, "plastic-bar": 5}),
+        "flying-robot-frame": (2, 1, 20, {"electric-engine-unit": 1, "battery": 2, "steel-plate": 1, "electronic-circuit": 3}),
+        "plastic-bar": (5, 2, 1, {"petroleum-gas": 20, "coal": 1}),
+        "sulfuric-acid": (10, 50, 1, {"sulfur": 5, "iron-plate": 1, "water": 100}),
+        "explosives": (5, 2, 4, {"sulfur": 1, "coal": 1, "water": 10}),
+        "production-science-pack": (1, 3, 21, {"electric-furnace": 1, "productivity-module": 1, "rail": 30}),
+        "utility-science-pack": (1, 3, 21, {"low-density-structure": 3, "processing-unit": 2, "flying-robot-frame": 1}),
+    }
+    for name, (factor, output, duration, native_inputs) in batches.items():
+        for route in (name, name + "-regulated"):
+            if route not in recipes:
+                continue
+            recipe = recipes[route]
+            actual_inputs = {entry["name"]: entry["amount"] for entry in recipe["ingredients"]}
+            actual_outputs = {entry["name"]: entry["amount"] for entry in recipe["results"]}
+            assert actual_outputs[name] == output * factor, route
+            assert recipe["energy_required"] == duration * factor, route
+            for ingredient, amount in native_inputs.items():
+                assert actual_inputs[ingredient] == amount * factor, (route, ingredient)
     for name in ("railway", "nuclear-power", "automation-3", "rocket-silo",
                  "advanced-circuit", "processing-unit", "construction-robotics"):
         assert "administrative-science-pack" not in analyzer.tech_science_packs(name), name
@@ -499,6 +535,17 @@ def assert_administrative_progression(data_raw: dict, *, space_age: bool) -> Non
             assert "office-desk" not in {item for item, _ in recipe_ingredients(recipe)}, name
     if not space_age:
         return
+    assert "electromagnetic-rocket-fuel-fulgora" not in recipes
+    mech_ancestors = set(analyzer.prereq_closure("mech-armor"))
+    assert not mech_ancestors & {"interplanetary-tube-network", "interplanetary-tube-chromatic"}
+    assert analyzer.tech_science_packs("mech-armor") == {
+        "automation-science-pack", "logistic-science-pack", "chemical-science-pack",
+        "utility-science-pack", "space-science-pack", "electromagnetic-science-pack",
+    }
+    for route in ("mech-armor", "mech-armor-regulated"):
+        ingredients = {entry["name"]: entry["amount"] for entry in recipes[route]["ingredients"]}
+        assert ingredients["blank-magenta-form"] == 1, route
+        assert "trichromatic-permit" not in ingredients, route
     for name, item in {
         "vulcanus-certification": "blank-cyan-form",
         "gleba-yellow-administration": "ink",
