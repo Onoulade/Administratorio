@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.8.4
+Date: 2026-10-03
+  Changes:
+    - Correct recipe batches and robot progression
+    - Fix personnel item filter visibility and tourism unlocks
+---------------------------------------------------------------------------------------------------
 Version: 0.8.3
 Date: 2026-10-01
   Changes:
