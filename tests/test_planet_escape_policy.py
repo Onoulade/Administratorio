@@ -159,4 +159,27 @@ check(
     "spoil results must participate in local progression",
 )
 
+multi_route_fixture = fixed_point_fixture()
+multi_route_fixture["technology"]["global-research"].pop("unit")
+multi_route_fixture["technology"]["global-research"]["research_trigger"] = {
+    "type": "mine-entity", "entities": ["off-world-entity", "fruit-tree"],
+}
+for recipe in multi_route_fixture["recipe"].values():
+    recipe["categories"] = ["unavailable", recipe.pop("category", "crafting")]
+multi_route_analyzer = planet_escape.PlanetEscapeAnalyzer(
+    multi_route_fixture, {"test": {"pressure": 1000, "gravity": 10}}
+)
+check(
+    "widget" in multi_route_analyzer.craftable_outputs("test"),
+    "secondary 2.1 categories must provide machine and material routes",
+)
+check(
+    planet_escape.recipe_category({"categories": ["unavailable", "widgets"]}, {"widgets"}) == "widgets",
+    "plans must select a category with an available provider",
+)
+check(
+    planet_escape.recipe_visible({"name": "widget-recycling", "hidden": True, "categories": ["recycling"]}),
+    "2.1 recycler categories must remain visible to the planner",
+)
+
 print("Planet escape import-policy tests passed")

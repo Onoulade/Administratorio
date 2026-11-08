@@ -28,6 +28,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
+from test_progression_report import recipe_categories
+
 
 log = logging.getLogger("planet-escape")
 
@@ -424,16 +426,15 @@ def recipe_visible(recipe: Dict) -> bool:
         return True
     # Quality generates hidden recycling recipes because the recycler selects
     # them automatically; hidden here is UI state, not engine inaccessibility.
-    return recipe_category(recipe) == "recycling" and str(recipe.get("name", "")).endswith("-recycling")
+    return "recycling" in recipe_categories(recipe) and str(recipe.get("name", "")).endswith("-recycling")
 
 
-def recipe_category(recipe: Dict) -> str:
-    level = recipe_level(recipe)
-    return level.get("category") or recipe.get("category") or "crafting"
+def recipe_category(recipe: Dict, available: Set[str]) -> str:
+    return next(category for category in sorted(recipe_categories(recipe)) if category in available)
 
 
 def recipe_is_recycling_route(recipe_name: str, recipe: Dict) -> bool:
-    return recipe_category(recipe) == "recycling" or recipe_name.endswith("-recycling")
+    return "recycling" in recipe_categories(recipe) or recipe_name.endswith("-recycling")
 
 
 def recipe_ingredients(recipe: Dict) -> List[Tuple[str, str, Fraction]]:
@@ -758,15 +759,15 @@ class PlanetEscapeAnalyzer:
         for tech_name, tech in self.technologies.items():
             trigger = tech.get("research_trigger") or {}
             if trigger.get("type") == "mine-entity":
-                entity = trigger.get("entity", "?")
+                entities = trigger.get("entities") or [trigger.get("entity")]
                 prereqs = tech.get("prerequisites", []) or []
                 unlocks = self.unlocks_by_tech.get(tech_name, [])
                 on_planets = [
                     p for p in self.planet_properties
-                    if entity in self.local_entity_names_by_planet.get(p, set())
+                    if any(entity in self.local_entity_names_by_planet.get(p, set()) for entity in entities)
                 ]
                 log.debug("mine-entity tech '%s': entity='%s', prereqs=%s, unlocks=%s, available on: %s",
-                          tech_name, entity, prereqs, unlocks,
+                          tech_name, entities, prereqs, unlocks,
                           ", ".join(on_planets) if on_planets else "(none)")
 
     def _recipe_available_on_planet(self, recipe: Dict, planet_name: str) -> bool:
@@ -898,8 +899,9 @@ class PlanetEscapeAnalyzer:
                     trigger_type = trigger.get("type")
                     trigger_ready = False
                     if trigger_type == "mine-entity":
-                        trigger_ready = self._mine_trigger_is_local(
-                            planet_name, trigger.get("entity")
+                        trigger_ready = any(
+                            self._mine_trigger_is_local(planet_name, entity)
+                            for entity in trigger.get("entities") or [trigger.get("entity")]
                         )
                     elif trigger_type == "craft-item":
                         trigger_ready = trigger.get("item") in craftable_set
@@ -1002,7 +1004,7 @@ class PlanetEscapeAnalyzer:
                 if recipe_name in usable_recipes:
                     continue
                 recipe = self.recipes[recipe_name]
-                if recipe_category(recipe) not in available_categories:
+                if available_categories.isdisjoint(recipe_categories(recipe)):
                     continue
                 if any(
                     ingredient_name not in craftable
@@ -1097,7 +1099,7 @@ class PlanetEscapeAnalyzer:
                 ),
             ):
                 recipe = self.recipes[recipe_name]
-                if recipe_category(recipe) not in categories:
+                if categories.isdisjoint(recipe_categories(recipe)):
                     continue
                 ingredients = recipe_ingredients(recipe)
                 if any(name not in reachable for name, _, _ in ingredients):
@@ -1182,7 +1184,9 @@ class PlanetEscapeAnalyzer:
             produced_amount = self.result_amount_for(source, material_name)
             crafts_needed = required_amount / produced_amount
             recipes[source] += crafts_needed
-            category = recipe_category(recipe)
+            category = recipe_category(
+                recipe, self.hand_crafting_categories.intersection(recipe_categories(recipe)) or set(category_providers)
+            )
             categories.add(category)
             steps.append(
                 f"{prefix}craft {format_fraction(crafts_needed)}x {source} "
@@ -1331,7 +1335,7 @@ class PlanetEscapeAnalyzer:
                 for recipe_name in available_key
                 if any(result_name == material_name for result_name, _, _ in recipe_results(self.recipes[recipe_name]))
                 and not recipe_name.startswith("fill-") and not recipe_name.startswith("empty-")
-                and recipe_category(self.recipes[recipe_name]) in planet_possible_categories
+                and not planet_possible_categories.isdisjoint(recipe_categories(self.recipes[recipe_name]))
             ]
             if not candidate_recipes:
                 if material_name in self.known_materials:
@@ -1358,13 +1362,16 @@ class PlanetEscapeAnalyzer:
                 imports = Counter()
                 deadlocks: Set[str] = set()
                 recipes = Counter({recipe_name: crafts_needed})
-                categories = {recipe_category(self.recipes[recipe_name])}
+                category = recipe_category(
+                    self.recipes[recipe_name],
+                    self.hand_crafting_categories.intersection(recipe_categories(self.recipes[recipe_name])) or planet_possible_categories,
+                )
+                categories = {category}
                 building_categories = set()
                 import_usage: Dict[str, List[Tuple[str, str, Fraction]]] = {}
                 steps: List[str] = [
                     f"craft {format_fraction(crafts_needed)}x {recipe_name} for {format_fraction(required_amount)}x {material_name}"
                 ]
-                category = recipe_category(self.recipes[recipe_name])
                 if category not in self.hand_crafting_categories:
                     building_categories.add(category)
 
