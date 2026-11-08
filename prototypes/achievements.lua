@@ -352,7 +352,7 @@ if feature_flags.space_age_enabled() then
       name = "file-not-found",
       to_build = "archive-recombination-bureau",
       icons = {
-        {icon = "__quality__/graphics/icons/recycler.png", icon_size = 64, tint = {r=0.82, g=0.68, b=0.96, a=1}},
+        {icon = "__recycler__/graphics/icons/recycler.png", icon_size = 64, tint = {r=0.82, g=0.68, b=0.96, a=1}},
         {icon = icons .. "blank-form.png", icon_size = 64, scale = 0.34, shift = {8, 8}},
       },
       order = "g[space-age]-c",

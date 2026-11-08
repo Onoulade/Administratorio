@@ -250,7 +250,7 @@ test("vanilla module recipes use the dedicated admin module category", function(
   }) do
     local recipe = data.raw.recipe[name]
     assert_true(recipe ~= nil, name .. " recipe missing")
-    assert_true(recipe.category == "bureaucracy-modules", name .. " should use bureaucracy-modules")
+    assert_true((recipe.categories or {"crafting"})[1] == "bureaucracy-modules", name .. " should use bureaucracy-modules")
   end
 end)
 

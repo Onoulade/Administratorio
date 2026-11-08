@@ -39,7 +39,7 @@ end
 package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 
 defines = {
-  inventory = {furnace_source = 1, furnace_result = 2, chest = 3, assembling_machine_input = 4},
+  inventory = {crafter_input = 1, crafter_output = 2, chest = 3},
   entity_status_diode = {red = 1, yellow = 2, green = 3},
   direction = {north = 0, east = 2, south = 4, west = 6},
   wire_connector_id = {circuit_red = 1, circuit_green = 2},

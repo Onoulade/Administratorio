@@ -29,7 +29,7 @@ local function assert_true(value, msg)
 end
 
 defines = {
-  inventory = {furnace_source = 1, furnace_result = 2},
+  inventory = {crafter_input = 1, crafter_output = 2},
   entity_status_diode = {red = 1, yellow = 2, green = 3},
   direction = {north = 0, east = 2, south = 4, west = 6},
   wire_connector_id = {circuit_red = 1, circuit_green = 2},
@@ -151,7 +151,7 @@ local function new_cannon(role, planet_name, requests, arrivals_capacity)
     name = entity_name,
     unit_number = next_unit_number,
     position = {x = 0, y = 0},
-    active = false,
+    disabled_by_script = true,
     custom_status = nil,
     force = {valid = true, index = 1},
     input = new_inventory(20),
@@ -193,8 +193,8 @@ local function new_cannon(role, planet_name, requests, arrivals_capacity)
   entity.surface = surface
 
   function entity.get_inventory(which)
-    if which == defines.inventory.furnace_source then return entity.input end
-    if which == defines.inventory.furnace_result then return entity.arrivals end
+    if which == defines.inventory.crafter_input then return entity.input end
+    if which == defines.inventory.crafter_output then return entity.arrivals end
     return nil
   end
 

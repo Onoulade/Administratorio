@@ -222,8 +222,6 @@ script.on_nth_tick(30, function()
   elseif game.tick == 150 then
     local empty = surface.find_entities_filtered{
       name = "rideable-biter",
-      position = {60, 0},
-      radius = 1,
     }
     if #empty ~= 1 then fail("empty rideable biter did not restore ordinary art") end
     if empty[1].get_driver() ~= nil then fail("empty rideable biter retained a driver") end
@@ -388,7 +386,7 @@ def prepare_profile(root: Path) -> None:
                 "version": "1.0.0",
                 "title": "Administratorio Runtime Smoke",
                 "author": "Administratorio test suite",
-                "factorio_version": "2.0",
+                "factorio_version": "2.1",
                 "dependencies": ["base", "space-age", MOD_NAME],
             },
             indent=2,
@@ -411,7 +409,7 @@ def prepare_profile(root: Path) -> None:
     )
     (root / "config.ini").write_text(
         "[path]\n"
-        "read-data=__PATH__system-read-data__\n"
+        "read-data=__PATH__executable__/../../data\n"
         f"write-data={root}\n\n"
         "[general]\n"
         "locale=auto\n",
@@ -433,10 +431,11 @@ def main() -> None:
         root = Path(temp)
         prepare_profile(root)
         server_settings_source = (
-            factorio_bin.parent.parent / "data" / "server-settings.example.json"
+            factorio_bin.parents[2] / "data" / "server-settings.example.json"
         )
         server_settings = json.loads(server_settings_source.read_text(encoding="utf-8"))
         server_settings["auto_pause"] = False
+        server_settings["visibility"] = {"public": False, "lan": False}
         (root / "server-settings.json").write_text(
             json.dumps(server_settings, indent=2) + "\n",
             encoding="utf-8",
@@ -447,13 +446,12 @@ def main() -> None:
             str(root / "config.ini"),
             "--mod-directory",
             str(root / "mods"),
-            "--disable-audio",
+
             "--server-settings",
             str(root / "server-settings.json"),
             "--start-server-load-scenario",
             f"{SMOKE_MOD_NAME}/runtime-smoke",
-            "--until-tick",
-            "180",
+
         ]
         marker = root / "script-output" / "administratorio-runtime-smoke.txt"
         process = subprocess.Popen(

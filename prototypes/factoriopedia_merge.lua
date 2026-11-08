@@ -81,6 +81,12 @@ function merge.build_recipe_rename_map(data_raw, shared)
   local recipes = data_raw.recipe or {}
   local candidate_targets = {}
   local candidate_names = {}
+  local fixed_recipes = {}
+  for _, entities in pairs(data_raw) do
+    for _, entity in pairs(entities) do
+      if entity.fixed_recipe then fixed_recipes[entity.fixed_recipe] = true end
+    end
+  end
 
   for recipe_name, recipe in pairs(recipes) do
     -- Quality generates one "-recycling" recipe per recyclable product. Some
@@ -95,7 +101,7 @@ function merge.build_recipe_rename_map(data_raw, shared)
     -- only after that canonical recipe has been created.
     local is_factoriopedia_alternative = recipe.factoriopedia_alternative ~= nil
       or recipe.hidden_in_factoriopedia == true
-    if not is_recycling_recipe
+    if not fixed_recipes[recipe_name] and not is_recycling_recipe
       and not is_factoriopedia_alternative
       and (shared.is_admin_recipe(recipe_name) or EXTRA_ALLOWED_RECIPES[recipe_name]) then
       local target_name = get_merge_target(recipe)
@@ -128,6 +134,12 @@ function merge.apply_recipe_renames(data_raw, shared, rename_map)
       recipes[old_name] = nil
       recipe.name = new_name
       recipes[new_name] = recipe
+    end
+  end
+
+  for _, recipe in pairs(recipes) do
+    if rename_map[recipe.factoriopedia_alternative] then
+      recipe.factoriopedia_alternative = rename_map[recipe.factoriopedia_alternative]
     end
   end
 

@@ -410,7 +410,7 @@ local function add_runtime_profiler_to_table(target, key, profiler)
   if not target or not key or not profiler then return end
   local section = target[key]
   if not section then
-    section = game.create_profiler(true)
+    section = helpers.create_profiler(true)
     target[key] = section
   end
   section.add(profiler)
@@ -1115,7 +1115,7 @@ function M.run_profiled_section(snapshot, key, fn)
     return
   end
 
-  local profiler = game.create_profiler()
+  local profiler = helpers.create_profiler()
   fn()
   profiler.stop()
   snapshot.sections[key] = profiler
@@ -1128,13 +1128,13 @@ function M.run_profiled_external_sections(root_key, fn)
   end
 
   local sections = {}
-  local profiler = game.create_profiler()
+  local profiler = helpers.create_profiler()
   fn(sections)
   profiler.stop()
 
   add_runtime_profiler_to_table(runtime_debug_external_sections, root_key, profiler)
   if not runtime_debug_external_total then
-    runtime_debug_external_total = game.create_profiler(true)
+    runtime_debug_external_total = helpers.create_profiler(true)
   end
   runtime_debug_external_total.add(profiler)
 
@@ -1158,7 +1158,7 @@ function M.begin_snapshot(tick)
     sections = sections,
     counts = {},
     external_total = external_total,
-  }, game.create_profiler()
+  }, helpers.create_profiler()
 end
 
 function M.complete_snapshot(snapshot, total_profiler)

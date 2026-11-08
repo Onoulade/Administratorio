@@ -156,7 +156,7 @@ local function hide_connector_body(connector)
 end
 
 local function universal_wire_connector(definition)
-  return hide_connector_body(circuit_connector_definitions.create_single(universal_connector_template, definition))
+  return {hide_connector_body(circuit_connector_definitions.create_single(universal_connector_template, definition))}
 end
 
 local function universal_wire_connectors(definitions)
@@ -174,7 +174,7 @@ local tube_intake = {
   name = "tube-intake",
   icon = "__administratorio__/graphics/entities/pneumatic/intake-icon.png",
   icon_size = 64,
-  flags = {"placeable-neutral", "placeable-player", "player-creation"},
+  flags = {"no-logistic-connection", "placeable-neutral", "placeable-player", "player-creation"},
   minable = {mining_time = 0.2, result = "tube-intake"},
   placeable_by = placeable_by_item("tube-intake"),
   fast_replaceable_group = "pneumatic-io",
@@ -193,7 +193,6 @@ local tube_intake = {
   allowed_effects = {},
   show_recipe_icon = false,
   show_recipe_icon_on_map = false,
-  enable_logistic_control_behavior = false,
   circuit_wire_max_distance = 9,
   circuit_connector = universal_wire_connectors({
     {variation = 25, main_offset = util.by_pixel(10, -5), shadow_offset = util.by_pixel(0, 0), show_shadow = false},

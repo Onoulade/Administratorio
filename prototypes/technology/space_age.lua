@@ -153,7 +153,7 @@ data:extend({
     prerequisites = {"planet-discovery-vulcanus"},
     research_trigger = {
       type = "mine-entity",
-      entity = "verdigris-crust",
+      entities = {"verdigris-crust"},
     },
     order = "h-b3",
   },
@@ -177,7 +177,7 @@ data:extend({
     prerequisites = {"planet-discovery-gleba"},
     research_trigger = {
       type = "mine-entity",
-      entity = "amber-sap-seep",
+      entities = {"amber-sap-seep"},
     },
     order = "h-b4",
   },
@@ -993,6 +993,16 @@ data:extend(orbital_employment_capacity_techs)
 -- making the visible Administratorium tier the culmination of Administratorio's
 -- interplanetary bureaucracy. The charter travels the Aquilo chromatic tube
 -- tier, so the expedition technology must not bypass that administrative branch.
+-- The 2.1 edge-discovery technology must use our replacement asteroid defense.
+local edge_discovery = data.raw.technology["stellar-discovery-solar-system-edge"]
+if edge_discovery then
+  for index, prerequisite in ipairs(edge_discovery.prerequisites) do
+    if prerequisite == "railgun" then
+      edge_discovery.prerequisites[index] = "trajectory-compliance-jurisdiction-3"
+    end
+  end
+end
+
 add_tech_prerequisite("promethium-science-pack", "interplanetary-tube-chromatic")
 add_tech_science_pack("promethium-science-pack", "administrative-science-pack", 1)
 add_tech_unlock("promethium-science-pack", "promethium-research-charter-production")

@@ -271,6 +271,7 @@ def build_temp_profile(mod_name: str) -> Path:
                     {"name": "base", "enabled": True},
                     {"name": "elevated-rails", "enabled": True},
                     {"name": "quality", "enabled": True},
+                    {"name": "recycler", "enabled": True},
                     {"name": "space-age", "enabled": True},
                     {"name": mod_name, "enabled": True},
                 ]
@@ -283,7 +284,7 @@ def build_temp_profile(mod_name: str) -> Path:
     write_file(
         tmp_root / "config.ini",
         "[path]\n"
-        "read-data=__PATH__system-read-data__\n"
+        "read-data=__PATH__executable__/../../data\n"
         f"write-data={tmp_root}\n\n"
         "[general]\n"
         "locale=auto\n",
@@ -301,7 +302,7 @@ def run_dump_data(factorio_bin: Path, tmp_root: Path) -> Path:
         str(tmp_root / "config.ini"),
         "--mod-directory",
         str(tmp_root / "mods"),
-        "--disable-audio",
+
         "--dump-data",
     ]
     log.info("Running dump-data: %s", " ".join(command))

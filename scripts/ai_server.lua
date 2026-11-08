@@ -116,11 +116,11 @@ function M.on_tick(_event)
 
     if core.temperature >= C.AI_SERVER_STALL_TEMPERATURE then
       -- Held inactive until the heat network draws the core back down.
-      entity.active = false
+      entity.disabled_by_script = true
       set_status(entity, "overheated", defines.entity_status_diode.red)
     else
-      if not entity.active then
-        entity.active = true
+      if entity.disabled_by_script then
+        entity.disabled_by_script = false
       end
 
       if entity.status == defines.entity_status.working then

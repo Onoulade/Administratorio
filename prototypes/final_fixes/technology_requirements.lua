@@ -1,3 +1,4 @@
+local recipe_categories = require("prototypes.shared.recipe_categories")
 -- Keep administrative science local to administration, and make recipe inputs
 -- available through explicit technology prerequisites rather than broad hooks.
 local M = {}
@@ -39,8 +40,8 @@ function M.apply(data)
   end
   for name in pairs(data.raw["asteroid-chunk"] or {}) do initial["item/" .. name] = true end
   local function production_recipe(recipe)
-    return recipe and not recipe.hidden and recipe.category ~= "recycling"
-      and recipe.category ~= "recycling-or-hand-crafting"
+    return recipe and not recipe.hidden and recipe_categories.primary(recipe) ~= "recycling"
+      and recipe_categories.primary(recipe) ~= "recycling-or-hand-crafting"
   end
   for _, recipe in pairs(recipes) do
     for _, result in ipairs(recipe.results or {}) do

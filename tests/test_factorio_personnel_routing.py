@@ -33,8 +33,8 @@ local function proxies(target)
   end
   return units
 end
-local function source() return input.get_inventory(defines.inventory.furnace_source) end
-local function arrival() return output.get_inventory(defines.inventory.furnace_result) end
+local function source() return input.get_inventory(defines.inventory.crafter_input) end
+local function arrival() return output.get_inventory(defines.inventory.crafter_output) end
 local function conservation(expected)
   local count = source().get_item_count{name="worker-biter",quality="rare"} + arrival().get_item_count{name="worker-biter",quality="rare"} + storage.fixture.buffer.get_item_count{name="worker-biter",quality="rare"} + #proxies()
   for _, chest in ipairs(surface.find_entities_filtered{name = "personnel-recovery-crate"}) do count = count + chest.get_item_count{name="worker-biter",quality="rare"} end
@@ -62,7 +62,7 @@ local function verify_grid()
       grid.create_entity{name=name,position=p,direction=direction,force=game.forces.player}
       local built=grid.find_entities_filtered{name=name,position=p,radius=2}
       check(#built==1, "native grid placement failed: " .. name .. " " .. serpent.line(p))
-      check(built[1].prototype.building_grid_bit_shift==prototypes.entity["straight-rail"].building_grid_bit_shift, "native placement grid differs from rails: " .. name .. " grid=" .. built[1].prototype.building_grid_bit_shift)
+      check(built[1].prototype.build_grid_size==prototypes.entity["straight-rail"].build_grid_size, "native placement grid differs from rails: " .. name .. " grid=" .. built[1].prototype.build_grid_size)
       check(built[1].position.x%2==1 and built[1].position.y%2==1, "native 2x2 building centers did not snap: " .. name .. " " .. serpent.line(built[1].position))
       script.raise_script_built{entity=built[1]}
       check(built[1].valid, "aligned placement was rejected: " .. name)
@@ -83,7 +83,7 @@ local function verify_grid()
   end
   local departure=native_build("personnel-deployment-office",12)
   local reception=native_build("personnel-reception-office",16)
-  check(departure.get_inventory(defines.inventory.furnace_source).insert{name="worker-biter",count=1,quality="epic"}==1,"native-grid source rejected personnel")
+  check(departure.get_inventory(defines.inventory.crafter_input).insert{name="worker-biter",count=1,quality="epic"}==1,"native-grid source rejected personnel")
   storage.fixture.grid={surface=grid,output=reception}
 end
 script.on_init(function()
@@ -133,21 +133,21 @@ local function cargo_lifecycle(tick)
     for i,item in ipairs(items) do
       local departure=build("personnel-deployment-office",0,(i-1)*6,defines.direction.east)
       local reception=build("personnel-reception-office",48,(i-1)*6)
-      local inv=departure.get_inventory(defines.inventory.furnace_source)
+      local inv=departure.get_inventory(defines.inventory.crafter_input)
       check(inv.insert{name=item,count=1,quality="rare"}==1,"cargo source rejected " .. item)
       if i>4 then inv[1].spoil_tick=tick+100 end
       fixture.lanes[i]={item=item,output=reception}
     end
     local fresh_departure=build("personnel-deployment-office",0,72,defines.direction.east)
     fixture.fresh_output=build("personnel-reception-office",4,72)
-    local fresh=fresh_departure.get_inventory(defines.inventory.furnace_source)
+    local fresh=fresh_departure.get_inventory(defines.inventory.crafter_input)
     fresh.insert{name=briefings[1].item,count=1,quality="rare"}
     fresh[1].spoil_tick=tick+200
     storage.fixture.cargo_lifecycle=fixture
     surface=main
   elseif tick==160 or tick==220 then
     local fixture=storage.fixture.cargo_lifecycle
-    local fresh=fixture.fresh_output.get_inventory(defines.inventory.furnace_result)[1]
+    local fresh=fixture.fresh_output.get_inventory(defines.inventory.crafter_output)[1]
     check(fresh.valid_for_read and fresh.quality.name=="rare","short trip lost manager/quality")
     if tick==160 then
       check(fresh.name==briefings[1].item and fresh.spoil_tick>=210 and fresh.spoil_tick<=220,
@@ -182,7 +182,7 @@ local function cargo_lifecycle(tick)
     check(#proxies(fixture.surface)==0,"cargo did not reach reception")
     for i,lane in ipairs(fixture.lanes) do
       local expected=i<=4 and lane.item or "middle-management-managing-manager"
-      check(lane.output.get_inventory(defines.inventory.furnace_result).get_item_count{name=expected,quality="rare"}==1,
+      check(lane.output.get_inventory(defines.inventory.crafter_output).get_item_count{name=expected,quality="rare"}==1,
         "tourist/expired manager lost cargo or quality: " .. lane.item)
     end
   end
@@ -196,13 +196,13 @@ script.on_nth_tick(4, function()
   end
   if storage.fixture.pending then
     local pending=storage.fixture.pending
-    local inv=pending.input.get_inventory(defines.inventory.furnace_source)
+    local inv=pending.input.get_inventory(defines.inventory.crafter_input)
     if not inv[1].valid_for_read then
       local stack=pending.buffer.find_item_stack{name="worker-biter",quality="epic"}
       if stack and inv.insert(stack)==1 then stack.clear() end
     end
     local count=inv.get_item_count{name="worker-biter",quality="epic"}+pending.buffer.get_item_count{name="worker-biter",quality="epic"}+#proxies(pending.surface)
-    if pending.output then count=count+pending.output.get_inventory(defines.inventory.furnace_result).get_item_count{name="worker-biter",quality="epic"} end
+    if pending.output then count=count+pending.output.get_inventory(defines.inventory.crafter_output).get_item_count{name="worker-biter",quality="epic"} end
     check(count==8,"incomplete route lost personnel")
     local units=proxies(pending.surface)
     for i,a in ipairs(units) do for j=i+1,#units do
@@ -236,13 +236,13 @@ script.on_nth_tick(4, function()
       pending.output=build("personnel-reception-office",18,12)
       surface=main
     elseif game.tick==2200 then
-      check(#units==0 and pending.output.get_inventory(defines.inventory.furnace_result).get_item_count{name="worker-biter",quality="epic"}==8,"extended route did not resume and deliver its queue")
+      check(#units==0 and pending.output.get_inventory(defines.inventory.crafter_output).get_item_count{name="worker-biter",quality="epic"}==8,"extended route did not resume and deliver its queue")
       check(pending.sign.minable and pending.sign.rotatable,"segment locks leaked after draining")
     end
   end
   if storage.fixture.folded then
     local folded=storage.fixture.folded
-    local inv=folded.input.get_inventory(defines.inventory.furnace_source)
+    local inv=folded.input.get_inventory(defines.inventory.crafter_input)
     if not inv[1].valid_for_read and folded.spare[1].valid_for_read and inv.insert(folded.spare[1])==1 then folded.spare[1].clear() end
   end
   if game.tick == 4 then
@@ -255,7 +255,7 @@ script.on_nth_tick(4, function()
     surface.set_tiles(tiles)
     local departure=build("personnel-deployment-office",0,0,defines.direction.east)
     local terminal=build("personnel-routing-sign",12,0,defines.direction.south)
-    departure.get_inventory(defines.inventory.furnace_source).insert{name="worker-biter",count=1,quality="epic"}
+    departure.get_inventory(defines.inventory.crafter_input).insert{name="worker-biter",count=1,quality="epic"}
     local buffer=game.create_inventory(7);buffer.insert{name="worker-biter",count=7,quality="epic"}
     storage.fixture.pending={surface=surface,input=departure,sign=terminal,buffer=buffer}
     surface=main
@@ -305,7 +305,7 @@ script.on_nth_tick(4, function()
     check(surface.get_tile(203,199).name=="personnel-path-concrete", "automatic pavement missing")
   elseif game.tick == 480 then
     local grid=storage.fixture.grid
-    check(grid.output.get_inventory(defines.inventory.furnace_result).get_item_count{name="worker-biter",quality="epic"}==1,"native-grid route did not deliver personnel")
+    check(grid.output.get_inventory(defines.inventory.crafter_output).get_item_count{name="worker-biter",quality="epic"}==1,"native-grid route did not deliver personnel")
     check(#proxies(grid.surface)==0,"native-grid route did not drain")
     game.delete_surface(grid.surface)
   elseif game.tick == 840 then
@@ -366,11 +366,11 @@ script.on_nth_tick(4, function()
       local y=(index-1)*6
       local departure=build("personnel-deployment-office",0,y,defines.direction.east)
       local reception=build("personnel-reception-office",4,y)
-      check(departure.get_inventory(defines.inventory.furnace_source).insert{name=name,count=1,quality="epic"}==1, "source rejected " .. name)
-      local stack=departure.get_inventory(defines.inventory.furnace_source)[1]
+      check(departure.get_inventory(defines.inventory.crafter_input).insert{name=name,count=1,quality="epic"}==1, "source rejected " .. name)
+      local stack=departure.get_inventory(defines.inventory.crafter_input)[1]
       stack.health=0.75
       if stack.spoil_tick>0 then stack.spoil_percent=0.25 end
-      for i=1,8 do reception.get_inventory(defines.inventory.furnace_result)[i].set_stack{name="worker-biter",count=1,quality="rare"} end
+      for i=1,8 do reception.get_inventory(defines.inventory.crafter_output)[i].set_stack{name="worker-biter",count=1,quality="rare"} end
       storage.fixture.roster[index]={name=name,input=departure,output=reception}
     end
     surface=main
@@ -387,14 +387,14 @@ script.on_nth_tick(4, function()
     supply.insert{name="worker-biter",count=2,quality="uncommon"}
     storage.fixture.inserter_result=result
     storage.fixture.inserters={input=departure,output=reception,supply=supply,arms=arms}
-    check(departure.get_inventory(defines.inventory.furnace_source).insert{name="rideable-biter",count=1}==0, "source inventory accepts rideable biter")
-    check(departure.get_inventory(defines.inventory.furnace_source).insert{name="hired-biter-capsule",count=1}==0, "source inventory accepts Field Agent")
+    check(departure.get_inventory(defines.inventory.crafter_input).insert{name="rideable-biter",count=1}==0, "source inventory accepts rideable biter")
+    check(departure.get_inventory(defines.inventory.crafter_input).insert{name="hired-biter-capsule",count=1}==0, "source inventory accepts Field Agent")
     local folded=build("personnel-deployment-office",220,220,defines.direction.east)
     build("personnel-routing-sign",224,220,defines.direction.south)
     build("personnel-routing-sign",224,222,defines.direction.west)
     local folded_output=build("personnel-reception-office",220,222)
-    for i=1,8 do folded_output.get_inventory(defines.inventory.furnace_result)[i].set_stack{name="worker-biter",count=1,quality="rare"} end
-    folded.get_inventory(defines.inventory.furnace_source).insert{name="worker-biter",count=1}
+    for i=1,8 do folded_output.get_inventory(defines.inventory.crafter_output)[i].set_stack{name="worker-biter",count=1,quality="rare"} end
+    folded.get_inventory(defines.inventory.crafter_input).insert{name="worker-biter",count=1}
     local spare=game.create_inventory(1)
     spare.insert{name="worker-biter",count=1}
     storage.fixture.folded={input=folded,output=folded_output,spare=spare}
@@ -413,33 +413,33 @@ script.on_nth_tick(4, function()
       end
     end
     check(briefings==5, "not all five briefing overlays were exercised")
-    for _,row in ipairs(storage.fixture.roster) do row.output.get_inventory(defines.inventory.furnace_result).clear() end
-    check(storage.fixture.folded.input.get_inventory(defines.inventory.furnace_source).get_item_count("worker-biter")==1, "tightly folded lane admitted intersecting traffic")
+    for _,row in ipairs(storage.fixture.roster) do row.output.get_inventory(defines.inventory.crafter_output).clear() end
+    check(storage.fixture.folded.input.get_inventory(defines.inventory.crafter_input).get_item_count("worker-biter")==1, "tightly folded lane admitted intersecting traffic")
     local count=0
     for _,unit in ipairs(units) do if unit.position.x>=219 and unit.position.x<=225 and unit.position.y>=219 and unit.position.y<=223 then count=count+1 end end
     check(count==1, "folded lane must keep exactly one active journey")
   elseif game.tick == 3240 then
-    storage.fixture.folded.output.get_inventory(defines.inventory.furnace_result).clear()
+    storage.fixture.folded.output.get_inventory(defines.inventory.crafter_output).clear()
     for _,id in ipairs(storage.fixture.briefing_renders) do
       local render=rendering.get_object_by_id(id)
       check(not render or not render.valid, "reception leaked its briefing overlay")
     end
     log("Personnel smoke: roster complete, validating inserters")
     for _,row in ipairs(storage.fixture.roster) do
-      check(row.output.get_inventory(defines.inventory.furnace_result).get_item_count{name=row.name,quality="epic"}==1,
+      check(row.output.get_inventory(defines.inventory.crafter_output).get_item_count{name=row.name,quality="epic"}==1,
         "roster identity/quality failed: " .. row.name .. " " .. serpent.line(remote.call("administratorio-personnel-routing","inspect")))
-      local stack=row.output.get_inventory(defines.inventory.furnace_result).find_item_stack{name=row.name,quality="epic"}
+      local stack=row.output.get_inventory(defines.inventory.crafter_output).find_item_stack{name=row.name,quality="epic"}
       check(math.abs(stack.health-0.75)<0.001, "cargo health metadata lost: " .. row.name)
       if stack.spoil_tick>0 then check(stack.spoil_percent>=0.25 and stack.spoil_percent<0.30, "cargo freshness metadata lost: " .. row.name) end
-      row.output.get_inventory(defines.inventory.furnace_result).clear()
+      row.output.get_inventory(defines.inventory.crafter_output).clear()
     end
     check(#proxies(storage.fixture.aux)==0, "roster queue failed to drain")
     local ins=storage.fixture.inserters
-    local diagnostic={supply=ins.supply.get_inventory(defines.inventory.chest).get_contents(),input=ins.input.get_inventory(defines.inventory.furnace_source).get_contents(),output=ins.output.get_inventory(defines.inventory.furnace_result).get_contents(),result=storage.fixture.inserter_result.get_inventory(defines.inventory.chest).get_contents(),arms={}}
+    local diagnostic={supply=ins.supply.get_inventory(defines.inventory.chest).get_contents(),input=ins.input.get_inventory(defines.inventory.crafter_input).get_contents(),output=ins.output.get_inventory(defines.inventory.crafter_output).get_contents(),result=storage.fixture.inserter_result.get_inventory(defines.inventory.chest).get_contents(),arms={}}
     for _,arm in ipairs(ins.arms) do diagnostic.arms[#diagnostic.arms+1]={status=arm.status,pickup=arm.pickup_position,drop=arm.drop_position,held=arm.held_stack.valid_for_read and arm.held_stack.name} end
     check(storage.fixture.inserter_result.get_item_count{name="worker-biter",quality="uncommon"}>=1, "native inserters did not load and collect personnel: " .. serpent.line(diagnostic))
   elseif game.tick == 3296 then
-    storage.fixture.roster[1].input.get_inventory(defines.inventory.furnace_source).insert{name="worker-biter",count=1}
+    storage.fixture.roster[1].input.get_inventory(defines.inventory.crafter_input).insert{name="worker-biter",count=1}
   elseif game.tick == 3304 then
     log("Personnel smoke: clearing surface")
     check(#proxies(storage.fixture.aux)==1, "surface clearing fixture never dispatched")
@@ -462,10 +462,10 @@ script.on_nth_tick(4, function()
     storage.fixture.deletion_input=departure
     surface=main
   elseif game.tick == 3476 then
-    check(storage.fixture.deletion_input.get_inventory(defines.inventory.furnace_source).insert{name="worker-biter",count=1}==1, "rebuilt input rejected cargo")
+    check(storage.fixture.deletion_input.get_inventory(defines.inventory.crafter_input).insert{name="worker-biter",count=1}==1, "rebuilt input rejected cargo")
   elseif game.tick == 3484 then
     log("Personnel smoke: deleting surface")
-    check(#proxies(storage.fixture.aux)==1, "surface deletion fixture never dispatched: " .. serpent.line(remote.call("administratorio-personnel-routing","inspect")) .. " source=" .. serpent.line(storage.fixture.deletion_input.get_inventory(defines.inventory.furnace_source).get_contents()) .. " status=" .. serpent.line(storage.fixture.deletion_input.custom_status))
+    check(#proxies(storage.fixture.aux)==1, "surface deletion fixture never dispatched: " .. serpent.line(remote.call("administratorio-personnel-routing","inspect")) .. " source=" .. serpent.line(storage.fixture.deletion_input.get_inventory(defines.inventory.crafter_input).get_contents()) .. " status=" .. serpent.line(storage.fixture.deletion_input.custom_status))
     game.delete_surface(storage.fixture.aux)
   elseif game.tick == 3600 then
     local recovered=0
@@ -474,9 +474,9 @@ script.on_nth_tick(4, function()
     check(storage.fixture.inserter_result.get_item_count{name="worker-biter",quality="uncommon"}==2, "native inserter queue did not fully drain")
     local departure=build("personnel-deployment-office",200,226,defines.direction.east)
     local reception=build("personnel-reception-office",206,226)
-    local buffer=reception.get_inventory(defines.inventory.furnace_result)
+    local buffer=reception.get_inventory(defines.inventory.crafter_output)
     for i=1,#buffer do buffer[i].set_stack{name="worker-biter",count=1} end
-    local inv=departure.get_inventory(defines.inventory.furnace_source)
+    local inv=departure.get_inventory(defines.inventory.crafter_input)
     check(inv.insert{name="training-briefed-middle-management-managing-manager",count=1,quality="rare"}==1, "briefing fixture source rejected cargo")
     inv[1].spoil_tick=game.tick+180
     storage.fixture.expiry_output=reception
@@ -500,7 +500,7 @@ script.on_nth_tick(4, function()
     check(jobs[1].spoil_tick-game.tick>=20 and jobs[1].spoil_tick-game.tick<=40,
       "queued manager half-speed clock drifted across save/load")
   elseif game.tick == 4140 then
-    check(storage.fixture.folded.output.get_inventory(defines.inventory.furnace_result).get_item_count("worker-biter")==2, "serialized folded lane failed to deliver both personnel: " .. serpent.line(remote.call("administratorio-personnel-routing","inspect")) .. " source=" .. serpent.line(storage.fixture.folded.input.get_inventory(defines.inventory.furnace_source).get_contents()) .. " output=" .. serpent.line(storage.fixture.folded.output.get_inventory(defines.inventory.furnace_result).get_contents()))
+    check(storage.fixture.folded.output.get_inventory(defines.inventory.crafter_output).get_item_count("worker-biter")==2, "serialized folded lane failed to deliver both personnel: " .. serpent.line(remote.call("administratorio-personnel-routing","inspect")) .. " source=" .. serpent.line(storage.fixture.folded.input.get_inventory(defines.inventory.crafter_input).get_contents()) .. " output=" .. serpent.line(storage.fixture.folded.output.get_inventory(defines.inventory.crafter_output).get_contents()))
     local jobs=remote.call("administratorio-personnel-routing","inspect")
     check(#jobs==1 and jobs[1].item=="middle-management-managing-manager", "waiting briefing did not retain its normal spoil result: " .. serpent.line(jobs))
     check(not jobs[1].briefing, "expired briefing badge remained active")
@@ -509,10 +509,10 @@ script.on_nth_tick(4, function()
       local render=rendering.get_object_by_id(id)
       check(not render or not render.valid, "expired briefing leaked its overlay")
     end
-    storage.fixture.expiry_output.get_inventory(defines.inventory.furnace_result).clear()
+    storage.fixture.expiry_output.get_inventory(defines.inventory.crafter_output).clear()
   elseif game.tick == 4260 then
     check(#remote.call("administratorio-personnel-routing","inspect")==0, "expired briefing did not finish reception")
-    check(storage.fixture.expiry_output.get_inventory(defines.inventory.furnace_result).get_item_count{name="middle-management-managing-manager",quality="rare"}==1, "expired briefing lost personnel/quality")
+    check(storage.fixture.expiry_output.get_inventory(defines.inventory.crafter_output).get_item_count{name="middle-management-managing-manager",quality="rare"}==1, "expired briefing lost personnel/quality")
     helpers.write_file("administratorio-personnel-routing-smoke.txt","PASS\n",false)
   end
 end)
@@ -528,14 +528,14 @@ def main() -> None:
         prepare_profile(root)
         (root/"saves").mkdir()
         (root/'mods'/SMOKE_MOD_NAME/'scenarios/runtime-smoke/control.lua').write_text(SCENARIO_CONTROL)
-        config = json.loads((factorio.parent.parent/'data/server-settings.example.json').read_text())
+        config = json.loads((factorio.parents[2]/'data/server-settings.example.json').read_text())
         config['auto_pause'] = False
         config['visibility'] = {'public': False, 'lan': False}
         config['require_user_verification'] = False
         (root/'server-settings.json').write_text(json.dumps(config))
         command = [str(factorio),'--config',str(root/'config.ini'),'--mod-directory',str(root/'mods'),
-                   '--disable-audio','--server-settings',str(root/'server-settings.json'),
-                   '--start-server-load-scenario',f'{SMOKE_MOD_NAME}/runtime-smoke','--until-tick','4320']
+                   '--server-settings',str(root/'server-settings.json'),
+                   '--start-server-load-scenario',f'{SMOKE_MOD_NAME}/runtime-smoke']
         log_file = root/'server.log'
         stream = log_file.open('w')
         process = subprocess.Popen(command,cwd=REPO_ROOT,text=True,stdout=stream,stderr=subprocess.STDOUT)
@@ -555,7 +555,7 @@ def main() -> None:
             assert save.exists(), f'{filename} was not written'
             marker.unlink()
             replay = subprocess.run([str(factorio),'--config',str(root/'config.ini'),'--mod-directory',str(root/'mods'),
-                '--disable-audio','--benchmark',str(save),'--benchmark-ticks',str(ticks),'--benchmark-runs','1'],
+                '--benchmark',str(save),'--benchmark-ticks',str(ticks),'--benchmark-runs','1'],
                 cwd=REPO_ROOT,text=True,capture_output=True,timeout=45)
             assert marker.exists(), f'{filename} replay failed:\n'+(replay.stdout+replay.stderr)[-7000:]
             assert marker.read_text() == 'PASS\n'

@@ -103,7 +103,7 @@ test("fluid recipes default to 1x and allow explicit balance overrides", functio
     type = "item",
     name = "standard-item",
     amount = 1,
-    probability = 0.5,
+    independent_probability = 0.5,
   }
   assert_resolution("fluid-recipe", prototype, 20, "explicit")
   assert_resolution("native-fluid-recipe", prototype, 1, "fluid-only")

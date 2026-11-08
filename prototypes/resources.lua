@@ -48,7 +48,7 @@ data:extend({
     minimum = 60000, normal = 300000,
     infinite_depletion_amount = 10, resource_patch_search_radius = 12,
     map_grid = false,
-    minable = {mining_time = 1, results = {{type="fluid", name="politician-fluid", amount_min=10, amount_max=10, probability=1}}},
+    minable = {mining_time = 1, results = {{type="fluid", name="politician-fluid", amount_min=10, amount_max=10, independent_probability=1}}},
     collision_box = {{-1.4, -1.4}, {1.4, 1.4}},
     selection_box = {{-1, -1}, {1, 1}},
     autoplace = resource_autoplace.resource_autoplace_settings{
@@ -125,7 +125,7 @@ if space_age_enabled then
           name = "amber-sap",
           amount_min = 10,
           amount_max = 10,
-          probability = 1
+          independent_probability = 1
         }}
       },
       collision_box = {{-1.4, -1.4}, {1.4, 1.4}},

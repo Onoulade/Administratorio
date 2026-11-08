@@ -47,8 +47,8 @@ defines = {
   command = {go_to_location = 1, stop = 2},
   distraction = {none = 0, by_enemy = 1},
   inventory = {
-    assembling_machine_input = 1,
-    assembling_machine_output = 2,
+    crafter_input = 1,
+    crafter_output = 2,
   },
 }
 
@@ -206,7 +206,7 @@ local function new_office(surface, unit_number, energy)
     surface = surface,
     position = {x = 10, y = 20},
     energy = energy == nil and 100 or energy,
-    active = nil,
+    disabled_by_script = nil,
     status = defines.entity_status.working,
     crafting_progress = 0,
     products_finished = 0,
@@ -215,7 +215,7 @@ local function new_office(surface, unit_number, energy)
     return {ingredients = {}}
   end
   function office.get_inventory(inventory)
-    if inventory == defines.inventory.assembling_machine_output then
+    if inventory == defines.inventory.crafter_output then
       return {is_full = function() return false end}
     end
     return {get_item_count = function() return 0 end}
@@ -317,7 +317,7 @@ test("field office stays active when unpowered so native electricity alert can s
 
   field_office.update(0)
 
-  assert_eq(office.active, true, "unpowered office should not be script-disabled")
+  assert_eq((not office.disabled_by_script), true, "unpowered office should not be script-disabled")
   assert_eq(office.custom_status.label[1], "gui.field-office-no-power", "custom status should still explain missing power")
 end)
 
@@ -340,7 +340,7 @@ test("field office reports unreachable workers after pathing failure", function(
 
   assert_true(biter.destroyed, "unreachable worker should be cleaned up")
   assert_eq(office.custom_status.label[1], "gui.field-office-no-workers-reachable", "office should report unreachable workers")
-  assert_eq(office.active, false, "unreachable office should stay disabled")
+  assert_eq((not office.disabled_by_script), false, "unreachable office should stay disabled")
 
   office.energy = 0
   field_office.update(30)
@@ -652,7 +652,7 @@ test("field office worker stays on site during low power", function()
 
   assert_eq(storage.field_office_state[office.unit_number].phase, "working", "low power should not dismiss the worker")
   assert_true(storage.field_office_releasing[biter.unit_number] == nil, "low power should not send the worker home")
-  assert_eq(office.active, true, "field office should remain active so it can keep progressing under brownout")
+  assert_eq((not office.disabled_by_script), true, "field office should remain active so it can keep progressing under brownout")
 end)
 
 test("field office summons a replacement worker for an in-progress craft", function()
@@ -665,7 +665,7 @@ test("field office summons a replacement worker for an in-progress craft", funct
     return {ingredients = {{type = "item", name = "ticket-landscape", amount = 1}}}
   end
   function office.get_inventory(inventory)
-    if inventory == defines.inventory.assembling_machine_output then
+    if inventory == defines.inventory.crafter_output then
       return {is_full = function() return false end}
     end
     return {get_item_count = function() return input_count end}
@@ -756,7 +756,7 @@ test("field office restores a working worker if its entity is invalid after load
   assert_eq(state.phase, "working", "office should keep working after worker restoration")
   assert_true(state.biter ~= nil and state.biter.valid, "working worker should be recreated")
   assert_true(state.biter.unit_number ~= old_biter.unit_number, "restored working worker should receive a fresh unit number")
-  assert_eq(office.active, true, "office should remain active with the restored worker")
+  assert_eq((not office.disabled_by_script), true, "office should remain active with the restored worker")
 end)
 
 test("field office certification scales biter range and placement preview radius", function()

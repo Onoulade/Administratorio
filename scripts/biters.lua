@@ -335,7 +335,7 @@ local function ensure_runtime_profile_section(runtime_profile, key)
   if not runtime_profile then return nil end
   local section = runtime_profile[key]
   if not section then
-    section = game.create_profiler(true)
+    section = helpers.create_profiler(true)
     runtime_profile[key] = section
   end
   return section
@@ -656,8 +656,7 @@ local function get_entity_output_inventory(entity)
   if not entity or not entity.valid or not entity.get_inventory then return nil end
   local inventory_defs = defines and defines.inventory or {}
   for _, inventory_id in ipairs({
-    inventory_defs.assembling_machine_output,
-    inventory_defs.furnace_result,
+    inventory_defs.crafter_output,
     inventory_defs.chest,
   }) do
     if inventory_id ~= nil then
@@ -672,54 +671,12 @@ end
 
 local function get_fluid_amount(entity, fluid_name)
   if not entity or not fluid_name then return 0 end
-
-  local function amount_in_fluidbox(fluidbox)
-    local amount = 0
-    if not fluidbox then return amount end
-    for i = 1, #fluidbox do
-      local fluid = fluidbox[i]
-      if fluid and fluid.name == fluid_name then
-        amount = amount + (fluid.amount or 0)
-      end
-    end
-    return amount
-  end
-
-  local amount = amount_in_fluidbox(entity.fluidbox)
-  return amount
+  return entity.get_fluid_count(fluid_name)
 end
 
 local function remove_fluid_amount(entity, fluid_name, amount)
   if not entity or not fluid_name or amount <= 0 then return 0 end
-
-  local function remove_from(target, remaining)
-    if remaining <= 0 or not target then return 0 end
-    if target.remove_fluid then
-      local ok, removed = pcall(target.remove_fluid, {name = fluid_name, amount = remaining})
-      if ok and removed then return removed end
-    end
-
-    local fluidbox = target.fluidbox
-    if not fluidbox then return 0 end
-    local removed = 0
-    for i = 1, #fluidbox do
-      local fluid = fluidbox[i]
-      if fluid and fluid.name == fluid_name and removed < remaining then
-        local take = math.min(fluid.amount or 0, remaining - removed)
-        removed = removed + take
-        local left = (fluid.amount or 0) - take
-        if left > 0 then
-          fluidbox[i] = {name = fluid.name, amount = left, temperature = fluid.temperature}
-        else
-          fluidbox[i] = nil
-        end
-      end
-    end
-    return removed
-  end
-
-  local removed_total = remove_from(entity, amount)
-  return removed_total
+  return entity.extract_fluid{name = fluid_name, amount = amount}
 end
 
 local function get_capture_bureau_lure(desk)
@@ -1079,7 +1036,7 @@ local function issue_desk_route_command(entity, destination)
 
   entity.force = get_biter_force()
   unit_ai_settings.apply_managed_unit_settings(entity)
-  entity.active = true
+  entity.disabled_by_script = false
   entity.commandable.set_command({
     type = defines.command.go_to_location,
     destination = destination,
@@ -1103,7 +1060,7 @@ local function park_waiting_biter(info, entity)
     type = defines.command.stop,
     distraction = defines.distraction.none,
   })
-  entity.active = false
+  entity.disabled_by_script = true
   remember_entity_tracking(info, entity)
   mark_desk_circuit_dirty(info.desk_id)
 end
@@ -1309,7 +1266,7 @@ local function start_return_home(info, entity, opts)
   entity.force = get_biter_force()
   unit_ai_settings.apply_managed_unit_settings(entity)
   entity.destructible = false
-  entity.active = true
+  entity.disabled_by_script = false
   entity.commandable.set_command({
     type = defines.command.go_to_location,
     destination = dest,
@@ -1406,7 +1363,7 @@ local function try_slot_search_approach(info, entity)
   info.slot_search_used_offsets = used_offsets
   entity.force = get_biter_force()
   unit_ai_settings.apply_managed_unit_settings(entity)
-  entity.active = true
+  entity.disabled_by_script = false
 
   while (info.slot_search_position_attempts or 0) <= SLOT_SEARCH_MAX_POSITION_RETRIES do
     info.slot_search_position_attempts = (info.slot_search_position_attempts or 0) + 1
@@ -1633,7 +1590,7 @@ route_or_seek_slot = function(info, entity, desks, excluded_platforms)
   -- each new position would slowly drift away from nearby desks.
   entity.force = get_biter_force()
   unit_ai_settings.apply_managed_unit_settings(entity)
-  entity.active = true
+  entity.disabled_by_script = false
   info.slot_search_wander_anchor = info.slot_search_wander_anchor or {
     x = entity.position.x, y = entity.position.y,
   }
@@ -1657,10 +1614,10 @@ end
 
 local function process_slot_search(info, entity)
   if not info or info.state ~= "seeking_slot" or not entity or not entity.valid then return end
-  if not entity.active then
+  if entity.disabled_by_script then
     -- Wake seekers persisted by older saves while their removed stop timer was
     -- still running. They must not spend another cycle parked and inactive.
-    entity.active = true
+    entity.disabled_by_script = false
     if not info.slot_search_dest then info.slot_search_retry_tick = nil end
   end
   if info.slot_search_dest then
@@ -1788,7 +1745,7 @@ function M.prepare_group_redirect(entity)
   entity.force = get_biter_force()
   unit_ai_settings.apply_managed_unit_settings(entity)
   entity.destructible = false
-  entity.active = false
+  entity.disabled_by_script = true
   if entity.commandable and entity.commandable.set_command then
     entity.commandable.set_command({
       type = defines.command.stop,
@@ -1924,7 +1881,7 @@ function M.process_walk_in_registration(surface, desks, runtime_profile)
 
   for _, desk in ipairs(desks) do
     enforce_desk_capacity_limit(desk)
-    local walkins_profiler = runtime_profile and game.create_profiler() or nil
+    local walkins_profiler = runtime_profile and helpers.create_profiler() or nil
     local lure_mode = update_capture_bureau_lure_upkeep(desk)
     local should_scan_walkins = walkin_scan_ticks <= 1 or (desk.unit_number % walkin_scan_ticks) == walkin_shard
     if should_scan_walkins then
@@ -2014,7 +1971,7 @@ function M.process_walk_in_registration(surface, desks, runtime_profile)
     end
     record_runtime_profile(runtime_profile, "registration_walkins", walkins_profiler)
 
-    local arrivals_profiler = runtime_profile and game.create_profiler() or nil
+    local arrivals_profiler = runtime_profile and helpers.create_profiler() or nil
     local arrived = {}
     ensure_desk_biters()
     local desk_set = storage.desk_biters[desk.unit_number]

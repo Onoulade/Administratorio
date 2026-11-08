@@ -404,7 +404,7 @@ end
 
 local function issue_route(entity, destination)
   if not valid(entity) or not destination then return false end
-  entity.active = true
+  entity.disabled_by_script = false
   if entity.commandable and entity.commandable.set_command then
     entity.commandable.set_command({
       type = defines.command.go_to_location, destination = destination, radius = PLATFORM_BOARD_RADIUS,
@@ -510,7 +510,7 @@ local function board_one(wagon, manifest, record, visitor_id, stop_id)
   entity.destroy()
   record.queue[visitor_id] = nil
   manifest.passengers[#manifest.passengers + 1] = passenger
-  wagon.minable = false
+  wagon.minable_flag = false
   return true
 end
 
@@ -589,7 +589,7 @@ local function unboard_platform_wagon(record, wagon, stop_id)
     end
   end
   manifest.passengers = retained
-  wagon.minable = #retained == 0
+  wagon.minable_flag = #retained == 0
 end
 
 local function unboard_train(train, stop)
@@ -766,7 +766,7 @@ local function process_outbreak(wagon, manifest)
   if #retained == 0 then
     manifest.outbreak_pending = nil
     storage.passenger_outbreaks[wagon.unit_number] = nil
-    wagon.minable = true
+    wagon.minable_flag = true
   end
 end
 
@@ -829,7 +829,7 @@ function M.on_tick(event)
           issue_route(entity, info.platform_dest or platform.position)
         elseif info.state == "pathfinding_to_platform" and distance_sq(entity.position, platform.position) <= PLATFORM_BOARD_RADIUS * PLATFORM_BOARD_RADIUS then
           if biters and biters.set_passenger_ground_state then biters.set_passenger_ground_state(info, "waiting_for_train") else info.state = "waiting_for_train" end
-          entity.active = false
+          entity.disabled_by_script = true
           if entity.commandable and entity.commandable.set_command then entity.commandable.set_command({type = defines.command.stop, distraction = defines.distraction.none}) end
         elseif info.state == "pathfinding_to_platform"
             and tick - (info.platform_route_started_tick or tick) >= (C.DESK_ROUTE_STALL_TICKS or 600) then
@@ -966,7 +966,7 @@ function M.rebuild_registry()
   end
   for wagon_id, manifest in pairs(storage.passenger_wagons) do
     local wagon = storage.passenger_wagon_entities[wagon_id]
-    if valid(wagon) then wagon.minable = #(manifest.passengers or {}) == 0 end
+    if valid(wagon) then wagon.minable_flag = #(manifest.passengers or {}) == 0 end
   end
   storage.passenger_registry_ready = true
 end

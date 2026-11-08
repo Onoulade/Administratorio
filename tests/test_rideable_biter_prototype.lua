@@ -82,6 +82,8 @@ test("rideable biter ignores terrain friction and uses its selective collision l
   local mounted = assert(data.raw.car["rideable-biter-mounted"])
   for _, vehicle in ipairs({empty, mounted}) do
     assert_eq(vehicle.terrain_friction_modifier, 0)
+    assert_eq(vehicle.braking_force, (900 * 1000) / 60, "preserve 900kW braking in 2.1 force units")
+    assert_eq(vehicle.friction_force, 0.024)
     assert_true(vehicle.collision_mask.layers.administratorio_rideable_biter_collision)
     assert_true(vehicle.collision_mask.layers.administratorio_rideable_biter_terrain)
     assert_true(vehicle.collision_mask.layers.train)

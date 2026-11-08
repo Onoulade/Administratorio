@@ -218,7 +218,7 @@ local function get_result_probability(recipe, item_name)
   if not recipe or not recipe.results then return nil end
   for _, res in ipairs(recipe.results) do
     if (res.name or res[1]) == item_name then
-      return res.probability
+      return res.independent_probability
     end
   end
   return nil
@@ -240,7 +240,7 @@ test("every printer recipe supplies a crafting-machine tint", function()
   }
 
   for recipe_name, recipe in pairs(recipes) do
-    if printing_categories[recipe.category] then
+    if printing_categories[(recipe.categories or {"crafting"})[1]] then
       local tint = recipe.crafting_machine_tint
       assert_true(tint and tint.primary,
         recipe_name .. " is missing the primary printer-paper tint")
@@ -300,7 +300,7 @@ test("combined form production recipes exist and scale with multiple work-orders
     assert_true(has_ingredient(r, combo[2]), combo[1] .. " missing " .. combo[2])
     assert_true(has_ingredient(r, combo[3]), combo[1] .. " missing " .. combo[3])
     assert_eq(get_ingredient_amount(r, combo[3]), combo[4], combo[1] .. " should scale work-order demand")
-    assert_eq(r.category, "bureaucracy-registration", combo[1] .. " wrong category")
+    assert_eq((r.categories or {"crafting"})[1], "bureaucracy-registration", combo[1] .. " wrong category")
   end
   assert_true(has_ingredient(get_recipe("management-written-work-order-production"), "management-approval-verbal"),
     "management-written-work-order-production should include the lower-tier verbal approval")
@@ -317,28 +317,28 @@ end)
 test("blank-form-production requires ink and uses printing category", function()
   local r = get_recipe("blank-form-production")
   assert_true(r ~= nil, "recipe missing")
-  assert_eq(r.category, "printing")
+  assert_eq((r.categories or {"crafting"})[1], "printing")
   assert_true(has_ingredient(r, "ink"), "missing ink")
   assert_true(has_ingredient(r, "paper"), "missing paper")
 end)
 
 test("blank-approval-production requires ink and uses printing category", function()
   local r = get_recipe("blank-approval-production")
-  assert_eq(r.category, "printing")
+  assert_eq((r.categories or {"crafting"})[1], "printing")
   assert_true(has_ingredient(r, "ink"))
   assert_true(has_ingredient(r, "paper"))
 end)
 
 test("blank-directive-production requires ink and uses printing category", function()
   local r = get_recipe("blank-directive-production")
-  assert_eq(r.category, "printing")
+  assert_eq((r.categories or {"crafting"})[1], "printing")
   assert_true(has_ingredient(r, "ink"))
   assert_true(has_ingredient(r, "paper"))
 end)
 
 test("all printer recipes contain ink", function()
   for name, recipe in pairs(recipes) do
-    local category = recipe.category
+    local category = (recipe.categories or {"crafting"})[1]
     if category == "printing" or category == "printing-workorder" or category == "printing-advanced" then
       assert_true(has_ingredient(recipe, "ink"), name .. " is a printer recipe but has no ink")
     end
@@ -347,7 +347,7 @@ end)
 
 test("non-printer recipes do not consume ink", function()
   for name, recipe in pairs(recipes) do
-    local category = recipe.category
+    local category = (recipe.categories or {"crafting"})[1]
     if category ~= "printing" and category ~= "printing-workorder" and category ~= "printing-advanced"
       and category ~= "pneumatic-intake" then
       assert_true(not has_ingredient(recipe, "ink"), name .. " should not consume ink outside a printer")
@@ -368,7 +368,7 @@ test("all copy recipes use printing-advanced category", function()
   for _, name in ipairs(copies) do
     local r = get_recipe(name)
     assert_true(r ~= nil, name .. " missing")
-    assert_eq(r.category, "printing-advanced", name .. " wrong category")
+    assert_eq((r.categories or {"crafting"})[1], "printing-advanced", name .. " wrong category")
     assert_true(has_ingredient(r, "ink"), name .. " missing ink")
     assert_true(has_ingredient(r, "paper"), name .. " missing paper")
   end
@@ -386,7 +386,7 @@ test("printer recipes only accept paper forms and ink", function()
   end
 
   for recipe_name, recipe in pairs(recipes) do
-    local category = recipe.category
+    local category = (recipe.categories or {"crafting"})[1]
     if category == "printing" or category == "printing-workorder" or category == "printing-advanced" then
       for _, ingredient in ipairs(recipe.ingredients or {}) do
         local ingredient_name = ingredient.name or ingredient[1]
@@ -435,12 +435,12 @@ end)
 test("safety-waiver requires 2-step printing pipeline", function()
   local draft = get_recipe("safety-waiver-draft")
   assert_true(draft ~= nil)
-  assert_eq(draft.category, "bureaucratic-bootstrap", "draft should be handcraftable")
+  assert_eq((draft.categories or {"crafting"})[1], "bureaucratic-bootstrap", "draft should be handcraftable")
   assert_true(has_ingredient(draft, "blank-approval"))
 
   local print_step = get_recipe("safety-waiver-printing")
   assert_true(print_step ~= nil)
-  assert_eq(print_step.category, "printing")
+  assert_eq((print_step.categories or {"crafting"})[1], "printing")
   assert_true(has_ingredient(print_step, "safety-waiver-draft"))
   assert_true(has_ingredient(print_step, "ink"))
   assert_eq(get_result_amount(print_step, "safety-waiver"), 2)
@@ -449,12 +449,12 @@ end)
 test("construction-permit requires 2-step printing pipeline", function()
   local draft = get_recipe("construction-permit-draft")
   assert_true(draft ~= nil)
-  assert_eq(draft.category, "bureaucratic-bootstrap")
+  assert_eq((draft.categories or {"crafting"})[1], "bureaucratic-bootstrap")
   assert_true(has_ingredient(draft, "blank-approval"))
 
   local print_step = get_recipe("construction-permit-printing")
   assert_true(print_step ~= nil)
-  assert_eq(print_step.category, "printing")
+  assert_eq((print_step.categories or {"crafting"})[1], "printing")
   assert_true(has_ingredient(print_step, "construction-permit-draft"))
   assert_true(has_ingredient(print_step, "ink"))
   assert_eq(get_result_amount(print_step, "construction-permit"), 2)
@@ -469,11 +469,11 @@ end)
 test("management-approval-verbal requires 2-step pipeline (gossip + printing)", function()
   local draft = get_recipe("management-verbal-draft")
   assert_true(draft ~= nil)
-  assert_eq(draft.category, "watercooler-gossip")
+  assert_eq((draft.categories or {"crafting"})[1], "watercooler-gossip")
   assert_true(has_ingredient(draft, "blank-directive"))
 
   local print_step = get_recipe("management-verbal-printing")
-  assert_eq(print_step.category, "printing")
+  assert_eq((print_step.categories or {"crafting"})[1], "printing")
   assert_true(has_ingredient(print_step, "management-verbal-draft"))
   assert_true(has_ingredient(print_step, "ink"))
   assert_true(has_ingredient(print_step, "paper"))
@@ -483,12 +483,12 @@ end)
 test("management-approval-written requires 2-step pipeline", function()
   local proposal = get_recipe("management-written-proposal")
   assert_true(proposal ~= nil)
-  assert_eq(proposal.category, "bureaucracy-policy")
+  assert_eq((proposal.categories or {"crafting"})[1], "bureaucracy-policy")
   assert_true(has_ingredient(proposal, "blank-directive"))
   assert_true(has_ingredient(proposal, "advanced-circuit"))
 
   local first = get_recipe("management-written-1st-printing")
-  assert_eq(first.category, "printing")
+  assert_eq((first.categories or {"crafting"})[1], "printing")
   assert_true(has_ingredient(first, "management-written-proposal"))
   assert_true(has_ingredient(first, "ink"))
   assert_true(has_ingredient(first, "form-27b-6"))
@@ -524,7 +524,7 @@ test("only bootstrap-safe handcraft recipes start enabled", function()
     assert_true(r ~= nil, name .. " missing")
     assert_true(r.enabled == true, name .. " should be enabled from start")
     -- Must be in a player-accessible category (nil/crafting or bureaucratic-bootstrap)
-    local cat = r.category or "crafting"
+    local cat = (r.categories or {"crafting"})[1] or "crafting"
     assert_true(cat == "crafting" or cat == "bureaucratic-bootstrap",
       name .. " in non-handcraftable category: " .. cat)
   end
@@ -534,13 +534,13 @@ test("work-order-production is NOT enabled from start (needs Automation tech)", 
   local r = get_recipe("work-order-production")
   assert_true(r ~= nil)
   assert_eq(r.enabled, false, "work-order should be disabled by default")
-  assert_eq(r.category, "bureaucratic-bootstrap", "work-order should be handcraftable category")
+  assert_eq((r.categories or {"crafting"})[1], "bureaucratic-bootstrap", "work-order should be handcraftable category")
 end)
 
 test("provisional-approval requires tech unlock", function()
   local r = get_recipe("provisional-approval-production")
   assert_eq(r.enabled, false)
-  assert_eq(r.category, "bureaucracy-registration")
+  assert_eq((r.categories or {"crafting"})[1], "bureaucracy-registration")
 end)
 
 test("management/policy recipes are NOT handcraftable", function()
@@ -556,7 +556,7 @@ test("management/policy recipes are NOT handcraftable", function()
   for _, name in ipairs(machine_only) do
     local r = get_recipe(name)
     assert_true(r ~= nil, name .. " missing")
-    local cat = r.category or "crafting"
+    local cat = (r.categories or {"crafting"})[1] or "crafting"
     assert_true(cat ~= "crafting" and cat ~= "bureaucratic-bootstrap",
       name .. " should NOT be in a handcraftable category, is: " .. cat)
   end
@@ -590,7 +590,7 @@ test("form production recipes use admin-only categories", function()
   for form_name, recipe_name in pairs(shared.FORM_PRODUCTION_RECIPES) do
     local r = get_recipe(recipe_name)
     assert_true(r ~= nil, recipe_name .. " missing")
-    local cat = r.category or "crafting"
+    local cat = (r.categories or {"crafting"})[1] or "crafting"
     assert_true(admin_categories[cat],
       recipe_name .. " uses AM-accessible category: " .. cat)
   end
@@ -656,7 +656,7 @@ test("union-headquarters preserves paperwork without depending on its own produc
       for _, producer in pairs(recipes) do
         if get_result_amount(producer, ingredient_name) then
           has_producer = true
-          local category = producer.category or "crafting"
+          local category = (producer.categories or {"crafting"})[1] or "crafting"
           if not hq_only_categories[category] then
             has_pre_hq_producer = true
           end
@@ -784,18 +784,18 @@ end)
 -- =========================================================================
 
 test("refinery recipes: basic oil-processing is exempt, advanced ops require chemical paperwork", function()
-  assert_eq(shared.get_operating_form({name = "oil-processing", category = "oil-processing"}), nil)
-  assert_eq(shared.get_operating_form({name = "advanced-oil-processing", category = "oil-processing"}), "chemical-handling-work-order")
-  assert_eq(shared.get_operating_form({name = "coal-liquefaction", category = "oil-processing"}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "oil-processing", categories = {"oil-processing"}}), nil)
+  assert_eq(shared.get_operating_form({name = "advanced-oil-processing", categories = {"oil-processing"}}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "coal-liquefaction", categories = {"oil-processing"}}), "chemical-handling-work-order")
 end)
 
 test("chemistry recipes use chemical-handling-work-order", function()
-  assert_eq(shared.get_operating_form({name = "plastic-bar", category = "chemistry"}), "chemical-handling-work-order")
-  assert_eq(shared.get_operating_form({name = "sulfur", category = "chemistry"}), "chemical-handling-work-order")
-  assert_eq(shared.get_operating_form({name = "sulfuric-acid", category = "chemistry"}), "chemical-handling-work-order")
-  assert_eq(shared.get_operating_form({name = "solid-fuel-from-heavy-oil", category = "chemistry"}), "chemical-handling-work-order")
-  assert_eq(shared.get_operating_form({name = "solid-fuel-from-light-oil", category = "chemistry"}), "chemical-handling-work-order")
-  assert_eq(shared.get_operating_form({name = "solid-fuel-from-petroleum-gas", category = "chemistry"}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "plastic-bar", categories = {"chemistry"}}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "sulfur", categories = {"chemistry"}}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "sulfuric-acid", categories = {"chemistry"}}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "solid-fuel-from-heavy-oil", categories = {"chemistry"}}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "solid-fuel-from-light-oil", categories = {"chemistry"}}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "solid-fuel-from-petroleum-gas", categories = {"chemistry"}}), "chemical-handling-work-order")
 end)
 
 test("chemistry requires chemical-handling-work-order", function()
@@ -808,12 +808,12 @@ end)
 
 test("operating paperwork chain: chemical < radiological", function()
   local eir = get_recipe("environmental-impact-report")
-  assert_eq(eir.category, "bureaucracy-registration")
+  assert_eq((eir.categories or {"crafting"})[1], "bureaucracy-registration")
   assert_true(has_ingredient(eir, "carbon-offset-certificate-verified"), "EIR should require verified carbon certificates")
   assert_true(not has_ingredient(eir, "barrel"), "EIR should no longer require barrels")
 
   local chem = get_recipe("chemical-handling-work-order-production")
-  assert_eq(chem.category, "bureaucracy-registration")
+  assert_eq((chem.categories or {"crafting"})[1], "bureaucracy-registration")
   assert_true(has_ingredient(chem, "safety-waiver"), "chemical needs safety paperwork")
   assert_true(has_ingredient(chem, "environmental-impact-report"), "chemical needs environmental paperwork")
   assert_true(has_ingredient(chem, "form-27b-6"), "chemical needs Form 27B-6")
@@ -827,7 +827,7 @@ test("operating paperwork chain: chemical < radiological", function()
   assert_eq(get_result_amount(chem, "chemical-handling-work-order"), 2)
 
   local radio = get_recipe("radiological-work-order-production")
-  assert_eq(radio.category, "bureaucracy-registration")
+  assert_eq((radio.categories or {"crafting"})[1], "bureaucracy-registration")
   assert_true(has_ingredient(radio, "chemical-handling-work-order"), "radio needs chemical work order")
   assert_true(has_ingredient(radio, "management-approval-written"))
   assert_true(has_ingredient(radio, "battery"))
@@ -848,7 +848,7 @@ test("all smelting-basic recipes require carbon-offset-certificate-basic", funct
   for _, name in ipairs(smelting_recipes) do
     local r = get_recipe(name)
     assert_true(r ~= nil, name .. " missing")
-    assert_eq(r.category, "smelting-basic", name .. " wrong category")
+    assert_eq((r.categories or {"crafting"})[1], "smelting-basic", name .. " wrong category")
     assert_true(has_ingredient(r, "carbon-offset-certificate-basic"),
       name .. " missing carbon offset certificate")
     assert_eq(r.ingredients[1].name, "carbon-offset-certificate-basic",
@@ -859,7 +859,7 @@ end)
 test("electric furnace compacts rubble without a carbon offset certificate", function()
   local r = get_recipe("compacted-rubble-electric")
   assert_true(r ~= nil, "compacted-rubble-electric missing")
-  assert_eq(r.category, "smelting", "electric rubble recipe should use electric furnace smelting")
+  assert_eq((r.categories or {"crafting"})[1], "smelting", "electric rubble recipe should use electric furnace smelting")
   assert_eq(r.enabled, false, "electric rubble recipe should be technology-gated")
   assert_true(has_ingredient(r, "redundant-rubble"), "electric rubble recipe missing redundant rubble")
   assert_eq(get_ingredient_amount(r, "redundant-rubble"), 1)
@@ -880,7 +880,7 @@ test("starter furnace recipes are enabled from start", function()
   for _, name in ipairs(starter_smelting_recipes) do
     local r = get_recipe(name)
     assert_true(r ~= nil, name .. " missing")
-    assert_eq(r.category, "smelting-basic", name .. " wrong category")
+    assert_eq((r.categories or {"crafting"})[1], "smelting-basic", name .. " wrong category")
     assert_eq(r.enabled, true, name .. " should be enabled from start")
   end
 end)
@@ -888,13 +888,13 @@ end)
 test("steel-plate-batch is locked behind steel-processing", function()
   local r = get_recipe("steel-plate-batch")
   assert_true(r ~= nil, "steel-plate-batch missing")
-  assert_eq(r.category, "smelting-basic")
+  assert_eq((r.categories or {"crafting"})[1], "smelting-basic")
   assert_eq(r.enabled, false, "steel-plate-batch should not be enabled from start")
 end)
 test("charcoal-production requires carbon offset", function()
   local r = get_recipe("charcoal-production")
   assert_true(r ~= nil)
-  assert_eq(r.category, "smelting-basic")
+  assert_eq((r.categories or {"crafting"})[1], "smelting-basic")
   assert_true(has_ingredient(r, "wood"))
   assert_eq(get_ingredient_amount(r, "wood"), 30)
   assert_eq(get_result_amount(r, "coal"), 8)
@@ -933,7 +933,7 @@ test("all filing recipes require blank-form and use expected categories", functi
     local expected_category = entry[2]
     local r = get_recipe(name)
     assert_true(r ~= nil, name .. " missing")
-    assert_eq(r.category, expected_category, name .. " wrong category")
+    assert_eq((r.categories or {"crafting"})[1], expected_category, name .. " wrong category")
     assert_true(has_ingredient(r, "blank-form"), name .. " missing blank-form")
   end
 end)
@@ -987,7 +987,7 @@ end)
 
 test("littering-final is simple (no case/brief, just filing + crappy-report)", function()
   local r = get_recipe("littering-final")
-  assert_eq(r.category, "resolution-handcraft")
+  assert_eq((r.categories or {"crafting"})[1], "resolution-handcraft")
   assert_true(has_ingredient(r, "filing-lt"))
   assert_true(has_ingredient(r, "crappy-report"))
   assert_eq(#r.ingredients, 2)
@@ -1091,7 +1091,7 @@ test("greenhouse recipes use admin-greenhouse category", function()
   for _, name in ipairs(gh_recipes) do
     local r = get_recipe(name)
     assert_true(r ~= nil, name .. " missing")
-    assert_eq(r.category, "admin-greenhouse", name .. " wrong category")
+    assert_eq((r.categories or {"crafting"})[1], "admin-greenhouse", name .. " wrong category")
   end
 end)
 
@@ -1148,7 +1148,7 @@ test("coffee-refining does not require work-order", function()
   assert_true(not has_ingredient(r, "work-order"), "coffee refining should not need work-order")
   assert_true(has_ingredient(r, "coffee-bean"), "coffee refining needs coffee-bean")
   assert_true(has_ingredient(r, "water"), "coffee refining needs water")
-  assert_eq(r.category, "watercooler-gossip")
+  assert_eq((r.categories or {"crafting"})[1], "watercooler-gossip")
 end)
 
 test("greenhouse-discovery has probabilistic coffee-bean output", function()
@@ -1157,7 +1157,7 @@ test("greenhouse-discovery has probabilistic coffee-bean output", function()
   local found = false
   for _, res in ipairs(r.results) do
     if res.name == "coffee-bean" then
-      assert_eq(res.probability, 0.1)
+      assert_eq(res.independent_probability, 0.1)
       found = true
     end
   end
@@ -1170,7 +1170,7 @@ end)
 
 test("treasury-bond requires taxpayer-money at the office desk", function()
   local r = get_recipe("treasury-bond-production")
-  assert_eq(r.category, "bureaucracy-registration")
+  assert_eq((r.categories or {"crafting"})[1], "bureaucracy-registration")
   assert_true(has_ingredient(r, "taxpayer-money"))
   assert_eq(get_ingredient_amount(r, "taxpayer-money"), 50)
   assert_eq(r.auto_recycle, false, "treasury bonds must not recycle back into loose taxpayer money")
@@ -1183,7 +1183,7 @@ end)
 test("rideable biter uses paperwork and coffee in its assignment recipe", function()
   local r = get_recipe("rideable-biter")
   assert_true(r ~= nil, "rideable-biter recipe missing")
-  assert_eq(r.category, "biter-training", "rideable biter should be assigned at the formation center")
+  assert_eq((r.categories or {"crafting"})[1], "biter-training", "rideable biter should be assigned at the formation center")
   assert_true(has_ingredient(r, "worker-biter"), "rideable biter should require a trained biter")
   assert_true(has_ingredient(r, "management-verbal-work-order"), "rideable biter should require assignment paperwork")
   assert_true(has_ingredient(r, "liquid-coffee"), "rideable biter should require training coffee")
@@ -1195,7 +1195,7 @@ end)
 test("biterport logistics uses dedicated formations instead of station workers", function()
   local r = get_recipe("biter-logistics-formation")
   assert_true(r ~= nil, "biter-logistics-formation recipe missing")
-  assert_eq(r.category, "biter-training", "logistics formations should be organized at the formation center")
+  assert_eq((r.categories or {"crafting"})[1], "biter-training", "logistics formations should be organized at the formation center")
   assert_true(has_ingredient(r, "worker-biter"), "formations should be trained from ordinary trained biters")
   assert_eq(get_ingredient_amount(r, "worker-biter"), 1)
   assert_true(has_ingredient(r, "management-verbal-work-order"), "formations should require management paperwork")
@@ -1209,7 +1209,7 @@ end)
 
 test("data-production now runs through bureaucracy-registration", function()
   local r = get_recipe("data-production")
-  assert_eq(r.category, "bureaucracy-registration")
+  assert_eq((r.categories or {"crafting"})[1], "bureaucracy-registration")
   assert_true(has_ingredient(r, "crappy-report"))
   assert_true(has_ingredient(r, "advanced-circuit"))
   assert_true(not has_ingredient(r, "credentials"),
@@ -1218,7 +1218,7 @@ end)
 
 test("government-grant requires treasury-bond and union negotiation", function()
   local r = get_recipe("government-grant-production")
-  assert_eq(r.category, "union-negotiation")
+  assert_eq((r.categories or {"crafting"})[1], "union-negotiation")
   assert_true(has_ingredient(r, "treasury-bond"))
   assert_eq(get_ingredient_amount(r, "treasury-bond"), 10)
   assert_true(has_ingredient(r, "management-approval-verbal"))
@@ -1237,14 +1237,14 @@ end)
 
 test("specialist training bootstraps before the buildings that consume specialists", function()
   local delegate = get_recipe("union-delegate-training")
-  assert_eq(delegate.category, "biter-training")
+  assert_eq((delegate.categories or {"crafting"})[1], "biter-training")
   assert_true(has_ingredient(delegate, "management-verbal-work-order"))
   assert_true(has_ingredient(delegate, "form-27b-6"))
   assert_true(not has_ingredient(delegate, "treasury-bond"))
   assert_true(not has_ingredient(delegate, "government-grant"))
 
   local chemical = get_recipe("chemical-operator-training")
-  assert_eq(chemical.category, "biter-training")
+  assert_eq((chemical.categories or {"crafting"})[1], "biter-training")
   assert_true(has_ingredient(chemical, "chemical-handling-work-order"))
   assert_true(has_ingredient(chemical, "liquid-coffee"))
   assert_true(not has_ingredient(chemical, "petrochemical-operating-permit"))
@@ -1263,7 +1263,7 @@ test("all biter training recipes use the formation center category", function()
   }) do
     local recipe = get_recipe(recipe_name)
     assert_true(recipe ~= nil, recipe_name .. " recipe missing")
-    assert_eq(recipe.category, "biter-training", recipe_name .. " should run only in the formation center")
+    assert_eq((recipe.categories or {"crafting"})[1], "biter-training", recipe_name .. " should run only in the formation center")
     assert_true(has_ingredient(recipe, "worker-biter"), recipe_name .. " should consume a trained biter")
   end
 end)
@@ -1307,7 +1307,7 @@ end)
 
 test("slush-fund-production uses propaganda-distillery", function()
   local r = get_recipe("slush-fund-production")
-  assert_eq(r.category, "propaganda-distillery")
+  assert_eq((r.categories or {"crafting"})[1], "propaganda-distillery")
   assert_true(has_ingredient(r, "treasury-bond"))
   assert_eq(get_ingredient_amount(r, "treasury-bond"), 1)
 end)
@@ -1319,11 +1319,11 @@ end)
 test("BS economy chain: dubious-data -> basic-excuse -> good-excuse", function()
   local excuse = get_recipe("basic-excuse-production")
   assert_true(has_ingredient(excuse, "dubious-data"))
-  assert_eq(excuse.category, "bureaucratic-bootstrap")
+  assert_eq((excuse.categories or {"crafting"})[1], "bureaucratic-bootstrap")
 
   local good = get_recipe("good-excuse-production")
   assert_true(has_ingredient(good, "data"))
-  assert_eq(good.category, "watercooler-gossip")
+  assert_eq((good.categories or {"crafting"})[1], "watercooler-gossip")
 end)
 
 test("credentials require lies and refined-nonsense", function()
@@ -1338,7 +1338,7 @@ test("narrative requires justification and good-excuse and watercooler-gossip", 
   assert_true(has_ingredient(r, "justification"))
   assert_true(has_ingredient(r, "good-excuse"))
   assert_true(has_ingredient(r, "watercooler-gossip"))
-  assert_eq(r.category, "union-negotiation")
+  assert_eq((r.categories or {"crafting"})[1], "union-negotiation")
 end)
 
 test("good-excuse has probabilistic office-drama byproduct", function()
@@ -1347,7 +1347,7 @@ test("good-excuse has probabilistic office-drama byproduct", function()
   local found = false
   for _, res in ipairs(r.results) do
     if res.name == "office-drama" then
-      assert_eq(res.probability, 0.5)
+      assert_eq(res.independent_probability, 0.5)
       found = true
     end
   end
@@ -1356,7 +1356,7 @@ end)
 
 test("office-drama recycling randomly returns gossip, excuses, and work orders", function()
   local r = get_recipe("office-drama-recycling")
-  assert_eq(r.category, "watercooler-gossip")
+  assert_eq((r.categories or {"crafting"})[1], "watercooler-gossip")
   assert_true(has_ingredient(r, "office-drama"))
   assert_true(has_ingredient(r, "liquid-coffee"))
   assert_eq(#r.results, 3)
@@ -1447,7 +1447,7 @@ test("direct draft-to-work-order recipes use printing-workorder category", funct
   for _, name in ipairs(direct) do
     local r = get_recipe(name)
     assert_true(r ~= nil, name .. " missing")
-    assert_eq(r.category, "printing-workorder", name .. " wrong category")
+    assert_eq((r.categories or {"crafting"})[1], "printing-workorder", name .. " wrong category")
     assert_true(has_ingredient(r, "work-order"), name .. " missing work-order")
     assert_true(has_ingredient(r, "ink"), name .. " missing ink")
   end
@@ -1467,7 +1467,7 @@ test("only printer recipes use Print in localized recipe names", function()
   for name, recipe in pairs(recipes) do
     local localized_name = recipe_name_locale[name]
     if localized_name and localized_name:match("^Print ") then
-      local category = recipe.category or "crafting"
+      local category = (recipe.categories or {"crafting"})[1] or "crafting"
       local is_printer_recipe = category == "printing"
         or category == "printing-advanced"
         or category == "printing-workorder"
@@ -1514,7 +1514,7 @@ end)
 
 test("overtime-exemption requires union-negotiation category", function()
   local r = get_recipe("overtime-exemption")
-  assert_eq(r.category, "union-negotiation")
+  assert_eq((r.categories or {"crafting"})[1], "union-negotiation")
   assert_true(has_ingredient(r, "processing-unit"))
   assert_eq(get_ingredient_amount(r, "treasury-bond"), 4)
   assert_false(has_ingredient(r, "government-grant"))
@@ -1530,7 +1530,7 @@ end)
 
 test("osha-scrubbing converts violations to justifications via union", function()
   local r = get_recipe("osha-scrubbing")
-  assert_eq(r.category, "union-negotiation")
+  assert_eq((r.categories or {"crafting"})[1], "union-negotiation")
   assert_true(has_ingredient(r, "osha-violation"))
   assert_true(has_ingredient(r, "refined-nonsense"))
   assert_eq(get_result_name(r), "justification")
@@ -1548,7 +1548,7 @@ end)
 
 test("admin science pack requires office desk and specific forms", function()
   local r = get_recipe("administrative-science-pack-production")
-  assert_eq(r.category, "bureaucracy-registration")
+  assert_eq((r.categories or {"crafting"})[1], "bureaucracy-registration")
   assert_eq(r.subgroup, "science-pack")
   assert_true(has_ingredient(r, "provisional-approval"))
   assert_true(has_ingredient(r, "basic-excuse"))
@@ -1576,7 +1576,7 @@ test("pneumatic intake recipes accept every transportable item without outputs",
   for item_name in pairs(shared.PNEUMATIC_ITEMS) do
     local recipe = get_recipe("pneumatic-intake-" .. item_name)
     assert_true(recipe ~= nil, "missing pneumatic intake recipe for " .. item_name)
-    assert_eq(recipe.category, "pneumatic-intake", recipe.name .. " wrong category")
+    assert_eq((recipe.categories or {"crafting"})[1], "pneumatic-intake", recipe.name .. " wrong category")
     assert_eq(recipe.enabled, false, recipe.name .. " should be unlocked by pneumatic transport tech")
     assert_eq(#recipe.ingredients, 1, recipe.name .. " should have one ingredient")
     assert_eq(recipe.ingredients[1].name, item_name, recipe.name .. " wrong ingredient")
@@ -1602,7 +1602,7 @@ end)
 
 test("promise stays handcraftable but is tech-gated", function()
   local r = get_recipe("promise-production")
-  assert_eq(r.category, "bureaucratic-bootstrap")
+  assert_eq((r.categories or {"crafting"})[1], "bureaucratic-bootstrap")
   assert_eq(r.subgroup, "capsule", "promise recipe should be in the combat/weapons tab")
   assert_eq(r.enabled, false)
   assert_true(has_ingredient(r, "blank-form"))
@@ -1612,7 +1612,7 @@ end)
 
 test("eviction-notice requires office desk and expensive ingredients", function()
   local r = get_recipe("eviction-notice-production")
-  assert_eq(r.category, "bureaucracy-registration")
+  assert_eq((r.categories or {"crafting"})[1], "bureaucracy-registration")
   assert_true(has_ingredient(r, "good-excuse"))
   assert_true(has_ingredient(r, "credentials"))
   assert_true(has_ingredient(r, "taxpayer-money"))
@@ -1649,8 +1649,8 @@ end)
 test("environmental compliance bootstrap does not require union-headquarters", function()
   local verified = get_recipe("carbon-offset-certificate-verified")
   local report = get_recipe("environmental-impact-report")
-  assert_eq(verified.category, "bureaucracy-registration", "verified carbon certificate should be office-desk craftable")
-  assert_eq(report.category, "bureaucracy-registration", "environmental impact report should be office-desk craftable")
+  assert_eq((verified.categories or {"crafting"})[1], "bureaucracy-registration", "verified carbon certificate should be office-desk craftable")
+  assert_eq((report.categories or {"crafting"})[1], "bureaucracy-registration", "environmental impact report should be office-desk craftable")
   assert_true(get_recipe("petrochemical-operating-permit-production") == nil, "petrochemical permits should stay removed")
 end)
 
@@ -1712,7 +1712,7 @@ local function find_recipe_for_item(item_name)
       for _, res in ipairs(recipe.results) do
         if (res.name or res[1]) == item_name then
           produces = true
-          if recipe.main_product == item_name or not res.probability then
+          if recipe.main_product == item_name or not res.independent_probability then
             is_primary = true
           end
           break
@@ -1735,9 +1735,9 @@ local function find_recipe_for_item(item_name)
       if score > best_score
         or (score == best_score and best and (
           -- Tiebreaker 1: prefer pre-electricity category
-          (PRE_ELECTRICITY_CATEGORIES[recipe.category or "crafting"] and not PRE_ELECTRICITY_CATEGORIES[best.category or "crafting"])
+          (PRE_ELECTRICITY_CATEGORIES[(recipe.categories or {"crafting"})[1] or "crafting"] and not PRE_ELECTRICITY_CATEGORIES[(best.categories or {"crafting"})[1] or "crafting"])
           -- Tiebreaker 2: alphabetical for full determinism
-          or (PRE_ELECTRICITY_CATEGORIES[recipe.category or "crafting"] == PRE_ELECTRICITY_CATEGORIES[best.category or "crafting"]
+          or (PRE_ELECTRICITY_CATEGORIES[(recipe.categories or {"crafting"})[1] or "crafting"] == PRE_ELECTRICITY_CATEGORIES[(best.categories or {"crafting"})[1] or "crafting"]
               and recipe.name < best.name)
         )) then
         best = recipe
@@ -1761,7 +1761,7 @@ local function check_pre_electricity_chain(item_name, visited, path)
     return "no recipe found for '" .. item_name .. "' (path: " .. path .. ")"
   end
 
-  local cat = recipe.category or "crafting"
+  local cat = (recipe.categories or {"crafting"})[1] or "crafting"
   if not PRE_ELECTRICITY_CATEGORIES[cat] then
     return "'" .. item_name .. "' requires category '" .. cat
       .. "' which needs electricity (path: " .. path .. ")"
@@ -1815,7 +1815,7 @@ test("basic-excuse is handcraftable (bureaucratic-bootstrap category)", function
   -- basic-excuse remains a critical bootstrap item for early draft paperwork.
   local r = get_recipe("basic-excuse-production")
   assert_true(r ~= nil, "basic-excuse-production missing")
-  assert_eq(r.category, "bureaucratic-bootstrap",
+  assert_eq((r.categories or {"crafting"})[1], "bureaucratic-bootstrap",
     "basic-excuse MUST be handcraftable — electric-only would deadlock power bootstrap")
 end)
 
@@ -1838,7 +1838,7 @@ test("no recipe cycle exists in the pre-electricity production chain", function(
     local recipe = find_recipe_for_item(item_name)
     if not recipe then return end
 
-    local cat = recipe.category or "crafting"
+    local cat = (recipe.categories or {"crafting"})[1] or "crafting"
     if not PRE_ELECTRICITY_CATEGORIES[cat] then return end  -- not in bootstrap chain
 
     color[item_name] = "gray"
@@ -1855,7 +1855,7 @@ test("no recipe cycle exists in the pre-electricity production chain", function(
 
   -- Check all items producible by pre-electricity recipes
   for _, recipe in pairs(recipes) do
-    local cat = recipe.category or "crafting"
+    local cat = (recipe.categories or {"crafting"})[1] or "crafting"
     if PRE_ELECTRICITY_CATEGORIES[cat] and recipe.results then
       for _, res in ipairs(recipe.results) do
         local res_name = res.name or res[1]
@@ -1878,7 +1878,7 @@ test("all admin buildings with recipes use crafting category (AM-regulatable)", 
   for name, _ in pairs(shared.ADMIN_BUILDINGS) do
     local r = get_recipe(name)
     if r then
-      local cat = r.category or "crafting"
+      local cat = (r.categories or {"crafting"})[1] or "crafting"
       assert_true(cat == "crafting" or cat == "advanced-crafting",
         name .. " has category '" .. cat .. "', must be crafting/advanced-crafting for AM regulation")
     end
@@ -1890,7 +1890,7 @@ test("only bootstrap-safe admin buildings start enabled", function()
   for _, name in ipairs(early_buildings) do
     local r = get_recipe(name)
     assert_true(r ~= nil, name .. " recipe missing")
-    local cat = r.category or "crafting"
+    local cat = (r.categories or {"crafting"})[1] or "crafting"
     assert_eq(cat, "crafting", name .. " must use crafting category for handcrafting")
     assert_eq(r.enabled, true, name .. " must be enabled from start")
   end
@@ -1901,7 +1901,7 @@ test("bootstrap structures that consume gated paperwork are tech-gated", functio
   for _, name in ipairs(gated_buildings) do
     local r = get_recipe(name)
     assert_true(r ~= nil, name .. " recipe missing")
-    local cat = r.category or "crafting"
+    local cat = (r.categories or {"crafting"})[1] or "crafting"
     assert_eq(cat, "crafting", name .. " must stay handcraftable once unlocked")
     assert_eq(r.enabled, false, name .. " should not be enabled before its gating tech exists")
   end
@@ -1927,7 +1927,7 @@ end)
 test("greenhouse is handcraftable (crafting category) but tech-gated", function()
   local r = get_recipe("greenhouse")
   assert_true(r ~= nil)
-  local cat = r.category or "crafting"
+  local cat = (r.categories or {"crafting"})[1] or "crafting"
   assert_eq(cat, "crafting", "greenhouse must use crafting category for handcrafting")
   assert_eq(r.enabled, false, "greenhouse should be tech-gated")
 end)

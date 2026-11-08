@@ -63,11 +63,11 @@ local function set_status(entity, key, diode)
 end
 
 local function payload_inventory(entity)
-  return entity.get_inventory(defines.inventory.furnace_source)
+  return entity.get_inventory(defines.inventory.crafter_input)
 end
 
 local function arrival_inventory(entity)
-  return entity.get_inventory(defines.inventory.furnace_result)
+  return entity.get_inventory(defines.inventory.crafter_output)
 end
 
 local function get_planet_name(surface)
@@ -147,7 +147,7 @@ function M.on_entity_built(entity, player)
     return false
   end
 
-  entity.active = false
+  entity.disabled_by_script = true
   storage.relocation_cannons[entity.unit_number] = {
     entity = entity,
     role = role,
@@ -386,7 +386,7 @@ function M.rebuild_registry()
       if planet_name then
         for _, entity in ipairs(surface.find_entities_filtered{name = role_info.name}) do
           if entity.valid then
-            entity.active = false
+            entity.disabled_by_script = true
             local previous = previous_entries[entity.unit_number]
             local combinator = previous and previous.combinator
             if not combinator or not combinator.valid then

@@ -208,6 +208,7 @@ def build_temp_profile(mod_name: str) -> Path:
                     {"name": "base", "enabled": True},
                     {"name": "elevated-rails", "enabled": True},
                     {"name": "quality", "enabled": True},
+                    {"name": "recycler", "enabled": True},
                     {"name": "space-age", "enabled": True},
                     {"name": mod_name, "enabled": True},
                 ]
@@ -220,7 +221,7 @@ def build_temp_profile(mod_name: str) -> Path:
     write_file(
         tmp_root / "config.ini",
         "[path]\n"
-        "read-data=__PATH__system-read-data__\n"
+        "read-data=__PATH__executable__/../../data\n"
         f"write-data={tmp_root}\n\n"
         "[general]\n"
         "locale=auto\n",
@@ -241,7 +242,7 @@ def run_dump_data(factorio_bin: Path, tmp_root: Path) -> Path:
         str(tmp_root / "config.ini"),
         "--mod-directory",
         str(tmp_root / "mods"),
-        "--disable-audio",
+
         "--dump-data",
     ]
     subprocess.run(command, check=True, cwd=REPO_ROOT)
@@ -256,9 +257,14 @@ def recipe_level(recipe: Dict) -> Dict:
     return recipe.get("normal", recipe)
 
 
-def recipe_category(recipe: Dict) -> Optional[str]:
+def recipe_categories(recipe: Dict) -> tuple[str, ...]:
     level = recipe_level(recipe)
-    return level.get("category") or recipe.get("category")
+    return tuple(level.get("categories") or recipe.get("categories") or
+                 [level.get("category") or recipe.get("category") or "crafting"])
+
+
+def recipe_category(recipe: Dict) -> str:
+    return recipe_categories(recipe)[0]
 
 
 def recipe_enabled_from_start(recipe: Dict) -> bool:
@@ -802,11 +808,12 @@ class ProgressionAnalyzer:
 
                 recipe = self.recipes[recipe_name]
                 category_name = recipe_category(recipe) or "crafting"
-                if category_name not in available_categories:
+                if not set(recipe_categories(recipe)) & set(available_categories):
                     continue
 
                 if respect_staffing and not (staffing_items & craftable_items):
-                    providers = self.category_providers.get(category_name, ())
+                    providers = [provider for category in recipe_categories(recipe) if category in available_categories
+                                 for provider in self.category_providers.get(category, ())]
                     if providers and all(
                         provider_name in staffed_provider_items
                         for provider_name in providers
@@ -1293,7 +1300,7 @@ class ProgressionAnalyzer:
                 for recipe_name in producers:
                     recipe = self.recipes[recipe_name]
                     category_name = recipe_category(recipe) or "crafting"
-                    if category_name not in available_category_set:
+                    if not set(recipe_categories(recipe)) & available_category_set:
                         providers = [
                             provider_name
                             for provider_name in self.category_providers.get(category_name, ())
@@ -1339,7 +1346,7 @@ class ProgressionAnalyzer:
         available_category_set = set(available_categories)
         blockers: List[str] = []
 
-        if category_name not in available_category_set:
+        if not set(recipe_categories(recipe)) & available_category_set:
             providers = [
                 provider_name
                 for provider_name in self.category_providers.get(category_name, ())

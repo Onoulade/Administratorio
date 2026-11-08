@@ -21,7 +21,7 @@ local function assert_eq(actual, expected, message)
 end
 
 defines = {
-  inventory = {furnace_source = 1, chest = 2},
+  inventory = {crafter_input = 1, chest = 2},
   entity_status_diode = {red = 1, yellow = 2, green = 3},
   direction = {north = 0, east = 2, south = 4, west = 6},
 }
@@ -275,11 +275,11 @@ local function new_fluid_entity(spec)
     surface_index = spec.surface_index,
     connections = {},
   }
-  entity.fluidbox = {true}
-  function entity.fluidbox.get_pipe_connections(_)
+  entity.fluids_count = 1
+  function entity.get_fluid_box_pipe_connections(_)
     local pipe_connections = {}
     for _, neighbour in ipairs(entity.connections) do
-      pipe_connections[#pipe_connections + 1] = {target = {owner = neighbour}}
+      pipe_connections[#pipe_connections + 1] = {target = neighbour}
     end
     return pipe_connections
   end

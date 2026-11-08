@@ -11,7 +11,7 @@ local function canonical_recipe(item_name)
   return {
     type = "recipe",
     name = item_name .. "-recycling",
-    category = "recycling",
+    categories = {"recycling"},
     subgroup = "form-paper-recycling-recipes",
     order = item_name,
     enabled = true,
@@ -26,7 +26,7 @@ local function canonical_recipe(item_name)
       {type = "item", name = item_name, amount = 1},
     },
     results = {
-      {type = "item", name = "paper", amount = 1, probability = 0.25},
+      {type = "item", name = "paper", amount = 1, independent_probability = 0.25},
     },
     energy_required = 0.5,
   }

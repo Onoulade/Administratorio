@@ -40,8 +40,7 @@ package.path = mod_root .. "?.lua;" .. mod_root .. "?/init.lua;" .. package.path
 
 defines = {
   inventory = {
-    assembling_machine_input = 1,
-    furnace_source = 2,
+    crafter_input = 1,
     chest = 3,
   },
   entity_status_diode = {
@@ -278,7 +277,7 @@ local function new_post(surface, force, covered_chunks, orders, coffee)
     position = {x = covered_chunks[1].x * 32 + 16, y = covered_chunks[1].y * 32 + 16},
     bounding_box = bounding_box_for_chunks(covered_chunks),
     unit_number = next_unit_number,
-    active = true,
+    disabled_by_script = false,
     destructible = true,
     energy = 5000,
     custom_status = nil,
@@ -287,7 +286,16 @@ local function new_post(surface, force, covered_chunks, orders, coffee)
         {name = module.POST_NAME},
       },
     },
-    fluidbox = fluidbox,
+    get_fluid_count = function(name)
+      assert(name == module.COFFEE_FLUID)
+      return fluidbox:amount()
+    end,
+    extract_fluid = function(spec)
+      assert(spec.name == module.COFFEE_FLUID)
+      local taken = math.min(fluidbox:amount(), spec.amount)
+      if fluidbox[1] then fluidbox[1].amount = fluidbox[1].amount - taken end
+      return taken
+    end,
     get_inventory = function(_, _)
       return inventory
     end,

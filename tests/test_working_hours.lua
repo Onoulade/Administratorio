@@ -56,7 +56,7 @@ local function new_entity(name)
     valid = true,
     name = name,
     unit_number = name == "office-desk" and 1 or 2,
-    active = true,
+    disabled_by_script = false,
     surface = {valid = true, index = 1, daytime = 0.5, dusk = 0.25, dawn = 0.75},
     force = {valid = true, index = 1, print = function() end},
   }
@@ -75,7 +75,7 @@ test("worker station managed buildings do not need overtime exemption at night",
   local breakroom = new_entity("corporate-breakroom")
   working_hours.refresh_entity(breakroom)
 
-  assert_eq(breakroom.active, true, "breakroom should stay available for biter-station dispatch")
+  assert_eq((not breakroom.disabled_by_script), true, "breakroom should stay available for biter-station dispatch")
   assert_eq(storage.working_hours_state[breakroom.unit_number].reason, nil, "breakroom should not receive a night shutdown reason")
 end)
 
@@ -88,7 +88,7 @@ test("regular working-hours buildings still need overtime exemption at night", f
   local office_desk = new_entity("office-desk")
   working_hours.refresh_entity(office_desk)
 
-  assert_eq(office_desk.active, false, "office desk should still shut down at night without overtime")
+  assert_eq((not office_desk.disabled_by_script), false, "office desk should still shut down at night without overtime")
   assert_eq(storage.working_hours_state[office_desk.unit_number].reason, "night", "office desk should keep the night shutdown reason")
 end)
 
@@ -101,7 +101,7 @@ test("worker station managed buildings can still be shut down by protests", func
   local breakroom = new_entity("corporate-breakroom")
   assert_eq(working_hours.claim_protest_target(breakroom, 99), true, "breakroom should still accept protest claims")
 
-  assert_eq(breakroom.active, false, "protest should disable the breakroom")
+  assert_eq((not breakroom.disabled_by_script), false, "protest should disable the breakroom")
   assert_eq(storage.working_hours_state[breakroom.unit_number].reason, "protest", "breakroom should keep the protest shutdown reason")
 end)
 
@@ -113,11 +113,11 @@ test("protest refresh reasserts a shutdown after an external reactivation", func
 
   local breakroom = new_entity("corporate-breakroom")
   working_hours.claim_protest_target(breakroom, 99)
-  breakroom.active = true
+  breakroom.disabled_by_script = false
 
   working_hours.refresh_entity(breakroom)
 
-  assert_eq(breakroom.active, false, "active protest targets must remain shut down after refresh")
+  assert_eq((not breakroom.disabled_by_script), false, "active protest targets must remain shut down after refresh")
 end)
 
 test("hard mode attackers do not keep working-hours protest shutdown claims", function()
@@ -151,7 +151,7 @@ test("hard mode attackers do not keep working-hours protest shutdown claims", fu
 
   working_hours.rebuild_registry()
 
-  assert_eq(breakroom.active, true, "hard-mode attackers should release protest shutdowns so they can attack live buildings")
+  assert_eq((not breakroom.disabled_by_script), true, "hard-mode attackers should release protest shutdowns so they can attack live buildings")
   assert_eq(storage.working_hours_state[breakroom.unit_number].reason, nil, "hard-mode attackers should not leave a protest shutdown reason")
 end)
 
@@ -198,11 +198,11 @@ test("desk inside a lit factory shuts down when it is night outside", function()
   desk.position = {x = 0, y = 0}
   working_hours.refresh_entity(desk)
 
-  assert_eq(desk.active, false, "desk inside a factory should close for the night")
+  assert_eq((not desk.disabled_by_script), false, "desk inside a factory should close for the night")
   assert_eq(storage.working_hours_state[desk.unit_number].reason, "night", "desk inside a factory should record a night shutdown")
 
   working_hours.update_managed_buildings()
-  assert_eq(desk.active, false, "the periodic update should keep the desk closed")
+  assert_eq((not desk.disabled_by_script), false, "the periodic update should keep the desk closed")
 
   remote = nil
   package.loaded["compat.hooks"] = nil

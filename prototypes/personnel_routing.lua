@@ -86,8 +86,8 @@ for i, name in ipairs(R.names) do
     entity.energy_source = {type = "void"}
     if role=="input" then
       -- Only deployment needs a direction. Reception accepts all four sides.
-      entity.fluid_boxes = {{production_type = "input", volume = 1, hide_connection_info = true,
-        pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {-0.5, -0.5}}}}}
+      entity.fluid_boxes = {{production_type = "input", volume = 1,
+        pipe_connections = {{flow_direction = "input", hide_connection_info = true, direction = defines.direction.north, position = {-0.5, -0.5}}}}}
       entity.fluid_boxes_off_when_no_fluid_recipe = true
     end
     entity.source_inventory_size = 1
@@ -240,7 +240,7 @@ for _, item in ipairs(cargo_names) do
   unit.attack_parameters.cooldown = 216000
   prototypes_to_add[#prototypes_to_add + 1] = unit
   prototypes_to_add[#prototypes_to_add + 1] = {
-    type = "recipe", name = R.load_recipe(item), category = R.CATEGORY,
+    type = "recipe", name = R.load_recipe(item), categories = {R.CATEGORY},
     enabled = false, hidden = true, hide_from_player_crafting = true,
     -- These identity recipes whitelist cargo, not personnel acquisition.
     unlock_results = false,

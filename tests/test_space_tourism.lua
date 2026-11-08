@@ -124,7 +124,7 @@ end
 defines = {
   inventory = {
     chest = 1,
-    assembling_machine_output = 2,
+    crafter_output = 2,
   },
   command = {
     stop = 1,
@@ -199,7 +199,7 @@ local function new_entity(surface, spec, created_entities, last_command_ref)
     position = spec.position or {x = 0, y = 0},
     surface = surface,
     force = {name = spec.force or "enemy"},
-    active = false,
+    disabled_by_script = true,
   }
   entity.commandable = {
     set_command = function(command)
@@ -331,14 +331,21 @@ local function new_context(opts)
       return opts.recipe_name and {name = opts.recipe_name} or nil
     end,
     get_inventory = function(inventory_id)
-      if inventory_id == defines.inventory.assembling_machine_output or inventory_id == defines.inventory.chest then
+      if inventory_id == defines.inventory.crafter_output or inventory_id == defines.inventory.chest then
         return output_inventory
       end
       return nil
     end,
     fluidbox = fluidbox,
   }
-  function desk.remove_fluid(spec)
+  function desk.get_fluid_count(name)
+    local total = 0
+    for _, fluid in pairs(fluidbox) do
+      if fluid.name == name then total = total + fluid.amount end
+    end
+    return total
+  end
+  function desk.extract_fluid(spec)
     local removed = 0
     for index, fluid in pairs(fluidbox) do
       if fluid and fluid.name == spec.name and removed < spec.amount then

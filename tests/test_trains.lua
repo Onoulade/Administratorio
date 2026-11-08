@@ -116,7 +116,7 @@ local function new_chest(surface, position, inventory_count)
     position = {x = position.x, y = position.y},
     force = "player",
     destructible = true,
-    minable = true,
+    minable_flag = true,
     direction = defines.direction.north,
     surface = surface,
     unit_number = alloc_unit_number(),
@@ -250,7 +250,7 @@ test("new train stops place permit chests on the leading rail-side corner for al
     assert_eq(chest.position.y, 20 + offset.y, "chest y offset should match the leading rail-side corner")
     assert_eq(chest.direction, direction, "new chest should inherit the station rotation")
     assert_eq(chest.destructible, false, "permit chest should be indestructible")
-    assert_eq(chest.minable, false, "permit chest should not be minable")
+    assert_eq(chest.minable_flag, false, "permit chest should not be minable")
     assert_eq(chest._inventory._filters[1], "transit-authorization", "permit chest should filter for transit forms")
     assert_eq(station.trains_limit, 0, "empty permit chest should close the station")
     assert_eq(station._behavior.circuit_enable_disable, false, "circuit enable/disable should stay locked off")

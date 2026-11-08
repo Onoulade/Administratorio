@@ -121,7 +121,7 @@ function M.apply(data_api)
   for name, ingredients in pairs(QUALITY_MODULE_RECIPES) do
     local recipe = raw.recipe and raw.recipe[name]
     if recipe then
-      recipe.category = "bureaucracy-modules"
+      recipe.categories = {"bureaucracy-modules"}
       recipe.ingredients = {}
       for _, ingredient in ipairs(ingredients) do
         recipe.ingredients[#recipe.ingredients + 1] = ingredient

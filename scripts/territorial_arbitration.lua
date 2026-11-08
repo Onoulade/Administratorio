@@ -147,8 +147,7 @@ local function get_input_inventory(entity)
   if not entity or not entity.valid or not entity.get_inventory then return nil end
   local inventory_defs = defines and defines.inventory or {}
   for _, inventory_id in ipairs({
-    inventory_defs.assembling_machine_input,
-    inventory_defs.furnace_source,
+    inventory_defs.crafter_input,
     inventory_defs.chest,
   }) do
     if inventory_id ~= nil then
@@ -190,46 +189,6 @@ local function remove_items(inventory, item_name, amount)
       local take = math.min(stack.count or 0, amount - removed)
       stack.count = (stack.count or 0) - take
       removed = removed + take
-    end
-  end
-  return removed
-end
-
-local function fluidbox_length(fluidbox)
-  if not fluidbox then return 0 end
-  return #fluidbox
-end
-
-local function fluid_amount(fluidbox, fluid_name)
-  if not fluidbox or not fluid_name then return 0 end
-  local total = 0
-  for index = 1, fluidbox_length(fluidbox) do
-    local entry = fluidbox[index]
-    if entry and entry.name == fluid_name then
-      total = total + (entry.amount or 0)
-    end
-  end
-  return total
-end
-
-local function remove_fluid(fluidbox, fluid_name, amount)
-  if not fluidbox or amount <= 0 then return 0 end
-  local removed = 0
-  for index = 1, fluidbox_length(fluidbox) do
-    local entry = fluidbox[index]
-    if entry and entry.name == fluid_name and removed < amount then
-      local take = math.min(entry.amount or 0, amount - removed)
-      local remaining = (entry.amount or 0) - take
-      removed = removed + take
-      if remaining > 0 then
-        fluidbox[index] = {
-          name = entry.name,
-          amount = remaining,
-          temperature = entry.temperature,
-        }
-      else
-        fluidbox[index] = nil
-      end
     end
   end
   return removed
@@ -287,7 +246,6 @@ local function attempt_upkeep(post_state, territory_state)
   end
 
   local inventory = get_input_inventory(entity)
-  local fluidbox = entity.fluidbox
   local size, orders_needed, coffee_needed = get_upkeep_for_state(territory_state)
 
   if inventory_count(inventory, ORDER_ITEM) < orders_needed then
@@ -295,7 +253,7 @@ local function attempt_upkeep(post_state, territory_state)
     return false, size, orders_needed, coffee_needed
   end
 
-  if fluid_amount(fluidbox, PROPAGANDA_FLUID) < coffee_needed then
+  if entity.get_fluid_count(PROPAGANDA_FLUID) < coffee_needed then
     mark_starved(entity)
     return false, size, orders_needed, coffee_needed
   end
@@ -305,7 +263,7 @@ local function attempt_upkeep(post_state, territory_state)
     return false, size, orders_needed, coffee_needed
   end
 
-  if remove_fluid(fluidbox, PROPAGANDA_FLUID, coffee_needed) < coffee_needed then
+  if entity.extract_fluid{name = PROPAGANDA_FLUID, amount = coffee_needed} < coffee_needed then
     mark_starved(entity)
     return false, size, orders_needed, coffee_needed
   end

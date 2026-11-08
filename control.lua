@@ -123,10 +123,14 @@ end
 
 local function normalize_player_admin_station_quickbar(player)
   if not player or not player.valid then return end
-  for slot = 1, 100 do
-    local filter = player.get_quick_bar_slot(slot)
-    if filter and filter.name and is_admin_station(filter.name) and filter.name ~= "admin-station" then
-      player.set_quick_bar_slot(slot, {name = "admin-station", quality = filter.quality})
+  for page = 1, 10 do
+    for slot = 1, player.quick_bar_width do
+      local entry = player.get_quick_bar_slot(page, slot)
+      local filter = entry and entry.type == "filter" and entry.filter
+      if filter and is_admin_station(filter.name) and filter.name ~= "admin-station" then
+        filter.name = "admin-station"
+        player.set_quick_bar_slot(page, slot, entry)
+      end
     end
   end
 end

@@ -18,7 +18,7 @@ local function recipe(ingredients, product, category, enabled, hidden)
   local inputs = {}
   for _, name in ipairs(ingredients) do inputs[#inputs + 1] = {type = "item", name = name, amount = 1} end
   return {ingredients = inputs, results = {{type = "item", name = product, amount = 1}},
-    category = category, enabled = enabled or false, hidden = hidden}
+    categories = {category}, enabled = enabled or false, hidden = hidden}
 end
 local data = {raw = {
   technology = {

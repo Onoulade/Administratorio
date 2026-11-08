@@ -210,7 +210,7 @@ local function new_context(opts)
     unit_number = opts.unit_number or 11,
     position = {x = 0, y = 0},
     force = {name = "neutral"},
-    active = false,
+    disabled_by_script = true,
   }
   local surface = {
     index = 1,

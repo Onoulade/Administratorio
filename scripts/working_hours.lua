@@ -144,14 +144,14 @@ local function apply_entity_state(entity, reason)
   if state.reason == reason then
     -- A protest is a hard shutdown. Reassert it because another script or
     -- control state may have reactivated the entity since the prior refresh.
-    if reason == "protest" and entity.active then
-      entity.active = false
+    if reason == "protest" and (not entity.disabled_by_script) then
+      entity.disabled_by_script = true
     end
     return
   end
 
   if reason == "night" then
-    entity.active = false
+    entity.disabled_by_script = true
     entity.custom_status = {
       diode = defines.entity_status_diode.red,
       label = {"gui.working-hours-night-status"},
@@ -172,10 +172,10 @@ local function apply_entity_state(entity, reason)
     end
     maybe_notify_force(entity)
   elseif reason == "protest" then
-    entity.active = false
+    entity.disabled_by_script = true
     clear_visual_state(entity, state)
   else
-    entity.active = true
+    entity.disabled_by_script = false
     clear_visual_state(entity, state)
   end
 
@@ -214,7 +214,7 @@ local function clear_disabled_state()
       local was_protest_shutdown = state and state.reason == "protest"
       local still_protested = was_protest_shutdown and entity_is_protested(entity) or false
       if not still_protested then
-        entity.active = true
+        entity.disabled_by_script = false
       end
     end
   end

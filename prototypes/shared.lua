@@ -1,3 +1,4 @@
+local recipe_categories = require("prototypes.shared.recipe_categories")
 -- ADMINISTRATORIO: SHARED CONSTANTS
 -- Single source of truth for constants used across data.lua and data-final-fixes.lua.
 
@@ -613,7 +614,7 @@ function shared.get_operating_form(recipe_or_name, category)
   local recipe_name = recipe_or_name
   if type(recipe_or_name) == "table" then
     recipe_name = recipe_or_name.name
-    category = recipe_or_name.category
+    category = recipe_categories.primary(recipe_or_name)
   end
 
   local recipe_rule = shared.OPERATING_FORM_CONFIG.recipes[recipe_name]

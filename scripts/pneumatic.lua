@@ -58,7 +58,7 @@ local function parse_pool_key(pool_key)
 end
 
 local function get_intake_inventory(entity)
-  local source_inventory = defines.inventory.furnace_source
+  local source_inventory = defines.inventory.crafter_input
   if source_inventory then
     local inv = entity.get_inventory(source_inventory)
     if inv then return inv end
@@ -68,7 +68,7 @@ end
 
 local function deactivate_intake_machine(entity)
   if entity and entity.valid and entity.name == "tube-intake" then
-    entity.active = false
+    entity.disabled_by_script = true
   end
 end
 
@@ -159,15 +159,14 @@ local function bfs_network_id(network_pipe)
     local current = queue[head]
     head = head + 1
     local current_id = current.unit_number
-    local fb = current.fluidbox
-    if fb then
-      for i = 1, #fb do
+    if current.fluids_count > 0 then
+      for i = 1, current.fluids_count do
         -- get_pipe_connections, not get_connections: only this one reports the
         -- "linked" connection that bridges a Factorissimo factory wall.
-        local connections = fb.get_pipe_connections(i)
+        local connections = current.get_fluid_box_pipe_connections(i)
         if connections then
           for _, connection in ipairs(connections) do
-            local owner = connection.target and connection.target.owner
+            local owner = connection.target
             -- Ghost entities participate in fluidbox connections in Factorio 2.x
             -- (for placement preview), but must not count as real network links.
             if owner and owner.valid and reached[owner.unit_number] == nil
@@ -522,7 +521,7 @@ end
 function M.add_tube_pump_supports(entity)
   if not entity or not entity.valid or entity.name ~= C.TUBE_PUMP_NAME then return end
   M.ensure_storage()
-  entity.active = false
+  entity.disabled_by_script = true
   local ports = {}
   for index, position in ipairs(tube_pump_ports(entity)) do
     local port_name = "tube-pump-port-" .. (index == 2 and entity.direction or (entity.direction + 8) % 16)
@@ -740,7 +739,7 @@ function M.rebuild_network_cache()
       -- Deactivate/activate the hidden intake inserter based on network state.
       if entry.inserter and entry.inserter.valid then
         local net_id = storage.tube_network_cache[uid]
-        entry.inserter.active = net_id ~= nil and not storage.tube_network_disabled[net_id]
+        entry.inserter.disabled_by_script = net_id == nil or storage.tube_network_disabled[net_id] == true
       end
     end
   end

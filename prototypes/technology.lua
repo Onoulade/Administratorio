@@ -110,7 +110,7 @@ data:extend({
       { type = "unlock-recipe", recipe = "construction-permit-draft" },
       { type = "unlock-recipe", recipe = "construction-permit-printing" }
     },
-    research_trigger = { type = "mine-entity", entity = "bullshit-ore" },
+    research_trigger = { type = "mine-entity", entities = {"bullshit-ore"} },
     order = "z-b"
   },
   -- DISCOVERY: RED TAPE
@@ -120,7 +120,7 @@ data:extend({
     effects = {
       { type = "unlock-recipe", recipe = "burner-mining-drill" }
     },
-    research_trigger = { type = "mine-entity", entity = "redundant-rubble" },
+    research_trigger = { type = "mine-entity", entities = {"redundant-rubble"} },
     order = "z-c"
   },
   -- FIELD OFFICE DEPLOYMENT (triggered when the first field office is crafted)

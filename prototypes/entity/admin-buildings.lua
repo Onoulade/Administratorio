@@ -180,10 +180,10 @@ local admin_station_base = {
   inventory_size = gameplay_facts.admin_station.inventory_size,
   circuit_wire_max_distance = 9,
   fast_replaceable_group = "admin-station",
-  circuit_connector = circuit_connector_definitions.create_single(
+  circuit_connector = {circuit_connector_definitions.create_single(
     universal_connector_template,
     {variation = 26, main_offset = util.by_pixel(96, 32), shadow_offset = util.by_pixel(100, 36), show_shadow = true}
-  ),
+  )},
   picture = {
     filename = "__core__/graphics/empty.png",
     width = 1,
@@ -298,10 +298,10 @@ biter_station.collision_mask = {layers = {
   water_tile = true,
 }}
 biter_station.circuit_wire_max_distance = 9
-biter_station.circuit_connector = circuit_connector_definitions.create_single(
+biter_station.circuit_connector = {circuit_connector_definitions.create_single(
   universal_connector_template,
   {variation = 26, main_offset = util.by_pixel(0, 0), shadow_offset = util.by_pixel(4, 4), show_shadow = true}
-)
+)}
 biter_station.picture = {
   layers = {
     {
@@ -357,10 +357,10 @@ biterport.collision_mask = {layers = {
   water_tile = true,
 }}
 biterport.circuit_wire_max_distance = 9
-biterport.circuit_connector = circuit_connector_definitions.create_single(
+biterport.circuit_connector = {circuit_connector_definitions.create_single(
   universal_connector_template,
   {variation = 26, main_offset = util.by_pixel(0, 0), shadow_offset = util.by_pixel(4, 4), show_shadow = true}
-)
+)}
 biterport.picture = {
   layers = {
     {

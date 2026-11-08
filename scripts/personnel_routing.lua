@@ -28,7 +28,7 @@ local function status(entity, key, green)
 end
 local function inventory(entity, output)
   if not valid(entity) then return nil end
-  return entity.get_inventory(output and defines.inventory.furnace_result or defines.inventory.furnace_source)
+  return entity.get_inventory(output and defines.inventory.crafter_output or defines.inventory.crafter_input)
 end
 local function watch(entity, kind, id)
   local registration = script.register_on_object_destroyed(entity)
@@ -273,7 +273,7 @@ function M.on_built(event)
   state().records[entity.unit_number] = record
   if role == "road" then cell.road = record else cell.node = record end
   if role == "input" then state().inputs[entity.unit_number] = record end
-  if entity.type == "furnace" then entity.active = false end
+  if entity.type == "furnace" then entity.disabled_by_script = true end
   entity.surface.set_tiles(floor_tiles(cell), true, false, true, false)
   s.revision = s.revision + 1
   s.dirty = true
@@ -442,7 +442,7 @@ local function route_for(record)
 end
 local function stop(job)
   job.entity.commandable.set_command{type = defines.command.stop, distraction = defines.distraction.none}
-  job.entity.active = false
+  job.entity.disabled_by_script = true
   if job.dx then job.entity.orientation=job.dx==1 and 0.25 or job.dx==-1 and 0.75 or job.dy==1 and 0.5 or 0 end
 end
 local function slow_spoilage(job, tick)
@@ -649,7 +649,7 @@ local function update_job(job, tick, index)
       unit.teleport(p)
       return
     end
-    if job.state=="stopped" then job.state="walking";unit.active=true;job.animation_goal=nil end
+    if job.state=="stopped" then job.state="walking";unit.disabled_by_script=false;job.animation_goal=nil end
     p = {x=p.x+dx*distance,y=p.y+dy*distance}
     if dx~=0 then p.y=cell.y else p.x=cell.x end
     local arrived = remaining<=distance+1/512
@@ -762,7 +762,7 @@ local function update_job(job, tick, index)
     job.goal,job.dx,job.dy=frontier,dx,dy
     job.position=job.position or {x=unit.position.x,y=unit.position.y}
     job.state,job.started,job.progress_tick="walking",tick,tick
-    unit.active=true
+    unit.disabled_by_script=false
     -- A turn starts exactly at the sign center, facing the next leg.
     unit.orientation=dx==1 and 0.25 or dx==-1 and 0.75 or dy==1 and 0.5 or 0
     local animation_goal=frontier
@@ -816,7 +816,7 @@ function M.on_tick(event)
     table.sort(inputs)
     for _, id in ipairs(inputs) do
       local record = st.inputs[id]
-      if valid(record.entity) then record.entity.active = false; dispatch(record, event.tick, index)
+      if valid(record.entity) then record.entity.disabled_by_script = true; dispatch(record, event.tick, index)
       else remove_record(id) end
     end
   end
