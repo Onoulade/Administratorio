@@ -50,13 +50,13 @@ data = {
       ["assembling-machine-2"] = { name = "assembling-machine-2", type = "assembling-machine", crafting_categories = {"crafting", "advanced-crafting", "crafting-with-fluid"} },
       ["assembling-machine-3"] = { name = "assembling-machine-3", type = "assembling-machine", crafting_categories = {"crafting", "advanced-crafting", "crafting-with-fluid"} },
       ["foundry"] = { name = "foundry", type = "assembling-machine",
-        crafting_categories = {"metallurgy", "pressing", "crafting-with-fluid-or-metallurgy", "metallurgy-or-assembling"},
+        crafting_categories = {"metallurgy", "crafting-with-fluid-or-metallurgy", "metallurgy-or-assembling"},
         minable = {mining_time = 0.5, result = "foundry"}, placeable_by = {item = "foundry", count = 1} },
       ["biochamber"] = { name = "biochamber", type = "assembling-machine",
         crafting_categories = {"organic", "organic-or-assembling"},
         minable = {mining_time = 0.5, result = "biochamber"}, placeable_by = {item = "biochamber", count = 1} },
       ["electromagnetic-plant"] = { name = "electromagnetic-plant", type = "assembling-machine",
-        crafting_categories = {"electromagnetics", "electronics", "electronics-with-fluid", "electronics-or-assembling"},
+        crafting_categories = {"electromagnetics"},
         minable = {mining_time = 0.5, result = "electromagnetic-plant"}, placeable_by = {item = "electromagnetic-plant", count = 1} },
       ["cryogenic-plant"] = { name = "cryogenic-plant", type = "assembling-machine",
         crafting_categories = {"cryogenics", "cryogenics-or-assembling"},
@@ -491,7 +491,7 @@ data.raw.item["pentapod-egg"] = {
 data.raw.recipe["pentapod-egg"] = {
   type = "recipe",
   name = "pentapod-egg",
-  category = "organic",
+  categories = {"organic"},
   energy_required = 15,
   ingredients = {{type = "item", name = "pentapod-egg", amount = 1}},
   results = {{type = "item", name = "pentapod-egg", amount = 2}},
@@ -583,7 +583,7 @@ data.raw.fluid["sulfuric-acid"] = {
 recipes["transport-belt"] = {
   type = "recipe",
   name = "transport-belt",
-  category = "pressing",
+  categories = {"crafting", "metallurgy"},
   enabled = true,
   ingredients = {
     { type = "item", name = "iron-plate", amount = 1 },
@@ -597,7 +597,7 @@ for _, belt_name in ipairs({"fast-transport-belt", "fast-underground-belt", "exp
   recipes[belt_name] = {
     type = "recipe",
     name = belt_name,
-    category = "pressing",
+    categories = {"crafting", "metallurgy"},
     enabled = false,
     ingredients = {{ type = "item", name = "iron-plate", amount = 1 }},
     results = {{ type = "item", name = belt_name, amount = 1 }},
@@ -607,7 +607,7 @@ end
 recipes["fast-splitter"] = {
   type = "recipe",
   name = "fast-splitter",
-  category = "pressing",
+  categories = {"crafting", "metallurgy"},
   enabled = false,
   ingredients = {
     { type = "item", name = "splitter", amount = 1 },
@@ -621,7 +621,7 @@ for _, inserter_name in ipairs({"long-handed-inserter", "fast-inserter"}) do
   recipes[inserter_name] = {
     type = "recipe",
     name = inserter_name,
-    category = "crafting",
+    categories = {"crafting"},
     enabled = false,
     ingredients = {{ type = "item", name = "iron-plate", amount = 1 }},
     results = {{ type = "item", name = inserter_name, amount = 1 }},
@@ -631,7 +631,7 @@ end
 recipes["bulk-inserter"] = {
   type = "recipe",
   name = "bulk-inserter",
-  category = "crafting",
+  categories = {"crafting"},
   enabled = false,
   ingredients = {
     { type = "item", name = "iron-gear-wheel", amount = 30 },
@@ -670,7 +670,7 @@ recipes["pipe-to-ground"] = {
 recipes["iron-plate"] = {
   type = "recipe",
   name = "iron-plate",
-  category = "smelting",
+  categories = {"smelting"},
   enabled = true,
   ingredients = {
     { type = "item", name = "iron-ore", amount = 1 },
@@ -683,7 +683,7 @@ recipes["iron-plate"] = {
 recipes["electric-furnace"] = {
   type = "recipe",
   name = "electric-furnace",
-  category = "advanced-crafting",
+  categories = {"advanced-crafting"},
   enabled = false,
   ingredients = {
     { type = "item", name = "steel-plate", amount = 10 },
@@ -698,7 +698,7 @@ recipes["electric-furnace"] = {
 recipes["oil-refinery"] = {
   type = "recipe",
   name = "oil-refinery",
-  category = "crafting",
+  categories = {"crafting"},
   enabled = false,
   ingredients = {
     { type = "item", name = "steel-plate", amount = 15 },
@@ -765,7 +765,7 @@ recipes["steam-engine"] = {
 recipes["engine-unit"] = {
   type = "recipe",
   name = "engine-unit",
-  category = "crafting",
+  categories = {"crafting"},
   enabled = false,
   ingredients = {
     { type = "item", name = "steel-plate", amount = 1 },
@@ -780,7 +780,7 @@ recipes["engine-unit"] = {
 recipes["electric-engine-unit"] = {
   type = "recipe",
   name = "electric-engine-unit",
-  category = "crafting-with-fluid",
+  categories = {"crafting-with-fluid"},
   enabled = false,
   ingredients = {
     { type = "item", name = "engine-unit", amount = 1 },
@@ -795,7 +795,7 @@ recipes["electric-engine-unit"] = {
 recipes["battery"] = {
   type = "recipe",
   name = "battery",
-  category = "chemistry-or-cryogenics",
+  categories = {"chemistry-or-cryogenics"},
   enabled = false,
   ingredients = {
     { type = "item", name = "iron-plate", amount = 1 },
@@ -810,7 +810,7 @@ recipes["battery"] = {
 recipes["rocket-fuel"] = {
   type = "recipe",
   name = "rocket-fuel",
-  category = "organic-or-assembling",
+  categories = {"crafting-with-fluid", "organic"},
   enabled = false,
   ingredients = {
     { type = "item", name = "solid-fuel", amount = 10 },
@@ -824,7 +824,7 @@ recipes["rocket-fuel"] = {
 recipes["nuclear-reactor"] = {
   type = "recipe",
   name = "nuclear-reactor",
-  category = "advanced-crafting",
+  categories = {"advanced-crafting"},
   enabled = false,
   ingredients = {
     { type = "item", name = "concrete", amount = 500 },
@@ -840,7 +840,7 @@ recipes["nuclear-reactor"] = {
 recipes["rocket-silo"] = {
   type = "recipe",
   name = "rocket-silo",
-  category = "advanced-crafting",
+  categories = {"advanced-crafting"},
   enabled = false,
   ingredients = {
     { type = "item", name = "concrete", amount = 1000 },
@@ -872,7 +872,7 @@ recipes["repair-pack"] = {
 recipes["heat-pipe"] = {
   type = "recipe",
   name = "heat-pipe",
-  category = "advanced-crafting",
+  categories = {"advanced-crafting"},
   enabled = false,
   ingredients = {
     { type = "item", name = "copper-plate", amount = 10 },
@@ -884,7 +884,7 @@ recipes["heat-pipe"] = {
 }
 
 recipes["foundry"] = {
-  type = "recipe", name = "foundry", category = "metallurgy-or-assembling", enabled = false,
+  type = "recipe", name = "foundry", categories = {"crafting-with-fluid", "metallurgy"}, enabled = false,
   ingredients = {{type = "item", name = "tungsten-carbide", amount = 4}},
   results = {{type = "item", name = "foundry", amount = 1}},
 }
@@ -892,7 +892,7 @@ recipes["foundry"] = {
 recipes["electromagnetic-plant"] = {
   type = "recipe",
   name = "electromagnetic-plant",
-  category = "electronics-or-assembling",
+  categories = {"advanced-crafting", "electromagnetics"},
   enabled = false,
   ingredients = {
     { type = "item", name = "holmium-plate", amount = 10 },
@@ -903,7 +903,7 @@ recipes["electromagnetic-plant"] = {
 }
 
 recipes["biochamber"] = {
-  type = "recipe", name = "biochamber", category = "organic-or-assembling", enabled = false,
+  type = "recipe", name = "biochamber", categories = {"crafting-with-fluid", "organic"}, enabled = false,
   ingredients = {{type = "item", name = "pentapod-egg", amount = 1}},
   results = {{type = "item", name = "biochamber", amount = 1}},
 }
@@ -921,12 +921,12 @@ for _, name in ipairs({"foundry", "biochamber", "electromagnetic-plant", "cryoge
 end
 
 for _, circuit in ipairs({
-  {name = "electronic-circuit", category = "electronics"},
-  {name = "advanced-circuit", category = "electronics"},
-  {name = "processing-unit", category = "electronics-with-fluid"},
+  {name = "electronic-circuit", categories = {"crafting", "electromagnetics"}},
+  {name = "advanced-circuit", categories = {"crafting", "electromagnetics"}},
+  {name = "processing-unit", categories = {"crafting-with-fluid", "electromagnetics"}},
 }) do
   recipes[circuit.name] = {
-    type = "recipe", name = circuit.name, category = circuit.category, enabled = false,
+    type = "recipe", name = circuit.name, categories = circuit.categories, enabled = false,
     ingredients = {{type = "item", name = "copper-plate", amount = 1}},
     results = {{type = "item", name = circuit.name, amount = 1}},
   }
@@ -934,7 +934,7 @@ end
 
 for _, process in ipairs({"superconductor", "electromagnetic-science-pack"}) do
   recipes[process] = {
-    type = "recipe", name = process, category = "electromagnetics", enabled = false,
+    type = "recipe", name = process, categories = {"electromagnetics"}, enabled = false,
     ingredients = {{type = "item", name = "holmium-plate", amount = 1}},
     results = {{type = "item", name = process, amount = 1}},
   }
@@ -943,7 +943,7 @@ end
 recipes["dual-planet-widget"] = {
   type = "recipe",
   name = "dual-planet-widget",
-  category = "advanced-crafting",
+  categories = {"advanced-crafting"},
   enabled = false,
   ingredients = {
     { type = "item", name = "tungsten-plate", amount = 2 },
@@ -957,7 +957,7 @@ recipes["dual-planet-widget"] = {
 recipes["quantum-processor"] = {
   type = "recipe",
   name = "quantum-processor",
-  category = "advanced-crafting",
+  categories = {"advanced-crafting"},
   enabled = false,
   ingredients = {
     { type = "item", name = "tungsten-plate", amount = 2 },
@@ -972,7 +972,7 @@ recipes["quantum-processor"] = {
 recipes["lithium"] = {
   type = "recipe",
   name = "lithium",
-  category = "cryogenics",
+  categories = {"cryogenics"},
   enabled = false,
   ingredients = {
     { type = "fluid", name = "lithium-brine", amount = 50 },
@@ -986,7 +986,7 @@ recipes["lithium"] = {
 recipes["lithium-plate"] = {
   type = "recipe",
   name = "lithium-plate",
-  category = "smelting",
+  categories = {"smelting"},
   enabled = false,
   ingredients = {
     { type = "item", name = "lithium", amount = 1 },
@@ -999,7 +999,7 @@ recipes["lithium-plate"] = {
 recipes["fluoroketone"] = {
   type = "recipe",
   name = "fluoroketone",
-  category = "cryogenics",
+  categories = {"cryogenics"},
   enabled = false,
   ingredients = {
     { type = "fluid", name = "ammonia", amount = 50 },
@@ -1014,7 +1014,7 @@ recipes["fluoroketone"] = {
 recipes["fluoroketone-cooling"] = {
   type = "recipe",
   name = "fluoroketone-cooling",
-  category = "cryogenics",
+  categories = {"cryogenics"},
   enabled = false,
   ingredients = {
     { type = "fluid", name = "fluoroketone-hot", amount = 10 },
@@ -1027,7 +1027,7 @@ recipes["fluoroketone-cooling"] = {
 recipes["cryogenic-plant"] = {
   type = "recipe",
   name = "cryogenic-plant",
-  category = "cryogenics-or-assembling",
+  categories = {"advanced-crafting", "cryogenics"},
   enabled = false,
   ingredients = {
     { type = "item", name = "lithium-plate", amount = 20 },
@@ -1125,7 +1125,7 @@ recipes["thruster"] = {
 recipes["propeller"] = {
   type = "recipe",
   name = "propeller",
-  category = "crafting",
+  categories = {"crafting"},
   subgroup = "space-processing",
   enabled = false,
   ingredients = {
@@ -1140,7 +1140,7 @@ recipes["propeller"] = {
 recipes["metallic-asteroid-crushing"] = {
   type = "recipe",
   name = "metallic-asteroid-crushing",
-  category = "crushing",
+  categories = {"crushing"},
   enabled = false,
   ingredients = {
     { type = "item", name = "metallic-asteroid-chunk", amount = 1 },
@@ -1153,7 +1153,7 @@ recipes["metallic-asteroid-crushing"] = {
 recipes["carbonic-asteroid-crushing"] = {
   type = "recipe",
   name = "carbonic-asteroid-crushing",
-  category = "crushing",
+  categories = {"crushing"},
   enabled = false,
   ingredients = {
     { type = "item", name = "carbonic-asteroid-chunk", amount = 1 },
@@ -1166,7 +1166,7 @@ recipes["carbonic-asteroid-crushing"] = {
 recipes["oxide-asteroid-crushing"] = {
   type = "recipe",
   name = "oxide-asteroid-crushing",
-  category = "crushing",
+  categories = {"crushing"},
   enabled = false,
   ingredients = {
     { type = "item", name = "oxide-asteroid-chunk", amount = 1 },
@@ -1179,7 +1179,7 @@ recipes["oxide-asteroid-crushing"] = {
 recipes["advanced-metallic-asteroid-crushing"] = {
   type = "recipe",
   name = "advanced-metallic-asteroid-crushing",
-  category = "crushing",
+  categories = {"crushing"},
   enabled = false,
   ingredients = {
     { type = "item", name = "metallic-asteroid-chunk", amount = 1 },
@@ -1192,7 +1192,7 @@ recipes["advanced-metallic-asteroid-crushing"] = {
 recipes["metallic-asteroid-reprocessing"] = {
   type = "recipe",
   name = "metallic-asteroid-reprocessing",
-  category = "crushing",
+  categories = {"crushing"},
   enabled = false,
   ingredients = {
     { type = "item", name = "metallic-asteroid-chunk", amount = 1 },
@@ -1262,7 +1262,7 @@ recipes["promethium-science-pack"] = {
 recipes["space-science-pack"] = {
   type = "recipe",
   name = "space-science-pack",
-  category = "orbital-bureaucracy",
+  categories = {"orbital-bureaucracy"},
   enabled = false,
   ingredients = {
     { type = "item", name = "iron-plate", amount = 2 },
@@ -1281,7 +1281,7 @@ recipes["space-science-pack"] = {
 recipes["science-pack-smuggling"] = {
   type = "recipe",
   name = "science-pack-smuggling",
-  category = "chemistry",
+  categories = {"chemistry"},
   enabled = false,
   normal = {
     ingredients = {
@@ -1424,7 +1424,7 @@ recipes["exoskeleton-equipment"] = {
 recipes["oil-processing"] = {
   type = "recipe",
   name = "oil-processing",
-  category = "oil-processing",
+  categories = {"oil-processing"},
   enabled = false,
   ingredients = {
     { type = "fluid", name = "crude-oil", amount = 100 },
@@ -1439,7 +1439,7 @@ recipes["oil-processing"] = {
 recipes["advanced-oil-processing"] = {
   type = "recipe",
   name = "advanced-oil-processing",
-  category = "oil-processing",
+  categories = {"oil-processing"},
   enabled = false,
   ingredients = {
     { type = "fluid", name = "crude-oil", amount = 100 },
@@ -1455,7 +1455,7 @@ recipes["advanced-oil-processing"] = {
 recipes["coal-liquefaction"] = {
   type = "recipe",
   name = "coal-liquefaction",
-  category = "oil-processing",
+  categories = {"oil-processing"},
   enabled = false,
   ingredients = {
     { type = "item", name = "coal", amount = 10 },
@@ -1472,7 +1472,7 @@ recipes["coal-liquefaction"] = {
 recipes["plastic-bar"] = {
   type = "recipe",
   name = "plastic-bar",
-  category = "chemistry-or-cryogenics",
+  categories = {"chemistry-or-cryogenics"},
   enabled = false,
   ingredients = {
     { type = "fluid", name = "petroleum-gas", amount = 20 },
@@ -1486,7 +1486,7 @@ recipes["plastic-bar"] = {
 recipes["chemical-science-pack"] = {
   type = "recipe",
   name = "chemical-science-pack",
-  category = "crafting-with-fluid",
+  categories = {"crafting-with-fluid"},
   enabled = false,
   ingredients = {
     { type = "item", name = "iron-plate", amount = 1 },
@@ -1501,7 +1501,7 @@ recipes["chemical-science-pack"] = {
 recipes["iron-stick"] = {
   type = "recipe",
   name = "iron-stick",
-  category = "crafting",
+  categories = {"crafting"},
   enabled = true,
   ingredients = {
     { type = "item", name = "iron-plate", amount = 1 },
@@ -1514,7 +1514,7 @@ recipes["iron-stick"] = {
 recipes["sulfur"] = {
   type = "recipe",
   name = "sulfur",
-  category = "chemistry-or-cryogenics",
+  categories = {"chemistry-or-cryogenics"},
   enabled = false,
   ingredients = {
     { type = "fluid", name = "petroleum-gas", amount = 30 },
@@ -1528,7 +1528,7 @@ recipes["sulfur"] = {
 recipes["sulfuric-acid"] = {
   type = "recipe",
   name = "sulfuric-acid",
-  category = "chemistry-or-cryogenics",
+  categories = {"chemistry-or-cryogenics"},
   enabled = false,
   ingredients = {
     { type = "item", name = "iron-plate", amount = 1 },
@@ -1543,7 +1543,7 @@ recipes["sulfuric-acid"] = {
 recipes["solid-fuel-from-heavy-oil"] = {
   type = "recipe",
   name = "solid-fuel-from-heavy-oil",
-  category = "chemistry",
+  categories = {"chemistry"},
   enabled = false,
   ingredients = {
     { type = "fluid", name = "heavy-oil", amount = 20 },
@@ -1556,7 +1556,7 @@ recipes["solid-fuel-from-heavy-oil"] = {
 recipes["solid-fuel-from-light-oil"] = {
   type = "recipe",
   name = "solid-fuel-from-light-oil",
-  category = "chemistry",
+  categories = {"chemistry"},
   enabled = false,
   ingredients = {
     { type = "fluid", name = "light-oil", amount = 10 },
@@ -1569,7 +1569,7 @@ recipes["solid-fuel-from-light-oil"] = {
 recipes["solid-fuel-from-petroleum-gas"] = {
   type = "recipe",
   name = "solid-fuel-from-petroleum-gas",
-  category = "chemistry",
+  categories = {"chemistry"},
   enabled = false,
   ingredients = {
     { type = "fluid", name = "petroleum-gas", amount = 20 },
@@ -1582,14 +1582,14 @@ recipes["solid-fuel-from-petroleum-gas"] = {
 recipes["uranium-processing"] = {
   type = "recipe",
   name = "uranium-processing",
-  category = "centrifuging",
+  categories = {"centrifuging"},
   enabled = false,
   ingredients = {
     { type = "item", name = "uranium-ore", amount = 10 },
   },
   results = {
-    { type = "item", name = "uranium-235", amount = 1, probability = 0.007 },
-    { type = "item", name = "uranium-238", amount = 1, probability = 0.993 },
+    { type = "item", name = "uranium-235", amount = 1, independent_probability = 0.007 },
+    { type = "item", name = "uranium-238", amount = 1, independent_probability = 0.993 },
   },
 }
 
@@ -2013,7 +2013,7 @@ end)
 test("mechanical-printer gets a regulated AM recipe", function()
   local r = get_recipe("mechanical-printer-regulated")
   assert_true(r ~= nil, "mechanical-printer-regulated missing")
-  assert_eq(r.category, "crafting-regulated", "mechanical printer regulated category")
+  assert_eq((r.categories or {"crafting"})[1], "crafting-regulated", "mechanical printer regulated category")
   assert_true(has_ingredient(r, "work-order"), "mechanical-printer-regulated missing work-order")
   assert_eq(r.enabled, true, "mechanical-printer-regulated should stay enabled from start")
 end)
@@ -2021,7 +2021,7 @@ end)
 test("printer-t1 gets a regulated AM recipe", function()
   local r = get_recipe("printer-t1-regulated")
   assert_true(r ~= nil, "printer-t1-regulated missing")
-  assert_eq(r.category, "crafting-regulated", "printer-t1 regulated category")
+  assert_eq((r.categories or {"crafting"})[1], "crafting-regulated", "printer-t1 regulated category")
   assert_true(has_ingredient(r, "provisional-work-order"), "printer-t1-regulated missing provisional-work-order")
   assert_true(not has_ingredient(r, "provisional-approval"), "printer-t1-regulated should combine provisional-approval")
 end)
@@ -2040,7 +2040,7 @@ end)
 test("printer-t2 gets a regulated AM recipe", function()
   local r = get_recipe("printer-t2-regulated")
   assert_true(r ~= nil, "printer-t2-regulated missing")
-  assert_eq(r.category, "crafting-regulated", "printer-t2 regulated category")
+  assert_eq((r.categories or {"crafting"})[1], "crafting-regulated", "printer-t2 regulated category")
   assert_true(has_ingredient(r, "construction-work-order"), "printer-t2-regulated missing construction-work-order")
   assert_true(has_ingredient(r, "printer-t1"), "printer-t2-regulated missing printer-t1")
   assert_true(not has_ingredient(r, "construction-permit"), "printer-t2-regulated should combine construction-permit")
@@ -2070,14 +2070,14 @@ end)
 test("paper and ink get regulated AM recipes", function()
   local paper = get_recipe("paper-production-regulated")
   assert_true(paper ~= nil, "paper-production-regulated missing")
-  assert_eq(paper.category, "crafting-regulated", "paper-production-regulated category")
+  assert_eq((paper.categories or {"crafting"})[1], "crafting-regulated", "paper-production-regulated category")
   assert_true(has_ingredient(paper, "work-order"), "paper-production-regulated missing work-order")
   assert_eq(paper.enabled, true, "paper-production-regulated should stay enabled from start")
 
   -- Factoriopedia merge canonicalizes ink-production -> ink.
   local ink = get_recipe("ink-regulated")
   assert_true(ink ~= nil, "ink-regulated missing")
-  assert_eq(ink.category, "crafting-regulated", "ink-regulated category")
+  assert_eq((ink.categories or {"crafting"})[1], "crafting-regulated", "ink-regulated category")
   assert_true(has_ingredient(ink, "work-order"), "ink-regulated missing work-order")
   assert_eq(ink.enabled, true, "ink-regulated should stay enabled from start")
 end)
@@ -2085,7 +2085,7 @@ end)
 test("repair-pack gets a bulked regulated AM recipe", function()
   local regulated = get_recipe("repair-pack-regulated")
   assert_true(regulated ~= nil, "repair-pack-regulated missing")
-  assert_eq(regulated.category, "crafting-regulated", "repair-pack-regulated category")
+  assert_eq((regulated.categories or {"crafting"})[1], "crafting-regulated", "repair-pack-regulated category")
   assert_true(has_ingredient(regulated, "work-order"), "repair-pack-regulated missing work-order")
   assert_eq(get_result_amount(regulated, "repair-pack"), 5, "repair-pack-regulated should batch to 5")
   assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_5.png"),
@@ -2100,8 +2100,8 @@ test("heat-pipe batches at 10x", function()
   local regulated = get_recipe("heat-pipe-regulated")
   assert_true(original ~= nil, "heat-pipe missing")
   assert_true(regulated ~= nil, "heat-pipe missing")
-  assert_eq(original.category, "crafting", "heat-pipe should use the character crafting category")
-  assert_eq(regulated.category, "advanced-crafting-regulated", "heat-pipe regulated category")
+  assert_eq((original.categories or {"crafting"})[1], "crafting", "heat-pipe should use the character crafting category")
+  assert_eq((regulated.categories or {"crafting"})[1], "advanced-crafting-regulated", "heat-pipe regulated category")
   assert_true(has_ingredient(regulated, "work-order"), "heat-pipe missing work-order")
   assert_eq(get_result_amount(regulated, "heat-pipe"), 10, "heat-pipe should batch to 10")
   assert_true(has_icon_layer(regulated, "__base__/graphics/icons/signal/signal_1.png"),
@@ -2142,7 +2142,7 @@ end)
 test("plain pipes are paperwork-free while underground pipes use 5x construction batches", function()
   local pipe = get_recipe("pipe-regulated")
   assert_true(pipe ~= nil, "pipe-regulated missing")
-  assert_eq(pipe.category, "crafting-regulated", "plain pipe should remain automatable")
+  assert_eq((pipe.categories or {"crafting"})[1], "crafting-regulated", "plain pipe should remain automatable")
   assert_eq(get_ingredient_amount(pipe, "iron-plate"), 1,
     "plain pipe should retain its native ingredient quantity")
   assert_eq(get_result_amount(pipe, "pipe"), 1,
@@ -2334,7 +2334,7 @@ end)
 test("smelting-basic keeps only explicit batch recipes", function()
   local batch = get_recipe("iron-plate-batch")
   assert_true(batch ~= nil, "iron-plate-batch missing")
-  assert_eq(batch.category, "smelting-basic", "iron-plate-batch category")
+  assert_eq((batch.categories or {"crafting"})[1], "smelting-basic", "iron-plate-batch category")
   assert_eq(batch.ingredients[1].name, "carbon-offset-certificate-basic",
     "iron-plate-batch should list the carbon certificate first")
   assert_eq(batch.ingredients[2].name, "iron-ore",
@@ -2350,13 +2350,13 @@ end)
 test("electric compacted rubble remains an unlocked alternate to the canonical batch recipe", function()
   local canonical = get_recipe("compacted-rubble")
   assert_true(canonical ~= nil, "canonical compacted-rubble recipe missing")
-  assert_eq(canonical.category, "smelting-basic", "canonical compacted rubble should remain the certified batch")
+  assert_eq((canonical.categories or {"crafting"})[1], "smelting-basic", "canonical compacted rubble should remain the certified batch")
   assert_true(has_ingredient(canonical, "carbon-offset-certificate-basic"),
     "canonical compacted rubble should require a carbon certificate")
 
   local electric = get_recipe("compacted-rubble-electric")
   assert_true(electric ~= nil, "electric compacted-rubble recipe missing")
-  assert_eq(electric.category, "smelting", "electric compacted rubble should use vanilla smelting")
+  assert_eq((electric.categories or {"crafting"})[1], "smelting", "electric compacted rubble should use vanilla smelting")
   assert_true(not has_ingredient(electric, "carbon-offset-certificate-basic"),
     "electric compacted rubble should not require a carbon certificate")
   assert_eq(electric.factoriopedia_alternative, "compacted-rubble")
@@ -2365,13 +2365,13 @@ end)
 test("electric furnace stays handcraftable; regulated copy uses management verbal work order", function()
   local original = get_recipe("electric-furnace")
   assert_true(original ~= nil, "electric-furnace missing")
-  assert_eq(original.category, "crafting", "electric-furnace should use the character crafting category")
+  assert_eq((original.categories or {"crafting"})[1], "crafting", "electric-furnace should use the character crafting category")
   assert_true(has_ingredient(original, "management-approval-verbal"), "electric-furnace missing management-approval-verbal")
   assert_true(not has_ingredient(original, "management-verbal-work-order"), "electric-furnace handcraft path should not use the regulated work-order form")
 
   local regulated = get_recipe("electric-furnace-regulated")
   assert_true(regulated ~= nil, "electric-furnace-regulated missing")
-  assert_eq(regulated.category, "advanced-crafting-regulated", "electric-furnace-regulated category")
+  assert_eq((regulated.categories or {"crafting"})[1], "advanced-crafting-regulated", "electric-furnace-regulated category")
   assert_true(has_ingredient(regulated, "management-verbal-work-order"), "electric-furnace-regulated missing management-verbal-work-order")
   assert_true(not has_ingredient(regulated, "construction-work-order"), "electric-furnace-regulated should not use construction-work-order")
 end)
@@ -2379,14 +2379,14 @@ end)
 test("oil refinery stays handcraftable and assembler-craftable without specialist paperwork", function()
   local original = get_recipe("oil-refinery")
   assert_true(original ~= nil, "oil-refinery missing")
-  assert_eq(original.category, "crafting", "oil-refinery should remain handcraftable")
+  assert_eq((original.categories or {"crafting"})[1], "crafting", "oil-refinery should remain handcraftable")
   assert_true(has_ingredient(original, "construction-permit"), "oil-refinery missing construction-permit")
   assert_true(not has_ingredient(original, "chemical-operator"), "oil-refinery should not require chemical-operator")
   assert_true(not has_ingredient(original, "chemical-handling-work-order"), "oil-refinery should not require chemical-handling-work-order")
 
   local regulated = get_recipe("oil-refinery-regulated")
   assert_true(regulated ~= nil, "oil-refinery-regulated missing")
-  assert_eq(regulated.category, "crafting-regulated", "oil-refinery-regulated category")
+  assert_eq((regulated.categories or {"crafting"})[1], "crafting-regulated", "oil-refinery-regulated category")
   assert_true(has_ingredient(regulated, "construction-work-order"), "oil-refinery-regulated missing construction-work-order")
   assert_true(not has_ingredient(regulated, "chemical-operator"), "oil-refinery-regulated should not require chemical-operator")
   assert_true(not has_ingredient(regulated, "chemical-handling-work-order"), "oil-refinery-regulated should not require chemical-handling-work-order")
@@ -2395,13 +2395,13 @@ end)
 test("engine units stay handcraftable with carbon offsets; regulated copy adds baseline paperwork", function()
   local original = get_recipe("engine-unit")
   assert_true(original ~= nil, "engine-unit missing")
-  assert_eq(original.category, "crafting", "engine-unit should remain handcraftable")
+  assert_eq((original.categories or {"crafting"})[1], "crafting", "engine-unit should remain handcraftable")
   assert_true(not has_ingredient(original, "work-order"), "engine-unit should not require work-order when handcrafted")
   assert_true(has_ingredient(original, "carbon-offset-certificate-basic"), "engine-unit missing carbon-offset-certificate-basic")
 
   local regulated = get_recipe("engine-unit-regulated")
   assert_true(regulated ~= nil, "engine-unit-regulated missing")
-  assert_eq(regulated.category, "crafting-regulated", "engine-unit-regulated category")
+  assert_eq((regulated.categories or {"crafting"})[1], "crafting-regulated", "engine-unit-regulated category")
   assert_true(has_ingredient(regulated, "work-order"), "engine-unit-regulated missing work-order")
   assert_true(has_ingredient(regulated, "carbon-offset-certificate-basic"), "engine-unit-regulated missing carbon-offset-certificate-basic")
   assert_true(not has_ingredient(regulated, "management-verbal-work-order"), "engine-unit-regulated should not use management-verbal-work-order")
@@ -2428,9 +2428,9 @@ end)
 test("Space Age shared categories receive regulated assembler copies", function()
   local belt = get_recipe("transport-belt")
   local regulated_belt = get_recipe("transport-belt-regulated")
-  assert_eq(belt.category, "pressing", "native belt path should remain available to the foundry")
+  assert_eq((belt.categories or {"crafting"})[1], "crafting", "native belt keeps its manual route; the foundry has its own copy")
   assert_true(regulated_belt ~= nil, "Space Age pressing belt missing regulated copy")
-  assert_eq(regulated_belt.category, "crafting-regulated", "basic belt should run in AM1")
+  assert_eq((regulated_belt.categories or {"crafting"})[1], "crafting-regulated", "basic belt should run in AM1")
   assert_true(has_ingredient(regulated_belt, "work-order"), "regulated belt missing work-order")
 
   for _, belt_name in ipairs({"fast-transport-belt", "fast-underground-belt", "express-underground-belt"}) do
@@ -2446,15 +2446,15 @@ test("Space Age shared categories receive regulated assembler copies", function(
 
   local rocket_fuel = get_recipe("rocket-fuel")
   local regulated_rocket_fuel = get_recipe("rocket-fuel-regulated")
-  assert_eq(rocket_fuel.category, "organic-or-assembling", "native rocket-fuel path should remain available to the biochamber")
+  assert_eq((rocket_fuel.categories or {"crafting"})[1], "crafting-with-fluid", "native rocket-fuel path should remain available to the biochamber")
   assert_true(regulated_rocket_fuel ~= nil, "hybrid rocket-fuel recipe missing regulated copy")
-  assert_eq(regulated_rocket_fuel.category, "advanced-crafting-regulated", "rocket fuel should use the regulated AM2 path")
+  assert_eq((regulated_rocket_fuel.categories or {"crafting"})[1], "advanced-crafting-regulated", "rocket fuel should use the regulated AM2 path")
 
   local electromagnetic = get_recipe("electromagnetic-plant")
   local regulated_electromagnetic = get_recipe("electromagnetic-plant-regulated")
-  assert_eq(electromagnetic.category, "electronics-or-assembling", "native electromagnetic build path should be preserved")
+  assert_eq((electromagnetic.categories or {"crafting"})[1], "crafting", "native electromagnetic build path should be preserved")
   assert_true(regulated_electromagnetic ~= nil, "specialist-machine bootstrap missing regulated copy")
-  assert_eq(regulated_electromagnetic.category, "advanced-crafting-regulated", "specialist-machine bootstrap should use AM2")
+  assert_eq((regulated_electromagnetic.categories or {"crafting"})[1], "advanced-crafting-regulated", "specialist-machine bootstrap should use AM2")
 end)
 
 test("electromagnetic plant keeps native electronics free of recurring paperwork", function()
@@ -2475,8 +2475,13 @@ test("electromagnetic plant keeps native electronics free of recurring paperwork
   for name, paperwork in pairs(required) do
     local native = assert(get_recipe(name))
     local assembler = assert(get_recipe(name .. "-regulated"))
-    local electromagnetic = assert(get_recipe(name .. "-electromagnetic"))
-    assert_eq(electromagnetic.category, "electromagnetic-electronics", name .. " plant category")
+    local fluid_route = require("prototypes.shared.recipe_categories").has(native, "crafting-with-fluid")
+    local electromagnetic = fluid_route and native or assert(get_recipe(name .. "-electromagnetic"))
+    if fluid_route then
+      assert_true(require("prototypes.shared.recipe_categories").has(native, "electromagnetics"), name .. " native plant route")
+    else
+      assert_eq((electromagnetic.categories or {"crafting"})[1], "electromagnetic-electronics", name .. " plant category")
+    end
     assert_true(not has_ingredient(electromagnetic, paperwork), name .. " plant route should not use " .. paperwork)
     assert_true(not has_ingredient(electromagnetic, "management-approval-verbal"),
       name .. " plant route should not inherit handcraft approval")
@@ -2512,7 +2517,7 @@ test("foundry pressing does not inherit handcraft permits", function()
     local native = assert(get_recipe(name))
     local regulated = assert(get_recipe(name .. "-regulated"))
     local foundry_recipe = assert(get_recipe(name .. "-foundry"))
-    assert_eq(foundry_recipe.category, "foundry-pressing", name .. " foundry category")
+    assert_eq((foundry_recipe.categories or {"crafting"})[1], "foundry-pressing", name .. " foundry category")
     assert_true(has_ingredient(native, paperwork.hand), name .. " handcraft route missing permit")
     assert_true(has_ingredient(regulated, paperwork.machine), name .. " assembler route missing work order")
     assert_true(not has_ingredient(foundry_recipe, paperwork.hand), name .. " foundry route inherited permit")
@@ -2544,7 +2549,7 @@ test("specialist buildings require approval after construction and mining", func
       assert_eq(get_result_amount(build_recipe, chassis_name), 1, build_name .. " output")
       assert_true(not has_ingredient(build_recipe, form), build_name .. " must not double-charge form")
     end
-    assert_eq(approval.category, "specialist-approval", name .. " approval category")
+    assert_eq((approval.categories or {"crafting"})[1], "specialist-approval", name .. " approval category")
     assert_eq(get_ingredient_amount(approval, chassis_name), 1, name .. " chassis cost")
     assert_eq(get_ingredient_amount(approval, form), 1, name .. " approval cost")
     assert_eq(get_result_amount(approval, name), 1, name .. " approved output")
@@ -2634,7 +2639,7 @@ end)
 test("high-energy intermediates require verified carbon certificates", function()
   local electric_engine = get_recipe("electric-engine-unit")
   assert_true(electric_engine ~= nil, "electric-engine-unit missing")
-  assert_eq(electric_engine.category, "advanced-crafting-regulated", "electric-engine-unit should be reassigned to the regulated fluid-capable AM2/AM3 path")
+  assert_eq((electric_engine.categories or {"crafting"})[1], "advanced-crafting-regulated", "electric-engine-unit should be reassigned to the regulated fluid-capable AM2/AM3 path")
   assert_true(has_ingredient(electric_engine, "carbon-offset-certificate-verified"), "electric-engine-unit missing verified carbon certificate")
 
   local battery = get_recipe("battery")
@@ -2841,7 +2846,7 @@ end)
 test("all plain crafting recipes have regulated AM copies", function()
   for name, recipe in pairs(recipes) do
     if not name:find("%-regulated$") then
-      local cat = recipe.category or "crafting"
+      local cat = (recipe.categories or {"crafting"})[1] or "crafting"
       if cat == "crafting" or cat == "advanced-crafting" then
         local regulated = get_recipe(name .. "-regulated")
         assert_true(regulated ~= nil, name .. " missing regulated AM copy")
@@ -2855,6 +2860,13 @@ test("printer regulated recipes share their technology unlock effects", function
   assert_true(tech_unlocks_recipe("printing-technology", "printer-t1-regulated"), "printing-technology should unlock printer-t1-regulated with the native route")
   assert_true(tech_unlocks_recipe("industrial-printing", "printer-t2"), "industrial-printing missing printer-t2 unlock")
   assert_true(tech_unlocks_recipe("industrial-printing", "printer-t2-regulated"), "industrial-printing should unlock printer-t2-regulated with the native route")
+end)
+
+test("shared fluid recipes retain their native specialist route", function()
+  local native = get_recipe("foundry")
+  assert_true(require("prototypes.shared.recipe_categories").has(native, "metallurgy"))
+  assert_true(get_recipe("foundry-regulated") ~= nil, "assembler paperwork route remains available")
+  assert_true(get_recipe("foundry-foundry") == nil, "non-handcraftable recipes need no permit-free clone")
 end)
 
 test("pneumatic transport shares regulated unlocks with native routes", function()

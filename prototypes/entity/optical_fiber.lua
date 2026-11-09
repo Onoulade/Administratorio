@@ -83,6 +83,7 @@ end
 local function apply_fibre_category(fluid_box)
   for _, connection in pairs(fluid_box.pipe_connections or {}) do
     connection.connection_category = FIBRE_CONNECTION_CATEGORY
+    connection.hide_connection_info = true
   end
   fluid_box.max_pipeline_extent = FIBRE_MAX_EXTENT
 end
@@ -96,7 +97,6 @@ optical_fibre.icon = fibre_graphics .. "opticalfiber-cross.png"
 optical_fibre.icon_size = 128
 optical_fibre.icons = nil
 optical_fibre.pictures = fibre_pictures()
-optical_fibre.fluid_box.hide_connection_info = true
 apply_fibre_category(optical_fibre.fluid_box)
 
 data:extend({optical_fibre})

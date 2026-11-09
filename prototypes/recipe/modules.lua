@@ -7,7 +7,7 @@ local recipes = {
   {
     type = "recipe",
     name = "overtime-exemption",
-    category = "union-negotiation",
+    categories = {"union-negotiation"},
     enabled = false,
     subgroup = "admin-policy-economy", order = "e-d",
     energy_required = 30,
@@ -29,7 +29,7 @@ if feature_flags.space_age_enabled() then
   table.insert(recipes, 1, {
     type = "recipe",
     name = "unstaffed-operations-waiver",
-    category = "union-negotiation",
+    categories = {"union-negotiation"},
     enabled = false,
     subgroup = "admin-policy-economy", order = "e-e",
     energy_required = 120,

@@ -32,7 +32,7 @@ local function assert_true(value, msg)
 end
 
 defines = {
-  inventory = {furnace_source = 1, furnace_result = 2, chest = 3},
+  inventory = {crafter_input = 1, crafter_output = 2, chest = 3},
   entity_status_diode = {red = 1, yellow = 2, green = 3},
   direction = {north = 0, east = 2, south = 4, west = 6},
   wire_connector_id = {circuit_red = 1, circuit_green = 2},
@@ -197,7 +197,7 @@ local function new_terminus(planet_name, researched, requests)
     name = C.TERMINUS_NAME,
     unit_number = next_unit_number,
     position = {x = 0, y = 0},
-    active = true,
+    disabled_by_script = false,
     custom_status = nil,
     force = {valid = true, index = 1, technologies = technologies},
     outbound = new_inventory(4),
@@ -209,8 +209,8 @@ local function new_terminus(planet_name, researched, requests)
   function entity.destroy() entity.valid = false end
 
   function entity.get_inventory(which)
-    if which == defines.inventory.furnace_source then return entity.outbound end
-    if which == defines.inventory.furnace_result then return entity.arrivals end
+    if which == defines.inventory.crafter_input then return entity.outbound end
+    if which == defines.inventory.crafter_output then return entity.arrivals end
     return nil
   end
 

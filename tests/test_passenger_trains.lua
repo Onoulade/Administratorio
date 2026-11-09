@@ -59,7 +59,7 @@ local function new_entity(surface, name, entity_type, x, y)
   local entity = {
     valid = true, name = name, type = entity_type, unit_number = id(),
     position = {x = x, y = y}, force = "enemy", surface = surface,
-    signals = {}, active = true,
+    signals = {}, disabled_by_script = false,
   }
   function entity.get_circuit_network()
     return {get_signal = function(signal) return entity.signals[signal.name] or 0 end}
@@ -129,7 +129,7 @@ test("only visitors on the center tile board on the 10-tick update", function()
   info.state = "waiting_for_train"
   passenger_trains.on_tick({tick = 20})
   assert_eq(info.state, "pathfinding_to_platform", "a displaced visitor should be routed back to the platform")
-  assert_true(visitor.active)
+  assert_true((not visitor.disabled_by_script))
   assert_eq(#storage.passenger_wagons[wagon.unit_number].passengers, 0)
 
   visitor.position = {x = 0.6, y = 3.0}

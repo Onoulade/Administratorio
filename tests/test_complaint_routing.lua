@@ -78,7 +78,7 @@ local function setup(desks)
   game = {tick = 0, connected_players = {}, forces = {neutral = {name = "neutral"}}}
   local biter = {
     valid = true, name = "small-biter", unit_number = 99,
-    position = {x = 0, y = 0}, surface = surface, active = true,
+    position = {x = 0, y = 0}, surface = surface, disabled_by_script = false,
     commandable = {set_command = function(command) surface.last_command = command end},
   }
   local info = {entity = biter, tracked_unit_number = 99, state = "seeking_slot", frustration = 37}
@@ -94,15 +94,15 @@ test("with no destinations a tracked visitor patrols while active", function()
   eq(info.slot_search_retry_tick, nil)
   eq(surface.last_command.type, defines.command.go_to_location)
   eq(info.slot_search_wander_anchor.x, 0)
-  eq(biter.active, true)
+  eq((not biter.disabled_by_script), true)
 end)
 
 test("an old saved inactive seeker wakes without the removed delay", function()
   local info, biter = setup({})
   info.slot_search_retry_tick = 180
-  biter.active = false
+  biter.disabled_by_script = true
   deps.process_slot_search(info, biter)
-  eq(biter.active, true)
+  eq((not biter.disabled_by_script), true)
   eq(info.slot_search_retry_tick, nil)
   eq(surface.last_command.type, defines.command.go_to_location)
 end)
@@ -119,7 +119,7 @@ test("fallback patrol remains anchored across repeated searches", function()
     local dest = surface.last_command.destination
     local distance_sq = (dest.x - anchor.x)^2 + (dest.y - anchor.y)^2
     eq(distance_sq <= 100, true)
-    eq(biter.active, true)
+    eq((not biter.disabled_by_script), true)
   end
 end)
 
@@ -184,7 +184,7 @@ test("roaming picks second or third closest and retries after arriving", functio
     eq(info.slot_search_retry_tick, nil)
     eq(info.desk_id, 3)
     eq(info.frustration, 37)
-    eq(biter.active, true)
+    eq((not biter.disabled_by_script), true)
   end)
   math.random = old_random
   if not ok then error(err) end
@@ -235,7 +235,7 @@ test("a failed approach tries three other spots then patrols", function()
   eq(info.slot_search_retry_tick, nil)
   eq(info.slot_search_failed_until[1], 10 * 60 * 60)
   eq(surface.last_command.type, defines.command.go_to_location)
-  eq(biter.active, true)
+  eq((not biter.disabled_by_script), true)
 end)
 
 test("four blocked approach spots wander without routing onto the desk", function()
@@ -250,7 +250,7 @@ test("four blocked approach spots wander without routing onto the desk", functio
   eq(info.slot_search_target_id, nil)
   eq(info.slot_search_retry_tick, 60)
   eq(surface.last_command.type, defines.command.wander)
-  eq(biter.active, true)
+  eq((not biter.disabled_by_script), true)
 end)
 
 test("the three roaming choices must all be within three chunks", function()

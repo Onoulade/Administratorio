@@ -47,19 +47,19 @@ def assert_recycling_routes(data_raw: dict) -> None:
         expected.update(SPACE_AGE_RETURNS)
     for item, allowed_returns in expected.items():
         recipe = recipes[item + "-recycling"]
-        assert recipe["category"] == "recycling", item
+        assert recipe["categories"][0] == "recycling", item
         assert [(entry["name"], entry["amount"]) for entry in recipe["ingredients"]] == [(item, 1)], item
         actual = {entry["name"] for entry in recipe["results"]}
         assert actual == allowed_returns, (
             f"{item}: recycler returns {sorted(actual)}, expected {sorted(allowed_returns)}"
         )
         if allowed_returns == {item}:
-            assert recipe["results"][0]["probability"] == 0.25, item
+            assert recipe["results"][0]["independent_probability"] == 0.25, item
 
     # Check entire generated families, including future additions and recipes
     # whose unsafe reverse route happens to be overwritten in today's load order.
     for name, recipe in recipes.items():
-        if name.startswith(("copy-", "slop-synthesis-")) or recipe.get("category") == "smelting-basic":
+        if name.startswith(("copy-", "slop-synthesis-")) or recipe.get("categories", ["crafting"])[0] == "smelting-basic":
             assert recipe.get("auto_recycle") is False, name
 
     # Ordinary machines still recycle into their construction materials.
@@ -90,7 +90,7 @@ def main() -> None:
                 path = root / "mods" / "mod-list.json"
                 mod_list = json.loads(path.read_text())
                 for mod in mod_list["mods"]:
-                    if mod["name"] == "quality":
+                    if mod["name"] in ("quality", "recycler"):
                         mod["enabled"] = True
                 path.write_text(json.dumps(mod_list))
                 assert_recycling_routes(dump_data(args.factorio_bin, root))

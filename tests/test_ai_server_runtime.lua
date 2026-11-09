@@ -34,7 +34,7 @@ local function assert_close(actual, expected, tolerance, msg)
 end
 
 defines = {
-  inventory = {furnace_source = 1, furnace_result = 2, chest = 3},
+  inventory = {crafter_input = 1, crafter_output = 2, chest = 3},
   entity_status_diode = {red = 1, yellow = 2, green = 3},
   entity_status = {working = 1, no_power = 2, item_ingredient_shortage = 3},
   direction = {north = 0, east = 2, south = 4, west = 6},
@@ -77,7 +77,7 @@ local function new_server(status, temperature)
     name = C.AI_SERVER_NAME,
     unit_number = next_unit_number,
     position = {x = 0, y = 0},
-    active = true,
+    disabled_by_script = false,
     status = status or defines.entity_status.working,
     custom_status = nil,
     force = {valid = true, index = 1},
@@ -145,7 +145,7 @@ test("under-cooling is a hard stop, not a throttle", function()
   local entity = new_server(defines.entity_status.working, C.AI_SERVER_STALL_TEMPERATURE)
 
   ai_server.on_tick{tick = 0}
-  assert_eq(entity.active, false, "an under-cooled server stops outright")
+  assert_eq((not entity.disabled_by_script), false, "an under-cooled server stops outright")
   assert_eq(entity.custom_status.diode, defines.entity_status_diode.red, "a stopped server should read red")
 end)
 
@@ -154,12 +154,12 @@ test("a server restarts once the heat network draws its core back down", functio
   local entity, core = new_server(defines.entity_status.working, C.AI_SERVER_STALL_TEMPERATURE)
 
   ai_server.on_tick{tick = 0}
-  assert_eq(entity.active, false, "the server should be stopped")
+  assert_eq((not entity.disabled_by_script), false, "the server should be stopped")
 
   -- A heat exchanger or Heat Exhaust drains the core.
   core.temperature = C.AI_SERVER_AMBIENT_TEMPERATURE
   ai_server.on_tick{tick = 60}
-  assert_eq(entity.active, true, "the server should resume once it can dump heat again")
+  assert_eq((not entity.disabled_by_script), true, "the server should resume once it can dump heat again")
 end)
 
 test("core temperature never exceeds the buffer maximum", function()

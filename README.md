@@ -2,9 +2,17 @@
 
 **The factory must grow. Subject to approval.**
 
-Administratorio is a Factorio 2.0 overhaul that replaces combat with bureaucracy. Build offices, automate paperwork, hire biters and try to keep the whole operation solvent.
+Administratorio is a Factorio 2.1 overhaul that replaces combat with bureaucracy. Build offices, automate paperwork, hire biters and try to keep the whole operation solvent.
 
 The biters are still angry about your factory. They just file complaints now. Resolving those complaints earns you money, and some of the visitors can be recruited to work for you. You'll need them: production depends on staff and permits, workers need paying, and the office closes at night.
+
+## Factorio 2.1 fork
+
+This fork requires **Factorio 2.1.23 or later in the 2.1 series**. Download
+`administratorio_0.8.5.zip` from [this fork's GitHub releases](https://github.com/SirEdvin/Administratorio/releases)
+and place it in your Factorio `mods` directory. Use the installable mod ZIP, not GitHub's source archives.
+Space Age and Quality remain optional. Back up existing saves before upgrading; do not keep a second copy of Administratorio enabled.
+This is an independent compatibility release of Onoulade's mod, not a Mod Portal publication.
 
 ## Features
 

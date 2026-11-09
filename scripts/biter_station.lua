@@ -161,7 +161,7 @@ local function debug_entity_summary(entity)
   local ok_name, name = pcall(function() return entity.name end)
   local ok_unit, unit_number = pcall(function() return entity.unit_number end)
   local ok_force, force = pcall(function() return entity.force end)
-  local ok_active, active = pcall(function() return entity.active end)
+  local ok_active, active = pcall(function() return (not entity.disabled_by_script) end)
   local ok_position, position = pcall(function() return entity.position end)
   local ok_has_command, has_command = pcall(function()
     return entity.commandable and entity.commandable.has_command or false
@@ -339,7 +339,7 @@ local function create_wall_blockers(station)
     }
     if blocker and blocker.valid then
       blocker.destructible = false
-      blocker.minable = false
+      blocker.minable_flag = false
       blocker.operable = false
     end
   end
@@ -362,7 +362,7 @@ local function create_hidden_coffee_input(station)
   }
   if created and created.valid then
     created.destructible = false
-    created.minable = false
+    created.minable_flag = false
     created.operable = false
     storage.biter_station_coffee_inputs[station.unit_number] = created
   end
@@ -391,8 +391,7 @@ local function available_dispatch_coffee(station)
   end
 
   local input = create_hidden_coffee_input(station)
-  local fluidbox = input and input.valid and input.fluidbox
-  local fluid = fluidbox and fluidbox[1] or nil
+  local fluid = input and input.valid and input.get_fluid(1) or nil
   if fluid and fluid.name == COFFEE_FLUID_NAME then
     return fluid.amount or 0
   end
@@ -409,11 +408,11 @@ local function remove_dispatch_coffee(station)
   end
 
   local input = create_hidden_coffee_input(station)
-  if not input or not input.valid or not input.remove_fluid then
+  if not input or not input.valid or not input.extract_fluid then
     return false
   end
 
-  local ok, removed = pcall(input.remove_fluid, {
+  local ok, removed = pcall(input.extract_fluid, {
     name = COFFEE_FLUID_NAME,
     amount = C.BITER_STATION_NIGHT_COFFEE_PER_DISPATCH,
   })
@@ -786,7 +785,7 @@ end
 local function issue_move_command(biter, destination, radius)
   if not biter or not biter.valid or not destination or not biter.commandable then return false end
   biter.force = get_biter_force()
-  biter.active = true
+  biter.disabled_by_script = false
   biter.commandable.set_command({
     type = defines.command.go_to_location,
     destination = destination,
@@ -873,7 +872,7 @@ local function turn_station_worker_into_protester(active_state, tick)
     station_worker_debug_log("turn-protester-skip-invalid-biter", active_state)
     return false
   end
-  biter.active = true
+  biter.disabled_by_script = false
   biter.destructible = true
 
   local biters = biters_module
@@ -1120,7 +1119,7 @@ local function activate_building_for_visit(building, biter_unit_number)
     return false
   end
 
-  building.active = true
+  building.disabled_by_script = false
   run_state.crafts_remaining = 1
   run_state.products_at_last_check = building.products_finished or 0
   run_state.recipe_name = get_recipe_name(recipe)
@@ -1551,7 +1550,7 @@ local function advance_running_buildings()
       -- A waiver installed mid-run takes over immediately: the building keeps
       -- running rather than stopping when its dispatched crafts run out.
       storage.managed_building_run[unit_number] = nil
-      entity.active = true
+      entity.disabled_by_script = false
     elseif not entity or not entity.valid then
       storage.managed_building_run[unit_number] = nil
     else
@@ -1567,13 +1566,13 @@ local function advance_running_buildings()
         -- appropriate active state every cycle so the same craft resumes as
         -- soon as the final protest claim is released.
         if is_building_blocked_by_working_hours(entity) then
-          entity.active = false
+          entity.disabled_by_script = true
           goto continue
         end
-        entity.active = true
+        entity.disabled_by_script = false
         local recipe = entity.get_recipe and entity.get_recipe() or nil
         if not recipe then
-          entity.active = false
+          entity.disabled_by_script = true
           run_state.crafts_remaining = 0
           run_state.recipe_name = nil
           run_state.crafting_progress_at_last_check = nil
@@ -1581,7 +1580,7 @@ local function advance_running_buildings()
           goto continue
         end
         if run_state.recipe_name and get_recipe_name(recipe) ~= run_state.recipe_name then
-          entity.active = false
+          entity.disabled_by_script = true
           run_state.crafts_remaining = 0
           run_state.recipe_name = nil
           run_state.crafting_progress_at_last_check = nil
@@ -1613,7 +1612,7 @@ local function advance_running_buildings()
         end
 
         if (run_state.crafts_remaining or 0) <= 0 then
-          entity.active = false
+          entity.disabled_by_script = true
           run_state.crafts_remaining = 0
           run_state.recipe_name = nil
           run_state.crafting_progress_at_last_check = nil
@@ -1918,7 +1917,7 @@ function M.track_managed_building(entity)
     -- The Administrative Space Station represents permanent onboard
     -- authorization. Platform printers therefore do not wait for a walking
     -- biter dispatched from a terrestrial Employment Office.
-    entity.active = true
+    entity.disabled_by_script = false
     return
   end
 
@@ -1926,17 +1925,17 @@ function M.track_managed_building(entity)
 
   if is_dispatch_exempt_approval(entity) then
     storage.managed_building_run[entity.unit_number] = nil
-    entity.active = not is_building_blocked_by_working_hours(entity)
+    entity.disabled_by_script = is_building_blocked_by_working_hours(entity)
     return
   end
 
   if has_unstaffed_operations_waiver(entity) then
     storage.managed_building_run[entity.unit_number] = nil
-    entity.active = true
+    entity.disabled_by_script = false
     return
   end
 
-  entity.active = false
+  entity.disabled_by_script = true
 
   local run_state = storage.managed_building_run[entity.unit_number]
   if run_state then
@@ -2231,14 +2230,14 @@ local function reconcile_waivered_buildings()
     if not entity or not entity.valid then
       storage.managed_building_registry[unit_number] = nil
     elseif is_dispatch_exempt_approval(entity) then
-      entity.active = not is_building_blocked_by_working_hours(entity)
+      entity.disabled_by_script = is_building_blocked_by_working_hours(entity)
       storage.managed_building_run[unit_number] = nil
     elseif has_unstaffed_operations_waiver(entity) then
-      if not entity.active then entity.active = true end
+      if entity.disabled_by_script then entity.disabled_by_script = false end
       storage.managed_building_run[unit_number] = nil
-    elseif entity.active and not storage.managed_building_run[unit_number] then
+    elseif (not entity.disabled_by_script) and not storage.managed_building_run[unit_number] then
       -- The waiver was removed: the building waits for a dispatched biter again.
-      entity.active = false
+      entity.disabled_by_script = true
     end
   end
 end

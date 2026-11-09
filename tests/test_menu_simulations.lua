@@ -49,7 +49,7 @@ local function run_init(scene, saved_names, available, creation_fails, surface_n
   for _, e in ipairs(entities) do if e.valid then live[#live + 1] = e end end
   if available['factorio-logo-11tiles'] and not creation_fails then
     assert(#live == 1 and live[1].name == 'factorio-logo-11tiles')
-    assert(live[1].destructible == false and live[1].minable == false and live[1].operable == false)
+    assert(live[1].destructible == false and live[1].minable_flag == false and live[1].operable == false)
     assert(game.simulation.camera_position[1] == live[1].position.x)
     assert(game.simulation.camera_position[2] == live[1].position.y + 9.75)
   end

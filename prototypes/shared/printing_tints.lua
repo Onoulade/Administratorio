@@ -1,3 +1,4 @@
+local recipe_categories = require("prototypes.shared.recipe_categories")
 local icon_tints = require("prototypes.shared.icon_tints")
 
 local M = {}
@@ -23,7 +24,7 @@ end
 
 function M.apply(recipes)
   for _, recipe in pairs(recipes or {}) do
-    if PRINTING_CATEGORIES[recipe.category] and not recipe.crafting_machine_tint then
+    if PRINTING_CATEGORIES[recipe_categories.primary(recipe)] and not recipe.crafting_machine_tint then
       recipe.crafting_machine_tint = icon_tints.document_tint(result_name(recipe))
     end
   end

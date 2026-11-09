@@ -1,16 +1,16 @@
 {
   "name": "administratorio",
-  "version": "0.8.4",
+  "version": "0.8.5",
   "title": "Administratorio",
   "author": "Onoulade",
   "contact": "",
-  "homepage": "",
+  "homepage": "https://github.com/SirEdvin/Administratorio",
   "description": "Beta overhaul where the factory grows only with proper permits. Replace biters with complainers and weapons with bureaucracy.",
-  "factorio_version": "2.0",
+  "factorio_version": "2.1",
   "dependencies": [
-    "base >= 2.0.0",
-    "? space-age >= 2.0.0",
-    "? quality >= 2.0.0",
+    "base >= 2.1.23",
+    "? space-age >= 2.1.23",
+    "? quality >= 2.1.23",
     "? Milestones"
   ],
   "quality_required": false,

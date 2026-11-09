@@ -54,7 +54,7 @@ test("desk deletion reroutes from canonical waiting data when desk index drifted
     position = {x = 0, y = 0},
     surface = surface,
     force = {name = "administratorio-biters"},
-    active = false,
+    disabled_by_script = true,
   }
   biter.commandable = {
     set_command = function() end,

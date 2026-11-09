@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.8.5
+Date: 2026-11-08
+  Changes:
+    - Port the fork to Factorio 2.1.23 and newer 2.1 releases, with optional Space Age and Quality support.
+    - Migrate recipe categories, product probabilities, circuit connectors, fluids, inventories and runtime entity controls to the 2.1 APIs.
+    - Preserve shared assembler/specialist crafting routes, fixed recipes and Factoriopedia links.
+    - Connect solar-system-edge discovery to trajectory compliance instead of the removed railgun progression.
+    - Update native engine regression fixtures for Factorio 2.1 and the separate Recycler dependency.
+---------------------------------------------------------------------------------------------------
 Version: 0.8.4
 Date: 2026-10-03
   Changes:

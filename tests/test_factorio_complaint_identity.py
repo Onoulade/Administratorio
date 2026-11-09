@@ -104,16 +104,17 @@ def run_case(factorio_bin: Path, station_x: int) -> None:
         prepare_profile(root)
         scenario = root / "mods" / SMOKE_MOD_NAME / "scenarios" / "runtime-smoke" / "control.lua"
         scenario.write_text(SCENARIO_CONTROL.replace("STATION_X", str(station_x)), encoding="utf-8")
-        server_settings_source = factorio_bin.parent.parent / "data" / "server-settings.example.json"
+        server_settings_source = factorio_bin.parents[2] / "data" / "server-settings.example.json"
         server_settings = json.loads(server_settings_source.read_text(encoding="utf-8"))
         server_settings["auto_pause"] = False
+        server_settings["visibility"] = {"public": False, "lan": False}
         (root / "server-settings.json").write_text(json.dumps(server_settings), encoding="utf-8")
         command = [
             str(factorio_bin), "--config", str(root / "config.ini"),
-            "--mod-directory", str(root / "mods"), "--disable-audio",
+            "--mod-directory", str(root / "mods"),
             "--server-settings", str(root / "server-settings.json"),
             "--start-server-load-scenario", f"{SMOKE_MOD_NAME}/runtime-smoke",
-            "--until-tick", "960",
+
         ]
         process = subprocess.Popen(
             command, cwd=REPO_ROOT, text=True, stdout=subprocess.PIPE,

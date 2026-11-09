@@ -1,3 +1,4 @@
+package.preload["__base__.prototypes.entity.assembler-pictures"] = function() return {assembler3pipepictures = {}} end
 -------------------------------------------------------------------------------
 -- ADMINISTRATORIO VULCANUS SPACE AGE TESTS
 -------------------------------------------------------------------------------
@@ -664,16 +665,16 @@ test("territorial arbitration post is a Vulcanus-only field office with scripted
   assert_eq(recipe.surface_conditions[1].min, 4000, "territorial-arbitration-post should target Vulcanus pressure")
   assert_eq(recipe.surface_conditions[2].min, 40, "territorial-arbitration-post should target Vulcanus gravity")
 
-  assert_eq(processing.category, "territorial-arbitration", "territorial processing should use the arbitration category")
+  assert_eq((processing.categories or {"crafting"})[1], "territorial-arbitration", "territorial processing should use the arbitration category")
   assert_true(processing.hidden, "territorial processing should stay hidden")
   assert_true(has_ingredient(processing, "territorial-resettlement-order"),
     "territorial processing should consume territorial-resettlement-order")
 end)
 
 test("chromatic recipes stay printer-only while support-heavy paperwork lives in the notary office", function()
-  assert_eq(data.raw.recipe["blank-cyan-form-production"].category, "printing-chromatic", "blank-cyan-form should be printer-made")
-  assert_eq(data.raw.recipe["inspection-docket"].category, "printing-chromatic", "inspection-docket should be printer-made")
-  assert_eq(data.raw.recipe["offworld-metallurgy-charter"].category, "bureaucracy-certification", "offworld charter should be notary-made")
+  assert_eq((data.raw.recipe["blank-cyan-form-production"].categories or {"crafting"})[1], "printing-chromatic", "blank-cyan-form should be printer-made")
+  assert_eq((data.raw.recipe["inspection-docket"].categories or {"crafting"})[1], "printing-chromatic", "inspection-docket should be printer-made")
+  assert_eq((data.raw.recipe["offworld-metallurgy-charter"].categories or {"crafting"})[1], "bureaucracy-certification", "offworld charter should be notary-made")
   assert_eq(data.raw.recipe["good-excuse-vulcanus"], nil,
     "Vulcanus should not receive a local generic good-excuse recipe")
 end)
@@ -814,11 +815,11 @@ test("fulgora bureau and magenta paperwork stay on fulgora", function()
     assert_eq(recipe.surface_conditions[2].min, 8, recipe_name .. " should target Fulgora gravity")
   end
 
-  assert_eq(data.raw.recipe["blank-magenta-form-production"].category, "printing-chromatic",
+  assert_eq((data.raw.recipe["blank-magenta-form-production"].categories or {"crafting"})[1], "printing-chromatic",
     "blank-magenta-form should be printer-made")
-  assert_eq(data.raw.recipe["archive-rubble-recovery"].category, "bureaucratic-bootstrap-fulgora",
+  assert_eq((data.raw.recipe["archive-rubble-recovery"].categories or {"crafting"})[1], "bureaucratic-bootstrap-fulgora",
     "archive-rubble-recovery should stay a Fulgora bootstrap salvage recipe")
-  assert_eq(data.raw.recipe["digital-processing-certificate"].category, "bureaucracy-registration-fulgora",
+  assert_eq((data.raw.recipe["digital-processing-certificate"].categories or {"crafting"})[1], "bureaucracy-registration-fulgora",
     "digital-processing-certificate should be Fulgora office work")
   assert_true(has_ingredient(data.raw.recipe["digital-services-bureau"], "relay-clerk"),
     "digital-services-bureau should require relay-clerk")
@@ -844,13 +845,14 @@ test("aquilo chromatic trunk and multicolor paperwork stay on Aquilo", function(
     assert_eq(recipe.surface_conditions[2].min, 15, recipe_name .. " should target Aquilo gravity")
   end
 
-  assert_eq(data.raw.recipe["transfer-emulsion-production"].category, "chemistry-or-cryogenics",
+  assert_true(require("prototypes.shared.recipe_categories").has(data.raw.recipe["transfer-emulsion-production"], "chemistry")
+    and require("prototypes.shared.recipe_categories").has(data.raw.recipe["transfer-emulsion-production"], "cryogenics"),
     "transfer-emulsion should be chemical-plant compatible before the first cryogenic plant")
-  assert_eq(data.raw.recipe["composite-chroma-ribbon-production"].category, "printing-multicolor",
+  assert_eq((data.raw.recipe["composite-chroma-ribbon-production"].categories or {"crafting"})[1], "printing-multicolor",
     "composite-chroma-ribbon should be laser-printer multicolor work")
-  assert_eq(data.raw.recipe["cryogenic-operations-license-production"].category, "printing-multicolor",
+  assert_eq((data.raw.recipe["cryogenic-operations-license-production"].categories or {"crafting"})[1], "printing-multicolor",
     "cryogenic-operations-license should be multicolor printed")
-  assert_eq(data.raw.recipe["promethium-research-charter-production"].category, "orbital-bureaucracy",
+  assert_eq((data.raw.recipe["promethium-research-charter-production"].categories or {"crafting"})[1], "orbital-bureaucracy",
     "promethium research charter should be orbital paperwork")
   assert_eq(data.raw.recipe["promethium-research-charter-production"].surface_conditions[1].max, 0,
     "promethium research charter should be issued in vacuum")

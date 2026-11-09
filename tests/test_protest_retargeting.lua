@@ -116,7 +116,7 @@ local function new_test_context(hard_mode_enabled, constant_overrides)
         type = params.type or "unit",
         position = {x = params.position.x, y = params.position.y},
         force = force,
-        active = true,
+        disabled_by_script = false,
         unit_number = next_unit_number,
         surface = surface,
         prototype = {
@@ -366,7 +366,7 @@ local function new_test_context(hard_mode_enabled, constant_overrides)
       release_calls = release_calls + 1
       last_released_entity = entity
       entity.force = game.forces.enemy
-      entity.active = true
+      entity.disabled_by_script = false
       entity.destructible = true
       return true
     end,
@@ -440,7 +440,7 @@ end
 local function new_target(surface, unit_number, x, y)
   return {
     valid = true,
-    active = false,
+    disabled_by_script = true,
     force = {name = "player"},
     unit_number = unit_number,
     name = "office-desk",
@@ -509,7 +509,7 @@ test("removing a protested building retargets the biter and resumes movement", f
   assert_true(info.target_building == replacement_target, "protester should switch to a new building after its target is removed")
   assert_true(info.arrived_at_building == nil, "reassigned protester should go back to the approach state")
   assert_true(ctx.get_last_move_command() ~= nil, "reassigned protester should receive a fresh movement command")
-  assert_true(entity.active == true, "reassigned protester should be active while moving toward the new target")
+  assert_true((not entity.disabled_by_script) == true, "reassigned protester should be active while moving toward the new target")
 end)
 
 test("a busy validation pathfinder defers when there is no local obstruction", function()
@@ -687,7 +687,7 @@ test("high protest load caps path requests created in the same tick", function()
   assert_true(second_info.pending_path_request_id == nil, "request over budget should remain deferred")
   assert_true(second_info.next_protest_target_retry_tick > game.tick, "request over budget should schedule a retry")
   assert_eq(ctx.get_move_command_count(), 1, "deferred protester should not receive a fallback wander command")
-  assert_true(second.active == false, "deferred protester should remain inactive until its path retry")
+  assert_true((not second.disabled_by_script) == false, "deferred protester should remain inactive until its path retry")
 end)
 
 test("high-load protesters outside the local radius still find distant buildings", function()
@@ -1355,7 +1355,7 @@ test("saved false arrivals at a wall gap resume toward the real protest target",
   local info = storage.waiting_biters[entity.unit_number]
   local waypoint = info.protest_pipe_gap_waypoint
   entity.position = {x = waypoint.x, y = waypoint.y}
-  entity.active = false
+  entity.disabled_by_script = true
   info.arrived_at_building = true
   info.protest_parked = true
   info.protest_anchor_position = {x = waypoint.x, y = waypoint.y}
@@ -1513,7 +1513,7 @@ test("underground pipes and transport infrastructure are never breach targets", 
   assert_eq(ctx.get_attack_command_count(), 0, "off-route pipes and excluded infrastructure must not receive attack commands")
   assert_true(info.protest_obstacle_attacking ~= true, "no eligible aligned breach should leave the protester non-hostile")
   assert_true(info.protest_path_retry_deferred == true, "the blocked protester should wait for its bounded route retry")
-  assert_true(entity.active == false, "a blocked protester with no eligible breach should remain inactive")
+  assert_true((not entity.disabled_by_script) == false, "a blocked protester with no eligible breach should remain inactive")
 end)
 
 test("a failed desk route releases its reservation and starts a protest", function()
@@ -1618,7 +1618,7 @@ test("an inactive stalled desk route releases its reservation", function()
     position = {x = 4, y = 4},
     force = "neutral",
   }
-  entity.active = false
+  entity.disabled_by_script = true
   local destination = {x = 20, y = 4}
   local info = {
     entity = entity,
@@ -1729,7 +1729,7 @@ test("protesters saved while protesting a pipe migrate to a real target and brea
   local ctx = new_test_context(true)
   local real_target = new_target(ctx.surface, 113, 20, 20)
   local old_pipe_target = new_obstacle(ctx.surface, 223, 6, 6, "pipe")
-  old_pipe_target.active = false
+  old_pipe_target.disabled_by_script = true
   ctx.set_protest_targets({real_target})
   ctx.set_protest_obstacles({old_pipe_target})
   local entity = ctx.surface.create_entity{
@@ -1753,7 +1753,7 @@ test("protesters saved while protesting a pipe migrate to a real target and brea
 
   assert_true(info.target_building == nil, "the obsolete pipe must be cleared as the current protest target")
   assert_eq(info.pending_protest_reserved_target, real_target, "the migrated protester should reserve a legitimate protest building")
-  assert_true(old_pipe_target.active == true, "migration should release the obsolete protest shutdown on the pipe")
+  assert_true((not old_pipe_target.disabled_by_script) == true, "migration should release the obsolete protest shutdown on the pipe")
   assert_true(ctx.get_pending_request_id() ~= nil, "the migrated protester should validate a route to the real building")
 
   ctx.controller.on_script_path_request_finished{
@@ -1866,7 +1866,7 @@ test("a surviving obstruction remains under continuous attack after transient co
   }
   assert_eq(ctx.get_attack_command_count(), 3, "each completed attempt should continue without a pause")
   assert_true(info.protest_obstacle_attacking == true, "the attacker must stay assigned while the target survives")
-  assert_true(entity.active == true, "the assigned attacker must remain active")
+  assert_true((not entity.disabled_by_script) == true, "the assigned attacker must remain active")
   assert_eq(entity.force, game.forces["administratorio-hard-mode-biters"], "the active breacher must retain its attack force")
 end)
 
@@ -1938,7 +1938,7 @@ test("obstruction attacks are capped while excess protesters remain deferred", f
   assert_true(first_info.protest_obstacle_attacking == true, "the first blocked protester should clear obstructions")
   assert_true(second_info.protest_obstacle_attacking ~= true, "the attacker cap should prevent a second obstruction attack")
   assert_true(second_info.protest_path_retry_deferred == true, "excess blocked protesters should wait for a later path retry")
-  assert_true(second.active == false, "deferred blocked protesters should stay inactive")
+  assert_true((not second.disabled_by_script) == false, "deferred blocked protesters should stay inactive")
 end)
 
 test("invalid protest targets are cleared during processing so the biter can recover", function()
@@ -2128,7 +2128,7 @@ end)
 test("ending a protest preserves a target that was already disabled", function()
   local ctx = new_test_context()
   local target = new_target(ctx.surface, 101, 12, 12)
-  target.active = false
+  target.disabled_by_script = true
 
   local entity = ctx.surface.create_entity{
     name = "small-biter",
@@ -2153,7 +2153,7 @@ test("ending a protest preserves a target that was already disabled", function()
   ctx.controller.process_frustration_and_protests(ctx.surface)
   ctx.controller.reset_protest_targeting(info, 13)
 
-  assert_eq(target.active, false, "a protest must not reactivate a target that was already disabled")
+  assert_eq((not target.disabled_by_script), false, "a protest must not reactivate a target that was already disabled")
 end)
 
 test("unused furnaces are ignored while lifetime-productive furnaces remain meaningful", function()

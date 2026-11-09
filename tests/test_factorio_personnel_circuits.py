@@ -21,7 +21,7 @@ local function build(s,name,x,y,direction)
  check(e.valid,"placement rejected: "..name)
  return e
 end
-local function inv(e,out) return e.get_inventory(out and defines.inventory.furnace_result or defines.inventory.furnace_source) end
+local function inv(e,out) return e.get_inventory(out and defines.inventory.crafter_output or defines.inventory.crafter_input) end
 local function source(s,x,y)
  local e=s.create_entity{name="constant-combinator",position={x,y},force="player"}
  check(e,"signal source not created")
@@ -232,12 +232,12 @@ def main() -> None:
         prepare_profile(root)
         (root/'saves').mkdir()
         (root/'mods'/SMOKE_MOD_NAME/'scenarios/runtime-smoke/control.lua').write_text(CONTROL)
-        settings = json.loads((factorio.parent.parent/'data/server-settings.example.json').read_text())
+        settings = json.loads((factorio.parents[2]/'data/server-settings.example.json').read_text())
         settings.update(auto_pause=False, visibility={'public': False, 'lan': False}, require_user_verification=False)
         (root/'server-settings.json').write_text(json.dumps(settings))
         command = [str(factorio), '--config', str(root/'config.ini'), '--mod-directory', str(root/'mods'),
-                   '--disable-audio', '--server-settings', str(root/'server-settings.json'),
-                   '--start-server-load-scenario', f'{SMOKE_MOD_NAME}/runtime-smoke', '--port', '34217', '--until-tick', '1420']
+                   '--server-settings', str(root/'server-settings.json'),
+                   '--start-server-load-scenario', f'{SMOKE_MOD_NAME}/runtime-smoke', '--port', '34217']
         log_path = root/'server.log'
         marker = root/'script-output/personnel-circuits.txt'
         with log_path.open('w') as stream:
@@ -256,7 +256,7 @@ def main() -> None:
         for save, ticks in [('personnel-circuits-mid-queue', '620'), ('personnel-circuits-mid-multisign-entry', '1420')]:
             filename=save+'.zip'
             replay = subprocess.run([str(factorio), '--config', str(root/'config.ini'), '--mod-directory', str(root/'mods'),
-                '--disable-audio', '--benchmark', str(root/'saves'/filename),
+                '--benchmark', str(root/'saves'/filename),
                 '--benchmark-ticks', ticks, '--benchmark-runs', '1'], cwd=REPO_ROOT, text=True, capture_output=True, timeout=45)
             assert marker.exists(), (replay.stdout+replay.stderr)[-6500:]
             assert marker.read_text() == 'PASS\n'

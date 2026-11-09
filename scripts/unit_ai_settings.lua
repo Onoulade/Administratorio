@@ -45,7 +45,7 @@ function M.release_as_regular_enemy(unit)
     pcall(function() unit.force = "enemy" end)
   end
   pcall(function() unit.destructible = true end)
-  pcall(function() unit.active = true end)
+  pcall(function() unit.disabled_by_script = false end)
   if unit.commandable and unit.commandable.set_command and defines and defines.command then
     pcall(function()
       unit.commandable.set_command({

@@ -55,45 +55,45 @@ package.loaded["prototypes.shared.space_age_rules"] = nil
 local shared = require("prototypes.shared")
 
 test("native Space Age machine categories are exempt from recurring operating paperwork", function()
-  assert_nil(shared.get_operating_form({name = "casting-copper-cable", category = "metallurgy"}), "metallurgy should be exempt")
-  assert_nil(shared.get_operating_form({name = "yumako-processing", category = "organic"}), "organic should be exempt")
-  assert_nil(shared.get_operating_form({name = "superconductor", category = "electromagnetics"}), "electromagnetics should be exempt")
-  assert_nil(shared.get_operating_form({name = "fluoroketone", category = "cryogenics"}), "cryogenics should be exempt")
+  assert_nil(shared.get_operating_form({name = "casting-copper-cable", categories = {"metallurgy"}}), "metallurgy should be exempt")
+  assert_nil(shared.get_operating_form({name = "yumako-processing", categories = {"organic"}}), "organic should be exempt")
+  assert_nil(shared.get_operating_form({name = "superconductor", categories = {"electromagnetics"}}), "electromagnetics should be exempt")
+  assert_nil(shared.get_operating_form({name = "fluoroketone", categories = {"cryogenics"}}), "cryogenics should be exempt")
 end)
 
 test("native Space Age machine build recipes stay exempt on hybrid categories", function()
-  assert_nil(shared.get_operating_form({name = "foundry", category = "metallurgy-or-assembling"}), "foundry should be exempt")
-  assert_nil(shared.get_operating_form({name = "biochamber", category = "organic-or-assembling"}), "biochamber should be exempt")
-  assert_nil(shared.get_operating_form({name = "electromagnetic-plant", category = "electronics-or-assembling"}), "electromagnetic-plant should be exempt")
-  assert_nil(shared.get_operating_form({name = "cryogenic-plant", category = "cryogenics-or-assembling"}), "cryogenic-plant should be exempt")
+  assert_nil(shared.get_operating_form({name = "foundry", categories = {"metallurgy-or-assembling"}}), "foundry should be exempt")
+  assert_nil(shared.get_operating_form({name = "biochamber", categories = {"organic-or-assembling"}}), "biochamber should be exempt")
+  assert_nil(shared.get_operating_form({name = "electromagnetic-plant", categories = {"electronics-or-assembling"}}), "electromagnetic-plant should be exempt")
+  assert_nil(shared.get_operating_form({name = "cryogenic-plant", categories = {"cryogenics-or-assembling"}}), "cryogenic-plant should be exempt")
 end)
 
 test("space age admin and convergence categories stay free of recurring operating paperwork", function()
-  assert_nil(shared.get_operating_form({name = "industrial-charter", category = "bureaucracy-certification"}),
+  assert_nil(shared.get_operating_form({name = "industrial-charter", categories = {"bureaucracy-certification"}}),
     "bureaucracy-certification should be exempt")
-  assert_nil(shared.get_operating_form({name = "territorial-arbitration-processing", category = "territorial-arbitration"}),
+  assert_nil(shared.get_operating_form({name = "territorial-arbitration-processing", categories = {"territorial-arbitration"}}),
     "territorial-arbitration should stay exempt")
-  assert_nil(shared.get_operating_form({name = "asteroid-processing-docket", category = "orbital-bureaucracy"}),
+  assert_nil(shared.get_operating_form({name = "asteroid-processing-docket", categories = {"orbital-bureaucracy"}}),
     "orbital-bureaucracy should stay exempt")
-  assert_nil(shared.get_operating_form({name = "cyan-yellow-form-production", category = "printing-multicolor"}),
+  assert_nil(shared.get_operating_form({name = "cyan-yellow-form-production", categories = {"printing-multicolor"}}),
     "printing-multicolor should stay exempt")
 end)
 
 test("existing vanilla operating-paperwork mappings remain intact under Space Age", function()
-  assert_eq(shared.get_operating_form({name = "oil-processing", category = "oil-processing"}), "chemical-handling-work-order")
-  assert_eq(shared.get_operating_form({name = "advanced-oil-processing", category = "oil-processing"}), "chemical-handling-work-order")
-  assert_eq(shared.get_operating_form({name = "uranium-processing", category = "centrifuging"}), "radiological-work-order")
+  assert_eq(shared.get_operating_form({name = "oil-processing", categories = {"oil-processing"}}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "advanced-oil-processing", categories = {"oil-processing"}}), "chemical-handling-work-order")
+  assert_eq(shared.get_operating_form({name = "uranium-processing", categories = {"centrifuging"}}), "radiological-work-order")
 end)
 
 test("Space Age hybrid chemical categories retain chemical paperwork", function()
-  assert_eq(shared.get_operating_form({name = "sulfuric-acid", category = "chemistry-or-cryogenics"}),
+  assert_eq(shared.get_operating_form({name = "sulfuric-acid", categories = {"chemistry-or-cryogenics"}}),
     "chemical-handling-work-order")
-  assert_eq(shared.get_operating_form({name = "heavy-oil-cracking", category = "organic-or-chemistry"}),
+  assert_eq(shared.get_operating_form({name = "heavy-oil-cracking", categories = {"organic-or-chemistry"}}),
     "chemical-handling-work-order")
 end)
 
 test("platform fuel uses local orbital forms while meltwater remains a bootstrap", function()
-  assert_nil(shared.get_operating_form({name = "ice-melting", category = "chemistry"}),
+  assert_nil(shared.get_operating_form({name = "ice-melting", categories = {"chemistry"}}),
     "ice melting must not deadlock orbital paper production")
   for _, recipe_name in ipairs({
     "thruster-fuel",
@@ -101,7 +101,7 @@ test("platform fuel uses local orbital forms while meltwater remains a bootstrap
     "advanced-thruster-fuel",
     "advanced-thruster-oxidizer",
   }) do
-    assert_eq(shared.get_operating_form({name = recipe_name, category = "chemistry"}),
+    assert_eq(shared.get_operating_form({name = recipe_name, categories = {"chemistry"}}),
       "orbital-operations-form", recipe_name .. " should use locally renewable orbital paperwork")
   end
 end)

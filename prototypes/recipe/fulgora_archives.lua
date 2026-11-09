@@ -11,7 +11,7 @@ data:extend({
   on_fulgora({
     type = "recipe",
     name = "old-archive-recycling",
-    category = "recycling",
+    categories = {"recycling"},
     subgroup = "archive-recovery-recipes",
     order = "a",
     icons = {
@@ -23,14 +23,14 @@ data:extend({
       {type = "item", name = "old-archive", amount = 1},
     },
     results = {
-      {type = "item", name = "blank-form", amount = 1, probability = 0.125},
-      {type = "item", name = "blank-approval", amount = 1, probability = 0.125},
-      {type = "item", name = "carbon-offset-certificate-basic", amount = 1, probability = 0.125},
-      {type = "item", name = "provisional-approval", amount = 1, probability = 0.125},
-      {type = "item", name = "work-order", amount = 1, probability = 0.125},
-      {type = "item", name = "safety-waiver-draft", amount = 1, probability = 0.125},
-      {type = "item", name = "construction-permit-draft", amount = 1, probability = 0.125},
-      {type = "item", name = "research-grant-approval", amount = 1, probability = 0.125},
+      {type = "item", name = "blank-form", amount = 1, independent_probability = 0.125},
+      {type = "item", name = "blank-approval", amount = 1, independent_probability = 0.125},
+      {type = "item", name = "carbon-offset-certificate-basic", amount = 1, independent_probability = 0.125},
+      {type = "item", name = "provisional-approval", amount = 1, independent_probability = 0.125},
+      {type = "item", name = "work-order", amount = 1, independent_probability = 0.125},
+      {type = "item", name = "safety-waiver-draft", amount = 1, independent_probability = 0.125},
+      {type = "item", name = "construction-permit-draft", amount = 1, independent_probability = 0.125},
+      {type = "item", name = "research-grant-approval", amount = 1, independent_probability = 0.125},
     },
     energy_required = 0.5,
     allow_productivity = false,
@@ -84,7 +84,7 @@ for input_name, reassignment in pairs(reassignments) do
       type = "item",
       name = candidate.name,
       amount = 1,
-      probability = reassignment_rules.OUTPUT_PROBABILITY,
+      independent_probability = reassignment_rules.OUTPUT_PROBABILITY,
     }
   end
   reassignment_recipes[#reassignment_recipes + 1] = {
@@ -94,7 +94,7 @@ for input_name, reassignment in pairs(reassignments) do
     localised_description = {"recipe-description.archive-form-reassignment"},
     icon = "__administratorio__/graphics/icons/blank-form.png",
     icon_size = 64,
-    category = "archive-reassignment",
+    categories = {"archive-reassignment"},
     subgroup = "form-reassignment-recipes",
     order = input_name,
     enabled = true,

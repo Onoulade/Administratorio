@@ -25,7 +25,7 @@ script.on_nth_tick(1,function()
   for _,force in pairs(game.forces) do
    if force.technologies["personnel-routing-speed-1"] then force.technologies["personnel-routing-speed-1"].researched=true end
   end
-  for _,s in pairs(game.surfaces) do for _,e in ipairs(s.find_entities_filtered{type='inserter'}) do e.active=false end end
+  for _,s in pairs(game.surfaces) do for _,e in ipairs(s.find_entities_filtered{type='inserter'}) do e.disabled_by_script=true end end
   storage.repro={start=game.tick,total=count(),delivered=0,previous={},moving_ticks=0}
   check(storage.repro.total>0,'save has no test personnel')
  end
@@ -49,7 +49,7 @@ script.on_nth_tick(1,function()
  for _,s in pairs(game.surfaces) do
   check(#s.find_entities_filtered{name='personnel-path'}==0,'old manually placed pavement remains')
   for _,e in ipairs(s.find_entities_filtered{name='personnel-reception-office'}) do
-   local inv=e.get_inventory(defines.inventory.furnace_result)
+   local inv=e.get_inventory(defines.inventory.crafter_output)
    local n=inv.get_item_count('management-trainee')
    r.delivered=r.delivered+n
    if n>0 then inv.remove{name='management-trainee',count=n} end
@@ -75,7 +75,7 @@ script.on_nth_tick(1,function()
   r.terminal=build('personnel-routing-sign',8,defines.direction.south)
   r.rotation_output=build('personnel-reception-office',16)
   s.set_tiles{{name='water',position={7,1}},{name='water',position={8,1}},{name='water',position={7,2}},{name='water',position={8,2}}}
-  input.get_inventory(defines.inventory.furnace_source).insert{name='worker-biter',count=1}
+  input.get_inventory(defines.inventory.crafter_input).insert{name='worker-biter',count=1}
   r.rotation_surface=s
   r.rotation_input=input
   r.rotation_buffer=game.create_inventory(5)
@@ -86,7 +86,7 @@ script.on_nth_tick(1,function()
    check(r.terminal.rotatable,'incoming dispatch re-locked terminal rotation')
    check(not r.terminal.minable,'incoming reservation lost mining protection')
   end
-  local inv=r.rotation_input.get_inventory(defines.inventory.furnace_source)
+  local inv=r.rotation_input.get_inventory(defines.inventory.crafter_input)
   if not inv[1].valid_for_read then
    local stack=r.rotation_buffer.find_item_stack('worker-biter')
    if stack and inv.insert(stack)==1 then stack.clear() end
@@ -120,7 +120,7 @@ script.on_nth_tick(1,function()
   -- Existing saves can already have a proxy standing on the sign. Even that
   -- overlap must select infrastructure, not swallow the player's R key.
   local old_proxy=r.rotation_surface.create_entity{name='personnel-in-transit-worker-biter',position=r.terminal.position,force='player'}
-  check(old_proxy,'could not create legacy overlap fixture');old_proxy.active=false
+  check(old_proxy,'could not create legacy overlap fixture');old_proxy.disabled_by_script=true
   player.update_selected_entity(r.terminal.position)
   check(player.selected==r.terminal,'legacy overlapping proxy hides sign selection')
   old_proxy.destroy()
@@ -150,7 +150,7 @@ script.on_nth_tick(1,function()
    sign=build('personnel-routing-sign',8,0,defines.direction.south),
    old_output=build('personnel-reception-office',8,40),new_output=build('personnel-reception-office',40,0),
    buffer=game.create_inventory(4)}
-  r.live.input.get_inventory(defines.inventory.furnace_source).insert{name='worker-biter',count=1}
+  r.live.input.get_inventory(defines.inventory.crafter_input).insert{name='worker-biter',count=1}
   r.live.buffer.insert{name='worker-biter',count=4}
   r.live.all_sides=build('personnel-reception-office',80,0,defines.direction.west)
   r.live.side_inputs={}
@@ -158,13 +158,13 @@ script.on_nth_tick(1,function()
     {80,12,defines.direction.north},{68,0,defines.direction.east}}) do
    local departure=build('personnel-deployment-office',p[1],p[2],p[3])
    r.live.side_inputs[#r.live.side_inputs+1]=departure
-   departure.get_inventory(defines.inventory.furnace_source).insert{name='worker-biter',count=1}
+   departure.get_inventory(defines.inventory.crafter_input).insert{name='worker-biter',count=1}
   end
  end
  if r.live then
   local live=r.live
   check(not live.all_sides.rotatable and not live.all_sides.rotate{},'omnidirectional reception rotates')
-  local inv=live.input.get_inventory(defines.inventory.furnace_source)
+  local inv=live.input.get_inventory(defines.inventory.crafter_input)
   if not inv[1].valid_for_read then
    local stack=live.buffer.find_item_stack('worker-biter')
    if stack and inv.insert(stack)==1 then stack.clear() end
@@ -173,7 +173,7 @@ script.on_nth_tick(1,function()
   local n=inv.get_item_count('worker-biter')+live.buffer.get_item_count('worker-biter')
     +live.old_output.get_item_count('worker-biter')+live.new_output.get_item_count('worker-biter')
     +live.all_sides.get_item_count('worker-biter')
-  for _,input in ipairs(live.side_inputs) do n=n+input.get_inventory(defines.inventory.furnace_source).get_item_count('worker-biter') end
+  for _,input in ipairs(live.side_inputs) do n=n+input.get_inventory(defines.inventory.crafter_input).get_item_count('worker-biter') end
   for _,j in ipairs(remote.call('administratorio-personnel-routing','inspect')) do
    if j.surface_index==live.surface.index then
     n=n+1;live_jobs[#live_jobs+1]=j
@@ -256,7 +256,7 @@ def main():
             for name in src.namelist():
                 dst.writestr(name,CONTROL.encode() if name.endswith('/control.lua') else src.read(name))
         run=subprocess.run([a.factorio_bin,'--config',str(root/'config.ini'),'--mod-directory',str(root/'mods'),
-            '--disable-audio','--benchmark',str(save),'--benchmark-ticks','2780','--benchmark-runs','1'],cwd=REPO_ROOT,
+            '--benchmark',str(save),'--benchmark-ticks','2780','--benchmark-runs','1'],cwd=REPO_ROOT,
             text=True,capture_output=True,timeout=45)
         marker=root/'script-output/personnel-saved-repro.txt'
         assert marker.exists(),(run.stdout+run.stderr)[-6500:]

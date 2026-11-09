@@ -474,7 +474,7 @@ administrative_space_station.fluid_boxes_off_when_no_fluid_recipe = true
 administrative_space_station.fluid_boxes = {
   {
     production_type = "input",
-    pipe_picture = assembler3pipepictures(),
+    pipe_picture = require("__base__.prototypes.entity.assembler-pictures").assembler3pipepictures,
     pipe_covers = pipecoverspictures(),
     pipe_connections = {{flow_direction = "input", direction = defines.direction.north, position = {0, -1}}},
     secondary_draw_orders = {north = -1},
@@ -510,7 +510,7 @@ local involuntary_relocation_cannon = {
   name = "involuntary-relocation-cannon",
   icon = item_icons .. "relocation-cannon.png",
   icon_size = 64,
-  flags = {"placeable-neutral", "player-creation"},
+  flags = {"no-logistic-connection", "placeable-neutral", "player-creation"},
   minable = {mining_time = 0.4, result = "involuntary-relocation-cannon"},
   placeable_by = placeable_by_item("involuntary-relocation-cannon"),
   max_health = 500,
@@ -528,7 +528,6 @@ local involuntary_relocation_cannon = {
   allowed_effects = {},
   show_recipe_icon = false,
   show_recipe_icon_on_map = false,
-  enable_logistic_control_behavior = false,
   circuit_wire_max_distance = 9,
   circuit_connector = circuit_connector_definitions.create_vector(
     universal_connector_template,
@@ -904,7 +903,7 @@ local interplanetary_terminus = {
   name = "interplanetary-terminus",
   icon = space_age_icons .. "interplanetary-terminus.png",
   icon_size = 64,
-  flags = {"placeable-neutral", "player-creation"},
+  flags = {"no-logistic-connection", "placeable-neutral", "player-creation"},
   minable = {mining_time = 0.2, result = "interplanetary-terminus"},
   placeable_by = placeable_by_item("interplanetary-terminus"),
   max_health = 450,
@@ -922,7 +921,6 @@ local interplanetary_terminus = {
   allowed_effects = {},
   show_recipe_icon = false,
   show_recipe_icon_on_map = false,
-  enable_logistic_control_behavior = false,
   circuit_wire_max_distance = 9,
   circuit_connector = circuit_connector_definitions.create_vector(
     universal_connector_template,

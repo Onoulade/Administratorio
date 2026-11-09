@@ -3,7 +3,7 @@ local planets = require("prototypes.shared.space_age_planets")
 local bureau = table.deepcopy(data.raw.furnace["recycler"])
 bureau.name = "archive-recombination-bureau"
 bureau.icons = {
-  {icon = "__quality__/graphics/icons/recycler.png", icon_size = 64, tint = {r = 0.82, g = 0.68, b = 0.96, a = 1}},
+  {icon = "__recycler__/graphics/icons/recycler.png", icon_size = 64, tint = {r = 0.82, g = 0.68, b = 0.96, a = 1}},
   {icon = "__administratorio__/graphics/icons/blank-form.png", icon_size = 64, scale = 0.34, shift = {8, 8}},
 }
 bureau.icon = nil

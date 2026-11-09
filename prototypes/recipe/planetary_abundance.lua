@@ -14,7 +14,7 @@ data:extend({
   on_planet("gleba", {
     type = "recipe",
     name = "construction-permit-gleba",
-    category = bureaucracy_categories.registration_for_planet("gleba"),
+    categories = {bureaucracy_categories.registration_for_planet("gleba")},
     enabled = false,
     localised_name = {"item-name.construction-permit"},
     ingredients = {
@@ -33,7 +33,7 @@ data:extend({
   on_planet("fulgora", {
     type = "recipe",
     name = "ink-recovery-fulgora",
-    category = bureaucracy_categories.bootstrap_for_planet("fulgora"),
+    categories = {bureaucracy_categories.bootstrap_for_planet("fulgora")},
     subgroup = "admin-planet-fulgora", order = "lb-l",
     enabled = false,
     ingredients = {
@@ -46,7 +46,7 @@ data:extend({
   on_planet("fulgora", {
     type = "recipe",
     name = "salvaged-data-analysis-fulgora",
-    category = bureaucracy_categories.bootstrap_for_planet("fulgora"),
+    categories = {bureaucracy_categories.bootstrap_for_planet("fulgora")},
     subgroup = "admin-planet-fulgora", order = "lb-m",
     enabled = false,
     ingredients = {
@@ -60,7 +60,7 @@ data:extend({
   on_planet("fulgora", {
     type = "recipe",
     name = "carbon-offset-certificate-basic-fulgora",
-    category = bureaucracy_categories.registration_for_planet("fulgora"),
+    categories = {bureaucracy_categories.registration_for_planet("fulgora")},
     enabled = false,
     localised_name = {"recipe-name.carbon-offset-certificate-basic-fulgora"},
     ingredients = {
@@ -74,7 +74,7 @@ data:extend({
   on_planet("fulgora", {
     type = "recipe",
     name = "salvage-electrolyte-fulgora",
-    category = "electromagnetics",
+    categories = {"electromagnetics"},
     subgroup = "admin-planet-fulgora", order = "lb-o",
     enabled = false,
     ingredients = {
@@ -94,7 +94,7 @@ data:extend({
   on_planet("fulgora", {
     type = "recipe",
     name = "electromagnetic-lubricant-fulgora",
-    category = "electromagnetics",
+    categories = {"electromagnetics"},
     subgroup = "admin-planet-fulgora", order = "lb-q",
     enabled = false,
     ingredients = {
@@ -112,7 +112,7 @@ data:extend({
   on_planet("gleba", {
     type = "recipe",
     name = "provisional-approval-cultivation-gleba",
-    category = bureaucracy_categories.bootstrap_for_planet("gleba"),
+    categories = {bureaucracy_categories.bootstrap_for_planet("gleba")},
     enabled = false,
     ingredients = {
       {type = "item", name = "blank-form", amount = 1},
@@ -128,7 +128,7 @@ data:extend({
   on_planet("gleba", {
     type = "recipe",
     name = "management-approval-written-gleba",
-    category = "bureaucracy-conciliation",
+    categories = {"bureaucracy-conciliation"},
     enabled = false,
     localised_name = {"item-name.management-approval-written"},
     ingredients = {
@@ -146,7 +146,7 @@ data:extend({
   on_planet("gleba", {
     type = "recipe",
     name = "composted-rubble-recovery-gleba",
-    category = "bureaucracy-conciliation",
+    categories = {"bureaucracy-conciliation"},
     subgroup = "admin-planet-gleba", order = "la-p",
     enabled = false,
     localised_name = {"item-name.redundant-rubble"},

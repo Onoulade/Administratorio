@@ -74,13 +74,13 @@ local recipes = {
   ["biosulfur"] = {type = "recipe", name = "biosulfur", ingredients = {{type = "item", name = "bioflux", amount = 1}}},
   ["biolubricant"] = {type = "recipe", name = "biolubricant", ingredients = {{type = "item", name = "bioflux", amount = 1}}},
   biochamber = {type = "recipe", name = "biochamber", surface_conditions = {{property = "pressure", min = 2000, max = 2000}}, ingredients = {{type = "item", name = "iron-plate", amount = 20}}},
-  ["pentapod-egg"] = {type = "recipe", name = "pentapod-egg", category = "organic", enabled = false, energy_required = 15},
+  ["pentapod-egg"] = {type = "recipe", name = "pentapod-egg", categories = {"organic"}, enabled = false, energy_required = 15},
   ["electromagnetic-plant"] = {type = "recipe", name = "electromagnetic-plant", surface_conditions = {{property = "pressure", min = 800, max = 800}}, ingredients = {{type = "item", name = "holmium-plate", amount = 150}}},
   ["cryogenic-plant"] = {type = "recipe", name = "cryogenic-plant", surface_conditions = {{property = "pressure", min = 300, max = 300}}, ingredients = {{type = "item", name = "lithium-plate", amount = 20}}},
   ["biter-logistics-formation"] = {
     type = "recipe",
     name = "biter-logistics-formation",
-    category = "biter-training",
+    categories = {"biter-training"},
     enabled = false,
     ingredients = {{type = "item", name = "biter-worker", amount = 1}},
     results = {{type = "item", name = "biter-logistics-formation", amount = 1}},
@@ -91,7 +91,7 @@ local recipes = {
     ingredients = {{type = "item", name = "worker-biter", amount = 1}},
     results = {{type = "item", name = "resolution-office", amount = 1}},
   },
-  ["scrap-recycling"] = {type = "recipe", name = "scrap-recycling", results = {{type = "item", name = "iron-gear-wheel", amount = 1, probability = 0.2}}},
+  ["scrap-recycling"] = {type = "recipe", name = "scrap-recycling", results = {{type = "item", name = "iron-gear-wheel", amount = 1, independent_probability = 0.2}}},
 }
 
 local items = {
@@ -336,7 +336,7 @@ local function get_result_probability(recipe, item_name)
   if not recipe or not recipe.results then return nil end
   for _, result in ipairs(recipe.results) do
     if (result.name or result[1]) == item_name then
-      return result.probability or 1
+      return result.independent_probability or 1
     end
   end
   return nil
@@ -345,7 +345,7 @@ end
 test("slop refinery converts blank forms into fabricated citations", function()
   local recipe = recipes["slop-synthesis-blank-form"]
   assert_true(recipe ~= nil, "blank-form slop recipe missing")
-  assert_eq(recipe.category, "slop-refining")
+  assert_eq((recipe.categories or {"crafting"})[1], "slop-refining")
   assert_eq(ingredient_amount(recipe, "blank-form"), 1,
     "blank-form slop recipe should consume one blank form")
   assert_eq(ingredient_amount(recipe, "administrative-slop"), 2,
@@ -591,7 +591,7 @@ test("worker-biter exists as the enrolled-to-workforce intermediate", function()
   assert_true(items["enrolled-biter"] ~= nil, "enrolled-biter missing")
   assert_true(items["worker-biter"] ~= nil, "worker-biter missing")
   assert_true(recipes["job-offer-production"] ~= nil, "job-offer recipe missing")
-  assert_eq(recipes["job-offer-production"].category, "bureaucracy-registration", "job-offer should be drafted through registration bureaucracy")
+  assert_eq((recipes["job-offer-production"].categories or {"crafting"})[1], "bureaucracy-registration", "job-offer should be drafted through registration bureaucracy")
   assert_true(has_ingredient(recipes["job-offer-production"], "taxpayer-money"), "job-offer should require taxpayer-money")
   assert_true(has_ingredient(recipes["job-offer-production"], "blank-form"), "job-offer should require a blank form")
   assert_true(has_ingredient(recipes["job-offer-production"], "provisional-approval"), "job-offer should require provisional approval")
@@ -669,7 +669,7 @@ test("colored paperwork adds one-step fast tracks for every complaint", function
 
   for _, track in ipairs(fast_tracks) do
     local recipe = assert(recipes[track.name], track.name .. " missing")
-    assert_eq(recipe.category, "bureaucracy-resolution", track.name .. " should use the Resolution Office")
+    assert_eq((recipe.categories or {"crafting"})[1], "bureaucracy-resolution", track.name .. " should use the Resolution Office")
     assert_eq(recipe.energy_required, 2, track.name .. " should be faster than the ordinary chain")
     assert_eq(#recipe.ingredients, 2, track.name .. " should have only ticket + colored form inputs")
     assert_eq(ingredient_amount(recipe, track.ticket), 1, track.name .. " should consume one ticket")
@@ -716,7 +716,7 @@ test("workforce formation stays on Nauvis while MMMM briefings work on every pla
   local formation_count = 0
 
   for recipe_name, recipe in pairs(recipes) do
-    if recipe.category == "workforce-formation" or recipe.category == "biter-training" then
+    if (recipe.categories or {"crafting"})[1] == "workforce-formation" or (recipe.categories or {"crafting"})[1] == "biter-training" then
       assert_true(not has_ingredient(recipe, "taxpayer-money"),
         recipe_name .. " must not use taxpayer money for workforce training")
 
@@ -764,7 +764,7 @@ test("every staffed recipe unlock follows the workforce recipe that supplies its
 
   local workforce_producers = {}
   for recipe_name, recipe in pairs(recipes) do
-    if recipe.category == "workforce-formation" or recipe.category == "biter-training" then
+    if (recipe.categories or {"crafting"})[1] == "workforce-formation" or (recipe.categories or {"crafting"})[1] == "biter-training" then
       local primary_result = recipe.main_product
       if not primary_result and recipe.results and recipe.results[1] then
         primary_result = recipe.results[1].name or recipe.results[1][1]
@@ -835,7 +835,7 @@ test("vacuum infrastructure uses one dedicated orbital permit", function()
 
   assert_true(items[permit_name] ~= nil, "orbital infrastructure permit item missing")
   assert_eq(items[permit_name].subgroup, "forms-permits")
-  assert_eq(permit_recipe.category, "bureaucracy-registration")
+  assert_eq((permit_recipe.categories or {"crafting"})[1], "bureaucracy-registration")
   assert_eq(permit_recipe.surface_conditions[1].min, 1,
     "orbital permits should be issued outside vacuum and shipped to the platform")
   assert_true(has_ingredient(permit_recipe, "low-density-structure"),
@@ -949,7 +949,7 @@ test("planetary inks are owned by their own pre-science bootstrap technologies",
       "Vulcanus cyan technology should not own Fulgora recipe " .. recipe_name)
   end
   assert_eq(cyan_ink.research_trigger.type, "mine-entity")
-  assert_eq(cyan_ink.research_trigger.entity, "verdigris-crust")
+  assert_eq(cyan_ink.research_trigger.entities[1], "verdigris-crust")
   assert_true(not tech_has_prerequisite(cyan_ink, "metallurgic-science-pack"),
     "cyan ink must precede metallurgic science")
   assert_true(not tech_uses_pack(cyan_ink, "metallurgic-science-pack"),
@@ -1373,7 +1373,7 @@ test("orbital admin station closes the basic asteroid paperwork loop without con
     "asteroid-processing-docket",
   }) do
     local recipe = assert(recipes[recipe_name], recipe_name .. " missing")
-    assert_eq(recipe.category, "orbital-bureaucracy", recipe_name .. " should use orbital-bureaucracy")
+    assert_eq((recipe.categories or {"crafting"})[1], "orbital-bureaucracy", recipe_name .. " should use orbital-bureaucracy")
     assert_eq(recipe.surface_conditions[1].max, 0, recipe_name .. " should stay vacuum-only")
     assert_true(not has_ingredient(recipe, "astronaut"), recipe_name .. " should use the station's permanent astronaut")
     assert_true(not has_ingredient(recipe, "orbital-briefed-middle-management-managing-manager"),
@@ -1382,7 +1382,7 @@ test("orbital admin station closes the basic asteroid paperwork loop without con
   end
   assert_true(items["orbital-operations-form"] ~= nil, "orbital-operations-form missing")
   assert_true(items["asteroid-processing-docket"] ~= nil, "asteroid-processing-docket missing")
-  assert_eq(recipes["space-science-pack"].category, "orbital-bureaucracy",
+  assert_eq((recipes["space-science-pack"].categories or {"crafting"})[1], "orbital-bureaucracy",
     "the Administrative Space Station should craft the one native space-science recipe")
   assert_true(has_ingredient(recipes["space-science-pack"], "research-grant-approval"),
     "space science should consume the ordinary research approval shipped from a planet")
@@ -1444,8 +1444,8 @@ test("advanced asteroid outputs feed tier-two orbital administration", function(
         recipe_name .. " should consume advanced asteroid output " .. ingredient_name)
     end
   end
-  assert_eq(recipes["orbital-operations-form-copying"].category, "orbital-printing")
-  assert_eq(recipes["priority-orbital-deviation-order"].category, "orbital-printing")
+  assert_eq((recipes["orbital-operations-form-copying"].categories or {"crafting"})[1], "orbital-printing")
+  assert_eq((recipes["priority-orbital-deviation-order"].categories or {"crafting"})[1], "orbital-printing")
   assert_eq(get_result_amount(recipes["orbital-operations-form-copying"], "orbital-operations-form"), 16,
     "tier-two form copying should substantially outperform direct printing")
   assert_eq(get_result_amount(recipes["asteroid-processing-docket-copying"], "asteroid-processing-docket"), 10,
@@ -1639,7 +1639,7 @@ test("gleba separates yellow administration from conciliation operations", funct
     "gleba yellow administration should follow the local amber sap discovery")
 
   local capsule = assert(recipes["pentapod-sampling-capsule"], "first-egg capsule recipe missing")
-  assert_eq(capsule.category, "crafting", "first-egg capsule must be handcraftable")
+  assert_eq((capsule.categories or {"crafting"})[1], "crafting", "first-egg capsule must be handcraftable")
   assert_eq(exact_surface_planet(capsule), "gleba", "first-egg capsule should be crafted on Gleba")
   assert_eq(ingredient_amount(capsule, "yumako-mash"), 2, "capsule should use local yumako mash")
   assert_eq(ingredient_amount(capsule, "jelly"), 2, "capsule should use local jelly")
@@ -1666,7 +1666,7 @@ test("mining amber sap unlocks Gleba bootstrap recipes", function()
   local technology = assert(technologies["amber-sap-processing"], "amber-sap-processing missing")
   assert_eq(technology.research_trigger.type, "mine-entity",
     "amber-sap-processing should use a resource discovery trigger")
-  assert_eq(technology.research_trigger.entity, "amber-sap-seep",
+  assert_eq(technology.research_trigger.entities[1], "amber-sap-seep",
     "amber-sap-processing should trigger from mining the amber sap seep")
   assert_eq(technology.prerequisites[1], "planet-discovery-gleba",
     "amber-sap-processing should remain behind arrival on Gleba")
@@ -1718,10 +1718,10 @@ test("field office categories never claim planet-local recipes", function()
   for recipe_name, recipe in pairs(recipes) do
     local planet_name = exact_surface_planet(recipe)
     if planet_name and planet_name ~= "nauvis" then
-      assert_true(not field_office_categories[recipe.category or "crafting"],
+      assert_true(not field_office_categories[(recipe.categories or {"crafting"})[1] or "crafting"],
         recipe_name .. " on " .. planet_name .. " leaks into a Field Office category")
 
-      local category_owner = planet_category_owner[recipe.category]
+      local category_owner = planet_category_owner[(recipe.categories or {"crafting"})[1]]
       if category_owner then
         assert_eq(category_owner, planet_name,
           recipe_name .. " uses a bureaucracy category belonging to another planet")
@@ -1785,7 +1785,7 @@ test("gleba yellow paperwork gates orbital spitter tourism with two-color forms"
     assert_eq(departure_item.spoil_ticks, 1, variant.departure_item .. " should release immediately after checkout")
 
     local tourism_recipe = assert(recipes[variant.tourism_recipe], variant.tourism_recipe .. " missing")
-    assert_eq(tourism_recipe.category, "orbital-bureaucracy", variant.tourism_recipe .. " should use orbital-bureaucracy")
+    assert_eq((tourism_recipe.categories or {"crafting"})[1], "orbital-bureaucracy", variant.tourism_recipe .. " should use orbital-bureaucracy")
     assert_eq(tourism_recipe.surface_conditions[1].max, 0, variant.tourism_recipe .. " should stay vacuum-only")
     assert_true(has_ingredient(tourism_recipe, variant.package_item), variant.tourism_recipe .. " should consume the packaged spitter")
     assert_true(not has_ingredient(tourism_recipe, "astronaut"), variant.tourism_recipe .. " should use permanent station staff")
@@ -1806,7 +1806,7 @@ test("gleba yellow paperwork gates orbital spitter tourism with two-color forms"
     assert_true(tech_unlocks_recipe(technologies["cyan-yellow-bureaucracy"], variant.tourism_recipe), "cyan-yellow-bureaucracy should unlock " .. variant.tourism_recipe)
 
     local checkout = assert(recipes[variant.checkout_recipe], variant.checkout_recipe .. " missing")
-    assert_eq(checkout.category, "bureaucracy-registration", variant.checkout_recipe .. " should run in an Administrative Office Desk")
+    assert_eq((checkout.categories or {"crafting"})[1], "bureaucracy-registration", variant.checkout_recipe .. " should run in an Administrative Office Desk")
     assert_eq(exact_surface_planet(checkout), "nauvis", variant.checkout_recipe .. " should stay on Nauvis")
     assert_eq(ingredient_amount(checkout, variant.tourist_item), 1, variant.checkout_recipe .. " should consume one fulfilled tourist")
     assert_eq(get_fluid_ingredient_amount(checkout, "liquid-coffee"), 10, variant.checkout_recipe .. " should serve checkout coffee")
@@ -1835,9 +1835,9 @@ test("capture bureau mode recipes split by surface and role", function()
   local egg_spores = assert(recipes["oviposition-lure-spores-production"], "oviposition-lure-spores-production missing")
   local cyan_yellow = technologies["cyan-yellow-bureaucracy"]
 
-  assert_eq(workforce.category, "hostile-acquisition", "workforce mode should use hostile-acquisition")
-  assert_eq(tourism.category, "hostile-acquisition", "tourism mode should use hostile-acquisition")
-  assert_eq(pentapods.category, "hostile-acquisition", "pentapod mode should use hostile-acquisition")
+  assert_eq((workforce.categories or {"crafting"})[1], "hostile-acquisition", "workforce mode should use hostile-acquisition")
+  assert_eq((tourism.categories or {"crafting"})[1], "hostile-acquisition", "tourism mode should use hostile-acquisition")
+  assert_eq((pentapods.categories or {"crafting"})[1], "hostile-acquisition", "pentapod mode should use hostile-acquisition")
   assert_true(fluids["hostile-spore-culture"] ~= nil, "hostile-spore-culture missing")
   assert_true(fluids["workforce-lure-spores"] ~= nil, "workforce-lure-spores missing")
   assert_true(fluids["tourism-lure-spores"] ~= nil, "tourism-lure-spores missing")
@@ -1853,15 +1853,17 @@ test("capture bureau mode recipes split by surface and role", function()
   assert_eq(exact_surface_planet(tourism), "nauvis", "tourism mode should stay on Nauvis")
   assert_eq(exact_surface_planet(pentapods), "gleba", "pentapod mode should stay on Gleba")
   assert_eq(exact_surface_planet(spore_base), "gleba", "spore culture base should stay on Gleba")
-  assert_eq(spore_base.category, "organic-or-chemistry",
+  assert_true(require("prototypes.shared.recipe_categories").has(spore_base, "organic")
+    and require("prototypes.shared.recipe_categories").has(spore_base, "chemistry"),
     "the first egg lure must be craftable in a Chemical Plant before the Biochamber")
-  assert_eq(workforce_spores.category, "organic", "workforce lure spores should be Biochamber-only")
-  assert_eq(tourism_spores.category, "organic", "tourism lure spores should be Biochamber-only")
-  assert_eq(egg_spores.category, "organic-or-chemistry",
+  assert_eq((workforce_spores.categories or {"crafting"})[1], "organic", "workforce lure spores should be Biochamber-only")
+  assert_eq((tourism_spores.categories or {"crafting"})[1], "organic", "tourism lure spores should be Biochamber-only")
+  assert_true(require("prototypes.shared.recipe_categories").has(egg_spores, "organic")
+    and require("prototypes.shared.recipe_categories").has(egg_spores, "chemistry"),
     "the first egg lure must not require a Biochamber built from an egg")
-  assert_true(machine_has_category(data.raw["assembling-machine"]["chemical-plant"], egg_spores.category),
+  assert_true(machine_has_category(data.raw["assembling-machine"]["chemical-plant"], "chemistry"),
     "the Chemical Plant must be able to craft oviposition spores before the Biochamber exists")
-  assert_true(machine_has_category(data.raw["assembling-machine"]["chemical-plant"], spore_base.category),
+  assert_true(machine_has_category(data.raw["assembling-machine"]["chemical-plant"], "chemistry"),
     "the Chemical Plant must be able to grow the hostile spore culture used by the egg lure")
   assert_true(not tech_has_prerequisite(technologies["gleba-conciliation"], "biochamber"),
     "spore acquisition must not depend on the Biochamber whose recipe requires an egg")
@@ -2144,7 +2146,8 @@ test("Aquilo bootstrap precedes cryogenic science and the chromatic trunk follow
     "Cryogenic Plant bootstrap must not consume cryogenic science")
   assert_true(tech_has_prerequisite(technologies["cryogenic-plant"], "aquilo-cryogenic-administration"),
     "Cryogenic Plant should explicitly follow its operating-license bootstrap")
-  assert_eq(recipes["transfer-emulsion-production"].category, "chemistry-or-cryogenics",
+  assert_true(require("prototypes.shared.recipe_categories").has(recipes["transfer-emulsion-production"], "chemistry")
+    and require("prototypes.shared.recipe_categories").has(recipes["transfer-emulsion-production"], "cryogenics"),
     "transfer emulsion must have a pre-Cryogenic-Plant provider")
 end)
 
@@ -2289,13 +2292,13 @@ test("two-color forms gate tourism intake and public transit contracts", functio
   local public_transport = assert(recipes["public-transportation-contract-production"], "public-transportation-contract-production missing")
   local anecdotal = assert(recipes["anecdotal-data-reprocessing"], "anecdotal-data-reprocessing missing")
 
-  assert_eq(cyan_yellow_form.category, "printing-multicolor", "cyan-yellow-form should use printing-multicolor")
+  assert_eq((cyan_yellow_form.categories or {"crafting"})[1], "printing-multicolor", "cyan-yellow-form should use printing-multicolor")
   assert_true(has_fluid_ingredient(cyan_yellow_form, "cyan-ink"),
     "cyan-yellow-form should require cyan-ink")
   assert_true(has_fluid_ingredient(cyan_yellow_form, "yellow-ink"),
     "cyan-yellow-form should require yellow-ink")
 
-  assert_eq(public_transport.category, "printing-chromatic", "public-transportation-contract should use printing-chromatic")
+  assert_eq((public_transport.categories or {"crafting"})[1], "printing-chromatic", "public-transportation-contract should use printing-chromatic")
   assert_true(has_ingredient(public_transport, "cyan-yellow-form"),
     "public-transportation-contract should require cyan-yellow-form")
   assert_true(has_ingredient(public_transport, "transit-authorization"),

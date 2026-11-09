@@ -22,7 +22,7 @@ def assert_filter_visibility(data: dict, *, space_age: bool) -> None:
     assert "always-show" not in items["worker-biter"].get("flags", []), (
         "Space Age trained workers must retain their formation unlock"
     )
-    loading = [r for r in recipes.values() if r.get("category") == "personnel-routing-cargo"]
+    loading = [r for r in recipes.values() if r.get("categories", ["crafting"])[0] == "personnel-routing-cargo"]
     assert loading, "personnel loading recipes are missing"
     for recipe in loading:
         assert recipe.get("unlock_results") is False, (
@@ -59,7 +59,7 @@ def assert_filter_visibility(data: dict, *, space_age: bool) -> None:
             assert recipe.get("hidden") and recipe.get("auto_recycle") is False
             for prototype_type in ("assembling-machine", "furnace", "character"):
                 for machine in data.get(prototype_type, {}).values():
-                    assert recipe["category"] not in machine.get("crafting_categories", []), (
+                    assert recipe["categories"][0] not in machine.get("crafting_categories", []), (
                         f"{package} visibility metadata must not manufacture cargo"
                     )
         tourist = size + "-space-tourist"
@@ -70,7 +70,7 @@ def assert_filter_visibility(data: dict, *, space_age: bool) -> None:
             and any(p.get("name") == tourist for p in r.get("results", []))
         ]
         assert producers and all(r.get("enabled") is False for r in producers), tourist
-        assert all(r.get("category") == "orbital-bureaucracy" for r in producers), (
+        assert all(r.get("categories", ["crafting"])[0] == "orbital-bureaucracy" for r in producers), (
             f"{tourist} must become selectable through orbital fulfillment, not transport"
         )
 

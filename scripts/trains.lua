@@ -160,7 +160,7 @@ local function setup_station(station)
 
   if chest then
     chest.destructible = false
-    chest.minable = false -- Prevent players from manually picking up the chest
+    chest.minable_flag = false -- Prevent players from manually picking up the chest
 
     -- Optional: Filter the chest so it only accepts the form
     local inv = chest.get_inventory(defines.inventory.chest)

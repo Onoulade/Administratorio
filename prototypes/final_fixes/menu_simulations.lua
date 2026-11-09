@@ -52,7 +52,7 @@ local function make_simulation(filename, duration, fallback_position, override_p
       end
       if logo then
         logo.destructible = false
-        logo.minable = false
+        logo.minable_flag = false
         logo.operable = false
         position = logo.position
       end

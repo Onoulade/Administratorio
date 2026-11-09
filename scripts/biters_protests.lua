@@ -82,7 +82,7 @@ function M.new(deps)
     if not ok_valid or not valid then return "invalid" end
     local ok_name, name = pcall(function() return entity.name end)
     local ok_force, force = pcall(function() return entity.force end)
-    local ok_active, active = pcall(function() return entity.active end)
+    local ok_active, active = pcall(function() return (not entity.disabled_by_script) end)
     local ok_destructible, destructible = pcall(function() return entity.destructible end)
     local ok_health, health = pcall(function() return entity.health end)
     local ok_command, command = pcall(function()
@@ -114,7 +114,7 @@ function M.new(deps)
     local ok_name, name = pcall(function() return target.name end)
     local ok_id, unit_number = pcall(function() return target.unit_number end)
     local ok_force, force = pcall(function() return target.force end)
-    local ok_active, active = pcall(function() return target.active end)
+    local ok_active, active = pcall(function() return (not target.disabled_by_script) end)
     local ok_destructible, destructible = pcall(function() return target.destructible end)
     local ok_health, health = pcall(function() return target.health end)
     local ok_position, position = pcall(function() return target.position end)
@@ -146,7 +146,7 @@ function M.new(deps)
     local target = info and info.target_building or nil
     local target_id = target and target.valid and (target.unit_number or target.name) or "nil"
     local target_valid = target and target.valid or false
-    local active = entity and entity.valid and entity.active or false
+    local active = entity and entity.valid and (not entity.disabled_by_script) or false
     local entity_valid = entity and entity.valid or false
     local surface_index = entity and entity.valid and entity.surface and entity.surface.index or "nil"
     local position = entity and entity.valid and entity.position and deps.format_position(entity.position) or "[nil]"
@@ -200,7 +200,7 @@ function M.new(deps)
     local ok_name, name = pcall(function() return entity.name end)
     local ok_unit, unit_number = pcall(function() return entity.unit_number end)
     local ok_force, force = pcall(function() return entity.force end)
-    local ok_active, active = pcall(function() return entity.active end)
+    local ok_active, active = pcall(function() return (not entity.disabled_by_script) end)
     local ok_destructible, destructible = pcall(function() return entity.destructible end)
     local ok_position, position = pcall(function() return entity.position end)
     local ok_has_command, has_command = pcall(function()
@@ -234,7 +234,7 @@ function M.new(deps)
     local ok_name, name = pcall(function() return target.name end)
     local ok_unit, unit_number = pcall(function() return target.unit_number end)
     local ok_force, force = pcall(function() return target.force end)
-    local ok_active, active = pcall(function() return target.active end)
+    local ok_active, active = pcall(function() return (not target.disabled_by_script) end)
     local ok_position, position = pcall(function() return target.position end)
     return "target_unit=" .. tostring(ok_unit and unit_number or "nil")
       .. " target_name=" .. tostring(ok_name and name or "nil")
@@ -528,7 +528,7 @@ function M.new(deps)
 
     opts = opts or {}
     entity.force = deps.get_biter_force()
-    entity.active = opts.active == false and false or true
+    entity.disabled_by_script = false
     entity.destructible = false
 
     local commandable = entity.commandable
@@ -555,10 +555,10 @@ function M.new(deps)
     if not working_hours_claimed and target.unit_number then
       storage.protest_target_active_states = storage.protest_target_active_states or {}
       if storage.protest_target_active_states[target.unit_number] == nil then
-        storage.protest_target_active_states[target.unit_number] = target.active == true
+        storage.protest_target_active_states[target.unit_number] = (not target.disabled_by_script) == true
       end
     end
-    target.active = false
+    target.disabled_by_script = true
   end
 
   local function release_protest_target(target, protester_id)
@@ -575,7 +575,7 @@ function M.new(deps)
       -- Existing saves may already contain an active protest without a stored
       -- initial state.  Keep the legacy re-enable behavior for those saves;
       -- new protests always restore the state that they interrupted.
-      target.active = initial_active == nil and true or initial_active
+      target.disabled_by_script = initial_active == false
     end
   end
 
@@ -720,7 +720,7 @@ function M.new(deps)
     end
     local attack_force = deps.get_hard_mode_attack_force and deps.get_hard_mode_attack_force() or deps.get_biter_force()
     entity.force = attack_force
-    entity.active = true
+    entity.disabled_by_script = false
     entity.destructible = true
     hard_mode_log(nil, entity, "attack-prepare-after", hard_mode_entity_summary(entity), {force = true})
     return true
@@ -1293,7 +1293,7 @@ function M.new(deps)
     info.protest_path_retry_deferred = true
     info.next_protest_wander_tick = info.next_protest_target_retry_tick
     if entity and entity.valid then
-      entity.active = false
+      entity.disabled_by_script = true
     end
   end
 
@@ -1659,7 +1659,7 @@ function M.new(deps)
         distraction = defines.distraction.none,
       })
     end
-    entity.active = false
+    entity.disabled_by_script = true
   end
 
   clear_desk_route_breach_runtime = function(info, entity)
@@ -1701,7 +1701,7 @@ function M.new(deps)
         distraction = defines.distraction.none,
       })
     end
-    entity.active = false
+    entity.disabled_by_script = true
   end
 
   local function process_desk_route(info, entity)
@@ -1840,7 +1840,7 @@ function M.new(deps)
       type = defines.command.stop,
       distraction = defines.distraction.none,
     })
-    entity.active = false
+    entity.disabled_by_script = true
   end
 
   local function issue_protest_wander_command(info, entity, opts)
@@ -1966,8 +1966,8 @@ function M.new(deps)
     local target_dist = distance_sq(entity.position, info.target_building.position)
 
     if info.protest_parked then
-      entity.active = false
-    elseif anchor_dist <= 0.5 * 0.5 or game.tick >= (info.protest_step_deadline_tick or 0) or not entity.active then
+      entity.disabled_by_script = true
+    elseif anchor_dist <= 0.5 * 0.5 or game.tick >= (info.protest_step_deadline_tick or 0) or entity.disabled_by_script then
       park_protester(info, entity)
     elseif game.tick > math.max(info.protest_arrival_tick or 0, info.protest_last_command_tick or 0)
        and target_dist > C.PROTEST_MAX_DISTANCE_FROM_TARGET * C.PROTEST_MAX_DISTANCE_FROM_TARGET then
@@ -2139,7 +2139,7 @@ function M.new(deps)
     info.protest_route_retry_tick = game.tick
       + (C.PROTEST_CLEAR_ROUTE_RETRY_TICKS or 60)
       + (unit_number % 60)
-    entity.active = false
+    entity.disabled_by_script = true
     render.ensure_protest_rendering(info)
     return true
   end
@@ -2149,7 +2149,7 @@ function M.new(deps)
     if not retry_tick then return false end
     if not entity or not entity.valid then return true end
     if game.tick < retry_tick then
-      entity.active = false
+      entity.disabled_by_script = true
       return true
     end
     local target = info.protest_route_retry_target
@@ -2204,7 +2204,7 @@ function M.new(deps)
     info.protest_pipe_gap_started_tick = nil
     info.protest_pipe_gap_route_active = nil
     unindex_protest_obstacle_route(info, entity)
-    entity.active = true
+    entity.disabled_by_script = false
     return begin_protest_route_toward_goal(info, entity, target, goal, 2)
   end
 
@@ -2375,7 +2375,7 @@ function M.new(deps)
       or deps.get_biter_force()
     entity.force = attack_force
     entity.destructible = true
-    entity.active = true
+    entity.disabled_by_script = false
     info.protest_obstacle_attacking = true
     info.protest_obstacle_goal = {x = candidate.pos.x, y = candidate.pos.y}
     info.protest_obstacle_goal_target = candidate.target
@@ -2815,7 +2815,7 @@ function M.new(deps)
           }, get_protest_load_factor(count_protesters()), {skip_gap = true})
         end
       end
-      entity.active = true
+      entity.disabled_by_script = false
       if game.tick < (info.next_protest_obstacle_command_tick or 0) then
         return true
       end
@@ -3011,7 +3011,7 @@ function M.new(deps)
 
     if info.state == "waiting" then
       replacement.force = deps.get_biter_force()
-      replacement.active = false
+      replacement.disabled_by_script = true
       deps.mark_desk_circuit_dirty(info.desk_id)
     elseif info.state == "pacified" then
       replacement.force = deps.get_biter_force()
@@ -3035,7 +3035,7 @@ function M.new(deps)
           info.desk_dest = desk_dest
           deps.issue_desk_route_command(replacement, desk_dest)
         else
-          replacement.active = false
+          replacement.disabled_by_script = true
         end
         deps.mark_desk_circuit_dirty(info.desk_id)
       end
@@ -3646,7 +3646,7 @@ function M.new(deps)
               goto continue_biter
             end
             if info.protest_path_retry_deferred then
-              info.entity.active = false
+              info.entity.disabled_by_script = true
             end
             goto continue_biter
           end
@@ -3657,7 +3657,7 @@ function M.new(deps)
             if dist <= C.PROTEST_ARRIVAL_DISTANCE * C.PROTEST_ARRIVAL_DISTANCE then
               mark_protester_arrived(info, info.entity)
             end
-            if not info.arrived_at_building and not info.entity.active and not info.pending_path_request_id then
+            if not info.arrived_at_building and info.entity.disabled_by_script and not info.pending_path_request_id then
               if not resume_en_route_protest(info, info.entity) then
                 if not assign_protest_target(surface, info, info.entity)
                    and not info.protest_path_retry_deferred then
@@ -3714,14 +3714,14 @@ function M.new(deps)
         -- Keep an arrived protest's gameplay effect asserted while deferring the
         -- expensive movement, rendering, position, and pathfinding maintenance.
         if info.arrived_at_building and info.target_building and info.target_building.valid then
-          info.target_building.active = false
+          info.target_building.disabled_by_script = true
           -- Old saves can contain arrived protesters that have not yet received
           -- their first parking pass. Freeze them cheaply so deferred Lua
           -- maintenance does not turn into native unit-update work.
           info.protest_parked = true
-          entity.active = false
+          entity.disabled_by_script = true
         elseif info.protest_path_retry_deferred then
-          entity.active = false
+          entity.disabled_by_script = true
         end
         goto continue_protester
       elseif recover_stale_protest_path_request(info, entity, protest_load_factor) then
@@ -3747,7 +3747,7 @@ function M.new(deps)
           goto continue_protester
         end
         if info.protest_path_retry_deferred then
-          info.entity.active = false
+          info.entity.disabled_by_script = true
         end
       else
         if process_stalled_protest_route(info, info.entity, protest_load_factor) then
@@ -3758,7 +3758,7 @@ function M.new(deps)
         end
         protect_protesting_biter(info, info.entity, "pacing")
         render.ensure_protest_rendering(info)
-        if not info.arrived_at_building and not info.pending_path_request_id and not info.entity.active then
+        if not info.arrived_at_building and not info.pending_path_request_id and info.entity.disabled_by_script then
           if not resume_en_route_protest(info, info.entity) then
             if not assign_protest_target(surface, info, info.entity)
                and not info.protest_path_retry_deferred then
@@ -3983,7 +3983,7 @@ function M.new(deps)
         -- A transient command failure is not evidence that the live, assigned
         -- obstruction disappeared. Keep biting it continuously until removal.
         info.protest_obstacle_command_failures = 0
-        entity.active = true
+        entity.disabled_by_script = false
         if not issue_protest_obstacle_attack_command(info, entity) then
           local load_factor = get_protest_load_factor(count_protesters())
           clear_protest_obstacle_attack_runtime(info, entity)

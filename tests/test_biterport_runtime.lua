@@ -347,13 +347,14 @@ local function new_surface()
       entity.valid = false
       entity.commandable.has_command = false
     end
+    function entity.get_fluid(index) return entity.fluidbox[index] end
     function entity.insert_fluid(fluid)
       entity.fluidbox[1] = {name = fluid.name, amount = fluid.amount}
       return fluid.amount
     end
     if params.name == "biterport-hidden-roboport" or params.name == "biterport-coffee-input" then
       entity.destructible = false
-      entity.minable = false
+      entity.minable_flag = false
       entity.operable = false
       surface.hidden[#surface.hidden + 1] = entity
     end

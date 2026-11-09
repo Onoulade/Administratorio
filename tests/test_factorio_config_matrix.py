@@ -29,16 +29,16 @@ CHROMATIC_FAST_TRACKS = (
 
 EVOLUTION_MILESTONE_RESOLUTIONS = {
     "administratorio-medium-complaints": (
-        "filing-smog", "case-smog", "smog-final",
-        "filing-hazmat", "case-hazmat", "hazmat-final",
+        "filing-s", "case-s", "resolved-smog",
+        "filing-h", "case-h", "resolved-hazmat",
     ),
     "administratorio-large-complaints": (
-        "filing-noise", "case-noise", "noise-final",
-        "filing-loitering", "case-loitering", "loitering-final",
+        "filing-n", "case-n", "resolved-noise",
+        "filing-lo", "case-lo", "resolved-loitering",
     ),
     "administratorio-behemoth-complaints": (
-        "filing-unemployment", "case-unemployment", "unemployment-final",
-        "filing-vagrancy", "case-vagrancy", "vagrancy-final",
+        "filing-u", "case-u", "resolved-unemployment",
+        "filing-v", "case-v", "resolved-vagrancy",
     ),
 }
 
@@ -80,6 +80,7 @@ def write_profile(root: Path, *, space_age: bool, working_hours: bool) -> Path:
         "base": True,
         "elevated-rails": space_age,
         "quality": space_age,
+        "recycler": space_age,
         "space-age": space_age,
         mod_name(): True,
     }
@@ -92,7 +93,7 @@ def write_profile(root: Path, *, space_age: bool, working_hours: bool) -> Path:
     )
     (root / "config.ini").write_text(
         "[path]\n"
-        "read-data=__PATH__system-read-data__\n"
+        "read-data=__PATH__executable__/../../data\n"
         f"write-data={root}\n\n"
         "[general]\n"
         "locale=auto\n"
@@ -107,7 +108,7 @@ def dump_data(factorio_bin: Path, root: Path) -> dict:
         str(root / "config.ini"),
         "--mod-directory",
         str(root / "mods"),
-        "--disable-audio",
+
         "--dump-data",
     ]
     result = subprocess.run(command, cwd=REPO_ROOT, text=True, capture_output=True)
@@ -149,7 +150,7 @@ def assert_public_train_stop_progression(data_raw: dict) -> None:
     packs = {ingredient[0] if isinstance(ingredient, list) else ingredient["name"]
              for ingredient in technology["unit"]["ingredients"]}
     assert {"metallurgic-science-pack", "agricultural-science-pack", "administrative-science-pack"} <= packs
-    assert any(effect.get("recipe") == "public-train-stop-production"
+    assert any(effect.get("recipe") == "public-train-stop"
                for effect in technology.get("effects", []))
 
 
@@ -171,7 +172,7 @@ def assert_specialist_approvals(data_raw: dict) -> None:
             assert (chassis, "item") in recipe_results(recipe), recipe_name
             assert form not in {ingredient for ingredient, _ in recipe_ingredients(recipe)}, recipe_name
         approval = data_raw["recipe"][approval_name]
-        assert approval["category"] == "specialist-approval", approval_name
+        assert approval["categories"][0] == "specialist-approval", approval_name
         assert {ingredient["name"]: ingredient["amount"] for ingredient in approval["ingredients"]} == {
             chassis: 1, form: 1,
         }, approval_name
@@ -324,17 +325,6 @@ def assert_ore_placement_masks(data_raw: dict) -> None:
 
 def assert_space_age_category_migrations_are_regulated(data_raw: dict) -> None:
     """Audit every Space Age category that can otherwise bypass an assembler."""
-    shared_categories = {
-        "electronics": "crafting-regulated",
-        "pressing": "crafting-regulated",
-        "electronics-with-fluid": "advanced-crafting-regulated",
-        "metallurgy-or-assembling": "advanced-crafting-regulated",
-        "organic-or-hand-crafting": "advanced-crafting-regulated",
-        "organic-or-assembling": "advanced-crafting-regulated",
-        "electronics-or-assembling": "advanced-crafting-regulated",
-        "cryogenics-or-assembling": "advanced-crafting-regulated",
-        "crafting-with-fluid-or-metallurgy": "advanced-crafting-regulated",
-    }
     recipes = data_raw["recipe"]
 
     for machine_name, expected_categories in {
@@ -349,23 +339,29 @@ def assert_space_age_category_migrations_are_regulated(data_raw: dict) -> None:
 
     audited = 0
     for recipe_name, recipe in recipes.items():
-        category = recipe.get("category", "crafting")
-        expected_category = shared_categories.get(category)
+        categories = recipe.get("categories", ["crafting"])
+        category = next((c for c in ("crafting", "advanced-crafting", "crafting-with-fluid") if c in categories), None)
+        shared_route = (len(categories) > 1 or recipe_name + "-foundry" in recipes
+                        or recipe_name + "-electromagnetic" in recipes)
+        expected_category = ("crafting-regulated" if category == "crafting" else "advanced-crafting-regulated") if shared_route and category else None
         if expected_category is None or recipe_name.endswith("-regulated"):
             continue
+        # Working Hours removal strips cooling from these manual routes after copies are made.
+        if recipe_name in ("electromagnetic-plant", "cryogenic-plant"):
+            expected_category = "advanced-crafting-regulated"
         audited += 1
         regulated_name = recipe_name + "-regulated"
         regulated = recipes.get(regulated_name)
         assert regulated is not None, (
             f"Space Age shared-category recipe {recipe_name} [{category}] has no regulated assembler copy"
         )
-        assert regulated.get("category") == expected_category, (
-            f"{regulated_name} should use {expected_category}, got {regulated.get('category')}"
+        assert regulated.get("categories", ["crafting"])[0] == expected_category, (
+            f"{regulated_name} should use {expected_category}, got {regulated.get('categories')}"
         )
     assert audited > 0, "Space Age shared-category audit did not inspect any recipes"
 
     for recipe_name, recipe in recipes.items():
-        if recipe.get("category", "crafting") in {"electronics", "pressing", "organic-or-hand-crafting"}:
+        if "crafting" in recipe.get("categories", ["crafting"]):
             assert not recipe.get("hide_from_player_crafting", False), (
                 f"{recipe_name} disappeared from the Space Age handcrafting menu"
             )
@@ -560,7 +556,7 @@ def assert_administrative_progression(data_raw: dict, *, space_age: bool) -> Non
         ingredients = {item for item, _ in recipe_ingredients(recipes[route])}
         assert "trichromatic-permit" in ingredients, route
         assert not ingredients & {"cyan-yellow-form", "cyan-magenta-form", "yellow-magenta-form"}, route
-    assert recipes["captive-biter-spawner"]["category"] == "cryogenics"
+    assert recipes["captive-biter-spawner"]["categories"][0] == "cryogenics"
     assert "captive-biter-spawner-regulated" not in recipes
     assert "missionary-manager" in {item for item, _ in recipe_ingredients(recipes["captive-biter-spawner"])}
     for name in ("ai-server", "slop-refinery"):

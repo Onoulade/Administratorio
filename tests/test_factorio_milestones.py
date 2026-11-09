@@ -27,7 +27,7 @@ local function machine(surface, force, entity_name, recipe_name, x, quality)
     if ingredient.type == "fluid" then
       assert(entity.insert_fluid{name=ingredient.name, amount=ingredient.amount} == ingredient.amount)
     else
-      local inventory = entity.get_inventory(defines.inventory.assembling_machine_input)
+      local inventory = entity.get_inventory(defines.inventory.crafter_input)
       assert(inventory.insert{name=ingredient.name, count=ingredient.amount, quality=quality} == ingredient.amount)
     end
   end
@@ -120,7 +120,7 @@ script.on_event(defines.events.on_tick, function(event)
     storage.bureau = bureau
   end
   for _, fixture in ipairs(storage.machines) do
-    fixture.entity.active = true
+    fixture.entity.disabled_by_script = false
     fixture.entity.energy = 1000000000
   end
   for _, desk in ipairs(storage.desks) do
@@ -166,7 +166,7 @@ script.on_event(defines.events.on_tick, function(event)
     end
     assert(stats.get_output_count("job-offer") > 0, "offers not consumed in native statistics")
     if storage.bureau then
-      assert(stats.get_input_count("worker-biter") == storage.bureau.get_inventory(defines.inventory.assembling_machine_output).get_item_count("worker-biter"),
+      assert(stats.get_input_count("worker-biter") == storage.bureau.get_inventory(defines.inventory.crafter_output).get_item_count("worker-biter"),
         "capture output missing/doubled")
     end
     helpers.write_file("milestones-qa.json", helpers.table_to_json{
@@ -208,7 +208,7 @@ def run_case(factorio: str, archive: Path, *, space_age: bool, quality: bool, fl
         probe.mkdir()
         (probe / "info.json").write_text(json.dumps({
             "name": "milestones-qa", "version": "1.0.0", "title": "Milestones QA", "author": "QA",
-            "factorio_version": "2.0", "dependencies": ["administratorio", "Milestones"],
+            "factorio_version": "2.1", "dependencies": ["administratorio", "Milestones"],
         }))
         (probe / "data-final-fixes.lua").write_text("""
 local count = 0
@@ -228,10 +228,10 @@ assert(count > 100, "regulated recipes were not generated")
         (mods / "mod-list.json").write_text(json.dumps({"mods": [
             {"name": name, "enabled": value} for name, value in enabled.items()
         ]}))
-        (root / "config.ini").write_text(f"[path]\nread-data=__PATH__system-read-data__\nwrite-data={root}\n")
+        (root / "config.ini").write_text(f"[path]\nread-data=__PATH__executable__/../../data\nwrite-data={root}\n")
         (root / "map-gen.json").write_text(json.dumps({"seed": 12345, "water": 0,
             "autoplace_controls": {name: {"frequency": 0, "size": 0} for name in ("enemy-base", "trees")}}))
-        common = [factorio, "--config", str(root / "config.ini"), "--mod-directory", str(mods), "--disable-audio"]
+        common = [factorio, "--config", str(root / "config.ini"), "--mod-directory", str(mods), ]
         for args in (["--create", str(root / "fixture.zip"), "--map-gen-settings", str(root / "map-gen.json")],
                      ["--benchmark", str(root / "fixture.zip"), "--benchmark-ticks", "3601", "--benchmark-runs", "1"]):
             result = subprocess.run(common + args, text=True, capture_output=True, timeout=120)

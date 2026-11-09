@@ -92,7 +92,7 @@ test("certification recipes use the exact costly administrative chain", function
   integration.apply(data_api)
   local recipes = data_api.raw.recipe
 
-  assert_eq(recipes["quality-module"].category, "bureaucracy-modules")
+  assert_eq((recipes["quality-module"].categories or {"crafting"})[1], "bureaucracy-modules")
   assert_eq(#recipes["quality-module"].ingredients, 4)
   assert_true(has_ingredient(recipes["quality-module"], "dubious-data", 10))
   assert_true(has_ingredient(recipes["quality-module"], "taxpayer-money", 25))

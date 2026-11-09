@@ -40,6 +40,8 @@ local function change(p,element,value)
  if element.type=="switch" then element.switch_state=value else element.elem_value=value end
  qa("change",p.index,element)
 end
+local resumed = false
+script.on_load(function() resumed = true end)
 local function setup()
  local s=game.surfaces[1]
  s.request_to_generate_chunks({0,0},2);s.force_generate_chunk_requests()
@@ -118,7 +120,8 @@ script.on_event(defines.events.on_tick,function(event)
  elseif event.tick==12 and not game.is_multiplayer() then
   storage.p.gui.screen["administratorio-personnel-multisign"].location={x=20,y=20}
   game.take_screenshot{player=storage.p,path="multisign-ui.png",resolution={1040,1180},show_gui=true}
- elseif event.tick==30 then
+ elseif event.tick==30 or (resumed and storage.saved) then
+  resumed = false
   local r=record(storage.sign)
   check(r.configuration.manual_filters.straight[5]=="biter-logistics-formation","saved fifth filter lost")
   check(r.configuration.filter_modes.right=="circuit" and r.filters.right["management-trainee"],"saved circuit mode lost")
@@ -147,19 +150,24 @@ def main() -> None:
     (mod/'control.lua').write_text((REPO_ROOT/'control.lua').read_text()+INSTRUMENTATION)
     (root/'mods'/SMOKE_MOD_NAME/'scenarios/runtime-smoke/control.lua').write_text(CONTROL)
     (root/'saves').mkdir()
-    common=[args.factorio_bin,'--config',str(root/'config.ini'),'--mod-directory',str(root/'mods'),'--disable-audio']
+    common=[args.factorio_bin,'--config',str(root/'config.ini'),'--mod-directory',str(root/'mods')]
     marker=root/'script-output/multisign-gui-qa.txt'
     save=root/'saves/_autosave-multisign-ui-preview.zip'
     log=root/'gui.log'
     with log.open('w') as stream:
         process=subprocess.Popen(common+['--load-scenario',f'{SMOKE_MOD_NAME}/runtime-smoke'],stdout=stream,stderr=subprocess.STDOUT)
         try:
-            deadline=time.monotonic()+60
+            deadline=time.monotonic()+180
             while (not marker.exists() or not save.exists()) and process.poll() is None and time.monotonic()<deadline:
                 time.sleep(.1)
         finally:
             if process.poll() is None: process.terminate()
-            process.wait(timeout=10)
+            try:
+                process.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=10)
+                raise
     assert marker.exists() and save.exists(),log.read_text()[-6000:]
     marker.unlink()
     result=subprocess.run(common+['--benchmark',str(save),'--benchmark-ticks','30','--benchmark-runs','1'],capture_output=True,text=True,timeout=45)

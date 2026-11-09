@@ -40,7 +40,7 @@ local function make_resolution_recipe(name, ingredients, result_name, energy_req
   return {
     type = "recipe",
     name = name,
-    category = category or "bureaucracy-resolution",
+    categories = {category or "bureaucracy-resolution"},
     enabled = false,
     subgroup = subgroup_for_slug(slug),
     order = order_for_stage(stage_type),
@@ -367,7 +367,7 @@ if feature_flags.space_age_enabled() then
     fast_track_recipes[#fast_track_recipes + 1] = {
       type = "recipe",
       name = "chromatic-" .. track.slug .. "-resolution",
-      category = "bureaucracy-resolution",
+      categories = {"bureaucracy-resolution"},
       enabled = false,
       -- The normal resolution recipe is the product's canonical Factoriopedia
       -- page; this direct route remains an alternate recipe on that page.

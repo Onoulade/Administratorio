@@ -65,16 +65,16 @@ end
 
 local function deactivate(entity)
   if M.is_terminus(entity) then
-    entity.active = false
+    entity.disabled_by_script = true
   end
 end
 
 local function outbound_inventory(entity)
-  return entity.get_inventory(defines.inventory.furnace_source)
+  return entity.get_inventory(defines.inventory.crafter_input)
 end
 
 local function arrival_inventory(entity)
-  return entity.get_inventory(defines.inventory.furnace_result)
+  return entity.get_inventory(defines.inventory.crafter_output)
 end
 
 -- Pool keys must keep quality as part of an item's identity. A control

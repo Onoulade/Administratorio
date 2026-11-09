@@ -36,7 +36,7 @@ script.on_event(defines.events.on_tick,function(event)
    if s.visitor and s.visitor.valid and s.visitor.position.x>-5 then s.walked=true end
   elseif s.kind=="path" then
    for i,output in ipairs(s.outputs) do
-    local inv=output.get_inventory(defines.inventory.furnace_result)
+    local inv=output.get_inventory(defines.inventory.crafter_output)
     local count=inv.get_item_count(s.items[i])
     assert(count_contents(inv.get_contents())==count,"Multisign delivered a type to the wrong exit")
     s.delivered[s.items[i]]=(s.delivered[s.items[i]] or 0)+count
@@ -76,7 +76,7 @@ def main():
     mods=root/"mods";mods.mkdir()
     (mods/"administratorio").symlink_to(REPO_ROOT,target_is_directory=True)
     probe=mods/"tip-scene-probe";probe.mkdir()
-    (probe/"info.json").write_text(json.dumps({"name":"tip-scene-probe","version":"1.0.0", "title":"Native tip scene validation","author":"QA","factorio_version":"2.0","dependencies":["administratorio","space-age"]}))
+    (probe/"info.json").write_text(json.dumps({"name":"tip-scene-probe","version":"1.0.0", "title":"Native tip scene validation","author":"QA","factorio_version":"2.1","dependencies":["administratorio","space-age"]}))
     if args.keep_profile:
         # Unlock tips only in the disposable preview profile, never the mod.
         (probe/"data-final-fixes.lua").write_text('''
@@ -85,7 +85,7 @@ for name,tip in pairs(data.raw["tips-and-tricks-item"]) do
 end
 ''')
     (mods/"mod-list.json").write_text(json.dumps({"mods":[{"name":name,"enabled":True} for name in ("base","quality","elevated-rails","space-age","administratorio","tip-scene-probe")]}))
-    (root/"config.ini").write_text(f"[path]\nread-data=__PATH__system-read-data__\nwrite-data={root}\n")
+    (root/"config.ini").write_text(f"[path]\nread-data=__PATH__executable__/../../data\nwrite-data={root}\n")
     scenes=[]
     for index,name in enumerate(("pneumatic-transport","passenger-boarding","personnel-routing"),1):
         export="local s=require('prototypes.tips-and-tricks-simulations');"+f"io.write(s['administratorio-{name}'].init)"
@@ -94,7 +94,7 @@ end
         scenes.append(f"do\n{init}\nlocal scene=storage.administratorio_tip_scene\nscene.delivered={{}};scene.boardings=0;scene.previous_count=0\nstorage.scenes[{index}]=scene\nend")
     update=(REPO_ROOT/"prototypes/tips-and-tricks-simulation-update.lua").read_text()
     (probe/"control.lua").write_text("script.on_init(function()\nstorage.scenes={}\n"+"\n".join(scenes)+"\nend)\n"+MONITOR.replace("-- SCENE_UPDATE",update))
-    common=[args.factorio_bin,"--config",str(root/"config.ini"),"--mod-directory",str(mods),"--disable-audio"]
+    common=[args.factorio_bin,"--config",str(root/"config.ini"),"--mod-directory",str(mods),]
     for command in (common+["--create",str(root/"fixture.zip")],common+["--benchmark",str(root/"fixture.zip"),"--benchmark-ticks","3601","--benchmark-runs","1"]):
         result=subprocess.run(command,text=True,capture_output=True,timeout=90)
         assert result.returncode==0,(result.stdout+result.stderr)[-10000:]

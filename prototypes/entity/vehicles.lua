@@ -158,8 +158,8 @@ local function make_rideable_biter()
   vehicle.max_health = 240
   vehicle.weight = 250
   vehicle.consumption = "110kW"
-  vehicle.braking_power = "900kW"
-  vehicle.friction = 0.024
+  vehicle.braking_force = (900 * 1000) / 60
+  vehicle.friction_force = 0.024
   vehicle.terrain_friction_modifier = 0
   -- Final fixes add separate layers to solid entities and impassable tiles.
   -- Keeping them separate lets shore buildings overlap water without making

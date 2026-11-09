@@ -38,7 +38,7 @@ local function approval_recipe(original, approved, spec)
   return {
     type = "recipe",
     name = spec.approval_recipe,
-    category = "specialist-approval",
+    categories = {"specialist-approval"},
     enabled = original.enabled == true,
     subgroup = approved.subgroup,
     order = (approved.order or spec.name) .. "-z[approval]",

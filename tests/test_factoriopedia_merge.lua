@@ -59,7 +59,7 @@ test("rename map only includes unique canonical product recipes", function()
         main_product = "good-excuse",
         results = {
           {type = "item", name = "good-excuse", amount = 1},
-          {type = "item", name = "office-drama", amount = 1, probability = 0.5},
+          {type = "item", name = "office-drama", amount = 1, independent_probability = 0.5},
         },
       },
       ["good-excuse-recycling"] = {
@@ -119,6 +119,10 @@ test("rename map only includes unique canonical product recipes", function()
     "a hidden Factoriopedia alternative should not receive a canonical rename")
   assert_true(rename_map["blank-form-production"] == nil, "blank-form has alternate recipes, so skip rename")
   assert_true(rename_map["copy-blank-form"] == nil, "alternate blank-form recipe should stay separate")
+
+  data_raw["assembling-machine"] = {printer = {fixed_recipe = "paper-production"}}
+  assert_true(merge.build_recipe_rename_map(data_raw, shared)["paper-production"] == nil,
+    "a fixed recipe keeps its entity reference valid")
 end)
 
 test("apply_recipe_renames updates recipes, technologies, and shared maps", function()
@@ -127,6 +131,7 @@ test("apply_recipe_renames updates recipes, technologies, and shared maps", func
       ["safety-waiver-printing"] = {
         type = "recipe",
         name = "safety-waiver-printing",
+        factoriopedia_alternative = "safety-waiver-printing",
         results = {{type = "item", name = "safety-waiver", amount = 1}},
       },
     },
@@ -153,6 +158,8 @@ test("apply_recipe_renames updates recipes, technologies, and shared maps", func
   assert_true(data_raw.recipe["safety-waiver-printing"] == nil, "old recipe key should be removed")
   assert_true(data_raw.recipe["safety-waiver"] ~= nil, "renamed recipe should exist")
   assert_eq(data_raw.recipe["safety-waiver"].name, "safety-waiver", "recipe name should update")
+  assert_eq(data_raw.recipe["safety-waiver"].factoriopedia_alternative, "safety-waiver",
+    "Factoriopedia alternatives must follow recipe renames")
   assert_eq(data_raw.technology.automation.effects[1].recipe, "safety-waiver", "tech unlock should retarget")
   assert_eq(shared.FORM_PRODUCTION_RECIPES["safety-waiver"], "safety-waiver", "shared map should retarget")
 end)

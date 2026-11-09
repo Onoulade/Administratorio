@@ -1,3 +1,4 @@
+local recipe_categories = require("prototypes.shared.recipe_categories")
 -- Presentation only: preserve recipe identities, costs, categories and unlocks.
 local M = {}
 local PREFIX = "administratorio-factoriopedia."
@@ -19,11 +20,7 @@ end
 local function accepts(recipe, categories)
   local accepted = {}
   for _, category in ipairs(categories or {}) do accepted[category] = true end
-  if accepted[recipe.category or "crafting"] then return true end
-  for _, category in ipairs(recipe.additional_categories or {}) do
-    if accepted[category] then return true end
-  end
-  return false
+  return recipe_categories.matches(recipe, accepted)
 end
 
 function M.apply(raw, space_age, item_types)

@@ -89,7 +89,7 @@ local function new_test_context(opts)
         name = params.name,
         position = {x = params.position.x, y = params.position.y},
         force = params.force,
-        active = true,
+        disabled_by_script = false,
         unit_number = next_unit_number,
         surface = surface,
       }
@@ -331,7 +331,7 @@ local function new_test_context(opts)
       release_calls = release_calls + 1
       last_released_entity = entity
       entity.force = game.forces.enemy
-      entity.active = true
+      entity.disabled_by_script = false
       entity.destructible = true
       if entity.commandable then
         entity.commandable.set_command({
@@ -523,7 +523,7 @@ test("invalid protesting biter rematerializes instead of being untracked", funct
   local ctx = new_test_context()
   local target = {
     valid = true,
-    active = false,
+    disabled_by_script = true,
     force = {name = "player"},
     unit_number = 91,
     position = {x = 7, y = 7},
@@ -564,7 +564,7 @@ test("arrived protesting biter parks inactive like desk waiters", function()
   local ctx = new_test_context()
   local target = {
     valid = true,
-    active = true,
+    disabled_by_script = false,
     force = {name = "player"},
     unit_number = 91,
     position = {x = 7, y = 7},
@@ -596,17 +596,17 @@ test("arrived protesting biter parks inactive like desk waiters", function()
 
   assert_true(info.arrived_at_building, "nearby protester should be marked arrived")
   assert_true(info.protest_parked, "arrived protester should be parked")
-  assert_eq(entity.active, false, "arrived protester should be inactive")
+  assert_eq((not entity.disabled_by_script), false, "arrived protester should be inactive")
   assert_eq(entity.destructible, false, "arrived protester should be protected")
   assert_eq(ctx.get_last_stop_command().type, defines.command.stop, "arrived protester should receive a stop command")
-  assert_eq(target.active, false, "arrived protester should keep the target disabled")
+  assert_eq((not target.disabled_by_script), false, "arrived protester should keep the target disabled")
 end)
 
 test("promise without desk capacity pacifies and explicitly stops the protester", function()
   local ctx = new_test_context()
   local target = {
     valid = true,
-    active = false,
+    disabled_by_script = true,
     force = {name = "player"},
     unit_number = 91,
     position = {x = 7, y = 7},
@@ -647,7 +647,7 @@ test("promise without desk capacity pacifies and explicitly stops the protester"
   assert_true(info.pacified_parked, "pacified protester should be parked while remaining visible")
   assert_eq(info.last_known_position.x, 1, "pacified protester should remember its last x position")
   assert_eq(info.last_known_position.y, 1, "pacified protester should remember its last y position")
-  assert_true(target.active == true, "promise should release the protested building while the biter is pacified")
+  assert_true((not target.disabled_by_script) == true, "promise should release the protested building while the biter is pacified")
   assert_true(ctx.get_last_stop_command() ~= nil, "pacified protester should receive an explicit stop command")
   assert_true(ctx.get_pacified_render_calls() > 0, "pacified protester should show a waiting indicator")
   assert_eq(ctx.get_last_stop_command().type, defines.command.stop, "promise pacification should stop the protester's movement command")
@@ -658,7 +658,7 @@ test("promise with only full desks keeps pacified biters roaming instead of free
   storage.admin_desks[ctx.desk.unit_number] = ctx.desk
   local target = {
     valid = true,
-    active = false,
+    disabled_by_script = true,
     force = {name = "player"},
     unit_number = 93,
     position = {x = 7, y = 7},
@@ -695,7 +695,7 @@ test("promise with only full desks keeps pacified biters roaming instead of free
 
   assert_eq(info.state, "pacified", "promise should still pacify protesters when desks are full")
   assert_eq(info.frustration, 300, "pacified roaming should keep frustration at half threshold")
-  assert_true(entity.active == true, "pacified biter should keep moving when desks exist but are full")
+  assert_true((not entity.disabled_by_script) == true, "pacified biter should keep moving when desks exist but are full")
   assert_true(ctx.get_last_move_command() ~= nil, "pacified biter should receive a roam movement command")
   assert_true(ctx.get_pacified_render_calls() > 0, "pacified roaming biter should still show a waiting indicator")
   local destination = ctx.get_last_move_command().destination
@@ -747,7 +747,7 @@ test("pacified pacing quickly resumes desk loitering after a short idle", functi
     force = "neutral",
   }
   entity.unit_number = 20
-  entity.active = false
+  entity.disabled_by_script = true
   local info = {
     state = "pacified",
     entity = entity,
@@ -831,7 +831,7 @@ test("hard mode protesting biter attacks a building while staying in protest mod
   local ctx = new_test_context{hard_mode = true}
   local target = {
     valid = true,
-    active = false,
+    disabled_by_script = true,
     force = {name = "player"},
     unit_number = 91,
     position = {x = 20, y = 20},
@@ -843,7 +843,7 @@ test("hard mode protesting biter attacks a building while staying in protest mod
   }
   local nearest_target = {
     valid = true,
-    active = true,
+    disabled_by_script = false,
     force = {name = "player"},
     unit_number = 92,
     position = {x = 8, y = 7},
@@ -891,7 +891,7 @@ test("hard mode protesting biter attacks a building while staying in protest mod
   assert_eq(ctx.get_release_calls(), 0, "hard mode escalation should not hand the biter back to regular enemy AI")
   assert_true(entity.force == game.forces["administratorio-hard-mode-biters"], "hard-mode attacking protester should use the dedicated hard-mode attack force")
   assert_true(entity.destructible == true, "hard-mode attacking protester should be destructible")
-  assert_true(target.active == true, "escalation should release the disabled protest target")
+  assert_true((not target.disabled_by_script) == true, "escalation should release the disabled protest target")
   assert_eq(nearest_damage_calls, 1, "hard-mode attacking protester should damage the nearest building when in range")
   assert_eq(nearest_damage_amount, 20, "hard-mode supplemental damage should use the hard-mode damage amount")
   assert_true(nearest_damage_force == game.forces["administratorio-hard-mode-biters"], "hard-mode supplemental damage should be attributed to the attack force")
@@ -904,7 +904,7 @@ test("hard mode protesting biter with missing frustration tick still rises past 
   local ctx = new_test_context{hard_mode = true}
   local target = {
     valid = true,
-    active = false,
+    disabled_by_script = true,
     force = {name = "player"},
     unit_number = 94,
     position = {x = 7, y = 7},
@@ -948,7 +948,7 @@ test("hard mode parked protester gains frustration during protest pacing", funct
   local ctx = new_test_context{hard_mode = true}
   local target = {
     valid = true,
-    active = false,
+    disabled_by_script = true,
     force = {name = "player"},
     unit_number = 95,
     position = {x = 7, y = 7},
@@ -964,7 +964,7 @@ test("hard mode parked protester gains frustration during protest pacing", funct
     force = "neutral",
   }
   entity.unit_number = 41
-  entity.active = false
+  entity.disabled_by_script = true
   local info = {
     state = "protesting",
     entity = entity,
@@ -991,7 +991,7 @@ test("hard mode parked protester escalates during protest pacing", function()
   local ctx = new_test_context{hard_mode = true}
   local target = {
     valid = true,
-    active = false,
+    disabled_by_script = true,
     force = {name = "player"},
     unit_number = 96,
     position = {x = 7, y = 7},
@@ -1011,7 +1011,7 @@ test("hard mode parked protester escalates during protest pacing", function()
     force = "neutral",
   }
   entity.unit_number = 42
-  entity.active = false
+  entity.disabled_by_script = true
   local info = {
     state = "protesting",
     entity = entity,
@@ -1037,7 +1037,7 @@ test("hard mode parked protester escalates during protest pacing", function()
   assert_eq(info.state, "protesting", "hard mode parked protester should stay in protest mode during escalation")
   assert_true(info.hard_mode_attacking == true, "hard mode parked protester should escalate during pacing")
   assert_eq(ctx.get_release_calls(), 0, "pacing escalation should not release the biter to regular enemy AI")
-  assert_true(target.active == true, "pacing escalation should release the disabled protest target")
+  assert_true((not target.disabled_by_script) == true, "pacing escalation should release the disabled protest target")
   assert_eq(damage_calls, 1, "pacing escalation should damage the target when the biter is already in range")
   assert_true(ctx.get_last_attack_command() ~= nil, "pacing escalation should issue a real attack command")
   assert_true(ctx.get_last_attack_command().target == target, "pacing escalation should attack the target")
@@ -1098,7 +1098,7 @@ test("promised hard mode attacking protester escalates again when no desk opens"
   local ctx = new_test_context{hard_mode = true}
   local target = {
     valid = true,
-    active = true,
+    disabled_by_script = false,
     force = {name = "player"},
     unit_number = 97,
     position = {x = 6, y = 5},
@@ -1150,7 +1150,7 @@ test("protest pacing refreshes protest rendering even before arrival", function(
   local ctx = new_test_context()
   local target = {
     valid = true,
-    active = false,
+    disabled_by_script = true,
     force = {name = "player"},
     unit_number = 95,
     position = {x = 7, y = 7},
@@ -1183,7 +1183,7 @@ test("protesting biter resumes movement when a successful approach command ends 
   local ctx = new_test_context()
   local target = {
     valid = true,
-    active = false,
+    disabled_by_script = true,
     force = {name = "player"},
     unit_number = 96,
     position = {x = 7, y = 7},
@@ -1213,7 +1213,7 @@ test("protesting biter resumes movement when a successful approach command ends 
   }
 
   assert_true(ctx.get_last_move_command() ~= nil, "protesting biter should receive a follow-up movement command after a premature command completion")
-  assert_true(entity.active == true, "protesting biter should stay active while resuming its approach")
+  assert_true((not entity.disabled_by_script) == true, "protesting biter should stay active while resuming its approach")
 end)
 
 test("stale protest path callback releases a biter with no valid target", function()

@@ -318,7 +318,7 @@ end
 for name, ingredients in pairs(module_recipe_overrides) do
   local recipe = data.raw["recipe"][name]
   if recipe then
-    recipe.category = "bureaucracy-modules"
+    recipe.categories = {"bureaucracy-modules"}
     recipe.ingredients = ingredients
     if space_age_enabled and name == "productivity-module-3" then
       require("prototypes.shared.space_age_planets").apply_planet_surface_conditions(recipe, "gleba")

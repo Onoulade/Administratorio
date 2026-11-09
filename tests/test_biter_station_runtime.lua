@@ -172,7 +172,7 @@ local function new_managed_building(surface, force, opts)
     position = opts.position or {x = 2, y = 0},
     surface = surface,
     force = force,
-    active = false,
+    disabled_by_script = true,
     products_finished = 0,
     crafting_progress = 0,
     recipe_name = opts.recipe_name or "dummy",
@@ -208,19 +208,19 @@ test("breakroom approval runs without wage dispatch and returns to normal gating
   })
   local biter_station = require("scripts.biter_station")
   biter_station.track_managed_building(breakroom)
-  assert_true(breakroom.active, "approval should run without a dispatched worker")
+  assert_true((not breakroom.disabled_by_script), "approval should run without a dispatched worker")
   biter_station.update(10)
-  assert_true(breakroom.active, "approval should remain active without a station")
+  assert_true((not breakroom.disabled_by_script), "approval should remain active without a station")
   assert_true(next(storage.biter_station_biter or {}) == nil,
     "approval should not dispatch or charge a worker")
 
   breakroom.recipe_name = "watercooler-gossip-production"
   biter_station.update(20)
-  assert_true(not breakroom.active, "gossip should still wait for a station worker")
+  assert_true(not (not breakroom.disabled_by_script), "gossip should still wait for a station worker")
 
   breakroom.recipe_name = "biochamber-approval"
   biter_station.update(30)
-  assert_true(breakroom.active, "switching back to approval should resume autonomously")
+  assert_true((not breakroom.disabled_by_script), "switching back to approval should resume autonomously")
 end)
 
 local function active_worker()
@@ -251,7 +251,7 @@ test("platform industrial printers use onboard authorization instead of biter di
 
   biter_station.track_managed_building(building)
 
-  assert_true(building.active, "platform industrial printer should remain active")
+  assert_true((not building.disabled_by_script), "platform industrial printer should remain active")
   assert_true(storage.managed_building_registry[building.unit_number] == nil,
     "platform industrial printer should not wait in the terrestrial dispatch registry")
 end)
@@ -332,15 +332,15 @@ test("biter station keeps a triggered machine active until recipe progress wraps
   active.biter.position = {x = building.position.x, y = building.position.y}
 
   biter_station.update(20)
-  assert_true(building.active, "arrival should activate the managed building")
+  assert_true((not building.disabled_by_script), "arrival should activate the managed building")
 
   building.crafting_progress = 0.65
   biter_station.update(30)
-  assert_true(building.active, "machine should stay active while the same recipe is still in progress")
+  assert_true((not building.disabled_by_script), "machine should stay active while the same recipe is still in progress")
 
   building.crafting_progress = 0.05
   biter_station.update(40)
-  assert_eq(building.active, false, "machine should stop after the recipe progress wraps")
+  assert_eq((not building.disabled_by_script), false, "machine should stop after the recipe progress wraps")
   assert_eq(storage.managed_building_run[building.unit_number], nil, "completed recipe authorization should clear runtime state")
 end)
 
@@ -561,19 +561,19 @@ test("managed building resumes an interrupted authorized craft without replaceme
   local active = active_worker()
   active.biter.position = {x = building.position.x, y = building.position.y}
   biter_station.update(20)
-  assert_true(building.active, "worker visit should authorize a craft")
+  assert_true((not building.disabled_by_script), "worker visit should authorize a craft")
 
   storage.working_hours_state = {
     [building.unit_number] = {reason = "protest"},
   }
-  building.active = false
+  building.disabled_by_script = true
   biter_station.update(30)
-  assert_eq(building.active, false, "active protest should keep the authorized craft paused")
+  assert_eq((not building.disabled_by_script), false, "active protest should keep the authorized craft paused")
 
   storage.working_hours_state[building.unit_number].reason = nil
   biter_station.update(40)
 
-  assert_true(building.active, "existing authorization should resume after the external shutdown is released")
+  assert_true((not building.disabled_by_script), "existing authorization should resume after the external shutdown is released")
   assert_eq(storage.managed_building_run[building.unit_number].crafts_remaining, 1,
     "interruption must not consume the authorized craft")
 
@@ -925,7 +925,7 @@ test("managed building without the waiver item prototype does not error", functi
 
   assert_true(storage.managed_building_registry[building.unit_number] == building,
     "building should still be tracked when the waiver prototype is absent")
-  assert_eq(building.active, false, "building without a waiver should wait for a dispatched worker")
+  assert_eq((not building.disabled_by_script), false, "building without a waiver should wait for a dispatched worker")
   prototypes = nil
 end)
 

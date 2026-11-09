@@ -179,7 +179,7 @@ local function debug_entity_summary(entity)
   local ok_name, name = pcall(function() return entity.name end)
   local ok_unit, unit_number = pcall(function() return entity.unit_number end)
   local ok_force, force = pcall(function() return entity.force end)
-  local ok_active, active = pcall(function() return entity.active end)
+  local ok_active, active = pcall(function() return (not entity.disabled_by_script) end)
   local ok_position, position = pcall(function() return entity.position end)
   local ok_has_command, has_command = pcall(function()
     return entity.commandable and entity.commandable.has_command or false
@@ -418,7 +418,7 @@ local function create_wall_blockers(port)
     }
     if blocker and blocker.valid then
       blocker.destructible = false
-      blocker.minable = false
+      blocker.minable_flag = false
       blocker.operable = false
     end
   end
@@ -449,7 +449,7 @@ local function create_hidden_coffee_input(port)
   }
   if created and created.valid then
     created.destructible = false
-    created.minable = false
+    created.minable_flag = false
     created.operable = false
     storage.biterport_coffee_inputs[port.unit_number] = created
   end
@@ -478,8 +478,7 @@ local function available_dispatch_coffee(port)
   end
 
   local input = create_hidden_coffee_input(port)
-  local fluidbox = input and input.valid and input.fluidbox
-  local fluid = fluidbox and fluidbox[1] or nil
+  local fluid = input and input.valid and input.get_fluid(1) or nil
   if fluid and fluid.name == COFFEE_FLUID_NAME then
     return fluid.amount or 0
   end
@@ -496,11 +495,11 @@ local function remove_dispatch_coffee(port)
   end
 
   local input = create_hidden_coffee_input(port)
-  if not input or not input.valid or not input.remove_fluid then
+  if not input or not input.valid or not input.extract_fluid then
     return false
   end
 
-  local ok, removed = pcall(input.remove_fluid, {
+  local ok, removed = pcall(input.extract_fluid, {
     name = COFFEE_FLUID_NAME,
     amount = C.BITERPORT_NIGHT_COFFEE_PER_DISPATCH,
   })
@@ -587,7 +586,7 @@ local function create_hidden_roboport(port)
   }
   if created and created.valid then
     created.destructible = false
-    created.minable = false
+    created.minable_flag = false
     created.operable = false
     storage.biterport_hidden_roboports[port.unit_number] = created
   end
@@ -2123,7 +2122,7 @@ end
 local function issue_move_command(biter, destination, radius)
   if not biter or not biter.valid or not destination or not biter.commandable then return false end
   biter.force = get_worker_force()
-  biter.active = true
+  biter.disabled_by_script = false
   biter.commandable.set_command{
     type = defines.command.go_to_location,
     destination = destination,
@@ -2453,7 +2452,7 @@ turn_worker_into_protester = function(active, tick)
     worker_debug_log("turn-protester-skip-invalid-biter", active)
     return false
   end
-  biter.active = true
+  biter.disabled_by_script = false
   biter.destructible = true
 
   local biters = biters_module

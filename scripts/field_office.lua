@@ -41,7 +41,7 @@ local function ensure_runtime_profile_section(runtime_profile, key)
   if not runtime_profile then return nil end
   local section = runtime_profile[key]
   if not section then
-    section = game.create_profiler(true)
+    section = helpers.create_profiler(true)
     runtime_profile[key] = section
   end
   return section
@@ -61,7 +61,7 @@ local function run_profiled(runtime_profile, key, fn)
     return fn()
   end
 
-  local profiler = game.create_profiler()
+  local profiler = helpers.create_profiler()
   local result = fn()
   record_runtime_profile(runtime_profile, key, profiler)
   return result
@@ -561,7 +561,7 @@ release_biter = function(state, tick)
     })
   end
   state.biter.force = get_biter_force()
-  state.biter.active = true
+  state.biter.disabled_by_script = false
   state.biter.destructible = false
 
   -- Track until the worker reaches home. Stale commands are retried a few
@@ -601,7 +601,7 @@ local function mark_worker_unreachable(state, office, tick)
   state.phase = "idle"
   state.unreachable_until = (tick or game.tick) + UNREACHABLE_RETRY_TICKS
   if office and office.valid then
-    office.active = false
+    office.disabled_by_script = true
     set_office_status(state, office, defines.entity_status_diode.red, "gui.field-office-no-workers-reachable")
   end
 end
@@ -633,10 +633,8 @@ end
 
 --- Check if the office's fluidbox has at least `amount` of `fluid_name`.
 local function fluidbox_has(office, fluid_name, amount)
-  local fluidbox = office.fluidbox
-  if not fluidbox then return false end
-  for i = 1, #fluidbox do
-    local fluid = fluidbox[i]
+  for i = 1, office.fluids_count do
+    local fluid = office.get_fluid(i)
     if fluid and fluid.name == fluid_name and fluid.amount >= amount then
       return true
     end
@@ -661,7 +659,7 @@ local function craft_readiness(office)
   -- must still count or the inactive office can never summon its replacement.
   local craft_in_progress = (office.crafting_progress or 0) > 0
   if not craft_in_progress then
-    local input_inv = office.get_inventory(defines.inventory.assembling_machine_input)
+    local input_inv = office.get_inventory(defines.inventory.crafter_input)
     for _, ingredient in pairs(recipe.ingredients) do
       if ingredient.type == "item" then
         if not input_inv or input_inv.get_item_count(ingredient.name) < ingredient.amount then
@@ -675,7 +673,7 @@ local function craft_readiness(office)
     end
   end
 
-  local output_inv = office.get_inventory(defines.inventory.assembling_machine_output)
+  local output_inv = office.get_inventory(defines.inventory.crafter_output)
   if output_inv and output_inv.is_full() then return "full-output" end
 
   return "ready"
@@ -711,7 +709,7 @@ function M.update(tick, runtime_profile)
             )
           end
           info.entity.force = get_biter_force()
-          info.entity.active = true
+          info.entity.disabled_by_script = false
           info.entity.destructible = false
           info.entity.commandable.set_command({
             type = defines.command.go_to_location,
@@ -779,12 +777,12 @@ function M.update(tick, runtime_profile)
       if readiness ~= "ready" then
         -- Leave unpowered offices active so Factorio can show the native
         -- missing-electricity alert instead of suppressing it as script-disabled.
-        office.active = (readiness == "no-power")
+        office.disabled_by_script = readiness ~= "no-power"
         set_office_status(state, office, defines.entity_status_diode.red, "gui.field-office-" .. readiness)
         goto continue
       end
 
-      office.active = false
+      office.disabled_by_script = true
 
       if state.unreachable_until and tick < state.unreachable_until then
         set_office_status(state, office, defines.entity_status_diode.red, "gui.field-office-no-workers-reachable")
@@ -833,10 +831,10 @@ function M.update(tick, runtime_profile)
       end
 
     elseif state.phase == "calling" then
-      local phase_profiler = runtime_profile and game.create_profiler() or nil
+      local phase_profiler = runtime_profile and helpers.create_profiler() or nil
 
       -- Building is inactive while biter is travelling
-      office.active = false
+      office.disabled_by_script = true
 
       -- Check if biter is still alive
       if not state.biter or not state.biter.valid then
@@ -890,7 +888,7 @@ function M.update(tick, runtime_profile)
         state.overlay_id = create_worker_overlay(state.biter, "working")
 
         -- Activate the building
-        office.active = true
+        office.disabled_by_script = false
         state.products_at_arrival = office.products_finished
         state.phase = "working"
         clear_calling_progress(state)
@@ -903,7 +901,7 @@ function M.update(tick, runtime_profile)
       record_runtime_profile(runtime_profile, "field_office_calling", phase_profiler)
 
     elseif state.phase == "working" then
-      local phase_profiler = runtime_profile and game.create_profiler() or nil
+      local phase_profiler = runtime_profile and helpers.create_profiler() or nil
 
       -- Check if biter died while working
       if not state.biter or not state.biter.valid then
@@ -915,7 +913,7 @@ function M.update(tick, runtime_profile)
             distraction = defines.distraction.none,
           })
           state.overlay_id = create_worker_overlay(biter, "working")
-          office.active = true
+          office.disabled_by_script = false
         else
           destroy_overlay(state)
           if state.biter_unit_number then
@@ -925,7 +923,7 @@ function M.update(tick, runtime_profile)
           end
           state.biter = nil
           state.phase = "idle"
-          office.active = false
+          office.disabled_by_script = true
           set_office_status(state, office, defines.entity_status_diode.red, "gui.field-office-no-nest")
           record_runtime_profile(runtime_profile, "field_office_working", phase_profiler)
           goto continue
@@ -939,7 +937,7 @@ function M.update(tick, runtime_profile)
          or not is_working_or_power_limited_status(status) then
         release_biter(state, tick)
         state.phase = "idle"
-        office.active = false
+        office.disabled_by_script = true
         clear_office_status(state, office)
         record_runtime_profile(runtime_profile, "field_office_working", phase_profiler)
         goto continue
@@ -951,7 +949,7 @@ function M.update(tick, runtime_profile)
         -- Release the biter
         release_biter(state, tick)
         state.phase = "idle"
-        office.active = false
+        office.disabled_by_script = true
         clear_office_status(state, office)
       end
 

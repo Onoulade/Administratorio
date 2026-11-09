@@ -1,3 +1,4 @@
+local recipe_categories = require("prototypes.shared.recipe_categories")
 -- ADMINISTRATORIO: DATA FINAL FIXES
 --
 -- Runs after ALL mods' data.lua and data-updates.lua.
@@ -395,7 +396,7 @@ local function add_osha_violation(target)
   })
 
   if res then
-    table.insert(res, {type = "item", name = "osha-violation", amount = 1, probability = 0.5})
+    table.insert(res, {type = "item", name = "osha-violation", amount = 1, independent_probability = 0.5})
     target.results = res
     target.result = nil
     if original_product then target.main_product = original_product end
@@ -404,7 +405,7 @@ end
 
 for _, recipe in pairs(data.raw["recipe"]) do
   if not shared.is_admin_recipe(recipe.name) then
-    local cat = recipe.category or "crafting"
+    local cat = recipe_categories.primary(recipe) or "crafting"
     local operating_form = shared.get_operating_form(recipe)
     -- Oil refineries use biter-station dispatch as their per-cycle gate. Keep
     -- their fluid-only recipes free of a second operating-paperwork gate.
@@ -902,7 +903,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
 
   -- Refineries are authorized by biter-station dispatch, not an operating
   -- form. Their fluid-only processes retain native recipe quantities.
-  if (recipe.category or "crafting") == "oil-processing" then
+  if (recipe_categories.primary(recipe) or "crafting") == "oil-processing" then
     goto next_operating_recipe
   end
 
@@ -934,7 +935,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     goto continue
   end
 
-  local cat = recipe.category or "crafting"
+  local cat = recipe_categories.primary(recipe) or "crafting"
 
   local shared_space_age_regulated_cat = feature_flags.space_age_enabled()
     and SPACE_AGE_SHARED_ASSEMBLER_CATEGORIES[cat]
@@ -980,7 +981,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
   local character_can_craft = cat == "crafting"
     or cat == "advanced-crafting"
     or (shared_space_age_regulated_cat and SPACE_AGE_CHARACTER_CRAFTING_CATEGORIES[cat])
-  local preserve_native_recipe = shared_space_age_regulated_cat or character_can_craft
+  local preserve_native_recipe = shared_space_age_regulated_cat or character_can_craft or #(recipe.categories or {}) > 1
 
   if not preserve_native_recipe then
     -------------------------------------------------------------------------
@@ -990,7 +991,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     -- while showing the correct regulated ingredients/machines.
     -- Keep the recipe visible in the player's crafting UI as unavailable.
     -------------------------------------------------------------------------
-    recipe.category = regulated_cat
+    recipe.categories = {regulated_cat}
     regulate_recipe(recipe, regulated_paperwork, multiplier)
     apply_bulk_recipe_icon_overlay(recipe)
     recipe.hide_from_player_crafting = false
@@ -1018,7 +1019,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     -- Hidden crafting routes still produce real items. Milestones and the
     -- production GUI both depend on the engine recording these crafts.
     regulated.hide_from_stats = false
-    regulated.category = regulated_cat
+    regulated.categories = {regulated_cat}
 
     regulate_recipe(regulated, regulated_paperwork, multiplier)
     apply_bulk_recipe_icon_overlay(regulated)
@@ -1038,9 +1039,7 @@ for name, recipe in pairs(data.raw["recipe"]) do
     -- Preserve Space Age's explicitly handcraftable shared categories. Other
     -- shared-category originals remain native-machine recipes but stay out of
     -- the character menu.
-    if shared_space_age_regulated_cat
-      and not SPACE_AGE_CHARACTER_CRAFTING_CATEGORIES[cat]
-    then
+    if not character_can_craft then
       recipe.hide_from_player_crafting = true
     elseif not is_t0 then
       batch_original_with_form(recipe, handcraft_paperwork, multiplier)
@@ -1054,7 +1053,9 @@ for name, recipe in pairs(data.raw["recipe"]) do
     -- prototype tests previously kept the native category and therefore hid
     -- this regression from the Factorio-backed progression audit.
     if cat == "advanced-crafting" then
-      recipe.category = "crafting"
+      for index, category in ipairs(recipe.categories) do
+        if category == "advanced-crafting" then recipe.categories[index] = "crafting" end
+      end
     end
 
   end
@@ -1169,7 +1170,7 @@ local admin_building_regulated = {}
 for recipe_name, recipe in pairs(data.raw["recipe"]) do
   if recipe_name:find("%-regulated$") then goto next_admin_building end
 
-  local cat = recipe.category or "crafting"
+  local cat = recipe_categories.primary(recipe) or "crafting"
   if cat ~= "crafting" and cat ~= "advanced-crafting" then goto next_admin_building end
   if data.raw["recipe"][recipe_name .. "-regulated"] then goto next_admin_building end
 
@@ -1178,7 +1179,7 @@ for recipe_name, recipe in pairs(data.raw["recipe"]) do
   regulated.localised_name, regulated.localised_description = resolve_regulated_recipe_localisation(recipe, recipe_name)
   regulated.hide_from_player_crafting = true
   regulated.hide_from_stats = false
-  regulated.category = (cat == "advanced-crafting") and "advanced-crafting-regulated" or "crafting-regulated"
+  regulated.categories = {(cat == "advanced-crafting") and "advanced-crafting-regulated" or "crafting-regulated"}
 
   local multiplier = get_recipe_batch_multiplier(recipe_name, recipe)
   regulate_admin_building(regulated, multiplier, recipe_name)
@@ -1234,8 +1235,8 @@ for _, recipe_name in ipairs({
   local recipe = data.raw.recipe[recipe_name]
   if recipe and (recipe_name:find("%-regulated$")
       or recipe_name == "explosives"
-      or recipe.category == "crafting-regulated"
-      or recipe.category == "advanced-crafting-regulated") then
+      or recipe_categories.primary(recipe) == "crafting-regulated"
+      or recipe_categories.primary(recipe) == "advanced-crafting-regulated") then
     use_machine_construction_work_order(recipe)
   end
 end
@@ -1348,7 +1349,7 @@ inject_carbon_cert_to_boiler("boiler-regulated")
 -- only/admin helper recipes that just add noise to the character crafting UI.
 -------------------------------------------------------------------------------
 for name, recipe in pairs(data.raw["recipe"]) do
-  local cat = recipe.category or "crafting"
+  local cat = recipe_categories.primary(recipe) or "crafting"
 
   if name:find("^copy%-") then
     recipe.hide_from_player_crafting = true
@@ -1625,7 +1626,7 @@ local function add_specialist_native_routes(machine_name, source_categories, rou
 
   local categories = {}
   for _, category in ipairs(machine.crafting_categories or {}) do
-    if not source_categories[category] then categories[#categories + 1] = category end
+    categories[#categories + 1] = category
   end
   categories[#categories + 1] = route_category
   machine.crafting_categories = categories
@@ -1633,10 +1634,12 @@ local function add_specialist_native_routes(machine_name, source_categories, rou
   local specialist_recipes = {}
   for recipe_name, native in pairs(data.raw.recipe) do
     local copy_name = recipe_name .. suffix
-    if source_categories[native.category] and not data.raw.recipe[copy_name] then
+    if recipe_categories.matches(native, source_categories)
+      and not recipe_categories.has(native, "crafting-with-fluid")
+      and data.raw.recipe[recipe_name .. "-regulated"] and not data.raw.recipe[copy_name] then
       local copy = util.table.deepcopy(native)
       copy.name = copy_name
-      copy.category = route_category
+      copy.categories = {route_category}
       copy.hide_from_player_crafting = true
       copy.localised_name, copy.localised_description = resolve_regulated_recipe_localisation(native, recipe_name)
 
@@ -1652,6 +1655,11 @@ local function add_specialist_native_routes(machine_name, source_categories, rou
         end
       end
       specialist_recipes[#specialist_recipes + 1] = copy
+      local retained = {}
+      for _, category in ipairs(native.categories) do
+        if not source_categories[category] then retained[#retained + 1] = category end
+      end
+      native.categories = retained
 
       for _, technology in pairs(data.raw.technology or {}) do
         for _, effect in ipairs(technology.effects or {}) do
@@ -1667,8 +1675,9 @@ local function add_specialist_native_routes(machine_name, source_categories, rou
 end
 
 if feature_flags.space_age_enabled() then
-  add_specialist_native_routes("foundry", {pressing = true}, "foundry-pressing", "-foundry")
+  add_specialist_native_routes("foundry", {metallurgy = true, pressing = true}, "foundry-pressing", "-foundry")
   add_specialist_native_routes("electromagnetic-plant", {
+    electromagnetics = true,
     electronics = true,
     ["electronics-with-fluid"] = true,
     ["electronics-or-assembling"] = true,

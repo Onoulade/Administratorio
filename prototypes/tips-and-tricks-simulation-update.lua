@@ -40,9 +40,9 @@ elseif s.kind=="boarding" then
     s.next_visitor=game.tick+120
   end
 elseif s.kind=="path" then
-  for _,output in ipairs(s.outputs) do output.get_inventory(defines.inventory.furnace_result).clear() end
+  for _,output in ipairs(s.outputs) do output.get_inventory(defines.inventory.crafter_output).clear() end
   if game.tick%90==0 then
-    local input=s.deployment.get_inventory(defines.inventory.furnace_source)
+    local input=s.deployment.get_inventory(defines.inventory.crafter_input)
     if input.is_empty() then
       input.insert{name=s.items[s.next_item],count=1}
       s.next_item=s.next_item%#s.items+1
